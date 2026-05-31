@@ -20,6 +20,10 @@ function slugify(str) {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
+function isValidUrl(val) {
+  return !val || /^https?:\/\/.+/.test(val.trim());
+}
+
 export default function PerformerEdit() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -27,6 +31,7 @@ export default function PerformerEdit() {
   const isNew = id === "new";
 
   const [form, setForm] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState({});
 
   const { data: performer } = useQuery({
     queryKey: ["performer", id],
@@ -62,6 +67,14 @@ export default function PerformerEdit() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const errs = {};
+    if (!form.display_name.trim()) errs.display_name = "Display name is required.";
+    if (!form.slug.trim()) errs.slug = "Slug is required.";
+    if (!form.status) errs.status = "Status is required.";
+    if (!isValidUrl(form.profile_image_url)) errs.profile_image_url = "Must be a valid http/https URL.";
+    if (!isValidUrl(form.cover_image_url)) errs.cover_image_url = "Must be a valid http/https URL.";
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    setErrors({});
     save.mutate(form);
   };
 
@@ -93,7 +106,9 @@ export default function PerformerEdit() {
           </div>
           <div className="space-y-2">
             <Label>Slug *</Label>
-            <Input value={form.slug} onChange={e => set("slug", e.target.value)} required className="font-mono text-sm" />
+            <Input value={form.slug} onChange={e => set("slug", e.target.value)} className={`font-mono text-sm ${errors.slug ? "border-destructive" : ""}`} />
+            {errors.slug && <p className="text-xs text-destructive">{errors.slug}</p>}
+            {!form.slug && form.display_name && <p className="text-xs text-muted-foreground">Slug will be auto-generated. You can override it.</p>}
           </div>
           <div className="space-y-2">
             <Label>Bio</Label>
@@ -140,7 +155,13 @@ export default function PerformerEdit() {
           ].map(({ field, label }) => (
             <div key={field} className="space-y-2">
               <Label>{label}</Label>
-              <Input value={form[field] || ""} onChange={e => set(field, e.target.value)} placeholder="https://…" className="font-mono text-xs" />
+              <Input
+                value={form[field] || ""}
+                onChange={e => { set(field, e.target.value); if (errors[field]) setErrors(ex => ({ ...ex, [field]: undefined })); }}
+                placeholder="https://…"
+                className={`font-mono text-xs ${errors[field] ? "border-destructive" : ""}`}
+              />
+              {errors[field] && <p className="text-xs text-destructive">{errors[field]}</p>}
             </div>
           ))}
         </section>

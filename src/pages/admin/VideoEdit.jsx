@@ -17,6 +17,12 @@ const EMPTY_FORM = {
   featured: false, is_exclusive: false,
 };
 
+const URL_FIELDS = ["primary_thumbnail_url", "cover_image_url", "trailer_url", "preview_gif_url"];
+
+function isValidUrl(val) {
+  return !val || /^https?:\/\/.+/.test(val.trim());
+}
+
 function slugify(str) {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
@@ -89,6 +95,7 @@ export default function VideoEdit() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [categoryInput, setCategoryInput] = useState("");
   const [tagInput, setTagInput] = useState("");
+  const [errors, setErrors] = useState({});
 
   const { data: brands = [] } = useQuery({
     queryKey: ["brands-lookup"],
@@ -136,6 +143,15 @@ export default function VideoEdit() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const errs = {};
+    if (!form.title.trim()) errs.title = "Title is required.";
+    if (!form.slug.trim()) errs.slug = "Slug is required.";
+    if (!form.status) errs.status = "Status is required.";
+    URL_FIELDS.forEach(f => {
+      if (!isValidUrl(form[f])) errs[f] = "Must be a valid http/https URL.";
+    });
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    setErrors({});
     const data = { ...form };
     if (data.duration_seconds) data.duration_seconds = parseInt(data.duration_seconds, 10);
     else delete data.duration_seconds;
@@ -172,7 +188,9 @@ export default function VideoEdit() {
           </div>
           <div className="space-y-2">
             <Label>Slug *</Label>
-            <Input value={form.slug} onChange={e => set("slug", e.target.value)} required className="font-mono text-sm" />
+            <Input value={form.slug} onChange={e => set("slug", e.target.value)} className={`font-mono text-sm ${errors.slug ? "border-destructive" : ""}`} />
+            {errors.slug && <p className="text-xs text-destructive">{errors.slug}</p>}
+            {!form.slug && form.title && <p className="text-xs text-muted-foreground">Slug will be auto-generated. You can override it.</p>}
           </div>
           <div className="space-y-2">
             <Label>Description</Label>
@@ -247,7 +265,13 @@ export default function VideoEdit() {
           ].map(({ field, label }) => (
             <div key={field} className="space-y-2">
               <Label>{label}</Label>
-              <Input value={form[field] || ""} onChange={e => set(field, e.target.value)} placeholder="https://…" className="font-mono text-xs" />
+              <Input
+                value={form[field] || ""}
+                onChange={e => { set(field, e.target.value); if (errors[field]) setErrors(ex => ({ ...ex, [field]: undefined })); }}
+                placeholder="https://…"
+                className={`font-mono text-xs ${errors[field] ? "border-destructive" : ""}`}
+              />
+              {errors[field] && <p className="text-xs text-destructive">{errors[field]}</p>}
             </div>
           ))}
         </section>

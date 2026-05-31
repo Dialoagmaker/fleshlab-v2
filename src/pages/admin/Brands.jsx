@@ -24,7 +24,9 @@ export default function Brands() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Brands</h1>
-          <p className="text-muted-foreground text-sm mt-1">{brands.length} total</p>
+          <p className="text-muted-foreground text-sm mt-1">
+            {brands.length} total{brands.length >= 200 && <span className="ml-2 text-xs text-yellow-400">(showing first 200 records)</span>}
+          </p>
         </div>
         <Link to="/admin/brands/new">
           <Button className="gap-2">
