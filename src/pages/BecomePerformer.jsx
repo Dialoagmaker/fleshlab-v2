@@ -13,14 +13,12 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
-// Real performer data from FLESHLAB
+// Real performer data from FLESHLAB (Asian performers only)
 const REAL_PERFORMERS = [
   { name: "Ze[D]", location: "Manila, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/d246f2643_WhatsAppBild2023-08-12.jpg" },
   { name: "Yero", location: "Cebu, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/0fb87950f_IMG-20230623-WA0019.jpg" },
   { name: "Josh", location: "Manila, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/3a6df758f_1694179373703.JPEG" },
-  { name: "DonDaddy", location: "Mombasa, Kenya", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/705b8ec1e_alexspit.png" },
   { name: "Julian", location: "Davao, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/18fe9d069_469121028_1221603939140534_8880509972313916004_n.jpg" },
-  { name: "CubaNuevo", location: "Santa Clara, Cuba", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/cc026adc6_photo_2023-11-02_16-42-50.jpg" },
   { name: "Kraken", location: "Manila, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/c9e2e88d8_photo_2023-12-12_21-37-05.jpg" },
   { name: "Benvao", location: "Iloilo, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/25cf4aedc_ben4.png" },
 ];
