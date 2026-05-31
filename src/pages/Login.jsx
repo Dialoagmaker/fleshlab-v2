@@ -14,13 +14,20 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const getRedirectForRole = (role) => {
+    if (role === "admin") return "/admin";
+    if (role === "performer") return "/performer/dashboard";
+    return "/account";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
       await base44.auth.loginViaEmailPassword(email, password);
-      window.location.href = "/";
+      const user = await base44.auth.me();
+      window.location.href = getRedirectForRole(user?.role);
     } catch (err) {
       setError(err.message || "Invalid email or password");
     } finally {
@@ -29,6 +36,7 @@ export default function Login() {
   };
 
   const handleGoogle = () => {
+    // Google OAuth lands on /, where AuthenticatedApp will handle role redirect
     base44.auth.loginWithProvider("google", "/");
   };
 
