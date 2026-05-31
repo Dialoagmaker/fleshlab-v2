@@ -29,7 +29,7 @@ const BTS_IMAGES = [
   { label: "Content Creation", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a761ba968_generated_image.png" },
   { label: "Smartphone Filming", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/c640eee81_generated_image.png" },
   { label: "Amateur Productions", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/1e0d2168a_generated_image.png" },
-  { label: "Live Cam Setup", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/5af007f0c_generated_image.png" },
+  { label: "Live Cam Setup", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/d790d5a3b_generated_image.png" },
   { label: "Studio Sessions", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/adcb70e7a_generated_image.png" },
   { label: "Creator Workflow", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/923c82eb8_generated_image.png" },
 ];
