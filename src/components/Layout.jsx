@@ -5,6 +5,7 @@ import { Menu, X, Search, Play } from "lucide-react";
 const navLinks = [
   { href: "/videos", label: "Videos" },
   { href: "/performers", label: "Performers" },
+  { href: "/become-performer", label: "Become a Performer" },
   { href: "/fanclub", label: "Fanclub" },
   { href: "/news", label: "News" },
 ];
@@ -12,7 +13,6 @@ const navLinks = [
 const footerLinks = [
   ...navLinks,
   { href: "/guest-production", label: "Guest Production" },
-  { href: "/become-performer", label: "Become a Performer" },
 ];
 
 export default function Layout() {

@@ -162,38 +162,35 @@ export default function BecomePerformer() {
         </div>
       </section>
 
-      {/* Reality Section */}
+      {/* Exclusive Representation Section */}
       <section className="py-20 px-6 bg-gradient-to-b from-background to-card/30">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12"
+            className="p-8 md:p-12 rounded-2xl bg-gradient-to-br from-primary/10 to-background border border-primary/30"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              You're Probably Already Doing This.
-            </h2>
-            <p className="text-xl text-muted-foreground leading-relaxed">
-              Many men already make money through escort work, private clients, content sales, cam work, subscriptions, and direct messages.
-            </p>
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="p-8 rounded-2xl bg-gradient-to-br from-primary/10 to-background border border-primary/30"
-          >
-            <div className="flex items-start gap-4 mb-6">
-              <TrendingUp className="w-8 h-8 text-primary shrink-0 mt-1" />
-              <div>
-                <h3 className="text-2xl font-bold text-foreground mb-3">The Difference?</h3>
-                <p className="text-lg text-muted-foreground leading-relaxed">
-                  FLESHLAB helps you build something that can continue generating income long after a single booking ends.
-                  We transform individual transactions into a sustainable business with recurring revenue, loyal fans, and long-term growth.
+            <div className="text-center mb-8">
+              <Star className="w-12 h-12 text-primary mx-auto mb-4" />
+              <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
+                Exclusive Representation
+              </h2>
+            </div>
+            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
+              <p>
+                <strong className="text-foreground">FLESHLAB works with a limited number of selected performers.</strong>
+              </p>
+              <p>
+                Approved performers are represented and managed by FLESHLAB under an exclusive management structure.
+              </p>
+              <p>
+                This allows the studio to invest in brand development, content planning, production support, fanclub growth, distribution, marketing, business opportunities and long-term performer growth.
+              </p>
+              <div className="p-6 rounded-xl bg-secondary/50 border border-border">
+                <p className="text-base text-muted-foreground">
+                  <strong className="text-foreground">FLESHLAB is not an open creator marketplace.</strong> We build performer brands under a managed studio strategy.
                 </p>
               </div>
             </div>
@@ -201,9 +198,9 @@ export default function BecomePerformer() {
         </div>
       </section>
 
-      {/* What FLESHLAB Does */}
+      {/* Studio Control Section */}
       <section className="py-20 px-6 bg-gradient-to-b from-card/30 to-background">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -212,92 +209,67 @@ export default function BecomePerformer() {
             className="text-center mb-12"
           >
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              More Than Just Content.
+              Studio Control {"&"} Management
             </h2>
             <p className="text-xl text-muted-foreground">
-              We are a creator studio. Not a dating platform. Not a hookup app.
+              Professional adult entertainment studio operations
             </p>
           </motion.div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 gap-6">
             {[
-              { icon: Camera, title: "Content Production", desc: "Professional shoots, 4K equipment, premium setups" },
-              { icon: TrendingUp, title: "Branding", desc: "Build your unique identity and market position" },
-              { icon: Users, title: "Social Media Growth", desc: "Strategic promotion across all platforms" },
-              { icon: DollarSign, title: "Fanclub Development", desc: "Recurring revenue from dedicated fans" },
-              { icon: Zap, title: "Content Distribution", desc: "Multi-platform reach and optimization" },
-              { icon: Star, title: "Marketing", desc: "Professional campaigns and audience targeting" },
-              { icon: FileText, title: "Platform Management", desc: "We handle the technical infrastructure" },
-              { icon: User, title: "Studio Support", desc: "Dedicated team for your success" },
-              { icon: Sparkles, title: "Revenue Optimization", desc: "Maximize earnings from every asset" },
+              {
+                title: "Production Planning",
+                desc: "Studio controls all production scheduling, concept development, and release strategy."
+              },
+              {
+                title: "Branding {"&"} Marketing",
+                desc: "Professional brand positioning, promotional campaigns, and audience targeting."
+              },
+              {
+                title: "Distribution",
+                desc: "Multi-platform content distribution and optimization across all channels."
+              },
+              {
+                title: "Performer Review",
+                desc: "Suitability, boundaries and production compatibility reviewed before productions."
+              }
             ].map((item, idx) => (
               <motion.div
                 key={idx}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: idx * 0.05 }}
-                className="p-6 rounded-xl bg-card/50 border border-border hover:border-primary/30 transition-colors"
+                transition={{ duration: 0.6, delay: idx * 0.1 }}
+                className="p-6 rounded-xl bg-card/50 border border-border"
               >
-                <item.icon className="w-8 h-8 text-primary mb-4" />
-                <h3 className="text-lg font-bold text-foreground mb-2">{item.title}</h3>
-                <p className="text-sm text-muted-foreground">{item.desc}</p>
+                <h3 className="text-xl font-bold text-foreground mb-3">{item.title}</h3>
+                <p className="text-muted-foreground">{item.desc}</p>
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Who We're Looking For */}
-      <section className="py-20 px-6 bg-gradient-to-b from-background to-card/30">
-        <div className="max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              Who Can Apply?
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              No previous studio experience required.
-            </p>
-          </motion.div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              "Twinks",
-              "Jocks",
-              "Boy-next-door",
-              "Slim",
-              "Athletic",
-              "Muscular",
-              "Gay",
-              "Bi",
-              "Curious newcomers",
-              "Experienced creators",
-              "First-timers",
-              "Industry veterans"
-            ].map((type, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: idx * 0.05 }}
-                className="p-4 rounded-xl bg-card border border-border text-center"
-              >
-                <p className="text-foreground font-semibold">{type}</p>
-              </motion.div>
-            ))}
+          <div className="mt-8 p-6 rounded-xl bg-destructive/10 border border-destructive/30">
+            <div className="flex items-start gap-4">
+              <AlertCircle className="w-6 h-6 text-destructive shrink-0 mt-1" />
+              <div className="space-y-3">
+                <p className="text-muted-foreground">
+                  <strong className="text-foreground">FLESHLAB is not a hookup app.</strong> We are a professional adult entertainment studio.
+                </p>
+                <p className="text-muted-foreground">
+                  <strong className="text-foreground">FLESHLAB is not a self-upload platform.</strong> All content goes through studio planning and approval.
+                </p>
+                <p className="text-muted-foreground">
+                  <strong className="text-foreground">FLESHLAB is not OnlyFans management only.</strong> We build comprehensive performer brands with multiple revenue streams.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Adult Content Transparency */}
-      <section className="py-20 px-6 bg-gradient-to-b from-card/30 to-background">
+      <section className="py-20 px-6 bg-gradient-to-b from-background to-card/30">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -319,9 +291,15 @@ export default function BecomePerformer() {
                   FLESHLAB is an adult entertainment studio. Most productions contain explicit sexual content for adult audiences.
                   Applicants should be comfortable working in the adult entertainment industry.
                 </p>
-                <p className="text-muted-foreground leading-relaxed">
-                  Nothing is produced without performer approval and agreement. You maintain control over your content and boundaries.
-                </p>
+                <div className="space-y-3">
+                  <p className="text-muted-foreground leading-relaxed">
+                    Before any production takes place, performer compatibility, production requirements, boundaries and availability are reviewed by the studio.
+                  </p>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Participation in productions is subject to studio approval, performer suitability and production planning.
+                    FLESHLAB operates as a managed adult entertainment studio, not as an open self-publishing platform.
+                  </p>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -329,7 +307,7 @@ export default function BecomePerformer() {
       </section>
 
       {/* Revenue Models */}
-      <section id="how-it-works" className="py-20 px-6 bg-gradient-to-b from-background to-card/30">
+      <section id="how-it-works" className="py-20 px-6 bg-gradient-to-b from-card/30 to-background">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -359,22 +337,26 @@ export default function BecomePerformer() {
               </div>
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-foreground mb-2">Full Management</h3>
-                <p className="text-muted-foreground">We handle everything</p>
+                <p className="text-muted-foreground">Exclusive representation {"&"} complete studio support</p>
               </div>
               <div className="mb-6">
                 <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-6xl font-bold text-primary">60</span>
+                  <span className="text-6xl font-bold text-primary">40</span>
                   <span className="text-2xl text-muted-foreground">%</span>
                 </div>
-                <p className="text-sm text-muted-foreground">Your revenue share</p>
+                <p className="text-sm text-muted-foreground">Studio commission (you keep 60%)</p>
               </div>
               <ul className="space-y-3 mb-8">
                 {[
-                  "Full production support",
-                  "Marketing & promotion",
-                  "Fan management",
-                  "Contract negotiation",
-                  "Payment processing"
+                  "Exclusive representation",
+                  "Brand building {"&"} positioning",
+                  "Production planning {"&"} scheduling",
+                  "Content strategy development",
+                  "Multi-platform distribution",
+                  "Marketing {"&"} promotional campaigns",
+                  "Fanclub development {"&"} management",
+                  "Business management",
+                  "Revenue optimization"
                 ].map((item, idx) => (
                   <li key={idx} className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-primary" />
@@ -384,7 +366,7 @@ export default function BecomePerformer() {
               </ul>
               <div className="p-4 rounded-lg bg-secondary/50 border border-border">
                 <p className="text-xs text-muted-foreground">
-                  <strong className="text-foreground">You keep 60%</strong> – We handle production, marketing, and fan engagement so you can focus on creating.
+                  <strong className="text-foreground">You keep 60%</strong> – Comprehensive studio management including exclusive representation, brand development, production planning, content strategy, distribution, marketing, fanclub growth, business management, and revenue optimization.
                 </p>
               </div>
             </motion.div>
@@ -397,23 +379,23 @@ export default function BecomePerformer() {
               className="p-8 rounded-2xl bg-gradient-to-br from-secondary to-background border border-border"
             >
               <div className="mb-6">
-                <h3 className="text-2xl font-bold text-foreground mb-2">Independent Creator</h3>
-                <p className="text-muted-foreground">DIY with platform access</p>
+                <h3 className="text-2xl font-bold text-foreground mb-2">Independent Creator Support</h3>
+                <p className="text-muted-foreground">Platform access with studio infrastructure</p>
               </div>
               <div className="mb-6">
                 <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-6xl font-bold text-primary">70</span>
+                  <span className="text-6xl font-bold text-primary">30</span>
                   <span className="text-2xl text-muted-foreground">%</span>
                 </div>
-                <p className="text-sm text-muted-foreground">Your revenue share</p>
+                <p className="text-sm text-muted-foreground">Studio commission (you keep 70%)</p>
               </div>
               <ul className="space-y-3 mb-8">
                 {[
                   "Platform distribution",
                   "Payment processing",
                   "Basic analytics",
-                  "Upload your own content",
-                  "Set your own schedule"
+                  "Content upload infrastructure",
+                  "Technical support"
                 ].map((item, idx) => (
                   <li key={idx} className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-primary" />
@@ -423,7 +405,7 @@ export default function BecomePerformer() {
               </ul>
               <div className="p-4 rounded-lg bg-secondary/50 border border-border">
                 <p className="text-xs text-muted-foreground">
-                  <strong className="text-foreground">You keep 70%</strong> – You manage production and promotion, we provide the platform and audience.
+                  <strong className="text-foreground">You keep 70%</strong> – You manage your own production, promotion, and content strategy while leveraging our platform infrastructure and existing audience.
                 </p>
               </div>
             </motion.div>
@@ -432,7 +414,7 @@ export default function BecomePerformer() {
       </section>
 
       {/* Application Process */}
-      <section className="py-20 px-6 bg-gradient-to-b from-card/30 to-background">
+      <section className="py-20 px-6 bg-gradient-to-b from-background to-card/30">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -456,7 +438,7 @@ export default function BecomePerformer() {
               { step: 3, title: "Interview", desc: "Schedule a call with our team", icon: Phone },
               { step: 4, title: "Identity Verification", desc: "Passport, ID, or driver license", icon: Shield },
               { step: 5, title: "Contract", desc: "Sign agreement and set terms", icon: FileText },
-              { step: 6, title: "Production & Launch", desc: "Start creating and earning", icon: Camera },
+              { step: 6, title: "Production {"&"} Launch", desc: "Start creating and earning", icon: Camera },
             ].map((item, idx) => (
               <motion.div
                 key={idx}
@@ -483,7 +465,7 @@ export default function BecomePerformer() {
       </section>
 
       {/* Identity Verification Info */}
-      <section className="py-20 px-6 bg-gradient-to-b from-background to-card/30">
+      <section className="py-20 px-6 bg-gradient-to-b from-card/30 to-background">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
