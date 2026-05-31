@@ -24,14 +24,14 @@ const REAL_VIDEOS = [
   { title: "Naked Asian Stud Jerks Off Post-Shower", thumbnail: "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/pinkboys-studios/thumbnails/DialogMaxX_Cute-Raven---hunky-asian-touches-and-shoots-in-shower.jpg" },
 ];
 
-// Behind the scenes lifestyle images
+// Behind the scenes lifestyle images - all using the same person
 const BTS_IMAGES = [
   { label: "Content Creation", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/796caf805_345878851_752320556536830_2038426243797267351_n.jpg" },
-  { label: "Smartphone Filming", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/8061e17de_generated_image.png" },
-  { label: "Amateur Productions", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/c005f696e_generated_image.png" },
-  { label: "Live Cam Setup", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/d0e213f38_generated_image.png" },
-  { label: "Studio Sessions", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/6a48778b3_generated_image.png" },
-  { label: "Creator Workflow", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/adb98fcef_generated_image.png" },
+  { label: "Smartphone Filming", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/796caf805_345878851_752320556536830_2038426243797267351_n.jpg" },
+  { label: "Amateur Productions", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/796caf805_345878851_752320556536830_2038426243797267351_n.jpg" },
+  { label: "Live Cam Setup", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/796caf805_345878851_752320556536830_2038426243797267351_n.jpg" },
+  { label: "Studio Sessions", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/796caf805_345878851_752320556536830_2038426243797267351_n.jpg" },
+  { label: "Creator Workflow", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/796caf805_345878851_752320556536830_2038426243797267351_n.jpg" },
 ];
 
 export default function BecomePerformer() {
