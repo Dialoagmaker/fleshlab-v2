@@ -78,6 +78,24 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
     }
   }, [files, onUploadComplete]);
 
+  // Sync status data with file progress
+  useEffect(() => {
+    if (!statusData) return;
+    
+    setFiles(prev => prev.map(f => {
+      if (!f.video_id || !statusData[f.video_id]) return f;
+      
+      const statusInfo = statusData[f.video_id];
+      const processingProgress = statusInfo.processing_progress;
+      
+      // Update processing progress from polling
+      if (f.status === UPLOAD_STATUS.PROCESSING && processingProgress) {
+        return { ...f, processingProgress };
+      }
+      return f;
+    }));
+  }, [statusData]);
+
   const uploadToR2 = async (file, uploadUrl, fileSize, mimeType) => {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
@@ -315,11 +333,23 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
   const activeUploads = files.filter(f => 
     f.status === UPLOAD_STATUS.UPLOADING || 
     f.status === UPLOAD_STATUS.PROCESSING ||
-    f.status === UPLOAD_STATUS.FINALIZING
+    f.status === UPLOAD_STATUS.FINALIZING ||
+    f.status === UPLOAD_STATUS.UPLOADED
   );
   
   const totalProgress = activeUploads.length > 0 
-    ? activeUploads.reduce((acc, f) => acc + (f.uploadProgress || 0), 0) / activeUploads.length
+    ? activeUploads.reduce((acc, f) => {
+        if (f.status === UPLOAD_STATUS.UPLOADING) return acc + (f.uploadProgress || 0);
+        if (f.status === UPLOAD_STATUS.UPLOADED) return acc + 100;
+        if (f.status === UPLOAD_STATUS.PROCESSING || f.status === UPLOAD_STATUS.FINALIZING) {
+          const statusInfo = statusData?.[f.video_id];
+          const processingProgress = statusInfo?.processing_progress;
+          const steps = processingProgress?.completed_steps || 0;
+          const total = processingProgress?.total_steps || 5;
+          return acc + (steps / total) * 100;
+        }
+        return acc;
+      }, 0) / activeUploads.length
     : 0;
 
   return (
