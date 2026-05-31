@@ -1,188 +1,186 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ArrowRight, Play, Clock } from "lucide-react";
-import HeroBackgroundSampler from "@/components/HeroBackgroundSampler";
-
-function VideoCard({ video }) {
-  const mins = video.duration_seconds ? Math.floor(video.duration_seconds / 60) : null;
-  const secs = video.duration_seconds ? String(video.duration_seconds % 60).padStart(2, "0") : null;
-
-  return (
-    <Link to={`/videos/${video.slug}`} className="group block">
-      <div className="relative aspect-video bg-muted rounded-lg overflow-hidden mb-3">
-        {video.primary_thumbnail_url ? (
-          <img
-            src={video.primary_thumbnail_url}
-            alt={video.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Play className="w-8 h-8 text-muted-foreground" />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-          <div className="w-11 h-11 bg-primary rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100 duration-200">
-            <Play className="w-4 h-4 text-white fill-white ml-0.5" />
-          </div>
-        </div>
-        {mins !== null && (
-          <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
-            <Clock className="w-2.5 h-2.5" />
-            {mins}:{secs}
-          </div>
-        )}
-        {video.featured && (
-          <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded font-medium">
-            Featured
-          </div>
-        )}
-      </div>
-      <h3 className="font-semibold text-foreground text-sm line-clamp-2 group-hover:text-primary transition-colors leading-snug">
-        {video.title}
-      </h3>
-    </Link>
-  );
-}
-
-function PerformerAvatar({ performer }) {
-  return (
-    <Link to={`/performers/${performer.slug}`} className="group flex flex-col items-center text-center gap-2">
-      <div className="w-18 h-18 rounded-full bg-muted overflow-hidden ring-2 ring-transparent group-hover:ring-primary transition-all duration-200" style={{ width: 72, height: 72 }}>
-        {performer.profile_image_url ? (
-          <img src={performer.profile_image_url} alt={performer.display_name} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-xl font-bold text-muted-foreground bg-muted">
-            {performer.display_name[0]}
-          </div>
-        )}
-      </div>
-      <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors line-clamp-1 max-w-[80px]">
-        {performer.display_name}
-      </span>
-    </Link>
-  );
-}
+import { Play, ArrowRight, Film, Users, Crown, Sparkles } from "lucide-react";
+import VideoCard from "@/components/public/VideoCard";
+import PerformerCard from "@/components/public/PerformerCard";
+import PremiumTeaserBlock from "@/components/public/PremiumTeaserBlock";
+import StudioTrustBlock from "@/components/public/StudioTrustBlock";
+import SectionHeader from "@/components/public/SectionHeader";
 
 export default function Home() {
-  const { data: latestVideos = [] } = useQuery({
-    queryKey: ["videos", "latest-home"],
-    queryFn: () => base44.entities.Video.filter({ status: "published" }, "-release_date", 8),
+  const { data: latestVideos = [], isLoading: videosLoading } = useQuery({
+    queryKey: ["public-videos-latest"],
+    queryFn: () => base44.entities.Video.filter({ status: "published" }, "-release_date", 12),
   });
 
-  const { data: featuredPerformers = [] } = useQuery({
-    queryKey: ["performers", "featured-home"],
-    queryFn: () => base44.entities.Performer.filter({ status: "active", featured: true }, "-created_date", 10),
+  const { data: featuredVideos = [] } = useQuery({
+    queryKey: ["public-videos-featured"],
+    queryFn: () => base44.entities.Video.filter({ status: "published", featured: true }, "-created_date", 8),
   });
+
+  const { data: allPerformers = [] } = useQuery({
+    queryKey: ["public-performers"],
+    queryFn: () => base44.entities.Performer.filter({ status: "active" }, "-created_date", 20),
+  });
+
+  const featuredPerformers = allPerformers.filter(p => p.featured).slice(0, 8);
+  const activePerformers = allPerformers.filter(p => p.status === "active").slice(0, 12);
 
   const { data: latestNews = [] } = useQuery({
-    queryKey: ["news", "latest-home"],
+    queryKey: ["public-news"],
     queryFn: () => base44.entities.NewsArticle.filter({ status: "published" }, "-published_at", 3),
   });
 
   return (
-    <div>
-      {/* Hero */}
-      <section className="relative min-h-[88vh] flex items-center justify-center overflow-hidden">
-        {/* Live video sampling layer — falls back to static if no assets */}
-        <HeroBackgroundSampler />
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              "radial-gradient(ellipse at 20% 50%, hsl(350 73% 42%) 0%, transparent 60%), radial-gradient(ellipse at 80% 50%, hsl(350 73% 42%) 0%, transparent 60%)",
-          }}
-        />
-        <div className="relative text-center px-4 max-w-3xl mx-auto">
-          <p className="text-xs font-bold tracking-[0.5em] text-primary uppercase mb-6 opacity-80">
-            Premium Studio
-          </p>
-          <h1 className="text-7xl sm:text-9xl font-black tracking-tight uppercase leading-none mb-6 text-foreground">
-            Flesh<span className="text-primary">lab</span>
+    <div className="min-h-screen bg-background">
+      {/* Hero Section - Reduced height, more impact */}
+      <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden border-b border-border">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-background" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: "radial-gradient(ellipse at 50% 50%, hsl(350 73% 42%) 0%, transparent 70%)"
+        }} />
+        
+        <div className="relative text-center px-4 max-w-4xl mx-auto z-10">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Sparkles className="w-5 h-5 text-primary" />
+            <p className="text-xs font-bold tracking-[0.4em] text-primary uppercase">
+              FLESHLAB Asia
+            </p>
+            <Sparkles className="w-5 h-5 text-primary" />
+          </div>
+          
+          <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tight uppercase leading-none mb-6 text-foreground">
+            Premium Asian <span className="text-primary">Twink</span> Content
           </h1>
-          <p className="text-base sm:text-lg text-muted-foreground max-w-md mx-auto mb-10 leading-relaxed">
-            Premium adult studio content. Exclusive videos, original performers, and a growing catalog.
+          
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
+            Exclusive studio productions featuring the hottest Filipino and Asian performers. 
+            Professional quality, authentic performances, new releases weekly.
           </p>
+          
           <div className="flex flex-wrap gap-4 justify-center">
             <Link
               to="/videos"
-              className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-3 rounded-lg transition-colors text-sm"
+              className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 py-3.5 rounded-lg transition-colors text-sm shadow-lg shadow-primary/20"
             >
               <Play className="w-4 h-4 fill-current" />
-              Browse Videos
+              Watch Videos
             </Link>
             <Link
               to="/performers"
-              className="inline-flex items-center gap-2 bg-transparent border border-border hover:border-foreground/50 text-foreground font-semibold px-8 py-3 rounded-lg transition-colors text-sm"
+              className="inline-flex items-center gap-2 bg-transparent border border-border hover:border-primary/50 text-foreground font-semibold px-8 py-3.5 rounded-lg transition-colors text-sm"
             >
-              Meet the Performers
-              <ArrowRight className="w-4 h-4" />
+              <Users className="w-4 h-4" />
+              Meet Performers
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Latest Releases */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-xl font-bold text-foreground">Latest Releases</h2>
-            <p className="text-muted-foreground text-sm mt-0.5">Fresh from the studio</p>
+      {/* Latest Releases - Above the fold */}
+      <section className="max-w-7xl mx-auto px-4 py-16">
+        <SectionHeader
+          title="Latest Asian Twink Videos"
+          subtitle="Fresh from the studio - new releases every week"
+          viewAllLink="/videos"
+          viewAllText="View All Videos"
+        />
+        
+        {videosLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="aspect-video bg-secondary rounded-xl animate-pulse" />
+            ))}
           </div>
-          <Link to="/videos" className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 font-medium transition-colors">
-            View all <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        {latestVideos.length > 0 ? (
+        ) : latestVideos.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {latestVideos.map(video => (
-              <VideoCard key={video.id} video={video} />
+              <VideoCard key={video.id} video={video} brands={[]} />
             ))}
           </div>
         ) : (
           <div className="border border-dashed border-border rounded-xl py-20 text-center">
-            <Play className="w-8 h-8 text-muted-foreground mx-auto mb-3 opacity-40" />
-            <p className="text-muted-foreground text-sm">Content migration pending</p>
+            <Film className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <p className="text-muted-foreground text-sm">Videos coming soon</p>
           </div>
         )}
       </section>
 
+      {/* Premium Teaser Block */}
+      <section className="max-w-7xl mx-auto px-4 py-12">
+        <PremiumTeaserBlock title="Want Full Access?" />
+      </section>
+
+      {/* Featured Videos */}
+      {featuredVideos.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 py-16">
+          <SectionHeader
+            title="FLESHLAB Originals"
+            subtitle="Our most popular exclusive scenes"
+            viewAllLink="/videos"
+          />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {featuredVideos.map(video => (
+              <VideoCard key={video.id} video={video} brands={[]} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Featured Performers */}
       {featuredPerformers.length > 0 && (
-        <section className="bg-card border-y border-border py-14">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-xl font-bold text-foreground">Featured Performers</h2>
-                <p className="text-muted-foreground text-sm mt-0.5">The faces of Fleshlab</p>
-              </div>
-              <Link to="/performers" className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 font-medium transition-colors">
-                All performers <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-            <div className="flex flex-wrap gap-6 justify-start">
-              {featuredPerformers.map(p => (
-                <PerformerAvatar key={p.id} performer={p} />
+        <section className="bg-card/50 border-y border-border py-16">
+          <div className="max-w-7xl mx-auto px-4">
+            <SectionHeader
+              title="Featured Performers"
+              subtitle="The hottest Asian twinks in the industry"
+              viewAllLink="/performers"
+              viewAllText="All Performers"
+            />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+              {featuredPerformers.map(performer => (
+                <PerformerCard key={performer.id} performer={performer} brands={[]} />
               ))}
             </div>
           </div>
         </section>
       )}
 
+      {/* Active Performers Rail */}
+      {activePerformers.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 py-16">
+          <SectionHeader
+            title="All Active Performers"
+            subtitle={`Browse ${activePerformers.length} performers`}
+            viewAllLink="/performers"
+          />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {activePerformers.map(performer => (
+              <PerformerCard key={performer.id} performer={performer} brands={[]} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Trust Block */}
+      <section className="max-w-7xl mx-auto px-4 py-16">
+        <div className="text-center mb-10">
+          <h2 className="text-2xl font-bold text-foreground mb-2">Why Join FLESHLAB?</h2>
+          <p className="text-muted-foreground">Premium studio experience built for fans</p>
+        </div>
+        <StudioTrustBlock />
+      </section>
+
       {/* Latest News */}
       {latestNews.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-xl font-bold text-foreground">Latest News</h2>
-              <p className="text-muted-foreground text-sm mt-0.5">Studio updates and announcements</p>
-            </div>
-            <Link to="/news" className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 font-medium transition-colors">
-              All news <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+        <section className="max-w-7xl mx-auto px-4 py-16 border-t border-border">
+          <SectionHeader
+            title="Studio News"
+            subtitle="Updates, announcements, and behind-the-scenes"
+            viewAllLink="/news"
+          />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {latestNews.map(article => (
               <Link
@@ -200,11 +198,20 @@ export default function Home() {
                   </div>
                 )}
                 <div className="p-5">
-                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-1.5 text-sm leading-snug">
+                  <h3 className="font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-2 leading-tight">
                     {article.title}
                   </h3>
                   {article.excerpt && (
                     <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{article.excerpt}</p>
+                  )}
+                  {article.published_at && (
+                    <p className="text-xs text-muted-foreground mt-3">
+                      {new Date(article.published_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </p>
                   )}
                 </div>
               </Link>
@@ -212,6 +219,36 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* Final CTA */}
+      <section className="bg-gradient-to-b from-card to-background border-t border-border py-16">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <Crown className="w-12 h-12 text-primary mx-auto mb-4" />
+          <h2 className="text-3xl font-bold text-foreground mb-4">
+            Ready to Experience Premium Content?
+          </h2>
+          <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
+            Join thousands of fans getting exclusive access to full scenes, early releases, 
+            and direct interaction with Asian twink performers.
+          </p>
+          <div className="flex flex-wrap gap-4 justify-center">
+            <Link
+              to="/videos"
+              className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 py-3.5 rounded-lg transition-colors shadow-lg shadow-primary/20"
+            >
+              <Play className="w-4 h-4 fill-current" />
+              Start Watching
+            </Link>
+            <Link
+              to="/performers"
+              className="inline-flex items-center gap-2 bg-transparent border border-border hover:border-primary/50 text-foreground font-semibold px-8 py-3.5 rounded-lg transition-colors"
+            >
+              Browse Performers
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import VideoCard from "@/components/public/VideoCard";
 import VideoFilters from "@/components/public/VideoFilters";
 import { Button } from "@/components/ui/button";
-import { Film, Loader2 } from "lucide-react";
+import { Film, Loader2, Play } from "lucide-react";
 
 const VIDEOS_PER_PAGE = 12;
 
@@ -91,14 +91,20 @@ export default function Videos() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero */}
-      <div className="bg-gradient-to-b from-primary/10 to-background py-12 px-4">
-        <div className="max-w-7xl mx-auto text-center">
-          <Film className="w-12 h-12 mx-auto mb-4 text-primary" />
-          <h1 className="text-4xl font-bold mb-2">Video Library</h1>
-          <p className="text-muted-foreground">
-            {filteredVideos.length} {filteredVideos.length === 1 ? 'video' : 'videos'} available
-          </p>
+      {/* Hero - Tube-style */}
+      <div className="bg-gradient-to-b from-primary/10 via-primary/5 to-background border-b border-border py-16 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+              <Play className="w-6 h-6 text-primary fill-current" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-foreground">Video Library</h1>
+              <p className="text-muted-foreground text-sm">
+                {filteredVideos.length} {filteredVideos.length === 1 ? 'video' : 'videos'} • Browse all Asian twink content
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -126,23 +132,30 @@ export default function Videos() {
 
             {/* Load More */}
             {hasMore && (
-              <div className="text-center pt-8">
+              <div className="text-center pt-8 pb-4">
                 <Button
                   onClick={() => setPage(p => p + 1)}
-                  className="px-8"
+                  className="px-8 bg-primary hover:bg-primary/90"
+                  size="lg"
                 >
-                  Load More ({filteredVideos.length - paginatedVideos.length} remaining)
+                  Load More Videos
+                  <span className="ml-2 text-xs opacity-80">
+                    ({filteredVideos.length - paginatedVideos.length} remaining)
+                  </span>
                 </Button>
               </div>
             )}
           </>
         ) : (
-          <div className="text-center py-20">
-            <Film className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-xl font-semibold mb-2">No videos found</h2>
-            <p className="text-muted-foreground">
+          <div className="text-center py-20 bg-card/50 rounded-xl border border-border">
+            <Film className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <h2 className="text-xl font-semibold mb-2 text-foreground">No videos found</h2>
+            <p className="text-muted-foreground mb-4">
               Try adjusting your search or filters
             </p>
+            <Button variant="outline" onClick={handleClearFilters}>
+              Clear All Filters
+            </Button>
           </div>
         )}
       </div>

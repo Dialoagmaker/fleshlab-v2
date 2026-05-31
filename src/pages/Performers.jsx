@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import PerformerCard from "@/components/public/PerformerCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Users, Search, X, Loader2 } from "lucide-react";
+import { Users, Search, X, Loader2, Sparkles } from "lucide-react";
 
 export default function Performers() {
   const [search, setSearch] = useState("");
@@ -43,32 +43,38 @@ export default function Performers() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero */}
-      <div className="bg-gradient-to-b from-primary/10 to-background py-12 px-4">
-        <div className="max-w-7xl mx-auto text-center">
-          <Users className="w-12 h-12 mx-auto mb-4 text-primary" />
-          <h1 className="text-4xl font-bold mb-2">Performers</h1>
-          <p className="text-muted-foreground">
-            {filteredPerformers.length} {filteredPerformers.length === 1 ? 'performer' : 'performers'}
-          </p>
+      {/* Hero - Tube Style */}
+      <div className="bg-gradient-to-b from-primary/10 via-primary/5 to-background border-b border-border py-16 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+              <Users className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-foreground">Asian Twink Performers</h1>
+              <p className="text-muted-foreground text-sm">
+                {filteredPerformers.length} {filteredPerformers.length === 1 ? 'performer' : 'performers'} • Meet the hottest Filipino and Asian stars
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
         {/* Search */}
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search performers..."
+              placeholder="Search by name or nationality..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-card border-border"
             />
           </div>
           {search && (
-            <Button variant="outline" size="icon" onClick={handleClear}>
+            <Button variant="outline" size="icon" onClick={handleClear} className="border-border">
               <X className="w-4 h-4" />
             </Button>
           )}
@@ -76,18 +82,23 @@ export default function Performers() {
 
         {/* Grid */}
         {filteredPerformers.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
             {filteredPerformers.map(performer => (
               <PerformerCard key={performer.id} performer={performer} brands={brands} />
             ))}
           </div>
         ) : (
-          <div className="text-center py-20">
-            <Users className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-xl font-semibold mb-2">No performers found</h2>
-            <p className="text-muted-foreground">
+          <div className="text-center py-20 bg-card/50 rounded-xl border border-border">
+            <Users className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <h2 className="text-xl font-semibold mb-2 text-foreground">No performers found</h2>
+            <p className="text-muted-foreground mb-4">
               {search ? 'Try adjusting your search' : 'No performers available'}
             </p>
+            {search && (
+              <Button variant="outline" onClick={handleClear}>
+                Clear Search
+              </Button>
+            )}
           </div>
         )}
       </div>
