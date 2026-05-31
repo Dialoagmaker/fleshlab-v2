@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Upload, Check, AlertCircle, Mail, Phone, Globe, Video, ImageIcon, User, Camera, Heart, Play } from "lucide-react";
+import { Upload, Check, AlertCircle, Mail, Phone, Globe, Video, ImageIcon, User, Camera, Heart, Play, TrendingUp, DollarSign, Users, Shield, Star, Zap, MessageCircle, Film, Mic, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,52 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { base44 } from "@/api/base44Client";
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+
+// Performer showcase data
+const featuredPerformers = [
+  {
+    name: "Alex",
+    age: 24,
+    location: "Taipei",
+    path: "Studio Performer",
+    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png",
+    stats: { videos: 12, fans: "2.4K", revenue: "Growing" }
+  },
+  {
+    name: "Marco",
+    age: 26,
+    location: "Bangkok",
+    path: "Live Cam + Fanclub",
+    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png",
+    stats: { videos: 8, fans: "1.8K", revenue: "Recurring" }
+  },
+  {
+    name: "Jay",
+    age: 23,
+    location: "Manila",
+    path: "Content Creator",
+    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png",
+    stats: { videos: 15, fans: "3.1K", revenue: "Scaling" }
+  },
+];
+
+const lifestyleMoments = [
+  { icon: Camera, label: "Creating Content", desc: "Your phone. Your pace." },
+  { icon: Users, label: "Building Fans", desc: "People who follow YOU." },
+  { icon: Play, label: "Live Shows", desc: "Real-time connection." },
+  { icon: Heart, label: "Fanclub", desc: "Recurring support." },
+  { icon: Film, label: "Studio Productions", desc: "Professional scenes." },
+  { icon: TrendingUp, label: "Growing Brand", desc: "Long-term career." },
+];
+
+const revenueStreams = [
+  { icon: Film, label: "Video Productions", desc: "One-time + residuals" },
+  { icon: Heart, label: "Fanclub Subscriptions", desc: "Monthly recurring" },
+  { icon: Play, label: "Live Cam Shows", desc: "Tips + private shows" },
+  { icon: DollarSign, label: "Tips & Donations", desc: "Direct fan support" },
+  { icon: Star, label: "Promotions", desc: "Brand partnerships" },
+  { icon: Users, label: "Partner Projects", desc: "Collaborative content" },
+];
 
 export default function BecomePerformer() {
   const navigate = useNavigate();
@@ -114,7 +160,7 @@ export default function BecomePerformer() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
+      {/* HERO - Pure Aspiration */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div 
           className="absolute inset-0 z-0"
@@ -126,294 +172,458 @@ export default function BecomePerformer() {
         />
         <div className="absolute inset-0 bg-gradient-to-br from-background/80 via-background/70 to-background/90 z-0" />
         
-        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
+        <div className="max-w-5xl mx-auto px-6 text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-5xl md:text-8xl font-black text-foreground mb-6 leading-tight tracking-tight">
-              Already Making Money<br />
-              <span className="text-primary">With Your Body?</span>
+            <h1 className="text-6xl md:text-9xl font-black text-foreground mb-8 leading-tight tracking-tight">
+              Your Audience<br />
+              <span className="text-primary">Is Waiting.</span>
             </h1>
-            <p className="text-lg md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Escorts. Callboys. Cam models. Content sellers.<br />
-              We turn one-time attention into a long-term adult brand.
+            <p className="text-xl md:text-3xl text-muted-foreground mb-12 max-w-3xl mx-auto font-light">
+              Turn attention into a career.<br />
+              Build a brand that lasts.
             </p>
             <Button
               size="lg"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-12 py-6 text-xl shadow-2xl shadow-primary/40"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-16 py-8 text-2xl shadow-2xl shadow-primary/40"
               onClick={() => document.getElementById('application-form')?.scrollIntoView({ behavior: 'smooth' })}
             >
-              Apply Now — 3 Minutes
+              Become A Performer
             </Button>
           </motion.div>
         </div>
       </section>
 
-      {/* What You Actually Do - Visual Grid */}
-      <section className="py-16 px-6 bg-background">
-        <div className="max-w-6xl mx-auto">
+      {/* MEET THE MEN - Social Proof */}
+      <section className="py-24 px-6 bg-background">
+        <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12"
+            className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-              What You Actually Do
+            <h2 className="text-5xl md:text-7xl font-black text-foreground mb-6">
+              Meet The Men Of<br />
+              <span className="text-primary">FLESHLAB.</span>
             </h2>
-            <p className="text-muted-foreground">This is adult entertainment.</p>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Real creators. Real brands. Real income.
+            </p>
           </motion.div>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {[
-              { icon: Camera, label: "Solo Content" },
-              { icon: Video, label: "Homemade" },
-              { icon: User, label: "Partner Scenes" },
-              { icon: Play, label: "Live Cam" },
-              { icon: Heart, label: "Fanclub" },
-              { icon: Check, label: "Promo" },
-            ].map((item, idx) => (
+          <div className="grid md:grid-cols-3 gap-8">
+            {featuredPerformers.map((performer, idx) => (
               <motion.div
                 key={idx}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: idx * 0.05 }}
-                className="p-6 rounded-xl bg-card/50 border border-border hover:border-primary/50 transition-colors text-center"
+                transition={{ duration: 0.6, delay: idx * 0.1 }}
+                className="group relative overflow-hidden rounded-2xl bg-card border border-border"
               >
-                <item.icon className="w-8 h-8 text-primary mx-auto mb-3" />
-                <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                <div className="aspect-[3/4] relative">
+                  <img
+                    src={performer.image}
+                    alt={performer.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-6">
+                  <div className="mb-4">
+                    <h3 className="text-2xl font-bold text-foreground">{performer.name}, {performer.age}</h3>
+                    <p className="text-sm text-muted-foreground">{performer.location} • {performer.path}</p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-2xl font-bold text-primary">{performer.stats.videos}</p>
+                      <p className="text-xs text-muted-foreground">Videos</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-primary">{performer.stats.fans}</p>
+                      <p className="text-xs text-muted-foreground">Fans</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-primary">{performer.stats.revenue}</p>
+                      <p className="text-xs text-muted-foreground">Income</p>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How You Earn - Simple Cards */}
-      <section className="py-16 px-6 bg-card/30">
+      {/* LIFESTYLE - Visual Journey */}
+      <section className="py-24 px-6 bg-card/30">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-5xl md:text-7xl font-black text-foreground mb-6">
+              Life Inside<br />
+              <span className="text-primary">FLESHLAB.</span>
+            </h2>
+          </motion.div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            {lifestyleMoments.map((item, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: idx * 0.05 }}
+                className="p-8 rounded-2xl bg-gradient-to-br from-primary/10 to-background border border-primary/30 text-center hover:border-primary/60 transition-colors"
+              >
+                <item.icon className="w-12 h-12 text-primary mx-auto mb-4" />
+                <h3 className="text-lg font-bold text-foreground mb-2">{item.label}</h3>
+                <p className="text-sm text-muted-foreground">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* TRANSFORMATION - Before/After */}
+      <section className="py-24 px-6 bg-background">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12"
+            className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-              How You Earn
+            <h2 className="text-5xl md:text-7xl font-black text-foreground mb-6">
+              From Attention<br />
+              <span className="text-primary">To A Brand.</span>
             </h2>
           </motion.div>
           
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8">
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="p-8 rounded-2xl bg-gradient-to-br from-primary/10 to-background border border-primary/30"
+              className="p-10 rounded-2xl bg-secondary/30 border border-border"
             >
-              <div className="mb-4">
-                <h3 className="text-3xl font-bold text-foreground mb-1">Full Management</h3>
-                <p className="text-muted-foreground">We handle everything</p>
-              </div>
-              <div className="mb-6">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-7xl font-black text-primary">60</span>
-                  <span className="text-2xl text-muted-foreground">%</span>
-                </div>
-                <p className="text-sm text-muted-foreground">You keep 60% • Studio takes 40%</p>
-              </div>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-primary" />
-                  Exclusive representation
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-primary" />
-                  Brand building
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-primary" />
-                  Production planning
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-primary" />
-                  Marketing and distribution
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-primary" />
-                  Fanclub management
-                </li>
+              <h3 className="text-3xl font-bold text-foreground mb-6">Before</h3>
+              <ul className="space-y-4">
+                {[
+                  "Random customers",
+                  "One-off transactions",
+                  "Inconsistent income",
+                  "No audience ownership",
+                  "Limited growth"
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-center gap-3 text-muted-foreground">
+                    <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+                    {item}
+                  </li>
+                ))}
               </ul>
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="p-8 rounded-2xl bg-gradient-to-br from-secondary to-background border border-border"
+              className="p-10 rounded-2xl bg-gradient-to-br from-primary/10 to-background border border-primary/30"
             >
-              <div className="mb-4">
-                <h3 className="text-3xl font-bold text-foreground mb-1">Independent Support</h3>
-                <p className="text-muted-foreground">Platform only</p>
-              </div>
-              <div className="mb-6">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-7xl font-black text-primary">70</span>
-                  <span className="text-2xl text-muted-foreground">%</span>
-                </div>
-                <p className="text-sm text-muted-foreground">You keep 70% • Studio takes 30%</p>
-              </div>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-primary" />
-                  Platform distribution
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-primary" />
-                  Payment processing
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-primary" />
-                  Basic analytics
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-primary" />
-                  Upload infrastructure
-                </li>
+              <h3 className="text-3xl font-bold text-foreground mb-6">After</h3>
+              <ul className="space-y-4">
+                {[
+                  "Dedicated fanbase",
+                  "Recurring revenue",
+                  "Content library",
+                  "Brand ownership",
+                  "Long-term career"
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-center gap-3 text-foreground">
+                    <Check className="w-5 h-5 text-primary" />
+                    {item}
+                  </li>
+                ))}
               </ul>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Studio Management - Simple Statement */}
-      <section className="py-16 px-6 bg-background">
-        <div className="max-w-4xl mx-auto text-center">
+      {/* WHAT PERFORMERS DO - Direct & Clear */}
+      <section className="py-24 px-6 bg-card/30">
+        <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
+            className="text-center mb-16"
           >
-            <Check className="w-12 h-12 text-primary mx-auto mb-6" />
-            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-6">
-              Exclusive Representation
+            <h2 className="text-5xl md:text-7xl font-black text-foreground mb-6">
+              What You'll<br />
+              <span className="text-primary">Create.</span>
             </h2>
-            <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-              FLESHLAB works with a limited number of selected performers.
-              We build performer brands under exclusive management.
-              This is not an open creator marketplace.
-            </p>
-            <div className="grid md:grid-cols-2 gap-4 text-left">
-              <div className="p-4 rounded-xl bg-card/50 border border-border">
-                <h3 className="font-bold text-foreground mb-2">We Handle</h3>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• Content planning</li>
-                  <li>• Distribution</li>
-                  <li>• Marketing</li>
-                  <li>• Fanclub setup</li>
-                  <li>• Brand development</li>
-                  <li>• Contracts</li>
-                </ul>
-              </div>
-              <div className="p-4 rounded-xl bg-card/50 border border-border">
-                <h3 className="font-bold text-foreground mb-2">Not A</h3>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• Dating app</li>
-                  <li>• Self-upload platform</li>
-                  <li>• OnlyFans management only</li>
-                  <li>• Hookup site</li>
-                  <li>• General creator platform</li>
-                </ul>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Requirements - Ultra Simple */}
-      <section className="py-16 px-6 bg-card/30">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-              Requirements
-            </h2>
+            <p className="text-xl text-muted-foreground">Adult entertainment. Professional productions.</p>
           </motion.div>
           
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold text-foreground mb-4">Must Have</h3>
-              <ul className="space-y-3">
-                {[
-                  "18+ years old",
-                  "Valid ID (passport, national ID, or driver license)",
-                  "Modern smartphone for video",
-                  "Stable internet connection",
-                  "Comfortable with adult entertainment"
-                ].map((item, idx) => (
-                  <li key={idx} className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-primary shrink-0" />
-                    <span className="text-muted-foreground">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold text-foreground mb-4">For Live Cam</h3>
-              <ul className="space-y-3">
-                {[
-                  "Laptop or desktop computer",
-                  "Webcam or smartphone setup",
-                  "High-speed internet"
-                ].map((item, idx) => (
-                  <li key={idx} className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-primary shrink-0" />
-                    <span className="text-muted-foreground">{item}</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="text-xs text-muted-foreground mt-4">
-                Professional equipment not required when applying.
-              </p>
-            </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              "Solo productions",
+              "Amateur content",
+              "Homemade videos",
+              "Fanclub exclusives",
+              "Partner scenes",
+              "Studio collaborations",
+              "Live cam shows",
+              "Promotional content"
+            ].map((item, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: idx * 0.05 }}
+                className="p-6 rounded-xl bg-background border border-border"
+              >
+                <div className="flex items-center gap-3">
+                  <Check className="w-5 h-5 text-primary" />
+                  <span className="text-foreground font-medium">{item}</span>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Application Process - Compact */}
-      <section className="py-16 px-6 bg-background">
+      {/* WHY JOIN - Benefits */}
+      <section className="py-24 px-6 bg-background">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-5xl md:text-7xl font-black text-foreground mb-6">
+              Why Performers<br />
+              <span className="text-primary">Join.</span>
+            </h2>
+          </motion.div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: TrendingUp,
+                title: "Audience Growth",
+                desc: "We help you find and grow your fanbase."
+              },
+              {
+                icon: Play,
+                title: "Content Distribution",
+                desc: "Multi-platform reach. Maximum visibility."
+              },
+              {
+                icon: Star,
+                title: "Brand Development",
+                desc: "Build something that lasts beyond today."
+              },
+              {
+                icon: Users,
+                title: "Marketing Support",
+                desc: "Promotion, campaigns, and audience engagement."
+              },
+              {
+                icon: Heart,
+                title: "Fanclub Setup",
+                desc: "Recurring revenue from dedicated fans."
+              },
+              {
+                icon: Film,
+                title: "Production Planning",
+                desc: "Professional content strategy and scheduling."
+              },
+            ].map((item, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: idx * 0.1 }}
+                className="p-8 rounded-2xl bg-card/50 border border-border"
+              >
+                <item.icon className="w-12 h-12 text-primary mb-6" />
+                <h3 className="text-2xl font-bold text-foreground mb-3">{item.title}</h3>
+                <p className="text-muted-foreground">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* HOW YOU EARN - Visual */}
+      <section className="py-24 px-6 bg-card/30">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-5xl md:text-7xl font-black text-foreground mb-6">
+              How You<br />
+              <span className="text-primary">Earn.</span>
+            </h2>
+          </motion.div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            {revenueStreams.map((item, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: idx * 0.05 }}
+                className="p-6 rounded-xl bg-gradient-to-br from-background to-card border border-border text-center"
+              >
+                <item.icon className="w-10 h-10 text-primary mx-auto mb-4" />
+                <h3 className="text-sm font-bold text-foreground mb-2">{item.label}</h3>
+                <p className="text-xs text-muted-foreground">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* COMMISSION - Simple Statement */}
+      <section className="py-24 px-6 bg-background">
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12"
+            className="text-center"
           >
-            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-              Application Process
+            <h2 className="text-5xl md:text-7xl font-black text-foreground mb-8">
+              You Keep<br />
+              <span className="text-primary">60-70%.</span>
+            </h2>
+            <p className="text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto">
+              Full Management: 60% to you<br />
+              Independent Support: 70% to you
+            </p>
+            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              <div className="p-8 rounded-2xl bg-primary/10 border border-primary/30">
+                <h3 className="text-2xl font-bold text-foreground mb-4">Full Management</h3>
+                <p className="text-muted-foreground">We handle everything: brand, production, marketing, fanclub, distribution.</p>
+              </div>
+              <div className="p-8 rounded-2xl bg-secondary/30 border border-border">
+                <h3 className="text-2xl font-bold text-foreground mb-4">Independent Support</h3>
+                <p className="text-muted-foreground">You manage production. We provide platform and infrastructure.</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* EXCLUSIVE - Premium Feel */}
+      <section className="py-24 px-6 bg-card/30">
+        <div className="max-w-5xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <Star className="w-16 h-16 text-primary mx-auto mb-8" />
+            <h2 className="text-5xl md:text-7xl font-black text-foreground mb-8">
+              Exclusive.<br />
+              <span className="text-primary">Selective.</span>
+            </h2>
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+              FLESHLAB works with a limited number of performers.<br />
+              We invest long-term in building creator brands.<br />
+              This is not an open marketplace.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* REQUIREMENTS - Minimal */}
+      <section className="py-24 px-6 bg-background">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-5xl md:text-7xl font-black text-foreground mb-6">
+              Requirements.
             </h2>
           </motion.div>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="p-10 rounded-2xl bg-card/50 border border-border">
+            <ul className="space-y-4">
+              {[
+                "18+ years old",
+                "Valid ID (passport, national ID, or driver license)",
+                "Modern smartphone for video",
+                "Stable internet connection",
+                "Comfortable with adult entertainment"
+              ].map((item, idx) => (
+                <li key={idx} className="flex items-center gap-4">
+                  <Check className="w-6 h-6 text-primary shrink-0" />
+                  <span className="text-lg text-foreground">{item}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-sm text-muted-foreground mt-8">
+              Professional equipment not required when applying.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* PROCESS - Simple */}
+      <section className="py-24 px-6 bg-card/30">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-5xl md:text-7xl font-black text-foreground mb-6">
+              The Process.
+            </h2>
+          </motion.div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
             {[
-              { num: 1, title: "Apply", desc: "3 min form" },
+              { num: 1, title: "Apply", desc: "3 minutes" },
               { num: 2, title: "Review", desc: "48 hours" },
               { num: 3, title: "Interview", desc: "Call" },
-              { num: 4, title: "Verify", desc: "ID check" },
-              { num: 5, title: "Contract", desc: "Sign" },
-              { num: 6, title: "Launch", desc: "Start earning" },
+              { num: 4, title: "Verify", desc: "ID" },
+              { num: 5, title: "Launch", desc: "Start" },
             ].map((item) => (
               <motion.div
                 key={item.num}
@@ -423,10 +633,10 @@ export default function BecomePerformer() {
                 transition={{ duration: 0.4, delay: item.num * 0.05 }}
                 className="text-center"
               >
-                <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-3 font-bold">
+                <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-4 font-black text-xl">
                   {item.num}
                 </div>
-                <p className="font-bold text-foreground">{item.title}</p>
+                <p className="font-bold text-foreground mb-1">{item.title}</p>
                 <p className="text-xs text-muted-foreground">{item.desc}</p>
               </motion.div>
             ))}
@@ -434,38 +644,39 @@ export default function BecomePerformer() {
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="py-20 px-6 bg-gradient-to-b from-card/30 to-background">
-        <div className="max-w-4xl mx-auto text-center">
+      {/* FINAL CTA - Massive */}
+      <section className="py-32 px-6 bg-gradient-to-b from-background to-card/30">
+        <div className="max-w-5xl mx-auto text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.8 }}
           >
-            <h2 className="text-4xl md:text-6xl font-black text-foreground mb-6">
-              Ready To Build More Than<br />
-              <span className="text-primary">One Client At A Time?</span>
+            <h2 className="text-6xl md:text-8xl font-black text-foreground mb-8 leading-tight">
+              Ready To Build<br />
+              <span className="text-primary">Something Bigger?</span>
             </h2>
-            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-              If people already pay for your attention, FLESHLAB can help turn that attention into content, fans and a long-term adult brand.
+            <p className="text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto">
+              Your audience is waiting.<br />
+              Turn attention into a career.
             </p>
             <Button
               size="lg"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-12 py-6 text-xl shadow-2xl shadow-primary/40"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-20 py-10 text-3xl shadow-2xl shadow-primary/40"
               onClick={() => document.getElementById('application-form')?.scrollIntoView({ behavior: 'smooth' })}
             >
               Apply Now
             </Button>
-            <p className="text-sm text-muted-foreground mt-4">
-              Takes 3 minutes. Private and secure. Response within 48 hours.
+            <p className="text-sm text-muted-foreground mt-6">
+              Takes 3 minutes. Private. Response within 48 hours.
             </p>
           </motion.div>
         </div>
       </section>
 
-      {/* Application Form */}
-      <section id="application-form" className="py-20 px-6 bg-background">
+      {/* APPLICATION FORM - Now */}
+      <section id="application-form" className="py-24 px-6 bg-background">
         <div className="max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
