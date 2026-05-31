@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, X, Save, Trash2 } from "lucide-react";
 import AICopyHelper from "@/components/admin/AICopyHelper";
+import VideoIdentificationPanel from "@/components/admin/VideoIdentificationPanel";
+import PerformerMultiSelect from "@/components/admin/PerformerMultiSelect";
 
 const EMPTY_FORM = {
   title: "", slug: "", description: "", short_summary: "", brand_id: "",
@@ -31,64 +33,7 @@ function slugify(str) {
   return str.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-function PerformerCredits({ videoId }) {
-  const queryClient = useQueryClient();
 
-  const { data: credits = [] } = useQuery({
-    queryKey: ["video-performers", videoId],
-    queryFn: () => base44.entities.VideoPerformer.filter({ video_id: videoId }),
-    enabled: !!videoId,
-  });
-
-  const { data: performers = [] } = useQuery({
-    queryKey: ["performers-lookup"],
-    queryFn: () => base44.entities.Performer.filter({ status: "active" }, "display_name", 200),
-  });
-
-  const addCredit = useMutation({
-    mutationFn: (performer_id) => base44.entities.VideoPerformer.create({ video_id: videoId, performer_id }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["video-performers", videoId] }),
-  });
-
-  const removeCredit = useMutation({
-    mutationFn: (id) => base44.entities.VideoPerformer.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["video-performers", videoId] }),
-  });
-
-  const creditIds = new Set(credits.map(c => c.performer_id));
-  const available = performers.filter(p => !creditIds.has(p.id));
-
-  return (
-    <div className="space-y-3">
-      <Label>Performer Credits</Label>
-      <div className="flex flex-wrap gap-2">
-        {credits.map(credit => {
-          const p = performers.find(x => x.id === credit.performer_id);
-          return (
-            <div key={credit.id} className="flex items-center gap-1.5 bg-muted border border-border rounded-full px-3 py-1 text-sm">
-              <span>{p?.display_name || credit.performer_id}</span>
-              <button onClick={() => removeCredit.mutate(credit.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          );
-        })}
-        {available.length > 0 && (
-          <Select onValueChange={(id) => addCredit.mutate(id)}>
-            <SelectTrigger className="w-auto h-8 rounded-full px-3 text-sm bg-muted border-dashed">
-              <Plus className="w-3.5 h-3.5 mr-1" />Add performer
-            </SelectTrigger>
-            <SelectContent>
-              {available.map(p => (
-                <SelectItem key={p.id} value={p.id}>{p.display_name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default function VideoEdit() {
   const { id } = useParams();
@@ -100,6 +45,7 @@ export default function VideoEdit() {
   const [categoryInput, setCategoryInput] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [errors, setErrors] = useState({});
+  const [selectedPerformerIds, setSelectedPerformerIds] = useState([]);
 
   // Resolve performer names + brand name for AI helper context
   const { data: allPerformers = [] } = useQuery({
@@ -115,6 +61,17 @@ export default function VideoEdit() {
     queryFn: () => base44.entities.VideoPerformer.filter({ video_id: id }),
     enabled: !isNew,
   });
+  
+  // Extract performer IDs from VideoPerformer junction records
+  useEffect(() => {
+    if (videoCredits && videoCredits.length > 0) {
+      const performerIds = videoCredits.map(c => c.performer_id);
+      setSelectedPerformerIds(performerIds);
+    } else {
+      setSelectedPerformerIds([]);
+    }
+  }, [videoCredits]);
+  
   const creditedPerformerNames = videoCredits
     .map(c => allPerformers.find(p => p.id === c.performer_id)?.display_name)
     .filter(Boolean);
@@ -151,6 +108,36 @@ export default function VideoEdit() {
     },
   });
 
+  // Mutations for VideoPerformer junction records
+  const syncPerformers = useMutation({
+    mutationFn: async ({ videoId, newPerformerIds, oldPerformerIds }) => {
+      const toAdd = newPerformerIds.filter(id => !oldPerformerIds.includes(id));
+      const toRemove = oldPerformerIds.filter(id => !newPerformerIds.includes(id));
+      
+      // Remove deselected performers
+      for (const performerId of toRemove) {
+        const credit = videoCredits.find(c => c.performer_id === performerId);
+        if (credit) {
+          await base44.entities.VideoPerformer.delete(credit.id);
+        }
+      }
+      
+      // Add new performers
+      for (const performerId of toAdd) {
+        await base44.entities.VideoPerformer.create({ 
+          video_id: videoId, 
+          performer_id: performerId,
+          order: 0 
+        });
+      }
+      
+      return { added: toAdd.length, removed: toRemove.length };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["video-performers", id] });
+    },
+  });
+
   const set = (field, value) => setForm(f => ({ ...f, [field]: value }));
 
   const handleTitleChange = (title) => {
@@ -178,7 +165,38 @@ export default function VideoEdit() {
     const data = { ...form };
     if (data.duration_seconds) data.duration_seconds = parseInt(data.duration_seconds, 10);
     else delete data.duration_seconds;
-    save.mutate(data);
+    
+    // Save video first, then sync performers
+    if (isNew) {
+      save.mutate(data, {
+        onSuccess: (result) => {
+          queryClient.invalidateQueries({ queryKey: ["admin-videos"] });
+          // Sync performers after video is created
+          if (selectedPerformerIds.length > 0) {
+            syncPerformers.mutate({ 
+              videoId: result.id, 
+              newPerformerIds: selectedPerformerIds, 
+              oldPerformerIds: [] 
+            });
+          }
+          navigate(`/admin/videos/${result.id}`);
+        },
+      });
+    } else {
+      save.mutate(data, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["admin-videos"] });
+          // Sync performers after video is updated
+          if (!isNew) {
+            syncPerformers.mutate({ 
+              videoId: id, 
+              newPerformerIds: selectedPerformerIds, 
+              oldPerformerIds: videoCredits.map(c => c.performer_id) 
+            });
+          }
+        },
+      });
+    }
   };
 
   return (
@@ -201,6 +219,11 @@ export default function VideoEdit() {
         )}
       </div>
 
+      {/* Video Identification Panel - Top of page */}
+      {!isNew && video && (
+        <VideoIdentificationPanel video={video} brands={brands} />
+      )}
+
       <AICopyHelper
         form={form}
         performerNames={creditedPerformerNames}
@@ -212,6 +235,24 @@ export default function VideoEdit() {
       />
 
       <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Performer Assignment - Before Core section */}
+        {!isNew && (
+          <section className="bg-card border border-border rounded-xl p-6 space-y-5">
+            <h2 className="text-sm font-semibold text-foreground">Performer Assignment</h2>
+            <p className="text-xs text-muted-foreground">
+              Select one or more performers appearing in this video. Use the search to find performers by name or nationality.
+            </p>
+            <PerformerMultiSelect
+              selectedPerformerIds={selectedPerformerIds}
+              onPerformersChange={setSelectedPerformerIds}
+              allPerformers={allPerformers}
+            />
+          </section>
+        )}
+        {isNew && (
+          <p className="text-xs text-muted-foreground px-1">Performer credits can be added after saving the video.</p>
+        )}
+
         {/* Core */}
         <section className="bg-card border border-border rounded-xl p-6 space-y-5">
           <h2 className="text-sm font-semibold text-foreground">Core</h2>
@@ -377,17 +418,6 @@ export default function VideoEdit() {
             <span className="text-sm text-foreground">PPV Enabled (metadata flag only)</span>
           </label>
         </section>
-
-        {/* Performer Credits */}
-        {!isNew && (
-          <section className="bg-card border border-border rounded-xl p-6">
-            <h2 className="text-sm font-semibold text-foreground mb-4">Performer Credits</h2>
-            <PerformerCredits videoId={id} />
-          </section>
-        )}
-        {isNew && (
-          <p className="text-xs text-muted-foreground px-1">Performer credits can be added after saving the video.</p>
-        )}
 
         {/* SEO */}
         <section className="bg-card border border-border rounded-xl p-6 space-y-5">
