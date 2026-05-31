@@ -95,7 +95,7 @@ export default function HeroVideoTeaser() {
 
     const interval = setInterval(rotateTeaser, 8000);
     return () => clearInterval(interval);
-  }, [videos.length]);
+  }, [videos.length, currentVideoIndex]);
 
   // Handle video errors - skip to next (memoized)
   const handleVideoError = useCallback(() => {
