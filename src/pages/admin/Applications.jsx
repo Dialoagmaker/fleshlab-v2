@@ -156,12 +156,9 @@ export default function Applications() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Performer Applications</h1>
-          <p className="text-muted-foreground">Review and manage new performer applications</p>
-        </div>
-        <Button onClick={() => navigate("/admin")}>Back to Dashboard</Button>
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-foreground mb-2">Performer Applications</h1>
+        <p className="text-muted-foreground">Review and manage new performer applications</p>
       </div>
 
       {/* Stats */}
