@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import NewsCard from "@/components/public/NewsCard";
 import SEOMeta from "@/components/SEOMeta";
+import ShareArticle from "@/components/public/ShareArticle";
 import { 
   ArrowLeft, 
   Loader2, 
@@ -164,6 +165,12 @@ export default function NewsDetail() {
               </div>
             </div>
           )}
+
+          {/* Social Sharing */}
+          <ShareArticle
+            title={article.title}
+            url={canonicalUrl || window.location.href}
+          />
         </div>
 
         {/* Related Articles */}

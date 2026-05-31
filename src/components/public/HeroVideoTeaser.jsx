@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export default function HeroVideoTeaser({ onVideosLoaded }) {
+export default function HeroVideoTeaser() {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [videos, setVideos] = useState([]);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -28,7 +28,6 @@ export default function HeroVideoTeaser({ onVideosLoaded }) {
   useEffect(() => {
     if (!allVideos || allVideos.length === 0) {
       setVideos([]);
-      if (onVideosLoaded) onVideosLoaded(0);
       return;
     }
 
@@ -39,7 +38,6 @@ export default function HeroVideoTeaser({ onVideosLoaded }) {
     }).slice(0, 12); // Limit to 12 videos max
 
     setVideos(eligibleVideos);
-    if (onVideosLoaded) onVideosLoaded(eligibleVideos.length);
 
     // Random initial selection
     if (eligibleVideos.length > 0) {
@@ -47,7 +45,7 @@ export default function HeroVideoTeaser({ onVideosLoaded }) {
       setCurrentVideoIndex(randomStart);
       previousIndexRef.current = -1;
     }
-  }, [allVideos, onVideosLoaded]);
+  }, [allVideos]);
 
   // Get media URL by priority
   const getPriorityMediaUrl = (video) => {
@@ -97,7 +95,7 @@ export default function HeroVideoTeaser({ onVideosLoaded }) {
 
     const interval = setInterval(rotateTeaser, 8000);
     return () => clearInterval(interval);
-  }, [videos.length, currentVideoIndex]);
+  }, [videos.length]);
 
   // Handle video errors - skip to next
   const handleVideoError = () => {
