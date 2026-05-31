@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -12,7 +12,6 @@ import ContentRail from "@/components/public/ContentRail";
 import HeroVideoTeaser from "@/components/public/HeroVideoTeaser";
 
 export default function Home() {
-  const [hasVideoTeaser, setHasVideoTeaser] = useState(false);
 
   const { data: latestVideos = [], isLoading: videosLoading } = useQuery({
     queryKey: ["public-videos-latest"],
@@ -54,7 +53,7 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       {/* Hero Section with Rotating Video Teaser */}
       <section className="relative min-h-[60vh] md:min-h-[65vh] flex items-center justify-center overflow-hidden border-b border-border">
-        <HeroVideoTeaser onVideosLoaded={(count) => setHasVideoTeaser(count > 0)} />
+        <HeroVideoTeaser />
       </section>
 
       {/* Latest Releases - Above the fold */}

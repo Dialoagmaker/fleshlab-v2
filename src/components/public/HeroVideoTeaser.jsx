@@ -1,159 +1,187 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Sparkles, Play } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { Play } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function HeroVideoTeaser({ onVideosLoaded }) {
-  const [teaserVideos, setTeaserVideos] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [hasError, setHasError] = useState(false);
-  const videoRefs = useRef([]);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const [videos, setVideos] = useState([]);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const videoRef = useRef(null);
+  const previousIndexRef = useRef(-1);
 
+  // Fetch published videos with valid media URLs
+  const { data: allVideos = [] } = useQuery({
+    queryKey: ["hero-teaser-videos"],
+    queryFn: async () => {
+      const response = await base44.entities.Video.filter(
+        { status: "published" },
+        "-release_date",
+        50
+      );
+      return response || [];
+    },
+  });
+
+  // Process videos on load - prioritize media fields, filter eligible
   useEffect(() => {
-    const fetchTeaserVideos = async () => {
-      try {
-        // Get videos with valid trailer or source URLs, limit to 6
-        const allVideos = await base44.entities.Video.filter(
-          { status: "published" },
-          "-release_date",
-          50
-        );
-
-        // Filter for videos with valid URLs
-        const validTeasers = allVideos.filter(
-          v => (v.trailer_url || v.source_video_url) && v.primary_thumbnail_url
-        ).slice(0, 6);
-
-        setTeaserVideos(validTeasers);
-        onVideosLoaded?.(validTeasers.length);
-      } catch (error) {
-        console.error("Failed to fetch teaser videos:", error);
-        setHasError(true);
-      }
-    };
-
-    fetchTeaserVideos();
-  }, [onVideosLoaded]);
-
-  // Auto-rotate every 8 seconds
-  useEffect(() => {
-    if (teaserVideos.length <= 1) return;
-
-    const interval = setInterval(() => {
-      setCurrentIndex(prev => (prev + 1) % teaserVideos.length);
-    }, 8000);
-
-    return () => clearInterval(interval);
-  }, [teaserVideos.length]);
-
-  // Handle video load errors
-  const handleVideoError = (index) => {
-    console.error(`Video ${index} failed to load`);
-    // Skip to next video after error
-    if (index === currentIndex && teaserVideos.length > 1) {
-      setCurrentIndex(prev => (prev + 1) % teaserVideos.length);
+    if (!allVideos || allVideos.length === 0) {
+      setVideos([]);
+      if (onVideosLoaded) onVideosLoaded(0);
+      return;
     }
+
+    // Filter videos with at least one valid media URL
+    const eligibleVideos = allVideos.filter(video => {
+      const mediaUrl = getPriorityMediaUrl(video);
+      return !!mediaUrl;
+    }).slice(0, 12); // Limit to 12 videos max
+
+    setVideos(eligibleVideos);
+    if (onVideosLoaded) onVideosLoaded(eligibleVideos.length);
+
+    // Random initial selection
+    if (eligibleVideos.length > 0) {
+      const randomStart = Math.floor(Math.random() * eligibleVideos.length);
+      setCurrentVideoIndex(randomStart);
+      previousIndexRef.current = -1;
+    }
+  }, [allVideos, onVideosLoaded]);
+
+  // Get media URL by priority
+  const getPriorityMediaUrl = (video) => {
+    // Priority 1: trailer_url
+    if (video.trailer_url && video.trailer_url.trim()) {
+      return video.trailer_url;
+    }
+    // Priority 2: preview_video_url
+    if (video.preview_video_url && video.preview_video_url.trim()) {
+      return video.preview_video_url;
+    }
+    // Priority 3: source_video_url
+    if (video.source_video_url && video.source_video_url.trim()) {
+      return video.source_video_url;
+    }
+    // Priority 4: src_url
+    if (video.src_url && video.src_url.trim()) {
+      return video.src_url;
+    }
+    return null;
   };
 
-  // Mobile: disable auto-rotation, show static
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  // Random rotation every 8 seconds
+  useEffect(() => {
+    if (videos.length === 0) return;
 
-  if (hasError || teaserVideos.length === 0) {
-    return null; // Parent will show static hero
+    const rotateTeaser = () => {
+      setIsTransitioning(true);
+      
+      // Fade out
+      setTimeout(() => {
+        // Pick random index (not same as previous)
+        let nextIndex;
+        do {
+          nextIndex = Math.floor(Math.random() * videos.length);
+        } while (nextIndex === previousIndexRef.current && videos.length > 1);
+        
+        previousIndexRef.current = currentVideoIndex;
+        setCurrentVideoIndex(nextIndex);
+        
+        // Fade in
+        setTimeout(() => {
+          setIsTransitioning(false);
+        }, 1000);
+      }, 1000);
+    };
+
+    const interval = setInterval(rotateTeaser, 8000);
+    return () => clearInterval(interval);
+  }, [videos.length, currentVideoIndex]);
+
+  // Handle video errors - skip to next
+  const handleVideoError = () => {
+    console.warn('Video failed to load, skipping to next...');
+    // Trigger immediate rotation
+    setIsTransitioning(true);
+    setTimeout(() => {
+      let nextIndex;
+      do {
+        nextIndex = Math.floor(Math.random() * videos.length);
+      } while (nextIndex === currentVideoIndex && videos.length > 1);
+      
+      previousIndexRef.current = currentVideoIndex;
+      setCurrentVideoIndex(nextIndex);
+      setTimeout(() => setIsTransitioning(false), 1000);
+    }, 500);
+  };
+
+  // No eligible videos - static fallback
+  if (videos.length === 0) {
+    return (
+      <div className="absolute inset-0 bg-gradient-to-br from-secondary via-muted to-background">
+        <div className="absolute inset-0 bg-black/60" />
+        <div className="relative h-full flex flex-col items-center justify-center text-center px-4">
+          <Play className="w-20 h-20 text-primary/40 mb-6" />
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            Premium Asian Twink Content
+          </h1>
+          <p className="text-lg text-white/70 max-w-xl">
+            Exclusive scenes, performer originals, and studio releases
+          </p>
+        </div>
+      </div>
+    );
   }
 
-  const currentVideo = teaserVideos[currentIndex];
+  const currentVideo = videos[currentVideoIndex];
+  const videoUrl = getPriorityMediaUrl(currentVideo);
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Video layer */}
-      {teaserVideos.map((video, index) => {
-        const videoUrl = video.trailer_url || video.source_video_url;
-        if (!videoUrl) return null;
+      {/* Video Background */}
+      <video
+        ref={videoRef}
+        key={currentVideo.id}
+        src={videoUrl}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        onError={handleVideoError}
+        className={cn(
+          "absolute inset-0 w-full h-full object-cover transition-opacity duration-1000",
+          isTransitioning ? "opacity-0" : "opacity-100"
+        )}
+        style={{
+          // Reduced zoom - show more of the scene
+          objectFit: "cover",
+          transform: "scale(1.0)"
+        }}
+      />
 
-        return (
-          <video
-            key={video.id}
-            ref={el => videoRefs.current[index] = el}
-            src={videoUrl}
-            autoPlay={index === currentIndex && !isMobile}
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            className={cn(
-              "absolute inset-0 w-full h-full object-cover transition-opacity duration-1000",
-              index === currentIndex ? "opacity-100" : "opacity-0 pointer-events-none"
-            )}
-            onError={() => handleVideoError(index)}
-          />
-        );
-      })}
-
-      {/* Dark overlay for readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-background" />
+      {/* Dark overlay for text readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />
       
-      {/* Crimson gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5" />
+      {/* Additional crimson gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-primary/5" />
 
-      {/* Content overlay */}
-      <div className="relative h-full flex items-center justify-center px-4">
-        <div className="text-center max-w-4xl mx-auto">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Sparkles className="w-5 h-5 text-primary" />
-            <p className="text-xs font-bold tracking-[0.4em] text-primary uppercase">
-              FLESHLAB Asia
-            </p>
-            <Sparkles className="w-5 h-5 text-primary" />
-          </div>
-          
-          <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tight uppercase leading-none mb-6 text-foreground drop-shadow-2xl">
-            Premium Asian <span className="text-primary">Twink</span> Content
-          </h1>
-          
-          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed drop-shadow-lg">
-            Exclusive studio productions featuring the hottest Filipino and Asian performers. 
-            Professional quality, authentic performances, new releases weekly.
-          </p>
-          
-          <div className="flex flex-wrap gap-4 justify-center">
-            <a
-              href="/videos"
-              className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 py-3.5 rounded-lg transition-colors text-sm shadow-lg shadow-primary/20"
-            >
-              <Play className="w-4 h-4 fill-current" />
-              Watch Videos
-            </a>
-            <a
-              href="/performers"
-              className="inline-flex items-center gap-2 bg-transparent border border-border hover:border-primary/50 text-foreground font-semibold px-8 py-3.5 rounded-lg transition-colors text-sm"
-            >
-              Meet Performers
-            </a>
-          </div>
-        </div>
+      {/* Content */}
+      <div className="relative h-full flex flex-col items-center justify-center text-center px-4">
+        <Play className="w-20 h-20 text-primary/80 mb-6 drop-shadow-2xl" />
+        <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">
+          Premium Asian Twink Content
+        </h1>
+        <p className="text-lg text-white/80 max-w-xl drop-shadow-md">
+          Exclusive scenes, performer originals, and studio releases
+        </p>
       </div>
 
-      {/* Navigation dots */}
-      {teaserVideos.length > 1 && (
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
-          {teaserVideos.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentIndex(index)}
-              className={cn(
-                "w-2 h-2 rounded-full transition-all",
-                index === currentIndex ? "bg-primary w-6" : "bg-white/30 hover:bg-white/50"
-              )}
-              aria-label={`Go to teaser ${index + 1}`}
-            />
-          ))}
-        </div>
+      {/* Smooth fade transition overlay */}
+      {isTransitioning && (
+        <div className="absolute inset-0 bg-black/40 transition-opacity duration-1000" />
       )}
     </div>
   );
-}
-
-// Helper for class merging (simplified cn)
-function cn(...classes) {
-  return classes.filter(Boolean).join(' ');
 }
