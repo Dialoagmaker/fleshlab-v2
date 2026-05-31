@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, X, CheckCircle, AlertCircle, Loader2, FileVideo, Play, RotateCcw, Trash2 } from "lucide-react";
+import { Upload, X, CheckCircle, AlertCircle, Loader2, FileVideo, Play, RotateCcw, Trash2, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
@@ -312,8 +312,51 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
     return metadata.title && metadata.description && metadata.access_tier;
   };
 
+  const activeUploads = files.filter(f => 
+    f.status === UPLOAD_STATUS.UPLOADING || 
+    f.status === UPLOAD_STATUS.PROCESSING ||
+    f.status === UPLOAD_STATUS.FINALIZING
+  );
+  
+  const totalProgress = activeUploads.length > 0 
+    ? activeUploads.reduce((acc, f) => acc + (f.uploadProgress || 0), 0) / activeUploads.length
+    : 0;
+
   return (
     <div className="space-y-6">
+      {/* Realtime Progress Banner */}
+      <AnimatePresence>
+        {activeUploads.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: -20, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 border border-primary/30 rounded-lg p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <TrendingUp className="w-5 h-5 text-primary animate-pulse" />
+                <span className="font-semibold text-primary">
+                  {activeUploads.length} active upload{activeUploads.length > 1 ? 's' : ''} in progress
+                </span>
+              </div>
+              <div className="h-3 bg-secondary rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-primary to-primary/60"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${totalProgress}%` }}
+                  transition={{ duration: 0.3 }}
+                />
+              </div>
+              <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                <span>Overall Progress</span>
+                <span className="text-primary font-mono">{totalProgress.toFixed(1)}%</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="grid gap-6">
         <div className="space-y-2">
           <Label htmlFor="title">Title *</Label>
