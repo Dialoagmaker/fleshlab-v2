@@ -7,6 +7,10 @@ import SEOMeta from "@/components/SEOMeta";
 import PremiumTeaserBlock from "@/components/public/PremiumTeaserBlock";
 import PerformerSection from "@/components/public/PerformerSection";
 import VideoRail from "@/components/public/VideoRail";
+import FeaturedPerformerBlock from "@/components/public/FeaturedPerformerBlock";
+import FanProductionTeaser from "@/components/public/FanProductionTeaser";
+import FanclubTeaser from "@/components/public/FanclubTeaser";
+import StudioVideosMiniList from "@/components/public/StudioVideosMiniList";
 import { 
   Calendar, 
   Clock, 
@@ -15,7 +19,8 @@ import {
   Loader2,
   Tag,
   Play,
-  Eye
+  Eye,
+  Crown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,9 +29,7 @@ export default function VideoDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [video, setVideo] = useState(null);
-  const [relatedVideos, setRelatedVideos] = useState([]);
-  const [performerVideos, setPerformerVideos] = useState([]);
-  const [studioVideos, setStudioVideos] = useState([]);
+  const [detectionInfo, setDetectionInfo] = useState(null);
 
   // Fetch all data
   const { data: videos = [], isLoading } = useQuery({
@@ -50,32 +53,135 @@ export default function VideoDetail() {
       if (foundVideo) {
         setVideo(foundVideo);
         
-        // Related videos (same brand or tags)
-        const related = videos
-          .filter(v => 
-            v.id !== foundVideo.id &&
-            (v.brand_id === foundVideo.brand_id ||
-             v.tags?.some(t => foundVideo.tags?.includes(t)))
-          )
-          .slice(0, 6);
-        setRelatedVideos(related);
+        // Performer Detection
+        let detectedPerformer = null;
+        let detectionMethod = null;
+        let performerVideos = [];
+        let hasFallback = false;
+        let fallbackPerformer = null;
 
-        // More from performer
+        // Strategy 1: Direct performer_id
         if (foundVideo.performer_id) {
-          const performerVids = videos
-            .filter(v => v.performer_id === foundVideo.performer_id && v.id !== foundVideo.id)
-            .slice(0, 4);
-          setPerformerVideos(performerVids);
+          const performer = performers.find(p => p.id === foundVideo.performer_id);
+          if (performer) {
+            detectedPerformer = performer;
+            detectionMethod = 'direct_performer_id';
+            performerVideos = videos.filter(
+              v => v.performer_id === foundVideo.performer_id && v.id !== foundVideo.id
+            ).slice(0, 4);
+          }
         }
 
-        // More from studio
-        const studioVids = videos
-          .filter(v => v.brand_id === foundVideo.brand_id && v.id !== foundVideo.id)
-          .slice(0, 4);
-        setStudioVideos(studioVids);
+        // Strategy 2: performer_ids array
+        if (!detectedPerformer && foundVideo.performer_ids && Array.isArray(foundVideo.performer_ids)) {
+          for (const performerId of foundVideo.performer_ids) {
+            const performer = performers.find(p => p.id === performerId);
+            if (performer) {
+              detectedPerformer = performer;
+              detectionMethod = 'performer_ids_array';
+              performerVideos = videos.filter(
+                v => v.performer_ids?.includes(performer.id) && v.id !== foundVideo.id
+              ).slice(0, 4);
+              break;
+            }
+          }
+        }
+
+        // Strategy 3: performers array
+        if (!detectedPerformer && foundVideo.performers && Array.isArray(foundVideo.performers)) {
+          for (const performerRef of foundVideo.performers) {
+            const performerId = performerRef.performer_id || performerRef.id;
+            const performer = performers.find(p => p.id === performerId);
+            if (performer) {
+              detectedPerformer = performer;
+              detectionMethod = 'performers_array';
+              performerVideos = videos.filter(
+                v => v.performers?.some(p => p.performer_id === performer.id) && v.id !== foundVideo.id
+              ).slice(0, 4);
+              break;
+            }
+          }
+        }
+
+        // Strategy 4: Fuzzy match on title/tags
+        if (!detectedPerformer) {
+          const videoText = `${foundVideo.title} ${foundVideo.tags?.join(' ')}`.toLowerCase();
+          for (const performer of performers) {
+            const performerNames = [
+              performer.display_name?.toLowerCase(),
+              performer.stage_name?.toLowerCase(),
+              performer.bio?.toLowerCase(),
+            ].filter(Boolean);
+            
+            for (const name of performerNames) {
+              if (videoText.includes(name)) {
+                detectedPerformer = performer;
+                detectionMethod = 'fuzzy_match_title_tags';
+                performerVideos = videos.filter(v => {
+                  const otherText = `${v.title} ${v.tags?.join(' ')}`.toLowerCase();
+                  return otherText.includes(name) && v.id !== foundVideo.id;
+                }).slice(0, 4);
+                break;
+              }
+            }
+            if (detectedPerformer) break;
+          }
+        }
+
+        // Strategy 5: Fallback - featured performer from same brand
+        if (!detectedPerformer && foundVideo.brand_id) {
+          const featuredPerformers = performers.filter(
+            p => p.featured === true && p.status === 'active'
+          );
+          const brandPerformer = featuredPerformers.find(p => p.brand_id === foundVideo.brand_id);
+          
+          if (brandPerformer) {
+            detectedPerformer = brandPerformer;
+            detectionMethod = 'fallback_featured_from_brand';
+            performerVideos = videos.filter(
+              v => v.brand_id === foundVideo.brand_id && v.id !== foundVideo.id
+            ).slice(0, 4);
+            hasFallback = true;
+            fallbackPerformer = brandPerformer;
+          }
+        }
+
+        // Strategy 6: Any active featured performer
+        if (!detectedPerformer) {
+          const featuredPerformer = performers.find(
+            p => p.featured === true && p.status === 'active'
+          );
+          
+          if (featuredPerformer) {
+            detectedPerformer = featuredPerformer;
+            detectionMethod = 'fallback_any_featured_performer';
+            performerVideos = videos.filter(v => v.id !== foundVideo.id).slice(0, 4);
+            hasFallback = true;
+            fallbackPerformer = featuredPerformer;
+          }
+        }
+
+        const detectionResult = {
+          detectedPerformer,
+          detectionMethod,
+          performerVideos,
+          hasFallback,
+          fallbackPerformer,
+        };
+        
+        setDetectionInfo(detectionResult);
+        
+        // Debug logging for detection path
+        console.log('=== VideoDetail Performer Detection ===');
+        console.log('Video:', foundVideo.title);
+        console.log('Detection Method:', detectionMethod || 'NONE');
+        console.log('Performer Detected:', detectedPerformer?.display_name || 'NONE');
+        console.log('Is Fallback:', hasFallback || false);
+        console.log('Performer Videos Found:', performerVideos.length);
+        console.log('========================================');
       }
     }
-  }, [videos, slug]);
+  }, [videos, slug, performers]);
 
   // Build JSON-LD structured data
   const jsonLd = video ? {
@@ -121,8 +227,30 @@ export default function VideoDetail() {
   }
 
   const brand = brands.find(b => b.id === video.brand_id);
-  const primaryPerformer = performers.find(p => p.id === video.performer_id);
+  const primaryPerformer = detectionInfo?.detectedPerformer || null;
   const canonicalUrl = `${window.location.origin}/videos/${video.slug}`;
+
+  // Related videos (same brand or tags)
+  const relatedVideos = videos
+    .filter(v => 
+      v.id !== video.id &&
+      (v.brand_id === video.brand_id ||
+       v.tags?.some(t => video.tags?.includes(t)))
+    )
+    .slice(0, 6);
+
+  // Studio videos
+  const studioVideos = videos
+    .filter(v => v.brand_id === video.brand_id && v.id !== video.id)
+    .slice(0, 6);
+
+  // Similar videos (by tags only)
+  const similarVideos = videos
+    .filter(v => 
+      v.id !== video.id &&
+      v.tags?.some(t => video.tags?.includes(t))
+    )
+    .slice(0, 4);
 
   return (
     <>
@@ -219,17 +347,65 @@ export default function VideoDetail() {
                 )}
               </div>
 
-              {/* Performer Section - Priority placement */}
+              {/* Performer Block OR Fallback */}
               {primaryPerformer && (
-                <PerformerSection 
-                  performer={primaryPerformer}
-                  videoCount={performerVideos.length + 1}
+                detectionInfo?.hasFallback ? (
+                  <FeaturedPerformerBlock
+                    performer={primaryPerformer}
+                    videoCount={detectionInfo.performerVideos.length + 1}
+                    isFallback={true}
+                  />
+                ) : (
+                  <PerformerSection 
+                    performer={primaryPerformer}
+                    videoCount={detectionInfo.performerVideos.length + 1}
+                  />
+                )
+              )}
+
+              {/* More From This Studio - ALWAYS show if studio has videos */}
+              {studioVideos.length > 0 && brand && (
+                <VideoRail
+                  title={`More from ${brand.name}`}
+                  subtitle={`${studioVideos.length} videos available`}
+                  videos={studioVideos}
+                  brands={brands}
+                  performers={performers}
+                  viewAllLink={`/brands/${brand.slug}`}
+                  viewAllText="View Studio"
                 />
               )}
 
-              {/* Tags */}
+              {/* Similar Videos - By tags */}
+              {similarVideos.length > 0 && (
+                <VideoRail
+                  title="Similar Videos"
+                  subtitle="Based on tags"
+                  videos={similarVideos}
+                  brands={brands}
+                  performers={performers}
+                />
+              )}
+
+              {/* Fan Production Teaser */}
+              <FanProductionTeaser />
+
+              {/* Fanclub Teaser */}
+              <FanclubTeaser />
+
+              {/* Description - AFTER content discovery */}
+              {video.description && (
+                <div className="prose prose-invert max-w-none pt-2">
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Description</h3>
+                  <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                    {video.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Tags - At bottom */}
               {video.tags && video.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 pt-2">
                   {video.tags.map((tag, idx) => (
                     <Badge key={idx} variant="secondary" className="gap-1.5 px-3 py-1">
                       <Tag className="w-3 h-3" />
@@ -239,16 +415,7 @@ export default function VideoDetail() {
                 </div>
               )}
 
-              {/* Description */}
-              {video.description && (
-                <div className="prose prose-invert max-w-none pt-2">
-                  <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                    {video.description}
-                  </p>
-                </div>
-              )}
-
-              {/* Related Videos - Above conversion */}
+              {/* Related Videos - Last */}
               {relatedVideos.length > 0 && (
                 <VideoRail
                   title="Related Videos"
@@ -258,33 +425,7 @@ export default function VideoDetail() {
                 />
               )}
 
-              {/* More From This Performer */}
-              {performerVideos.length > 0 && primaryPerformer && (
-                <VideoRail
-                  title={`More from ${primaryPerformer.display_name}`}
-                  subtitle={`Browse ${performerVideos.length} more videos`}
-                  videos={performerVideos}
-                  brands={brands}
-                  performers={performers}
-                  viewAllLink={`/performers/${primaryPerformer.slug}`}
-                  viewAllText="View Profile"
-                />
-              )}
-
-              {/* More From This Studio */}
-              {studioVideos.length > 0 && brand && (
-                <VideoRail
-                  title={`More from ${brand.name}`}
-                  subtitle={`Browse ${studioVideos.length} more videos`}
-                  videos={studioVideos}
-                  brands={brands}
-                  performers={performers}
-                  viewAllLink={`/brands/${brand.slug}`}
-                  viewAllText="View Studio"
-                />
-              )}
-
-              {/* Premium Teaser - Last */}
+              {/* Premium Teaser - Very Last */}
               <div className="pt-8">
                 <PremiumTeaserBlock title="Want Full Access?" />
               </div>
@@ -292,6 +433,70 @@ export default function VideoDetail() {
 
             {/* Sidebar - 1/3 */}
             <div className="space-y-4">
+              {/* Featured Performer or Fallback */}
+              {primaryPerformer ? (
+                <FeaturedPerformerBlock
+                  performer={primaryPerformer}
+                  videoCount={detectionInfo.performerVideos.length + 1}
+                  isFallback={detectionInfo.hasFallback}
+                />
+              ) : (
+                <div className="bg-card rounded-xl p-5 border border-border">
+                  <h3 className="font-semibold mb-3 text-xs uppercase tracking-wide text-muted-foreground">
+                    Featured Performer
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Browse our featured Asian twink performers and discover exclusive content.
+                  </p>
+                  <Link to="/performers">
+                    <Button className="w-full mt-3 bg-primary hover:bg-primary/90">
+                      View All Performers
+                    </Button>
+                  </Link>
+                </div>
+              )}
+
+              {/* Fanclub Teaser - Sidebar */}
+              <div className="bg-card rounded-xl p-5 border border-primary/30 bg-primary/5">
+                <h3 className="font-semibold mb-3 text-xs uppercase tracking-wide text-primary flex items-center gap-2">
+                  <Crown className="w-4 h-4" />
+                  Fanclub Access
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Get exclusive access to behind-the-scenes content and direct interaction with performers.
+                </p>
+                <Link to="/fanclub">
+                  <Button className="w-full bg-primary hover:bg-primary/90 text-sm">
+                    Join Fanclub
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Fan Production Teaser - Sidebar */}
+              <div className="bg-card rounded-xl p-5 border border-purple-500/30 bg-purple-900/10">
+                <h3 className="font-semibold mb-3 text-xs uppercase tracking-wide text-purple-400 flex items-center gap-2">
+                  <Film className="w-4 h-4" />
+                  Fan Production
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Create professional content with our performers. We provide equipment and distribution.
+                </p>
+                <Link to="/guest-production">
+                  <Button className="w-full bg-purple-600 hover:bg-purple-700 text-sm">
+                    Apply Now
+                  </Button>
+                </Link>
+              </div>
+
+              {/* More from Studio Mini List */}
+              {studioVideos.length > 0 && brand && (
+                <StudioVideosMiniList
+                  brand={brand}
+                  videos={studioVideos}
+                  performers={performers}
+                />
+              )}
+
               {/* Access Tier */}
               <div className="bg-card rounded-xl p-5 border border-border">
                 <h3 className="font-semibold mb-3 text-xs uppercase tracking-wide text-muted-foreground">Access Level</h3>
@@ -319,67 +524,6 @@ export default function VideoDetail() {
                       </Badge>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {/* Featured Performer Sidebar */}
-              {primaryPerformer && (
-                <div className="bg-card rounded-xl p-5 border border-border">
-                  <h3 className="font-semibold mb-3 text-xs uppercase tracking-wide text-muted-foreground">Featured Performer</h3>
-                  <Link to={`/performers/${primaryPerformer.slug}`} className="block group">
-                    <div className="aspect-[3/4] rounded-lg overflow-hidden mb-3">
-                      {primaryPerformer.profile_image_url ? (
-                        <img
-                          src={primaryPerformer.profile_image_url}
-                          alt={primaryPerformer.display_name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-secondary flex items-center justify-center">
-                          <span className="text-4xl">👤</span>
-                        </div>
-                      )}
-                    </div>
-                    <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors">
-                      {primaryPerformer.display_name}
-                    </p>
-                    {primaryPerformer.nationality && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {primaryPerformer.nationality}
-                      </p>
-                    )}
-                  </Link>
-                </div>
-              )}
-
-              {/* Studio Link */}
-              {brand && (
-                <div className="bg-card rounded-xl p-5 border border-border">
-                  <h3 className="font-semibold mb-3 text-xs uppercase tracking-wide text-muted-foreground">Studio</h3>
-                  <Link
-                    to={`/brands/${brand.slug}`}
-                    className="flex items-center gap-3 group"
-                  >
-                    {brand.logo_url ? (
-                      <img
-                        src={brand.logo_url}
-                        alt={brand.name}
-                        className="w-12 h-12 object-contain bg-secondary rounded-lg p-2"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center">
-                        <Film className="w-6 h-6 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors">
-                        {brand.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        View all videos →
-                      </p>
-                    </div>
-                  </Link>
                 </div>
               )}
             </div>
