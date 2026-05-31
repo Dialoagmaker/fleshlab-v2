@@ -26,12 +26,12 @@ const REAL_VIDEOS = [
 
 // Behind the scenes lifestyle images
 const BTS_IMAGES = [
-  { label: "Content Creation", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png" },
-  { label: "Smartphone Filming", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png" },
-  { label: "Amateur Productions", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png" },
-  { label: "Live Cam Setup", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png" },
-  { label: "Studio Sessions", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png" },
-  { label: "Creator Workflow", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png" },
+  { label: "Content Creation", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a99dc0931_generated_image.png" },
+  { label: "Smartphone Filming", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/951f3b800_generated_image.png" },
+  { label: "Amateur Productions", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/47fe6a196_generated_image.png" },
+  { label: "Live Cam Setup", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/2eb5f0fb7_generated_image.png" },
+  { label: "Studio Sessions", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/652f5c257_generated_image.png" },
+  { label: "Creator Workflow", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/b0c6edc22_generated_image.png" },
 ];
 
 export default function BecomePerformer() {
