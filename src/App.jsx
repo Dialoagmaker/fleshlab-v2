@@ -24,6 +24,15 @@ import PerformerEdit from './pages/admin/PerformerEdit';
 import Brands from './pages/admin/Brands';
 import BrandEdit from './pages/admin/BrandEdit';
 import ComingSoon from './pages/ComingSoon';
+// Public pages
+import PublicVideos from './pages/Videos';
+import VideoDetail from './pages/VideoDetail';
+import PublicPerformers from './pages/Performers';
+import PerformerDetail from './pages/PerformerDetail';
+import PublicBrands from './pages/Brands';
+import BrandDetail from './pages/BrandDetail';
+import PublicNews from './pages/News';
+import NewsDetail from './pages/NewsDetail';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -59,16 +68,16 @@ const AuthenticatedApp = () => {
       {/* Public routes */}
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/videos" element={<ComingSoon title="Video Library" />} />
-        <Route path="/videos/:slug" element={<ComingSoon title="Video" />} />
-        <Route path="/performers" element={<ComingSoon title="Performers" />} />
-        <Route path="/performers/:slug" element={<ComingSoon title="Performer Profile" />} />
-        <Route path="/brands" element={<ComingSoon title="Brands" />} />
-        <Route path="/brands/:slug" element={<ComingSoon title="Brand" />} />
+        <Route path="/videos" element={<PublicVideos />} />
+        <Route path="/videos/:slug" element={<VideoDetail />} />
+        <Route path="/performers" element={<PublicPerformers />} />
+        <Route path="/performers/:slug" element={<PerformerDetail />} />
+        <Route path="/brands" element={<PublicBrands />} />
+        <Route path="/brands/:slug" element={<BrandDetail />} />
         <Route path="/fanclub" element={<ComingSoon title="Fanclub" />} />
         <Route path="/fanclub/:slug" element={<ComingSoon title="Performer Fanclub" />} />
-        <Route path="/news" element={<ComingSoon title="News" />} />
-        <Route path="/news/:slug" element={<ComingSoon title="Article" />} />
+        <Route path="/news" element={<PublicNews />} />
+        <Route path="/news/:slug" element={<NewsDetail />} />
         <Route path="/search" element={<ComingSoon title="Search" />} />
         <Route path="/guest-production" element={<ComingSoon title="Guest Production" />} />
       </Route>

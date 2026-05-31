@@ -1,0 +1,266 @@
+import React, { useEffect, useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import VideoCard from "@/components/public/VideoCard";
+import SEOMeta from "@/components/SEOMeta";
+import { 
+  Calendar, 
+  Clock, 
+  Film, 
+  ArrowLeft, 
+  Loader2,
+  ExternalLink,
+  Tag
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+
+export default function VideoDetail() {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const [video, setVideo] = useState(null);
+  const [relatedVideos, setRelatedVideos] = useState([]);
+
+  // Fetch video by slug
+  const { data: videos = [], isLoading } = useQuery({
+    queryKey: ['public-videos'],
+    queryFn: () => base44.entities.Video.list(),
+  });
+
+  const { data: brands = [] } = useQuery({
+    queryKey: ['public-brands'],
+    queryFn: () => base44.entities.Brand.list(),
+  });
+
+  useEffect(() => {
+    if (videos.length > 0 && slug) {
+      const foundVideo = videos.find(v => v.slug === slug);
+      if (foundVideo) {
+        setVideo(foundVideo);
+        
+        // Find related videos (same brand or tags)
+        const related = videos
+          .filter(v => 
+            v.id !== foundVideo.id &&
+            (v.brand_id === foundVideo.brand_id ||
+             v.tags?.some(t => foundVideo.tags?.includes(t)))
+          )
+          .slice(0, 6);
+        setRelatedVideos(related);
+      }
+    }
+  }, [videos, slug]);
+
+  // Build JSON-LD structured data
+  const jsonLd = video ? {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    "name": video.title,
+    "description": video.short_summary || video.description,
+    "thumbnailUrl": video.primary_thumbnail_url,
+    "uploadDate": video.release_date || video.created_date,
+    "duration": video.duration_seconds ? `PT${video.duration_seconds}S` : undefined,
+    "contentUrl": video.source_video_url,
+    "embedUrl": video.trailer_url,
+    "author": brand ? {
+      "@type": "Organization",
+      "name": brand.name
+    } : undefined,
+  } : undefined;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!video) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Film className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+          <h1 className="text-2xl font-bold mb-2">Video Not Found</h1>
+          <p className="text-muted-foreground mb-4">
+            The video you're looking for doesn't exist or has been removed.
+          </p>
+          <Button onClick={() => navigate('/videos')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Videos
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const brand = brands.find(b => b.id === video.brand_id);
+  const canonicalUrl = `${window.location.origin}/videos/${video.slug}`;
+
+  return (
+    <>
+      <SEOMeta
+        title={video.meta_title || `${video.title} | FLESHLAB`}
+        description={video.meta_description || video.short_summary || video.description}
+        canonical={canonicalUrl}
+        ogImage={video.primary_thumbnail_url || video.cover_image_url}
+        ogType="video.object"
+        jsonLd={jsonLd}
+      />
+      <div className="min-h-screen bg-background">
+      {/* Back Navigation */}
+      <div className="bg-card border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/videos')}
+            className="gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Videos
+          </Button>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Video Player */}
+            <div className="bg-black rounded-xl overflow-hidden aspect-video">
+              {video.trailer_url ? (
+                <iframe
+                  src={video.trailer_url}
+                  title={video.title}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : video.source_video_url ? (
+                <video
+                  controls
+                  className="w-full h-full"
+                  poster={video.primary_thumbnail_url}
+                >
+                  <source src={video.source_video_url} />
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Film className="w-16 h-16 mx-auto mb-4" />
+                    <p>Video not available</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Video Info */}
+            <div className="space-y-4">
+              <h1 className="text-3xl font-bold">{video.title}</h1>
+
+              {/* Meta */}
+              <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                {brand && (
+                  <Link
+                    to={`/brands/${brand.slug}`}
+                    className="bg-primary/10 text-primary px-3 py-1 rounded-full hover:bg-primary/20 transition-colors"
+                  >
+                    {brand.name}
+                  </Link>
+                )}
+                {video.release_date && (
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    {new Date(video.release_date).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </span>
+                )}
+                {video.duration_seconds && (
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    {Math.floor(video.duration_seconds / 60)}:{String(video.duration_seconds % 60).padStart(2, '0')}
+                  </span>
+                )}
+                {video.view_count !== undefined && (
+                  <span>{video.view_count.toLocaleString()} views</span>
+                )}
+              </div>
+
+              {/* Tags */}
+              {video.tags && video.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {video.tags.map((tag, idx) => (
+                    <Badge key={idx} variant="secondary" className="gap-1">
+                      <Tag className="w-3 h-3" />
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Description */}
+              {video.description && (
+                <div className="prose prose-invert max-w-none">
+                  <p className="text-muted-foreground whitespace-pre-wrap">
+                    {video.description}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Access Tier */}
+            <div className="bg-card rounded-xl p-6 border border-border">
+              <h3 className="font-semibold mb-3">Access</h3>
+              <Badge 
+                className={
+                  video.access_tier === 'free' ? 'bg-green-500/10 text-green-500' :
+                  video.access_tier === 'fanclub' ? 'bg-purple-500/10 text-purple-500' :
+                  'bg-primary/10 text-primary'
+                }
+              >
+                {video.access_tier === 'free' ? 'Free' :
+                 video.access_tier === 'fanclub' ? 'Fanclub Only' :
+                 video.access_tier === 'ppv' ? 'PPV' : video.access_tier}
+              </Badge>
+            </div>
+
+            {/* Categories */}
+            {video.categories && video.categories.length > 0 && (
+              <div className="bg-card rounded-xl p-6 border border-border">
+                <h3 className="font-semibold mb-3">Categories</h3>
+                <div className="flex flex-wrap gap-2">
+                  {video.categories.map((cat, idx) => (
+                    <Badge key={idx} variant="outline">
+                      {cat}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Related Videos */}
+        {relatedVideos.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold mb-6">Related Videos</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {relatedVideos.map(v => (
+                <VideoCard key={v.id} video={v} brands={brands} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+    </>
+  );
+}
