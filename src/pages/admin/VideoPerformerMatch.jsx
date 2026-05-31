@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Play, Film, X, Save, SkipForward, Search, Image, CheckCircle2, AlertCircle, Loader2, Keyboard } from "lucide-react";
+import { Play, Film, X, Save, SkipForward, Search, Image, CheckCircle2, AlertCircle, Loader2, Keyboard, Users, Plus, Trash2 } from "lucide-react";
 
 function VideoPreviewCard({ video, brands = [] }) {
   const brand = brands.find(b => b.id === video.brand_id);
@@ -97,6 +97,7 @@ function suggestPerformers(video, performers, brands) {
 
 export default function VideoPerformerMatch() {
   const queryClient = useQueryClient();
+  const [mode, setMode] = useState("quick"); // "quick" or "bulk"
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [selectedPerformerIds, setSelectedPerformerIds] = useState([]);
   const [filterMode, setFilterMode] = useState("unassigned");
@@ -105,6 +106,13 @@ export default function VideoPerformerMatch() {
   const [performerSearch, setPerformerSearch] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  
+  // Bulk assign mode state
+  const [bulkSelectedPerformerId, setBulkSelectedPerformerId] = useState(null);
+  const [bulkSelectedVideoIds, setBulkSelectedVideoIds] = useState([]);
+  const [bulkFilterUnassigned, setBulkFilterUnassigned] = useState(false);
+  const [bulkFilterAssigned, setBulkFilterAssigned] = useState(false);
+  const [bulkActionType, setBulkActionType] = useState("assign"); // "assign" or "remove"
 
   const { data: videos = [], isLoading: videosLoading } = useQuery({ queryKey: ["match-videos"], queryFn: () => base44.entities.Video.list("-created_date", 200) });
   const { data: brands = [] } = useQuery({ queryKey: ["match-brands"], queryFn: () => base44.entities.Brand.filter({ status: "active" }) });
@@ -165,13 +173,32 @@ export default function VideoPerformerMatch() {
     <div className="max-w-7xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Quick Match: Video to Performers</h1>
-          <p className="text-muted-foreground text-sm mt-1">Fast assignment tool - {filteredVideos.length} videos - {totalUnassigned} unassigned</p>
+          <h1 className="text-2xl font-bold text-foreground">Video-Performer Matching</h1>
+          <p className="text-muted-foreground text-sm mt-1">Quick match or bulk assign performers to videos</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setShowShortcuts(!showShortcuts)} className="gap-2"><Keyboard className="w-4 h-4" />Shortcuts</Button>
+        <div className="flex gap-2">
+          <Button 
+            variant={mode === "quick" ? "default" : "outline"} 
+            size="sm" 
+            onClick={() => setMode("quick")}
+            className="gap-2"
+          >
+            <Keyboard className="w-4 h-4" />
+            Quick Match
+          </Button>
+          <Button 
+            variant={mode === "bulk" ? "default" : "outline"} 
+            size="sm" 
+            onClick={() => setMode("bulk")}
+            className="gap-2"
+          >
+            <Users className="w-4 h-4" />
+            Bulk Assign
+          </Button>
+        </div>
       </div>
 
-      {showShortcuts && (
+      {showShortcuts && mode === "quick" && (
         <div className="bg-card border border-border rounded-xl p-4">
           <h3 className="font-semibold text-sm mb-3 flex items-center gap-2"><Keyboard className="w-4 h-4" />Keyboard Shortcuts</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
@@ -183,107 +210,405 @@ export default function VideoPerformerMatch() {
         </div>
       )}
 
-      <div className="bg-card border border-border rounded-xl p-4">
-        <div className="grid md:grid-cols-4 gap-4">
-          <div className="space-y-2">
-            <Label>Filter Mode</Label>
-            <Select value={filterMode} onValueChange={setFilterMode}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="unassigned">Unassigned Only</SelectItem>
-                <SelectItem value="all">All Videos</SelectItem>
-                <SelectItem value="by_brand">By Brand</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {filterMode === "by_brand" && (
+      {/* BULK ASSIGN MODE */}
+      {mode === "bulk" && (
+        <div className="space-y-6">
+          {/* Step 1: Select Performer */}
+          <div className="bg-card border border-border rounded-xl p-4">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" />
+              Step 1: Select Performer
+            </h2>
             <div className="space-y-2">
-              <Label>Brand</Label>
-              <Select value={filterBrand} onValueChange={setFilterBrand}>
-                <SelectTrigger><SelectValue placeholder="Select brand..." /></SelectTrigger>
-                <SelectContent>{brands.map(b => (<SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>))}</SelectContent>
-              </Select>
-            </div>
-          )}
-          <div className="space-y-2 md:col-span-2">
-            <Label>Search by Title</Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search videos..." className="pl-10" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {!currentVideo ? (
-        <div className="bg-card border border-border rounded-xl p-12 text-center">
-          <CheckCircle2 className="w-16 h-16 mx-auto mb-4 text-green-500 opacity-50" />
-          <h3 className="text-xl font-bold text-foreground mb-2">All Done!</h3>
-          <p className="text-muted-foreground">{filterMode === "unassigned" ? "No more unassigned videos. Change filter to see all videos." : "No videos match your current filters."}</p>
-        </div>
-      ) : (
-        <div className="grid lg:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <VideoPreviewCard video={currentVideo} brands={brands} />
-            <div className="bg-card border border-border rounded-xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Progress</span>
-                <span className="text-sm text-muted-foreground">{currentVideoIndex + 1} / {filteredVideos.length}</span>
-              </div>
-              <div className="w-full bg-secondary rounded-full h-2"><div className="bg-primary h-2 rounded-full transition-all" style={{ width: `${((currentVideoIndex + 1) / filteredVideos.length) * 100}%` }} /></div>
-            </div>
-            {currentAssignments.length > 0 && (
-              <div className="bg-card border border-border rounded-xl p-4">
-                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-500" />Currently Assigned ({currentAssignments.length})</h3>
-                <div className="flex flex-wrap gap-2">
-                  {currentAssignments.map(performerId => { const performer = allPerformers.find(p => p.id === performerId); return (<Badge key={performerId} variant="secondary" className="gap-2">{performer?.profile_image_url && (<img src={performer.profile_image_url} alt={performer.display_name} className="w-5 h-5 rounded-full object-cover" />)}{performer?.display_name || performerId}</Badge>); })}
-                </div>
-              </div>
-            )}
-            {suggestedPerformerIds.length > 0 && (
-              <div className="bg-card border border-primary/30 rounded-xl p-4">
-                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-primary"><CheckCircle2 className="w-4 h-4" />AI Suggestions ({suggestedPerformerIds.length})</h3>
-                <p className="text-xs text-muted-foreground mb-3">Based on title, description, tags, and brand matching</p>
-                <div className="flex flex-wrap gap-2">
-                  {suggestedPerformerIds.map(performerId => { const performer = allPerformers.find(p => p.id === performerId); return (<Button key={performerId} variant="outline" size="sm" onClick={() => togglePerformer(performerId)} className={selectedPerformerIds.includes(performerId) ? "bg-primary text-primary-foreground" : ""}>{performer?.display_name}</Button>); })}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Search Performers</Label>
+              <Label>Search Performer</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input value={performerSearch} onChange={(e) => setPerformerSearch(e.target.value)} placeholder="Search by name, stage name, or nationality..." className="pl-10" />
+                <Input 
+                  value={performerSearch} 
+                  onChange={(e) => setPerformerSearch(e.target.value)} 
+                  placeholder="Search by name, stage name, or nationality..." 
+                  className="pl-10" 
+                />
               </div>
             </div>
-            <div className="flex items-center justify-between">
-              <Label>Performers ({selectedPerformerIds.length} selected)</Label>
-              {selectedPerformerIds.length > 0 && (<Button variant="ghost" size="sm" onClick={() => setSelectedPerformerIds([])} className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3 mr-1" />Clear</Button>)}
-            </div>
-            <ScrollArea className="h-[600px] border border-border rounded-xl p-4 bg-card">
-              <div className="grid gap-3">
-                {filteredPerformers.slice(0, 50).map((performer, idx) => (<PerformerCard key={performer.id} performer={performer} isSelected={selectedPerformerIds.includes(performer.id)} onToggle={() => togglePerformer(performer.id)} shortcut={idx < 9 ? idx + 1 : null} />))}
-                {filteredPerformers.length === 0 && (<div className="text-center py-12 text-muted-foreground"><Image className="w-12 h-12 mx-auto mb-3 opacity-50" /><p>No performers found</p></div>)}
+            <ScrollArea className="h-[300px] mt-4 border border-border rounded-xl p-4">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filteredPerformers.slice(0, 30).map((performer) => (
+                  <div
+                    key={performer.id}
+                    onClick={() => setBulkSelectedPerformerId(performer.id)}
+                    className={`relative border rounded-lg p-3 cursor-pointer transition-all ${
+                      bulkSelectedPerformerId === performer.id 
+                        ? "border-primary bg-primary/5 ring-2 ring-primary" 
+                        : "border-border bg-card hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {performer.profile_image_url ? (
+                        <img src={performer.profile_image_url} alt={performer.display_name} className="w-12 h-12 rounded-full object-cover border-2 border-border" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center border-2 border-border">
+                          <Image className="w-6 h-6 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-foreground truncate">{performer.display_name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{performer.nationality || 'Performer'}</p>
+                      </div>
+                    </div>
+                    {bulkSelectedPerformerId === performer.id && (
+                      <div className="absolute top-2 right-2">
+                        <CheckCircle2 className="w-5 h-5 text-primary" />
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </ScrollArea>
-            <div className="flex gap-3">
-              <Button onClick={handleSaveAndNext} disabled={isSaving || selectedPerformerIds.length === 0} className="flex-1 gap-2 bg-primary hover:bg-primary/90">
-                {isSaving ? (<Loader2 className="w-4 h-4 animate-spin" />) : (<Save className="w-4 h-4" />)}
-                {isSaving ? "Saving..." : "Save and Next"}
-              </Button>
-              <Button onClick={handleSkip} variant="outline" className="gap-2"><SkipForward className="w-4 h-4" />Skip</Button>
-            </div>
-            {saveMutation.isError && (
-              <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 flex items-center gap-2 text-destructive">
-                <AlertCircle className="w-4 h-4" />
-                <span className="text-sm">Error saving: {saveMutation.error.message}</span>
+            {bulkSelectedPerformerId && (
+              <div className="mt-4 flex items-center justify-between p-3 bg-primary/5 border border-primary/30 rounded-lg">
+                <div className="flex items-center gap-3">
+                  {allPerformers.find(p => p.id === bulkSelectedPerformerId)?.profile_image_url && (
+                    <img 
+                      src={allPerformers.find(p => p.id === bulkSelectedPerformerId).profile_image_url} 
+                      alt="" 
+                      className="w-10 h-10 rounded-full object-cover" 
+                    />
+                  )}
+                  <div>
+                    <p className="font-semibold text-sm">Selected: {allPerformers.find(p => p.id === bulkSelectedPerformerId)?.display_name}</p>
+                    <p className="text-xs text-muted-foreground">Ready to assign to videos</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setBulkSelectedPerformerId(null)}>
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
             )}
           </div>
+
+          {/* Step 2: Select Videos */}
+          {bulkSelectedPerformerId && (
+            <div className="bg-card border border-border rounded-xl p-4">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Film className="w-5 h-5 text-primary" />
+                Step 2: Select Videos to {bulkActionType === "assign" ? "Assign" : "Remove"}
+              </h2>
+              
+              {/* Filters */}
+              <div className="grid md:grid-cols-3 gap-4 mb-4">
+                <div className="space-y-2">
+                  <Label>Search by Title</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input 
+                      value={searchQuery} 
+                      onChange={(e) => setSearchQuery(e.target.value)} 
+                      placeholder="Search videos..." 
+                      className="pl-10" 
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Brand</Label>
+                  <Select value={filterBrand} onValueChange={setFilterBrand}>
+                    <SelectTrigger><SelectValue placeholder="All brands" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={null}>All Brands</SelectItem>
+                      {brands.map(b => (<SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Assignment Status</Label>
+                  <Select 
+                    value={bulkFilterUnassigned ? "unassigned" : bulkFilterAssigned ? "assigned" : "all"} 
+                    onValueChange={(val) => {
+                      setBulkFilterUnassigned(val === "unassigned");
+                      setBulkFilterAssigned(val === "assigned");
+                    }}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Videos</SelectItem>
+                      <SelectItem value="unassigned">Unassigned Only</SelectItem>
+                      <SelectItem value="assigned">Already Assigned</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Action Toggle */}
+              <div className="flex items-center gap-4 mb-4 p-3 bg-muted/50 rounded-lg">
+                <Label className="mb-0">Action:</Label>
+                <div className="flex gap-2">
+                  <Button
+                    variant={bulkActionType === "assign" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setBulkActionType("assign")}
+                    className="gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Assign to {allPerformers.find(p => p.id === bulkSelectedPerformerId)?.display_name}
+                  </Button>
+                  <Button
+                    variant={bulkActionType === "remove" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setBulkActionType("remove")}
+                    className="gap-2 text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Remove from {allPerformers.find(p => p.id === bulkSelectedPerformerId)?.display_name}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Video Grid */}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto p-4 border border-border rounded-xl bg-card">
+                {filteredVideos
+                  .filter(v => !filterBrand || v.brand_id === filterBrand)
+                  .filter(v => !searchQuery || v.title.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .filter(v => {
+                    if (!bulkFilterUnassigned && !bulkFilterAssigned) return true;
+                    const isAssigned = videoPerformers.some(vp => vp.video_id === v.id && vp.performer_id === bulkSelectedPerformerId);
+                    if (bulkFilterUnassigned && !bulkFilterAssigned) return !isAssigned;
+                    if (bulkFilterAssigned && !bulkFilterUnassigned) return isAssigned;
+                    return true;
+                  })
+                  .map((video) => {
+                    const isAssigned = videoPerformers.some(vp => vp.video_id === video.id && vp.performer_id === bulkSelectedPerformerId);
+                    const isSelected = bulkSelectedVideoIds.includes(video.id);
+                    return (
+                      <div
+                        key={video.id}
+                        onClick={() => {
+                          setBulkSelectedVideoIds(prev => 
+                            prev.includes(video.id) 
+                              ? prev.filter(id => id !== video.id)
+                              : [...prev, video.id]
+                          );
+                        }}
+                        className={`relative border rounded-lg p-3 cursor-pointer transition-all ${
+                          isSelected 
+                            ? "border-primary bg-primary/5 ring-2 ring-primary" 
+                            : isAssigned
+                              ? "border-green-500/50 bg-green-500/5 hover:border-primary/50"
+                              : "border-border bg-card hover:border-primary/50"
+                        }`}
+                      >
+                        {/* Checkbox */}
+                        <div className="absolute top-2 right-2 z-10">
+                          <Checkbox checked={isSelected} onCheckedChange={() => {}} />
+                        </div>
+                        
+                        {/* Thumbnail */}
+                        <div className="aspect-video bg-secondary rounded-lg overflow-hidden mb-3">
+                          {video.primary_thumbnail_url ? (
+                            <img src={video.primary_thumbnail_url} alt={video.title} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                              <Film className="w-8 h-8 opacity-50" />
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Title */}
+                        <p className="font-medium text-sm text-foreground line-clamp-2 mb-2">{video.title}</p>
+                        
+                        {/* Meta */}
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          {brands.find(b => b.id === video.brand_id) && (
+                            <Badge variant="secondary" className="px-1.5 py-0.5 text-xs">
+                              {brands.find(b => b.id === video.brand_id).name}
+                            </Badge>
+                          )}
+                          {isAssigned && (
+                            <Badge variant="outline" className="text-green-500 border-green-500">
+                              Already Assigned
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+              
+              {/* Selected Count */}
+              <div className="mt-4 flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <p className="text-sm font-medium">
+                  Selected: <span className="text-primary">{bulkSelectedVideoIds.length}</span> videos
+                </p>
+                {bulkSelectedVideoIds.length > 0 && (
+                  <Button variant="ghost" size="sm" onClick={() => setBulkSelectedVideoIds([])}>
+                    <X className="w-4 h-4 mr-1" />
+                    Clear Selection
+                  </Button>
+                )}
+              </div>
+
+              {/* Bulk Action Button */}
+              <div className="flex gap-3 mt-4">
+                <Button 
+                  onClick={async () => {
+                    if (!bulkSelectedPerformerId || bulkSelectedVideoIds.length === 0) return;
+                    setIsSaving(true);
+                    try {
+                      if (bulkActionType === "assign") {
+                        for (const videoId of bulkSelectedVideoIds) {
+                          const exists = videoPerformers.find(vp => vp.video_id === videoId && vp.performer_id === bulkSelectedPerformerId);
+                          if (!exists) {
+                            await base44.entities.VideoPerformer.create({
+                              video_id: videoId,
+                              performer_id: bulkSelectedPerformerId,
+                              order: 0
+                            });
+                          }
+                        }
+                      } else {
+                        const toRemove = videoPerformers.filter(
+                          vp => vp.performer_id === bulkSelectedPerformerId && bulkSelectedVideoIds.includes(vp.video_id)
+                        );
+                        for (const assignment of toRemove) {
+                          await base44.entities.VideoPerformer.delete(assignment.id);
+                        }
+                      }
+                      
+                      queryClient.invalidateQueries({ queryKey: ["all-video-performers"] });
+                      setBulkSelectedVideoIds([]);
+                    } catch (error) {
+                      console.error("Bulk assign error:", error);
+                    } finally {
+                      setIsSaving(false);
+                    }
+                  }}
+                  disabled={isSaving || bulkSelectedVideoIds.length === 0}
+                  className="flex-1 gap-2"
+                  size="lg"
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : bulkActionType === "assign" ? (
+                    <Plus className="w-5 h-5" />
+                  ) : (
+                    <Trash2 className="w-5 h-5" />
+                  )}
+                  {isSaving ? "Processing..." : bulkActionType === "assign" 
+                    ? `Assign ${bulkSelectedVideoIds.length} Videos`
+                    : `Remove ${bulkSelectedVideoIds.length} Videos`
+                  }
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
+      )}
+
+      {/* QUICK MATCH MODE */}
+      {mode === "quick" && (
+        <>
+          <div className="bg-card border border-border rounded-xl p-4">
+            <div className="grid md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label>Filter Mode</Label>
+                <Select value={filterMode} onValueChange={setFilterMode}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Unassigned Only</SelectItem>
+                    <SelectItem value="all">All Videos</SelectItem>
+                    <SelectItem value="by_brand">By Brand</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {filterMode === "by_brand" && (
+                <div className="space-y-2">
+                  <Label>Brand</Label>
+                  <Select value={filterBrand} onValueChange={setFilterBrand}>
+                    <SelectTrigger><SelectValue placeholder="Select brand..." /></SelectTrigger>
+                    <SelectContent>{brands.map(b => (<SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>))}</SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="space-y-2 md:col-span-2">
+                <Label>Search by Title</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search videos..." className="pl-10" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {!currentVideo ? (
+            <div className="bg-card border border-border rounded-xl p-12 text-center">
+              <CheckCircle2 className="w-16 h-16 mx-auto mb-4 text-green-500 opacity-50" />
+              <h3 className="text-xl font-bold text-foreground mb-2">All Done!</h3>
+              <p className="text-muted-foreground">{filterMode === "unassigned" ? "No more unassigned videos. Change filter to see all videos." : "No videos match your current filters."}</p>
+            </div>
+          ) : (
+            <div className="grid lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <VideoPreviewCard video={currentVideo} brands={brands} />
+                <div className="bg-card border border-border rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">Progress</span>
+                    <span className="text-sm text-muted-foreground">{currentVideoIndex + 1} / {filteredVideos.length}</span>
+                  </div>
+                  <div className="w-full bg-secondary rounded-full h-2"><div className="bg-primary h-2 rounded-full transition-all" style={{ width: `${((currentVideoIndex + 1) / filteredVideos.length) * 100}%` }} /></div>
+                </div>
+                {currentAssignments.length > 0 && (
+                  <div className="bg-card border border-border rounded-xl p-4">
+                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-500" />Currently Assigned ({currentAssignments.length})</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {currentAssignments.map(performerId => { const performer = allPerformers.find(p => p.id === performerId); return (<Badge key={performerId} variant="secondary" className="gap-2">{performer?.profile_image_url && (<img src={performer.profile_image_url} alt={performer.display_name} className="w-5 h-5 rounded-full object-cover" />)}{performer?.display_name || performerId}</Badge>); })}
+                    </div>
+                  </div>
+                )}
+                {suggestedPerformerIds.length > 0 && (
+                  <div className="bg-card border border-primary/30 rounded-xl p-4">
+                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-primary"><CheckCircle2 className="w-4 h-4" />AI Suggestions ({suggestedPerformerIds.length})</h3>
+                    <p className="text-xs text-muted-foreground mb-3">Based on title, description, tags, and brand matching</p>
+                    <div className="flex flex-wrap gap-2">
+                      {suggestedPerformerIds.map(performerId => { const performer = allPerformers.find(p => p.id === performerId); return (<Button key={performerId} variant="outline" size="sm" onClick={() => togglePerformer(performerId)} className={selectedPerformerIds.includes(performerId) ? "bg-primary text-primary-foreground" : ""}>{performer?.display_name}</Button>); })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Search Performers</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input value={performerSearch} onChange={(e) => setPerformerSearch(e.target.value)} placeholder="Search by name, stage name, or nationality..." className="pl-10" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Performers ({selectedPerformerIds.length} selected)</Label>
+                  {selectedPerformerIds.length > 0 && (<Button variant="ghost" size="sm" onClick={() => setSelectedPerformerIds([])} className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3 mr-1" />Clear</Button>)}
+                </div>
+                <ScrollArea className="h-[600px] border border-border rounded-xl p-4 bg-card">
+                  <div className="grid gap-3">
+                    {filteredPerformers.slice(0, 50).map((performer, idx) => (<PerformerCard key={performer.id} performer={performer} isSelected={selectedPerformerIds.includes(performer.id)} onToggle={() => togglePerformer(performer.id)} shortcut={idx < 9 ? idx + 1 : null} />))}
+                    {filteredPerformers.length === 0 && (<div className="text-center py-12 text-muted-foreground"><Image className="w-12 h-12 mx-auto mb-3 opacity-50" /><p>No performers found</p></div>)}
+                  </div>
+                </ScrollArea>
+                <div className="flex gap-3">
+                  <Button onClick={handleSaveAndNext} disabled={isSaving || selectedPerformerIds.length === 0} className="flex-1 gap-2 bg-primary hover:bg-primary/90">
+                    {isSaving ? (<Loader2 className="w-4 h-4 animate-spin" />) : (<Save className="w-4 h-4" />)}
+                    {isSaving ? "Saving..." : "Save and Next"}
+                  </Button>
+                  <Button onClick={handleSkip} variant="outline" className="gap-2"><SkipForward className="w-4 h-4" />Skip</Button>
+                </div>
+                {saveMutation.isError && (
+                  <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 flex items-center gap-2 text-destructive">
+                    <AlertCircle className="w-4 h-4" />
+                    <span className="text-sm">Error saving: {saveMutation.error.message}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

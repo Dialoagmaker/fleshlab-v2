@@ -41,17 +41,27 @@ export default function PerformerDetail() {
     queryFn: () => base44.entities.Brand.list(),
   });
 
+  const { data: videoPerformers = [] } = useQuery({
+    queryKey: ['video-performers'],
+    queryFn: () => base44.entities.VideoPerformer.filter({}),
+  });
+
   useEffect(() => {
-    if (performers.length > 0 && slug) {
+    if (performers.length > 0 && slug && videos.length > 0) {
       const foundPerformer = performers.find(p => p.slug === slug);
       if (foundPerformer) {
         setPerformer(foundPerformer);
         
-        // Note: VideoPerformer links are empty (V1 export didn't include performer data)
-        setPerformerVideos([]);
+        // Find videos assigned to this performer via VideoPerformer records
+        const assignedVideoIds = videoPerformers
+          .filter(vp => vp.performer_id === foundPerformer.id)
+          .map(vp => vp.video_id);
+        
+        const assignedVideos = videos.filter(v => assignedVideoIds.includes(v.id));
+        setPerformerVideos(assignedVideos);
       }
     }
-  }, [performers, slug]);
+  }, [performers, slug, videos, videoPerformers]);
 
   const jsonLd = performer ? {
     "@context": "https://schema.org",
