@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Video, Users, Tag, Newspaper, Database, ArrowRight, Globe, Plus } from "lucide-react";
+import { Video, Users, Tag, Newspaper, Link2, ArrowRight, Globe, Plus, Database } from "lucide-react";
 
 const STAT_CONFIGS = [
   { label: "Videos", icon: Video, href: "/admin/videos", entity: "Video", color: "text-blue-400 bg-blue-400/10" },
@@ -13,6 +13,7 @@ const STAT_CONFIGS = [
 const MIGRATION_ITEMS = ["Videos", "Performers", "Brands", "Video Assets", "SEO Pages", "News Articles", "Slug Redirects"];
 
 const QUICK_ACTIONS = [
+  { label: "Quick Match: Video to Performers", href: "/admin/video-performer-match", icon: Link2 },
   { label: "Manage Videos", href: "/admin/videos", icon: Video },
   { label: "Manage Performers", href: "/admin/performers", icon: Users },
   { label: "Manage Brands", href: "/admin/brands", icon: Tag },

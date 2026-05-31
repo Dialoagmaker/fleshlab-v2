@@ -8,6 +8,7 @@ import {
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/videos", label: "Videos", icon: Video },
+  { href: "/admin/video-performer-match", label: "Quick Match", icon: Link2 },
   { href: "/admin/performers", label: "Performers", icon: Users },
   { href: "/admin/brands", label: "Brands", icon: Tag },
   { href: "/admin/news", label: "News", icon: Newspaper },
