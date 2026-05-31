@@ -1,6 +1,20 @@
-// Cinematic dark animated gradient background placeholder.
-// TODO: Enable real HeroBackgroundSampler after V1 video assets have been migrated 
-// and preview/trailer URLs are available in VideoAsset records.
+/**
+ * HeroBackgroundSampler — Dormant Cinematic Placeholder
+ * 
+ * SAFETY: This component is intentionally CSS-only and dormant. It renders no queries,
+ * no video tags, and no R2 dependencies. It is visually optional and will never block
+ * Home page rendering or trigger any migration/processing logic.
+ * 
+ * STATUS: Placeholder mode (animated gradient + vignette only).
+ * 
+ * ENABLEMENT: Real background video sampling will be enabled ONLY AFTER:
+ *   - V1 → V2 video asset migration is complete
+ *   - VideoAsset records contain valid trailer/preview cdn_urls
+ *   - All assets have status="ready"
+ * 
+ * DO NOT expand this component further until post-migration enablement is approved.
+ * DO NOT add queries, video tags, or processing until migration data is validated.
+ */
 
 export default function HeroBackgroundSampler() {
   return (
