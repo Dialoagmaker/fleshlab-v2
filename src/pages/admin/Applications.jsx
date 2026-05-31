@@ -31,6 +31,7 @@ import {
 import { format } from "date-fns";
 
 export default function Applications() {
+  // Note: This page is wrapped by AdminLayout in App.jsx route
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedApplication, setSelectedApplication] = useState(null);
