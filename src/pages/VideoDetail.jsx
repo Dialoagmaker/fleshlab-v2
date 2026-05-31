@@ -5,6 +5,8 @@ import { base44 } from "@/api/base44Client";
 import VideoCard from "@/components/public/VideoCard";
 import SEOMeta from "@/components/SEOMeta";
 import PremiumTeaserBlock from "@/components/public/PremiumTeaserBlock";
+import PerformerSection from "@/components/public/PerformerSection";
+import VideoRail from "@/components/public/VideoRail";
 import { 
   Calendar, 
   Clock, 
@@ -23,8 +25,10 @@ export default function VideoDetail() {
   const navigate = useNavigate();
   const [video, setVideo] = useState(null);
   const [relatedVideos, setRelatedVideos] = useState([]);
+  const [performerVideos, setPerformerVideos] = useState([]);
+  const [studioVideos, setStudioVideos] = useState([]);
 
-  // Fetch video by slug
+  // Fetch all data
   const { data: videos = [], isLoading } = useQuery({
     queryKey: ['public-videos'],
     queryFn: () => base44.entities.Video.list(),
@@ -35,13 +39,18 @@ export default function VideoDetail() {
     queryFn: () => base44.entities.Brand.list(),
   });
 
+  const { data: performers = [] } = useQuery({
+    queryKey: ['public-performers'],
+    queryFn: () => base44.entities.Performer.list(),
+  });
+
   useEffect(() => {
     if (videos.length > 0 && slug) {
       const foundVideo = videos.find(v => v.slug === slug);
       if (foundVideo) {
         setVideo(foundVideo);
         
-        // Find related videos (same brand or tags)
+        // Related videos (same brand or tags)
         const related = videos
           .filter(v => 
             v.id !== foundVideo.id &&
@@ -50,6 +59,20 @@ export default function VideoDetail() {
           )
           .slice(0, 6);
         setRelatedVideos(related);
+
+        // More from performer
+        if (foundVideo.performer_id) {
+          const performerVids = videos
+            .filter(v => v.performer_id === foundVideo.performer_id && v.id !== foundVideo.id)
+            .slice(0, 4);
+          setPerformerVideos(performerVids);
+        }
+
+        // More from studio
+        const studioVids = videos
+          .filter(v => v.brand_id === foundVideo.brand_id && v.id !== foundVideo.id)
+          .slice(0, 4);
+        setStudioVideos(studioVids);
       }
     }
   }, [videos, slug]);
@@ -98,6 +121,7 @@ export default function VideoDetail() {
   }
 
   const brand = brands.find(b => b.id === video.brand_id);
+  const primaryPerformer = performers.find(p => p.id === video.performer_id);
   const canonicalUrl = `${window.location.origin}/videos/${video.slug}`;
 
   return (
@@ -127,121 +151,155 @@ export default function VideoDetail() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Large Video Player */}
-              <div className="bg-black rounded-2xl overflow-hidden shadow-2xl shadow-primary/10">
-                <div className="aspect-video">
-                  {video.trailer_url ? (
-                    <iframe
-                      src={video.trailer_url}
-                      title={video.title}
-                      className="w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  ) : video.source_video_url ? (
-                    <video
-                      controls
-                      className="w-full h-full"
-                      poster={video.primary_thumbnail_url}
-                    >
-                      <source src={video.source_video_url} />
-                      Your browser does not support the video tag.
-                    </video>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-gradient-to-br from-secondary to-muted">
-                      <div className="text-center">
-                        <Play className="w-20 h-20 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg">Video not available</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Video Title and Metadata */}
-              <div className="space-y-4">
-                <h1 className="text-3xl sm:text-4xl font-bold text-foreground leading-tight">
-                  {video.title}
-                </h1>
-
-                {/* Stats Bar */}
-                <div className="flex flex-wrap items-center gap-4 pb-4 border-b border-border">
-                  {video.release_date && (
-                    <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <Calendar className="w-4 h-4" />
-                      {new Date(video.release_date).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </span>
-                  )}
-                  {video.duration_seconds && (
-                    <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <Clock className="w-4 h-4" />
-                      {Math.floor(video.duration_seconds / 60)}:{String(video.duration_seconds % 60).padStart(2, '0')}
-                    </span>
-                  )}
-                  {video.view_count !== undefined && (
-                    <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <Eye className="w-4 h-4" />
-                      {video.view_count.toLocaleString()} views
-                    </span>
-                  )}
-                </div>
-
-                {/* Brand Link */}
-                {brand && (
-                  <Link
-                    to={`/brands/${brand.slug}`}
-                    className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full hover:bg-primary/20 transition-colors font-medium"
+          {/* Video Player - Full width */}
+          <div className="mb-8">
+            <div className="bg-black rounded-2xl overflow-hidden shadow-2xl shadow-primary/10">
+              <div className="aspect-video">
+                {video.trailer_url ? (
+                  <iframe
+                    src={video.trailer_url}
+                    title={video.title}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : video.source_video_url ? (
+                  <video
+                    controls
+                    className="w-full h-full"
+                    poster={video.primary_thumbnail_url}
                   >
-                    <Play className="w-4 h-4 fill-current" />
-                    {brand.name}
-                  </Link>
-                )}
-
-                {/* Tags */}
-                {video.tags && video.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {video.tags.map((tag, idx) => (
-                      <Badge key={idx} variant="secondary" className="gap-1.5 px-3 py-1">
-                        <Tag className="w-3 h-3" />
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-
-                {/* Description */}
-                {video.description && (
-                  <div className="prose prose-invert max-w-none pt-4">
-                    <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                      {video.description}
-                    </p>
+                    <source src={video.source_video_url} />
+                    Your browser does not support the video tag.
+                  </video>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-gradient-to-br from-secondary to-muted">
+                    <div className="text-center">
+                      <Play className="w-20 h-20 mx-auto mb-4 opacity-50" />
+                      <p className="text-lg">Video not available</p>
+                    </div>
                   </div>
                 )}
               </div>
+            </div>
+          </div>
 
-              {/* Premium Teaser */}
+          {/* Tube-Style Layout */}
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Main Content - 2/3 */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Title & Quick Stats */}
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight">
+                {video.title}
+              </h1>
+
+              {/* Stats Bar - Compact */}
+              <div className="flex flex-wrap items-center gap-4 pb-4 border-b border-border text-sm">
+                {video.release_date && (
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <Calendar className="w-4 h-4" />
+                    {new Date(video.release_date).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </span>
+                )}
+                {video.duration_seconds && (
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <Clock className="w-4 h-4" />
+                    {Math.floor(video.duration_seconds / 60)}:{String(video.duration_seconds % 60).padStart(2, '0')}
+                  </span>
+                )}
+                {video.view_count !== undefined && (
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <Eye className="w-4 h-4" />
+                    {video.view_count.toLocaleString()}
+                  </span>
+                )}
+              </div>
+
+              {/* Performer Section - Priority placement */}
+              {primaryPerformer && (
+                <PerformerSection 
+                  performer={primaryPerformer}
+                  videoCount={performerVideos.length + 1}
+                />
+              )}
+
+              {/* Tags */}
+              {video.tags && video.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {video.tags.map((tag, idx) => (
+                    <Badge key={idx} variant="secondary" className="gap-1.5 px-3 py-1">
+                      <Tag className="w-3 h-3" />
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Description */}
+              {video.description && (
+                <div className="prose prose-invert max-w-none pt-2">
+                  <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                    {video.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Related Videos - Above conversion */}
+              {relatedVideos.length > 0 && (
+                <VideoRail
+                  title="Related Videos"
+                  videos={relatedVideos}
+                  brands={brands}
+                  performers={performers}
+                />
+              )}
+
+              {/* More From This Performer */}
+              {performerVideos.length > 0 && primaryPerformer && (
+                <VideoRail
+                  title={`More from ${primaryPerformer.display_name}`}
+                  subtitle={`Browse ${performerVideos.length} more videos`}
+                  videos={performerVideos}
+                  brands={brands}
+                  performers={performers}
+                  viewAllLink={`/performers/${primaryPerformer.slug}`}
+                  viewAllText="View Profile"
+                />
+              )}
+
+              {/* More From This Studio */}
+              {studioVideos.length > 0 && brand && (
+                <VideoRail
+                  title={`More from ${brand.name}`}
+                  subtitle={`Browse ${studioVideos.length} more videos`}
+                  videos={studioVideos}
+                  brands={brands}
+                  performers={performers}
+                  viewAllLink={`/brands/${brand.slug}`}
+                  viewAllText="View Studio"
+                />
+              )}
+
+              {/* Premium Teaser - Last */}
               <div className="pt-8">
                 <PremiumTeaserBlock title="Want Full Access?" />
               </div>
             </div>
 
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Access Tier Badge */}
-              <div className="bg-card rounded-xl p-6 border border-border">
-                <h3 className="font-semibold mb-4 text-sm uppercase tracking-wide text-muted-foreground">Access Level</h3>
+            {/* Sidebar - 1/3 */}
+            <div className="space-y-4">
+              {/* Access Tier */}
+              <div className="bg-card rounded-xl p-5 border border-border">
+                <h3 className="font-semibold mb-3 text-xs uppercase tracking-wide text-muted-foreground">Access Level</h3>
                 <Badge 
                   className={
-                    video.access_tier === 'free' ? 'bg-green-500/10 text-green-500 text-sm px-4 py-2' :
-                    video.access_tier === 'fanclub' ? 'bg-purple-500/10 text-purple-500 text-sm px-4 py-2' :
-                    'bg-primary/10 text-primary text-sm px-4 py-2'
+                    video.access_tier === 'free' ? 'bg-green-500/10 text-green-500 text-sm px-3 py-1.5' :
+                    video.access_tier === 'fanclub' ? 'bg-purple-500/10 text-purple-500 text-sm px-3 py-1.5' :
+                    'bg-primary/10 text-primary text-sm px-3 py-1.5'
                   }
                 >
                   {video.access_tier === 'free' ? 'Free to Watch' :
@@ -252,11 +310,11 @@ export default function VideoDetail() {
 
               {/* Categories */}
               {video.categories && video.categories.length > 0 && (
-                <div className="bg-card rounded-xl p-6 border border-border">
-                  <h3 className="font-semibold mb-4 text-sm uppercase tracking-wide text-muted-foreground">Categories</h3>
+                <div className="bg-card rounded-xl p-5 border border-border">
+                  <h3 className="font-semibold mb-3 text-xs uppercase tracking-wide text-muted-foreground">Categories</h3>
                   <div className="flex flex-wrap gap-2">
                     {video.categories.map((cat, idx) => (
-                      <Badge key={idx} variant="outline" className="text-sm">
+                      <Badge key={idx} variant="outline" className="text-xs">
                         {cat}
                       </Badge>
                     ))}
@@ -264,33 +322,68 @@ export default function VideoDetail() {
                 </div>
               )}
 
-              {/* More from Studio */}
+              {/* Featured Performer Sidebar */}
+              {primaryPerformer && (
+                <div className="bg-card rounded-xl p-5 border border-border">
+                  <h3 className="font-semibold mb-3 text-xs uppercase tracking-wide text-muted-foreground">Featured Performer</h3>
+                  <Link to={`/performers/${primaryPerformer.slug}`} className="block group">
+                    <div className="aspect-[3/4] rounded-lg overflow-hidden mb-3">
+                      {primaryPerformer.profile_image_url ? (
+                        <img
+                          src={primaryPerformer.profile_image_url}
+                          alt={primaryPerformer.display_name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-secondary flex items-center justify-center">
+                          <span className="text-4xl">👤</span>
+                        </div>
+                      )}
+                    </div>
+                    <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors">
+                      {primaryPerformer.display_name}
+                    </p>
+                    {primaryPerformer.nationality && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {primaryPerformer.nationality}
+                      </p>
+                    )}
+                  </Link>
+                </div>
+              )}
+
+              {/* Studio Link */}
               {brand && (
-                <div className="bg-card rounded-xl p-6 border border-border">
-                  <h3 className="font-semibold mb-4 text-sm uppercase tracking-wide text-muted-foreground">More from {brand.name}</h3>
+                <div className="bg-card rounded-xl p-5 border border-border">
+                  <h3 className="font-semibold mb-3 text-xs uppercase tracking-wide text-muted-foreground">Studio</h3>
                   <Link
                     to={`/brands/${brand.slug}`}
-                    className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-medium transition-colors"
+                    className="flex items-center gap-3 group"
                   >
-                    View all videos
-                    <ArrowLeft className="w-4 h-4 rotate-180" />
+                    {brand.logo_url ? (
+                      <img
+                        src={brand.logo_url}
+                        alt={brand.name}
+                        className="w-12 h-12 object-contain bg-secondary rounded-lg p-2"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 bg-secondary rounded-lg flex items-center justify-center">
+                        <Film className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors">
+                        {brand.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        View all videos →
+                      </p>
+                    </div>
                   </Link>
                 </div>
               )}
             </div>
           </div>
-
-          {/* Related Videos */}
-          {relatedVideos.length > 0 && (
-            <div className="mt-16 pt-8 border-t border-border">
-              <h2 className="text-2xl font-bold mb-6 text-foreground">Related Videos</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {relatedVideos.map(v => (
-                  <VideoCard key={v.id} video={v} brands={brands} />
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </>

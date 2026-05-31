@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Play } from "lucide-react";
@@ -97,22 +97,21 @@ export default function HeroVideoTeaser() {
     return () => clearInterval(interval);
   }, [videos.length]);
 
-  // Handle video errors - skip to next
-  const handleVideoError = () => {
+  // Handle video errors - skip to next (memoized)
+  const handleVideoError = useCallback(() => {
     console.warn('Video failed to load, skipping to next...');
-    // Trigger immediate rotation
     setIsTransitioning(true);
     setTimeout(() => {
       let nextIndex;
       do {
         nextIndex = Math.floor(Math.random() * videos.length);
-      } while (nextIndex === currentVideoIndex && videos.length > 1);
+      } while (nextIndex === previousIndexRef.current && videos.length > 1);
       
       previousIndexRef.current = currentVideoIndex;
       setCurrentVideoIndex(nextIndex);
       setTimeout(() => setIsTransitioning(false), 1000);
     }, 500);
-  };
+  }, [videos.length, currentVideoIndex]);
 
   // No eligible videos - static fallback
   if (videos.length === 0) {

@@ -5,8 +5,9 @@ import { cn } from "@/lib/utils";
 
 export default function VideoCard({ video, brands = [], performers = [] }) {
   const brand = brands.find(b => b.id === video.brand_id);
-  const videoPerformers = performers.filter(p => p.id === video.performer_id);
-  const performerNames = videoPerformers.map(p => p.display_name).join(", ");
+  // Support both direct performer_id and VideoPerformer relationship
+  const performerId = video.performer_id;
+  const primaryPerformer = performers.find(p => p.id === performerId);
   
   const mins = video.duration_seconds ? Math.floor(video.duration_seconds / 60) : null;
   const secs = video.duration_seconds ? String(video.duration_seconds % 60).padStart(2, '0') : null;
@@ -73,24 +74,33 @@ export default function VideoCard({ video, brands = [], performers = [] }) {
           )}
         </div>
 
-        {/* Content - More compact, tube-style */}
-        <div className="p-3.5 space-y-2">
-          {/* Title - Bold, max 2 lines, explicit */}
-          <h3 className="font-bold text-foreground text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors min-h-[2.5rem]">
+        {/* Content - Tube-optimized layout */}
+        <div className="p-3 space-y-2.5">
+          {/* Title - Bold, max 2 lines, tube-style */}
+          <h3 className="font-bold text-foreground text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors min-h-[2.5rem]">
             {video.title}
           </h3>
 
-          {/* Performer names if available */}
-          {performerNames && (
-            <p className="text-xs text-muted-foreground line-clamp-1">
-              {performerNames}
-            </p>
+          {/* Performer - Priority display */}
+          {primaryPerformer && (
+            <div className="flex items-center gap-2">
+              {primaryPerformer.profile_image_url && (
+                <img
+                  src={primaryPerformer.profile_image_url}
+                  alt={primaryPerformer.display_name}
+                  className="w-5 h-5 rounded-full object-cover border border-border"
+                />
+              )}
+              <p className="text-xs text-primary font-medium line-clamp-1">
+                {primaryPerformer.display_name}
+              </p>
+            </div>
           )}
 
           {/* Meta row - Brand and date */}
-          <div className="flex items-center justify-between gap-2 pt-1">
+          <div className="flex items-center justify-between gap-2 pt-0.5">
             {brand && (
-              <span className="bg-primary/15 text-primary text-xs font-semibold px-2.5 py-1 rounded-full">
+              <span className="bg-secondary/80 text-muted-foreground text-xs font-medium px-2 py-0.5 rounded">
                 {brand.name}
               </span>
             )}
@@ -98,7 +108,7 @@ export default function VideoCard({ video, brands = [], performers = [] }) {
               <span className="text-xs text-muted-foreground shrink-0">
                 {new Date(video.release_date).toLocaleDateString('en-US', {
                   month: 'short',
-                  year: 'numeric'
+                  day: 'numeric'
                 })}
               </span>
             )}

@@ -9,6 +9,7 @@ import PremiumTeaserBlock from "@/components/public/PremiumTeaserBlock";
 import StudioTrustBlock from "@/components/public/StudioTrustBlock";
 import SectionHeader from "@/components/public/SectionHeader";
 import ContentRail from "@/components/public/ContentRail";
+import VideoRail from "@/components/public/VideoRail";
 import HeroVideoTeaser from "@/components/public/HeroVideoTeaser";
 
 export default function Home() {
@@ -46,8 +47,8 @@ export default function Home() {
     p.nationality && p.nationality.toLowerCase().includes('filipino')
   ).slice(0, 8);
 
-  // Get videos with Filipino performers (simplified - would need VideoPerformer data)
-  const filipinoVideos = latestVideos.slice(0, 8);
+  // Get videos with Filipino performers
+  const filipinoVideos = latestVideos.filter(v => v.performer_id).slice(0, 8);
 
   return (
     <div className="min-h-screen bg-background">
@@ -86,24 +87,30 @@ export default function Home() {
       </section>
 
       {/* FLESHLAB Asia Originals */}
-      <ContentRail
-        title="FLESHLAB Asia Originals"
-        subtitle="Our most popular exclusive scenes"
-        videos={featuredVideos}
-        brands={brands}
-        viewAllLink="/videos"
-        viewAllText="View All Originals"
-      />
+      <section className="max-w-7xl mx-auto px-4 py-12">
+        <VideoRail
+          title="FLESHLAB Asia Originals"
+          subtitle="Our most popular exclusive scenes"
+          videos={featuredVideos}
+          brands={brands}
+          performers={allPerformers}
+          viewAllLink="/videos"
+          viewAllText="View All Originals"
+        />
+      </section>
 
       {/* Filipino Twink Picks */}
-      <ContentRail
-        title="Filipino Twink Picks"
-        subtitle="Hottest performers from the Philippines"
-        videos={filipinoVideos}
-        brands={brands}
-        viewAllLink="/videos"
-        viewAllText="Browse All Videos"
-      />
+      <section className="max-w-7xl mx-auto px-4 py-12">
+        <VideoRail
+          title="Filipino Twink Picks"
+          subtitle="Hottest performers from the Philippines"
+          videos={filipinoVideos}
+          brands={brands}
+          performers={allPerformers}
+          viewAllLink="/videos"
+          viewAllText="Browse All Videos"
+        />
+      </section>
 
       {/* Premium Teaser Block */}
       <section className="max-w-7xl mx-auto px-4 py-12">
