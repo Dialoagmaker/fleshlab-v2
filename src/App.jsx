@@ -11,6 +11,12 @@ import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
 import Home from './pages/Home';
 import Dashboard from './pages/admin/Dashboard';
+import Videos from './pages/admin/Videos';
+import VideoEdit from './pages/admin/VideoEdit';
+import Performers from './pages/admin/Performers';
+import PerformerEdit from './pages/admin/PerformerEdit';
+import Brands from './pages/admin/Brands';
+import BrandEdit from './pages/admin/BrandEdit';
 import ComingSoon from './pages/ComingSoon';
 
 const AuthenticatedApp = () => {
@@ -58,11 +64,12 @@ const AuthenticatedApp = () => {
       {/* Admin routes */}
       <Route element={<AdminLayout />}>
         <Route path="/admin" element={<Dashboard />} />
-        <Route path="/admin/videos" element={<ComingSoon title="Video Management" />} />
-        <Route path="/admin/videos/:id" element={<ComingSoon title="Edit Video" />} />
-        <Route path="/admin/performers" element={<ComingSoon title="Performer Management" />} />
-        <Route path="/admin/performers/:id" element={<ComingSoon title="Edit Performer" />} />
-        <Route path="/admin/brands" element={<ComingSoon title="Brand Management" />} />
+        <Route path="/admin/videos" element={<Videos />} />
+        <Route path="/admin/videos/:id" element={<VideoEdit />} />
+        <Route path="/admin/performers" element={<Performers />} />
+        <Route path="/admin/performers/:id" element={<PerformerEdit />} />
+        <Route path="/admin/brands" element={<Brands />} />
+        <Route path="/admin/brands/:id" element={<BrandEdit />} />
         <Route path="/admin/news" element={<ComingSoon title="News Management" />} />
         <Route path="/admin/seo" element={<ComingSoon title="SEO Management" />} />
         <Route path="/admin/migration" element={<ComingSoon title="Migration Tools" />} />
