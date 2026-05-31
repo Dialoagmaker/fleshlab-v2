@@ -115,18 +115,18 @@ export default function BecomePerformer() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/20">
       {/* Hero Section with Cinematic Background */}
-      <section className="relative h-[70vh] min-h-[500px] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-secondary/80 via-background/90 to-background/95 z-0" />
+      <section className="relative h-[85vh] min-h-[600px] flex items-center justify-center overflow-hidden">
         <div 
-          className="absolute inset-0 opacity-30 z-0"
+          className="absolute inset-0 z-0"
           style={{
             backgroundImage: 'url(https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
         />
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/20 to-transparent blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-1/3 h-2/3 bg-gradient-to-tr from-primary/15 to-transparent blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/80 to-background/95 z-0" />
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/30 to-transparent blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-1/3 h-2/3 bg-gradient-to-tr from-primary/20 to-transparent blur-3xl" />
         
         <div className="max-w-5xl mx-auto px-6 text-center relative z-10">
           <motion.div
@@ -836,43 +836,30 @@ export default function BecomePerformer() {
               className="hidden md:block space-y-6"
             >
               <div className="sticky top-8">
-                <div className="aspect-[3/4] rounded-2xl overflow-hidden bg-gradient-to-br from-secondary to-muted border border-border relative mb-6">
-                  <div 
-                    className="absolute inset-0 opacity-60"
-                    style={{
-                      backgroundImage: 'url(https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png)',
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Lock className="w-5 h-5 text-primary" />
-                      <span className="text-sm font-semibold text-primary-foreground">100% Confidential</span>
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-background border border-primary/30">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                      <Lock className="w-6 h-6" />
                     </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      Private review. No public posting without approval.
-                    </p>
+                    <div>
+                      <h4 className="font-bold text-foreground">100% Confidential</h4>
+                      <p className="text-xs text-muted-foreground">Private {"&"} secure</p>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="p-6 rounded-2xl bg-card/50 border border-border">
-                  <h4 className="font-bold text-foreground mb-3">Why performers choose us:</h4>
-                  <ul className="space-y-2 text-sm">
-                    {[
-                      "Professional, respectful team",
-                      "Flexible scheduling",
-                      "Fast payments",
-                      "Creative freedom",
-                      "Build your brand"
-                    ].map((item, idx) => (
-                      <li key={idx} className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-primary" />
-                        <span className="text-muted-foreground">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                    Your application is reviewed privately by authorized staff only. Nothing is posted publicly without your explicit approval.
+                  </p>
+                  <div className="pt-4 border-t border-primary/20">
+                    <h5 className="font-semibold text-foreground mb-3 text-sm">Why performers choose us:</h5>
+                    <ul className="space-y-2 text-sm">
+                      {["Professional team", "Flexible scheduling", "Fast payments", "Creative freedom"].map((item, idx) => (
+                        <li key={idx} className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-primary" />
+                          <span className="text-muted-foreground">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -880,31 +867,7 @@ export default function BecomePerformer() {
         </div>
       </section>
 
-      {/* Image Assets Reference */}
-      <section className="py-12 px-6 bg-muted/30 border-t border-border">
-        <div className="max-w-6xl mx-auto">
-          <h3 className="text-2xl font-bold text-foreground mb-6 text-center">
-            Recommended Image Assets
-          </h3>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { name: "Hero Background", path: "/performer-hero-placeholder.jpg", size: "1920x1080px", desc: "Cinematic performer vibe, dark atmosphere, red neon" },
-              { name: "Performer Prep", path: "/performer-prep-placeholder.jpg", size: "800x1000px", desc: "Mirror/selfie/camera setup" },
-              { name: "Studio Production", path: "/studio-production-placeholder.jpg", size: "800x600px", desc: "Laptop/camera/production planning" },
-              { name: "Performer Portrait", path: "/performer-portrait-placeholder.jpg", size: "600x800px", desc: "Confident portrait, casting mood" }
-            ].map((img, idx) => (
-              <div key={idx} className="p-4 rounded-xl bg-card border border-border">
-                <div className="aspect-video bg-secondary rounded-lg mb-3 flex items-center justify-center">
-                  <Image className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <h4 className="font-semibold text-foreground text-sm mb-1">{img.name}</h4>
-                <p className="text-xs text-muted-foreground mb-1">{img.size}</p>
-                <p className="text-xs text-muted-foreground">{img.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
     </div>
   );
 }
