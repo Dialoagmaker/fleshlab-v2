@@ -20,7 +20,8 @@ import {
   Tag,
   Play,
   Eye,
-  Crown
+  Crown,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,21 +48,63 @@ export default function VideoDetail() {
     queryFn: () => base44.entities.Performer.list(),
   });
 
+  const { data: videoPerformers = [] } = useQuery({
+    queryKey: ['video-performers', slug],
+    queryFn: async () => {
+      if (!slug || videos.length === 0) return [];
+      const foundVideo = videos.find(v => v.slug === slug);
+      if (!foundVideo) return [];
+      return await base44.entities.VideoPerformer.filter({ video_id: foundVideo.id });
+    },
+    enabled: !!slug && videos.length > 0,
+  });
+
   useEffect(() => {
     if (videos.length > 0 && slug) {
       const foundVideo = videos.find(v => v.slug === slug);
       if (foundVideo) {
         setVideo(foundVideo);
         
-        // Performer Detection
+        // Performer Detection with VideoPerformer priority
+        let assignedPerformers = [];
         let detectedPerformer = null;
         let detectionMethod = null;
         let performerVideos = [];
         let hasFallback = false;
         let fallbackPerformer = null;
 
-        // Strategy 1: Direct performer_id
-        if (foundVideo.performer_id) {
+        // STRATEGY 1: VideoPerformer records (HIGHEST PRIORITY)
+        if (videoPerformers && videoPerformers.length > 0) {
+          const performerIds = videoPerformers.map(vp => vp.performer_id).filter(Boolean);
+          assignedPerformers = performers.filter(p => performerIds.includes(p.id));
+          
+          if (assignedPerformers.length > 0) {
+            // Use first assigned performer as primary
+            detectedPerformer = assignedPerformers[0];
+            detectionMethod = `videoperformer_records (${assignedPerformers.length} assigned)`;
+            
+            // Find other videos with same assigned performers
+            const assignedIds = assignedPerformers.map(p => p.id);
+            performerVideos = videos.filter(v => {
+              // Check direct performer_id
+              if (v.performer_id && assignedIds.includes(v.performer_id)) return true;
+              // Check performer_ids array
+              if (v.performer_ids && Array.isArray(v.performer_ids)) {
+                return v.performer_ids.some(id => assignedIds.includes(id));
+              }
+              // Check performers array
+              if (v.performers && Array.isArray(v.performers)) {
+                return v.performers.some(p => assignedIds.includes(p.performer_id || p.id));
+              }
+              return false;
+            }).filter(v => v.id !== foundVideo.id).slice(0, 4);
+            
+            hasFallback = false;
+          }
+        }
+
+        // STRATEGY 2: Direct performer_id (legacy)
+        if (!detectedPerformer && foundVideo.performer_id) {
           const performer = performers.find(p => p.id === foundVideo.performer_id);
           if (performer) {
             detectedPerformer = performer;
@@ -72,7 +115,7 @@ export default function VideoDetail() {
           }
         }
 
-        // Strategy 2: performer_ids array
+        // STRATEGY 3: performer_ids array
         if (!detectedPerformer && foundVideo.performer_ids && Array.isArray(foundVideo.performer_ids)) {
           for (const performerId of foundVideo.performer_ids) {
             const performer = performers.find(p => p.id === performerId);
@@ -87,7 +130,7 @@ export default function VideoDetail() {
           }
         }
 
-        // Strategy 3: performers array
+        // STRATEGY 4: performers array
         if (!detectedPerformer && foundVideo.performers && Array.isArray(foundVideo.performers)) {
           for (const performerRef of foundVideo.performers) {
             const performerId = performerRef.performer_id || performerRef.id;
@@ -103,7 +146,7 @@ export default function VideoDetail() {
           }
         }
 
-        // Strategy 4: Fuzzy match on title/tags
+        // STRATEGY 5: Fuzzy match on title/tags
         if (!detectedPerformer) {
           const videoText = `${foundVideo.title} ${foundVideo.tags?.join(' ')}`.toLowerCase();
           for (const performer of performers) {
@@ -128,7 +171,7 @@ export default function VideoDetail() {
           }
         }
 
-        // Strategy 5: Fallback - featured performer from same brand
+        // STRATEGY 6: Fallback - featured performer from same brand
         if (!detectedPerformer && foundVideo.brand_id) {
           const featuredPerformers = performers.filter(
             p => p.featured === true && p.status === 'active'
@@ -146,7 +189,7 @@ export default function VideoDetail() {
           }
         }
 
-        // Strategy 6: Any active featured performer
+        // STRATEGY 7: Any active featured performer
         if (!detectedPerformer) {
           const featuredPerformer = performers.find(
             p => p.featured === true && p.status === 'active'
@@ -163,6 +206,7 @@ export default function VideoDetail() {
 
         const detectionResult = {
           detectedPerformer,
+          assignedPerformers,
           detectionMethod,
           performerVideos,
           hasFallback,
@@ -173,15 +217,19 @@ export default function VideoDetail() {
         
         // Debug logging for detection path
         console.log('=== VideoDetail Performer Detection ===');
-        console.log('Video:', foundVideo.title);
+        console.log('Video ID:', foundVideo.id);
+        console.log('Video Title:', foundVideo.title);
+        console.log('VideoPerformer Records Found:', videoPerformers.length);
+        console.log('Assigned Performer IDs:', videoPerformers.map(vp => vp.performer_id));
+        console.log('Resolved Performer Names:', assignedPerformers.map(p => p.display_name));
         console.log('Detection Method:', detectionMethod || 'NONE');
-        console.log('Performer Detected:', detectedPerformer?.display_name || 'NONE');
+        console.log('Primary Performer:', detectedPerformer?.display_name || 'NONE');
         console.log('Is Fallback:', hasFallback || false);
         console.log('Performer Videos Found:', performerVideos.length);
         console.log('========================================');
       }
     }
-  }, [videos, slug, performers]);
+  }, [videos, slug, performers, videoPerformers]);
 
   // Build JSON-LD structured data
   const jsonLd = video ? {
@@ -347,7 +395,7 @@ export default function VideoDetail() {
                 )}
               </div>
 
-              {/* Performer Block OR Fallback */}
+              {/* Performer Block - Support Multiple Assigned Performers */}
               {primaryPerformer && (
                 detectionInfo?.hasFallback ? (
                   <FeaturedPerformerBlock
@@ -355,6 +403,50 @@ export default function VideoDetail() {
                     videoCount={detectionInfo.performerVideos.length + 1}
                     isFallback={true}
                   />
+                ) : detectionInfo.assignedPerformers && detectionInfo.assignedPerformers.length > 1 ? (
+                  // Multiple assigned performers from VideoPerformer
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
+                        Featured Performers ({detectionInfo.assignedPerformers.length})
+                      </h3>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        {detectionInfo.assignedPerformers.map((performer, idx) => (
+                          <Link
+                            key={performer.id}
+                            to={`/performers/${performer.slug}`}
+                            className="group block bg-card rounded-xl p-4 border border-border hover:border-primary/50 transition-all"
+                          >
+                            <div className="flex items-center gap-3">
+                              {performer.profile_image_url ? (
+                                <img
+                                  src={performer.profile_image_url}
+                                  alt={performer.display_name}
+                                  className="w-12 h-12 rounded-full object-cover border-2 border-border group-hover:border-primary"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
+                                  <Users className="w-6 h-6 text-muted-foreground" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                                  {performer.display_name}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {performer.nationality || 'Performer'}
+                                </p>
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                    <PerformerSection 
+                      performer={primaryPerformer}
+                      videoCount={detectionInfo.performerVideos.length + 1}
+                    />
+                  </div>
                 ) : (
                   <PerformerSection 
                     performer={primaryPerformer}
@@ -433,7 +525,7 @@ export default function VideoDetail() {
 
             {/* Sidebar - 1/3 */}
             <div className="space-y-4">
-              {/* Featured Performer or Fallback */}
+              {/* Featured Performer - Use First Assigned Performer */}
               {primaryPerformer ? (
                 <FeaturedPerformerBlock
                   performer={primaryPerformer}
@@ -453,6 +545,44 @@ export default function VideoDetail() {
                       View All Performers
                     </Button>
                   </Link>
+                </div>
+              )}
+              
+              {/* Multiple Assigned Performers List - Sidebar */}
+              {detectionInfo.assignedPerformers && detectionInfo.assignedPerformers.length > 1 && (
+                <div className="bg-card rounded-xl p-5 border border-border">
+                  <h3 className="font-semibold mb-3 text-xs uppercase tracking-wide text-muted-foreground">
+                    All Performers ({detectionInfo.assignedPerformers.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {detectionInfo.assignedPerformers.map((performer, idx) => (
+                      <Link
+                        key={performer.id}
+                        to={`/performers/${performer.slug}`}
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors group"
+                      >
+                        {performer.profile_image_url ? (
+                          <img
+                            src={performer.profile_image_url}
+                            alt={performer.display_name}
+                            className="w-10 h-10 rounded-full object-cover border border-border"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                            <Users className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                            {performer.display_name}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {performer.nationality || 'Performer'}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               )}
 
