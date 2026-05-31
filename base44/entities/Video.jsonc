@@ -1,0 +1,135 @@
+{
+  "name": "Video",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "Title"
+    },
+    "slug": {
+      "type": "string",
+      "title": "Slug"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "format": "textarea"
+    },
+    "short_summary": {
+      "type": "string",
+      "title": "Short Teaser / Summary"
+    },
+    "brand_id": {
+      "type": "string",
+      "title": "Brand ID"
+    },
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Categories"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published",
+        "unlisted",
+        "archived"
+      ],
+      "title": "Status",
+      "default": "draft"
+    },
+    "access_tier": {
+      "type": "string",
+      "enum": [
+        "free",
+        "fanclub",
+        "ppv"
+      ],
+      "title": "Access Tier",
+      "default": "free"
+    },
+    "release_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Release Date"
+    },
+    "duration_seconds": {
+      "type": "integer",
+      "title": "Duration (seconds)"
+    },
+    "source_video_url": {
+      "type": "string",
+      "title": "Source Video URL (R2/CDN)"
+    },
+    "primary_thumbnail_url": {
+      "type": "string",
+      "title": "Thumbnail URL"
+    },
+    "cover_image_url": {
+      "type": "string",
+      "title": "Cover Image URL"
+    },
+    "trailer_url": {
+      "type": "string",
+      "title": "Trailer URL"
+    },
+    "preview_gif_url": {
+      "type": "string",
+      "title": "Preview GIF URL"
+    },
+    "meta_title": {
+      "type": "string",
+      "title": "Meta Title"
+    },
+    "meta_description": {
+      "type": "string",
+      "title": "Meta Description"
+    },
+    "view_count": {
+      "type": "integer",
+      "title": "View Count",
+      "default": 0
+    },
+    "featured": {
+      "type": "boolean",
+      "title": "Featured",
+      "default": false
+    },
+    "is_exclusive": {
+      "type": "boolean",
+      "title": "Exclusive",
+      "default": false
+    },
+    "ppv_enabled": {
+      "type": "boolean",
+      "title": "PPV Enabled (metadata only)",
+      "default": false
+    },
+    "download_price": {
+      "type": "number",
+      "title": "Download Price USD (metadata only)"
+    },
+    "production_cost": {
+      "type": "number",
+      "title": "Production Cost USD (internal)"
+    },
+    "v1_id": {
+      "type": "string",
+      "title": "V1 Migration ID"
+    }
+  },
+  "required": [
+    "title",
+    "slug"
+  ]
+}

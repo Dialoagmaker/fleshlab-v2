@@ -8,16 +8,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, X, Save, Trash2 } from "lucide-react";
+import AICopyHelper from "@/components/admin/AICopyHelper";
 
 const EMPTY_FORM = {
-  title: "", slug: "", description: "", brand_id: "", categories: [],
-  tags: [], status: "draft", access_tier: "free", release_date: "",
-  duration_seconds: "", primary_thumbnail_url: "", cover_image_url: "",
-  trailer_url: "", preview_gif_url: "", meta_title: "", meta_description: "",
+  title: "", slug: "", description: "", short_summary: "", brand_id: "",
+  categories: [], tags: [], status: "draft", access_tier: "free",
+  release_date: "", duration_seconds: "",
+  source_video_url: "", primary_thumbnail_url: "", cover_image_url: "",
+  trailer_url: "", preview_gif_url: "",
+  meta_title: "", meta_description: "",
   featured: false, is_exclusive: false,
+  ppv_enabled: false, download_price: "", production_cost: "",
 };
 
-const URL_FIELDS = ["primary_thumbnail_url", "cover_image_url", "trailer_url", "preview_gif_url"];
+const URL_FIELDS = ["source_video_url", "primary_thumbnail_url", "cover_image_url", "trailer_url", "preview_gif_url"];
 
 function isValidUrl(val) {
   return !val || /^https?:\/\/.+/.test(val.trim());
@@ -96,6 +100,25 @@ export default function VideoEdit() {
   const [categoryInput, setCategoryInput] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [errors, setErrors] = useState({});
+
+  // Resolve performer names + brand name for AI helper context
+  const { data: allPerformers = [] } = useQuery({
+    queryKey: ["performers-lookup"],
+    queryFn: () => base44.entities.Performer.filter({ status: "active" }, "display_name", 200),
+  });
+  const { data: allBrands = [] } = useQuery({
+    queryKey: ["brands-lookup"],
+    queryFn: () => base44.entities.Brand.filter({ status: "active" }, "name", 100),
+  });
+  const { data: videoCredits = [] } = useQuery({
+    queryKey: ["video-performers", id],
+    queryFn: () => base44.entities.VideoPerformer.filter({ video_id: id }),
+    enabled: !isNew,
+  });
+  const creditedPerformerNames = videoCredits
+    .map(c => allPerformers.find(p => p.id === c.performer_id)?.display_name)
+    .filter(Boolean);
+  const brandName = allBrands.find(b => b.id === form.brand_id)?.name || "";
 
   const { data: brands = [] } = useQuery({
     queryKey: ["brands-lookup"],
@@ -178,6 +201,16 @@ export default function VideoEdit() {
         )}
       </div>
 
+      <AICopyHelper
+        form={form}
+        performerNames={creditedPerformerNames}
+        brandName={brandName}
+        onApply={(field, value) => {
+          set(field, value);
+          if (errors[field]) setErrors(ex => ({ ...ex, [field]: undefined }));
+        }}
+      />
+
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Core */}
         <section className="bg-card border border-border rounded-xl p-6 space-y-5">
@@ -195,6 +228,10 @@ export default function VideoEdit() {
           <div className="space-y-2">
             <Label>Description</Label>
             <Textarea value={form.description || ""} onChange={e => set("description", e.target.value)} rows={4} />
+          </div>
+          <div className="space-y-2">
+            <Label>Short Teaser / Summary</Label>
+            <Input value={form.short_summary || ""} onChange={e => set("short_summary", e.target.value)} placeholder="One-line hook shown in listings…" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -258,6 +295,7 @@ export default function VideoEdit() {
           <h2 className="text-sm font-semibold text-foreground">Media Asset URLs</h2>
           <p className="text-xs text-muted-foreground">Paste CDN/R2 URLs directly. No processing.</p>
           {[
+            { field: "source_video_url", label: "Source Video URL (R2/CDN)" },
             { field: "primary_thumbnail_url", label: "Thumbnail URL" },
             { field: "cover_image_url", label: "Cover Image URL" },
             { field: "trailer_url", label: "Trailer URL" },
@@ -315,6 +353,29 @@ export default function VideoEdit() {
               <Button type="button" variant="outline" onClick={() => addChip("tags", tagInput, setTagInput)}>Add</Button>
             </div>
           </div>
+        </section>
+
+        {/* Commercial metadata — admin-only, no checkout/payment logic */}
+        <section className="bg-card border border-border rounded-xl p-6 space-y-5">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-foreground">Commercial Metadata</h2>
+            <span className="text-xs bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 rounded-full px-2 py-0.5">Admin only · Dormant</span>
+          </div>
+          <p className="text-xs text-muted-foreground">Stored for future activation. No checkout, payment, or download delivery is connected.</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Download Price (USD)</Label>
+              <Input type="number" step="0.01" value={form.download_price || ""} onChange={e => set("download_price", e.target.value)} placeholder="0.00" />
+            </div>
+            <div className="space-y-2">
+              <Label>Production Cost USD (internal)</Label>
+              <Input type="number" step="0.01" value={form.production_cost || ""} onChange={e => set("production_cost", e.target.value)} placeholder="0.00" />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={form.ppv_enabled || false} onChange={e => set("ppv_enabled", e.target.checked)} className="w-4 h-4 accent-primary" />
+            <span className="text-sm text-foreground">PPV Enabled (metadata flag only)</span>
+          </label>
         </section>
 
         {/* Performer Credits */}
