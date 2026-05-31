@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowRight, Play, Clock } from "lucide-react";
+import HeroBackgroundSampler from "@/components/HeroBackgroundSampler";
 
 function VideoCard({ video }) {
   const mins = video.duration_seconds ? Math.floor(video.duration_seconds / 60) : null;
@@ -84,7 +85,8 @@ export default function Home() {
     <div>
       {/* Hero */}
       <section className="relative min-h-[88vh] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-black via-background/80 to-background" />
+        {/* Live video sampling layer — falls back to static if no assets */}
+        <HeroBackgroundSampler />
         <div
           className="absolute inset-0 opacity-[0.04]"
           style={{
