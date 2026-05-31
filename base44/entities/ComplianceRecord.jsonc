@@ -1,0 +1,69 @@
+{
+  "name": "ComplianceRecord",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "video_id": {
+      "type": "string",
+      "title": "Video ID"
+    },
+    "document_type": {
+      "type": "string",
+      "enum": [
+        "id",
+        "medical_test",
+        "std_test",
+        "background_check",
+        "work_permit",
+        "other"
+      ],
+      "title": "Document Type"
+    },
+    "document_url": {
+      "type": "string",
+      "title": "Document URL (Private R2)"
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Issued At"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Expires At"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "valid",
+        "expiring_soon",
+        "expired",
+        "revoked"
+      ],
+      "title": "Status",
+      "default": "valid"
+    },
+    "issuing_authority": {
+      "type": "string",
+      "title": "Issuing Authority"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes",
+      "format": "textarea"
+    },
+    "v1_id": {
+      "type": "string",
+      "title": "V1 Migration ID"
+    }
+  },
+  "required": [
+    "performer_id",
+    "document_type",
+    "document_url"
+  ]
+}
