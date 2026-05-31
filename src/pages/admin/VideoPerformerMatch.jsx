@@ -110,8 +110,7 @@ export default function VideoPerformerMatch() {
   // Bulk assign mode state
   const [bulkSelectedPerformerId, setBulkSelectedPerformerId] = useState(null);
   const [bulkSelectedVideoIds, setBulkSelectedVideoIds] = useState([]);
-  const [bulkFilterUnassigned, setBulkFilterUnassigned] = useState(false);
-  const [bulkFilterAssigned, setBulkFilterAssigned] = useState(false);
+  const [bulkFilterMode, setBulkFilterMode] = useState("all"); // "all", "assigned", "unassigned_to_selected", "unassigned_to_anyone"
   const [bulkActionType, setBulkActionType] = useState("assign"); // "assign" or "remove"
 
   const { data: videos = [], isLoading: videosLoading } = useQuery({ queryKey: ["match-videos"], queryFn: () => base44.entities.Video.list("-created_date", 200) });
@@ -119,15 +118,35 @@ export default function VideoPerformerMatch() {
   const { data: allPerformers = [] } = useQuery({ queryKey: ["match-performers"], queryFn: () => base44.entities.Performer.filter({ status: "active" }, "display_name", 200) });
   const { data: videoPerformers = [] } = useQuery({ queryKey: ["all-video-performers"], queryFn: () => base44.entities.VideoPerformer.filter({}) });
 
+  // Compute assignment map for Quick Match
+  const videoAssignmentMap = React.useMemo(() => {
+    const map = new Map();
+    videoPerformers.forEach(vp => {
+      if (!map.has(vp.video_id)) map.set(vp.video_id, []);
+      map.get(vp.video_id).push(vp.performer_id);
+    });
+    return map;
+  }, [videoPerformers]);
+
   const filteredVideos = React.useMemo(() => {
     let filtered = [...videos];
-    const assignmentMap = new Map();
-    videoPerformers.forEach(vp => { if (!assignmentMap.has(vp.video_id)) assignmentMap.set(vp.video_id, []); assignmentMap.get(vp.video_id).push(vp.performer_id); });
-    if (filterMode === "unassigned") filtered = filtered.filter(v => !assignmentMap.has(v.id) || assignmentMap.get(v.id).length === 0);
+    if (filterMode === "unassigned") filtered = filtered.filter(v => !videoAssignmentMap.has(v.id) || videoAssignmentMap.get(v.id).length === 0);
     if (filterMode === "by_brand" && filterBrand) filtered = filtered.filter(v => v.brand_id === filterBrand);
     if (searchQuery) { const query = searchQuery.toLowerCase(); filtered = filtered.filter(v => v.title?.toLowerCase().includes(query) || v.description?.toLowerCase().includes(query)); }
     return filtered;
-  }, [videos, videoPerformers, filterMode, filterBrand, searchQuery]);
+  }, [videos, videoAssignmentMap, filterMode, filterBrand, searchQuery]);
+
+  // Bulk mode: compute which videos are assigned to selected performer
+  const bulkVideoAssignments = React.useMemo(() => {
+    if (!bulkSelectedPerformerId) return new Set();
+    const assigned = new Set();
+    videoPerformers.forEach(vp => {
+      if (vp.performer_id === bulkSelectedPerformerId) {
+        assigned.add(vp.video_id);
+      }
+    });
+    return assigned;
+  }, [bulkSelectedPerformerId, videoPerformers]);
 
   const currentVideo = filteredVideos[currentVideoIndex];
   const currentAssignments = React.useMemo(() => { if (!currentVideo) return []; return videoPerformers.filter(vp => vp.video_id === currentVideo.id).map(vp => vp.performer_id); }, [currentVideo, videoPerformers]);
@@ -321,18 +340,13 @@ export default function VideoPerformerMatch() {
                 </div>
                 <div className="space-y-2">
                   <Label>Assignment Status</Label>
-                  <Select 
-                    value={bulkFilterUnassigned ? "unassigned" : bulkFilterAssigned ? "assigned" : "all"} 
-                    onValueChange={(val) => {
-                      setBulkFilterUnassigned(val === "unassigned");
-                      setBulkFilterAssigned(val === "assigned");
-                    }}
-                  >
+                  <Select value={bulkFilterMode} onValueChange={setBulkFilterMode}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Videos</SelectItem>
-                      <SelectItem value="unassigned">Unassigned Only</SelectItem>
-                      <SelectItem value="assigned">Already Assigned</SelectItem>
+                      <SelectItem value="assigned">Assigned to {allPerformers.find(p => p.id === bulkSelectedPerformerId)?.display_name}</SelectItem>
+                      <SelectItem value="unassigned_to_selected">Not assigned to {allPerformers.find(p => p.id === bulkSelectedPerformerId)?.display_name}</SelectItem>
+                      <SelectItem value="unassigned_to_anyone">Unassigned to anyone</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -369,14 +383,15 @@ export default function VideoPerformerMatch() {
                   .filter(v => !filterBrand || v.brand_id === filterBrand)
                   .filter(v => !searchQuery || v.title.toLowerCase().includes(searchQuery.toLowerCase()))
                   .filter(v => {
-                    if (!bulkFilterUnassigned && !bulkFilterAssigned) return true;
-                    const isAssigned = videoPerformers.some(vp => vp.video_id === v.id && vp.performer_id === bulkSelectedPerformerId);
-                    if (bulkFilterUnassigned && !bulkFilterAssigned) return !isAssigned;
-                    if (bulkFilterAssigned && !bulkFilterUnassigned) return isAssigned;
+                    const isAssignedToSelected = bulkVideoAssignments.has(v.id);
+                    const isAssignedToAnyone = videoAssignmentMap.has(v.id) && videoAssignmentMap.get(v.id).length > 0;
+                    if (bulkFilterMode === "assigned") return isAssignedToSelected;
+                    if (bulkFilterMode === "unassigned_to_selected") return !isAssignedToSelected;
+                    if (bulkFilterMode === "unassigned_to_anyone") return !isAssignedToAnyone;
                     return true;
                   })
                   .map((video) => {
-                    const isAssigned = videoPerformers.some(vp => vp.video_id === video.id && vp.performer_id === bulkSelectedPerformerId);
+                    const isAssignedToSelected = bulkVideoAssignments.has(video.id);
                     const isSelected = bulkSelectedVideoIds.includes(video.id);
                     return (
                       <div
@@ -391,14 +406,14 @@ export default function VideoPerformerMatch() {
                         className={`relative border rounded-lg p-3 cursor-pointer transition-all ${
                           isSelected 
                             ? "border-primary bg-primary/5 ring-2 ring-primary" 
-                            : isAssigned
+                            : isAssignedToSelected
                               ? "border-green-500/50 bg-green-500/5 hover:border-primary/50"
                               : "border-border bg-card hover:border-primary/50"
                         }`}
                       >
                         {/* Checkbox */}
                         <div className="absolute top-2 right-2 z-10">
-                          <Checkbox checked={isSelected} onCheckedChange={() => {}} />
+                          <Checkbox checked={isAssignedToSelected || isSelected} onCheckedChange={() => {}} />
                         </div>
                         
                         {/* Thumbnail */}
@@ -422,9 +437,9 @@ export default function VideoPerformerMatch() {
                               {brands.find(b => b.id === video.brand_id).name}
                             </Badge>
                           )}
-                          {isAssigned && (
+                          {isAssignedToSelected && (
                             <Badge variant="outline" className="text-green-500 border-green-500">
-                              Already Assigned
+                              Assigned to {allPerformers.find(p => p.id === bulkSelectedPerformerId)?.display_name}
                             </Badge>
                           )}
                         </div>
@@ -433,6 +448,26 @@ export default function VideoPerformerMatch() {
                   })}
               </div>
               
+              {/* Counts */}
+              <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-card border border-border rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">Total Videos</p>
+                  <p className="text-lg font-bold text-foreground">{filteredVideos.filter(v => !filterBrand || v.brand_id === filterBrand).filter(v => !searchQuery || v.title.toLowerCase().includes(searchQuery.toLowerCase())).length}</p>
+                </div>
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+                  <p className="text-xs text-green-500">Assigned to {allPerformers.find(p => p.id === bulkSelectedPerformerId)?.display_name}</p>
+                  <p className="text-lg font-bold text-green-500">{bulkVideoAssignments.size}</p>
+                </div>
+                <div className="bg-card border border-border rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">Not assigned to {allPerformers.find(p => p.id === bulkSelectedPerformerId)?.display_name}</p>
+                  <p className="text-lg font-bold text-foreground">{filteredVideos.filter(v => !bulkVideoAssignments.has(v.id)).length}</p>
+                </div>
+                <div className="bg-card border border-border rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">Unassigned to anyone</p>
+                  <p className="text-lg font-bold text-foreground">{filteredVideos.filter(v => !videoAssignmentMap.has(v.id) || videoAssignmentMap.get(v.id).length === 0).length}</p>
+                </div>
+              </div>
+
               {/* Selected Count */}
               <div className="mt-4 flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                 <p className="text-sm font-medium">
@@ -454,17 +489,17 @@ export default function VideoPerformerMatch() {
                     setIsSaving(true);
                     try {
                       if (bulkActionType === "assign") {
-                        for (const videoId of bulkSelectedVideoIds) {
-                          const exists = videoPerformers.find(vp => vp.video_id === videoId && vp.performer_id === bulkSelectedPerformerId);
-                          if (!exists) {
-                            await base44.entities.VideoPerformer.create({
-                              video_id: videoId,
-                              performer_id: bulkSelectedPerformerId,
-                              order: 0
-                            });
-                          }
+                        // Only assign to videos not already assigned to this performer
+                        const videosToAssign = bulkSelectedVideoIds.filter(vid => !bulkVideoAssignments.has(vid));
+                        for (const videoId of videosToAssign) {
+                          await base44.entities.VideoPerformer.create({
+                            video_id: videoId,
+                            performer_id: bulkSelectedPerformerId,
+                            order: 0
+                          });
                         }
                       } else {
+                        // Remove from selected performer only
                         const toRemove = videoPerformers.filter(
                           vp => vp.performer_id === bulkSelectedPerformerId && bulkSelectedVideoIds.includes(vp.video_id)
                         );
@@ -473,7 +508,8 @@ export default function VideoPerformerMatch() {
                         }
                       }
                       
-                      queryClient.invalidateQueries({ queryKey: ["all-video-performers"] });
+                      // Invalidate and refetch
+                      await queryClient.invalidateQueries({ queryKey: ["all-video-performers"] });
                       setBulkSelectedVideoIds([]);
                     } catch (error) {
                       console.error("Bulk assign error:", error);
@@ -493,7 +529,7 @@ export default function VideoPerformerMatch() {
                     <Trash2 className="w-5 h-5" />
                   )}
                   {isSaving ? "Processing..." : bulkActionType === "assign" 
-                    ? `Assign ${bulkSelectedVideoIds.length} Videos`
+                    ? `Assign ${bulkSelectedVideoIds.filter(vid => !bulkVideoAssignments.has(vid)).length} Videos`
                     : `Remove ${bulkSelectedVideoIds.length} Videos`
                   }
                 </Button>
