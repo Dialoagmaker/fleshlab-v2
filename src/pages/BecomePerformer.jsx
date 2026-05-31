@@ -57,14 +57,12 @@ export default function BecomePerformer() {
     queryFn: () => base44.entities.Performer.list(),
   });
   
-  // Filter to Asian performers only, fallback to all if none found
-  const asianPerformers = (() => {
-    const filtered = allPerformers.filter(p => {
-      const nationality = (p.nationality || "").toUpperCase();
-      return ASIAN_COUNTRIES.some(country => nationality.includes(country.toUpperCase()));
-    });
-    return filtered.length > 0 ? filtered.slice(0, 8) : allPerformers.slice(0, 8);
-  })();
+  // Filter to Filipino performers only
+  const FILIPINO_COUNTRIES = ["PH", "Philippines", "PHL", "Filipino"];
+  const filipinoPerformers = allPerformers.filter(p => {
+    const nationality = (p.nationality || "").toUpperCase();
+    return FILIPINO_COUNTRIES.some(country => nationality.includes(country.toUpperCase()));
+  });
 
   const submitMutation = useMutation({
     mutationFn: async (data) => {
@@ -147,7 +145,7 @@ export default function BecomePerformer() {
           </motion.div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-            {asianPerformers.map((performer, idx) => (
+            {filipinoPerformers.map((performer, idx) => (
               <motion.div
                 key={performer.id}
                 initial={{ opacity: 0, scale: 0.9 }}
