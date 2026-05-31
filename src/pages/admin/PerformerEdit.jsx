@@ -2,12 +2,24 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useState, useEffect } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 const EMPTY_FORM = {
   display_name: "", slug: "", bio: "", nationality: "",
@@ -32,6 +44,9 @@ export default function PerformerEdit() {
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [videoCount, setVideoCount] = useState(0);
 
   const { data: performer } = useQuery({
     queryKey: ["performer", id],
@@ -39,9 +54,23 @@ export default function PerformerEdit() {
     enabled: !isNew,
   });
 
+  const { data: videoPerformers = [] } = useQuery({
+    queryKey: ["video-performers-performer", id],
+    queryFn: () => base44.entities.VideoPerformer.filter({ performer_id: id }),
+    enabled: !isNew && !!id,
+  });
+
   useEffect(() => {
     if (performer) setForm({ ...EMPTY_FORM, ...performer });
   }, [performer]);
+
+  useEffect(() => {
+    if (videoPerformers && videoPerformers.length > 0) {
+      setVideoCount(videoPerformers.length);
+    } else {
+      setVideoCount(0);
+    }
+  }, [videoPerformers]);
 
   const save = useMutation({
     mutationFn: (data) => isNew ? base44.entities.Performer.create(data) : base44.entities.Performer.update(id, data),
@@ -52,10 +81,29 @@ export default function PerformerEdit() {
   });
 
   const remove = useMutation({
-    mutationFn: () => base44.entities.Performer.delete(id),
-    onSuccess: () => {
+    mutationFn: async () => {
+      // Delete all VideoPerformer records for this performer
+      for (const vp of videoPerformers) {
+        await base44.entities.VideoPerformer.delete(vp.id);
+      }
+      // Delete the performer
+      await base44.entities.Performer.delete(id);
+      return { videoCount: videoPerformers.length };
+    },
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["admin-performers"] });
+      queryClient.invalidateQueries({ queryKey: ["video-performers-performer", id] });
+      setDeleteDialogOpen(false);
+      setConfirmText("");
+      toast.success(
+        result.videoCount > 0
+          ? `Performer deleted. Removed ${result.videoCount} video credit(s).`
+          : "Performer deleted successfully."
+      );
       navigate("/admin/performers");
+    },
+    onError: (error) => {
+      toast.error(`Delete failed: ${error.message}`);
     },
   });
 
@@ -89,7 +137,7 @@ export default function PerformerEdit() {
         </div>
         {!isNew && (
           <button
-            onClick={() => { if (confirm("Delete this performer?")) remove.mutate(); }}
+            onClick={() => setDeleteDialogOpen(true)}
             className="p-2 text-muted-foreground hover:text-destructive transition-colors"
           >
             <Trash2 className="w-4 h-4" />
@@ -188,6 +236,75 @@ export default function PerformerEdit() {
           </Link>
         </div>
       </form>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setDeleteDialogOpen(false);
+          setConfirmText("");
+        }
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">Delete Performer</AlertDialogTitle>
+            <AlertDialogDescription>
+              {videoCount > 0 ? (
+                <>
+                  <p className="mb-3">
+                    <strong>{performer?.display_name}</strong> is linked to{" "}
+                    <span className="font-bold text-foreground">{videoCount}</span> video(s).
+                  </p>
+                  <p className="text-destructive font-semibold">
+                    Deleting will remove performer credits from those videos, but the videos will remain published.
+                  </p>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    This action will also remove all profile images, bio, and metadata. This cannot be undone.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="mb-3">
+                    Are you sure you want to delete <strong>{performer?.display_name}</strong>?
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    This will permanently remove all profile data, images, and metadata. This cannot be undone.
+                  </p>
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Label htmlFor="confirm-delete-edit" className="text-sm font-semibold">
+              Type {videoCount > 0 ? '"DELETE"' : `"${performer?.display_name}"`} to confirm:
+            </Label>
+            <Input
+              id="confirm-delete-edit"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              className="mt-2 font-mono"
+              placeholder={videoCount > 0 ? "DELETE" : performer?.display_name}
+              autoComplete="off"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmText("")}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const requiredText = videoCount > 0 ? "DELETE" : performer?.display_name;
+                if (confirmText !== requiredText) {
+                  toast.error(`Please type "${requiredText}" to confirm.`);
+                  return;
+                }
+                remove.mutate();
+              }}
+              disabled={remove.isPending || confirmText !== (videoCount > 0 ? "DELETE" : performer?.display_name)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {remove.isPending ? "Deleting..." : "Delete Performer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
