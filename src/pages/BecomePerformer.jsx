@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Play, ArrowRight, Check, Upload, MessageCircle, Shield, Star, Film, Heart, Globe, TrendingUp, Users, DollarSign } from "lucide-react";
+import { Play, Check, Star, Film, Heart, Globe, TrendingUp, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,17 +13,8 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
-// Real performer data from FLESHLAB (Asian performers only)
-const REAL_PERFORMERS = [
-  { name: "Jameson", location: "Philippines", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/f197b20a8_image.png" },
-  { name: "TooClose", location: "India", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/ea740e389_image.png" },
-  { name: "Luxe Ryn", location: "Agra, India", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/ea740e389_image.png" },
-  { name: "The_Fitmaster", location: "Malabon City, Philippines", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/f197b20a8_image.png" },
-  { name: "Ze[D]", location: "Manila, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/d246f2643_WhatsAppBild2023-08-12.jpg" },
-  { name: "Yero", location: "Cebu, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/0fb87950f_IMG-20230623-WA0019.jpg" },
-  { name: "Josh", location: "Manila, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/3a6df758f_1694179373703.JPEG" },
-  { name: "Kraken", location: "Manila, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/c9e2e88d8_photo_2023-12-12_21-37-05.jpg" },
-];
+// Asian countries filter
+const ASIAN_COUNTRIES = ["PH", "Philippines", "PHL", "CN", "China", "CHN", "JP", "Japan", "JPN", "KR", "Korea", "KOR", "TH", "Thailand", "THA", "VN", "Vietnam", "VNM", "ID", "Indonesia", "IDN", "MY", "Malaysia", "MYS", "SG", "Singapore", "SGP", "TW", "Taiwan", "TWN", "HK", "Hong Kong", "HKG", "IN", "India", "IND", "PK", "Pakistan", "PAK", "BD", "Bangladesh", "BGD", "LK", "Sri Lanka", "LKA", "KH", "Cambodia", "KHM", "LA", "Laos", "LAO", "MM", "Myanmar", "MMR", "MN", "Mongolia", "MNG", "NP", "Nepal", "NPL", "BT", "Bhutan", "BTN", "MV", "Maldives", "MDV", "BN", "Brunei", "BRN", "TL", "Timor", "TLS", "MO", "Macau", "MAC"];
 
 // Real video data from FLESHLAB (only high quality with proper assets)
 const REAL_VIDEOS = [
@@ -59,6 +50,20 @@ export default function BecomePerformer() {
     consent_confirmed: false,
     privacy_accepted: false,
   });
+
+  // Load real performers from database (Asian only)
+  const { data: allPerformers = [] } = useQuery({
+    queryKey: ['performers'],
+    queryFn: () => base44.entities.Performer.list(),
+  });
+  
+  // Filter to Asian performers only and take first 8
+  const asianPerformers = allPerformers
+    .filter(p => {
+      const nationality = (p.nationality || "").toUpperCase();
+      return ASIAN_COUNTRIES.some(country => nationality.includes(country.toUpperCase()));
+    })
+    .slice(0, 8);
 
   const submitMutation = useMutation({
     mutationFn: async (data) => {
@@ -124,7 +129,7 @@ export default function BecomePerformer() {
         </div>
       </section>
 
-      {/* ACT 2: THE ROSTER - Real Performers */}
+      {/* ACT 2: THE ROSTER - Real Performers from Database */}
       <section id="roster" className="py-32 px-6 bg-background">
         <div className="max-w-[1800px] mx-auto">
           <motion.div
@@ -141,9 +146,9 @@ export default function BecomePerformer() {
           </motion.div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-            {REAL_PERFORMERS.map((performer, idx) => (
+            {asianPerformers.map((performer, idx) => (
               <motion.div
-                key={idx}
+                key={performer.id}
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
@@ -151,14 +156,14 @@ export default function BecomePerformer() {
                 className="group relative overflow-hidden aspect-[3/4]"
               >
                 <img
-                  src={performer.image}
-                  alt={performer.name}
+                  src={performer.profile_image_url || "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png"}
+                  alt={performer.display_name}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                  <h3 className="text-xl font-black text-foreground mb-1">{performer.name}</h3>
-                  <p className="text-xs text-muted-foreground">{performer.location}</p>
+                  <h3 className="text-xl font-black text-foreground mb-1">{performer.display_name}</h3>
+                  <p className="text-xs text-muted-foreground">{performer.nationality}</p>
                 </div>
               </motion.div>
             ))}
