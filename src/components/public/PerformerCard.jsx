@@ -54,7 +54,7 @@ export default function PerformerCard({ performer, brands = [], videoCount = 0 }
         {/* Content - Performer profile style */}
         <div className="p-4 space-y-3">
           {/* Name - Bold, prominent */}
-          <h3 className="font-bold text-foreground text-base line-clamp-1 group-hover:text-primary transition-colors">
+          <h3 className="font-bold text-foreground text-sm line-clamp-2 group-hover:text-primary transition-colors">
             {performer.display_name}
           </h3>
 
