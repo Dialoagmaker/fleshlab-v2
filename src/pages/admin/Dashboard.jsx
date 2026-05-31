@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Video, Users, Tag, Newspaper, Link2, ArrowRight, Globe, Plus, Database } from "lucide-react";
+import { Video, Users, Tag, Newspaper, Link2, ArrowRight, Globe, Plus, Database, AlertCircle } from "lucide-react";
 
 const STAT_CONFIGS = [
   { label: "Videos", icon: Video, href: "/admin/videos", entity: "Video", color: "text-blue-400 bg-blue-400/10" },
@@ -10,10 +10,55 @@ const STAT_CONFIGS = [
   { label: "News Articles", icon: Newspaper, href: "/admin/news", entity: "NewsArticle", color: "text-green-400 bg-green-400/10" },
 ];
 
+function AssignmentStatCard() {
+  const { data: videos = [] } = useQuery({
+    queryKey: ["admin-stat", "Video"],
+    queryFn: () => base44.entities.Video.list(),
+  });
+
+  const { data: videoPerformers = [] } = useQuery({
+    queryKey: ["admin-stat", "VideoPerformer"],
+    queryFn: () => base44.entities.VideoPerformer.list(),
+  });
+
+  const stats = (() => {
+    const total = videos.length;
+    const assignedVideoIds = new Set(videoPerformers.map(vp => vp.video_id));
+    const assigned = assignedVideoIds.size;
+    const missing = total - assigned;
+    const coverage = total > 0 ? ((assigned / total) * 100).toFixed(1) : 0;
+    return { total, assigned, missing, coverage };
+  })();
+
+  return (
+    <Link to="/admin/missing-performer-assignments" className="group bg-card border border-border rounded-xl p-5 hover:border-primary/40 transition-all">
+      <div className="flex items-start justify-between mb-4">
+        <div className={`p-2.5 rounded-lg ${stats.missing > 0 ? 'text-destructive bg-destructive/10' : 'text-green-500 bg-green-500/10'}`}>
+          <AlertCircle className="w-4 h-4" />
+        </div>
+        <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+      </div>
+      <p className="text-3xl font-bold text-foreground mb-1">
+        {stats.missing}
+      </p>
+      <p className="text-sm text-muted-foreground">Missing Assignments</p>
+      <div className="mt-3 pt-3 border-t border-border">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-muted-foreground">Total: {stats.total}</span>
+          <span className={`${stats.missing > 0 ? 'text-destructive' : 'text-green-500'} font-semibold`}>
+            {stats.coverage}% coverage
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 const MIGRATION_ITEMS = ["Videos", "Performers", "Brands", "Video Assets", "SEO Pages", "News Articles", "Slug Redirects"];
 
 const QUICK_ACTIONS = [
   { label: "Quick Match: Video to Performers", href: "/admin/video-performer-match", icon: Link2 },
+  { label: "Missing Performer Assignments", href: "/admin/missing-performer-assignments", icon: AlertCircle },
   { label: "Manage Videos", href: "/admin/videos", icon: Video },
   { label: "Manage Performers", href: "/admin/performers", icon: Users },
   { label: "Manage Brands", href: "/admin/brands", icon: Tag },
@@ -52,10 +97,11 @@ export default function Dashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {STAT_CONFIGS.map(cfg => (
           <StatCard key={cfg.entity} {...cfg} />
         ))}
+        <AssignmentStatCard />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
