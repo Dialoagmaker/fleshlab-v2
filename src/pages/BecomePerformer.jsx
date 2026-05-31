@@ -23,14 +23,12 @@ const REAL_PERFORMERS = [
   { name: "Benvao", location: "Iloilo, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/25cf4aedc_ben4.png" },
 ];
 
-// Real video data from FLESHLAB
+// Real video data from FLESHLAB (only high quality with proper assets)
 const REAL_VIDEOS = [
   { title: "Wild Asian Twink Jacking Off", thumbnail: "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/pinkboys-studios/thumbnails/mj1.jpg" },
   { title: "Asian Twink Fucks His Own Ass", thumbnail: "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/pinkboys-studios/thumbnails/DialogMaxX_BI-Alex---Wanking-in-the-School-Locker-Room.jpg" },
   { title: "Twink's Wild Orgasmic Solo Release", thumbnail: "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/pinkboys-studios/thumbnails/DialogMaxX_Cute-Raven---hunky-Asian-twink-lying-touching-and-cumming.jpg" },
   { title: "Naked Asian Stud Jerks Off Post-Shower", thumbnail: "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/pinkboys-studios/thumbnails/DialogMaxX_Cute-Raven---hunky-asian-touches-and-shoots-in-shower.jpg" },
-  { title: "Hot Twink Wanking in School Locker Room", thumbnail: "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/pinkboys-studios/thumbnails/DialogMaxX_Jack-Off---Hot-twink-wanking-in-school-locker-room.jpg" },
-  { title: "Twink Pleasures Himself on Camera", thumbnail: "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/pinkboys-studios/thumbnails/DialogMaxX_Jack-Off---twink-pleasures-himself.jpg" },
 ];
 
 // Behind the scenes lifestyle images
