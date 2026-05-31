@@ -413,8 +413,161 @@ export default function BecomePerformer() {
         </div>
       </section>
 
-      {/* Application Process */}
+      {/* What Performers Actually Do */}
       <section className="py-20 px-6 bg-gradient-to-b from-background to-card/30">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+              What Does a FLESHLAB Performer Actually Do?
+            </h2>
+          </motion.div>
+          
+          <div className="p-8 rounded-2xl bg-card/50 border border-border mb-12">
+            <p className="text-lg text-muted-foreground leading-relaxed mb-6">
+              FLESHLAB performers work in the <strong className="text-foreground">adult entertainment industry</strong>.
+            </p>
+            <p className="text-base text-muted-foreground mb-4">Typical activities may include:</p>
+            <ul className="grid md:grid-cols-2 gap-3">
+              {[
+                "Amateur productions",
+                "Self-made content",
+                "Home-made content",
+                "Solo productions",
+                "Partner productions with approved studio partners",
+                "Fanclub content",
+                "Promotional content",
+                "Live cam shows through approved partner platforms"
+              ].map((item, idx) => (
+                <li key={idx} className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary shrink-0" />
+                  <span className="text-sm text-muted-foreground">{item}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-sm text-muted-foreground mt-6">
+              Content is produced according to performer suitability, studio planning, and available opportunities.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Minimum Requirements */}
+      <section className="py-20 px-6 bg-gradient-to-b from-card/30 to-background">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+              Minimum Requirements
+            </h2>
+          </motion.div>
+          
+          <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/10 to-background border border-primary/30">
+            <p className="text-lg text-muted-foreground mb-6">Applicants must:</p>
+            <ul className="space-y-4">
+              {[
+                "Be at least 18 years old",
+                "Be comfortable working in the adult entertainment industry",
+                "Be able to verify their identity",
+                "Have reliable communication",
+                "Be willing to participate in content creation"
+              ].map((item, idx) => (
+                <li key={idx} className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+                    <Check className="w-4 h-4" />
+                  </div>
+                  <span className="text-base text-muted-foreground">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* Equipment Requirements */}
+      <section className="py-20 px-6 bg-gradient-to-b from-background to-card/30">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+              Equipment Requirements
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              Basic tools needed to create content
+            </p>
+          </motion.div>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="p-8 rounded-2xl bg-card/50 border border-border"
+            >
+              <h3 className="text-2xl font-bold text-foreground mb-4">For Video Productions</h3>
+              <ul className="space-y-3">
+                {[
+                  "Modern smartphone capable of recording high-quality video",
+                  "Stable internet connection",
+                  "Ability to record content independently when required"
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm text-muted-foreground">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="p-8 rounded-2xl bg-card/50 border border-border"
+            >
+              <h3 className="text-2xl font-bold text-foreground mb-4">For Live Cam Shows</h3>
+              <ul className="space-y-3">
+                {[
+                  "Laptop or desktop computer",
+                  "Webcam or smartphone setup",
+                  "Stable high-speed internet connection"
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                    <span className="text-sm text-muted-foreground">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          </div>
+          
+          <div className="mt-8 p-6 rounded-xl bg-secondary/50 border border-border">
+            <p className="text-sm text-muted-foreground">
+              <strong className="text-foreground">Professional equipment is not required when applying.</strong> However, applicants must have access to the basic tools needed to create content and participate in productions.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Application Process */}
+      <section className="py-20 px-6 bg-gradient-to-b from-card/30 to-background">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -464,45 +617,46 @@ export default function BecomePerformer() {
         </div>
       </section>
 
-      {/* Identity Verification Info */}
+      {/* Identity Verification */}
       <section className="py-20 px-6 bg-gradient-to-b from-card/30 to-background">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="p-8 rounded-2xl bg-card/50 border border-border"
+            className="text-center mb-12"
           >
-            <div className="flex items-start gap-4 mb-6">
-              <Shield className="w-8 h-8 text-primary shrink-0 mt-1" />
-              <div>
-                <h2 className="text-2xl font-bold text-foreground mb-4">
-                  Identity Verification
-                </h2>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  Approved applicants will be required to provide government-issued identification:
-                </p>
-                <ul className="grid md:grid-cols-2 gap-3 mb-6">
-                  {[
-                    "Passport",
-                    "National ID",
-                    "Driver License",
-                    "Recent photos",
-                    "Intro videos"
-                  ].map((item, idx) => (
-                    <li key={idx} className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary" />
-                      <span className="text-sm text-muted-foreground">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-sm text-muted-foreground">
-                  This is for age verification, compliance, and performer protection. All documents are stored securely and handled confidentially.
-                </p>
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+              Identity Verification
+            </h2>
+          </motion.div>
+          
+          <div className="p-8 rounded-2xl bg-card/50 border border-border mb-8">
+            <p className="text-lg text-muted-foreground mb-6">All approved applicants must provide:</p>
+            <div className="grid md:grid-cols-3 gap-4 mb-6">
+              <div className="p-4 rounded-xl bg-secondary/50 border border-border text-center">
+                <Shield className="w-8 h-8 text-primary mx-auto mb-2" />
+                <p className="text-sm font-semibold text-foreground">Passport</p>
+              </div>
+              <div className="p-4 rounded-xl bg-secondary/50 border border-border text-center">
+                <Shield className="w-8 h-8 text-primary mx-auto mb-2" />
+                <p className="text-sm font-semibold text-foreground">National ID Card</p>
+              </div>
+              <div className="p-4 rounded-xl bg-secondary/50 border border-border text-center">
+                <Shield className="w-8 h-8 text-primary mx-auto mb-2" />
+                <p className="text-sm font-semibold text-foreground">Driver's License</p>
               </div>
             </div>
-          </motion.div>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Additional verification may be required depending on country, production type, and compliance requirements.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                <strong className="text-foreground">Applications cannot proceed without valid identity verification.</strong>
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
