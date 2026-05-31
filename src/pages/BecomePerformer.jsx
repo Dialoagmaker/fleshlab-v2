@@ -57,11 +57,13 @@ export default function BecomePerformer() {
     queryFn: () => base44.entities.Performer.list(),
   });
   
-  // Filter to Filipino performers only
+  // Filter to Filipino performers only (excluding Josh and Emjey)
   const FILIPINO_COUNTRIES = ["PH", "Philippines", "PHL", "Filipino"];
   const filipinoPerformers = allPerformers.filter(p => {
     const nationality = (p.nationality || "").toUpperCase();
-    return FILIPINO_COUNTRIES.some(country => nationality.includes(country.toUpperCase()));
+    const name = (p.display_name || "").toLowerCase();
+    return FILIPINO_COUNTRIES.some(country => nationality.includes(country.toUpperCase())) &&
+           !name.includes("josh") && !name.includes("emjey");
   });
 
   const submitMutation = useMutation({
