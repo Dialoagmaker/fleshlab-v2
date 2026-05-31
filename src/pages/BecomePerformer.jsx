@@ -16,8 +16,8 @@ import toast from "react-hot-toast";
 // Real performer data from FLESHLAB (Asian performers only)
 const REAL_PERFORMERS = [
   { name: "Jameson", location: "Philippines", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/f197b20a8_image.png" },
-  { name: "TooClose", location: "India", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/f197b20a8_image.png" },
-  { name: "Luxe Ryn", location: "Agra, India", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/f197b20a8_image.png" },
+  { name: "TooClose", location: "India", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/ea740e389_image.png" },
+  { name: "Luxe Ryn", location: "Agra, India", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/ea740e389_image.png" },
   { name: "The_Fitmaster", location: "Malabon City, Philippines", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/f197b20a8_image.png" },
   { name: "Ze[D]", location: "Manila, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/d246f2643_WhatsAppBild2023-08-12.jpg" },
   { name: "Yero", location: "Cebu, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/0fb87950f_IMG-20230623-WA0019.jpg" },
