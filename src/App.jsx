@@ -27,6 +27,7 @@ import VideoPerformerMatch from './pages/admin/VideoPerformerMatch';
 import VideoMetadataCompletion from './pages/admin/VideoMetadataCompletion';
 import MissingPerformerAssignments from './pages/admin/MissingPerformerAssignments';
 import Applications from './pages/admin/Applications';
+import VideoUploadTest from './pages/admin/VideoUploadTest';
 import ComingSoon from './pages/ComingSoon';
 // Public pages
 import PublicVideos from './pages/Videos';
@@ -102,6 +103,7 @@ const AuthenticatedApp = () => {
             <Route path="/admin/video-performer-match" element={<VideoPerformerMatch />} />
             <Route path="/admin/video-metadata-completion" element={<VideoMetadataCompletion />} />
             <Route path="/admin/missing-performer-assignments" element={<MissingPerformerAssignments />} />
+            <Route path="/admin/video-upload-test" element={<VideoUploadTest />} />
             <Route path="/admin/applications" element={<Applications />} />
             <Route path="/admin/performers" element={<Performers />} />
             <Route path="/admin/performers/:id" element={<PerformerEdit />} />
