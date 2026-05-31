@@ -1,9 +1,13 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Upload, X, CheckCircle, AlertCircle, Loader2, FileVideo, Play, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { base44 } from "@/api/base44Client";
 import toast from "react-hot-toast";
 
@@ -18,10 +22,29 @@ const UPLOAD_STATUS = {
   FAILED: "failed",
 };
 
+const ACCESS_TIERS = [
+  { value: "free", label: "Free" },
+  { value: "fanclub", label: "Fanclub Only" },
+  { value: "ppv", label: "PPV" },
+];
+
 export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) {
   const [files, setFiles] = useState([]);
+  const [metadata, setMetadata] = useState({
+    title: "",
+    description: "",
+    brand_id: "",
+    categories: [],
+    tags: [],
+    access_tier: "free",
+  });
   const fileInputRef = useRef(null);
   const dragOverRef = useRef(false);
+
+  const { data: brands } = useQuery({
+    queryKey: ['brands'],
+    queryFn: () => base44.entities.Brand.list(),
+  });
 
   const { data: statusData, refetch: refetchStatus } = useQuery({
     queryKey: ['upload-status', files.map(f => f.video_id).filter(Boolean)],
@@ -41,6 +64,19 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
     enabled: files.some(f => f.video_id && f.status !== UPLOAD_STATUS.IDLE && f.status !== UPLOAD_STATUS.FAILED),
     refetchInterval: 3000,
   });
+
+  useEffect(() => {
+    if (files.length > 0 && files[0].status === UPLOAD_STATUS.COMPLETED && onUploadComplete) {
+      onUploadComplete({
+        video_id: files[0].video_id,
+        asset_id: files[0].asset_id,
+        r2_key: files[0].r2_key,
+        upload_url: files[0].upload_url,
+        cdn_url: files[0].cdn_url,
+        expires_in: files[0].expires_in,
+      });
+    }
+  }, [files, onUploadComplete]);
 
   const uploadToR2 = async (file, uploadUrl, fileSize, mimeType) => {
     return new Promise((resolve, reject) => {
@@ -81,12 +117,13 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
 
   const createUploadMutation = useMutation({
     mutationFn: async (fileData) => {
-      const { file, brand_id, categories, tags, access_tier } = fileData;
+      const { file, title, description, brand_id, categories, tags, access_tier } = fileData;
       
       updateFileStatus(file.id, { status: UPLOAD_STATUS.PREPARING });
       
       const response = await base44.functions.invoke('createR2UploadUrl', {
-        title: file.name.replace(/\.[^/.]+$/, ""),
+        title,
+        description,
         file_name: file.name,
         file_size_bytes: file.size,
         mime_type: file.type,
@@ -103,6 +140,9 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
         video_id: data.video_id,
         asset_id: data.asset_id,
         r2_key: data.r2_key,
+        upload_url: data.upload_url,
+        cdn_url: data.cdn_url,
+        expires_in: data.expires_in,
         status: UPLOAD_STATUS.UPLOADING,
         startTime: Date.now(),
       });
@@ -134,9 +174,9 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
       return await base44.functions.invoke('finalizeUploadedVideo', { video_id, asset_id });
     },
     onSuccess: (data, variables) => {
-      updateFileStatus(variables.asset_id, {
+      updateFileStatus(variables.video_id, {
         status: UPLOAD_STATUS.PROCESSING,
-        job_id: data.data.job_id,
+        job_id: data.data?.job_id,
       });
       toast.success('Upload complete! Processing started...');
     },
@@ -146,7 +186,7 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
   });
 
   const finalizeUpload = (videoId, assetId) => {
-    updateFileStatus(assetId, { status: UPLOAD_STATUS.FINALIZING });
+    updateFileStatus(videoId, { status: UPLOAD_STATUS.FINALIZING });
     finalizeMutation.mutate({ video_id: videoId, asset_id: assetId });
   };
 
@@ -156,16 +196,31 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
     ));
   };
 
+  const generateSlug = (title) => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
   const handleFileSelect = (selectedFiles) => {
+    if (!metadata.title || !metadata.description || !metadata.access_tier) {
+      toast.error("Please fill in all required fields (Title, Description, Access Tier)");
+      return;
+    }
+
     const newFiles = Array.from(selectedFiles).map(file => ({
       id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       file,
       status: UPLOAD_STATUS.IDLE,
       uploadProgress: 0,
-      brand_id: null,
-      categories: [],
-      tags: [],
-      access_tier: 'free',
+      title: metadata.title,
+      description: metadata.description,
+      brand_id: metadata.brand_id || null,
+      categories: metadata.categories || [],
+      tags: metadata.tags || [],
+      access_tier: metadata.access_tier,
+      slug: generateSlug(metadata.title),
     }));
 
     setFiles(prev => [...prev, ...newFiles]);
@@ -253,8 +308,89 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
     return 'bg-primary';
   };
 
+  const canUpload = () => {
+    return metadata.title && metadata.description && metadata.access_tier;
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="grid gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="title">Title *</Label>
+          <Input
+            id="title"
+            value={metadata.title}
+            onChange={(e) => setMetadata({ ...metadata, title: e.target.value })}
+            placeholder="Enter video title"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Description *</Label>
+          <Textarea
+            id="description"
+            value={metadata.description}
+            onChange={(e) => setMetadata({ ...metadata, description: e.target.value })}
+            placeholder="Enter video description"
+            className="min-h-[100px]"
+          />
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="brand">Brand (Optional)</Label>
+            <Select
+              value={metadata.brand_id}
+              onValueChange={(value) => setMetadata({ ...metadata, brand_id: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select brand" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>No Brand</SelectItem>
+                {brands?.map(brand => (
+                  <SelectItem key={brand.id} value={brand.id}>
+                    {brand.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="access_tier">Access Tier *</Label>
+            <Select
+              value={metadata.access_tier}
+              onValueChange={(value) => setMetadata({ ...metadata, access_tier: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select tier" />
+              </SelectTrigger>
+              <SelectContent>
+                {ACCESS_TIERS.map(tier => (
+                  <SelectItem key={tier.value} value={tier.value}>
+                    {tier.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="tags">Tags (Optional, comma-separated)</Label>
+          <Input
+            id="tags"
+            value={metadata.tags.join(', ')}
+            onChange={(e) => setMetadata({ 
+              ...metadata, 
+              tags: e.target.value.split(',').map(t => t.trim()).filter(t => t) 
+            })}
+            placeholder="e.g. solo, asian, twink"
+          />
+        </div>
+      </div>
+
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
@@ -263,12 +399,16 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
           dragOverRef.current
             ? 'border-primary bg-primary/5'
             : 'border-border hover:border-primary/50'
-        }`}
-        onClick={() => fileInputRef.current?.click()}
+        } ${!canUpload() ? 'opacity-50 pointer-events-none' : ''}`}
+        onClick={() => canUpload() && fileInputRef.current?.click()}
       >
         <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-        <h3 className="text-lg font-semibold mb-2">Drag and Drop Video Files</h3>
-        <p className="text-muted-foreground mb-4">or click to browse</p>
+        <h3 className="text-lg font-semibold mb-2">
+          {canUpload() ? "Drag and Drop Video Files" : "Fill in required fields first"}
+        </h3>
+        <p className="text-muted-foreground mb-4">
+          {canUpload() ? "or click to browse" : "Title, Description and Access Tier required"}
+        </p>
         <p className="text-sm text-muted-foreground">
           Supported: MP4, MOV, WebM, MKV - Max: 10 GB per file
         </p>
@@ -279,6 +419,7 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
           multiple
           onChange={(e) => handleFileSelect(Array.from(e.target.files))}
           className="hidden"
+          disabled={!canUpload()}
         />
       </div>
 
@@ -302,10 +443,12 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium truncate">{fileData.file.name}</h4>
-                    <span className="text-sm text-muted-foreground">
-                      {(fileData.file.size / 1024 / 1024 / 1024).toFixed(2)} GB
-                    </span>
+                    <div className="min-w-0">
+                      <h4 className="font-medium truncate">{fileData.title}</h4>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {fileData.file.name} • {(fileData.file.size / 1024 / 1024 / 1024).toFixed(2)} GB
+                      </p>
+                    </div>
                   </div>
 
                   {(fileData.status === UPLOAD_STATUS.UPLOADING || 
@@ -329,6 +472,14 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
                   <p className="text-sm text-muted-foreground">
                     {getStatusText(fileData.status, fileData.uploadProgress, processingProgress)}
                   </p>
+
+                  {fileData.video_id && (
+                    <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
+                      <div>Video ID: <span className="text-green-400 font-mono">{fileData.video_id}</span></div>
+                      <div>Asset ID: <span className="text-green-400 font-mono">{fileData.asset_id}</span></div>
+                      <div>R2 Key: <span className="text-blue-400 font-mono break-all">{fileData.r2_key}</span></div>
+                    </div>
+                  )}
 
                   {fileData.status === UPLOAD_STATUS.FAILED && fileData.error && (
                     <Alert variant="destructive" className="mt-2">
@@ -378,8 +529,7 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
       {files.length === 0 && (
         <Alert>
           <AlertDescription>
-            Videos are uploaded directly to Cloudflare R2. Processing starts automatically after upload completes.
-            Signed URLs expire after 60 minutes.
+            Fill in the metadata fields above, then select a video file. The video will be created as a draft immediately, then uploaded to R2. Processing starts automatically after upload completes. Video remains in draft status.
           </AlertDescription>
         </Alert>
       )}
