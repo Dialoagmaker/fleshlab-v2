@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Upload, Check, AlertCircle, Lock, Mail, Phone, Globe, Video, Image, User, Camera, Sparkles, TrendingUp, FileText, DollarSign, Users, Calendar, Shield, Star, Zap } from "lucide-react";
+import { Upload, Check, AlertCircle, Mail, Phone, Globe, Video, ImageIcon, User, Camera, Heart, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -115,7 +115,7 @@ export default function BecomePerformer() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden border-b border-border">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div 
           className="absolute inset-0 z-0"
           style={{
@@ -124,190 +124,35 @@ export default function BecomePerformer() {
             backgroundPosition: 'center',
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-background/90 via-background/85 to-background/95 z-0" />
+        <div className="absolute inset-0 bg-gradient-to-br from-background/80 via-background/70 to-background/90 z-0" />
         
-        <div className="max-w-5xl mx-auto px-6 text-center relative z-10">
+        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <Camera className="w-16 h-16 text-primary mx-auto mb-6" />
-            <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-6 leading-tight">
-              Turn Your Sex Appeal<br />
-              <span className="text-primary">Into a Real Brand.</span>
+            <h1 className="text-5xl md:text-8xl font-black text-foreground mb-6 leading-tight tracking-tight">
+              Already Making Money<br />
+              <span className="text-primary">With Your Body?</span>
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-              Stop chasing one customer at a time.<br />
-              Build a fanbase. Create content. Earn long-term.
+            <p className="text-lg md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Escorts. Callboys. Cam models. Content sellers.<br />
+              We turn one-time attention into a long-term adult brand.
             </p>
-            <div className="flex flex-wrap gap-4 justify-center">
-              <Button
-                size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-10 py-4 text-lg shadow-lg shadow-primary/30"
-                onClick={() => document.getElementById('application-form')?.scrollIntoView({ behavior: 'smooth' })}
-              >
-                Apply Now
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-border hover:border-primary/50 font-semibold px-10 py-4 text-lg"
-                onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
-              >
-                How It Works
-              </Button>
-            </div>
+            <Button
+              size="lg"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-12 py-6 text-xl shadow-2xl shadow-primary/40"
+              onClick={() => document.getElementById('application-form')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              Apply Now — 3 Minutes
+            </Button>
           </motion.div>
         </div>
       </section>
 
-      {/* Exclusive Representation Section */}
-      <section className="py-20 px-6 bg-gradient-to-b from-background to-card/30">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="p-8 md:p-12 rounded-2xl bg-gradient-to-br from-primary/10 to-background border border-primary/30"
-          >
-            <div className="text-center mb-8">
-              <Star className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-                Exclusive Representation
-              </h2>
-            </div>
-            <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
-              <p>
-                <strong className="text-foreground">FLESHLAB works with a limited number of selected performers.</strong>
-              </p>
-              <p>
-                Approved performers are represented and managed by FLESHLAB under an exclusive management structure.
-              </p>
-              <p>
-                This allows the studio to invest in brand development, content planning, production support, fanclub growth, distribution, marketing, business opportunities and long-term performer growth.
-              </p>
-              <div className="p-6 rounded-xl bg-secondary/50 border border-border">
-                <p className="text-base text-muted-foreground">
-                  <strong className="text-foreground">FLESHLAB is not an open creator marketplace.</strong> We build performer brands under a managed studio strategy.
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Studio Control Section */}
-      <section className="py-20 px-6 bg-gradient-to-b from-card/30 to-background">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              Studio Control {"&"} Management
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              Professional adult entertainment studio operations
-            </p>
-          </motion.div>
-          
-          <div className="grid md:grid-cols-2 gap-6">
-            {[
-              {
-                title: "Production Planning",
-                desc: "Studio controls all production scheduling, concept development, and release strategy."
-              },
-              {
-                title: "Branding {"&"} Marketing",
-                desc: "Professional brand positioning, promotional campaigns, and audience targeting."
-              },
-              {
-                title: "Distribution",
-                desc: "Multi-platform content distribution and optimization across all channels."
-              },
-              {
-                title: "Performer Review",
-                desc: "Suitability, boundaries and production compatibility reviewed before productions."
-              }
-            ].map((item, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: idx * 0.1 }}
-                className="p-6 rounded-xl bg-card/50 border border-border"
-              >
-                <h3 className="text-xl font-bold text-foreground mb-3">{item.title}</h3>
-                <p className="text-muted-foreground">{item.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-          
-          <div className="mt-8 p-6 rounded-xl bg-destructive/10 border border-destructive/30">
-            <div className="flex items-start gap-4">
-              <AlertCircle className="w-6 h-6 text-destructive shrink-0 mt-1" />
-              <div className="space-y-3">
-                <p className="text-muted-foreground">
-                  <strong className="text-foreground">FLESHLAB is not a hookup app.</strong> We are a professional adult entertainment studio.
-                </p>
-                <p className="text-muted-foreground">
-                  <strong className="text-foreground">FLESHLAB is not a self-upload platform.</strong> All content goes through studio planning and approval.
-                </p>
-                <p className="text-muted-foreground">
-                  <strong className="text-foreground">FLESHLAB is not OnlyFans management only.</strong> We build comprehensive performer brands with multiple revenue streams.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Adult Content Transparency */}
-      <section className="py-20 px-6 bg-gradient-to-b from-background to-card/30">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="p-8 rounded-2xl bg-gradient-to-br from-destructive/10 to-background border border-destructive/30"
-          >
-            <div className="flex items-start gap-4 mb-6">
-              <AlertCircle className="w-8 h-8 text-destructive shrink-0 mt-1" />
-              <div>
-                <h2 className="text-3xl font-bold text-foreground mb-4">
-                  Will I Appear In Adult Content?
-                </h2>
-                <p className="text-lg text-muted-foreground leading-relaxed mb-4">
-                  <strong className="text-foreground">Yes.</strong>
-                </p>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  FLESHLAB is an adult entertainment studio. Most productions contain explicit sexual content for adult audiences.
-                  Applicants should be comfortable working in the adult entertainment industry.
-                </p>
-                <div className="space-y-3">
-                  <p className="text-muted-foreground leading-relaxed">
-                    Before any production takes place, performer compatibility, production requirements, boundaries and availability are reviewed by the studio.
-                  </p>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Participation in productions is subject to studio approval, performer suitability and production planning.
-                    FLESHLAB operates as a managed adult entertainment studio, not as an open self-publishing platform.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Revenue Models */}
-      <section id="how-it-works" className="py-20 px-6 bg-gradient-to-b from-card/30 to-background">
+      {/* What You Actually Do - Visual Grid */}
+      <section className="py-16 px-6 bg-background">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -316,106 +161,40 @@ export default function BecomePerformer() {
             transition={{ duration: 0.6 }}
             className="text-center mb-12"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              Revenue Models
+            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
+              What You Actually Do
             </h2>
-            <p className="text-xl text-muted-foreground">
-              Choose the path that fits your goals
-            </p>
+            <p className="text-muted-foreground">This is adult entertainment.</p>
           </motion.div>
           
-          <div className="grid md:grid-cols-2 gap-8">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="relative p-8 rounded-2xl bg-gradient-to-br from-primary/10 to-background border border-primary/30"
-            >
-              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1.5 rounded-bl-lg rounded-tr-lg">
-                MOST POPULAR
-              </div>
-              <div className="mb-6">
-                <h3 className="text-2xl font-bold text-foreground mb-2">Full Management</h3>
-                <p className="text-muted-foreground">Exclusive representation {"&"} complete studio support</p>
-              </div>
-              <div className="mb-6">
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-6xl font-bold text-primary">40</span>
-                  <span className="text-2xl text-muted-foreground">%</span>
-                </div>
-                <p className="text-sm text-muted-foreground">Studio commission (you keep 60%)</p>
-              </div>
-              <ul className="space-y-3 mb-8">
-                {[
-                  "Exclusive representation",
-                  "Brand building {"&"} positioning",
-                  "Production planning {"&"} scheduling",
-                  "Content strategy development",
-                  "Multi-platform distribution",
-                  "Marketing {"&"} promotional campaigns",
-                  "Fanclub development {"&"} management",
-                  "Business management",
-                  "Revenue optimization"
-                ].map((item, idx) => (
-                  <li key={idx} className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-muted-foreground">{item}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-                <p className="text-xs text-muted-foreground">
-                  <strong className="text-foreground">You keep 60%</strong> – Comprehensive studio management including exclusive representation, brand development, production planning, content strategy, distribution, marketing, fanclub growth, business management, and revenue optimization.
-                </p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="p-8 rounded-2xl bg-gradient-to-br from-secondary to-background border border-border"
-            >
-              <div className="mb-6">
-                <h3 className="text-2xl font-bold text-foreground mb-2">Independent Creator Support</h3>
-                <p className="text-muted-foreground">Platform access with studio infrastructure</p>
-              </div>
-              <div className="mb-6">
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-6xl font-bold text-primary">30</span>
-                  <span className="text-2xl text-muted-foreground">%</span>
-                </div>
-                <p className="text-sm text-muted-foreground">Studio commission (you keep 70%)</p>
-              </div>
-              <ul className="space-y-3 mb-8">
-                {[
-                  "Platform distribution",
-                  "Payment processing",
-                  "Basic analytics",
-                  "Content upload infrastructure",
-                  "Technical support"
-                ].map((item, idx) => (
-                  <li key={idx} className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-muted-foreground">{item}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-                <p className="text-xs text-muted-foreground">
-                  <strong className="text-foreground">You keep 70%</strong> – You manage your own production, promotion, and content strategy while leveraging our platform infrastructure and existing audience.
-                </p>
-              </div>
-            </motion.div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[
+              { icon: Camera, label: "Solo Content" },
+              { icon: Video, label: "Homemade" },
+              { icon: User, label: "Partner Scenes" },
+              { icon: Play, label: "Live Cam" },
+              { icon: Heart, label: "Fanclub" },
+              { icon: Check, label: "Promo" },
+            ].map((item, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: idx * 0.05 }}
+                className="p-6 rounded-xl bg-card/50 border border-border hover:border-primary/50 transition-colors text-center"
+              >
+                <item.icon className="w-8 h-8 text-primary mx-auto mb-3" />
+                <p className="text-sm font-semibold text-foreground">{item.label}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* What Performers Actually Do */}
-      <section className="py-20 px-6 bg-gradient-to-b from-background to-card/30">
-        <div className="max-w-5xl mx-auto">
+      {/* How You Earn - Simple Cards */}
+      <section className="py-16 px-6 bg-card/30">
+        <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -423,115 +202,51 @@ export default function BecomePerformer() {
             transition={{ duration: 0.6 }}
             className="text-center mb-12"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              What Does a FLESHLAB Performer Actually Do?
+            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
+              How You Earn
             </h2>
           </motion.div>
           
-          <div className="p-8 rounded-2xl bg-card/50 border border-border mb-12">
-            <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-              FLESHLAB performers work in the <strong className="text-foreground">adult entertainment industry</strong>.
-            </p>
-            <p className="text-base text-muted-foreground mb-4">Typical activities may include:</p>
-            <ul className="grid md:grid-cols-2 gap-3">
-              {[
-                "Amateur productions",
-                "Self-made content",
-                "Home-made content",
-                "Solo productions",
-                "Partner productions with approved studio partners",
-                "Fanclub content",
-                "Promotional content",
-                "Live cam shows through approved partner platforms"
-              ].map((item, idx) => (
-                <li key={idx} className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-primary shrink-0" />
-                  <span className="text-sm text-muted-foreground">{item}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="text-sm text-muted-foreground mt-6">
-              Content is produced according to performer suitability, studio planning, and available opportunities.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Minimum Requirements */}
-      <section className="py-20 px-6 bg-gradient-to-b from-card/30 to-background">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              Minimum Requirements
-            </h2>
-          </motion.div>
-          
-          <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/10 to-background border border-primary/30">
-            <p className="text-lg text-muted-foreground mb-6">Applicants must:</p>
-            <ul className="space-y-4">
-              {[
-                "Be at least 18 years old",
-                "Be comfortable working in the adult entertainment industry",
-                "Be able to verify their identity",
-                "Have reliable communication",
-                "Be willing to participate in content creation"
-              ].map((item, idx) => (
-                <li key={idx} className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
-                    <Check className="w-4 h-4" />
-                  </div>
-                  <span className="text-base text-muted-foreground">{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      {/* Equipment Requirements */}
-      <section className="py-20 px-6 bg-gradient-to-b from-background to-card/30">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              Equipment Requirements
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              Basic tools needed to create content
-            </p>
-          </motion.div>
-          
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="p-8 rounded-2xl bg-card/50 border border-border"
+              transition={{ duration: 0.6 }}
+              className="p-8 rounded-2xl bg-gradient-to-br from-primary/10 to-background border border-primary/30"
             >
-              <h3 className="text-2xl font-bold text-foreground mb-4">For Video Productions</h3>
-              <ul className="space-y-3">
-                {[
-                  "Modern smartphone capable of recording high-quality video",
-                  "Stable internet connection",
-                  "Ability to record content independently when required"
-                ].map((item, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
-                    <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                    <span className="text-sm text-muted-foreground">{item}</span>
-                  </li>
-                ))}
+              <div className="mb-4">
+                <h3 className="text-3xl font-bold text-foreground mb-1">Full Management</h3>
+                <p className="text-muted-foreground">We handle everything</p>
+              </div>
+              <div className="mb-6">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-7xl font-black text-primary">60</span>
+                  <span className="text-2xl text-muted-foreground">%</span>
+                </div>
+                <p className="text-sm text-muted-foreground">You keep 60% • Studio takes 40%</p>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary" />
+                  Exclusive representation
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary" />
+                  Brand building
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary" />
+                  Production planning
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary" />
+                  Marketing and distribution
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary" />
+                  Fanclub management
+                </li>
               </ul>
             </motion.div>
 
@@ -539,129 +254,90 @@ export default function BecomePerformer() {
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="p-8 rounded-2xl bg-card/50 border border-border"
+              transition={{ duration: 0.6 }}
+              className="p-8 rounded-2xl bg-gradient-to-br from-secondary to-background border border-border"
             >
-              <h3 className="text-2xl font-bold text-foreground mb-4">For Live Cam Shows</h3>
-              <ul className="space-y-3">
-                {[
-                  "Laptop or desktop computer",
-                  "Webcam or smartphone setup",
-                  "Stable high-speed internet connection"
-                ].map((item, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
-                    <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                    <span className="text-sm text-muted-foreground">{item}</span>
-                  </li>
-                ))}
+              <div className="mb-4">
+                <h3 className="text-3xl font-bold text-foreground mb-1">Independent Support</h3>
+                <p className="text-muted-foreground">Platform only</p>
+              </div>
+              <div className="mb-6">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-7xl font-black text-primary">70</span>
+                  <span className="text-2xl text-muted-foreground">%</span>
+                </div>
+                <p className="text-sm text-muted-foreground">You keep 70% • Studio takes 30%</p>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary" />
+                  Platform distribution
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary" />
+                  Payment processing
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary" />
+                  Basic analytics
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary" />
+                  Upload infrastructure
+                </li>
               </ul>
             </motion.div>
           </div>
-          
-          <div className="mt-8 p-6 rounded-xl bg-secondary/50 border border-border">
-            <p className="text-sm text-muted-foreground">
-              <strong className="text-foreground">Professional equipment is not required when applying.</strong> However, applicants must have access to the basic tools needed to create content and participate in productions.
-            </p>
-          </div>
         </div>
       </section>
 
-      {/* Application Process */}
-      <section className="py-20 px-6 bg-gradient-to-b from-card/30 to-background">
-        <div className="max-w-6xl mx-auto">
+      {/* Studio Management - Simple Statement */}
+      <section className="py-16 px-6 bg-background">
+        <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              Application Process
+            <Check className="w-12 h-12 text-primary mx-auto mb-6" />
+            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-6">
+              Exclusive Representation
             </h2>
-            <p className="text-xl text-muted-foreground">
-              Six steps from application to launch
+            <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
+              FLESHLAB works with a limited number of selected performers.
+              We build performer brands under exclusive management.
+              This is not an open creator marketplace.
             </p>
+            <div className="grid md:grid-cols-2 gap-4 text-left">
+              <div className="p-4 rounded-xl bg-card/50 border border-border">
+                <h3 className="font-bold text-foreground mb-2">We Handle</h3>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• Content planning</li>
+                  <li>• Distribution</li>
+                  <li>• Marketing</li>
+                  <li>• Fanclub setup</li>
+                  <li>• Brand development</li>
+                  <li>• Contracts</li>
+                </ul>
+              </div>
+              <div className="p-4 rounded-xl bg-card/50 border border-border">
+                <h3 className="font-bold text-foreground mb-2">Not A</h3>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• Dating app</li>
+                  <li>• Self-upload platform</li>
+                  <li>• OnlyFans management only</li>
+                  <li>• Hookup site</li>
+                  <li>• General creator platform</li>
+                </ul>
+              </div>
+            </div>
           </motion.div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { step: 1, title: "Application", desc: "Fill out the form below", icon: FileText },
-              { step: 2, title: "Review", desc: "We review within 48 hours", icon: User },
-              { step: 3, title: "Interview", desc: "Schedule a call with our team", icon: Phone },
-              { step: 4, title: "Identity Verification", desc: "Passport, ID, or driver license", icon: Shield },
-              { step: 5, title: "Contract", desc: "Sign agreement and set terms", icon: FileText },
-              { step: 6, title: "Production {"&"} Launch", desc: "Start creating and earning", icon: Camera },
-            ].map((item, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: idx * 0.1 }}
-                className="relative p-6 rounded-xl bg-card/50 border border-border"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 font-bold text-lg">
-                    {item.step}
-                  </div>
-                  <div>
-                    <item.icon className="w-6 h-6 text-primary mb-2" />
-                    <h3 className="text-lg font-bold text-foreground mb-1">{item.title}</h3>
-                    <p className="text-sm text-muted-foreground">{item.desc}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* Identity Verification */}
-      <section className="py-20 px-6 bg-gradient-to-b from-card/30 to-background">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              Identity Verification
-            </h2>
-          </motion.div>
-          
-          <div className="p-8 rounded-2xl bg-card/50 border border-border mb-8">
-            <p className="text-lg text-muted-foreground mb-6">All approved applicants must provide:</p>
-            <div className="grid md:grid-cols-3 gap-4 mb-6">
-              <div className="p-4 rounded-xl bg-secondary/50 border border-border text-center">
-                <Shield className="w-8 h-8 text-primary mx-auto mb-2" />
-                <p className="text-sm font-semibold text-foreground">Passport</p>
-              </div>
-              <div className="p-4 rounded-xl bg-secondary/50 border border-border text-center">
-                <Shield className="w-8 h-8 text-primary mx-auto mb-2" />
-                <p className="text-sm font-semibold text-foreground">National ID Card</p>
-              </div>
-              <div className="p-4 rounded-xl bg-secondary/50 border border-border text-center">
-                <Shield className="w-8 h-8 text-primary mx-auto mb-2" />
-                <p className="text-sm font-semibold text-foreground">Driver's License</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Additional verification may be required depending on country, production type, and compliance requirements.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                <strong className="text-foreground">Applications cannot proceed without valid identity verification.</strong>
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Application Form */}
-      <section id="application-form" className="py-20 px-6">
+      {/* Requirements - Ultra Simple */}
+      <section className="py-16 px-6 bg-card/30">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -670,32 +346,157 @@ export default function BecomePerformer() {
             transition={{ duration: 0.6 }}
             className="text-center mb-12"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              Apply Now
+            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
+              Requirements
             </h2>
-            <p className="text-xl text-muted-foreground">
-              Takes 3 minutes. Private and secure.
+          </motion.div>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold text-foreground mb-4">Must Have</h3>
+              <ul className="space-y-3">
+                {[
+                  "18+ years old",
+                  "Valid ID (passport, national ID, or driver license)",
+                  "Modern smartphone for video",
+                  "Stable internet connection",
+                  "Comfortable with adult entertainment"
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-primary shrink-0" />
+                    <span className="text-muted-foreground">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold text-foreground mb-4">For Live Cam</h3>
+              <ul className="space-y-3">
+                {[
+                  "Laptop or desktop computer",
+                  "Webcam or smartphone setup",
+                  "High-speed internet"
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-center gap-3">
+                    <Check className="w-5 h-5 text-primary shrink-0" />
+                    <span className="text-muted-foreground">{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs text-muted-foreground mt-4">
+                Professional equipment not required when applying.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Application Process - Compact */}
+      <section className="py-16 px-6 bg-background">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
+              Application Process
+            </h2>
+          </motion.div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[
+              { num: 1, title: "Apply", desc: "3 min form" },
+              { num: 2, title: "Review", desc: "48 hours" },
+              { num: 3, title: "Interview", desc: "Call" },
+              { num: 4, title: "Verify", desc: "ID check" },
+              { num: 5, title: "Contract", desc: "Sign" },
+              { num: 6, title: "Launch", desc: "Start earning" },
+            ].map((item) => (
+              <motion.div
+                key={item.num}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: item.num * 0.05 }}
+                className="text-center"
+              >
+                <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-3 font-bold">
+                  {item.num}
+                </div>
+                <p className="font-bold text-foreground">{item.title}</p>
+                <p className="text-xs text-muted-foreground">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="py-20 px-6 bg-gradient-to-b from-card/30 to-background">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-4xl md:text-6xl font-black text-foreground mb-6">
+              Ready To Build More Than<br />
+              <span className="text-primary">One Client At A Time?</span>
+            </h2>
+            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+              If people already pay for your attention, FLESHLAB can help turn that attention into content, fans and a long-term adult brand.
             </p>
+            <Button
+              size="lg"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-12 py-6 text-xl shadow-2xl shadow-primary/40"
+              onClick={() => document.getElementById('application-form')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              Apply Now
+            </Button>
+            <p className="text-sm text-muted-foreground mt-4">
+              Takes 3 minutes. Private and secure. Response within 48 hours.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Application Form */}
+      <section id="application-form" className="py-20 px-6 bg-background">
+        <div className="max-w-3xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+              Application
+            </h2>
+            <p className="text-muted-foreground">Private and secure.</p>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="bg-card border border-border rounded-2xl p-8 shadow-xl"
+            transition={{ duration: 0.6 }}
+            className="bg-card border border-border rounded-2xl p-8"
           >
-            {/* Step indicators */}
-            <div className="flex items-center justify-center gap-4 mb-12">
+            <div className="flex items-center justify-center gap-2 mb-8">
               {[1, 2, 3].map((s) => (
                 <div key={s} className="flex items-center gap-2">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-colors ${
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
                     step >= s ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
                   }`}>
                     {s}
                   </div>
                   {s < 3 && (
-                    <div className={`w-12 h-1 rounded transition-colors ${
+                    <div className={`w-8 h-0.5 transition-colors ${
                       step > s ? "bg-primary" : "bg-secondary"
                     }`} />
                   )}
@@ -712,38 +513,24 @@ export default function BecomePerformer() {
             >
               {step === 1 && (
                 <div className="space-y-6">
-                  <div className="text-center mb-8">
-                    <h3 className="text-2xl font-bold text-foreground mb-2">Basic Info</h3>
-                    <p className="text-muted-foreground">Let's start with the basics</p>
-                  </div>
-
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="stage_name">Stage Name (Public)</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="stage_name"
-                          value={formData.stage_name}
-                          onChange={(e) => setFormData({ ...formData, stage_name: e.target.value })}
-                          className="pl-10"
-                          placeholder="Your performer name"
-                        />
-                      </div>
+                      <Label htmlFor="stage_name">Stage Name</Label>
+                      <Input
+                        id="stage_name"
+                        value={formData.stage_name}
+                        onChange={(e) => setFormData({ ...formData, stage_name: e.target.value })}
+                        placeholder="Performer name"
+                      />
                     </div>
-
                     <div className="space-y-2">
                       <Label htmlFor="legal_name">Legal Name (Private)</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="legal_name"
-                          value={formData.legal_name}
-                          onChange={(e) => setFormData({ ...formData, legal_name: e.target.value })}
-                          className="pl-10"
-                          placeholder="Your real name"
-                        />
-                      </div>
+                      <Input
+                        id="legal_name"
+                        value={formData.legal_name}
+                        onChange={(e) => setFormData({ ...formData, legal_name: e.target.value })}
+                        placeholder="Real name"
+                      />
                     </div>
                   </div>
 
@@ -753,68 +540,43 @@ export default function BecomePerformer() {
                         checked={formData.age_confirmed}
                         onCheckedChange={(checked) => setFormData({ ...formData, age_confirmed: checked })}
                       />
-                      I confirm I am 18 years or older
+                      I am 18+ years old
                     </Label>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="country">Country / Location</Label>
-                    <div className="relative">
-                      <Globe className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="country"
-                        value={formData.country}
-                        onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                        className="pl-10"
-                        placeholder="Where are you based?"
-                      />
-                    </div>
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      value={formData.country}
+                      onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                      placeholder="Where are you based?"
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="pl-10"
-                        placeholder="your@email.com"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone or Messaging</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="phone"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="pl-10"
-                        placeholder="+1 234 567 8900"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-4">
                     <Input
-                      value={formData.telegram}
-                      onChange={(e) => setFormData({ ...formData, telegram: e.target.value })}
-                      placeholder="Telegram @username"
-                    />
-                    <Input
-                      value={formData.whatsapp}
-                      onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                      placeholder="WhatsApp number"
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="your@email.com"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Preferred Contact Method</Label>
+                    <Label htmlFor="phone">Phone / Telegram / WhatsApp</Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="Contact number or username"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Preferred Contact</Label>
                     <Select
                       value={formData.preferred_contact}
                       onValueChange={(value) => setFormData({ ...formData, preferred_contact: value })}
@@ -827,29 +589,23 @@ export default function BecomePerformer() {
                         <SelectItem value="phone">Phone</SelectItem>
                         <SelectItem value="telegram">Telegram</SelectItem>
                         <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                        <SelectItem value="line">LINE</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <Button
-                    className="w-full mt-6"
+                    className="w-full"
                     size="lg"
                     disabled={!canProceedToStep2() || submitMutation.isPending}
                     onClick={() => setStep(2)}
                   >
-                    Continue to Step 2
+                    Continue
                   </Button>
                 </div>
               )}
 
               {step === 2 && (
                 <div className="space-y-6">
-                  <div className="text-center mb-8">
-                    <h3 className="text-2xl font-bold text-foreground mb-2">Experience and Path</h3>
-                    <p className="text-muted-foreground">Tell us about yourself</p>
-                  </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="preferred_path">What interests you?</Label>
                     <Select
@@ -857,46 +613,42 @@ export default function BecomePerformer() {
                       onValueChange={(value) => setFormData({ ...formData, preferred_path: value })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select your path" />
+                        <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="studio_performer">Studio Performer (Scene work)</SelectItem>
-                        <SelectItem value="live_cam">Live Cam Performer</SelectItem>
-                        <SelectItem value="fanclub_creator">Fanclub Creator (Exclusive content)</SelectItem>
-                        <SelectItem value="fan_production">Fan Production (Guest scenes)</SelectItem>
-                        <SelectItem value="not_sure">Not Sure Yet</SelectItem>
+                        <SelectItem value="studio_performer">Studio Performer</SelectItem>
+                        <SelectItem value="live_cam">Live Cam</SelectItem>
+                        <SelectItem value="fanclub_creator">Fanclub Creator</SelectItem>
+                        <SelectItem value="fan_production">Fan Production</SelectItem>
+                        <SelectItem value="not_sure">Not Sure</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="experience">Content Experience</Label>
+                    <Label htmlFor="experience">Experience</Label>
                     <Textarea
                       id="experience"
                       value={formData.content_experience}
                       onChange={(e) => setFormData({ ...formData, content_experience: e.target.value })}
-                      placeholder="Tell us about your experience (or lack thereof - beginners welcome!)"
-                      className="min-h-[120px]"
+                      placeholder="Tell us about your experience (beginners welcome)"
+                      className="min-h-[100px]"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="social">Social Media Links</Label>
+                    <Label htmlFor="social">Social Media (optional)</Label>
                     <Textarea
                       id="social"
                       value={formData.social_links}
                       onChange={(e) => setFormData({ ...formData, social_links: e.target.value })}
-                      placeholder="Twitter, Instagram, OnlyFans, etc. (optional)"
-                      className="min-h-[80px]"
+                      placeholder="Twitter, Instagram, OnlyFans, etc."
+                      className="min-h-[60px]"
                     />
                   </div>
 
                   <div className="flex gap-4">
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => setStep(1)}
-                    >
+                    <Button variant="outline" className="flex-1" onClick={() => setStep(1)}>
                       Back
                     </Button>
                     <Button
@@ -905,7 +657,7 @@ export default function BecomePerformer() {
                       disabled={!canProceedToStep3() || submitMutation.isPending}
                       onClick={() => setStep(3)}
                     >
-                      Continue to Step 3
+                      Continue
                     </Button>
                   </div>
                 </div>
@@ -913,14 +665,9 @@ export default function BecomePerformer() {
 
               {step === 3 && (
                 <div className="space-y-6">
-                  <div className="text-center mb-8">
-                    <h3 className="text-2xl font-bold text-foreground mb-2">Photos and Consent</h3>
-                    <p className="text-muted-foreground">Final step - upload photos and confirm</p>
-                  </div>
-
                   <div className="space-y-2">
-                    <Label>Profile Photos (Required)</Label>
-                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                    <Label>Photos (Required)</Label>
+                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
                       <input
                         type="file"
                         accept="image/*"
@@ -936,23 +683,18 @@ export default function BecomePerformer() {
                         id="photo-upload"
                       />
                       <label htmlFor="photo-upload" className="cursor-pointer">
-                        <Image className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground mb-2">
-                          Upload 2-4 clear photos (face + body)
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          PNG, JPG up to 10MB each
-                        </p>
+                        <ImageIcon className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">Upload 2-4 photos (face + body)</p>
                       </label>
                     </div>
                     {uploadedFiles.photos.length > 0 && (
-                      <div className="flex gap-2 mt-2">
+                      <div className="flex gap-2">
                         {uploadedFiles.photos.map((url, idx) => (
                           <img
                             key={idx}
                             src={url}
                             alt={`Upload ${idx + 1}`}
-                            className="w-20 h-20 object-cover rounded border border-border"
+                            className="w-16 h-16 object-cover rounded border border-border"
                           />
                         ))}
                       </div>
@@ -960,8 +702,8 @@ export default function BecomePerformer() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Intro / Demo Video (Optional)</Label>
-                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                    <Label>Video (Optional)</Label>
+                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
                       <input
                         type="file"
                         accept="video/*"
@@ -974,22 +716,10 @@ export default function BecomePerformer() {
                         id="video-upload"
                       />
                       <label htmlFor="video-upload" className="cursor-pointer">
-                        <Video className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground mb-2">
-                          Upload a short intro or demo video
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          MP4, MOV up to 100MB
-                        </p>
+                        <Video className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">Upload intro/demo video</p>
                       </label>
                     </div>
-                    {uploadedFiles.video && (
-                      <video
-                        src={uploadedFiles.video}
-                        controls
-                        className="w-full max-w-md mx-auto rounded border border-border mt-2"
-                      />
-                    )}
                   </div>
 
                   <div className="space-y-4 pt-4 border-t border-border">
@@ -1000,7 +730,7 @@ export default function BecomePerformer() {
                         onCheckedChange={(checked) => setFormData({ ...formData, consent_confirmed: checked })}
                       />
                       <Label htmlFor="consent" className="font-normal text-sm">
-                        I confirm all information is accurate and I consent to FLESHLAB contacting me regarding my application.
+                        I confirm this information is accurate and consent to FLESHLAB contacting me.
                       </Label>
                     </div>
 
@@ -1011,7 +741,7 @@ export default function BecomePerformer() {
                         onCheckedChange={(checked) => setFormData({ ...formData, privacy_accepted: checked })}
                       />
                       <Label htmlFor="privacy" className="font-normal text-sm">
-                        I accept the Privacy Policy and understand my data will be stored securely and used only for application processing.
+                        I accept the Privacy Policy.
                       </Label>
                     </div>
                   </div>
@@ -1026,11 +756,7 @@ export default function BecomePerformer() {
                   )}
 
                   <div className="flex gap-4">
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => setStep(2)}
-                    >
+                    <Button variant="outline" className="flex-1" onClick={() => setStep(2)}>
                       Back
                     </Button>
                     <Button
@@ -1047,10 +773,9 @@ export default function BecomePerformer() {
             </motion.div>
           </motion.div>
 
-          <div className="mt-8 text-center text-xs text-muted-foreground">
-            <p>Your information is kept strictly confidential and only accessible to authorized admin staff.</p>
-            <p className="mt-1">We never share your data with third parties without your explicit consent.</p>
-          </div>
+          <p className="text-center text-xs text-muted-foreground mt-6">
+            Your information is kept strictly confidential.
+          </p>
         </div>
       </section>
     </div>
