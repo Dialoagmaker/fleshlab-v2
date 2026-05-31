@@ -9,6 +9,12 @@ const navLinks = [
   { href: "/news", label: "News" },
 ];
 
+const footerLinks = [
+  ...navLinks,
+  { href: "/guest-production", label: "Guest Production" },
+  { href: "/become-performer", label: "Become a Performer" },
+];
+
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
@@ -89,14 +95,11 @@ export default function Layout() {
               <span className="text-base font-black tracking-[0.2em] text-foreground uppercase">Fleshlab</span>
             </div>
             <nav className="flex flex-wrap justify-center gap-6">
-              {navLinks.map(link => (
+              {footerLinks.map(link => (
                 <Link key={link.href} to={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   {link.label}
                 </Link>
               ))}
-              <Link to="/guest-production" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Guest Production
-              </Link>
             </nav>
             <p className="text-xs text-muted-foreground">© 2026 Fleshlab. All rights reserved.</p>
           </div>

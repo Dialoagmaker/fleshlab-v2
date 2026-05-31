@@ -2,7 +2,7 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Play, ArrowRight, Film, Users, Crown, Sparkles } from "lucide-react";
+import { Play, ArrowRight, Film, Users, Crown, Sparkles, Camera } from "lucide-react";
 import VideoCard from "@/components/public/VideoCard";
 import PerformerCard from "@/components/public/PerformerCard";
 import PremiumTeaserBlock from "@/components/public/PremiumTeaserBlock";
@@ -208,6 +208,27 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* Performer Recruitment CTA */}
+      <section className="bg-gradient-to-r from-primary/20 to-primary/10 border-t border-border py-16">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <Camera className="w-16 h-16 text-primary mx-auto mb-6" />
+          <h2 className="text-4xl font-bold text-foreground mb-4">
+            Want to Be a FLESHLAB Performer?
+          </h2>
+          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Gay / bi / queer guys wanted. Create content. Build fans. Earn with FLESHLAB.
+            Apply in 3 minutes.
+          </p>
+          <Link
+            to="/become-performer"
+            className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-10 py-4 rounded-lg transition-colors shadow-lg shadow-primary/30 text-lg"
+          >
+            Apply Now
+            <ArrowRight className="w-5 h-5" />
+          </Link>
+        </div>
+      </section>
 
       {/* Final CTA */}
       <section className="bg-gradient-to-b from-card to-background border-t border-border py-12">

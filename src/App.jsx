@@ -26,6 +26,7 @@ import BrandEdit from './pages/admin/BrandEdit';
 import VideoPerformerMatch from './pages/admin/VideoPerformerMatch';
 import VideoMetadataCompletion from './pages/admin/VideoMetadataCompletion';
 import MissingPerformerAssignments from './pages/admin/MissingPerformerAssignments';
+import Applications from './pages/admin/Applications';
 import ComingSoon from './pages/ComingSoon';
 // Public pages
 import PublicVideos from './pages/Videos';
@@ -36,6 +37,7 @@ import PublicBrands from './pages/Brands';
 import BrandDetail from './pages/BrandDetail';
 import PublicNews from './pages/News';
 import NewsDetail from './pages/NewsDetail';
+import BecomePerformer from './pages/BecomePerformer';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -83,6 +85,7 @@ const AuthenticatedApp = () => {
         <Route path="/news/:slug" element={<NewsDetail />} />
         <Route path="/search" element={<ComingSoon title="Search" />} />
         <Route path="/guest-production" element={<ComingSoon title="Guest Production" />} />
+        <Route path="/become-performer" element={<BecomePerformer />} />
       </Route>
       {/* Protected placeholder routes for non-admin roles */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
@@ -99,6 +102,7 @@ const AuthenticatedApp = () => {
             <Route path="/admin/video-performer-match" element={<VideoPerformerMatch />} />
             <Route path="/admin/video-metadata-completion" element={<VideoMetadataCompletion />} />
             <Route path="/admin/missing-performer-assignments" element={<MissingPerformerAssignments />} />
+            <Route path="/admin/applications" element={<Applications />} />
             <Route path="/admin/performers" element={<Performers />} />
             <Route path="/admin/performers/:id" element={<PerformerEdit />} />
             <Route path="/admin/brands" element={<Brands />} />
