@@ -163,7 +163,7 @@ export default function BecomePerformer() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                  <h3 className="text-xl font-black text-foreground mb-1">{performer.display_name}</h3>
+                  <h3 className="text-sm font-black text-foreground mb-1 line-clamp-2">{performer.display_name}</h3>
                   <p className="text-xs text-muted-foreground">{performer.nationality}</p>
                 </div>
               </motion.div>
