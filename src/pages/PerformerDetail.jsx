@@ -43,7 +43,7 @@ export default function PerformerDetail() {
 
   const { data: videoPerformers = [] } = useQuery({
     queryKey: ['video-performers'],
-    queryFn: () => base44.entities.VideoPerformer.filter({}),
+    queryFn: () => base44.entities.VideoPerformer.list(),
   });
 
   useEffect(() => {
@@ -52,7 +52,7 @@ export default function PerformerDetail() {
       if (foundPerformer) {
         setPerformer(foundPerformer);
         
-        // Find videos assigned to this performer via VideoPerformer records
+        // Find videos assigned to this performer via VideoPerformer records (source of truth)
         const assignedVideoIds = videoPerformers
           .filter(vp => vp.performer_id === foundPerformer.id)
           .map(vp => vp.video_id);
@@ -173,12 +173,10 @@ export default function PerformerDetail() {
                       <span className="font-medium text-foreground">{age} years old</span>
                     </span>
                   )}
-                  {performer.video_count !== undefined && (
-                    <span className="flex items-center gap-1.5">
-                      <Film className="w-4 h-4" />
-                      <span className="font-medium text-foreground">{performer.video_count} videos</span>
-                    </span>
-                  )}
+                  <span className="flex items-center gap-1.5">
+                    <Film className="w-4 h-4" />
+                    <span className="font-medium text-foreground">{performerVideos.length} {performerVideos.length === 1 ? 'video' : 'videos'}</span>
+                  </span>
                 </div>
               </div>
 

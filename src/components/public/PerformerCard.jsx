@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Verified, MapPin, Calendar, Film, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export default function PerformerCard({ performer, brands = [] }) {
+export default function PerformerCard({ performer, brands = [], videoCount = 0 }) {
   const brand = brands.find(b => b.id === performer.brand_id);
   
   // Calculate age from date_of_birth if available
@@ -86,13 +86,13 @@ export default function PerformerCard({ performer, brands = [] }) {
             )}
           </div>
 
-          {/* Video count - Softer messaging */}
+          {/* Video count - Use VideoPerformer as source of truth */}
           <div className="pt-3 border-t border-border">
-            {performer.video_count !== undefined && performer.video_count > 0 ? (
+            {videoCount > 0 ? (
               <div className="flex items-center gap-1.5 text-xs">
                 <Film className="w-3 h-3 text-primary" />
                 <span className="text-muted-foreground">
-                  <span className="font-bold text-foreground">{performer.video_count}</span> videos
+                  <span className="font-bold text-foreground">{videoCount}</span> {videoCount === 1 ? 'video' : 'videos'}
                 </span>
               </div>
             ) : (

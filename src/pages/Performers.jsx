@@ -9,7 +9,7 @@ import { Users, Search, X, Loader2, Sparkles } from "lucide-react";
 export default function Performers() {
   const [search, setSearch] = useState("");
 
-  // Fetch performers and brands
+  // Fetch performers, brands, and VideoPerformer records
   const { data: performers = [], isLoading } = useQuery({
     queryKey: ['public-performers'],
     queryFn: () => base44.entities.Performer.list(),
@@ -19,6 +19,21 @@ export default function Performers() {
     queryKey: ['public-brands'],
     queryFn: () => base44.entities.Brand.list(),
   });
+
+  const { data: videoPerformers = [] } = useQuery({
+    queryKey: ['public-video-performers'],
+    queryFn: () => base44.entities.VideoPerformer.list(),
+  });
+
+  // Count videos per performer using VideoPerformer as source of truth
+  const performerVideoCounts = useMemo(() => {
+    const counts = {};
+    videoPerformers.forEach(vp => {
+      const performerId = vp.performer_id;
+      counts[performerId] = (counts[performerId] || 0) + 1;
+    });
+    return counts;
+  }, [videoPerformers]);
 
   // Filter performers
   const filteredPerformers = useMemo(() => {
@@ -84,7 +99,12 @@ export default function Performers() {
         {filteredPerformers.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
             {filteredPerformers.map(performer => (
-              <PerformerCard key={performer.id} performer={performer} brands={brands} />
+              <PerformerCard 
+                key={performer.id} 
+                performer={performer} 
+                brands={brands}
+                videoCount={performerVideoCounts[performer.id] || 0}
+              />
             ))}
           </div>
         ) : (
