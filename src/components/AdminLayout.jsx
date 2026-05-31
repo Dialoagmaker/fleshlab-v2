@@ -12,6 +12,7 @@ const navItems = [
   { href: "/admin/video-metadata-completion", label: "Metadata Fill", icon: FileText },
   { href: "/admin/performers", label: "Performers", icon: Users },
   { href: "/admin/brands", label: "Brands", icon: Tag },
+  { href: "/admin/applications", label: "Applications", icon: FileText },
   { href: "/admin/news", label: "News", icon: Newspaper },
   { href: "/admin/seo", label: "SEO", icon: Link2 },
   { href: "/admin/migration", label: "Migration", icon: Database },
