@@ -271,6 +271,9 @@ Deno.serve(async (req) => {
           }
 
           if (!effectiveDryRun) {
+            // Rate limit protection: 500ms delay between requests
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
             if (isExisting) {
               await base44.asServiceRole.entities[entityName].update(byV1Id[v1_id].id, payload);
               stageReport.imported_updated++;
