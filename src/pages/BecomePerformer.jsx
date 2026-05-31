@@ -57,13 +57,14 @@ export default function BecomePerformer() {
     queryFn: () => base44.entities.Performer.list(),
   });
   
-  // Filter to Asian performers only and take first 8
-  const asianPerformers = allPerformers
-    .filter(p => {
+  // Filter to Asian performers only, fallback to all if none found
+  const asianPerformers = (() => {
+    const filtered = allPerformers.filter(p => {
       const nationality = (p.nationality || "").toUpperCase();
       return ASIAN_COUNTRIES.some(country => nationality.includes(country.toUpperCase()));
-    })
-    .slice(0, 8);
+    });
+    return filtered.length > 0 ? filtered.slice(0, 8) : allPerformers.slice(0, 8);
+  })();
 
   const submitMutation = useMutation({
     mutationFn: async (data) => {
