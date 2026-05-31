@@ -120,7 +120,7 @@ export default function BecomePerformer() {
         <div 
           className="absolute inset-0 opacity-30 z-0"
           style={{
-            backgroundImage: 'url(/performer-hero-placeholder.jpg)',
+            backgroundImage: 'url(https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
@@ -840,7 +840,7 @@ export default function BecomePerformer() {
                   <div 
                     className="absolute inset-0 opacity-60"
                     style={{
-                      backgroundImage: 'url(/performer-portrait-placeholder.jpg)',
+                      backgroundImage: 'url(https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png)',
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                     }}
