@@ -15,14 +15,14 @@ import toast from "react-hot-toast";
 
 // Real performer data from FLESHLAB (Asian performers only)
 const REAL_PERFORMERS = [
+  { name: "Jameson", location: "Philippines", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/f197b20a8_image.png" },
+  { name: "TooClose", location: "India", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/f197b20a8_image.png" },
+  { name: "Luxe Ryn", location: "Agra, India", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/f197b20a8_image.png" },
+  { name: "The_Fitmaster", location: "Malabon City, Philippines", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/f197b20a8_image.png" },
   { name: "Ze[D]", location: "Manila, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/d246f2643_WhatsAppBild2023-08-12.jpg" },
   { name: "Yero", location: "Cebu, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/0fb87950f_IMG-20230623-WA0019.jpg" },
   { name: "Josh", location: "Manila, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/3a6df758f_1694179373703.JPEG" },
-  { name: "Julian", location: "Davao, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/18fe9d069_469121028_1221603939140534_8880509972313916004_n.jpg" },
   { name: "Kraken", location: "Manila, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/c9e2e88d8_photo_2023-12-12_21-37-05.jpg" },
-  { name: "Benvao", location: "Iloilo, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/25cf4aedc_ben4.png" },
-  { name: "Jameson", location: "Manila, PH", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/d246f2643_WhatsAppBild2023-08-12.jpg" },
-  { name: "The_Fitmaster", location: "Philippines", image: "https://base44.app/api/apps/69512bea20e7e5b8a6186fd5/files/public/69512bea20e7e5b8a6186fd5/3a6df758f_1694179373703.JPEG" },
 ];
 
 // Real video data from FLESHLAB (only high quality with proper assets)
