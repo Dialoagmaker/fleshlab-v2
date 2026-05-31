@@ -24,6 +24,7 @@ import PerformerEdit from './pages/admin/PerformerEdit';
 import Brands from './pages/admin/Brands';
 import BrandEdit from './pages/admin/BrandEdit';
 import VideoPerformerMatch from './pages/admin/VideoPerformerMatch';
+import VideoMetadataCompletion from './pages/admin/VideoMetadataCompletion';
 import ComingSoon from './pages/ComingSoon';
 // Public pages
 import PublicVideos from './pages/Videos';
@@ -95,6 +96,7 @@ const AuthenticatedApp = () => {
             <Route path="/admin/videos" element={<Videos />} />
             <Route path="/admin/videos/:id" element={<VideoEdit />} />
             <Route path="/admin/video-performer-match" element={<VideoPerformerMatch />} />
+            <Route path="/admin/video-metadata-completion" element={<VideoMetadataCompletion />} />
             <Route path="/admin/performers" element={<Performers />} />
             <Route path="/admin/performers/:id" element={<PerformerEdit />} />
             <Route path="/admin/brands" element={<Brands />} />
