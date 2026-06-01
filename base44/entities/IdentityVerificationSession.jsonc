@@ -1,0 +1,146 @@
+{
+  "name": "IdentityVerificationSession",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "veriff",
+        "sumsub",
+        "onfido",
+        "stripe_identity",
+        "persona",
+        "jumio",
+        "idenfy"
+      ],
+      "title": "Verification Provider",
+      "default": "manual"
+    },
+    "provider_session_id": {
+      "type": "string",
+      "title": "Provider Session ID"
+    },
+    "provider_applicant_id": {
+      "type": "string",
+      "title": "Provider Applicant ID"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "created",
+        "pending",
+        "approved",
+        "declined",
+        "needs_review",
+        "expired",
+        "cancelled"
+      ],
+      "title": "Verification Status",
+      "default": "created"
+    },
+    "document_check_status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "pending",
+        "passed",
+        "failed",
+        "needs_review"
+      ],
+      "title": "Document Check Status",
+      "default": "not_started"
+    },
+    "liveness_check_status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "pending",
+        "passed",
+        "failed",
+        "needs_review"
+      ],
+      "title": "Liveness Check Status",
+      "default": "not_started"
+    },
+    "face_match_status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "pending",
+        "passed",
+        "failed",
+        "needs_review"
+      ],
+      "title": "Face Match Status",
+      "default": "not_started"
+    },
+    "age_check_status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "pending",
+        "passed",
+        "failed",
+        "needs_review"
+      ],
+      "title": "Age Check Status",
+      "default": "not_started"
+    },
+    "result_summary": {
+      "type": "string",
+      "title": "Result Summary",
+      "format": "textarea",
+      "description": "Human-readable summary of verification results"
+    },
+    "provider_raw_result_json": {
+      "type": "string",
+      "title": "Provider Raw Result JSON",
+      "description": "Raw provider response - ADMIN ONLY, never shown to performers"
+    },
+    "admin_note": {
+      "type": "string",
+      "title": "Admin Note (Internal)",
+      "format": "textarea",
+      "description": "Internal admin notes - never shown to performers"
+    },
+    "performer_visible_note": {
+      "type": "string",
+      "title": "Performer Visible Note",
+      "format": "textarea",
+      "description": "Notes that can be shown to the performer"
+    },
+    "created_by": {
+      "type": "string",
+      "title": "Created By User ID"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "title": "Reviewed By User ID"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Reviewed At"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Completed At"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Session Expires At"
+    }
+  },
+  "required": [
+    "performer_id",
+    "provider",
+    "status"
+  ]
+}

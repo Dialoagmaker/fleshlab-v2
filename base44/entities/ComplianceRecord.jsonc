@@ -26,6 +26,45 @@
       "type": "string",
       "title": "Document URL (Private R2)"
     },
+    "verification_session_id": {
+      "type": "string",
+      "title": "Identity Verification Session ID"
+    },
+    "verification_provider": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "veriff",
+        "sumsub",
+        "onfido",
+        "stripe_identity",
+        "persona",
+        "jumio",
+        "idenfy"
+      ],
+      "title": "Verification Provider"
+    },
+    "verification_status": {
+      "type": "string",
+      "enum": [
+        "not_verified",
+        "pending",
+        "verified",
+        "failed",
+        "needs_review"
+      ],
+      "title": "Verification Status",
+      "default": "not_verified"
+    },
+    "verification_result_summary": {
+      "type": "string",
+      "title": "Verification Result Summary"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Verified At"
+    },
     "issued_at": {
       "type": "string",
       "format": "date-time",
