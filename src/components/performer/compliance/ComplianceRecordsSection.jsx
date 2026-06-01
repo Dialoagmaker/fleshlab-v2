@@ -80,15 +80,27 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
   // Safe array default - prevent .map() on undefined
   const safeRecords = Array.isArray(records) ? records : [];
 
-  // Helper to get thumbnail URL - use document_url directly for now (will be replaced with signed URL)
-  const getThumbnailUrl = (docUrl) => {
-    if (!docUrl) return null;
-    // For thumbnails, we'll use a simpler approach - direct URL if it's already a full URL
-    if (docUrl.startsWith('http')) {
-      return docUrl;
+  // Helper to get thumbnail URL - uses signed URL for R2 keys
+  const [thumbnailUrls, setThumbnailUrls] = useState({});
+
+  const loadThumbnailUrl = async (docUrl, recordId) => {
+    if (!docUrl || docUrl.startsWith('http')) return;
+    
+    try {
+      const result = await getSignedUrl.mutateAsync(docUrl);
+      if (result?.signed_url) {
+        setThumbnailUrls(prev => ({ ...prev, [recordId]: result.signed_url }));
+      }
+    } catch (error) {
+      console.log('Could not load thumbnail:', error.message);
     }
-    // Otherwise it's an R2 key - we'd need a signed URL, but for thumbnails we'll skip for now
-    return null;
+  };
+
+  const getThumbnailUrl = (docUrl, recordId) => {
+    if (!docUrl) return null;
+    if (docUrl.startsWith('http')) return docUrl;
+    // Check if we have a signed URL for this record
+    return thumbnailUrls[recordId] || null;
   };
 
   // Helper to check if document is an image
@@ -208,11 +220,18 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
 
                 return (
                   <div key={r.id} className="flex items-center gap-3 p-3 border rounded-lg bg-card/50">
+                    {/* Load thumbnail on mount if needed */}
+                    {(() => {
+                      if (isImageDocument(r.document_url) && !thumbnailUrls[r.id] && !r.document_url.startsWith('http')) {
+                        loadThumbnailUrl(r.document_url, r.id);
+                      }
+                      return null;
+                    })()}
                     {/* Thumbnail or File Icon */}
                     <div className="w-16 h-16 rounded-lg overflow-hidden border bg-muted flex-shrink-0">
                       {isImageDocument(r.document_url) ? (
                         <img
-                          src={getThumbnailUrl(r.document_url)}
+                          src={getThumbnailUrl(r.document_url, r.id)}
                           alt={r.document_type}
                           className="w-full h-full object-cover"
                           onError={(e) => {
