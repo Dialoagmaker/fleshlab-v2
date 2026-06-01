@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       job_type: 'process_video',
       status: 'pending',
       priority: 5,
-      payload: JSON.stringify({ video_id, source_asset_id: asset_id, source_r2_key: asset.r2_key, action: 'process_video' }),
+      payload: JSON.stringify({ video_id, source_asset_id: asset_id, source_r2_key: asset.r2_key }),
       entity_type: 'Video',
       entity_id: video_id,
       retry_count: 0,
@@ -75,70 +75,75 @@ Deno.serve(async (req) => {
     const sourceSignedUrl = await getSignedUrl(r2Client, getCommand, { expiresIn: 3600 });
 
     const processorWebhookUrl = Deno.env.get('PROCESSOR_WEBHOOK_URL');
-    const processorApiKey = Deno.env.get('PROCESSOR_API_KEY');
-    const appBaseUrl = Deno.env.get('APP_BASE_URL') || '';
+    const processorSecret = Deno.env.get('PROCESSOR_API_KEY');
 
+    // Derive studio and file from r2_key (format: fleshlab/{studio}/videos/{filename})
+    const keyParts = asset.r2_key.split('/');
+    const studio = keyParts.length >= 2 ? keyParts[1] : 'default';
+    const file = keyParts[keyParts.length - 1];
+    const basename = file.replace(/\.[^.]+$/, '');
+
+    // Trigger processor — POST /regenerate with secret in body
     const processorPayload = {
-      base44_video_id: video_id,
-      base44_asset_id: asset_id,
-      source_r2_key: asset.r2_key,
-      source_signed_url: sourceSignedUrl,
-      callback_url: `${appBaseUrl}/api/functions/updateVideoProcessingResult`,
-      callback_api_key: processorApiKey,
-      target_asset_prefix: `fleshlab/${asset.r2_key.split('/')[1]}/videos/${asset.r2_key.split('/')[3]}/`,
-      processor_job_id: `proc_${job.id}`,
-      required_assets: ['thumbnail', 'cover', 'preview_video'],
-      optional_assets: ['preview_gif'],
-      metadata_requirements: {
-        extract_duration: true,
-        extract_resolution: true,
-        extract_bitrate: true,
-        extract_mime_type: true,
-      },
+      secret: processorSecret,
+      studio,
+      file,
+      src_url: sourceSignedUrl,
     };
 
-    // Await the processor trigger to surface errors
     let processorStatus = 'unknown';
-    try {
-      const processorResponse = await fetch(processorWebhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Processor-API-Key': processorApiKey,
-        },
-        body: JSON.stringify(processorPayload),
-      });
 
-      processorStatus = processorResponse.status;
+    const processorResponse = await fetch(`${processorWebhookUrl}/regenerate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(processorPayload),
+    });
 
-      if (!processorResponse.ok) {
-        const errorText = await processorResponse.text();
-        console.error('Processor trigger failed:', processorResponse.status, errorText);
-        await base44.entities.JobQueue.update(job.id, {
-          status: 'failed',
-          error_message: `Processor responded with ${processorResponse.status}: ${errorText}`,
-          completed_at: new Date().toISOString(),
-        });
-        return Response.json({
-          error: `Processor trigger failed: HTTP ${processorResponse.status}`,
-          details: errorText,
-          job_id: job.id,
-        }, { status: 502 });
-      }
+    processorStatus = processorResponse.status;
 
-      console.log('Processor triggered successfully, status:', processorResponse.status);
-    } catch (processorError) {
-      console.error('Processor fetch error:', processorError.message);
+    if (!processorResponse.ok) {
+      const errorText = await processorResponse.text();
+      console.error('Processor trigger failed:', processorResponse.status, errorText);
       await base44.entities.JobQueue.update(job.id, {
         status: 'failed',
-        error_message: `Failed to reach processor: ${processorError.message}`,
+        error_message: `Processor responded with ${processorResponse.status}: ${errorText}`,
         completed_at: new Date().toISOString(),
       });
       return Response.json({
-        error: `Failed to reach processor: ${processorError.message}`,
+        error: `Processor trigger failed: HTTP ${processorResponse.status}`,
+        details: errorText,
         job_id: job.id,
       }, { status: 502 });
     }
+
+    console.log('Processor accepted job (202):', studio, file);
+
+    // Pre-compute expected CDN URLs — processor uploads to these paths in R2
+    const cdnBase = (Deno.env.get('R2_PUBLIC_BUCKET_URL') || '').replace(/\/$/, '');
+    const expectedThumbnailUrl = `${cdnBase}/studios/${studio}/thumbnails/${basename}.jpg`;
+    const expectedPreviewUrl = `${cdnBase}/studios/${studio}/previews/${basename}-preview.mp4`;
+
+    // Store expected URLs on video entity
+    await base44.entities.Video.update(video_id, {
+      primary_thumbnail_url: expectedThumbnailUrl,
+      trailer_url: expectedPreviewUrl,
+    });
+
+    // Create VideoAsset entries for thumbnail and preview
+    await base44.entities.VideoAsset.create({
+      video_id,
+      asset_type: 'thumbnail',
+      r2_key: `studios/${studio}/thumbnails/${basename}.jpg`,
+      cdn_url: expectedThumbnailUrl,
+      status: 'processing',
+    });
+    await base44.entities.VideoAsset.create({
+      video_id,
+      asset_type: 'preview',
+      r2_key: `studios/${studio}/previews/${basename}-preview.mp4`,
+      cdn_url: expectedPreviewUrl,
+      status: 'processing',
+    });
 
     // Update job to running
     await base44.entities.JobQueue.update(job.id, {
@@ -150,8 +155,11 @@ Deno.serve(async (req) => {
       status: 'queued',
       job_id: job.id,
       processor_http_status: processorStatus,
-      callback_url: `${appBaseUrl}/api/functions/updateVideoProcessingResult`,
-      message: 'Upload verified. Processing started.',
+      studio,
+      file,
+      expected_thumbnail_url: expectedThumbnailUrl,
+      expected_preview_url: expectedPreviewUrl,
+      message: 'Upload verified. Processor accepted job (async).',
     });
 
   } catch (error) {
