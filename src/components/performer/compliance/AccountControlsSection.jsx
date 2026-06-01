@@ -100,25 +100,24 @@ export default function AccountControlsSection({ performer }) {
           </div>
 
           <div className="flex gap-2 pt-4 border-t">
-            {performer.compliance_locked ? (
-              <Button
-                variant="outline"
-                onClick={handleUnlock}
-                disabled={manualUnlock.isPending}
-              >
-                <Unlock className="w-4 h-4 mr-2" />
-                {manualUnlock.isPending ? "Unlocking..." : "Manually Unlock"}
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                onClick={handleLock}
-                disabled={manualLock.isPending}
-              >
-                <Lock className="w-4 h-4 mr-2" />
-                {manualLock.isPending ? "Locking..." : "Manually Lock"}
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              onClick={handleUnlock}
+              disabled={manualUnlock.isPending || !performer.compliance_locked}
+              className={performer.compliance_locked ? "" : "opacity-50"}
+            >
+              <Unlock className="w-4 h-4 mr-2" />
+              {manualUnlock.isPending ? "Unlocking..." : "Manually Unlock"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleLock}
+              disabled={manualLock.isPending || performer.compliance_locked}
+              className={performer.compliance_locked ? "opacity-50" : ""}
+            >
+              <Lock className="w-4 h-4 mr-2" />
+              {manualLock.isPending ? "Locking..." : "Manually Lock"}
+            </Button>
           </div>
         </div>
       </CardContent>
