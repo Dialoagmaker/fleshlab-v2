@@ -69,6 +69,7 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState(null);
+  const [isUrlLoading, setIsUrlLoading] = useState(false);
 
   const { data: records, refetch: refetchRecords } = useQuery({
     queryKey: ["complianceRecords", performer?.id],
@@ -79,6 +80,17 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
   // Safe array default - prevent .map() on undefined
   const safeRecords = Array.isArray(records) ? records : [];
 
+  // Helper to get thumbnail URL - use document_url directly for now (will be replaced with signed URL)
+  const getThumbnailUrl = (docUrl) => {
+    if (!docUrl) return null;
+    // For thumbnails, we'll use a simpler approach - direct URL if it's already a full URL
+    if (docUrl.startsWith('http')) {
+      return docUrl;
+    }
+    // Otherwise it's an R2 key - we'd need a signed URL, but for thumbnails we'll skip for now
+    return null;
+  };
+
   // Helper to check if document is an image
   const isImageDocument = (docUrl) => {
     if (!docUrl) return false;
@@ -87,24 +99,36 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
     return imageExtensions.some(ext => lowerUrl.includes(ext) || lowerUrl.endsWith(ext));
   };
 
-  // Helper to get signed URL for viewing (using R2 public bucket URL if available)
-  const getDocumentViewUrl = (r2Key) => {
-    if (!r2Key) return null;
-    const bucketUrl = window.R2_PUBLIC_BUCKET_URL || 'https://fleshlab-video.aee5a2c1098dbb664c57f458dc7b99b3.r2.cloudflarestorage.com';
-    return `${bucketUrl}/${r2Key}`;
-  };
+  // Mutation to get signed URL for viewing private R2 documents
+  const getSignedUrl = useMutation({
+    mutationFn: async (r2Key) => {
+      if (!r2Key) throw new Error('No document key provided');
+      const res = await base44.functions.invoke('getComplianceDocumentSignedUrl', {
+        r2_key: r2Key,
+      });
+      return res.data;
+    },
+  });
 
   const handleViewDocument = async (record) => {
     try {
-      const viewUrl = getDocumentViewUrl(record.document_url);
-      if (viewUrl) {
-        setSelectedImageUrl(viewUrl);
+      setIsUrlLoading(true);
+      console.log('Fetching signed URL for document:', record.document_url);
+      
+      const result = await getSignedUrl.mutateAsync(record.document_url);
+      
+      if (result?.signed_url) {
+        console.log('Signed URL generated successfully');
+        setSelectedImageUrl(result.signed_url);
         setShowImageModal(true);
       } else {
-        toast.error("Unable to generate document URL");
+        toast.error('Unable to generate document URL');
       }
     } catch (error) {
+      console.error('Failed to generate signed URL:', error);
       toast.error(`Failed to load document: ${error.message}`);
+    } finally {
+      setIsUrlLoading(false);
     }
   };
 
@@ -188,7 +212,7 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
                     <div className="w-16 h-16 rounded-lg overflow-hidden border bg-muted flex-shrink-0">
                       {isImageDocument(r.document_url) ? (
                         <img
-                          src={getDocumentViewUrl(r.document_url)}
+                          src={getThumbnailUrl(r.document_url)}
                           alt={r.document_type}
                           className="w-full h-full object-cover"
                           onError={(e) => {
@@ -249,16 +273,28 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
                           variant="outline"
                           size="sm"
                           onClick={() => handleViewDocument(r)}
+                          disabled={isUrlLoading}
                         >
                           <Eye className="w-4 h-4 mr-1" />
-                          View
+                          {isUrlLoading ? 'Loading...' : 'View'}
                         </Button>
                       )}
                       {r.document_url && (
-                        <Button variant="ghost" size="icon" asChild>
-                          <a href={getDocumentViewUrl(r.document_url)} target="_blank" rel="noopener noreferrer">
-                            <Download className="w-4 h-4" />
-                          </a>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={async () => {
+                            try {
+                              const result = await getSignedUrl.mutateAsync(r.document_url);
+                              if (result?.signed_url) {
+                                window.open(result.signed_url, '_blank');
+                              }
+                            } catch (error) {
+                              toast.error(`Failed to download: ${error.message}`);
+                            }
+                          }}
+                        >
+                          <Download className="w-4 h-4" />
                         </Button>
                       )}
                       {/* Verify button - disabled if already verified */}
@@ -312,7 +348,7 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
         </Dialog>
       )}
 
-      {showImageModal && selectedImageUrl && (
+      {showImageModal && (
         <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
           <DialogContent className="max-w-4xl">
             <DialogHeader>
@@ -320,14 +356,34 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
               <DialogDescription>Viewing uploaded compliance document</DialogDescription>
             </DialogHeader>
             <div className="flex items-center justify-center min-h-[400px]">
-              <img
-                src={selectedImageUrl}
-                alt="Document preview"
-                className="max-w-full max-h-[60vh] object-contain rounded-lg"
-              />
+              {isUrlLoading ? (
+                <div className="text-center">
+                  <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-sm text-muted-foreground">Loading document...</p>
+                </div>
+              ) : selectedImageUrl ? (
+                <img
+                  src={selectedImageUrl}
+                  alt="Document preview"
+                  className="max-w-full max-h-[60vh] object-contain rounded-lg"
+                  onError={(e) => {
+                    console.error('Image failed to load');
+                    toast.error('Failed to load image');
+                  }}
+                />
+              ) : (
+                <div className="text-center text-muted-foreground">
+                  <FileIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Document preview not available</p>
+                </div>
+              )}
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => window.open(selectedImageUrl, '_blank')}>
+              <Button 
+                variant="outline" 
+                onClick={() => selectedImageUrl && window.open(selectedImageUrl, '_blank')}
+                disabled={!selectedImageUrl}
+              >
                 <Download className="w-4 h-4 mr-2" />
                 Download
               </Button>
