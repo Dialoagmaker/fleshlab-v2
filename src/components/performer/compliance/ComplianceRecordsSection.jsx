@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, Download, Calendar, Plus, ExternalLink, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Upload, Download, Calendar, Plus, ExternalLink, CheckCircle, XCircle, AlertCircle, Eye, File as FileIcon } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -67,6 +67,8 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState(null);
 
   const { data: records, refetch: refetchRecords } = useQuery({
     queryKey: ["complianceRecords", performer?.id],
@@ -76,6 +78,38 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
 
   // Safe array default - prevent .map() on undefined
   const safeRecords = Array.isArray(records) ? records : [];
+
+  // Helper to check if document is an image
+  const isImageDocument = (docUrl) => {
+    if (!docUrl) return false;
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const lowerUrl = docUrl.toLowerCase();
+    return imageExtensions.some(ext => lowerUrl.includes(ext) || lowerUrl.endsWith(ext));
+  };
+
+  // Helper to get signed URL for viewing (using R2 public bucket URL if available)
+  const getDocumentViewUrl = (r2Key) => {
+    if (!r2Key) return null;
+    // For now, use the R2 public bucket URL pattern
+    // In production, you might want to create a backend function to generate signed URLs
+    const bucketUrl = window.R2_PUBLIC_BUCKET_URL || 'https://fleshlab-video.aee5a2c1098dbb664c57f458dc7b99b3.r2.cloudflarestorage.com';
+    return `${bucketUrl}/${r2Key}`;
+  };
+
+  const handleViewDocument = async (record) => {
+    try {
+      // For images, we'll use the R2 public URL directly
+      const viewUrl = getDocumentViewUrl(record.document_url);
+      if (viewUrl) {
+        setSelectedImageUrl(viewUrl);
+        setShowImageModal(true);
+      } else {
+        toast.error("Unable to generate document URL");
+      }
+    } catch (error) {
+      toast.error(`Failed to load document: ${error.message}`);
+    }
+  };
 
   const updateRecord = useMutation({
     mutationFn: async ({ recordId, data }) => {
@@ -136,7 +170,26 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
                   r.verification_status === 'needs_review' ? AlertCircle : null;
 
                 return (
-                  <div key={r.id} className="flex items-center justify-between p-3 border rounded-lg bg-card/50">
+                  <div key={r.id} className="flex items-center gap-3 p-3 border rounded-lg bg-card/50">
+                    {/* Thumbnail or File Icon */}
+                    <div className="w-16 h-16 rounded-lg overflow-hidden border bg-muted flex-shrink-0">
+                      {isImageDocument(r.document_url) ? (
+                        <img
+                          src={getDocumentViewUrl(r.document_url)}
+                          alt={r.document_type}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.parentNode.innerHTML = '<div class="flex items-center justify-center w-full h-full text-muted-foreground"><FileIcon class="w-6 h-6" /></div>';
+                          }}
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center w-full h-full text-muted-foreground">
+                          <FileIcon className="w-6 h-6" />
+                        </div>
+                      )}
+                    </div>
+
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge variant="outline" className="text-xs">{r.document_type}</Badge>
@@ -169,7 +222,25 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
                         )}
                       </div>
                     </div>
+
                     <div className="flex items-center gap-2">
+                      {r.document_url && isImageDocument(r.document_url) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewDocument(r)}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          View
+                        </Button>
+                      )}
+                      {r.document_url && (
+                        <Button variant="ghost" size="icon" asChild>
+                          <a href={getDocumentViewUrl(r.document_url)} target="_blank" rel="noopener noreferrer">
+                            <Download className="w-4 h-4" />
+                          </a>
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
@@ -180,13 +251,6 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
                       >
                         Verify
                       </Button>
-                      {r.document_url && (
-                        <Button variant="ghost" size="icon" asChild>
-                          <a href={r.document_url} target="_blank" rel="noopener noreferrer">
-                            <Download className="w-4 h-4" />
-                          </a>
-                        </Button>
-                      )}
                     </div>
                   </div>
                 );
@@ -208,15 +272,49 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
       )}
 
       {showVerificationModal && selectedRecord && (
-        <VerificationModal
-          record={selectedRecord}
-          onClose={() => {
+        <Dialog open={showVerificationModal} onOpenChange={(open) => {
+          if (!open) {
             setShowVerificationModal(false);
             setSelectedRecord(null);
-          }}
-          onSubmit={handleVerificationUpdate}
-          isLoading={updateRecord.isPending}
-        />
+          }
+        }}>
+          <VerificationModal
+            record={selectedRecord}
+            onClose={() => {
+              setShowVerificationModal(false);
+              setSelectedRecord(null);
+            }}
+            onSubmit={handleVerificationUpdate}
+            isLoading={updateRecord.isPending}
+          />
+        </Dialog>
+      )}
+
+      {showImageModal && selectedImageUrl && (
+        <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Document Preview</DialogTitle>
+              <DialogDescription>Viewing uploaded compliance document</DialogDescription>
+            </DialogHeader>
+            <div className="flex items-center justify-center min-h-[400px]">
+              <img
+                src={selectedImageUrl}
+                alt="Document preview"
+                className="max-w-full max-h-[60vh] object-contain rounded-lg"
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => window.open(selectedImageUrl, '_blank')}>
+                <Download className="w-4 h-4 mr-2" />
+                Download
+              </Button>
+              <Button variant="outline" onClick={() => setShowImageModal(false)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </>
   );
