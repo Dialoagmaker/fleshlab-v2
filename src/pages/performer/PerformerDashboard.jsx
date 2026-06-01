@@ -23,17 +23,25 @@ export default function PerformerDashboard() {
       }
 
       // Load dashboard data
-      const res = await base44.functions.invoke("performerDashboardService", {
-        action: "get_dashboard_summary"
-      });
+      const [dashboardRes, statsRes] = await Promise.all([
+        base44.functions.invoke("performerDashboardService", {
+          action: "get_dashboard_summary"
+        }),
+        base44.functions.invoke("performerDashboardService", {
+          action: "get_career_statistics"
+        })
+      ]);
 
-      if (res.data.error) {
-        setError(res.data.error);
+      if (dashboardRes.data.error) {
+        setError(dashboardRes.data.error);
         setLoading(false);
         return;
       }
 
-      setPerformer(res.data);
+      setPerformer({
+        ...dashboardRes.data,
+        career_stats: statsRes.data.stats
+      });
       setLoading(false);
     } catch (err) {
       setError(err.message || "Failed to load dashboard");

@@ -23,6 +23,12 @@
       "type": "boolean",
       "title": "Featured Credit",
       "default": false
+    },
+    "lead_performer": {
+      "type": "boolean",
+      "title": "Lead Performer",
+      "default": false,
+      "description": "Primary performer in this video"
     }
   },
   "required": [

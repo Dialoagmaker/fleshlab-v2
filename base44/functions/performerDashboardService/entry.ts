@@ -284,6 +284,98 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, videos: filteredVideos });
     }
 
+    // Action: get_career_statistics
+    if (action === 'get_career_statistics') {
+      // Get all VideoPerformer records for this performer
+      const videoPerformers = await base44.asServiceRole.entities.VideoPerformer.filter({
+        performer_id: myPerformer.id
+      });
+
+      if (!videoPerformers || videoPerformers.length === 0) {
+        return Response.json({ 
+          success: true, 
+          stats: {
+            total_productions: 0,
+            published_videos: 0,
+            draft_videos: 0,
+            total_runtime_minutes: 0,
+            latest_release_date: null,
+            active_promotions: 0,
+            lifetime_revenue_usd: 0,
+            lead_roles: 0,
+            lead_percentage: 0
+          }
+        });
+      }
+
+      // Get unique video IDs
+      const videoIds = [...new Set(videoPerformers.map(vp => vp.video_id))];
+      const leadVideoIds = videoPerformers
+        .filter(vp => vp.lead_performer)
+        .map(vp => vp.video_id);
+
+      // Fetch all videos
+      const videos = [];
+      for (const vid of videoIds) {
+        const video = await base44.asServiceRole.entities.Video.get(vid);
+        if (video) videos.push(video);
+      }
+
+      // Calculate statistics
+      const totalProductions = videoIds.length;
+      const publishedVideos = videos.filter(v => v.status === 'published').length;
+      const draftVideos = videos.filter(v => v.status === 'draft').length;
+      const totalRuntimeMinutes = Math.round(
+        videos.reduce((sum, v) => sum + (v.duration_seconds || 0), 0) / 60
+      );
+
+      // Latest release date (prefer release_date, fallback to published_at)
+      let latestReleaseDate = null;
+      for (const v of videos) {
+        const date = v.release_date || v.published_at;
+        if (date && (!latestReleaseDate || date > latestReleaseDate)) {
+          latestReleaseDate = date;
+        }
+      }
+
+      // Active promotions
+      const allSnapshots = [];
+      for (const videoId of videoIds) {
+        const snapshots = await base44.asServiceRole.entities.VideoStatSnapshot.filter({ video_id: videoId });
+        allSnapshots.push(...snapshots);
+      }
+      const activePromotions = allSnapshots.filter(s => s.promotion_status === 'active').length;
+
+      // Lifetime revenue (all approved/paid earnings)
+      const earnings = await base44.asServiceRole.entities.PerformerEarning.filter({
+        performer_id: myPerformer.id
+      });
+      const lifetimeRevenue = earnings
+        .filter(e => e.status === 'approved' || e.status === 'paid')
+        .reduce((sum, e) => sum + (e.net_amount_usd || 0), 0);
+
+      // Lead roles count
+      const leadRolesCount = leadVideoIds.length;
+      const leadPercentage = totalProductions > 0 
+        ? Math.round((leadRolesCount / totalProductions) * 100) 
+        : 0;
+
+      return Response.json({
+        success: true,
+        stats: {
+          total_productions: totalProductions,
+          published_videos: publishedVideos,
+          draft_videos: draftVideos,
+          total_runtime_minutes: totalRuntimeMinutes,
+          latest_release_date: latestReleaseDate,
+          active_promotions: activePromotions,
+          lifetime_revenue_usd: lifetimeRevenue,
+          lead_roles: leadRolesCount,
+          lead_percentage: leadPercentage
+        }
+      });
+    }
+
     // Action: get_fanclub
     if (action === 'get_fanclub') {
       const fanclubs = await base44.asServiceRole.entities.Fanclub.filter({

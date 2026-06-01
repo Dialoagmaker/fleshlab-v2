@@ -7,9 +7,11 @@ import PayoutReadinessCard from "./PayoutReadinessCard";
 import StudioAdvanceCard from "./StudioAdvanceCard";
 import LatestVideosCard from "./LatestVideosCard";
 import ComplianceSummaryCard from "./ComplianceSummaryCard";
+import CareerStatisticsCard from "./CareerStatisticsCard";
 
 export default function OverviewTab({ data }) {
   const performer = data?.performer;
+  const careerStats = data?.career_stats;
 
   if (!performer) {
     return (
@@ -23,6 +25,9 @@ export default function OverviewTab({ data }) {
     <div className="space-y-6">
       {/* Action Required */}
       <ActionRequiredCard performer={performer} />
+
+      {/* Career Statistics */}
+      <CareerStatisticsCard stats={careerStats} />
 
       {/* Top row - Monthly Closeout, Production Goal, Payout Readiness */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

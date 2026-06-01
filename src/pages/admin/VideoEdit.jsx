@@ -49,6 +49,7 @@ export default function VideoEdit() {
   const [tagInput, setTagInput] = useState("");
   const [errors, setErrors] = useState({});
   const [selectedPerformerIds, setSelectedPerformerIds] = useState([]);
+  const [leadPerformerIds, setLeadPerformerIds] = useState([]);
 
   // Resolve performer names + brand name for AI helper context
   const { data: allPerformers = [] } = useQuery({
@@ -65,13 +66,16 @@ export default function VideoEdit() {
     enabled: !isNew,
   });
   
-  // Extract performer IDs from VideoPerformer junction records
+  // Extract performer IDs and lead performer flags from VideoPerformer junction records
   useEffect(() => {
     if (videoCredits && videoCredits.length > 0) {
       const performerIds = videoCredits.map(c => c.performer_id);
+      const leadIds = videoCredits.filter(c => c.lead_performer).map(c => c.performer_id);
       setSelectedPerformerIds(performerIds);
+      setLeadPerformerIds(leadIds);
     } else {
       setSelectedPerformerIds([]);
+      setLeadPerformerIds([]);
     }
   }, [videoCredits]);
   
@@ -136,7 +140,7 @@ export default function VideoEdit() {
 
   // Mutations for VideoPerformer junction records
   const syncPerformers = useMutation({
-    mutationFn: async ({ videoId, newPerformerIds, oldPerformerIds }) => {
+    mutationFn: async ({ videoId, newPerformerIds, oldPerformerIds, newLeadIds, oldLeadIds }) => {
       const toAdd = newPerformerIds.filter(id => !oldPerformerIds.includes(id));
       const toRemove = oldPerformerIds.filter(id => !newPerformerIds.includes(id));
       
@@ -150,11 +154,26 @@ export default function VideoEdit() {
       
       // Add new performers
       for (const performerId of toAdd) {
+        const isLead = newLeadIds.includes(performerId);
         await base44.entities.VideoPerformer.create({ 
           video_id: videoId, 
           performer_id: performerId,
-          order: 0 
+          order: 0,
+          lead_performer: isLead
         });
+      }
+      
+      // Update lead_performer flag for existing performers
+      for (const performerId of newPerformerIds) {
+        const credit = videoCredits.find(c => c.performer_id === performerId);
+        if (credit) {
+          const shouldBeLead = newLeadIds.includes(performerId);
+          if (credit.lead_performer !== shouldBeLead) {
+            await base44.entities.VideoPerformer.update(performerId, {
+              lead_performer: shouldBeLead
+            });
+          }
+        }
       }
       
       return { added: toAdd.length, removed: toRemove.length };
@@ -202,7 +221,9 @@ export default function VideoEdit() {
             syncPerformers.mutate({ 
               videoId: result.id, 
               newPerformerIds: selectedPerformerIds, 
-              oldPerformerIds: [] 
+              oldPerformerIds: [],
+              newLeadIds: leadPerformerIds,
+              oldLeadIds: []
             });
           }
           navigate(`/admin/videos/${result.id}`);
@@ -217,7 +238,9 @@ export default function VideoEdit() {
             syncPerformers.mutate({ 
               videoId: id, 
               newPerformerIds: selectedPerformerIds, 
-              oldPerformerIds: videoCredits.map(c => c.performer_id) 
+              oldPerformerIds: videoCredits.map(c => c.performer_id),
+              newLeadIds: leadPerformerIds,
+              oldLeadIds: videoCredits.filter(c => c.lead_performer).map(c => c.performer_id)
             });
           }
         },
@@ -322,8 +345,61 @@ export default function VideoEdit() {
           <section className="bg-card border border-border rounded-xl p-6 space-y-5">
             <h2 className="text-sm font-semibold text-foreground">Performer Assignment</h2>
             <p className="text-xs text-muted-foreground">
-              Select one or more performers appearing in this video. Use the search to find performers by name or nationality.
+              Select one or more performers appearing in this video. Mark one as the lead performer if applicable.
             </p>
+            <div className="space-y-3">
+              {selectedPerformerIds.map(performerId => {
+                const performer = allPerformers.find(p => p.id === performerId);
+                if (!performer) return null;
+                const isLead = leadPerformerIds.includes(performerId);
+                return (
+                  <div key={performerId} className="flex items-center justify-between p-3 bg-muted/30 border border-border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-muted overflow-hidden">
+                        {performer.profile_image_url ? (
+                          <img src={performer.profile_image_url} alt={performer.display_name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                            {performer.display_name.charAt(0)}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{performer.display_name}</p>
+                        <p className="text-xs text-muted-foreground">{performer.nationality || "Performer"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isLead}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setLeadPerformerIds([performerId]); // Only one lead at a time
+                            } else {
+                              setLeadPerformerIds([]);
+                            }
+                          }}
+                          className="w-4 h-4 accent-primary"
+                        />
+                        <span className="text-sm text-foreground">Lead Performer</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPerformerIds(selectedPerformerIds.filter(id => id !== performerId))}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+              {selectedPerformerIds.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">No performers assigned yet.</p>
+              )}
+            </div>
             <PerformerMultiSelect
               selectedPerformerIds={selectedPerformerIds}
               onPerformersChange={setSelectedPerformerIds}
