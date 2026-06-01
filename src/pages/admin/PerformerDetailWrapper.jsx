@@ -7,11 +7,12 @@ import ComplianceTab from "@/components/performer/tabs/ComplianceTab";
 import VideosTab from "@/components/performer/tabs/VideosTab";
 import EarningsTab from "@/components/performer/tabs/EarningsTab";
 import FanclubTab from "@/components/performer/tabs/FanclubTab";
+import PerformerHeader from "@/components/performer/PerformerHeader";
 
 export default function PerformerDetailWrapper() {
   const { id } = useParams();
 
-  const { data: performer, isLoading } = useQuery({
+  const { data: performer, isLoading, refetch } = useQuery({
     queryKey: ["performer", id],
     queryFn: () => base44.entities.Performer.get(id),
   });
@@ -24,15 +25,12 @@ export default function PerformerDetailWrapper() {
     return <div className="text-center py-16 text-destructive">Performer not found</div>;
   }
 
-  // Pass performer data to all tabs - parent layout controls which tab is visible
   return (
-    <>
-      <ProfileTab performer={performer} />
-      <ProductionTab performer={performer} />
-      <ComplianceTab performer={performer} />
-      <VideosTab performer={performer} />
-      <EarningsTab performer={performer} />
-      <FanclubTab performer={performer} />
-    </>
+    <div className="space-y-6">
+      {/* Header Status Bar - always visible */}
+      <PerformerHeader performer={performer} onRefresh={() => refetch()} />
+
+      {/* Tab Content - rendered by parent layout based on activeTab state */}
+    </div>
   );
 }

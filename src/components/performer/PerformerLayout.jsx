@@ -8,33 +8,32 @@ import ComplianceTab from "@/components/performer/tabs/ComplianceTab";
 import VideosTab from "@/components/performer/tabs/VideosTab";
 import EarningsTab from "@/components/performer/tabs/EarningsTab";
 import FanclubTab from "@/components/performer/tabs/FanclubTab";
+import PerformerDetailWrapper from "@/pages/admin/PerformerDetailWrapper";
 
 // Tab configuration - Phase 1 approved structure
 const TABS = [
-  { id: "profile", label: "Profile", icon: User, component: ProfileTab },
-  { id: "production", label: "Production", icon: Calendar, component: ProductionTab },
-  { id: "compliance", label: "Compliance", icon: Shield, component: ComplianceTab },
-  { id: "videos", label: "Videos", icon: Video, component: VideosTab },
-  { id: "earnings", label: "Earnings", icon: CreditCard, component: EarningsTab },
-  { id: "fanclub", label: "Fanclub", icon: Users, component: FanclubTab },
+  { id: "profile", label: "Profile", icon: User },
+  { id: "production", label: "Production", icon: Calendar },
+  { id: "compliance", label: "Compliance", icon: Shield },
+  { id: "videos", label: "Videos", icon: Video },
+  { id: "earnings", label: "Earnings", icon: CreditCard },
+  { id: "fanclub", label: "Fanclub", icon: Users },
 ];
 
-export default function PerformerLayout({ children }) {
+export default function PerformerLayout() {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("profile");
 
-  const ActiveComponent = TABS.find(tab => tab.id === activeTab)?.component || ProfileTab;
-
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Back Link */}
       <div className="flex items-center gap-3">
         <a href="/admin/performers" className="text-muted-foreground hover:text-foreground transition-colors">
           <span className="text-sm">← Back to Performers</span>
         </a>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs — internal UI state only, NO route changes */}
       <div className="border-b border-border">
         <nav className="flex gap-6" role="tablist">
           {TABS.map(tab => {
@@ -63,8 +62,8 @@ export default function PerformerLayout({ children }) {
       </div>
 
       {/* Tab Content */}
-      <div role="tabpanel">
-        <ActiveComponent />
+      <div role="tabpanel" className="pt-4">
+        <PerformerDetailWrapper />
       </div>
     </div>
   );
