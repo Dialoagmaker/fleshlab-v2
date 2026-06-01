@@ -268,6 +268,40 @@
       "format": "date-time",
       "title": "Last Consent Update At",
       "description": "Timestamp when consent/boundaries were last updated"
+    },
+    "performer_username": {
+      "type": "string",
+      "title": "Performer Username",
+      "description": "Unique username for performer login (separate from Base44 user account)"
+    },
+    "performer_password_hash": {
+      "type": "string",
+      "title": "Performer Password Hash",
+      "description": "Bcrypt hash of performer password - NEVER store plaintext"
+    },
+    "performer_must_change_password": {
+      "type": "boolean",
+      "title": "Must Change Password",
+      "default": true,
+      "description": "If true, performer must change password on next login"
+    },
+    "performer_login_enabled": {
+      "type": "boolean",
+      "title": "Login Enabled",
+      "default": false,
+      "description": "If true, performer can log in with username/password"
+    },
+    "performer_last_login_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last Login At",
+      "description": "Timestamp of performer's last successful login"
+    },
+    "performer_login_created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Login Created At",
+      "description": "Timestamp when performer login credentials were created"
     }
   },
   "required": [

@@ -3,13 +3,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { User, Link as LinkIcon, UserX } from "lucide-react";
+import { User, KeyRound, Link as LinkIcon, UserX } from "lucide-react";
 import BasicInfoSection from "../profile/BasicInfoSection";
 import ProfileImagesSection from "../profile/ProfileImagesSection";
 import PlatformAccountsSection from "../profile/PlatformAccountsSection";
 import SeoSection from "../profile/SeoSection";
 import InternalNotesSection from "../profile/InternalNotesSection";
 import LinkUserModal from "../profile/LinkUserModal";
+import LoginCredentialsSection from "../profile/LoginCredentialsSection";
 
 export default function ProfileTab({ performer }) {
   const queryClient = useQueryClient();
@@ -159,6 +160,9 @@ export default function ProfileTab({ performer }) {
 
   return (
     <div className="space-y-6">
+      {/* Login Credentials Section */}
+      <LoginCredentialsSection performer={performer} />
+
       {/* User Linking Card */}
       <div className="bg-card border border-border rounded-xl p-6 space-y-4">
         <div className="flex items-center justify-between">
