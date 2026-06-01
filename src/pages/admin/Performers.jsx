@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Plus, Edit, Search, Trash2, ChevronLeft, ChevronRight, AlertCircle, UserX } from "lucide-react";
+import { Plus, Edit, Search, Trash2, ChevronLeft, ChevronRight, AlertCircle, UserX, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,15 +37,18 @@ export default function Performers() {
   const queryClient = useQueryClient();
 
   // Server-side search + pagination via backend function
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["admin-performers-search", search, statusFilter, page],
-    queryFn: () => base44.functions.invoke("searchPerformers", {
-      search,
-      status: statusFilter,
-      page,
-      pageSize: PAGE_SIZE,
-    }),
-    staleTime: 10_000, // Refresh after 10s to keep search responsive
+    queryFn: async () => {
+      const params = { search, status: statusFilter, page, pageSize: PAGE_SIZE };
+      console.log('[Performers] Fetching with params:', params);
+      const result = await base44.functions.invoke("searchPerformers", params);
+      console.log('[Performers] Received:', { totalCount: result.totalCount, resultsLength: result.results?.length });
+      return result;
+    },
+    staleTime: 0, // Always refetch on mount
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 
   const results = data?.results || [];
@@ -147,6 +150,16 @@ export default function Performers() {
             <SelectItem value="pending">Pending</SelectItem>
           </SelectContent>
         </Select>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetch()}
+          disabled={isRefetching}
+          className="gap-2"
+        >
+          <RefreshCw className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`} />
+          {isRefetching ? 'Refreshing...' : 'Refresh'}
+        </Button>
       </div>
 
       {/* Info banner about server-side search */}
@@ -154,11 +167,15 @@ export default function Performers() {
         <AlertCircle className="w-4 h-4 text-blue-400 flex-shrink-0" />
         <p className="text-xs text-blue-200">
           Server-side search active · Results beyond 500 records are fully searchable
+          {data && ` · Showing ${data.results?.length || 0} of ${data.totalCount || 0}`}
         </p>
       </div>
 
-      {isLoading ? (
-        <div className="text-center py-16 text-muted-foreground text-sm">Loading…</div>
+      {isLoading || isRefetching ? (
+        <div className="text-center py-16 text-muted-foreground text-sm flex items-center justify-center gap-2">
+          <RefreshCw className="w-4 h-4 animate-spin" />
+          Loading performers…
+        </div>
       ) : results.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground text-sm border border-dashed border-border rounded-xl">
           {search || statusFilter !== "all" ? "No performers match your filters." : "No performers yet."}
