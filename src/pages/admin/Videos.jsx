@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Plus, Edit, Eye, EyeOff, Search } from "lucide-react";
+import { Plus, Edit, Eye, EyeOff, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,11 @@ export default function Videos() {
       base44.entities.Video.update(id, {
         status: status === "published" ? "draft" : "published",
       }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-videos"] }),
+  });
+
+  const deleteVideo = useMutation({
+    mutationFn: (id) => base44.entities.Video.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-videos"] }),
   });
 
@@ -83,13 +88,25 @@ export default function Videos() {
               {filtered.map(video => (
                 <tr key={video.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3">
-                    <div className="font-medium text-foreground line-clamp-1">{video.title}</div>
-                    {video.release_date && (
-                      <div className="text-xs text-muted-foreground mt-0.5">{video.release_date}</div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 hidden sm:table-cell">
-                    <code className="text-xs text-muted-foreground">{video.slug}</code>
+                     <div className="flex items-center gap-3">
+                       {video.primary_thumbnail_url ? (
+                         <img
+                           src={video.primary_thumbnail_url}
+                           alt=""
+                           className="w-12 h-8 object-cover rounded shrink-0 bg-muted"
+                         />
+                       ) : (
+                         <div className="w-12 h-8 rounded shrink-0 bg-muted flex items-center justify-center">
+                           <Eye className="w-3 h-3 text-muted-foreground/40" />
+                         </div>
+                       )}
+                       <div>
+                         <div className="font-medium text-foreground line-clamp-1">{video.title}</div>
+                         {video.release_date && (
+                           <div className="text-xs text-muted-foreground mt-0.5">{video.release_date}</div>
+                         )}
+                       </div>
+                     </div>
                   </td>
                   <td className="px-4 py-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${STATUS_COLORS[video.status] || STATUS_COLORS.draft}`}>
@@ -106,8 +123,15 @@ export default function Videos() {
                         {video.status === "published" ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                       <Link to={`/admin/videos/${video.id}`} className="p-1.5 text-muted-foreground hover:text-primary transition-colors">
-                        <Edit className="w-4 h-4" />
-                      </Link>
+                         <Edit className="w-4 h-4" />
+                       </Link>
+                       <button
+                         onClick={() => { if (window.confirm('Video löschen?')) deleteVideo.mutate(video.id); }}
+                         className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
+                         title="Löschen"
+                       >
+                         <Trash2 className="w-4 h-4" />
+                       </button>
                     </div>
                   </td>
                 </tr>
