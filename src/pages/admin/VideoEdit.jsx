@@ -228,7 +228,24 @@ export default function VideoEdit() {
 
       {/* Video Identification Panel - Top of page */}
       {!isNew && video && (
-        <VideoIdentificationPanel video={video} brands={brands} />
+        <VideoIdentificationPanel
+          video={video}
+          brands={brands}
+          onClearThumbnail={() => {
+            if (window.confirm('Thumbnail-URL entfernen?')) {
+              base44.entities.Video.update(id, { primary_thumbnail_url: '' }).then(() =>
+                queryClient.invalidateQueries({ queryKey: ['video', id] })
+              );
+            }
+          }}
+          onClearPreview={() => {
+            if (window.confirm('Preview/Trailer-URL entfernen?')) {
+              base44.entities.Video.update(id, { trailer_url: '' }).then(() =>
+                queryClient.invalidateQueries({ queryKey: ['video', id] })
+              );
+            }
+          }}
+        />
       )}
 
       {/* Retrigger Assets */}

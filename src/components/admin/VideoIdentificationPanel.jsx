@@ -1,13 +1,14 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Play, Film, Calendar, Clock, Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Play, Film, Calendar, Clock, Eye, X } from "lucide-react";
 
 /**
  * Video Identification Panel
  * Shows thumbnail, preview player, and key metadata to help admin identify performers
  */
-export default function VideoIdentificationPanel({ video, brands = [] }) {
+export default function VideoIdentificationPanel({ video, brands = [], onClearThumbnail, onClearPreview }) {
   if (!video) return null;
 
   const brand = brands.find(b => b.id === video.brand_id);
@@ -41,7 +42,14 @@ export default function VideoIdentificationPanel({ video, brands = [] }) {
         <div className="space-y-3">
           {/* Thumbnail */}
           <div className="space-y-2">
-            <Label>Thumbnail</Label>
+            <Label className="flex items-center justify-between">
+              Thumbnail
+              {hasThumbnail && onClearThumbnail && (
+                <button onClick={onClearThumbnail} className="text-xs text-destructive hover:underline flex items-center gap-1">
+                  <X className="w-3 h-3" /> URL löschen
+                </button>
+              )}
+            </Label>
             <div className="aspect-video bg-secondary rounded-lg overflow-hidden border border-border relative">
               {hasThumbnail ? (
                 <img
@@ -59,7 +67,14 @@ export default function VideoIdentificationPanel({ video, brands = [] }) {
 
           {/* Video Preview */}
           <div className="space-y-2">
-            <Label>Video Preview</Label>
+            <Label className="flex items-center justify-between">
+              Video Preview
+              {hasVideo && onClearPreview && (
+                <button onClick={onClearPreview} className="text-xs text-destructive hover:underline flex items-center gap-1">
+                  <X className="w-3 h-3" /> URL löschen
+                </button>
+              )}
+            </Label>
             <div className="aspect-video bg-black rounded-lg overflow-hidden border border-border relative">
               {hasVideo ? (
                 <video
