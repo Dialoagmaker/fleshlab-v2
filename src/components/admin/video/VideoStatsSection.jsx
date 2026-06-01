@@ -7,12 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, RefreshCw } from 'lucide-react';
+import { Plus, RefreshCw, Pencil } from 'lucide-react';
 import VideoStatSnapshotModal from './VideoStatSnapshotModal';
 
 export default function VideoStatsSection({ videoId }) {
   const [showModal, setShowModal] = useState(false);
-  const [filters, setFilters] = useState({ platform: '', period_month: '' });
+  const [filters, setFilters] = useState({ platform: '', period_month: '', promotion_status: '' });
 
   const { data: snapshots, isLoading, refetch } = useQuery({
     queryKey: ['video-stats', videoId, filters],
@@ -43,7 +43,7 @@ export default function VideoStatsSection({ videoId }) {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4 items-center">
+      <div className="flex gap-4 items-center flex-wrap">
         <div className="space-y-1">
           <Label className="text-xs">Platform</Label>
           <Select value={filters.platform} onValueChange={(v) => setFilters({ ...filters, platform: v })}>
@@ -69,6 +69,21 @@ export default function VideoStatsSection({ videoId }) {
             className="w-32"
           />
         </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Promotion</Label>
+          <Select value={filters.promotion_status} onValueChange={(v) => setFilters({ ...filters, promotion_status: v })}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={null}>All</SelectItem>
+              <SelectItem value="none">none</SelectItem>
+              <SelectItem value="planned">planned</SelectItem>
+              <SelectItem value="active">active</SelectItem>
+              <SelectItem value="ended">ended</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Table */}
@@ -86,8 +101,7 @@ export default function VideoStatsSection({ videoId }) {
               <TableHead>Likes</TableHead>
               <TableHead>Favourites</TableHead>
               <TableHead>Revenue</TableHead>
-              <TableHead>Sales</TableHead>
-              <TableHead>Tips</TableHead>
+              <TableHead>Promo Status</TableHead>
               <TableHead>Source</TableHead>
               <TableHead>Notes</TableHead>
             </TableRow>
@@ -101,10 +115,19 @@ export default function VideoStatsSection({ videoId }) {
                 <TableCell>{snap.likes?.toLocaleString()}</TableCell>
                 <TableCell>{snap.favourites?.toLocaleString()}</TableCell>
                 <TableCell className="font-medium">${snap.revenue_usd?.toFixed(2)}</TableCell>
-                <TableCell>{snap.sales_count?.toLocaleString()}</TableCell>
-                <TableCell>${snap.tips_usd?.toFixed(2)}</TableCell>
+                <TableCell>
+                  {snap.promotion_status && (
+                    <Badge variant={
+                      snap.promotion_status === 'active' ? 'default' :
+                      snap.promotion_status === 'planned' ? 'secondary' :
+                      snap.promotion_status === 'ended' ? 'destructive' : 'outline'
+                    }>
+                      {snap.promotion_status}
+                    </Badge>
+                  )}
+                </TableCell>
                 <TableCell className="text-xs">{snap.import_source}</TableCell>
-                <TableCell className="max-w-[150px] truncate text-xs">{snap.notes || '-'}</TableCell>
+                <TableCell className="max-w-[150px] truncate text-xs">{snap.notes || snap.admin_note || '-'}</TableCell>
               </TableRow>
             ))}
           </TableBody>

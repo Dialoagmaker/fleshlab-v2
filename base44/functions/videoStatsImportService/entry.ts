@@ -25,6 +25,9 @@ Deno.serve(async (req) => {
         revenue_usd = 0,
         sales_count = 0,
         tips_usd = 0,
+        promotion_status = 'none',
+        promotion_note,
+        admin_note,
         raw_data_json,
         import_source = 'manual',
         notes
@@ -55,6 +58,12 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'period_month must be in YYYY-MM format' }, { status: 400 });
       }
 
+      // Validate promotion_status
+      const validPromotionStatus = ['none', 'planned', 'active', 'ended'];
+      if (promotion_status && !validPromotionStatus.includes(promotion_status)) {
+        return Response.json({ error: 'Invalid promotion_status' }, { status: 400 });
+      }
+
       // Check if snapshot already exists for this video + platform + period
       const existing = await base44.asServiceRole.entities.VideoStatSnapshot.filter({
         video_id,
@@ -72,26 +81,48 @@ Deno.serve(async (req) => {
         revenue_usd,
         sales_count,
         tips_usd,
+        promotion_status,
+        promotion_note: promotion_note || null,
+        admin_note: admin_note || null,
         raw_data_json: raw_data_json || null,
         import_source,
         notes: notes || null
       };
 
       let result;
+      let actionType = 'created';
       if (existing && existing.length > 0) {
-        // Update existing
-        result = await base44.asServiceRole.entities.VideoStatSnapshot.update(existing[0].id, snapshotData);
+        // Update existing - track changes for audit
+        const oldSnapshot = existing[0];
+        const changes = {};
+        
+        // Track promotion_status changes specifically
+        if (oldSnapshot.promotion_status !== promotion_status) {
+          changes.promotion_status = { before: oldSnapshot.promotion_status, after: promotion_status };
+        }
+        if (oldSnapshot.admin_note !== (admin_note || null)) {
+          changes.admin_note = { changed: true }; // Don't log content
+        }
+        if (oldSnapshot.promotion_note !== (promotion_note || null)) {
+          changes.promotion_note = { changed: true };
+        }
+        if (oldSnapshot.views !== views) changes.views = { before: oldSnapshot.views, after: views };
+        if (oldSnapshot.revenue_usd !== revenue_usd) changes.revenue_usd = { before: oldSnapshot.revenue_usd, after: revenue_usd };
 
-        // Create AuditLog entry
+        result = await base44.asServiceRole.entities.VideoStatSnapshot.update(existing[0].id, snapshotData);
+        actionType = 'updated';
+
+        // Create AuditLog entry with detailed changes
         await base44.asServiceRole.entities.AuditLog.create({
           entity_type: 'VideoStatSnapshot',
           entity_id: existing[0].id,
           actor_id: user.id,
           actor_role: user.role,
           action: 'video_stat_snapshot_updated',
-          changes_json: JSON.stringify(snapshotData),
+          changes_json: JSON.stringify(changes),
           ip_address: null,
-          notes: `Video stat snapshot updated: ${video.title} - ${platform} - ${period_month}`
+          notes: `Video stat snapshot updated: ${video.title} - ${platform} - ${period_month}` + 
+                 (changes.promotion_status ? ` | Promotion: ${changes.promotion_status.before} → ${changes.promotion_status.after}` : '')
         });
 
         return Response.json({ success: true, snapshot_id: existing[0].id, action: 'updated' });
@@ -106,7 +137,11 @@ Deno.serve(async (req) => {
           actor_id: user.id,
           actor_role: user.role,
           action: 'video_stat_snapshot_created',
-          changes_json: JSON.stringify(snapshotData),
+          changes_json: JSON.stringify({
+            promotion_status,
+            views,
+            revenue_usd
+          }),
           ip_address: null,
           notes: `Video stat snapshot created: ${video.title} - ${platform} - ${period_month}`
         });
@@ -117,7 +152,7 @@ Deno.serve(async (req) => {
 
     // Action 2: list_snapshots_for_video
     if (action === 'list_snapshots_for_video') {
-      const { video_id, platform, period_month } = data;
+      const { video_id, platform, period_month, promotion_status } = data;
 
       if (!video_id) {
         return Response.json({ error: 'Missing required field: video_id' }, { status: 400 });
@@ -127,6 +162,7 @@ Deno.serve(async (req) => {
       const query = { video_id };
       if (platform) query.platform = platform;
       if (period_month) query.period_month = period_month;
+      if (promotion_status) query.promotion_status = promotion_status;
 
       const snapshots = await base44.asServiceRole.entities.VideoStatSnapshot.filter(query);
 

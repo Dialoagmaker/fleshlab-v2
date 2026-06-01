@@ -53,6 +53,29 @@
       "title": "Tips (USD)",
       "default": 0
     },
+    "promotion_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "planned",
+        "active",
+        "ended"
+      ],
+      "title": "Promotion Status",
+      "default": "none"
+    },
+    "promotion_note": {
+      "type": "string",
+      "title": "Promotion Note",
+      "format": "textarea",
+      "description": "Notes about promotion strategy"
+    },
+    "admin_note": {
+      "type": "string",
+      "title": "Admin Note",
+      "format": "textarea",
+      "description": "Internal admin notes (not visible to performers)"
+    },
     "raw_data_json": {
       "type": "string",
       "title": "Raw Data JSON",

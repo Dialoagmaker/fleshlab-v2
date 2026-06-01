@@ -23,6 +23,7 @@ const EMPTY_FORM = {
   meta_title: "", meta_description: "",
   featured: false, is_exclusive: false,
   ppv_enabled: false, download_price: "", production_cost: "",
+  xhamster_video_url: "", xhamster_video_title: "",
 };
 
 const URL_FIELDS = ["source_video_url", "primary_thumbnail_url", "cover_image_url", "trailer_url", "preview_gif_url"];
@@ -434,6 +435,29 @@ export default function VideoEdit() {
               {errors[field] && <p className="text-xs text-destructive">{errors[field]}</p>}
             </div>
           ))}
+        </section>
+
+        {/* External Platform URLs */}
+        <section className="bg-card border border-border rounded-xl p-6 space-y-5">
+          <h2 className="text-sm font-semibold text-foreground">External Platform URLs</h2>
+          <p className="text-xs text-muted-foreground">xHamster platform links (stammdaten).</p>
+          <div className="space-y-2">
+            <Label>xHamster Video URL</Label>
+            <Input
+              value={form.xhamster_video_url || ""}
+              onChange={e => set("xhamster_video_url", e.target.value)}
+              placeholder="https://xhamster.com/videos/..."
+              className="font-mono text-xs"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>xHamster Video Title</Label>
+            <Input
+              value={form.xhamster_video_title || ""}
+              onChange={e => set("xhamster_video_title", e.target.value)}
+              placeholder="Title on xHamster..."
+            />
+          </div>
         </section>
 
         {/* Categories and Tags */}

@@ -7,6 +7,7 @@ import ProductionTab from "@/components/performer/tabs/ProductionTab";
 import ComplianceTab from "@/components/performer/tabs/ComplianceTab";
 import VideosTab from "@/components/performer/tabs/VideosTab";
 import EarningsTab from "@/components/performer/tabs/EarningsTab";
+import VideoStatsTab from "@/components/performer/tabs/VideoStatsTab";
 import FanclubTab from "@/components/performer/tabs/FanclubTab";
 import PerformerDetailWrapper from "@/pages/admin/PerformerDetailWrapper";
 
@@ -16,6 +17,7 @@ const TABS = [
   { id: "production", label: "Production", icon: Calendar },
   { id: "compliance", label: "Compliance", icon: Shield },
   { id: "videos", label: "Videos", icon: Video },
+  { id: "video_stats", label: "Video Stats", icon: Video },
   { id: "earnings", label: "Earnings", icon: CreditCard },
   { id: "fanclub", label: "Fanclub", icon: Users },
 ];

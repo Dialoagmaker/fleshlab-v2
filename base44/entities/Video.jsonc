@@ -148,6 +148,16 @@
       "type": "number",
       "title": "Production Cost USD (internal)"
     },
+    "xhamster_video_url": {
+      "type": "string",
+      "title": "xHamster Video URL",
+      "description": "URL of the video on xHamster platform"
+    },
+    "xhamster_video_title": {
+      "type": "string",
+      "title": "xHamster Video Title",
+      "description": "Title of the video on xHamster (may differ from internal title)"
+    },
     "v1_id": {
       "type": "string",
       "title": "V1 Migration ID"

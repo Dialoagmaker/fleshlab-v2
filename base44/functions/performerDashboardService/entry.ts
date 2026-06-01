@@ -313,6 +313,61 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Action: get_video_stats (performer read-only)
+    if (action === 'get_video_stats') {
+      const { period_month } = body;
+
+      // Get all VideoPerformer records for this performer
+      const videoPerformers = await base44.asServiceRole.entities.VideoPerformer.filter({
+        performer_id: myPerformer.id
+      });
+
+      if (!videoPerformers || videoPerformers.length === 0) {
+        return Response.json({ success: true, stats: [], total_count: 0 });
+      }
+
+      const videoIds = videoPerformers.map(vp => vp.video_id);
+
+      // Get all snapshots for these videos
+      const allSnapshots = [];
+      for (const videoId of videoIds) {
+        const query = { video_id: videoId };
+        if (period_month) query.period_month = period_month;
+
+        const snapshots = await base44.asServiceRole.entities.VideoStatSnapshot.filter(query);
+        allSnapshots.push(...snapshots);
+      }
+
+      // Get video titles and sanitize data (remove admin-only fields)
+      const statsWithVideos = await Promise.all(allSnapshots.map(async (snap) => {
+        const video = await base44.asServiceRole.entities.Video.get(snap.video_id);
+        return {
+          id: snap.id,
+          video_id: snap.video_id,
+          video_title: video?.title || 'Unknown',
+          platform: snap.platform,
+          period_month: snap.period_month,
+          views: snap.views,
+          likes: snap.likes,
+          favourites: snap.favourites,
+          revenue_usd: snap.revenue_usd,
+          promotion_status: snap.promotion_status
+          // NOT returning: admin_note, promotion_note, raw_data_json (admin-only)
+        };
+      }));
+
+      // Sort by period_month descending
+      const sorted = statsWithVideos.sort((a, b) => 
+        b.period_month.localeCompare(a.period_month)
+      );
+
+      return Response.json({ 
+        success: true, 
+        stats: sorted, 
+        total_count: sorted.length 
+      });
+    }
+
     return Response.json({ error: 'Unknown action' }, { status: 400 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

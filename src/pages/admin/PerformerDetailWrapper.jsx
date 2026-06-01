@@ -5,6 +5,7 @@ import ProfileTab from "@/components/performer/tabs/ProfileTab";
 import ProductionTab from "@/components/performer/tabs/ProductionTab";
 import ComplianceTab from "@/components/performer/tabs/ComplianceTab";
 import VideosTab from "@/components/performer/tabs/VideosTab";
+import VideoStatsTab from "@/components/performer/tabs/VideoStatsTab";
 import EarningsTab from "@/components/performer/tabs/EarningsTab";
 import FanclubTab from "@/components/performer/tabs/FanclubTab";
 import PerformerHeader from "@/components/performer/PerformerHeader";
@@ -35,6 +36,8 @@ export default function PerformerDetailWrapper({ activeTab = "profile" }) {
         return <ComplianceTab performer={performer} />;
       case "videos":
         return <VideosTab performer={performer} />;
+      case "video_stats":
+        return <VideoStatsTab performerId={performer.id} />;
       case "earnings":
         return <EarningsTab performer={performer} />;
       case "fanclub":

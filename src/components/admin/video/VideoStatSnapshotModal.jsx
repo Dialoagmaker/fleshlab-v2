@@ -19,6 +19,9 @@ export default function VideoStatSnapshotModal({ videoId, onClose, onSuccess }) 
     revenue_usd: 0,
     sales_count: 0,
     tips_usd: 0,
+    promotion_status: 'none',
+    promotion_note: '',
+    admin_note: '',
     import_source: 'manual',
     notes: ''
   });
@@ -49,7 +52,7 @@ export default function VideoStatSnapshotModal({ videoId, onClose, onSuccess }) 
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Monthly Stats</DialogTitle>
         </DialogHeader>
@@ -101,15 +104,39 @@ export default function VideoStatSnapshotModal({ videoId, onClose, onSuccess }) 
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label>Sales Count</Label>
-              <Input type="number" value={formData.sales_count} onChange={(e) => set('sales_count', parseInt(e.target.value) || 0)} />
-            </div>
-            <div className="grid gap-2">
-              <Label>Tips USD</Label>
-              <Input type="number" step="0.01" value={formData.tips_usd} onChange={(e) => set('tips_usd', parseFloat(e.target.value) || 0)} />
-            </div>
+          <div className="grid gap-2">
+            <Label htmlFor="promotion_status">Promotion Status</Label>
+            <Select value={formData.promotion_status} onValueChange={(v) => set('promotion_status', v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">none</SelectItem>
+                <SelectItem value="planned">planned</SelectItem>
+                <SelectItem value="active">active</SelectItem>
+                <SelectItem value="ended">ended</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="promotion_note">Promotion Note</Label>
+            <Textarea 
+              id="promotion_note" 
+              value={formData.promotion_note} 
+              onChange={(e) => set('promotion_note', e.target.value)} 
+              rows={2} 
+              placeholder="Promotion strategy notes..."
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="admin_note">Admin Note (Internal)</Label>
+            <Textarea 
+              id="admin_note" 
+              value={formData.admin_note} 
+              onChange={(e) => set('admin_note', e.target.value)} 
+              rows={2} 
+              placeholder="Internal admin notes..."
+            />
           </div>
 
           <div className="grid gap-2">
@@ -125,7 +152,7 @@ export default function VideoStatSnapshotModal({ videoId, onClose, onSuccess }) 
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="notes">General Notes</Label>
             <Textarea id="notes" value={formData.notes} onChange={(e) => set('notes', e.target.value)} rows={2} />
           </div>
 
