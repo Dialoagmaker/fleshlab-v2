@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Plus, Edit, Search, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Edit, Search, Trash2, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,43 +34,31 @@ export default function Performers() {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, performer: null, videoCount: 0 });
   const [confirmText, setConfirmText]   = useState("");
 
-  // Build filter object for server-side filtering
-  const filterObj = statusFilter !== "all" ? { status: statusFilter } : {};
+  const queryClient = useQueryClient();
 
-  const { data: performers = [], isLoading } = useQuery({
-    queryKey: ["admin-performers", statusFilter],
-    // Load up to 500 server-side filtered by status; text search is applied client-side within this set.
-    // This avoids the old 200-hard-limit truncation while keeping server-side status filtering.
-    queryFn: () => {
-      if (statusFilter !== "all") {
-        return base44.entities.Performer.filter({ status: statusFilter }, "display_name", 500);
-      }
-      return base44.entities.Performer.list("display_name", 500);
-    },
-    staleTime: 30_000,
+  // Server-side search + pagination via backend function
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-performers-search", search, statusFilter, page],
+    queryFn: () => base44.functions.invoke("searchPerformers", {
+      search,
+      status: statusFilter,
+      page,
+      pageSize: PAGE_SIZE,
+    }),
+    staleTime: 10_000, // Refresh after 10s to keep search responsive
   });
 
-  // Client-side text search (across the full server-filtered set, not just first 200)
-  const searched = performers.filter(p =>
-    !search ||
-    p.display_name?.toLowerCase().includes(search.toLowerCase()) ||
-    p.slug?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  // Pagination over search results
-  const totalPages   = Math.ceil(searched.length / PAGE_SIZE);
-  const paged        = searched.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-  const totalCount   = performers.length;
+  const results = data?.results || [];
+  const totalCount = data?.totalCount || 0;
+  const hasMore = data?.hasMore || false;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   // Reset to page 0 when search/filter changes
   const handleSearch = (v) => { setSearch(v); setPage(0); };
   const handleStatus = (v) => { setStatusFilter(v); setPage(0); };
 
-  const queryClient = useQueryClient();
-
   const deleteMutation = useMutation({
     mutationFn: async ({ performerId }) => {
-      // Fetch only this performer's credits at delete time — not all VideoPerformers
       const relatedVPs = await base44.entities.VideoPerformer.filter({ performer_id: performerId });
       for (const vp of relatedVPs) {
         await base44.entities.VideoPerformer.delete(vp.id);
@@ -79,7 +67,7 @@ export default function Performers() {
       return { videoCount: relatedVPs.length };
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["admin-performers"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-performers-search"] });
       setDeleteDialog({ open: false, performer: null, videoCount: 0 });
       setConfirmText("");
       toast.success(
@@ -94,7 +82,6 @@ export default function Performers() {
   });
 
   const handleDeleteClick = async (performer) => {
-    // Fetch credit count fresh at click time — no unbounded preload needed
     const relatedVPs = await base44.entities.VideoPerformer.filter({ performer_id: performer.id });
     setDeleteDialog({ open: true, performer, videoCount: relatedVPs.length });
   };
@@ -117,10 +104,9 @@ export default function Performers() {
           <p className="text-muted-foreground text-sm mt-1">
             {isLoading ? "Loading…" : (
               <>
-                {searched.length} result{searched.length !== 1 ? "s" : ""}
-                {statusFilter !== "all" && ` (${statusFilter})`}
-                {search && ` matching "${search}"`}
-                {totalCount !== searched.length && ` · ${totalCount} total`}
+                {totalCount} total
+                {statusFilter !== "all" && ` · ${totalCount} (${statusFilter})`}
+                {search && ` · ${totalCount} matching "${search}"`}
               </>
             )}
           </p>
@@ -156,9 +142,17 @@ export default function Performers() {
         </Select>
       </div>
 
+      {/* Info banner about server-side search */}
+      <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-3 flex items-center gap-3">
+        <AlertCircle className="w-4 h-4 text-blue-400 flex-shrink-0" />
+        <p className="text-xs text-blue-200">
+          Server-side search active · Results beyond 500 records are fully searchable
+        </p>
+      </div>
+
       {isLoading ? (
         <div className="text-center py-16 text-muted-foreground text-sm">Loading…</div>
-      ) : paged.length === 0 ? (
+      ) : results.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground text-sm border border-dashed border-border rounded-xl">
           {search || statusFilter !== "all" ? "No performers match your filters." : "No performers yet."}
         </div>
@@ -170,12 +164,11 @@ export default function Performers() {
                 <th className="text-left text-muted-foreground font-medium px-4 py-3">Performer</th>
                 <th className="text-left text-muted-foreground font-medium px-4 py-3 hidden sm:table-cell">Slug</th>
                 <th className="text-left text-muted-foreground font-medium px-4 py-3">Status</th>
-                {/* Badge columns prepared for Phase 1 Performer entity extension */}
                 <th className="text-right text-muted-foreground font-medium px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {paged.map(p => (
+              {results.map(p => (
                 <tr key={p.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -202,7 +195,6 @@ export default function Performers() {
                       <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${STATUS_COLORS[p.status] || STATUS_COLORS.active}`}>
                         {p.status || "active"}
                       </span>
-                      {/* Phase 1 badge placeholders — rendered only if fields exist after entity extension */}
                       {p.kyc_status && p.kyc_status !== "approved" && (
                         <span className="text-xs px-2 py-0.5 rounded-full border font-medium bg-orange-500/10 text-orange-400 border-orange-500/20">
                           KYC: {p.kyc_status}
@@ -249,7 +241,7 @@ export default function Performers() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">
-            Page {page + 1} of {totalPages} · {searched.length} performers
+            Page {page + 1} of {totalPages} · {totalCount} performers
           </span>
           <div className="flex gap-2">
             <Button
@@ -264,7 +256,7 @@ export default function Performers() {
             <Button
               variant="outline"
               size="sm"
-              disabled={page >= totalPages - 1}
+              disabled={page >= totalPages - 1 || (!hasMore && (page + 1) * PAGE_SIZE >= totalCount)}
               onClick={() => setPage(p => p + 1)}
               className="gap-1"
             >
