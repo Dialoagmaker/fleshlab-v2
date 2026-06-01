@@ -2,11 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
-import { Loader2, Download } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Loader2, Download, FileText } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ComplianceTab({ performerId }) {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["performer-compliance", performerId],
     queryFn: async () => {
       const res = await base44.functions.invoke("performerDashboardService", {
@@ -17,6 +18,32 @@ export default function ComplianceTab({ performerId }) {
     },
     enabled: !!performerId
   });
+
+  // Mutation for generating signed URLs
+  const downloadMutation = useMutation({
+    mutationFn: async ({ documentType, documentId, filename }) => {
+      const res = await base44.functions.invoke("performerDashboardService", {
+        action: "create_document_signed_url",
+        document_type: documentType,
+        document_id: documentId
+      });
+      return { ...res.data, filename };
+    },
+    onSuccess: (data) => {
+      if (data.signed_url) {
+        // Open in new tab/window
+        window.open(data.signed_url, '_blank');
+        toast.success(`Download started: ${data.filename}`);
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to generate download link');
+    }
+  });
+
+  const handleDownload = (documentType, documentId, filename) => {
+    downloadMutation.mutate({ documentType, documentId, filename });
+  };
 
   if (isLoading) {
     return (
@@ -58,11 +85,34 @@ export default function ComplianceTab({ performerId }) {
           ) : (
             data.contracts.map(contract => {
               const daysUntilExpiry = expiryDays(contract.expires_at);
+              const canDownload = contract.status === "signed";
+              
               return (
                 <div key={contract.id} className="p-3 border rounded-lg space-y-2">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-medium capitalize">{contract.contract_type?.replace(/_/g, " ")}</h4>
-                    <Badge variant={contract.status === "signed" ? "default" : "secondary"}>{contract.status}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={contract.status === "signed" ? "default" : "secondary"}>{contract.status}</Badge>
+                      {canDownload && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDownload(
+                            "contract",
+                            contract.id,
+                            `${contract.contract_type}_contract`
+                          )}
+                          disabled={downloadMutation.isPending}
+                          className="h-7 px-2"
+                        >
+                          {downloadMutation.isPending ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Download className="h-3 w-3" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   {contract.signed_at && (
                     <p className="text-xs text-muted-foreground">Signed: {new Date(contract.signed_at).toLocaleDateString()}</p>
@@ -91,11 +141,34 @@ export default function ComplianceTab({ performerId }) {
           ) : (
             data.compliance_records.map(record => {
               const daysUntilExpiry = expiryDays(record.expires_at);
+              const canDownload = record.status === "valid";
+              
               return (
                 <div key={record.id} className="p-3 border rounded-lg space-y-2">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-medium capitalize">{record.document_type.replace(/_/g, " ")}</h4>
-                    <Badge variant={record.status === "valid" ? "default" : "secondary"}>{record.status}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={record.status === "valid" ? "default" : "secondary"}>{record.status}</Badge>
+                      {canDownload && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDownload(
+                            "compliance_record",
+                            record.id,
+                            `${record.document_type}_record`
+                          )}
+                          disabled={downloadMutation.isPending}
+                          className="h-7 px-2"
+                        >
+                          {downloadMutation.isPending ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Download className="h-3 w-3" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   {record.issued_at && (
                     <p className="text-xs text-muted-foreground">Issued: {new Date(record.issued_at).toLocaleDateString()}</p>

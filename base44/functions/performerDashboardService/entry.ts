@@ -375,6 +375,142 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Action: create_document_signed_url
+    if (action === 'create_document_signed_url') {
+      const { document_type, document_id } = body;
+      
+      if (!document_type || !document_id) {
+        return Response.json({ 
+          error: 'document_type and document_id are required' 
+        }, { status: 400 });
+      }
+      
+      if (!['contract', 'compliance_record'].includes(document_type)) {
+        return Response.json({ 
+          error: 'Invalid document_type. Must be "contract" or "compliance_record"' 
+        }, { status: 400 });
+      }
+      
+      // Fetch the document based on type
+      let document;
+      let entityName;
+      
+      if (document_type === 'contract') {
+        document = await base44.asServiceRole.entities.Contract.get(document_id);
+        entityName = 'Contract';
+      } else {
+        document = await base44.asServiceRole.entities.ComplianceRecord.get(document_id);
+        entityName = 'ComplianceRecord';
+      }
+      
+      if (!document) {
+        return Response.json({ 
+          error: 'Document not found' 
+        }, { status: 404 });
+      }
+      
+      // Verify document belongs to the linked performer
+      if (document.performer_id !== myPerformer.id) {
+        return Response.json({ 
+          error: 'Access denied: Document does not belong to your performer profile' 
+        }, { status: 403 });
+      }
+      
+      // Check document status - only allow downloads for valid/signed documents
+      const allowedStatuses = document_type === 'contract' 
+        ? ['signed'] 
+        : ['valid'];
+      
+      if (!allowedStatuses.includes(document.status)) {
+        return Response.json({ 
+          error: `Document not available for download (status: ${document.status})` 
+        }, { status: 403 });
+      }
+      
+      // Verify document has a valid URL
+      if (!document.document_url) {
+        return Response.json({ 
+          error: 'Document file not available' 
+        }, { status: 404 });
+      }
+      
+      // Extract file URI from document_url
+      // Base44 private files use format: base44://app/{app_id}/files/{file_key}
+      // or may be direct R2 URLs. We need to handle both.
+      let fileUri = document.document_url;
+      
+      // If it's already a base44:// URI, use it directly
+      if (!fileUri.startsWith('base44://')) {
+        // For R2 URLs or other formats, we need to construct the file_uri
+        // Try to extract the key from common URL patterns
+        try {
+          const urlObj = new URL(fileUri);
+          // If it's an R2 URL, extract the key from the path
+          const pathParts = urlObj.pathname.split('/').filter(p => p);
+          if (pathParts.length > 0) {
+            // Construct base44:// URI
+            const appInfo = await base44.asServiceRole.app.getApp();
+            fileUri = `base44://app/${appInfo.id}/files/${pathParts[pathParts.length - 1]}`;
+          }
+        } catch (e) {
+          // If URL parsing fails, try using as-is
+          // This might work if it's already a relative path or key
+        }
+      }
+      
+      try {
+        // Generate signed URL using Base44 Core integration
+        const signedUrlResult = await base44.integrations.Core.CreateFileSignedUrl({
+          file_uri: fileUri,
+          expires_in: 300 // 5 minutes
+        });
+        
+        // Create AuditLog entry
+        await base44.asServiceRole.entities.AuditLog.create({
+          entity_type: entityName,
+          entity_id: document_id,
+          actor_id: user.id,
+          actor_role: user.role,
+          action: 'performer_document_signed_url_created',
+          changes_json: JSON.stringify({
+            performer_id: myPerformer.id,
+            document_type,
+            document_id,
+            document_status: document.status,
+          }),
+          notes: `Performer ${myPerformer.display_name} requested signed URL for ${document_type}`,
+        });
+        
+        // Return only safe data - never expose raw URLs or keys
+        return Response.json({
+          success: true,
+          signed_url: signedUrlResult.signed_url,
+          expires_in_seconds: 300,
+          filename: document.title || `${document_type}_${document_id}`,
+        });
+      } catch (error) {
+        // Log the attempt but don't expose internal error details
+        await base44.asServiceRole.entities.AuditLog.create({
+          entity_type: entityName,
+          entity_id: document_id,
+          actor_id: user.id,
+          actor_role: user.role,
+          action: 'performer_document_signed_url_failed',
+          changes_json: JSON.stringify({
+            performer_id: myPerformer.id,
+            document_type,
+            document_id,
+            error: 'Signed URL generation failed',
+          }),
+          notes: `Failed to generate signed URL: ${error.message}`,
+        });
+        
+        return Response.json({ 
+          error: 'Unable to generate secure download link. Please contact support.' 
+        }, { status: 500 });
+      }
+    }
+
     // Action: get_fanclub
     if (action === 'get_fanclub') {
       const fanclubs = await base44.asServiceRole.entities.Fanclub.filter({
