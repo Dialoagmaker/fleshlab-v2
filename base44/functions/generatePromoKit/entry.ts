@@ -79,8 +79,14 @@ Return as JSON with these exact keys:
         required: ['xhamster_title', 'xhamster_description', 'xhamster_tags', 'social_short_caption', 'social_long_caption', 'hashtags'],
       },
     });
-
-    const generatedContent = JSON.parse(llmResponse.data.response);
+    
+    // InvokeLLM with response_json_schema returns parsed JSON directly
+    // Response structure: { xhamster_title: "...", ... }
+    const generatedContent = llmResponse;
+    
+    if (!generatedContent || !generatedContent.xhamster_title) {
+      throw new Error('LLM did not return expected xhamster_title. Got: ' + JSON.stringify(generatedContent));
+    }
 
     // Create VideoPromoKit record
     const promoKit = await base44.entities.VideoPromoKit.create({

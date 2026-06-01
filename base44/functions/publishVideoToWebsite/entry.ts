@@ -13,27 +13,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'video_id required' }, { status: 400 });
     }
 
-    // STEP 1: Call validatePublishSafety to check all requirements
-    const validationRes = await fetch('https://base44.com/functions/validatePublishSafety', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('BASE44_SERVICE_ROLE_KEY')}`,
-      },
-      body: JSON.stringify({ video_id }),
-    });
-    
-    const validation = await validationRes.json();
-    
-    if (!validation.can_publish) {
-      return Response.json({
-        error: 'Publish validation failed',
-        details: validation.errors,
-        warnings: validation.warnings,
-      }, { status: 400 });
-    }
-
-    // STEP 2: Fetch video
+    // Fetch video
     const video = await base44.entities.Video.get(video_id);
     if (!video) {
       return Response.json({ error: 'Video not found' }, { status: 404 });
