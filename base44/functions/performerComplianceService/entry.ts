@@ -1,9 +1,9 @@
-// performerComplianceService — Service layer for performer compliance checks and locks.
-// Phase 1: Compliance evaluation and lock management.
+// performerComplianceService — Service layer for performer compliance checks and locks
+// Phase 2: Full compliance evaluation with KYC, contracts, medical records
 //
 // Actions:
 //   compliance_check — Evaluates compliance status, returns issues
-//   lock_evaluation — Locks performer if compliance issues found
+//   lock_evaluation — Locks/unlocks performer based on compliance gates
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
@@ -30,50 +30,228 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'compliance_check') {
-      // Phase 1: Stub compliance check
-      // In future phases, this will check:
-      // - KYC status
-      // - Contract expiration
-      // - Medical test expiration
-      // - Compliance documents
-      
       const issues = [];
-      
-      // Example checks (Phase 1 stubs)
-      if (performer.kyc_status !== 'approved') {
-        issues.push({ type: 'kyc', message: 'KYC not approved', severity: 'high' });
+      const gates = {
+        kyc_ok: false,
+        release_contract_ok: false,
+        medical_ok: false,
+        balance_ok: false,
+        account_status_ok: false,
+      };
+
+      // Level 1 — Identity: KYC status
+      if (performer.kyc_status === 'approved') {
+        gates.kyc_ok = true;
+      } else {
+        issues.push({ 
+          type: 'kyc', 
+          message: `KYC status: ${performer.kyc_status || 'not started'}`, 
+          severity: 'high',
+          gate: 'identity'
+        });
       }
-      if (performer.compliance_locked) {
-        issues.push({ type: 'compliance_lock', message: performer.compliance_lock_reason || 'Compliance locked', severity: 'critical' });
-      }
+
+      // Level 2 — Legal: Valid signed release contract
+      const contracts = await base44.asServiceRole.entities.Contract.filter({
+        performer_id,
+        contract_type: 'release',
+        status: 'signed'
+      });
       
-      const isCompliant = issues.length === 0;
+      if (contracts && contracts.length > 0) {
+        // Check if any signed release contract is not expired
+        const hasValidContract = contracts.some(c => {
+          if (!c.expires_at) return true; // No expiry = valid
+          return new Date(c.expires_at) > new Date();
+        });
+        
+        if (hasValidContract) {
+          gates.release_contract_ok = true;
+        } else {
+          issues.push({ 
+            type: 'contract', 
+            message: 'Release contract expired', 
+            severity: 'critical',
+            gate: 'legal'
+          });
+        }
+      } else {
+        issues.push({ 
+          type: 'contract', 
+          message: 'No signed release contract found', 
+          severity: 'critical',
+          gate: 'legal'
+        });
+      }
+
+      // Level 3 — Health: Valid medical/HIV/STI ComplianceRecord
+      const medicalRecords = await base44.asServiceRole.entities.ComplianceRecord.filter({
+        performer_id,
+        status: 'valid'
+      });
+
+      if (medicalRecords && medicalRecords.length > 0) {
+        // Check for medical_test, std_test, or hiv_test
+        const hasMedicalRecord = medicalRecords.some(r => {
+          if (!['medical_test', 'std_test'].includes(r.document_type)) return false;
+          if (!r.expires_at) return true; // No expiry = valid
+          return new Date(r.expires_at) > new Date();
+        });
+
+        if (hasMedicalRecord) {
+          gates.medical_ok = true;
+        } else {
+          issues.push({ 
+            type: 'medical', 
+            message: 'Medical/STI test expired or missing', 
+            severity: 'high',
+            gate: 'health'
+          });
+        }
+      } else {
+        issues.push({ 
+          type: 'medical', 
+          message: 'No valid medical/STI test record found', 
+          severity: 'high',
+          gate: 'health'
+        });
+      }
+
+      // Level 4 — Financial: Outstanding balance
+      if (!performer.outstanding_balance_usd || performer.outstanding_balance_usd <= 0) {
+        gates.balance_ok = true;
+      } else {
+        issues.push({ 
+          type: 'balance', 
+          message: `Outstanding balance: $${performer.outstanding_balance_usd.toFixed(2)}`, 
+          severity: 'medium',
+          gate: 'financial'
+        });
+      }
+
+      // Level 5 — Operational: Account status
+      if (performer.account_status === 'active') {
+        gates.account_status_ok = true;
+      } else {
+        issues.push({ 
+          type: 'account', 
+          message: `Account status: ${performer.account_status}`, 
+          severity: 'critical',
+          gate: 'operational'
+        });
+      }
+
+      // Determine overall compliance
+      const isCompliant = Object.values(gates).every(g => g === true);
+      const shouldLock = !isCompliant;
 
       return Response.json({
         success: true,
         performer_id,
         is_compliant: isCompliant,
+        should_lock: shouldLock,
+        currently_locked: performer.compliance_locked || false,
+        gates,
         issues,
-        compliance_locked: performer.compliance_locked || false,
         kyc_status: performer.kyc_status,
+        account_status: performer.account_status,
       });
     }
 
     if (action === 'lock_evaluation') {
-      // Evaluate and lock if needed
-      const { reason } = body;
-      
-      // For Phase 1, just lock with provided reason
-      await base44.asServiceRole.entities.Performer.update(performer_id, {
-        compliance_locked: true,
-        compliance_lock_reason: reason || 'Compliance lock via evaluation',
+      // Run full compliance check
+      const issues = [];
+      let shouldLock = false;
+
+      // Level 1 — Identity
+      if (performer.kyc_status !== 'approved') {
+        issues.push({ type: 'kyc', message: 'KYC not approved', severity: 'high' });
+        shouldLock = true;
+      }
+
+      // Level 2 — Legal
+      const contracts = await base44.asServiceRole.entities.Contract.filter({
+        performer_id,
+        contract_type: 'release',
+        status: 'signed'
       });
+
+      const hasValidContract = contracts && contracts.some(c => {
+        if (!c.expires_at) return true;
+        return new Date(c.expires_at) > new Date();
+      });
+
+      if (!hasValidContract) {
+        issues.push({ type: 'contract', message: 'No valid release contract', severity: 'critical' });
+        shouldLock = true;
+      }
+
+      // Level 3 — Health
+      const medicalRecords = await base44.asServiceRole.entities.ComplianceRecord.filter({
+        performer_id,
+        status: 'valid'
+      });
+
+      const hasMedicalRecord = medicalRecords && medicalRecords.some(r => {
+        if (!['medical_test', 'std_test'].includes(r.document_type)) return false;
+        if (!r.expires_at) return true;
+        return new Date(r.expires_at) > new Date();
+      });
+
+      if (!hasMedicalRecord) {
+        issues.push({ type: 'medical', message: 'No valid medical test', severity: 'high' });
+        shouldLock = true;
+      }
+
+      // Level 4 — Financial
+      if (performer.outstanding_balance_usd && performer.outstanding_balance_usd > 0) {
+        issues.push({ type: 'balance', message: 'Outstanding balance', severity: 'medium' });
+        // Balance alone doesn't trigger lock in Phase 2
+      }
+
+      // Level 5 — Operational
+      if (performer.account_status !== 'active') {
+        issues.push({ type: 'account', message: 'Account not active', severity: 'critical' });
+        shouldLock = true;
+      }
+
+      // Update lock status if changed
+      const oldLocked = performer.compliance_locked || false;
+      const lockChanged = shouldLock !== oldLocked;
+
+      if (lockChanged) {
+        await base44.asServiceRole.entities.Performer.update(performer_id, {
+          compliance_locked: shouldLock,
+        });
+
+        // Create AuditLog entry
+        await base44.asServiceRole.entities.AuditLog.create({
+          entity_type: 'Performer',
+          entity_id: performer_id,
+          actor_id: user.id,
+          actor_role: user.role,
+          action: 'compliance_lock_evaluation',
+          changes_json: JSON.stringify({
+            compliance_locked: {
+              before: oldLocked,
+              after: shouldLock,
+            },
+            reasons: issues.map(i => i.message),
+          }),
+          notes: shouldLock 
+            ? `Performer locked due to: ${issues.map(i => i.message).join(', ')}`
+            : 'Performer unlocked - all compliance gates passed',
+        });
+      }
 
       return Response.json({
         success: true,
-        message: 'Performer locked',
         performer_id,
-        compliance_locked: true,
+        compliance_locked: shouldLock,
+        lock_changed: lockChanged,
+        was_locked: oldLocked,
+        reasons: issues.map(i => i.message),
+        issues,
       });
     }
 
