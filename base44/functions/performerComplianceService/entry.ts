@@ -290,6 +290,72 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'manual_unlock') {
+      // Admin manually unlocks performer (override)
+      await base44.asServiceRole.entities.Performer.update(performer_id, {
+        compliance_locked: false,
+        compliance_override: true,
+        compliance_override_reason: body.reason || 'Manual override by admin',
+      });
+
+      // Create AuditLog entry
+      await base44.asServiceRole.entities.AuditLog.create({
+        entity_type: 'Performer',
+        entity_id: performer_id,
+        actor_id: user.id,
+        actor_role: user.role,
+        action: 'manual_compliance_unlock',
+        changes_json: JSON.stringify({
+          compliance_locked: {
+            before: true,
+            after: false,
+          },
+          compliance_override: true,
+          reason: body.reason || 'Manual override by admin',
+        }),
+        notes: `Admin manually unlocked performer: ${body.reason || 'No reason provided'}`,
+      });
+
+      return Response.json({
+        success: true,
+        performer_id,
+        compliance_locked: false,
+        message: 'Performer manually unlocked by admin',
+      });
+    }
+
+    if (action === 'manual_lock') {
+      // Admin manually locks performer
+      await base44.asServiceRole.entities.Performer.update(performer_id, {
+        compliance_locked: true,
+        freeze_reason: body.reason || 'Manual lock by admin',
+      });
+
+      // Create AuditLog entry
+      await base44.asServiceRole.entities.AuditLog.create({
+        entity_type: 'Performer',
+        entity_id: performer_id,
+        actor_id: user.id,
+        actor_role: user.role,
+        action: 'manual_compliance_lock',
+        changes_json: JSON.stringify({
+          compliance_locked: {
+            before: false,
+            after: true,
+          },
+          freeze_reason: body.reason || 'Manual lock by admin',
+        }),
+        notes: `Admin manually locked performer: ${body.reason || 'No reason provided'}`,
+      });
+
+      return Response.json({
+        success: true,
+        performer_id,
+        compliance_locked: true,
+        message: 'Performer manually locked by admin',
+      });
+    }
+
     return Response.json({ error: 'Unknown action' }, { status: 400 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
