@@ -34,6 +34,7 @@
       "type": "string",
       "enum": [
         "manual",
+        "philsys_national_id_check",
         "veriff",
         "sumsub",
         "onfido",
@@ -42,19 +43,31 @@
         "jumio",
         "idenfy"
       ],
-      "title": "Verification Provider"
+      "title": "Verification Provider",
+      "default": "manual"
+    },
+    "verification_method": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "philsys_national_id_check",
+        "third_party_provider"
+      ],
+      "title": "Verification Method",
+      "default": "manual",
+      "description": "Method used for verification"
     },
     "verification_status": {
       "type": "string",
       "enum": [
-        "not_verified",
+        "not_started",
         "pending",
-        "verified",
+        "passed",
         "failed",
         "needs_review"
       ],
       "title": "Verification Status",
-      "default": "not_verified"
+      "default": "not_started"
     },
     "verification_result_summary": {
       "type": "string",
@@ -64,6 +77,32 @@
       "type": "string",
       "format": "date-time",
       "title": "Verified At"
+    },
+    "verification_checked_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Verification Checked At"
+    },
+    "verification_checked_by": {
+      "type": "string",
+      "title": "Verification Checked By User ID"
+    },
+    "verification_note": {
+      "type": "string",
+      "title": "Verification Note (Internal)",
+      "format": "textarea",
+      "description": "Internal admin notes about verification"
+    },
+    "performer_visible_note": {
+      "type": "string",
+      "title": "Performer Visible Note",
+      "format": "textarea",
+      "description": "Notes that can be shown to the performer"
+    },
+    "external_verification_url": {
+      "type": "string",
+      "title": "External Verification URL",
+      "description": "URL of external verification tool (e.g., https://everify.gov.ph/check)"
     },
     "issued_at": {
       "type": "string",

@@ -5,15 +5,39 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Download, Calendar, Plus } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Upload, Download, Calendar, Plus, ExternalLink, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import AddComplianceRecordModal from "./AddComplianceRecordModal";
+import { useAuth } from "@/lib/AuthContext";
 
 const DOCUMENT_STATUSES = [
   { value: "valid", label: "Valid" },
   { value: "expiring_soon", label: "Expiring Soon" },
   { value: "expired", label: "Expired" },
   { value: "revoked", label: "Revoked" },
+];
+
+const VERIFICATION_METHODS = [
+  { value: "manual", label: "Manual Review" },
+  { value: "philsys_national_id_check", label: "Philippines National ID Check" },
+  { value: "third_party_provider", label: "Third-party Provider (Later)" },
+];
+
+const VERIFICATION_STATUSES = [
+  { value: "not_started", label: "Not Started", color: "bg-gray-500/10 text-gray-500" },
+  { value: "pending", label: "Pending", color: "bg-yellow-500/10 text-yellow-500" },
+  { value: "passed", label: "Passed", color: "bg-green-500/10 text-green-500" },
+  { value: "failed", label: "Failed", color: "bg-red-500/10 text-red-500" },
+  { value: "needs_review", label: "Needs Review", color: "bg-orange-500/10 text-orange-500" },
 ];
 
 const getStatusBadge = (status) => {
@@ -33,51 +57,47 @@ const getStatusBadge = (status) => {
   return variants[status] || "bg-gray-500/10 text-gray-500";
 };
 
+const getVerificationStatusConfig = (status) => {
+  return VERIFICATION_STATUSES.find(s => s.value === status) || VERIFICATION_STATUSES[0];
+};
+
 export default function ComplianceRecordsSection({ performer, onRefresh }) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
 
-  // Hooks must be called unconditionally - use optional chaining
   const { data: records, refetch: refetchRecords } = useQuery({
     queryKey: ["complianceRecords", performer?.id],
     queryFn: () => base44.entities.ComplianceRecord.filter({ performer_id: performer.id }, "-created_date"),
     enabled: !!performer?.id,
   });
 
-  const updateRecordStatus = useMutation({
-    mutationFn: async ({ recordId, status }) => {
+  const updateRecord = useMutation({
+    mutationFn: async ({ recordId, data }) => {
       if (!performer?.id) return;
-      await base44.functions.invoke("complianceRecordService", {
-        action: "update_record_status",
-        record_id: recordId,
-        performer_id: performer.id,
-        status,
-      });
+      await base44.entities.ComplianceRecord.update(recordId, data);
     },
     onSuccess: () => {
       refetchRecords();
-      toast.success("Status updated");
+      toast.success("Verification updated");
     },
   });
 
-  const updateRecordExpiry = useMutation({
-    mutationFn: async ({ recordId, expiresAt }) => {
-      if (!performer?.id) return;
-      await base44.functions.invoke("complianceRecordService", {
-        action: "update_record_expiry",
-        record_id: recordId,
-        performer_id: performer.id,
-        expires_at: expiresAt,
-      });
-    },
-    onSuccess: () => {
-      refetchRecords();
-      queryClient.invalidateQueries({ queryKey: ["performer", performer.id] });
-      toast.success("Expiry updated");
-    },
-  });
+  const handleVerificationUpdate = (recordId, verificationData) => {
+    updateRecord.mutate({
+      recordId,
+      data: {
+        ...verificationData,
+        verification_checked_at: new Date().toISOString(),
+        verification_checked_by: user?.id || 'unknown'
+      }
+    });
+    setShowVerificationModal(false);
+    setSelectedRecord(null);
+  };
 
-  // Early return after hooks
   if (!performer || !performer.id) {
     return <div className="text-sm text-muted-foreground p-4">Performer data not available</div>;
   }
@@ -105,48 +125,69 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
             </div>
           ) : (
             <div className="space-y-3">
-              {records.map((r) => (
-                <div key={r.id} className="flex items-center justify-between p-3 border rounded-lg bg-card/50">
-                  <div className="flex-1 space-y-1">
+              {records.map((r) => {
+                const verificationConfig = getVerificationStatusConfig(r.verification_status);
+                const VerificationIcon = 
+                  r.verification_status === 'passed' ? CheckCircle :
+                  r.verification_status === 'failed' ? XCircle :
+                  r.verification_status === 'needs_review' ? AlertCircle : null;
+
+                return (
+                  <div key={r.id} className="flex items-center justify-between p-3 border rounded-lg bg-card/50">
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className="text-xs">{r.document_type}</Badge>
+                        <Badge className={getStatusBadge(r.status)}>{r.status}</Badge>
+                        {r.verification_status && r.verification_status !== 'not_started' && (
+                          <Badge className={verificationConfig.color} variant="outline">
+                            {VerificationIcon && <VerificationIcon className="w-3 h-3 mr-1" />}
+                            {verificationConfig.label}
+                          </Badge>
+                        )}
+                        {r.verification_method === 'philsys_national_id_check' && (
+                          <Badge className="bg-blue-500/10 text-blue-500" variant="outline">
+                            PhilSys ID Check
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                        {r.issued_at && <span>Issued: {new Date(r.issued_at).toLocaleDateString()}</span>}
+                        {r.expires_at && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            Expires: {new Date(r.expires_at).toLocaleDateString()}
+                          </span>
+                        )}
+                        {r.issuing_authority && <span className="truncate max-w-[150px]">{r.issuing_authority}</span>}
+                        {r.verification_checked_at && (
+                          <span className="text-xs">
+                            Verified: {new Date(r.verification_checked_at).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">{r.document_type}</Badge>
-                      <Badge className={getStatusBadge(r.status)}>{r.status}</Badge>
-                    </div>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      {r.issued_at && <span>Issued: {new Date(r.issued_at).toLocaleDateString()}</span>}
-                      {r.expires_at && (
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          Expires: {new Date(r.expires_at).toLocaleDateString()}
-                        </span>
-                      )}
-                      {r.issuing_authority && <span className="truncate max-w-[150px]">{r.issuing_authority}</span>}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Select
-                      value={r.status}
-                      onValueChange={(v) => updateRecordStatus.mutate({ recordId: r.id, status: v })}
-                    >
-                      <SelectTrigger className="w-32 h-8">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {DOCUMENT_STATUSES.map((s) => (
-                          <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {r.document_url && (
-                      <Button variant="ghost" size="icon" asChild>
-                        <a href={r.document_url} target="_blank" rel="noopener noreferrer">
-                          <Download className="w-4 h-4" />
-                        </a>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedRecord(r);
+                          setShowVerificationModal(true);
+                        }}
+                      >
+                        Verify
                       </Button>
-                    )}
+                      {r.document_url && (
+                        <Button variant="ghost" size="icon" asChild>
+                          <a href={r.document_url} target="_blank" rel="noopener noreferrer">
+                            <Download className="w-4 h-4" />
+                          </a>
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -162,6 +203,159 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
           }}
         />
       )}
+
+      {showVerificationModal && selectedRecord && (
+        <VerificationModal
+          record={selectedRecord}
+          onClose={() => {
+            setShowVerificationModal(false);
+            setSelectedRecord(null);
+          }}
+          onSubmit={handleVerificationUpdate}
+          isLoading={updateRecord.isPending}
+        />
+      )}
     </>
+  );
+}
+
+function VerificationModal({ record, onClose, onSubmit, isLoading }) {
+  const [verificationMethod, setVerificationMethod] = useState(record.verification_method || "manual");
+  const [verificationStatus, setVerificationStatus] = useState(record.verification_status || "not_started");
+  const [verificationNote, setVerificationNote] = useState(record.verification_note || "");
+  const [performerNote, setPerformerNote] = useState(record.performer_visible_note || "");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(record.id, {
+      verification_method: verificationMethod,
+      verification_status: verificationStatus,
+      verification_note: verificationNote,
+      performer_visible_note: performerNote,
+      external_verification_url: verificationMethod === 'philsys_national_id_check' 
+        ? 'https://everify.gov.ph/check' 
+        : record.external_verification_url
+    });
+  };
+
+  return (
+    <DialogContent className="max-w-2xl">
+      <DialogHeader>
+        <DialogTitle>Verify Document</DialogTitle>
+        <DialogDescription>
+          Document Type: {record.document_type}
+          {record.issuing_authority && ` • ${record.issuing_authority}`}
+        </DialogDescription>
+      </DialogHeader>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Document Preview */}
+        {record.document_url && (
+          <div className="bg-muted rounded-lg p-4">
+            <p className="text-xs text-muted-foreground mb-2">Document</p>
+            <a 
+              href={record.document_url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-sm text-primary hover:underline flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              View Document (New Tab)
+            </a>
+          </div>
+        )}
+
+        {/* Verification Method */}
+        <div>
+          <label className="text-sm font-medium mb-2 block">Verification Method</label>
+          <Select value={verificationMethod} onValueChange={setVerificationMethod}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select method" />
+            </SelectTrigger>
+            <SelectContent>
+              {VERIFICATION_METHODS.map((m) => (
+                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {verificationMethod === 'philsys_national_id_check' && (
+            <div className="mt-3 bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 space-y-2">
+              <p className="text-xs text-blue-200">
+                <strong>Philippines National ID Check</strong>
+              </p>
+              <p className="text-xs text-blue-100">
+                Use the official Philippine National ID Check to verify the PhilID/ePhilID/Digital National ID QR code. 
+                This is a manual verification step.
+              </p>
+              <a
+                href="https://everify.gov.ph/check"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-xs text-blue-300 hover:text-blue-200 hover:underline"
+              >
+                <ExternalLink className="w-3 h-3" />
+                Open National ID Check (everify.gov.ph)
+              </a>
+              <p className="text-xs text-blue-100/80">
+                Opens in new tab. Manually scan/check the QR code and compare with uploaded ID.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Verification Status */}
+        <div>
+          <label className="text-sm font-medium mb-2 block">Verification Status</label>
+          <Select value={verificationStatus} onValueChange={setVerificationStatus}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              {VERIFICATION_STATUSES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Internal Note */}
+        <div>
+          <label className="text-sm font-medium mb-2 block">Verification Note (Internal)</label>
+          <Textarea
+            value={verificationNote}
+            onChange={(e) => setVerificationNote(e.target.value)}
+            placeholder="Enter internal verification notes..."
+            className="h-20"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Internal notes - never shown to performer
+          </p>
+        </div>
+
+        {/* Performer Visible Note */}
+        <div>
+          <label className="text-sm font-medium mb-2 block">Note to Performer (Optional)</label>
+          <Textarea
+            value={performerNote}
+            onChange={(e) => setPerformerNote(e.target.value)}
+            placeholder="Enter message visible to performer..."
+            className="h-20"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            This message will be visible to the performer
+          </p>
+        </div>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Saving..." : "Save Verification"}
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
   );
 }
