@@ -39,6 +39,10 @@ Deno.serve(async (req) => {
       offset + safePageSize + 1 // Fetch one extra to detect hasMore
     );
 
+    console.log('[searchPerformers] Filter:', filter);
+    console.log('[searchPerformers] Fetched performers count:', allPerformers?.length || 0);
+    console.log('[searchPerformers] First performer:', allPerformers?.[0]?.display_name);
+
     // Apply text search server-side if search term provided
     let results = allPerformers;
     if (search.trim()) {
@@ -47,23 +51,23 @@ Deno.serve(async (req) => {
         p.display_name?.toLowerCase().includes(searchLower) ||
         p.slug?.toLowerCase().includes(searchLower)
       );
+      console.log('[searchPerformers] After search filter:', results.length);
     }
 
     // Check if there are more results
     const hasMore = results.length > safePageSize;
     const pagedResults = hasMore ? results.slice(0, safePageSize) : results;
 
-    // We can't get exact totalCount without scanning all records,
-    // but we can provide the count within the fetched range
+    const totalCount = hasMore ? (offset + safePageSize + 1) : (offset + results.length);
+    console.log('[searchPerformers] Returning:', { totalCount, resultsLength: pagedResults.length, hasMore });
+
     return Response.json({
       success: true,
       results: pagedResults,
       hasMore,
       page,
       pageSize: safePageSize,
-      // Note: totalCount is approximate when search is active
-      // For exact counts, a separate count query would be needed
-      totalCount: hasMore ? (offset + safePageSize + 1) : (offset + results.length),
+      totalCount,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
