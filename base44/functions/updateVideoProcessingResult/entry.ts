@@ -165,8 +165,13 @@ Deno.serve(async (req) => {
     // Update video with metadata and URLs
     const videoUpdateData = {
       source_video_url: sourceAsset.cdn_url,
-      duration_seconds: metadata?.duration_seconds,
+      processing_status: 'metadata_pending',
     };
+
+    // Only write duration_seconds if actually provided by processor (never overwrite with null)
+    if (metadata?.duration_seconds) {
+      videoUpdateData.duration_seconds = metadata.duration_seconds;
+    }
 
     if (assets?.thumbnail) {
       videoUpdateData.primary_thumbnail_url = assets.thumbnail.cdn_url;
@@ -184,8 +189,6 @@ Deno.serve(async (req) => {
       videoUpdateData.preview_gif_url = assets.preview_gif.cdn_url;
     }
 
-    videoUpdateData.processing_status = 'metadata_pending';
-    if (metadata?.duration_seconds) videoUpdateData.duration_seconds = metadata.duration_seconds;
     await base44.entities.Video.update(video.id, videoUpdateData);
 
     // Trigger AI metadata generation asynchronously (fire-and-forget)

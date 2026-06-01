@@ -56,7 +56,7 @@ Generate a complete metadata package. Reply ONLY in this exact JSON:
   "ppv_price": 6.99
 }
 
-PPV price rules: 0-5min = 4.99, 5-10min = 6.99, 10-20min = 9.99, 20+min = 14.99. Duration: ${video.duration_seconds ? Math.round(video.duration_seconds / 60) + ' minutes' : 'unknown — use 6.99'}.
+Duration context for tone/pacing only: ${video.duration_seconds ? Math.round(video.duration_seconds / 60) + ' minutes' : 'unknown'}. Do NOT include ppv_price in your response.
 
 AVOID: generic intros, "Don't miss", "HD studio quality", clichés.`,
     response_json_schema: {
@@ -69,13 +69,28 @@ AVOID: generic intros, "Don't miss", "HD studio quality", clichés.`,
         seo_description: { type: 'string' },
         categories: { type: 'array', items: { type: 'string' } },
         tags: { type: 'array', items: { type: 'string' } },
-        ppv_price: { type: 'number' }
+
       },
-      required: ['title', 'description', 'short_teaser', 'seo_title', 'seo_description', 'categories', 'tags', 'ppv_price']
+      required: ['title', 'description', 'short_teaser', 'seo_title', 'seo_description', 'categories', 'tags']
     }
   });
 
-  return { ...draft, _source: 'backfill' };
+  // Calculate PPV price from real duration — never guess
+  let ppv_price = null;
+  if (video.duration_seconds) {
+    const mins = video.duration_seconds / 60;
+    if (mins <= 5) ppv_price = 4.99;
+    else if (mins <= 10) ppv_price = 6.99;
+    else if (mins <= 20) ppv_price = 9.99;
+    else ppv_price = 14.99;
+  }
+
+  return {
+    ...draft,
+    ppv_price,
+    duration_missing: !video.duration_seconds,
+    _source: 'backfill',
+  };
 }
 
 Deno.serve(async (req) => {
