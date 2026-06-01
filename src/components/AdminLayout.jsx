@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   LayoutDashboard, Video, Upload, Users, Tag, Newspaper,
   Link2, Database, Menu, Play, ChevronRight, Globe, FileText, ClipboardList,
-  AlertCircle, Settings, UserX, DollarSign
+  AlertCircle, Settings, UserX, DollarSign, MessageSquare
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -33,6 +33,7 @@ const NAV_GROUPS = [
       { href: "/admin/video-performer-match",         label: "Quick Match",     icon: Link2 },
       { href: "/admin/video-metadata-completion",     label: "Metadata Fill",   icon: FileText },
       { href: "/admin/monthly-closeout",              label: "Monthly Closeout", icon: DollarSign },
+      { href: "/admin/performer-support",             label: "Performer Support", icon: MessageSquare },
     ],
   },
   {

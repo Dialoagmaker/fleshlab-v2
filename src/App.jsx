@@ -35,6 +35,7 @@ import UnlinkedPerformers from './pages/admin/UnlinkedPerformers';
 import MonthlyCloseout from './pages/admin/MonthlyCloseout';
 import ContentReview from './pages/admin/ContentReview';
 import PromoKitDetail from './pages/admin/PromoKitDetail';
+import PerformerSupport from './pages/admin/PerformerSupport';
 import ComingSoon from './pages/ComingSoon';
 import PerformerDashboard from './pages/performer/PerformerDashboard';
 // Public pages
@@ -131,6 +132,7 @@ const AuthenticatedApp = () => {
             <Route path="/admin/monthly-closeout" element={<MonthlyCloseout />} />
             <Route path="/admin/content-review" element={<ContentReview />} />
             <Route path="/admin/promo-kit/:video_id" element={<PromoKitDetail />} />
+            <Route path="/admin/performer-support" element={<PerformerSupport />} />
           </Route>
         </Route>
       </Route>

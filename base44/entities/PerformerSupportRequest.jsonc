@@ -1,0 +1,101 @@
+{
+  "name": "PerformerSupportRequest",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "user_id": {
+      "type": "string",
+      "title": "User ID"
+    },
+    "subject": {
+      "type": "string",
+      "title": "Subject",
+      "maxLength": 120
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "general",
+        "profile",
+        "videos",
+        "compliance",
+        "earnings_question",
+        "fanclub",
+        "technical_issue",
+        "safety_privacy",
+        "other"
+      ],
+      "title": "Category"
+    },
+    "message": {
+      "type": "string",
+      "title": "Message",
+      "format": "textarea",
+      "maxLength": 4000
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "in_review",
+        "waiting_for_performer",
+        "resolved",
+        "closed"
+      ],
+      "title": "Status",
+      "default": "open"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "normal",
+        "high",
+        "urgent"
+      ],
+      "title": "Priority",
+      "default": "normal"
+    },
+    "admin_note": {
+      "type": "string",
+      "title": "Admin Note (Internal)",
+      "format": "textarea",
+      "description": "Internal admin-only note. Never shown to performers."
+    },
+    "performer_visible_response": {
+      "type": "string",
+      "title": "Response to Performer",
+      "format": "textarea",
+      "description": "Optional admin response that can be shown to the performer"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Updated At"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Resolved At"
+    },
+    "resolved_by": {
+      "type": "string",
+      "title": "Resolved By"
+    }
+  },
+  "required": [
+    "performer_id",
+    "user_id",
+    "subject",
+    "category",
+    "message"
+  ]
+}
