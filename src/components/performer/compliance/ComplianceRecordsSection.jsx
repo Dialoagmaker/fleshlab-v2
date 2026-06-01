@@ -90,15 +90,12 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
   // Helper to get signed URL for viewing (using R2 public bucket URL if available)
   const getDocumentViewUrl = (r2Key) => {
     if (!r2Key) return null;
-    // For now, use the R2 public bucket URL pattern
-    // In production, you might want to create a backend function to generate signed URLs
     const bucketUrl = window.R2_PUBLIC_BUCKET_URL || 'https://fleshlab-video.aee5a2c1098dbb664c57f458dc7b99b3.r2.cloudflarestorage.com';
     return `${bucketUrl}/${r2Key}`;
   };
 
   const handleViewDocument = async (record) => {
     try {
-      // For images, we'll use the R2 public URL directly
       const viewUrl = getDocumentViewUrl(record.document_url);
       if (viewUrl) {
         setSelectedImageUrl(viewUrl);
@@ -111,24 +108,38 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
     }
   };
 
-  const updateRecord = useMutation({
-    mutationFn: async ({ recordId, data }) => {
-      if (!performer?.id) return;
-      await base44.entities.ComplianceRecord.update(recordId, data);
+  // Mutation to update record verification using the service
+  const updateRecordVerification = useMutation({
+    mutationFn: async ({ recordId, performerId, verificationData }) => {
+      if (!performerId) return;
+      const res = await base44.functions.invoke("complianceRecordService", {
+        action: "update_record_verification",
+        record_id: recordId,
+        performer_id: performerId,
+        ...verificationData,
+      });
+      return res.data;
     },
     onSuccess: () => {
       refetchRecords();
-      toast.success("Verification updated");
+      onRefresh?.();
+      toast.success("Document verified successfully");
+    },
+    onError: (error) => {
+      toast.error(`Failed to verify document: ${error.message}`);
     },
   });
 
   const handleVerificationUpdate = (recordId, verificationData) => {
-    updateRecord.mutate({
+    updateRecordVerification.mutate({
       recordId,
-      data: {
+      performerId: performer.id,
+      verificationData: {
         ...verificationData,
-        verification_checked_at: new Date().toISOString(),
-        verification_checked_by: user?.id || 'unknown'
+        // Auto-set status to 'valid' when verification passes
+        status: verificationData.verification_status === 'passed' ? 'valid' : verificationData.status,
+        // Set verified_at timestamp when verification passes
+        verified_at: verificationData.verification_status === 'passed' ? new Date().toISOString() : undefined,
       }
     });
     setShowVerificationModal(false);
@@ -169,6 +180,8 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
                   r.verification_status === 'failed' ? XCircle :
                   r.verification_status === 'needs_review' ? AlertCircle : null;
 
+                const isVerified = r.verification_status === 'passed';
+
                 return (
                   <div key={r.id} className="flex items-center gap-3 p-3 border rounded-lg bg-card/50">
                     {/* Thumbnail or File Icon */}
@@ -205,6 +218,12 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
                             PhilSys ID Check
                           </Badge>
                         )}
+                        {isVerified && (
+                          <Badge className="bg-green-500/10 text-green-500" variant="outline">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Verified
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                         {r.issued_at && <span>Issued: {new Date(r.issued_at).toLocaleDateString()}</span>}
@@ -218,6 +237,7 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
                         {r.verification_checked_at && (
                           <span className="text-xs">
                             Verified: {new Date(r.verification_checked_at).toLocaleDateString()}
+                            {r.verification_checked_by && ` by Admin`}
                           </span>
                         )}
                       </div>
@@ -241,15 +261,17 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
                           </a>
                         </Button>
                       )}
+                      {/* Verify button - disabled if already verified */}
                       <Button
                         variant="outline"
                         size="sm"
+                        disabled={isVerified}
                         onClick={() => {
                           setSelectedRecord(r);
                           setShowVerificationModal(true);
                         }}
                       >
-                        Verify
+                        {isVerified ? "Verified" : "Verify"}
                       </Button>
                     </div>
                   </div>
@@ -285,7 +307,7 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
               setSelectedRecord(null);
             }}
             onSubmit={handleVerificationUpdate}
-            isLoading={updateRecord.isPending}
+            isLoading={updateRecordVerification.isPending}
           />
         </Dialog>
       )}
@@ -328,7 +350,8 @@ function VerificationModal({ record, onClose, onSubmit, isLoading }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(record.id, {
+    
+    const updateData = {
       verification_method: verificationMethod,
       verification_status: verificationStatus,
       verification_note: verificationNote,
@@ -336,7 +359,15 @@ function VerificationModal({ record, onClose, onSubmit, isLoading }) {
       external_verification_url: verificationMethod === 'philsys_national_id_check' 
         ? 'https://everify.gov.ph/check' 
         : record.external_verification_url
-    });
+    };
+    
+    // If verification passed, also set status to valid and verified_at timestamp
+    if (verificationStatus === 'passed') {
+      updateData.status = 'valid';
+      updateData.verified_at = new Date().toISOString();
+    }
+    
+    onSubmit(record.id, updateData);
   };
 
   return (

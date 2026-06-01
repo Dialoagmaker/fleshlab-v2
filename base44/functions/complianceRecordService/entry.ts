@@ -219,6 +219,78 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'update_record_verification') {
+      const { record_id, performer_id, verification_method, verification_status, verification_note, performer_visible_note, external_verification_url, status, verified_at } = data;
+
+      if (!record_id || !performer_id) {
+        return Response.json({ 
+          error: 'Missing required fields: record_id, performer_id' 
+        }, { status: 400 });
+      }
+
+      // Get current record
+      const record = await base44.asServiceRole.entities.ComplianceRecord.get(record_id);
+      if (!record) {
+        return Response.json({ error: 'ComplianceRecord not found' }, { status: 404 });
+      }
+
+      const oldVerificationStatus = record.verification_status;
+      const oldStatus = record.status;
+
+      // Build update data
+      const updateData = {};
+      if (verification_method !== undefined) updateData.verification_method = verification_method;
+      if (verification_status !== undefined) updateData.verification_status = verification_status;
+      if (verification_note !== undefined) updateData.verification_note = verification_note;
+      if (performer_visible_note !== undefined) updateData.performer_visible_note = performer_visible_note;
+      if (external_verification_url !== undefined) updateData.external_verification_url = external_verification_url;
+      if (status !== undefined) updateData.status = status;
+      if (verified_at !== undefined) updateData.verified_at = verified_at;
+      
+      // Always set verification_checked_at and verification_checked_by
+      updateData.verification_checked_at = new Date().toISOString();
+      updateData.verification_checked_by = user.id;
+
+      // Update record
+      await base44.asServiceRole.entities.ComplianceRecord.update(record_id, updateData);
+
+      // Create AuditLog entry
+      await base44.asServiceRole.entities.AuditLog.create({
+        entity_type: 'ComplianceRecord',
+        entity_id: record_id,
+        actor_id: user.id,
+        actor_role: user.role,
+        action: 'compliance_document_verified',
+        changes_json: JSON.stringify({
+          verification_status: {
+            before: oldVerificationStatus,
+            after: verification_status || oldVerificationStatus,
+          },
+          status: {
+            before: oldStatus,
+            after: status || oldStatus,
+          },
+        }),
+        notes: `Compliance document verified: ${record.document_type} by ${user.email}`,
+      });
+
+      // Trigger compliance lock re-evaluation
+      try {
+        await base44.asServiceRole.functions.invoke('performerComplianceService', {
+          action: 'lock_evaluation',
+          performer_id,
+        });
+      } catch (e) {
+        console.error('Lock evaluation failed:', e.message);
+      }
+
+      return Response.json({
+        success: true,
+        record_id,
+        message: 'Compliance document verification updated',
+      });
+    }
+
     return Response.json({ error: 'Unknown action' }, { status: 400 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
