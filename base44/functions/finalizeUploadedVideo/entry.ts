@@ -1,11 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
-import { S3Client, HeadObjectCommand } from 'npm:@aws-sdk/client-s3';
+import { S3Client, HeadObjectCommand, GetObjectCommand } from 'npm:@aws-sdk/client-s3';
+import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner';
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    
+
     if (!user || user.role !== 'admin') {
       return Response.json({ error: 'Unauthorized: Admin access required' }, { status: 403 });
     }
@@ -40,15 +41,14 @@ Deno.serve(async (req) => {
         Key: asset.r2_key,
       });
       const headResult = await r2Client.send(headCommand);
-      
-      // Update asset with actual file size from R2
+
       await base44.entities.VideoAsset.update(asset_id, {
         status: 'uploaded',
         file_size_bytes: headResult.ContentLength || asset.file_size_bytes,
       });
     } catch (r2Error) {
-      if (r2Error.name === 'NotFound') {
-        return Response.json({ 
+      if (r2Error.name === 'NotFound' || r2Error.$metadata?.httpStatusCode === 404) {
+        return Response.json({
           error: 'File not found in R2. Upload may have failed or expired.',
           retry_allowed: true
         }, { status: 404 });
@@ -56,46 +56,34 @@ Deno.serve(async (req) => {
       throw r2Error;
     }
 
-    // Create JobQueue entry for processing
-    const jobPayload = {
-      video_id,
-      source_asset_id: asset_id,
-      source_r2_key: asset.r2_key,
-      action: 'process_video',
-    };
-
+    // Create JobQueue entry
     const job = await base44.entities.JobQueue.create({
       job_type: 'process_video',
       status: 'pending',
       priority: 5,
-      payload: JSON.stringify(jobPayload),
+      payload: JSON.stringify({ video_id, source_asset_id: asset_id, source_r2_key: asset.r2_key, action: 'process_video' }),
       entity_type: 'Video',
       entity_id: video_id,
       retry_count: 0,
     });
 
-    // Trigger external processor (fire-and-forget)
-    const processorWebhookUrl = Deno.env.get('PROCESSOR_WEBHOOK_URL');
-    const processorApiKey = Deno.env.get('PROCESSOR_API_KEY');
-    const publicBucketUrl = Deno.env.get('R2_PUBLIC_BUCKET_URL');
-
-    // Generate signed GET URL for processor to download source
-    const { GetObjectCommand } = await import('npm:@aws-sdk/client-s3');
-    const { getSignedUrl } = await import('npm:@aws-sdk/s3-request-presigner');
-    
+    // Generate signed URL for processor to download source
     const getCommand = new GetObjectCommand({
       Bucket: Deno.env.get('R2_BUCKET_NAME'),
       Key: asset.r2_key,
     });
     const sourceSignedUrl = await getSignedUrl(r2Client, getCommand, { expiresIn: 3600 });
 
-    // Fire-and-forget processor trigger
+    const processorWebhookUrl = Deno.env.get('PROCESSOR_WEBHOOK_URL');
+    const processorApiKey = Deno.env.get('PROCESSOR_API_KEY');
+    const appBaseUrl = Deno.env.get('APP_BASE_URL') || '';
+
     const processorPayload = {
       base44_video_id: video_id,
       base44_asset_id: asset_id,
       source_r2_key: asset.r2_key,
       source_signed_url: sourceSignedUrl,
-      callback_url: `${req.headers.get('origin') || 'https://preview-sandbox--6a1bc26018a7bec38bc6ac4a.base44.app'}/functions/updateVideoProcessingResult`,
+      callback_url: `${appBaseUrl}/api/functions/updateVideoProcessingResult`,
       callback_api_key: processorApiKey,
       target_asset_prefix: `fleshlab/${asset.r2_key.split('/')[1]}/videos/${asset.r2_key.split('/')[3]}/`,
       processor_job_id: `proc_${job.id}`,
@@ -109,20 +97,50 @@ Deno.serve(async (req) => {
       },
     };
 
-    // Fire-and-forget: Don't wait for response
-    fetch(processorWebhookUrl + '/trigger', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Processor-API-Key': processorApiKey,
-      },
-      body: JSON.stringify(processorPayload),
-    }).catch(err => {
-      console.error('Processor trigger failed:', err);
-      // Don't throw - fire-and-forget should not block response
-    });
+    // Await the processor trigger to surface errors
+    let processorStatus = 'unknown';
+    try {
+      const processorResponse = await fetch(`${processorWebhookUrl}/trigger`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Processor-API-Key': processorApiKey,
+        },
+        body: JSON.stringify(processorPayload),
+      });
 
-    // Update job status to running
+      processorStatus = processorResponse.status;
+
+      if (!processorResponse.ok) {
+        const errorText = await processorResponse.text();
+        console.error('Processor trigger failed:', processorResponse.status, errorText);
+        await base44.entities.JobQueue.update(job.id, {
+          status: 'failed',
+          error_message: `Processor responded with ${processorResponse.status}: ${errorText}`,
+          completed_at: new Date().toISOString(),
+        });
+        return Response.json({
+          error: `Processor trigger failed: HTTP ${processorResponse.status}`,
+          details: errorText,
+          job_id: job.id,
+        }, { status: 502 });
+      }
+
+      console.log('Processor triggered successfully, status:', processorResponse.status);
+    } catch (processorError) {
+      console.error('Processor fetch error:', processorError.message);
+      await base44.entities.JobQueue.update(job.id, {
+        status: 'failed',
+        error_message: `Failed to reach processor: ${processorError.message}`,
+        completed_at: new Date().toISOString(),
+      });
+      return Response.json({
+        error: `Failed to reach processor: ${processorError.message}`,
+        job_id: job.id,
+      }, { status: 502 });
+    }
+
+    // Update job to running
     await base44.entities.JobQueue.update(job.id, {
       status: 'running',
       started_at: new Date().toISOString(),
@@ -131,6 +149,8 @@ Deno.serve(async (req) => {
     return Response.json({
       status: 'queued',
       job_id: job.id,
+      processor_http_status: processorStatus,
+      callback_url: `${appBaseUrl}/api/functions/updateVideoProcessingResult`,
       message: 'Upload verified. Processing started.',
     });
 
