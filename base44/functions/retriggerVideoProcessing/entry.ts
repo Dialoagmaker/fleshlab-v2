@@ -51,7 +51,14 @@ Deno.serve(async (req) => {
     const processorResponse = await fetch(`${processorWebhookUrl}/regenerate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ secret: processorSecret, studio, file, src_url: signedUrl }),
+      body: JSON.stringify({
+        secret: processorSecret,
+        studio,
+        file,
+        src_url: signedUrl,
+        video_id,
+        source_asset_id: sourceAsset.id,
+      }),
     });
 
     if (!processorResponse.ok) {
