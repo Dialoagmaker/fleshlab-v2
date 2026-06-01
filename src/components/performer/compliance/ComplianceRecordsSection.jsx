@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -83,23 +83,36 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
   // Helper to get thumbnail URL - uses signed URL for R2 keys
   const [thumbnailUrls, setThumbnailUrls] = useState({});
 
-  const loadThumbnailUrl = async (docUrl, recordId) => {
-    if (!docUrl || docUrl.startsWith('http')) return;
-    
-    try {
-      const result = await getSignedUrl.mutateAsync(docUrl);
-      if (result?.signed_url) {
-        setThumbnailUrls(prev => ({ ...prev, [recordId]: result.signed_url }));
+  // Load thumbnail URLs once per record
+  useEffect(() => {
+    const loadThumbnails = async () => {
+      const toLoad = safeRecords.filter(r => 
+        r.document_url && 
+        !r.document_url.startsWith('http') && 
+        isImageDocument(r.document_url) &&
+        !thumbnailUrls[r.id]
+      );
+
+      for (const record of toLoad) {
+        try {
+          const result = await getSignedUrl.mutateAsync(record.document_url);
+          if (result?.signed_url) {
+            setThumbnailUrls(prev => ({ ...prev, [record.id]: result.signed_url }));
+          }
+        } catch (error) {
+          console.log('Could not load thumbnail for', record.id, ':', error.message);
+        }
       }
-    } catch (error) {
-      console.log('Could not load thumbnail:', error.message);
+    };
+
+    if (safeRecords.length > 0) {
+      loadThumbnails();
     }
-  };
+  }, [safeRecords.map(r => r.id).join(',')]); // Shallow dep tracking
 
   const getThumbnailUrl = (docUrl, recordId) => {
     if (!docUrl) return null;
     if (docUrl.startsWith('http')) return docUrl;
-    // Check if we have a signed URL for this record
     return thumbnailUrls[recordId] || null;
   };
 
@@ -220,13 +233,6 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
 
                 return (
                   <div key={r.id} className="flex items-center gap-3 p-3 border rounded-lg bg-card/50">
-                    {/* Load thumbnail on mount if needed */}
-                    {(() => {
-                      if (isImageDocument(r.document_url) && !thumbnailUrls[r.id] && !r.document_url.startsWith('http')) {
-                        loadThumbnailUrl(r.document_url, r.id);
-                      }
-                      return null;
-                    })()}
                     {/* Thumbnail or File Icon */}
                     <div className="w-16 h-16 rounded-lg overflow-hidden border bg-muted flex-shrink-0">
                       {isImageDocument(r.document_url) ? (
