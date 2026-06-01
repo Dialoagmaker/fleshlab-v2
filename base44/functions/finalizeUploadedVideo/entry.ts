@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
     // Await the processor trigger to surface errors
     let processorStatus = 'unknown';
     try {
-      const processorResponse = await fetch(`${processorWebhookUrl}/trigger`, {
+      const processorResponse = await fetch(processorWebhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
