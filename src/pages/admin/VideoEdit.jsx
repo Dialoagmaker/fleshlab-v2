@@ -11,6 +11,8 @@ import { ArrowLeft, Plus, X, Save, Trash2, RefreshCw } from "lucide-react";
 import AICopyHelper from "@/components/admin/AICopyHelper";
 import VideoIdentificationPanel from "@/components/admin/VideoIdentificationPanel";
 import PerformerMultiSelect from "@/components/admin/PerformerMultiSelect";
+import VideoStatsSection from "@/components/admin/video/VideoStatsSection";
+import VideoDealsSection from "@/components/admin/video/VideoDealsSection";
 
 const EMPTY_FORM = {
   title: "", slug: "", description: "", short_summary: "", brand_id: "",
@@ -497,6 +499,12 @@ export default function VideoEdit() {
             <span className="text-sm text-foreground">PPV Enabled (metadata flag only)</span>
           </label>
         </section>
+
+        {/* Platform Stats Section */}
+        {!isNew && <VideoStatsSection videoId={id} />}
+
+        {/* Commercial Deals Section */}
+        {!isNew && <VideoDealsSection videoId={id} />}
 
         {/* SEO */}
         <section className="bg-card border border-border rounded-xl p-6 space-y-5">
