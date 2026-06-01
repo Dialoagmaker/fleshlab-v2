@@ -75,14 +75,6 @@ export default function ComplianceTab({ performerId }) {
                       }
                     </p>
                   )}
-                  {contract.document_url && (
-                    <Button variant="outline" size="sm" asChild className="mt-2">
-                      <a href={contract.document_url} target="_blank" rel="noopener noreferrer">
-                        <Download className="w-4 h-4 mr-2" />
-                        Download
-                      </a>
-                    </Button>
-                  )}
                 </div>
               );
             })

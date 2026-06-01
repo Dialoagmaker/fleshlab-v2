@@ -20,8 +20,8 @@ Deno.serve(async (req) => {
 
     if (!myPerformer) {
       return Response.json({ 
-        error: 'No linked performer profile found. Please contact support to link your account.'
-      }, { status: 404 });
+        error: 'No performer profile linked to your account. Please contact management.'
+      }, { status: 403 });
     }
 
     // Action: get_dashboard_summary
@@ -235,8 +235,7 @@ Deno.serve(async (req) => {
         contract_type: c.contract_type,
         status: c.status,
         signed_at: c.signed_at,
-        expires_at: c.expires_at,
-        document_url: c.document_url
+        expires_at: c.expires_at
       }));
 
       const safeRecords = complianceRecords.map(r => ({
