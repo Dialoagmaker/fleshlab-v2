@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
-import { Lock, Unlock } from "lucide-react";
+import { ShieldAlert, ShieldCheck } from "lucide-react";
 
 const getStatusBadge = (status) => {
   const variants = {
@@ -106,7 +106,7 @@ export default function AccountControlsSection({ performer }) {
               disabled={manualUnlock.isPending || !performer.compliance_locked}
               className={performer.compliance_locked ? "" : "opacity-50"}
             >
-              <Unlock className="w-4 h-4 mr-2" />
+              <ShieldCheck className="w-4 h-4 mr-2" />
               {manualUnlock.isPending ? "Unlocking..." : "Manually Unlock"}
             </Button>
             <Button
@@ -115,7 +115,7 @@ export default function AccountControlsSection({ performer }) {
               disabled={manualLock.isPending || performer.compliance_locked}
               className={performer.compliance_locked ? "opacity-50" : ""}
             >
-              <Lock className="w-4 h-4 mr-2" />
+              <ShieldAlert className="w-4 h-4 mr-2" />
               {manualLock.isPending ? "Locking..." : "Manually Lock"}
             </Button>
           </div>
