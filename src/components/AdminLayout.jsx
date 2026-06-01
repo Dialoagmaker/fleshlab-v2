@@ -2,22 +2,44 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import { useState } from "react";
 import {
   LayoutDashboard, Video, Upload, Users, Tag, Newspaper,
-  Link2, Database, Menu, Play, ChevronRight, Globe, FileText, ClipboardList
+  Link2, Database, Menu, Play, ChevronRight, Globe, FileText, ClipboardList,
+  AlertCircle, Settings
 } from "lucide-react";
 
-const navItems = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/admin/draft-review", label: "Draft Review", icon: ClipboardList },
-  { href: "/admin/videos", label: "Videos", icon: Video },
-  { href: "/admin/video-upload", label: "Video Upload", icon: Upload },
-  { href: "/admin/video-performer-match", label: "Quick Match", icon: Link2 },
-  { href: "/admin/video-metadata-completion", label: "Metadata Fill", icon: FileText },
-  { href: "/admin/performers", label: "Performers", icon: Users },
-  { href: "/admin/brands", label: "Brands", icon: Tag },
-  { href: "/admin/applications", label: "Applications", icon: FileText },
-  { href: "/admin/news", label: "News", icon: Newspaper },
-  { href: "/admin/seo", label: "SEO", icon: Link2 },
-  { href: "/admin/migration", label: "Migration", icon: Database },
+const NAV_GROUPS = [
+  {
+    label: "Overview",
+    items: [
+      { href: "/admin",              label: "Dashboard",  icon: LayoutDashboard, exact: true },
+    ],
+  },
+  {
+    label: "Content",
+    items: [
+      { href: "/admin/videos",       label: "Videos",     icon: Video },
+      { href: "/admin/performers",   label: "Performers", icon: Users },
+      { href: "/admin/brands",       label: "Brands",     icon: Tag },
+      { href: "/admin/news",         label: "News",       icon: Newspaper },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [
+      { href: "/admin/applications",                  label: "Applications",    icon: FileText },
+      { href: "/admin/draft-review",                  label: "Draft Review",    icon: ClipboardList },
+      { href: "/admin/missing-performer-assignments", label: "Missing Assign.", icon: AlertCircle },
+      { href: "/admin/video-upload",                  label: "Video Upload",    icon: Upload },
+      { href: "/admin/video-performer-match",         label: "Quick Match",     icon: Link2 },
+      { href: "/admin/video-metadata-completion",     label: "Metadata Fill",   icon: FileText },
+    ],
+  },
+  {
+    label: "System",
+    items: [
+      { href: "/admin/seo",       label: "SEO",       icon: Settings },
+      { href: "/admin/migration", label: "Migration", icon: Database },
+    ],
+  },
 ];
 
 function SidebarContent({ onNavClick }) {
@@ -38,27 +60,36 @@ function SidebarContent({ onNavClick }) {
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {navItems.map(item => {
-          const Icon = item.icon;
-          const active = isActive(item);
-          return (
-            <Link
-              key={item.href}
-              to={item.href}
-              onClick={onNavClick}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              <Icon className="w-4 h-4 flex-shrink-0" />
-              <span>{item.label}</span>
-              {active && <ChevronRight className="w-3.5 h-3.5 ml-auto opacity-70" />}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-4">
+        {NAV_GROUPS.map(group => (
+          <div key={group.label}>
+            <p className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground/60 px-3 mb-1">
+              {group.label}
+            </p>
+            <div className="space-y-0.5">
+              {group.items.map(item => {
+                const Icon = item.icon;
+                const active = isActive(item);
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    onClick={onNavClick}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      active
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <span>{item.label}</span>
+                    {active && <ChevronRight className="w-3.5 h-3.5 ml-auto opacity-70" />}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       <div className="px-3 py-4 border-t border-border">
