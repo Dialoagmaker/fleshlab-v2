@@ -548,6 +548,87 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Action: invite_performer_user
+    // Secure invitation flow - performer sets their own password
+    if (action === 'invite_performer_user') {
+      const { email, display_name } = body;
+      
+      // Validation: email required
+      if (!email || email.trim() === '') {
+        return Response.json({ error: 'Email is required' }, { status: 400 });
+      }
+
+      // Validation: email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return Response.json({ error: 'Invalid email format' }, { status: 400 });
+      }
+
+      // Check if performer already has a linked user
+      if (performer.user_id) {
+        return Response.json({ 
+          error: 'Performer is already linked to a user. Unlink first before inviting a new user.',
+          current_user_id: performer.user_id
+        }, { status: 400 });
+      }
+
+      // Check if user with this email already exists
+      const existingUsers = await base44.asServiceRole.entities.User.filter({});
+      const existingUser = existingUsers.find(u => u.email?.toLowerCase() === email.toLowerCase());
+      
+      if (existingUser) {
+        return Response.json({ 
+          error: 'User with this email already exists. Use "Link Existing User" instead.',
+          existing_user_id: existingUser.id,
+          existing_user_email: existingUser.email
+        }, { status: 400 });
+      }
+
+      // Send invitation via Base44 Auth
+      // This creates the user and sends them an email to set their password
+      await base44.asServiceRole.auth.inviteUser(email, 'user');
+
+      // Wait a moment for the user to be created, then fetch them
+      // Note: In production, you might want a more robust way to get the newly created user
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const users = await base44.asServiceRole.entities.User.filter({});
+      const newUser = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+
+      if (!newUser) {
+        return Response.json({ 
+          error: 'Invitation sent but could not link user. Please manually link the user after they accept the invitation.',
+          invitation_sent: true
+        }, { status: 202 });
+      }
+
+      // Link the newly created user to this performer
+      await base44.asServiceRole.entities.Performer.update(performer_id, { 
+        user_id: newUser.id 
+      });
+
+      // Append AuditLog
+      await appendAuditLog({
+        action: 'performer_login_account_created',
+        changes_json: { 
+          user_id: newUser.id,
+          user_email: newUser.email,
+          performer_display_name: performer.display_name
+        },
+        notes: `Invitation sent to ${email}. User linked to performer ${performer.display_name}. Performer must accept invitation and set password.`,
+      });
+
+      return Response.json({
+        success: true,
+        message: 'Invitation sent and user linked to performer',
+        performer_id,
+        user_id: newUser.id,
+        user_email: email,
+        invitation_sent: true,
+        note: 'Performer will receive an email to set their password. They should change it after first login.',
+      });
+    }
+
     return Response.json({ error: 'Unknown action' }, { status: 400 });
   } catch (error) {
     console.error('performerAdminService error:', error);

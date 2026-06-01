@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Search, User, Unlink } from "lucide-react";
+import { Search, User, Unlink, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 export default function LinkUserModal({ performerId, currentUserId, onClose, onSuccess }) {
@@ -121,7 +121,7 @@ export default function LinkUserModal({ performerId, currentUserId, onClose, onS
               </Button>
             </div>
           ) : (
-            // Search and link new user
+            // Search and link existing user
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="search-user">Search User by Email or Name</Label>
