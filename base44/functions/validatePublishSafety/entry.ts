@@ -13,6 +13,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'video_id required' }, { status: 400 });
     }
 
+    // IMPORTANT: Publish safety rules are intentionally duplicated in validatePublishSafety.js
+    // and publishVideoToWebsite.js because shared helper modules are not supported reliably
+    // in this Base44 deployment. Any future change to publish safety rules must be applied
+    // to BOTH files. These rules must stay identical.
+
     // Fetch video
     const video = await base44.entities.Video.get(video_id);
     if (!video) {
