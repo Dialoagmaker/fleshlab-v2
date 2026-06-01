@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Download, Calendar, Plus } from "lucide-react";
+import { Upload, Download, Calendar, Plus, Eye } from "lucide-react";
 import { toast } from "sonner";
 import AddContractModal from "./AddContractModal";
+import AdminFileViewModal from "@/components/admin/AdminFileViewModal";
 
 const CONTRACT_STATUSES = [
   { value: "draft", label: "Draft" },
@@ -37,6 +38,8 @@ const getStatusBadge = (status) => {
 export default function ContractsSection({ performer, contracts, onRefresh }) {
   const queryClient = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingContract, setViewingContract] = useState(null);
 
   // Safe array default - prevent .map() on undefined
   const safeContracts = Array.isArray(contracts) ? contracts : [];
@@ -118,11 +121,37 @@ export default function ContractsSection({ performer, contracts, onRefresh }) {
                       </SelectContent>
                     </Select>
                     {c.document_url && (
-                      <Button variant="ghost" size="icon" asChild>
-                        <a href={c.document_url} target="_blank" rel="noopener noreferrer">
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setViewingContract(c);
+                            setShowViewModal(true);
+                          }}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          View
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={async () => {
+                            try {
+                              const result = await base44.functions.invoke('getAdminFileViewUrl', {
+                                object_key: c.document_url,
+                              });
+                              if (result?.signed_url) {
+                                window.open(result.signed_url, '_blank');
+                              }
+                            } catch (error) {
+                              toast.error(`Failed to download: ${error.message}`);
+                            }
+                          }}
+                        >
                           <Download className="w-4 h-4" />
-                        </a>
-                      </Button>
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -140,6 +169,16 @@ export default function ContractsSection({ performer, contracts, onRefresh }) {
             queryClient.invalidateQueries({ queryKey: ["contracts", performer.id] });
             onRefresh?.();
           }}
+        />
+      )}
+
+      {showViewModal && viewingContract && (
+        <AdminFileViewModal
+          open={showViewModal}
+          onOpenChange={setShowViewModal}
+          recordId={viewingContract.id}
+          recordType="contract"
+          objectKey={viewingContract.document_url}
         />
       )}
     </>

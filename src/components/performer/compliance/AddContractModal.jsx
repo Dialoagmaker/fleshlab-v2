@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Upload, X, File } from "lucide-react";
 import { toast } from "sonner";
+import { uploadAdminFile } from "@/lib/adminFileUpload";
 
 const CONTRACT_TYPES = [
   { value: "performer", label: "Performer Agreement" },
@@ -61,36 +62,43 @@ export default function AddContractModal({ performerId, onClose, onSuccess }) {
     },
   });
 
-  const uploadFile = (uploadUrl, file) => {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-          setUploadProgress((e.loaded / e.total) * 100);
-        }
-      });
-      xhr.addEventListener('load', () => {
-        if (xhr.status >= 200 && xhr.status < 300) resolve();
-        else reject(new Error(`Upload failed: ${xhr.status}`));
-      });
-      xhr.addEventListener('error', () => reject(new Error('Upload failed')));
-      xhr.open('PUT', uploadUrl);
-      xhr.setRequestHeader('Content-Type', file.type);
-      xhr.send(file);
-    });
-  };
-
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
-    if (file && file.size <= 50 * 1024 * 1024) {
-      setSelectedFile(file);
-      if (!formData.title) setFormData({ ...formData, title: file.name });
-    } else {
+    if (!file) return;
+    
+    // Validate file size
+    if (file.size > 50 * 1024 * 1024) {
       toast.error("File must be under 50MB");
+      return;
+    }
+    
+    // Validate MIME type
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Invalid file type. Allowed: PDF, JPG, PNG, GIF, WebP, DOC, DOCX");
+      return;
+    }
+    
+    setSelectedFile(file);
+    if (!formData.title) {
+      setFormData({ ...formData, title: file.name });
     }
   };
 
   const handleSubmit = async () => {
+    if (!performerId) {
+      toast.error("Performer ID is missing");
+      return;
+    }
     if (!formData.title) {
       toast.error("Title is required");
       return;
@@ -104,24 +112,21 @@ export default function AddContractModal({ performerId, onClose, onSuccess }) {
       setIsUploading(true);
       setUploadProgress(0);
 
-      // Get upload URL
-      const { upload_url, r2_key } = await base44.functions.invoke("createDocumentUploadUrl", {
-        entity_type: "Contract",
-        performer_id: performerId,
-        file_name: selectedFile.name,
-        file_size_bytes: selectedFile.size,
-        mime_type: selectedFile.type,
+      // Upload file using centralized helper
+      const uploadResult = await uploadAdminFile({
+        file: selectedFile,
+        contextType: 'contract',
+        performerId: performerId,
+        onProgress: (progress) => setUploadProgress(progress),
       });
-
-      // Upload file
-      await uploadFile(upload_url, selectedFile);
 
       // Create contract
       createContract.mutate({
         ...formData,
-        document_url: r2_key,
+        document_url: uploadResult.object_key, // Store R2 key, not signed URL
       });
     } catch (error) {
+      console.error("Contract upload error:", error);
       toast.error(`Upload failed: ${error.message}`);
       setIsUploading(false);
     }
@@ -206,18 +211,7 @@ export default function AddContractModal({ performerId, onClose, onSuccess }) {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="document_url">Document URL *</Label>
-            <Input
-              id="document_url"
-              placeholder="https://storage.example.com/contracts/..."
-              value={formData.document_url}
-              onChange={(e) => setFormData({ ...formData, document_url: e.target.value })}
-            />
-            <p className="text-xs text-muted-foreground">
-              Enter the document storage URL. File upload coming soon.
-            </p>
-          </div>
+          {/* Document URL field removed - file upload handles storage */}
 
           <div className="space-y-2">
             <Label htmlFor="notes">Admin Notes</Label>

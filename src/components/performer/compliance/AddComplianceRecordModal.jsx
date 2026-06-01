@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { Upload, File, X } from "lucide-react";
+import { uploadAdminFile } from "@/lib/adminFileUpload";
 
 const RECORD_TYPES = [
   { value: "id", label: "ID Document" },
@@ -43,34 +44,40 @@ export default function AddComplianceRecordModal({ performerId, onClose, onSucce
     notes: "",
   });
 
-  const uploadFile = (uploadUrl, file) => {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) setUploadProgress((e.loaded / e.total) * 100);
-      });
-      xhr.addEventListener('load', () => {
-        if (xhr.status >= 200 && xhr.status < 300) resolve();
-        else reject(new Error(`Upload failed: ${xhr.status}`));
-      });
-      xhr.addEventListener('error', () => reject(new Error('Upload failed')));
-      xhr.addEventListener('abort', () => reject(new Error('Upload aborted')));
-      xhr.open('PUT', uploadUrl, true);
-      xhr.setRequestHeader('Content-Type', file.type);
-      xhr.send(file);
-    });
-  };
-
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
-    if (file && file.size <= 50 * 1024 * 1024) {
-      setSelectedFile(file);
-    } else {
+    if (!file) return;
+    
+    // Validate file size
+    if (file.size > 50 * 1024 * 1024) {
       toast.error("File must be under 50MB");
+      return;
     }
+    
+    // Validate MIME type
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Invalid file type. Allowed: PDF, JPG, PNG, GIF, WebP, DOC, DOCX");
+      return;
+    }
+    
+    setSelectedFile(file);
   };
 
   const handleSubmit = async () => {
+    if (!performerId) {
+      toast.error("Performer ID is missing");
+      return;
+    }
     if (!formData.document_type) {
       toast.error("Document type is required");
       return;
@@ -84,21 +91,19 @@ export default function AddComplianceRecordModal({ performerId, onClose, onSucce
       setIsUploading(true);
       setUploadProgress(0);
 
-      const res = await base44.functions.invoke('getUploadUrl', {
-        performer_id: performerId,
-        file_name: selectedFile.name,
-        file_size_bytes: selectedFile.size,
-        mime_type: selectedFile.type,
+      // Upload file using centralized helper
+      const uploadResult = await uploadAdminFile({
+        file: selectedFile,
+        contextType: 'compliance_record',
+        performerId: performerId,
+        onProgress: (progress) => setUploadProgress(progress),
       });
-      const { upload_url, r2_key } = res.data;
-
-      await uploadFile(upload_url, selectedFile);
 
       // Convert dates to ISO 8601 format with time (entity expects date-time, not date)
       const createPayload = {
         performer_id: performerId,
         document_type: formData.document_type,
-        document_url: r2_key,
+        document_url: uploadResult.object_key, // Store R2 key, not signed URL
         issued_at: formData.issued_at ? new Date(formData.issued_at).toISOString() : undefined,
         expires_at: formData.expires_at ? new Date(formData.expires_at).toISOString() : undefined,
         status: formData.status,

@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import AddComplianceRecordModal from "./AddComplianceRecordModal";
+import AdminFileViewModal from "@/components/admin/AdminFileViewModal";
 import { useAuth } from "@/lib/AuthContext";
 
 const DOCUMENT_STATUSES = [
@@ -67,9 +68,8 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
-  const [showImageModal, setShowImageModal] = useState(false);
-  const [selectedImageUrl, setSelectedImageUrl] = useState(null);
-  const [isUrlLoading, setIsUrlLoading] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingRecord, setViewingRecord] = useState(null);
 
   const { data: records, refetch: refetchRecords } = useQuery({
     queryKey: ["complianceRecords", performer?.id],
@@ -135,26 +135,9 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
     },
   });
 
-  const handleViewDocument = async (record) => {
-    try {
-      setIsUrlLoading(true);
-      console.log('Fetching signed URL for document:', record.document_url);
-      
-      const result = await getSignedUrl.mutateAsync(record.document_url);
-      
-      if (result?.signed_url) {
-        console.log('Signed URL generated successfully');
-        setSelectedImageUrl(result.signed_url);
-        setShowImageModal(true);
-      } else {
-        toast.error('Unable to generate document URL');
-      }
-    } catch (error) {
-      console.error('Failed to generate signed URL:', error);
-      toast.error(`Failed to load document: ${error.message}`);
-    } finally {
-      setIsUrlLoading(false);
-    }
+  const handleViewDocument = (record) => {
+    setViewingRecord(record);
+    setShowViewModal(true);
   };
 
   // Mutation to update record verification using the service
@@ -293,33 +276,14 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {r.document_url && isImageDocument(r.document_url) && (
+                      {r.document_url && (
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleViewDocument(r)}
-                          disabled={isUrlLoading}
                         >
                           <Eye className="w-4 h-4 mr-1" />
-                          {isUrlLoading ? 'Loading...' : 'View'}
-                        </Button>
-                      )}
-                      {r.document_url && (
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={async () => {
-                            try {
-                              const result = await getSignedUrl.mutateAsync(r.document_url);
-                              if (result?.signed_url) {
-                                window.open(result.signed_url, '_blank');
-                              }
-                            } catch (error) {
-                              toast.error(`Failed to download: ${error.message}`);
-                            }
-                          }}
-                        >
-                          <Download className="w-4 h-4" />
+                          View
                         </Button>
                       )}
                       {/* Verify button - disabled if already verified */}
@@ -373,51 +337,14 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
         </Dialog>
       )}
 
-      {showImageModal && (
-        <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
-          <DialogContent className="max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>Document Preview</DialogTitle>
-              <DialogDescription>Viewing uploaded compliance document</DialogDescription>
-            </DialogHeader>
-            <div className="flex items-center justify-center min-h-[400px]">
-              {isUrlLoading ? (
-                <div className="text-center">
-                  <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-sm text-muted-foreground">Loading document...</p>
-                </div>
-              ) : selectedImageUrl ? (
-                <img
-                  src={selectedImageUrl}
-                  alt="Document preview"
-                  className="max-w-full max-h-[60vh] object-contain rounded-lg"
-                  onError={(e) => {
-                    console.error('Image failed to load');
-                    toast.error('Failed to load image');
-                  }}
-                />
-              ) : (
-                <div className="text-center text-muted-foreground">
-                  <FileIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Document preview not available</p>
-                </div>
-              )}
-            </div>
-            <DialogFooter>
-              <Button 
-                variant="outline" 
-                onClick={() => selectedImageUrl && window.open(selectedImageUrl, '_blank')}
-                disabled={!selectedImageUrl}
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Download
-              </Button>
-              <Button variant="outline" onClick={() => setShowImageModal(false)}>
-                Close
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+      {showViewModal && viewingRecord && (
+        <AdminFileViewModal
+          open={showViewModal}
+          onOpenChange={setShowViewModal}
+          recordId={viewingRecord.id}
+          recordType="compliance_record"
+          objectKey={viewingRecord.document_url}
+        />
       )}
     </>
   );
