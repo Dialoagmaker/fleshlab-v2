@@ -114,13 +114,14 @@ function DraftPanel({ draft, onApply }) {
 // Main Component — FLESHLAB Single-Call Architecture
 // ---------------------------------------------------------------------------
 
-export default function AICopyHelper({ form, performerNames, brandName, onApply }) {
+export default function AICopyHelper({ form, performerNames, brandName, thumbnailUrl, onApply }) {
   const [open, setOpen]     = useState(false);
   const [notes, setNotes]   = useState("");
   const [rawTitle, setRawTitle] = useState("");
   const [loading, setLoading] = useState(false);
   const [draft, setDraft]   = useState(null);
   const [error, setError]   = useState("");
+  const [autoTriggered, setAutoTriggered] = useState(false);
 
   const handleGenerate = async () => {
     setError("");
@@ -135,9 +136,10 @@ export default function AICopyHelper({ form, performerNames, brandName, onApply 
         brandName,
         categories: form.categories,
         tags:       form.tags,
+        thumbnail_url: thumbnailUrl || null,
       });
       
-      setDraft(result);
+      setDraft(result.data || result);
     } catch (e) {
       setError("Generation failed. Check your connection and try again.");
     } finally {
@@ -145,11 +147,21 @@ export default function AICopyHelper({ form, performerNames, brandName, onApply 
     }
   };
 
+  // Auto-generate when panel opens (once per session)
+  const handleToggleOpen = () => {
+    const willOpen = !open;
+    setOpen(willOpen);
+    if (willOpen && !autoTriggered && !draft && (form.title || thumbnailUrl)) {
+      setAutoTriggered(true);
+      setTimeout(handleGenerate, 100);
+    }
+  };
+
   return (
     <section className="bg-card border border-primary/20 rounded-xl overflow-hidden">
       <button
         type="button"
-        onClick={() => setOpen(o => !o)}
+        onClick={handleToggleOpen}
         className="w-full flex items-center gap-3 px-6 py-4 text-left hover:bg-muted/30 transition-colors"
       >
         <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />

@@ -306,6 +306,7 @@ export default function VideoEdit() {
         form={form}
         performerNames={creditedPerformerNames}
         brandName={brandName}
+        thumbnailUrl={form.primary_thumbnail_url || null}
         onApply={(field, value) => {
           set(field, value);
           if (errors[field]) setErrors(ex => ({ ...ex, [field]: undefined }));

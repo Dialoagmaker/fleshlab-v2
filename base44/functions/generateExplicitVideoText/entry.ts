@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { title, notes, performerNames, brandName, categories, tags } = await req.json();
+    const { title, notes, performerNames, brandName, categories, tags, thumbnail_url } = await req.json();
     
     if (!title || !title.trim()) {
       return Response.json({ error: 'Title or scene notes are required' }, { status: 400 });
@@ -25,7 +25,11 @@ Deno.serve(async (req) => {
     ].filter(Boolean).join("\n");
 
     const response = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are an expert adult SEO copywriter for FLESHLAB Studios — a premium gay adult studio with verified 18+ Asian twink and Filipino male performers.
+      ...(thumbnail_url ? { file_urls: [thumbnail_url] } : {}),
+      model: thumbnail_url ? 'gemini_3_flash' : undefined,
+      prompt: `You are an expert adult SEO copywriter for FLESHLAB Studios${thumbnail_url ? ' with access to a frame/thumbnail from this video for visual analysis' : ''}. Analyze it carefully for: physical appearance of performers, setting/location, lighting, acts depicted, props/toys.
+
+You are an expert adult SEO copywriter for FLESHLAB Studios — a premium gay adult studio with verified 18+ Asian twink and Filipino male performers.
 
 The production context is:
 ${contextBlock}
