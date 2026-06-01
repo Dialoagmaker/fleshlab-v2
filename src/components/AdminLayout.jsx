@@ -2,11 +2,12 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import { useState } from "react";
 import {
   LayoutDashboard, Video, Upload, Users, Tag, Newspaper,
-  Link2, Database, Menu, Play, ChevronRight, Globe, FileText
+  Link2, Database, Menu, Play, ChevronRight, Globe, FileText, ClipboardList
 } from "lucide-react";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/admin/draft-review", label: "Draft Review", icon: ClipboardList },
   { href: "/admin/videos", label: "Videos", icon: Video },
   { href: "/admin/video-upload", label: "Video Upload", icon: Upload },
   { href: "/admin/video-performer-match", label: "Quick Match", icon: Link2 },

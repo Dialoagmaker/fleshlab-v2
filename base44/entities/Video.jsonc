@@ -48,6 +48,31 @@
       "title": "Status",
       "default": "draft"
     },
+    "processing_status": {
+      "type": "string",
+      "enum": [
+        "uploading",
+        "processing",
+        "metadata_pending",
+        "draft_ready",
+        "failed"
+      ],
+      "title": "Processing Status"
+    },
+    "ai_metadata_draft": {
+      "type": "string",
+      "title": "AI Metadata Draft (JSON)"
+    },
+    "ai_metadata_generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "AI Metadata Generated At"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Published At"
+    },
     "access_tier": {
       "type": "string",
       "enum": [

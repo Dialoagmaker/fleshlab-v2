@@ -1,0 +1,101 @@
+{
+  "name": "VideoAsset",
+  "type": "object",
+  "properties": {
+    "video_id": {
+      "type": "string",
+      "title": "Video ID"
+    },
+    "asset_type": {
+      "type": "string",
+      "enum": [
+        "source",
+        "trailer",
+        "preview",
+        "thumbnail",
+        "cover",
+        "cover_candidate",
+        "keyframe",
+        "poster",
+        "gif"
+      ],
+      "title": "Asset Type"
+    },
+    "r2_key": {
+      "type": "string",
+      "title": "R2 Key"
+    },
+    "cdn_url": {
+      "type": "string",
+      "title": "CDN URL"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processing",
+        "ready",
+        "failed"
+      ],
+      "title": "Status",
+      "default": "pending"
+    },
+    "file_size_bytes": {
+      "type": "integer",
+      "title": "File Size (bytes)"
+    },
+    "duration_seconds": {
+      "type": "integer",
+      "title": "Duration (seconds)"
+    },
+    "width": {
+      "type": "integer",
+      "title": "Width"
+    },
+    "height": {
+      "type": "integer",
+      "title": "Height"
+    },
+    "mime_type": {
+      "type": "string",
+      "title": "MIME Type"
+    },
+    "fps": {
+      "type": "number",
+      "title": "FPS"
+    },
+    "bitrate_kbps": {
+      "type": "integer",
+      "title": "Bitrate (kbps)"
+    },
+    "codec": {
+      "type": "string",
+      "title": "Codec"
+    },
+    "aspect_ratio": {
+      "type": "string",
+      "title": "Aspect Ratio"
+    },
+    "frame_timestamp_seconds": {
+      "type": "number",
+      "title": "Frame Timestamp (seconds)"
+    },
+    "ai_score": {
+      "type": "number",
+      "title": "AI Quality Score"
+    },
+    "is_approved_cover": {
+      "type": "boolean",
+      "title": "Approved Cover",
+      "default": false
+    },
+    "v1_id": {
+      "type": "string",
+      "title": "V1 Migration ID"
+    }
+  },
+  "required": [
+    "video_id",
+    "asset_type"
+  ]
+}

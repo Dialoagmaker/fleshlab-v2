@@ -51,6 +51,7 @@ Deno.serve(async (req) => {
       await base44.entities.VideoAsset.update(sourceAsset.id, {
         status: 'failed',
       });
+      await base44.entities.Video.update(video_id, { processing_status: 'failed' });
 
       // Update job queue
       const jobs = await base44.entities.JobQueue.filter({
@@ -76,13 +77,17 @@ Deno.serve(async (req) => {
     // Success: Create asset records and update video
     const assetPromises = [];
 
-    // Update source asset
+    // Update source asset with technical metadata from ffprobe
     assetPromises.push(
       base44.entities.VideoAsset.update(sourceAsset.id, {
         status: 'ready',
         duration_seconds: metadata?.duration_seconds || null,
         width: metadata?.width || null,
         height: metadata?.height || null,
+        fps: metadata?.fps || null,
+        bitrate_kbps: metadata?.bitrate_kbps || null,
+        codec: metadata?.codec || null,
+        aspect_ratio: metadata?.aspect_ratio || null,
       })
     );
 
@@ -179,7 +184,14 @@ Deno.serve(async (req) => {
       videoUpdateData.preview_gif_url = assets.preview_gif.cdn_url;
     }
 
+    videoUpdateData.processing_status = 'metadata_pending';
+    if (metadata?.duration_seconds) videoUpdateData.duration_seconds = metadata.duration_seconds;
     await base44.entities.Video.update(video.id, videoUpdateData);
+
+    // Trigger AI metadata generation asynchronously (fire-and-forget)
+    base44.asServiceRole.functions.invoke('generateVideoMetadata', { video_id }).catch(err =>
+      console.error('generateVideoMetadata fire-and-forget failed:', err?.message)
+    );
 
     // Update job queue
     const jobs = await base44.entities.JobQueue.filter({
