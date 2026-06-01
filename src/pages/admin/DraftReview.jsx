@@ -13,7 +13,7 @@ import {
 // ── Backfill Panel ──────────────────────────────────────────────────────────
 
 function BackfillPanel() {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [mode, setMode] = useState('missing_only');
   const [overwrite, setOverwrite] = useState(false);
   const [result, setResult] = useState(null);
