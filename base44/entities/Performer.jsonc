@@ -1,0 +1,121 @@
+{
+  "name": "Performer",
+  "type": "object",
+  "properties": {
+    "display_name": {
+      "type": "string",
+      "title": "Display Name"
+    },
+    "slug": {
+      "type": "string",
+      "title": "Slug"
+    },
+    "bio": {
+      "type": "string",
+      "title": "Bio",
+      "format": "textarea"
+    },
+    "nationality": {
+      "type": "string",
+      "title": "Nationality"
+    },
+    "profile_image_url": {
+      "type": "string",
+      "title": "Profile Image URL"
+    },
+    "cover_image_url": {
+      "type": "string",
+      "title": "Cover Image URL"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "pending"
+      ],
+      "title": "Status",
+      "default": "active"
+    },
+    "featured": {
+      "type": "boolean",
+      "title": "Featured",
+      "default": false
+    },
+    "video_count": {
+      "type": "integer",
+      "title": "Video Count",
+      "default": 0
+    },
+    "fanclub_enabled": {
+      "type": "boolean",
+      "title": "Fanclub Enabled",
+      "default": false
+    },
+    "verified": {
+      "type": "boolean",
+      "title": "Verified",
+      "default": false
+    },
+    "date_of_birth": {
+      "type": "string",
+      "format": "date",
+      "title": "Date of Birth"
+    },
+    "meta_title": {
+      "type": "string",
+      "title": "Meta Title"
+    },
+    "meta_description": {
+      "type": "string",
+      "title": "Meta Description"
+    },
+    "v1_id": {
+      "type": "string",
+      "title": "V1 Migration ID"
+    },
+    "compliance_locked": {
+      "type": "boolean",
+      "title": "Compliance Locked",
+      "default": false,
+      "description": "If true, performer cannot be edited or have content published until unlocked by admin"
+    },
+    "compliance_lock_reason": {
+      "type": "string",
+      "title": "Compliance Lock Reason",
+      "description": "Reason for compliance lock (e.g., expired ID, missing contract)"
+    },
+    "account_status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "suspended",
+        "pending_verification",
+        "terminated"
+      ],
+      "title": "Account Status",
+      "default": "active"
+    },
+    "kyc_status": {
+      "type": "string",
+      "enum": [
+        "approved",
+        "pending",
+        "rejected",
+        "expired"
+      ],
+      "title": "KYC Status",
+      "default": "pending"
+    },
+    "outstanding_balance_usd": {
+      "type": "number",
+      "title": "Outstanding Balance (USD)",
+      "default": 0,
+      "description": "Amount owed by performer to platform (if any)"
+    }
+  },
+  "required": [
+    "display_name",
+    "slug"
+  ]
+}

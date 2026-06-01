@@ -1,14 +1,13 @@
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useParams, useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useState, useEffect } from "react";
-import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Trash2 } from "lucide-react";
+import { Save, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -82,11 +81,9 @@ export default function PerformerEdit() {
 
   const remove = useMutation({
     mutationFn: async () => {
-      // Delete all VideoPerformer records for this performer
       for (const vp of videoPerformers) {
         await base44.entities.VideoPerformer.delete(vp.id);
       }
-      // Delete the performer
       await base44.entities.Performer.delete(id);
       return { videoCount: videoPerformers.length };
     },
@@ -127,14 +124,9 @@ export default function PerformerEdit() {
   };
 
   return (
-    <div className="max-w-2xl space-y-8">
-      <div className="flex items-center gap-3">
-        <Link to="/admin/performers" className="text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-        </Link>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-foreground">{isNew ? "New Performer" : "Edit Performer"}</h1>
-        </div>
+    <div className="max-w-2xl space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-foreground">{isNew ? "Create Performer" : "Edit Performer Details"}</h1>
         {!isNew && (
           <button
             onClick={() => setDeleteDialogOpen(true)}
@@ -145,8 +137,8 @@ export default function PerformerEdit() {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <section className="bg-card border border-border rounded-xl p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
           <h2 className="text-sm font-semibold text-foreground">Profile</h2>
           <div className="space-y-2">
             <Label>Display Name *</Label>
@@ -193,9 +185,9 @@ export default function PerformerEdit() {
               <span className="text-sm text-foreground">Verified</span>
             </label>
           </div>
-        </section>
+        </div>
 
-        <section className="bg-card border border-border rounded-xl p-6 space-y-5">
+        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
           <h2 className="text-sm font-semibold text-foreground">Images</h2>
           {[
             { field: "profile_image_url", label: "Profile Image URL" },
@@ -212,9 +204,9 @@ export default function PerformerEdit() {
               {errors[field] && <p className="text-xs text-destructive">{errors[field]}</p>}
             </div>
           ))}
-        </section>
+        </div>
 
-        <section className="bg-card border border-border rounded-xl p-6 space-y-5">
+        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
           <h2 className="text-sm font-semibold text-foreground">SEO</h2>
           <div className="space-y-2">
             <Label>Meta Title</Label>
@@ -224,16 +216,16 @@ export default function PerformerEdit() {
             <Label>Meta Description</Label>
             <Textarea value={form.meta_description || ""} onChange={e => set("meta_description", e.target.value)} rows={3} />
           </div>
-        </section>
+        </div>
 
-        <div className="flex items-center gap-3 pb-8">
+        <div className="flex items-center gap-3">
           <Button type="submit" disabled={save.isPending} className="gap-2">
             <Save className="w-4 h-4" />
             {save.isPending ? "Saving…" : isNew ? "Create Performer" : "Save Changes"}
           </Button>
-          <Link to="/admin/performers">
-            <Button type="button" variant="outline">Cancel</Button>
-          </Link>
+          <Button type="button" variant="outline" onClick={() => navigate(`/admin/performers/${id}`)}>
+            Cancel
+          </Button>
         </div>
       </form>
 

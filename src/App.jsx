@@ -21,6 +21,8 @@ import Videos from './pages/admin/Videos';
 import VideoEdit from './pages/admin/VideoEdit';
 import Performers from './pages/admin/Performers';
 import PerformerEdit from './pages/admin/PerformerEdit';
+import PerformerLayout from './components/performer/PerformerLayout';
+import PerformerDetailWrapper from './pages/admin/PerformerDetailWrapper';
 import Brands from './pages/admin/Brands';
 import BrandEdit from './pages/admin/BrandEdit';
 import VideoPerformerMatch from './pages/admin/VideoPerformerMatch';
@@ -108,7 +110,13 @@ const AuthenticatedApp = () => {
             <Route path="/admin/missing-performer-assignments" element={<MissingPerformerAssignments />} />
             <Route path="/admin/applications" element={<Applications />} />
             <Route path="/admin/performers" element={<Performers />} />
-            <Route path="/admin/performers/:id" element={<PerformerEdit />} />
+            <Route path="/admin/performers/new" element={<PerformerEdit />} />
+            {/* Performer OS 6-tab shell */}
+            <Route path="/admin/performers/:id" element={
+              <PerformerLayout>
+                <PerformerDetailWrapper />
+              </PerformerLayout>
+            } />
             <Route path="/admin/brands" element={<Brands />} />
             <Route path="/admin/brands/:id" element={<BrandEdit />} />
             <Route path="/admin/news" element={<ComingSoon title="News Management" />} />
