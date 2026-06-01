@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
         performer_id,
         document_type,
         document_url,
-        status: 'pending',
+        status: 'valid',
         issued_at: issued_at || null,
         expires_at: expires_at || null,
         issuing_authority: issuing_authority || null,

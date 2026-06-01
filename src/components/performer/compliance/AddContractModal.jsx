@@ -12,7 +12,7 @@ import { toast } from "sonner";
 const CONTRACT_TYPES = [
   { value: "performer", label: "Performer Agreement" },
   { value: "guest", label: "Guest Agreement" },
-  { value: "licensing", label: "Content License" },
+  { value: "licensing", label: "Licensing Agreement" },
   { value: "release", label: "Model Release" },
 ];
 
@@ -32,6 +32,7 @@ export default function AddContractModal({ performerId, onClose, onSuccess }) {
     status: "draft",
     signed_at: "",
     expires_at: "",
+    document_url: "",
     notes: "",
   });
 
@@ -60,6 +61,10 @@ export default function AddContractModal({ performerId, onClose, onSuccess }) {
       toast.error("Title is required");
       return;
     }
+    if (!formData.document_url) {
+      toast.error("Document URL is required");
+      return;
+    }
     createContract.mutate(formData);
   };
 
@@ -69,7 +74,7 @@ export default function AddContractModal({ performerId, onClose, onSuccess }) {
         <DialogHeader>
           <DialogTitle>Add New Contract</DialogTitle>
           <DialogDescription>
-            Create a new contract for this performer. All fields are optional except title.
+            Create a new contract for this performer. Title and Document URL are required.
           </DialogDescription>
         </DialogHeader>
 
@@ -140,6 +145,19 @@ export default function AddContractModal({ performerId, onClose, onSuccess }) {
               value={formData.expires_at}
               onChange={(e) => setFormData({ ...formData, expires_at: e.target.value })}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="document_url">Document URL *</Label>
+            <Input
+              id="document_url"
+              placeholder="https://storage.example.com/contracts/..."
+              value={formData.document_url}
+              onChange={(e) => setFormData({ ...formData, document_url: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">
+              Enter the document storage URL. File upload coming soon.
+            </p>
           </div>
 
           <div className="space-y-2">

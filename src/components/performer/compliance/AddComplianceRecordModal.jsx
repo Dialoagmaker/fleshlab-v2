@@ -62,6 +62,10 @@ export default function AddComplianceRecordModal({ performerId, onClose, onSucce
       toast.error("Document type is required");
       return;
     }
+    if (!formData.document_url) {
+      toast.error("Document URL is required");
+      return;
+    }
     createRecord.mutate(formData);
   };
 
@@ -71,7 +75,7 @@ export default function AddComplianceRecordModal({ performerId, onClose, onSucce
         <DialogHeader>
           <DialogTitle>Add Compliance Record</DialogTitle>
           <DialogDescription>
-            Create a new compliance record for this performer.
+            Create a new compliance record for this performer. Document Type and URL are required.
           </DialogDescription>
         </DialogHeader>
 
