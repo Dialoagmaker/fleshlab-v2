@@ -47,11 +47,11 @@ Deno.serve(async (req) => {
 
     const keyParts = sourceAsset.r2_key.split('/');
     const studio = keyParts.length >= 2 ? keyParts[1] : 'default';
-    const file = keyParts[keyParts.length - 1];
-    // Use the UUID directory (second-to-last segment) as basename to ensure unique output paths.
-    // Without this, all videos named "source.mov" would overwrite each other's thumbnails.
-    const uuidDir = keyParts.length >= 2 ? keyParts[keyParts.length - 2] : null;
-    const basename = (uuidDir && uuidDir !== 'videos') ? uuidDir : file.replace(/\.[^.]+$/, '');
+    // Use UUID directory as filename so output is unique per video (not shared "source.jpg")
+    const originalFile = keyParts[keyParts.length - 1];
+    const ext = originalFile.includes('.') ? originalFile.split('.').pop() : 'mov';
+    const uuidDir = keyParts[keyParts.length - 2];
+    const file = (uuidDir && uuidDir !== 'videos') ? `${uuidDir}.${ext}` : originalFile;
 
     const processorResponse = await fetch(`${processorWebhookUrl}/regenerate`, {
       method: 'POST',
@@ -60,7 +60,6 @@ Deno.serve(async (req) => {
         secret: processorSecret,
         studio,
         file,
-        basename,
         src_url: signedUrl,
         video_id,
         source_asset_id: sourceAsset.id,
@@ -84,6 +83,7 @@ Deno.serve(async (req) => {
       status: 'accepted',
       studio,
       file,
+      basename: file.replace(/\.[^.]+$/, ''),
       source_r2_key: sourceAsset.r2_key,
       message: `Processor job accepted. Assets will update automatically via webhook when done. Source: ${sourceAsset.r2_key}`,
     });

@@ -77,10 +77,14 @@ Deno.serve(async (req) => {
     const processorWebhookUrl = Deno.env.get('PROCESSOR_WEBHOOK_URL');
     const processorSecret = Deno.env.get('PROCESSOR_API_KEY');
 
-    // Derive studio and file from r2_key (format: fleshlab/{studio}/videos/{filename})
+    // Derive studio and file from r2_key (format: fleshlab/{studio}/videos/{uuid}/source.mov)
     const keyParts = asset.r2_key.split('/');
     const studio = keyParts.length >= 2 ? keyParts[1] : 'default';
-    const file = keyParts[keyParts.length - 1];
+    const originalFile = keyParts[keyParts.length - 1];
+    const ext = originalFile.includes('.') ? originalFile.split('.').pop() : 'mov';
+    const uuidDir = keyParts[keyParts.length - 2];
+    // Use UUID as filename so each video gets unique output (not shared "source.jpg")
+    const file = (uuidDir && uuidDir !== 'videos') ? `${uuidDir}.${ext}` : originalFile;
     const basename = file.replace(/\.[^.]+$/, '');
 
     // Trigger processor — POST /regenerate with secret in body
