@@ -83,13 +83,11 @@ export default function AddComplianceRecordModal({ performerId, onClose, onSucce
       setIsUploading(true);
       setUploadProgress(0);
 
-      const { upload_url, r2_key } = await base44.functions.invoke("createDocumentUploadUrl", {
-        entity_type: "ComplianceRecord",
+      const { upload_url, r2_key } = await base44.functions.invoke("getComplianceUploadUrl", {
         performer_id: performerId,
         file_name: selectedFile.name,
         file_size_bytes: selectedFile.size,
         mime_type: selectedFile.type,
-        document_type: formData.document_type,
       });
 
       await uploadFile(upload_url, selectedFile);

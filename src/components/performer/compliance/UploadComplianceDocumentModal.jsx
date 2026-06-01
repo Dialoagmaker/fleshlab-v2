@@ -51,19 +51,7 @@ export default function UploadComplianceDocumentModal({ performerId, onClose, on
     performer_visible_note: "",
   });
 
-  const createDocument = useMutation({
-    mutationFn: async (data) => {
-      const res = await base44.functions.invoke("createDocumentUploadUrl", {
-        entity_type: "ComplianceRecord",
-        performer_id: performerId,
-        file_name: data.file_name,
-        file_size_bytes: data.file_size_bytes,
-        mime_type: data.mime_type,
-        document_type: data.document_type,
-      });
-      return res.data;
-    },
-  });
+  // Removed unused mutation - direct function call instead
 
   const uploadFile = (uploadUrl, file) => {
     return new Promise((resolve, reject) => {
@@ -126,13 +114,13 @@ export default function UploadComplianceDocumentModal({ performerId, onClose, on
       setUploadProgress(0);
 
       // Step 1: Get upload URL
-      const { upload_url, r2_key } = await createDocument.mutateAsync({
-        document_type: formData.document_type,
-        title: formData.title,
+      const res = await base44.functions.invoke("getComplianceUploadUrl", {
+        performer_id: performerId,
         file_name: selectedFile.name,
         file_size_bytes: selectedFile.size,
         mime_type: selectedFile.type,
       });
+      const { upload_url, r2_key } = res.data;
 
       // Step 2: Upload file to R2
       await uploadFile(upload_url, selectedFile);
