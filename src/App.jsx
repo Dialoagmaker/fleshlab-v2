@@ -111,7 +111,7 @@ const AuthenticatedApp = () => {
             <Route path="/admin/applications" element={<Applications />} />
             <Route path="/admin/performers" element={<Performers />} />
             <Route path="/admin/performers/new" element={<PerformerEdit />} />
-            {/* Performer OS 6-tab shell */}
+            {/* Performer OS 6-tab shell — single route, tabs are internal UI state */}
             <Route path="/admin/performers/:id" element={
               <PerformerLayout>
                 <PerformerDetailWrapper />

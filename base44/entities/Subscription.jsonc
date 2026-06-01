@@ -1,0 +1,56 @@
+{
+  "name": "Subscription",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "title": "User ID"
+    },
+    "fanclub_id": {
+      "type": "string",
+      "title": "Fanclub ID"
+    },
+    "stripe_subscription_id": {
+      "type": "string",
+      "title": "Stripe Subscription ID"
+    },
+    "stripe_customer_id": {
+      "type": "string",
+      "title": "Stripe Customer ID"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "cancelled",
+        "past_due",
+        "trialing",
+        "incomplete"
+      ],
+      "title": "Status"
+    },
+    "current_period_start": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Period Start"
+    },
+    "current_period_end": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Period End"
+    },
+    "cancelled_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Cancelled At"
+    },
+    "amount_usd": {
+      "type": "number",
+      "title": "Amount (USD)"
+    }
+  },
+  "required": [
+    "user_id",
+    "fanclub_id"
+  ]
+}

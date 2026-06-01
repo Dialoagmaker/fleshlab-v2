@@ -1,10 +1,9 @@
 // performerComplianceService — Service layer for performer compliance checks and locks.
-// This is the foundation for the Compliance tab and compliance_locked field enforcement.
+// Phase 1: Compliance evaluation and lock management.
 //
-// Methods:
-//   checkCompliance(performerId) — Returns compliance status and any blocking issues
-//   lockPerformer(performerId, reason) — Sets compliance_locked flag
-//   unlockPerformer(performerId) — Clears compliance_locked flag
+// Actions:
+//   compliance_check — Evaluates compliance status, returns issues
+//   lock_evaluation — Locks performer if compliance issues found
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
@@ -30,10 +29,24 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Performer not found' }, { status: 404 });
     }
 
-    if (action === 'check') {
-      // Check compliance status
-      // In Phase 1, this is a stub — will be extended with real compliance rules
+    if (action === 'compliance_check') {
+      // Phase 1: Stub compliance check
+      // In future phases, this will check:
+      // - KYC status
+      // - Contract expiration
+      // - Medical test expiration
+      // - Compliance documents
+      
       const issues = [];
+      
+      // Example checks (Phase 1 stubs)
+      if (performer.kyc_status !== 'approved') {
+        issues.push({ type: 'kyc', message: 'KYC not approved', severity: 'high' });
+      }
+      if (performer.compliance_locked) {
+        issues.push({ type: 'compliance_lock', message: performer.compliance_lock_reason || 'Compliance locked', severity: 'critical' });
+      }
+      
       const isCompliant = issues.length === 0;
 
       return Response.json({
@@ -42,33 +55,25 @@ Deno.serve(async (req) => {
         is_compliant: isCompliant,
         issues,
         compliance_locked: performer.compliance_locked || false,
+        kyc_status: performer.kyc_status,
       });
     }
 
-    if (action === 'lock') {
+    if (action === 'lock_evaluation') {
+      // Evaluate and lock if needed
       const { reason } = body;
+      
+      // For Phase 1, just lock with provided reason
       await base44.asServiceRole.entities.Performer.update(performer_id, {
         compliance_locked: true,
-        compliance_lock_reason: reason || 'Manual lock by admin',
+        compliance_lock_reason: reason || 'Compliance lock via evaluation',
       });
 
       return Response.json({
         success: true,
         message: 'Performer locked',
         performer_id,
-      });
-    }
-
-    if (action === 'unlock') {
-      await base44.asServiceRole.entities.Performer.update(performer_id, {
-        compliance_locked: false,
-        compliance_lock_reason: null,
-      });
-
-      return Response.json({
-        success: true,
-        message: 'Performer unlocked',
-        performer_id,
+        compliance_locked: true,
       });
     }
 

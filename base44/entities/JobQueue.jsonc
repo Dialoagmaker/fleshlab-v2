@@ -1,0 +1,75 @@
+{
+  "name": "JobQueue",
+  "type": "object",
+  "properties": {
+    "job_type": {
+      "type": "string",
+      "enum": [
+        "generate_thumbnail",
+        "generate_preview",
+        "generate_cover",
+        "validate_assets",
+        "process_video",
+        "send_email",
+        "compute_stats",
+        "generate_sitemap"
+      ],
+      "title": "Job Type"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "running",
+        "completed",
+        "failed",
+        "cancelled"
+      ],
+      "title": "Status",
+      "default": "pending"
+    },
+    "priority": {
+      "type": "integer",
+      "title": "Priority",
+      "default": 5
+    },
+    "payload": {
+      "type": "string",
+      "title": "Payload (JSON)"
+    },
+    "result": {
+      "type": "string",
+      "title": "Result (JSON)"
+    },
+    "error_message": {
+      "type": "string",
+      "title": "Error Message"
+    },
+    "entity_type": {
+      "type": "string",
+      "title": "Entity Type"
+    },
+    "entity_id": {
+      "type": "string",
+      "title": "Entity ID"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Started At"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Completed At"
+    },
+    "retry_count": {
+      "type": "integer",
+      "title": "Retry Count",
+      "default": 0
+    }
+  },
+  "required": [
+    "job_type"
+  ]
+}

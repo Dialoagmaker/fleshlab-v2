@@ -1,0 +1,33 @@
+{
+  "name": "PerformerStat",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "total_videos": {
+      "type": "integer",
+      "title": "Total Videos",
+      "default": 0
+    },
+    "total_views": {
+      "type": "integer",
+      "title": "Total Views",
+      "default": 0
+    },
+    "total_fanclub_subscribers": {
+      "type": "integer",
+      "title": "Total Fanclub Subscribers",
+      "default": 0
+    },
+    "last_computed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last Computed At"
+    }
+  },
+  "required": [
+    "performer_id"
+  ]
+}

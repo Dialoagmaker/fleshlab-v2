@@ -1,0 +1,51 @@
+{
+  "name": "GeoAudit",
+  "type": "object",
+  "properties": {
+    "ip_address": {
+      "type": "string",
+      "title": "IP Address"
+    },
+    "country_code": {
+      "type": "string",
+      "title": "Country Code"
+    },
+    "region_code": {
+      "type": "string",
+      "title": "Region Code"
+    },
+    "action_taken": {
+      "type": "string",
+      "enum": [
+        "allowed",
+        "blocked",
+        "redirected"
+      ],
+      "title": "Action Taken"
+    },
+    "resource_type": {
+      "type": "string",
+      "title": "Resource Type"
+    },
+    "resource_id": {
+      "type": "string",
+      "title": "Resource ID"
+    },
+    "policy_id": {
+      "type": "string",
+      "title": "Matched Policy ID"
+    },
+    "user_agent": {
+      "type": "string",
+      "title": "User Agent"
+    },
+    "user_id": {
+      "type": "string",
+      "title": "User ID"
+    }
+  },
+  "required": [
+    "country_code",
+    "action_taken"
+  ]
+}

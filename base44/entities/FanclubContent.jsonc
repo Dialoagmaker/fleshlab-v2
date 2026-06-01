@@ -1,0 +1,67 @@
+{
+  "name": "FanclubContent",
+  "type": "object",
+  "properties": {
+    "fanclub_id": {
+      "type": "string",
+      "title": "Fanclub ID"
+    },
+    "content_type": {
+      "type": "string",
+      "enum": [
+        "video",
+        "image",
+        "text",
+        "gallery"
+      ],
+      "title": "Content Type"
+    },
+    "title": {
+      "type": "string",
+      "title": "Title"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "media_url": {
+      "type": "string",
+      "title": "Media URL"
+    },
+    "thumbnail_url": {
+      "type": "string",
+      "title": "Thumbnail URL"
+    },
+    "access_tier": {
+      "type": "string",
+      "enum": [
+        "public_teaser",
+        "subscriber"
+      ],
+      "title": "Access Tier",
+      "default": "subscriber"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published"
+      ],
+      "title": "Status",
+      "default": "draft"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Published At"
+    },
+    "v1_id": {
+      "type": "string",
+      "title": "V1 Migration ID"
+    }
+  },
+  "required": [
+    "fanclub_id",
+    "content_type"
+  ]
+}

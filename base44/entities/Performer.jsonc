@@ -74,17 +74,6 @@
       "type": "string",
       "title": "V1 Migration ID"
     },
-    "compliance_locked": {
-      "type": "boolean",
-      "title": "Compliance Locked",
-      "default": false,
-      "description": "If true, performer cannot be edited or have content published until unlocked by admin"
-    },
-    "compliance_lock_reason": {
-      "type": "string",
-      "title": "Compliance Lock Reason",
-      "description": "Reason for compliance lock (e.g., expired ID, missing contract)"
-    },
     "account_status": {
       "type": "string",
       "enum": [
@@ -95,6 +84,23 @@
       ],
       "title": "Account Status",
       "default": "active"
+    },
+    "freeze_reason": {
+      "type": "string",
+      "title": "Freeze Reason",
+      "description": "Reason for account suspension/freeze"
+    },
+    "outstanding_balance_usd": {
+      "type": "number",
+      "title": "Outstanding Balance (USD)",
+      "default": 0,
+      "description": "Amount owed by performer to platform (if any)"
+    },
+    "revenue_split_pct": {
+      "type": "number",
+      "title": "Revenue Split (%)",
+      "default": 70,
+      "description": "Percentage of revenue that goes to the performer"
     },
     "kyc_status": {
       "type": "string",
@@ -107,11 +113,52 @@
       "title": "KYC Status",
       "default": "pending"
     },
-    "outstanding_balance_usd": {
-      "type": "number",
-      "title": "Outstanding Balance (USD)",
-      "default": 0,
-      "description": "Amount owed by performer to platform (if any)"
+    "compliance_locked": {
+      "type": "boolean",
+      "title": "Compliance Locked",
+      "default": false,
+      "description": "If true, performer cannot be edited or have content published until unlocked by admin"
+    },
+    "compliance_override": {
+      "type": "boolean",
+      "title": "Compliance Override",
+      "default": false,
+      "description": "If true, admin has manually overridden compliance lock"
+    },
+    "compliance_override_reason": {
+      "type": "string",
+      "title": "Compliance Override Reason",
+      "description": "Reason for manual compliance override by admin"
+    },
+    "onlyfans_url": {
+      "type": "string",
+      "title": "OnlyFans URL"
+    },
+    "twitter_url": {
+      "type": "string",
+      "title": "Twitter URL"
+    },
+    "instagram_url": {
+      "type": "string",
+      "title": "Instagram URL"
+    },
+    "production_preferences": {
+      "type": "string",
+      "title": "Production Preferences",
+      "format": "textarea",
+      "description": "Notes about performer's production preferences"
+    },
+    "internal_notes": {
+      "type": "string",
+      "title": "Internal Notes",
+      "format": "textarea",
+      "description": "Internal admin notes about this performer"
+    },
+    "availability_notes": {
+      "type": "string",
+      "title": "Availability Notes",
+      "format": "textarea",
+      "description": "Notes about performer's availability for shoots"
     }
   },
   "required": [

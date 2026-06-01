@@ -1,0 +1,51 @@
+{
+  "name": "AuditLog",
+  "type": "object",
+  "properties": {
+    "entity_type": {
+      "type": "string",
+      "title": "Entity Type",
+      "description": "Type of entity being audited (e.g., 'Performer', 'Video', 'Brand')"
+    },
+    "entity_id": {
+      "type": "string",
+      "title": "Entity ID"
+    },
+    "actor_id": {
+      "type": "string",
+      "title": "Actor ID",
+      "description": "User ID of the person who performed the action"
+    },
+    "actor_role": {
+      "type": "string",
+      "title": "Actor Role",
+      "description": "Role of the actor (e.g., 'admin', 'manager', 'viewer')"
+    },
+    "action": {
+      "type": "string",
+      "title": "Action",
+      "description": "Type of action performed (e.g., 'create', 'update', 'delete', 'freeze', 'unlock')"
+    },
+    "changes_json": {
+      "type": "string",
+      "title": "Changes JSON",
+      "description": "JSON string describing what changed (old values, new values)"
+    },
+    "ip_address": {
+      "type": "string",
+      "title": "IP Address"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes",
+      "format": "textarea",
+      "description": "Optional notes about the action"
+    }
+  },
+  "required": [
+    "entity_type",
+    "entity_id",
+    "actor_id",
+    "action"
+  ]
+}

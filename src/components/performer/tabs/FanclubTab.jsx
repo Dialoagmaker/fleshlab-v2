@@ -1,7 +1,32 @@
-export default function FanclubTab() {
+export default function FanclubTab({ performer }) {
   return (
-    <div className="text-center py-16 text-muted-foreground">
-      <p>Fanclub tab — Phase 1 core shell</p>
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold text-foreground">Fanclub</h2>
+      <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+        <div>
+          <p className="text-xs text-muted-foreground">Fanclub Enabled</p>
+          <p className="text-sm text-foreground">{performer.fanclub_enabled ? "Yes" : "No"}</p>
+        </div>
+        {performer.onlyfans_url && (
+          <div>
+            <p className="text-xs text-muted-foreground">OnlyFans</p>
+            <p className="text-sm text-foreground">{performer.onlyfans_url}</p>
+          </div>
+        )}
+        {performer.twitter_url && (
+          <div>
+            <p className="text-xs text-muted-foreground">Twitter</p>
+            <p className="text-sm text-foreground">{performer.twitter_url}</p>
+          </div>
+        )}
+        {performer.instagram_url && (
+          <div>
+            <p className="text-xs text-muted-foreground">Instagram</p>
+            <p className="text-sm text-foreground">{performer.instagram_url}</p>
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground mt-4">Fanclub management — Phase 3 (deferred)</p>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,41 @@
+{
+  "name": "GeoRule",
+  "type": "object",
+  "properties": {
+    "policy_id": {
+      "type": "string",
+      "title": "Policy ID"
+    },
+    "country_code": {
+      "type": "string",
+      "title": "Country Code (ISO 3166-1 alpha-2)"
+    },
+    "region_code": {
+      "type": "string",
+      "title": "Region Code"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "allow",
+        "block",
+        "redirect"
+      ],
+      "title": "Action"
+    },
+    "redirect_url": {
+      "type": "string",
+      "title": "Redirect URL"
+    },
+    "active": {
+      "type": "boolean",
+      "title": "Active",
+      "default": true
+    }
+  },
+  "required": [
+    "policy_id",
+    "country_code",
+    "action"
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "name": "Contract",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "contract_type": {
+      "type": "string",
+      "enum": [
+        "performer",
+        "guest",
+        "licensing",
+        "release"
+      ],
+      "title": "Contract Type"
+    },
+    "title": {
+      "type": "string",
+      "title": "Contract Title"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent",
+        "signed",
+        "expired",
+        "cancelled"
+      ],
+      "title": "Status",
+      "default": "draft"
+    },
+    "signed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Signed At"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Expires At"
+    },
+    "document_url": {
+      "type": "string",
+      "title": "Document URL"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    },
+    "v1_id": {
+      "type": "string",
+      "title": "V1 Migration ID"
+    }
+  },
+  "required": [
+    "performer_id",
+    "contract_type",
+    "title"
+  ]
+}

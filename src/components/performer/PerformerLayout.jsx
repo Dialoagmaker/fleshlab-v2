@@ -1,33 +1,37 @@
-import { useParams, Link, useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useState } from "react";
-import { User, CreditCard, Shield, Users, Calendar, Settings } from "lucide-react";
+import { User, Calendar, Shield, Video, CreditCard, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import ProfileTab from "@/components/performer/tabs/ProfileTab";
+import ProductionTab from "@/components/performer/tabs/ProductionTab";
+import ComplianceTab from "@/components/performer/tabs/ComplianceTab";
+import VideosTab from "@/components/performer/tabs/VideosTab";
+import EarningsTab from "@/components/performer/tabs/EarningsTab";
+import FanclubTab from "@/components/performer/tabs/FanclubTab";
 
-// Tab configuration
+// Tab configuration - Phase 1 approved structure
 const TABS = [
-  { id: "overview", label: "Overview", icon: User, path: "" },
-  { id: "earnings", label: "Earnings", icon: CreditCard, path: "earnings" },
-  { id: "compliance", label: "Compliance", icon: Shield, path: "compliance" },
-  { id: "fanclub", label: "Fanclub", icon: Users, path: "fanclub" },
-  { id: "production", label: "Production", icon: Calendar, path: "production" },
-  { id: "settings", label: "Settings", icon: Settings, path: "settings" },
+  { id: "profile", label: "Profile", icon: User, component: ProfileTab },
+  { id: "production", label: "Production", icon: Calendar, component: ProductionTab },
+  { id: "compliance", label: "Compliance", icon: Shield, component: ComplianceTab },
+  { id: "videos", label: "Videos", icon: Video, component: VideosTab },
+  { id: "earnings", label: "Earnings", icon: CreditCard, component: EarningsTab },
+  { id: "fanclub", label: "Fanclub", icon: Users, component: FanclubTab },
 ];
 
 export default function PerformerLayout({ children }) {
   const { id } = useParams();
-  const location = useLocation();
-  const [activeTab, setActiveTab] = useState(() => {
-    const path = location.pathname.replace(`/admin/performers/${id}`, "");
-    return path.replace("/", "") || "overview";
-  });
+  const [activeTab, setActiveTab] = useState("profile");
+
+  const ActiveComponent = TABS.find(tab => tab.id === activeTab)?.component || ProfileTab;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link to="/admin/performers" className="text-muted-foreground hover:text-foreground transition-colors">
+        <a href="/admin/performers" className="text-muted-foreground hover:text-foreground transition-colors">
           <span className="text-sm">← Back to Performers</span>
-        </Link>
+        </a>
       </div>
 
       {/* Tabs */}
@@ -37,11 +41,12 @@ export default function PerformerLayout({ children }) {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
-              <Link
+              <button
                 key={tab.id}
-                to={`/admin/performers/${id}${tab.path ? `/${tab.path}` : ""}`}
+                type="button"
                 role="tab"
                 aria-selected={isActive}
+                onClick={() => setActiveTab(tab.id)}
                 className={cn(
                   "flex items-center gap-2 pb-3 text-sm font-medium transition-colors border-b-2",
                   isActive
@@ -51,7 +56,7 @@ export default function PerformerLayout({ children }) {
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
-              </Link>
+              </button>
             );
           })}
         </nav>
@@ -59,7 +64,7 @@ export default function PerformerLayout({ children }) {
 
       {/* Tab Content */}
       <div role="tabpanel">
-        {children}
+        <ActiveComponent />
       </div>
     </div>
   );
