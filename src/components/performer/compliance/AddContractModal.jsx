@@ -44,20 +44,25 @@ export default function AddContractModal({ performerId, onClose, onSuccess }) {
 
   const createContract = useMutation({
     mutationFn: async (data) => {
+      console.log('[createContract] mutationFn called with data:', { ...data, document_url: data.document_url?.substring(0, 50) + '...' });
+      console.log('[createContract] performer_id:', performerId);
       const res = await base44.functions.invoke("contractService", {
         action: "create_contract",
         performer_id: performerId,
         ...data,
       });
+      console.log('[createContract] Backend response:', res.data);
       return res.data;
     },
     onSuccess: () => {
+      console.log('[createContract] onSuccess - invalidating queries');
       queryClient.invalidateQueries({ queryKey: ["contracts", performerId] });
       toast.success("Contract created successfully");
       onSuccess();
       onClose();
     },
     onError: (error) => {
+      console.error('[createContract] onError:', error);
       toast.error(`Failed to create contract: ${error.message}`);
     },
   });
@@ -95,7 +100,13 @@ export default function AddContractModal({ performerId, onClose, onSuccess }) {
   };
 
   const handleSubmit = async () => {
+    console.log('[AddContractModal] handleSubmit called');
+    console.log('[AddContractModal] performerId:', performerId);
+    console.log('[AddContractModal] selectedFile:', selectedFile?.name, selectedFile?.size, selectedFile?.type);
+    console.log('[AddContractModal] formData:', formData);
+    
     if (!performerId) {
+      console.error('[AddContractModal] performerId is missing');
       toast.error("Performer ID is missing");
       return;
     }
@@ -109,26 +120,36 @@ export default function AddContractModal({ performerId, onClose, onSuccess }) {
     }
 
     try {
+      console.log('[AddContractModal] Starting upload...');
       setIsUploading(true);
       setUploadProgress(0);
 
       // Upload file using centralized helper
+      console.log('[AddContractModal] Calling uploadAdminFile...');
       const uploadResult = await uploadAdminFile({
         file: selectedFile,
         contextType: 'contract',
         performerId: performerId,
-        onProgress: (progress) => setUploadProgress(progress),
+        onProgress: (progress) => {
+          console.log('[AddContractModal] Upload progress:', progress);
+          setUploadProgress(progress);
+        },
       });
 
+      console.log('[AddContractModal] Upload completed. object_key:', uploadResult.object_key);
+
       // Create contract
+      console.log('[AddContractModal] Creating contract...');
       createContract.mutate({
         ...formData,
         document_url: uploadResult.object_key, // Store R2 key, not signed URL
       });
     } catch (error) {
-      console.error("Contract upload error:", error);
+      console.error("[AddContractModal] Contract upload error:", error);
+      console.error("[AddContractModal] Error stack:", error.stack);
       toast.error(`Upload failed: ${error.message}`);
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
