@@ -1,4 +1,5 @@
 import ProductionCompatibilityTab from "./ProductionCompatibilityTab";
+import GuestProductionCompatibilityCheck from "./GuestProductionCompatibilityCheck";
 
 export default function ProductionTab({ performer }) {
   const performerId = performer?.id;
@@ -12,9 +13,15 @@ export default function ProductionTab({ performer }) {
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-foreground">Production Compatibility Profile</h2>
-      <ProductionCompatibilityTab performerId={performerId} />
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground">Production Compatibility Profile</h2>
+        <ProductionCompatibilityTab performerId={performerId} />
+      </div>
+
+      <div className="border-t pt-6">
+        <GuestProductionCompatibilityCheck performer={performer} />
+      </div>
     </div>
   );
 }
