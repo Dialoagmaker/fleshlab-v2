@@ -60,6 +60,10 @@ export default function ComplianceTab({ performer }) {
     enabled: !!performer?.id,
   });
 
+  // Safe array defaults - prevent .map() on undefined
+  const safeContracts = Array.isArray(contracts) ? contracts : [];
+  const safeRecords = Array.isArray(records) ? records : [];
+
   const handleRefresh = () => {
     setRefreshKey((prev) => prev + 1);
     toast.success("Refreshed");
@@ -100,15 +104,15 @@ export default function ComplianceTab({ performer }) {
 
   return (
     <div className="space-y-6">
-      <ComplianceSummaryCard performer={performer} contracts={contracts || []} records={records || []} />
+      <ComplianceSummaryCard performer={performer} contracts={safeContracts} records={safeRecords} />
       <ErrorBoundary>
         <KycSection performer={performer} />
       </ErrorBoundary>
       <ErrorBoundary>
-        <ContractsSection performer={performer} contracts={contracts || []} onRefresh={handleRefresh} />
+        <ContractsSection performer={performer} contracts={safeContracts} onRefresh={handleRefresh} />
       </ErrorBoundary>
       <ErrorBoundary>
-        <ComplianceRecordsSection performer={performer} records={records || []} onRefresh={handleRefresh} />
+        <ComplianceRecordsSection performer={performer} onRefresh={handleRefresh} />
       </ErrorBoundary>
       <ErrorBoundary>
         <AccountControlsSection performer={performer} />

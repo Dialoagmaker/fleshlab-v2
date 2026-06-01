@@ -74,6 +74,9 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
     enabled: !!performer?.id,
   });
 
+  // Safe array default - prevent .map() on undefined
+  const safeRecords = Array.isArray(records) ? records : [];
+
   const updateRecord = useMutation({
     mutationFn: async ({ recordId, data }) => {
       if (!performer?.id) return;
@@ -118,14 +121,14 @@ export default function ComplianceRecordsSection({ performer, onRefresh }) {
           </div>
         </CardHeader>
         <CardContent>
-          {records?.length === 0 ? (
+          {safeRecords.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-sm text-muted-foreground">No compliance records yet</p>
               <p className="text-xs text-muted-foreground mt-1">Click "Add Record" to create one</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {records.map((r) => {
+              {safeRecords.map((r) => {
                 const verificationConfig = getVerificationStatusConfig(r.verification_status);
                 const VerificationIcon = 
                   r.verification_status === 'passed' ? CheckCircle :

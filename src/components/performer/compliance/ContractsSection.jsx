@@ -34,16 +34,12 @@ const getStatusBadge = (status) => {
   return variants[status] || "bg-gray-500/10 text-gray-500";
 };
 
-export default function ContractsSection({ performer, onRefresh }) {
+export default function ContractsSection({ performer, contracts, onRefresh }) {
   const queryClient = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // Hooks must be called unconditionally - use optional chaining
-  const { data: contracts, refetch: refetchContracts } = useQuery({
-    queryKey: ["contracts", performer?.id],
-    queryFn: () => base44.entities.Contract.filter({ performer_id: performer.id }, "-created_date"),
-    enabled: !!performer?.id,
-  });
+  // Safe array default - prevent .map() on undefined
+  const safeContracts = Array.isArray(contracts) ? contracts : [];
 
   const updateContractStatus = useMutation({
     mutationFn: async ({ contractId, status }) => {
@@ -56,7 +52,8 @@ export default function ContractsSection({ performer, onRefresh }) {
       });
     },
     onSuccess: () => {
-      refetchContracts();
+      queryClient.invalidateQueries({ queryKey: ["contracts", performer.id] });
+      onRefresh?.();
       toast.success("Status updated");
     },
   });
@@ -82,14 +79,14 @@ export default function ContractsSection({ performer, onRefresh }) {
           </div>
         </CardHeader>
         <CardContent>
-          {contracts?.length === 0 ? (
+          {safeContracts.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-sm text-muted-foreground">No contracts yet</p>
               <p className="text-xs text-muted-foreground mt-1">Click "Add Contract" to create one</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {contracts.map((c) => (
+              {safeContracts.map((c) => (
                 <div key={c.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
@@ -140,7 +137,7 @@ export default function ContractsSection({ performer, onRefresh }) {
           performerId={performer.id}
           onClose={() => setShowAddModal(false)}
           onSuccess={() => {
-            refetchContracts();
+            queryClient.invalidateQueries({ queryKey: ["contracts", performer.id] });
             onRefresh?.();
           }}
         />

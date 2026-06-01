@@ -70,7 +70,7 @@ export default function IdentityVerificationSection({ performer }) {
     }
   });
 
-  const sessions = sessionsData?.sessions || [];
+  const sessions = Array.isArray(sessionsData?.sessions) ? sessionsData.sessions : [];
 
   const createSession = useMutation({
     mutationFn: async (data) => {
