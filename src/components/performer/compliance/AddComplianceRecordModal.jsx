@@ -36,7 +36,7 @@ export default function AddComplianceRecordModal({ performerId, onClose, onSucce
   const [formData, setFormData] = useState({
     document_type: "id",
     document_url: "",
-    issued_at: new Date().toISOString().split("T")[0],
+    issued_at: "",
     expires_at: "",
     status: "valid",
     issuing_authority: "",
@@ -94,17 +94,27 @@ export default function AddComplianceRecordModal({ performerId, onClose, onSucce
 
       await uploadFile(upload_url, selectedFile);
 
-      await base44.entities.ComplianceRecord.create({
-        ...formData,
+      // Convert dates to ISO 8601 format with time (entity expects date-time, not date)
+      const createPayload = {
+        performer_id: performerId,
+        document_type: formData.document_type,
         document_url: r2_key,
-      });
+        issued_at: formData.issued_at ? new Date(formData.issued_at).toISOString() : undefined,
+        expires_at: formData.expires_at ? new Date(formData.expires_at).toISOString() : undefined,
+        status: formData.status,
+        issuing_authority: formData.issuing_authority,
+        notes: formData.notes,
+      };
+
+      await base44.entities.ComplianceRecord.create(createPayload);
 
       toast.success("Compliance record created successfully");
       queryClient.invalidateQueries({ queryKey: ["complianceRecords", performerId] });
       onSuccess();
       onClose();
     } catch (error) {
-      toast.error(`Upload failed: ${error.message}`);
+      console.error("Compliance record creation error:", error);
+      toast.error(`Failed to create record: ${error.message || error}`);
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
