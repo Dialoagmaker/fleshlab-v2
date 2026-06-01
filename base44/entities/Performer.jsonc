@@ -164,6 +164,110 @@
       "type": "string",
       "title": "Linked User ID",
       "description": "Authenticated user account permanently linked to this performer profile"
+    },
+    "production_profile_enabled": {
+      "type": "boolean",
+      "title": "Production Profile Enabled",
+      "default": false,
+      "description": "Whether performer has an active production compatibility profile"
+    },
+    "available_production_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Available Production Types",
+      "description": "Types of productions performer is available for"
+    },
+    "preferred_scene_styles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Preferred Scene Styles",
+      "description": "Performer's preferred scene styles and aesthetics"
+    },
+    "available_roles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Available Roles",
+      "description": "Roles performer is available to play"
+    },
+    "conditional_themes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Conditional Themes",
+      "description": "Themes that may be possible but require studio review and explicit performer approval"
+    },
+    "not_available_boundaries": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Not Available / Boundaries",
+      "description": "Hard boundaries - unavailable production elements that must block compatibility matches"
+    },
+    "privacy_options": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Privacy Options",
+      "description": "Performer's privacy preferences for content distribution"
+    },
+    "safety_requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Safety Requirements",
+      "description": "Safety and consent requirements that must be satisfied before approval"
+    },
+    "production_notes_public": {
+      "type": "string",
+      "title": "Production Notes (Public)",
+      "format": "textarea",
+      "description": "Admin-approved notes that may be shown in performer-facing or production-facing contexts"
+    },
+    "production_notes_internal": {
+      "type": "string",
+      "title": "Production Notes (Internal)",
+      "format": "textarea",
+      "description": "Admin-only internal notes - never exposed to performers or public"
+    },
+    "compatibility_review_status": {
+      "type": "string",
+      "enum": [
+        "not_reviewed",
+        "draft",
+        "reviewed",
+        "approved",
+        "needs_update"
+      ],
+      "title": "Compatibility Review Status",
+      "default": "not_reviewed",
+      "description": "Current review status of the production compatibility profile"
+    },
+    "compatibility_reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Compatibility Reviewed At",
+      "description": "Timestamp when profile was last reviewed"
+    },
+    "compatibility_reviewed_by": {
+      "type": "string",
+      "title": "Compatibility Reviewed By",
+      "description": "User ID of admin who last reviewed the profile"
+    },
+    "last_consent_update_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last Consent Update At",
+      "description": "Timestamp when consent/boundaries were last updated"
     }
   },
   "required": [

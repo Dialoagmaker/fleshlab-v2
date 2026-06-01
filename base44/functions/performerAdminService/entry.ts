@@ -2,6 +2,8 @@
 // Phase 1.6: Hardened with AuditLog writes and role-based access control.
 //
 // Actions:
+//   get_performer — Fetches performer by ID (admin-only)
+//   update_performer — Updates performer fields (admin-only)
 //   freeze_account — Sets account_status to "suspended", records freeze_reason
 //   unfreeze_account — Sets account_status to "active", clears freeze_reason
 //   set_kyc_status — Updates kyc_status (not_started, pending, approved, rejected, expired)
@@ -91,6 +93,83 @@ Deno.serve(async (req) => {
         notes: notes || '',
       });
     };
+
+    // Action: get_performer
+    if (action === 'get_performer') {
+      return Response.json({
+        success: true,
+        ...performer
+      });
+    }
+
+    // Action: update_performer
+    if (action === 'update_performer') {
+      const { data } = body;
+      
+      if (!data || typeof data !== 'object') {
+        return Response.json({ error: 'data object is required' }, { status: 400 });
+      }
+
+      // Capture before state (only production compatibility fields)
+      const before = {
+        production_profile_enabled: performer.production_profile_enabled,
+        available_production_types: performer.available_production_types,
+        preferred_scene_styles: performer.preferred_scene_styles,
+        available_roles: performer.available_roles,
+        conditional_themes: performer.conditional_themes,
+        not_available_boundaries: performer.not_available_boundaries,
+        privacy_options: performer.privacy_options,
+        safety_requirements: performer.safety_requirements,
+        production_notes_public: performer.production_notes_public,
+        production_notes_internal: performer.production_notes_internal,
+        compatibility_review_status: performer.compatibility_review_status,
+        compatibility_reviewed_at: performer.compatibility_reviewed_at,
+        compatibility_reviewed_by: performer.compatibility_reviewed_by,
+        last_consent_update_at: performer.last_consent_update_at,
+      };
+
+      // Remove metadata fields that should not be directly updated
+      const updateData = { ...data };
+      delete updateData.action;
+      delete updateData.performer_id;
+
+      // Update performer
+      await base44.asServiceRole.entities.Performer.update(performer_id, updateData);
+
+      // Fetch updated performer to get final state
+      const updatedPerformer = await base44.asServiceRole.entities.Performer.get(performer_id);
+
+      // Capture after state
+      const after = {
+        production_profile_enabled: updatedPerformer.production_profile_enabled,
+        available_production_types: updatedPerformer.available_production_types,
+        preferred_scene_styles: updatedPerformer.preferred_scene_styles,
+        available_roles: updatedPerformer.available_roles,
+        conditional_themes: updatedPerformer.conditional_themes,
+        not_available_boundaries: updatedPerformer.not_available_boundaries,
+        privacy_options: updatedPerformer.privacy_options,
+        safety_requirements: updatedPerformer.safety_requirements,
+        production_notes_public: updatedPerformer.production_notes_public,
+        production_notes_internal: updatedPerformer.production_notes_internal,
+        compatibility_review_status: updatedPerformer.compatibility_review_status,
+        compatibility_reviewed_at: updatedPerformer.compatibility_reviewed_at,
+        compatibility_reviewed_by: updatedPerformer.compatibility_reviewed_by,
+        last_consent_update_at: updatedPerformer.last_consent_update_at,
+      };
+
+      // Append AuditLog
+      await appendAuditLog({
+        action: 'performer_production_compatibility_updated',
+        changes_json: { before, after },
+        notes: `Production compatibility profile updated by ${user.email || user.id}`,
+      });
+
+      return Response.json({
+        success: true,
+        message: 'Production compatibility profile updated',
+        performer_id,
+      });
+    }
 
     // Action: freeze_account
     if (action === 'freeze_account') {
