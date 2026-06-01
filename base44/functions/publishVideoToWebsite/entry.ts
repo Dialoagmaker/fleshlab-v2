@@ -19,6 +19,69 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Video not found' }, { status: 404 });
     }
 
+    // === SERVER-SIDE VALIDATION (same logic as validatePublishSafety.js) ===
+    const errors = [];
+    const warnings = [];
+
+    // BLOCKING CHECKS
+    if (!video.source_video_url || video.source_video_url.trim() === '') {
+      errors.push('Source video URL is missing');
+    }
+    if (!video.primary_thumbnail_url || video.primary_thumbnail_url.trim() === '') {
+      errors.push('Primary thumbnail URL is missing');
+    }
+    if (!video.trailer_url || video.trailer_url.trim() === '') {
+      errors.push('Trailer URL is missing');
+    }
+    if (!video.title || video.title.trim().length < 3) {
+      errors.push('Video title must be at least 3 characters long');
+    }
+    if (!video.access_tier || !['free', 'fanclub', 'ppv'].includes(video.access_tier)) {
+      errors.push('Access tier must be set (free, fanclub, or ppv)');
+    }
+    if (video.status !== 'draft') {
+      errors.push('Video must be in draft status to publish');
+    }
+    if (video.processing_status !== 'draft_ready') {
+      errors.push('Video processing must be complete before publishing (status must be \'draft_ready\')');
+    }
+
+    const videoPerformers = await base44.entities.VideoPerformer.filter({ video_id });
+    if (!videoPerformers || videoPerformers.length === 0) {
+      errors.push('At least one performer must be assigned before publishing');
+    }
+
+    // WARNING CHECKS (non-blocking)
+    if (!video.description || video.description.trim().length < 50) {
+      warnings.push('Description is short (recommended: at least 50 characters)');
+    }
+    if (!video.ai_metadata_draft) {
+      warnings.push('No AI metadata draft generated');
+    }
+    if (!video.promo_kit_generated_at) {
+      warnings.push('No promo kit generated yet');
+    }
+
+    const assets = await base44.entities.VideoAsset.filter({ video_id });
+    const hasSource = assets?.some(a => a.asset_type === 'source' && a.status === 'ready');
+    const hasThumbnail = assets?.some(a => a.asset_type === 'thumbnail' && a.status === 'ready');
+    const hasPreview = assets?.some(a => a.asset_type === 'preview' && a.status === 'ready');
+    const hasCover = assets?.some(a => a.asset_type === 'cover' && a.is_approved_cover);
+
+    if (!hasSource) warnings.push('Source asset not marked as ready');
+    if (!hasThumbnail) warnings.push('Thumbnail asset not marked as ready');
+    if (!hasPreview) warnings.push('Preview asset not marked as ready');
+    if (!hasCover) warnings.push('Cover asset not approved');
+
+    // BLOCK PUBLISHING IF ANY ERRORS
+    if (errors.length > 0) {
+      return Response.json({
+        error: 'Publish validation failed',
+        details: errors,
+        warnings: warnings,
+      }, { status: 400 });
+    }
+
     const now = new Date().toISOString();
 
     // STEP 3: Update video status to published
