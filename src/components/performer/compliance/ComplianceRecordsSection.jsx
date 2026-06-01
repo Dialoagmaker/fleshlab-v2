@@ -15,15 +15,6 @@ const DOCUMENT_STATUSES = [
   { value: "revoked", label: "Revoked" },
 ];
 
-const DOCUMENT_TYPES = [
-  { value: "id", label: "ID Document" },
-  { value: "medical_test", label: "Medical Test" },
-  { value: "std_test", label: "STI/HIV Test" },
-  { value: "background_check", label: "Background Check" },
-  { value: "work_permit", label: "Work Permit" },
-  { value: "other", label: "Other" },
-];
-
 const getStatusBadge = (status) => {
   const variants = {
     valid: "bg-green-500/10 text-green-500",
@@ -41,18 +32,21 @@ const getStatusBadge = (status) => {
   return variants[status] || "bg-gray-500/10 text-gray-500";
 };
 
-export default function ComplianceRecordsSection({ performer }) {
+export default function ComplianceRecordsSection({ performer, onRefresh }) {
   const queryClient = useQueryClient();
   const [documentType, setDocumentType] = useState("id");
   const [selectedFile, setSelectedFile] = useState(null);
 
+  // Hooks must be called unconditionally - use optional chaining
   const { data: records, refetch: refetchRecords } = useQuery({
-    queryKey: ["complianceRecords", performer.id],
+    queryKey: ["complianceRecords", performer?.id],
     queryFn: () => base44.entities.ComplianceRecord.filter({ performer_id: performer.id }, "-created_date"),
+    enabled: !!performer?.id,
   });
 
   const updateRecordStatus = useMutation({
     mutationFn: async ({ recordId, status }) => {
+      if (!performer?.id) return;
       await base44.functions.invoke("complianceRecordService", {
         action: "update_record_status",
         record_id: recordId,
@@ -68,6 +62,7 @@ export default function ComplianceRecordsSection({ performer }) {
 
   const updateRecordExpiry = useMutation({
     mutationFn: async ({ recordId, expiresAt }) => {
+      if (!performer?.id) return;
       await base44.functions.invoke("complianceRecordService", {
         action: "update_record_expiry",
         record_id: recordId,
@@ -83,7 +78,7 @@ export default function ComplianceRecordsSection({ performer }) {
   });
 
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !performer?.id) return;
     try {
       const uploadRes = await base44.functions.invoke("createDocumentUploadUrl", {
         entity_type: "ComplianceRecord",
@@ -113,6 +108,11 @@ export default function ComplianceRecordsSection({ performer }) {
       toast.error(`Upload failed: ${error.message}`);
     }
   };
+
+  // Early return after hooks
+  if (!performer || !performer.id) {
+    return <div className="text-sm text-muted-foreground p-4">Performer data not available</div>;
+  }
 
   return (
     <Card>

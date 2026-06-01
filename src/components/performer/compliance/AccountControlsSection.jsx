@@ -12,6 +12,10 @@ const getStatusBadge = (status) => {
 };
 
 export default function AccountControlsSection({ performer }) {
+  if (!performer || !performer.id) {
+    return <div className="text-sm text-muted-foreground p-4">Performer data not available</div>;
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -21,8 +25,8 @@ export default function AccountControlsSection({ performer }) {
         <div className="grid grid-cols-3 gap-4">
           <div>
             <p className="text-xs text-muted-foreground">Status</p>
-            <p className="text-sm font-medium capitalize">{performer.account_status}</p>
-            <Badge className={getStatusBadge(performer.account_status)}>{performer.account_status}</Badge>
+            <p className="text-sm font-medium capitalize">{performer.account_status || "active"}</p>
+            <Badge className={getStatusBadge(performer.account_status || "active")}>{performer.account_status || "active"}</Badge>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Compliance Locked</p>

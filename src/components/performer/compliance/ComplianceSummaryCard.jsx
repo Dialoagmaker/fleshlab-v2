@@ -19,15 +19,19 @@ const getStatusBadge = (status) => {
 };
 
 export default function ComplianceSummaryCard({ performer, contracts, records }) {
+  if (!performer || !performer.id) {
+    return <div className="text-sm text-muted-foreground p-4">Performer data not available</div>;
+  }
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
       <div>
         <p className="text-xs text-muted-foreground">KYC</p>
-        <Badge className={getStatusBadge(performer.kyc_status)}>{performer.kyc_status || "pending"}</Badge>
+        <Badge className={getStatusBadge(performer.kyc_status || "pending")}>{performer.kyc_status || "pending"}</Badge>
       </div>
       <div>
         <p className="text-xs text-muted-foreground">Account</p>
-        <Badge className={getStatusBadge(performer.account_status)}>{performer.account_status}</Badge>
+        <Badge className={getStatusBadge(performer.account_status || "active")}>{performer.account_status || "active"}</Badge>
       </div>
       <div>
         <p className="text-xs text-muted-foreground">Compliance</p>

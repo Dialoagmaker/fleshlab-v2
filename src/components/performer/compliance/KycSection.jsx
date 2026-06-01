@@ -9,8 +9,10 @@ import { toast } from "sonner";
 export default function KycSection({ performer }) {
   const queryClient = useQueryClient();
 
+  // Hooks must be called unconditionally
   const updateKycStatus = useMutation({
     mutationFn: async ({ status }) => {
+      if (!performer?.id) return;
       await base44.functions.invoke("performerAdminService", {
         action: "set_kyc_status",
         performer_id: performer.id,
@@ -25,6 +27,7 @@ export default function KycSection({ performer }) {
 
   const runLockEvaluation = useMutation({
     mutationFn: async () => {
+      if (!performer?.id) return;
       const res = await base44.functions.invoke("performerComplianceService", {
         action: "lock_evaluation",
         performer_id: performer.id,
@@ -37,6 +40,11 @@ export default function KycSection({ performer }) {
     },
   });
 
+  // Early return after hooks
+  if (!performer || !performer.id) {
+    return <div className="text-sm text-muted-foreground p-4">Performer data not available</div>;
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -47,7 +55,7 @@ export default function KycSection({ performer }) {
       </CardHeader>
       <CardContent>
         <div className="flex items-center gap-4">
-          <Select value={performer.kyc_status} onValueChange={(v) => updateKycStatus.mutate({ status: v })}>
+          <Select value={performer.kyc_status || "not_started"} onValueChange={(v) => updateKycStatus.mutate({ status: v })}>
             <SelectTrigger className="w-48">
               <SelectValue />
             </SelectTrigger>
@@ -56,6 +64,7 @@ export default function KycSection({ performer }) {
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
               <SelectItem value="rejected">Rejected</SelectItem>
+              <SelectItem value="expired">Expired</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" onClick={() => runLockEvaluation.mutate()} disabled={runLockEvaluation.isPending}>

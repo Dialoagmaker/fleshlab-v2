@@ -33,18 +33,21 @@ const getStatusBadge = (status) => {
   return variants[status] || "bg-gray-500/10 text-gray-500";
 };
 
-export default function ContractsSection({ performer }) {
+export default function ContractsSection({ performer, onRefresh }) {
   const queryClient = useQueryClient();
   const [contractType, setContractType] = useState("release");
   const [selectedFile, setSelectedFile] = useState(null);
 
+  // Hooks must be called unconditionally - use optional chaining
   const { data: contracts, refetch: refetchContracts } = useQuery({
-    queryKey: ["contracts", performer.id],
+    queryKey: ["contracts", performer?.id],
     queryFn: () => base44.entities.Contract.filter({ performer_id: performer.id }, "-created_date"),
+    enabled: !!performer?.id,
   });
 
   const updateContractStatus = useMutation({
     mutationFn: async ({ contractId, status }) => {
+      if (!performer?.id) return;
       await base44.functions.invoke("contractService", {
         action: "update_contract_status",
         contract_id: contractId,
@@ -60,6 +63,7 @@ export default function ContractsSection({ performer }) {
 
   const updateContractExpiry = useMutation({
     mutationFn: async ({ contractId, expiresAt }) => {
+      if (!performer?.id) return;
       await base44.functions.invoke("contractService", {
         action: "update_contract_expiry",
         contract_id: contractId,
@@ -75,7 +79,7 @@ export default function ContractsSection({ performer }) {
   });
 
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !performer?.id) return;
     try {
       const uploadRes = await base44.functions.invoke("createDocumentUploadUrl", {
         entity_type: "Contract",
@@ -104,6 +108,11 @@ export default function ContractsSection({ performer }) {
       toast.error(`Upload failed: ${error.message}`);
     }
   };
+
+  // Early return after hooks
+  if (!performer || !performer.id) {
+    return <div className="text-sm text-muted-foreground p-4">Performer data not available</div>;
+  }
 
   return (
     <Card>

@@ -6,8 +6,10 @@ import { CheckCircle2, Activity } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ComplianceActionsCard({ performer, onRefresh }) {
+  // Hooks must be called unconditionally
   const runComplianceCheck = useMutation({
     mutationFn: async () => {
+      if (!performer?.id) return;
       const res = await base44.functions.invoke("performerComplianceService", {
         action: "compliance_check",
         performer_id: performer.id,
@@ -18,6 +20,11 @@ export default function ComplianceActionsCard({ performer, onRefresh }) {
       toast.success(data.issues?.length === 0 ? "All gates passed" : `${data.issues.length} issue(s)`);
     },
   });
+
+  // Early return after hooks
+  if (!performer || !performer.id) {
+    return <div className="text-sm text-muted-foreground p-4">Performer data not available</div>;
+  }
 
   return (
     <Card>

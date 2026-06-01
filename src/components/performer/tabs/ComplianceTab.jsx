@@ -14,20 +14,33 @@ export default function ComplianceTab({ performer }) {
   const queryClient = useQueryClient();
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Hooks must be called unconditionally - use optional chaining for performer.id
   const { data: contracts, isLoading: contractsLoading, error: contractsError } = useQuery({
-    queryKey: ["contracts", performer.id, refreshKey],
+    queryKey: ["contracts", performer?.id, refreshKey],
     queryFn: () => base44.entities.Contract.filter({ performer_id: performer.id }, "-created_date"),
+    enabled: !!performer?.id,
   });
 
   const { data: records, isLoading: recordsLoading, error: recordsError } = useQuery({
-    queryKey: ["complianceRecords", performer.id, refreshKey],
+    queryKey: ["complianceRecords", performer?.id, refreshKey],
     queryFn: () => base44.entities.ComplianceRecord.filter({ performer_id: performer.id }, "-created_date"),
+    enabled: !!performer?.id,
   });
 
   const handleRefresh = () => {
     setRefreshKey((prev) => prev + 1);
     toast.success("Refreshed");
   };
+
+  // Defensive check - performer must exist
+  if (!performer || !performer.id) {
+    return (
+      <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-6">
+        <p className="text-destructive font-medium">Performer data not available</p>
+        <p className="text-sm text-muted-foreground mt-2">Please refresh the page or try again</p>
+      </div>
+    );
+  }
 
   // Show loading state
   if (contractsLoading || recordsLoading) {
