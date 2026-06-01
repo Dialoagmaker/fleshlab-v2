@@ -174,7 +174,14 @@ export default function LinkUserModal({ performerId, currentUserId, onClose, onS
 
               <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
                 <p className="text-xs text-blue-200">
-                  ℹ️ Linking a user account allows them to access the performer dashboard and manage their profile.
+                  ℹ️ Linking a user account allows this performer to access their read-only performer dashboard. 
+                  Performers can view their assigned content, compliance status, and support requests, but cannot edit profile data.
+                </p>
+              </div>
+
+              <div className="bg-muted/50 border border-border rounded-lg p-3">
+                <p className="text-xs text-muted-foreground">
+                  💡 <strong>Admin note:</strong> Create the user account through the auth/user system first, then link it here.
                 </p>
               </div>
             </div>

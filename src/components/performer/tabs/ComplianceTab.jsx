@@ -1,7 +1,8 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import ComplianceSummaryCard from "../compliance/ComplianceSummaryCard";
 import KycSection from "../compliance/KycSection";
 import ContractsSection from "../compliance/ContractsSection";
@@ -9,6 +10,37 @@ import ComplianceRecordsSection from "../compliance/ComplianceRecordsSection";
 import AccountControlsSection from "../compliance/AccountControlsSection";
 import GeoBlockingPlaceholder from "../compliance/GeoBlockingPlaceholder";
 import ComplianceActionsCard from "../compliance/ComplianceActionsCard";
+
+// Simple ErrorBoundary component
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("ComplianceTab Error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-6">
+          <p className="text-destructive font-medium">Error loading compliance data</p>
+          <p className="text-sm text-muted-foreground mt-2">{this.state.error?.message}</p>
+          <Button variant="outline" size="sm" onClick={() => this.setState({ hasError: false })} className="mt-3">
+            Try Again
+          </Button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function ComplianceTab({ performer }) {
   const queryClient = useQueryClient();
@@ -68,12 +100,24 @@ export default function ComplianceTab({ performer }) {
   return (
     <div className="space-y-6">
       <ComplianceSummaryCard performer={performer} contracts={contracts || []} records={records || []} />
-      <KycSection performer={performer} />
-      <ContractsSection performer={performer} contracts={contracts || []} onRefresh={handleRefresh} />
-      <ComplianceRecordsSection performer={performer} records={records || []} onRefresh={handleRefresh} />
-      <AccountControlsSection performer={performer} />
-      <GeoBlockingPlaceholder />
-      <ComplianceActionsCard performer={performer} onRefresh={handleRefresh} />
+      <ErrorBoundary>
+        <KycSection performer={performer} />
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <ContractsSection performer={performer} contracts={contracts || []} onRefresh={handleRefresh} />
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <ComplianceRecordsSection performer={performer} records={records || []} onRefresh={handleRefresh} />
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <AccountControlsSection performer={performer} />
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <GeoBlockingPlaceholder />
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <ComplianceActionsCard performer={performer} onRefresh={handleRefresh} />
+      </ErrorBoundary>
     </div>
   );
 }

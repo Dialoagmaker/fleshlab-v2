@@ -1,5 +1,5 @@
-import { useParams } from "react-router-dom";
-import { useState } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { User, Calendar, Shield, Video, CreditCard, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ProfileTab from "@/components/performer/tabs/ProfileTab";
@@ -24,7 +24,21 @@ const TABS = [
 
 export default function PerformerLayout() {
   const { id } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("profile");
+
+  // Sync tab state with URL query param
+  useEffect(() => {
+    const tabFromUrl = searchParams.get("tab");
+    if (tabFromUrl && TABS.some(t => t.id === tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    setSearchParams({ tab: tabId });
+  };
 
   return (
     <div className="space-y-6">
@@ -35,7 +49,7 @@ export default function PerformerLayout() {
         </a>
       </div>
 
-      {/* Tabs — internal UI state only, NO route changes */}
+      {/* Tabs — URL-synced with query params */}
       <div className="border-b border-border">
         <nav className="flex gap-6" role="tablist">
           {TABS.map(tab => {
@@ -47,7 +61,7 @@ export default function PerformerLayout() {
                 type="button"
                 role="tab"
                 aria-selected={isActive}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={cn(
                   "flex items-center gap-2 pb-3 text-sm font-medium transition-colors border-b-2",
                   isActive
