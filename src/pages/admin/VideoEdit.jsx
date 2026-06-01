@@ -109,6 +109,22 @@ export default function VideoEdit() {
   });
 
   const [retriggerStatus, setRetriggerStatus] = useState(null);
+  const [checkStatus, setCheckStatus] = useState(null);
+
+  const checkAssets = useMutation({
+    mutationFn: () => base44.functions.invoke('checkAndApplyVideoAssets', { video_id: id }),
+    onSuccess: (res) => {
+      const d = res.data;
+      if (d?.status === 'applied') {
+        setCheckStatus({ ok: true, msg: `✓ Assets gefunden: ${d.thumbnail_url ? 'Thumbnail' : ''} ${d.preview_url ? '+ Preview' : ''}`.trim() });
+        queryClient.invalidateQueries({ queryKey: ['video', id] });
+      } else {
+        setCheckStatus({ ok: false, msg: 'Noch keine Assets im CDN gefunden. Processor läuft evtl. noch.' });
+      }
+    },
+    onError: (err) => setCheckStatus({ ok: false, msg: err.message }),
+  });
+
   const retrigger = useMutation({
     mutationFn: () => base44.functions.invoke('retriggerVideoProcessing', { video_id: id }),
     onSuccess: (res) => setRetriggerStatus({ ok: true, msg: res.data?.message || 'Job accepted by processor.' }),
@@ -257,17 +273,32 @@ export default function VideoEdit() {
             {retriggerStatus && (
               <p className={`text-xs mt-1 ${retriggerStatus.ok ? 'text-green-400' : 'text-destructive'}`}>{retriggerStatus.msg}</p>
             )}
+            {checkStatus && (
+              <p className={`text-xs mt-1 ${checkStatus.ok ? 'text-green-400' : 'text-yellow-400'}`}>{checkStatus.msg}</p>
+            )}
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={retrigger.isPending}
-            onClick={() => { setRetriggerStatus(null); retrigger.mutate(); }}
-            className="gap-2 shrink-0"
-          >
-            <RefreshCw className={`w-4 h-4 ${retrigger.isPending ? 'animate-spin' : ''}`} />
-            {retrigger.isPending ? 'Wird gesendet…' : 'Assets neu erstellen'}
-          </Button>
+          <div className="flex flex-col gap-2 shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={retrigger.isPending}
+              onClick={() => { setRetriggerStatus(null); setCheckStatus(null); retrigger.mutate(); }}
+              className="gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${retrigger.isPending ? 'animate-spin' : ''}`} />
+              {retrigger.isPending ? 'Wird gesendet…' : 'Assets neu erstellen'}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={checkAssets.isPending}
+              onClick={() => { setCheckStatus(null); checkAssets.mutate(); }}
+              className="gap-2 text-xs"
+            >
+              <RefreshCw className={`w-3 h-3 ${checkAssets.isPending ? 'animate-spin' : ''}`} />
+              {checkAssets.isPending ? 'Suche…' : 'Assets prüfen & anwenden'}
+            </Button>
+          </div>
         </section>
       )}
 
