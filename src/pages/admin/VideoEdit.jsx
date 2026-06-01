@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, X, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, X, Save, Trash2, RefreshCw } from "lucide-react";
 import AICopyHelper from "@/components/admin/AICopyHelper";
 import VideoIdentificationPanel from "@/components/admin/VideoIdentificationPanel";
 import PerformerMultiSelect from "@/components/admin/PerformerMultiSelect";
@@ -106,6 +106,13 @@ export default function VideoEdit() {
       queryClient.invalidateQueries({ queryKey: ["admin-videos"] });
       navigate("/admin/videos");
     },
+  });
+
+  const [retriggerStatus, setRetriggerStatus] = useState(null);
+  const retrigger = useMutation({
+    mutationFn: () => base44.functions.invoke('retriggerVideoProcessing', { video_id: id }),
+    onSuccess: (res) => setRetriggerStatus({ ok: true, msg: res.data?.message || 'Job accepted by processor.' }),
+    onError: (err) => setRetriggerStatus({ ok: false, msg: err.message || 'Failed to trigger processor.' }),
   });
 
   // Mutations for VideoPerformer junction records
@@ -222,6 +229,29 @@ export default function VideoEdit() {
       {/* Video Identification Panel - Top of page */}
       {!isNew && video && (
         <VideoIdentificationPanel video={video} brands={brands} />
+      )}
+
+      {/* Retrigger Assets */}
+      {!isNew && (
+        <section className="bg-card border border-border rounded-xl p-5 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Thumbnail &amp; Preview</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Lässt den Processor Thumbnail und Preview-Video neu erstellen.</p>
+            {retriggerStatus && (
+              <p className={`text-xs mt-1 ${retriggerStatus.ok ? 'text-green-400' : 'text-destructive'}`}>{retriggerStatus.msg}</p>
+            )}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={retrigger.isPending}
+            onClick={() => { setRetriggerStatus(null); retrigger.mutate(); }}
+            className="gap-2 shrink-0"
+          >
+            <RefreshCw className={`w-4 h-4 ${retrigger.isPending ? 'animate-spin' : ''}`} />
+            {retrigger.isPending ? 'Wird gesendet…' : 'Assets neu erstellen'}
+          </Button>
+        </section>
       )}
 
       <AICopyHelper
