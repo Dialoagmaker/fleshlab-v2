@@ -159,6 +159,11 @@
       "title": "Availability Notes",
       "format": "textarea",
       "description": "Notes about performer's availability for shoots"
+    },
+    "user_id": {
+      "type": "string",
+      "title": "Linked User ID",
+      "description": "Authenticated user account permanently linked to this performer profile"
     }
   },
   "required": [

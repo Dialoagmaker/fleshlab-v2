@@ -12,17 +12,15 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
-    // Find performer linked to this user
-    // BLOCKER: Performer entity lacks user_id field
-    // Using created_by_id as temporary workaround - this is WRONG for production
-    // In production, Performer needs a dedicated user_id field
-    const performers = await base44.asServiceRole.entities.Performer.filter({});
-    const myPerformer = performers.find(p => p.created_by_id === user.id);
+    // Find performer linked to this user via user_id field
+    const performers = await base44.asServiceRole.entities.Performer.filter({
+      user_id: user.id
+    });
+    const myPerformer = performers[0] || null;
 
     if (!myPerformer) {
       return Response.json({ 
-        error: 'No linked performer profile found',
-        blocker: 'Performer entity requires user_id field for secure linking'
+        error: 'No linked performer profile found. Please contact support to link your account.'
       }, { status: 404 });
     }
 
