@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Level 2 — Legal: Valid signed release contract
+      // Level 2 — Legal: Valid signed AND verified release contract
       const contracts = await base44.asServiceRole.entities.Contract.filter({
         performer_id,
         contract_type: 'release',
@@ -59,21 +59,43 @@ Deno.serve(async (req) => {
       });
       
       if (contracts && contracts.length > 0) {
-        // Check if any signed release contract is not expired
+        // Check if any signed release contract is not expired AND verified
         const hasValidContract = contracts.some(c => {
           if (!c.expires_at) return true; // No expiry = valid
-          return new Date(c.expires_at) > new Date();
+          const notExpired = new Date(c.expires_at) > new Date();
+          const verified = c.verified === true; // Must be verified
+          return notExpired && verified;
         });
         
         if (hasValidContract) {
           gates.release_contract_ok = true;
         } else {
-          issues.push({ 
-            type: 'contract', 
-            message: 'Release contract expired', 
-            severity: 'critical',
-            gate: 'legal'
-          });
+          // Provide detailed reason
+          const hasExpired = contracts.some(c => c.expires_at && new Date(c.expires_at) <= new Date());
+          const hasUnverified = contracts.some(c => c.verified !== true);
+          
+          if (hasExpired && hasUnverified) {
+            issues.push({ 
+              type: 'contract', 
+              message: 'Release contract expired and not verified', 
+              severity: 'critical',
+              gate: 'legal'
+            });
+          } else if (hasExpired) {
+            issues.push({ 
+              type: 'contract', 
+              message: 'Release contract expired', 
+              severity: 'critical',
+              gate: 'legal'
+            });
+          } else if (hasUnverified) {
+            issues.push({ 
+              type: 'contract', 
+              message: 'Release contract not verified by admin', 
+              severity: 'critical',
+              gate: 'legal'
+            });
+          }
         }
       } else {
         issues.push({ 
@@ -169,7 +191,7 @@ Deno.serve(async (req) => {
         shouldLock = true;
       }
 
-      // Level 2 — Legal
+      // Level 2 — Legal: Signed AND verified release contract
       const contracts = await base44.asServiceRole.entities.Contract.filter({
         performer_id,
         contract_type: 'release',
@@ -178,11 +200,24 @@ Deno.serve(async (req) => {
 
       const hasValidContract = contracts && contracts.some(c => {
         if (!c.expires_at) return true;
-        return new Date(c.expires_at) > new Date();
+        const notExpired = new Date(c.expires_at) > new Date();
+        const verified = c.verified === true; // Must be verified
+        return notExpired && verified;
       });
 
       if (!hasValidContract) {
-        issues.push({ type: 'contract', message: 'No valid release contract', severity: 'critical' });
+        const hasExpired = contracts && contracts.some(c => c.expires_at && new Date(c.expires_at) <= new Date());
+        const hasUnverified = contracts && contracts.some(c => c.verified !== true);
+        
+        if (hasExpired && hasUnverified) {
+          issues.push({ type: 'contract', message: 'Release contract expired and not verified', severity: 'critical' });
+        } else if (hasExpired) {
+          issues.push({ type: 'contract', message: 'Release contract expired', severity: 'critical' });
+        } else if (hasUnverified) {
+          issues.push({ type: 'contract', message: 'Release contract not verified by admin', severity: 'critical' });
+        } else {
+          issues.push({ type: 'contract', message: 'No valid release contract', severity: 'critical' });
+        }
         shouldLock = true;
       }
 

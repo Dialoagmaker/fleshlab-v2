@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Download, Calendar, Plus, Eye } from "lucide-react";
+import { Upload, Download, Calendar, Plus, Eye, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 import AddContractModal from "./AddContractModal";
 import AdminFileViewModal from "@/components/admin/AdminFileViewModal";
@@ -40,6 +40,7 @@ export default function ContractsSection({ performer, contracts, onRefresh }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewingContract, setViewingContract] = useState(null);
+  const [verifyingContract, setVerifyingContract] = useState(null);
 
   // Safe array default - prevent .map() on undefined
   const safeContracts = Array.isArray(contracts) ? contracts : [];
@@ -58,6 +59,26 @@ export default function ContractsSection({ performer, contracts, onRefresh }) {
       queryClient.invalidateQueries({ queryKey: ["contracts", performer.id] });
       onRefresh?.();
       toast.success("Status updated");
+    },
+  });
+
+  const verifyContract = useMutation({
+    mutationFn: async ({ contractId }) => {
+      if (!performer?.id) return;
+      await base44.functions.invoke("contractService", {
+        action: "verify_contract",
+        contract_id: contractId,
+        performer_id: performer.id,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contracts", performer.id] });
+      onRefresh?.();
+      setVerifyingContract(null);
+      toast.success("Contract verified");
+    },
+    onError: (error) => {
+      toast.error(`Failed to verify: ${error.message}`);
     },
   });
 
@@ -120,6 +141,27 @@ export default function ContractsSection({ performer, contracts, onRefresh }) {
                         ))}
                       </SelectContent>
                     </Select>
+                    {c.status === 'signed' && !c.verified && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (window.confirm(`Verify contract "${c.title}"?\n\nThis confirms the contract has been reviewed and is valid.`)) {
+                            verifyContract.mutate({ contractId: c.id });
+                          }
+                        }}
+                        disabled={verifyContract.isPending}
+                      >
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        {verifyContract.isPending ? "Verifying..." : "Verify"}
+                      </Button>
+                    )}
+                    {c.verified && (
+                      <Badge className="bg-green-500/10 text-green-500 border border-green-500/20">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Verified
+                      </Badge>
+                    )}
                     {c.document_url && (
                       <>
                         <Button

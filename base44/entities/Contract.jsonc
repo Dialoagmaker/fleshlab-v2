@@ -50,6 +50,22 @@
       "type": "string",
       "title": "Notes"
     },
+    "verified": {
+      "type": "boolean",
+      "title": "Verified",
+      "default": false,
+      "description": "Whether admin has verified this contract"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Verified At"
+    },
+    "verified_by": {
+      "type": "string",
+      "title": "Verified By",
+      "description": "User ID or email of admin who verified"
+    },
     "v1_id": {
       "type": "string",
       "title": "V1 Migration ID"

@@ -218,6 +218,64 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'verify_contract') {
+      const { contract_id: cid } = data;
+      const contract_id = cid || body.contract_id;
+
+      if (!contract_id) {
+        return Response.json({ 
+          error: 'Missing required field: contract_id' 
+        }, { status: 400 });
+      }
+
+      // Get current contract
+      const contract = await base44.asServiceRole.entities.Contract.get(contract_id);
+      if (!contract) {
+        return Response.json({ error: 'Contract not found' }, { status: 404 });
+      }
+
+      // Update verification fields
+      await base44.asServiceRole.entities.Contract.update(contract_id, {
+        verified: true,
+        verified_at: new Date().toISOString(),
+        verified_by: user.email,
+      });
+
+      // Create AuditLog entry
+      await base44.asServiceRole.entities.AuditLog.create({
+        entity_type: 'Contract',
+        entity_id: contract_id,
+        actor_id: user.id,
+        actor_role: user.role,
+        action: 'contract_verified',
+        changes_json: JSON.stringify({
+          verified: {
+            before: contract.verified || false,
+            after: true,
+          },
+          verified_at: new Date().toISOString(),
+          verified_by: user.email,
+        }),
+        notes: `Contract verified by ${user.email}`,
+      });
+
+      // Trigger compliance lock re-evaluation
+      try {
+        await base44.asServiceRole.functions.invoke('performerComplianceService', {
+          action: 'lock_evaluation',
+          performer_id: contract.performer_id,
+        });
+      } catch (e) {
+        console.error('Lock evaluation failed:', e.message);
+      }
+
+      return Response.json({
+        success: true,
+        contract_id,
+        message: 'Contract verified',
+      });
+    }
+
     return Response.json({ error: 'Unknown action' }, { status: 400 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
