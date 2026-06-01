@@ -32,6 +32,7 @@ import Applications from './pages/admin/Applications';
 import VideoUploadTest from './pages/admin/VideoUploadTest';
 import DraftReview from './pages/admin/DraftReview';
 import UnlinkedPerformers from './pages/admin/UnlinkedPerformers';
+import MonthlyCloseout from './pages/admin/MonthlyCloseout';
 import ComingSoon from './pages/ComingSoon';
 import PerformerDashboard from './pages/performer/PerformerDashboard';
 // Public pages
@@ -125,6 +126,7 @@ const AuthenticatedApp = () => {
             <Route path="/admin/news" element={<ComingSoon title="News Management" />} />
             <Route path="/admin/seo" element={<ComingSoon title="SEO Management" />} />
             <Route path="/admin/migration" element={<ComingSoon title="Migration Tools" />} />
+            <Route path="/admin/monthly-closeout" element={<MonthlyCloseout />} />
           </Route>
         </Route>
       </Route>
