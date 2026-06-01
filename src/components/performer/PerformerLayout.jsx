@@ -63,7 +63,7 @@ export default function PerformerLayout() {
 
       {/* Tab Content */}
       <div role="tabpanel" className="pt-4">
-        <PerformerDetailWrapper />
+        <PerformerDetailWrapper activeTab={activeTab} />
       </div>
     </div>
   );

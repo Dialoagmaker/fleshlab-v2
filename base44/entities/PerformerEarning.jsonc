@@ -1,0 +1,94 @@
+{
+  "name": "PerformerEarning",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "video_id": {
+      "type": "string",
+      "title": "Video ID",
+      "description": "Optional - for video-specific earnings"
+    },
+    "earning_type": {
+      "type": "string",
+      "enum": [
+        "xhamster_share",
+        "faphouse_share",
+        "video_sale",
+        "fanclub_share",
+        "livestream",
+        "sponsorship_share",
+        "product_placement_share",
+        "bonus",
+        "adjustment"
+      ],
+      "title": "Earning Type"
+    },
+    "gross_amount_usd": {
+      "type": "number",
+      "title": "Gross Amount (USD)"
+    },
+    "split_pct": {
+      "type": "number",
+      "title": "Split Percentage",
+      "description": "Snapshotted revenue split at time of earning creation"
+    },
+    "net_amount_usd": {
+      "type": "number",
+      "title": "Net Amount (USD)",
+      "description": "gross_amount_usd * split_pct / 100"
+    },
+    "period_month": {
+      "type": "string",
+      "title": "Period Month",
+      "description": "Format: YYYY-MM"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "paid",
+        "held",
+        "disputed"
+      ],
+      "title": "Status",
+      "default": "pending"
+    },
+    "hold_reason": {
+      "type": "string",
+      "title": "Hold Reason",
+      "description": "Required when status is held or disputed"
+    },
+    "paid_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Paid At"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes",
+      "format": "textarea"
+    },
+    "source_ref_type": {
+      "type": "string",
+      "title": "Source Reference Type",
+      "description": "e.g., 'VideoStatSnapshot', 'VideoDeal'"
+    },
+    "source_ref_id": {
+      "type": "string",
+      "title": "Source Reference ID"
+    }
+  },
+  "required": [
+    "performer_id",
+    "earning_type",
+    "gross_amount_usd",
+    "split_pct",
+    "net_amount_usd",
+    "period_month",
+    "status"
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "name": "VideoStatSnapshot",
+  "type": "object",
+  "properties": {
+    "video_id": {
+      "type": "string",
+      "title": "Video ID"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "xhamster",
+        "faphouse",
+        "internal",
+        "pornhub",
+        "other"
+      ],
+      "title": "Platform"
+    },
+    "period_month": {
+      "type": "string",
+      "title": "Period Month",
+      "description": "Format: YYYY-MM"
+    },
+    "views": {
+      "type": "integer",
+      "title": "Views",
+      "default": 0
+    },
+    "likes": {
+      "type": "integer",
+      "title": "Likes",
+      "default": 0
+    },
+    "favourites": {
+      "type": "integer",
+      "title": "Favourites",
+      "default": 0
+    },
+    "revenue_usd": {
+      "type": "number",
+      "title": "Revenue (USD)",
+      "default": 0,
+      "description": "Gross platform revenue"
+    },
+    "sales_count": {
+      "type": "integer",
+      "title": "Sales Count",
+      "default": 0
+    },
+    "tips_usd": {
+      "type": "number",
+      "title": "Tips (USD)",
+      "default": 0
+    },
+    "raw_data_json": {
+      "type": "string",
+      "title": "Raw Data JSON",
+      "description": "Original imported data as JSON string"
+    },
+    "import_source": {
+      "type": "string",
+      "title": "Import Source",
+      "description": "e.g., 'manual', 'csv_import', 'api_sync'"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes",
+      "format": "textarea"
+    }
+  },
+  "required": [
+    "video_id",
+    "platform",
+    "period_month"
+  ]
+}

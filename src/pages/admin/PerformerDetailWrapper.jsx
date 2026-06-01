@@ -9,7 +9,7 @@ import EarningsTab from "@/components/performer/tabs/EarningsTab";
 import FanclubTab from "@/components/performer/tabs/FanclubTab";
 import PerformerHeader from "@/components/performer/PerformerHeader";
 
-export default function PerformerDetailWrapper() {
+export default function PerformerDetailWrapper({ activeTab = "profile" }) {
   const { id } = useParams();
 
   const { data: performer, isLoading, refetch } = useQuery({
@@ -25,12 +25,32 @@ export default function PerformerDetailWrapper() {
     return <div className="text-center py-16 text-destructive">Performer not found</div>;
   }
 
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "profile":
+        return <ProfileTab performer={performer} onRefresh={refetch} />;
+      case "production":
+        return <ProductionTab performer={performer} />;
+      case "compliance":
+        return <ComplianceTab performer={performer} />;
+      case "videos":
+        return <VideosTab performer={performer} />;
+      case "earnings":
+        return <EarningsTab performer={performer} />;
+      case "fanclub":
+        return <FanclubTab performer={performer} />;
+      default:
+        return <ProfileTab performer={performer} onRefresh={refetch} />;
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Status Bar - always visible */}
       <PerformerHeader performer={performer} onRefresh={() => refetch()} />
 
-      {/* Tab Content - rendered by parent layout based on activeTab state */}
+      {/* Tab Content */}
+      {renderTabContent()}
     </div>
   );
 }
