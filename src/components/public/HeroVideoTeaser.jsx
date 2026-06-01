@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Play } from "lucide-react";
@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 
 export default function HeroVideoTeaser() {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [videos, setVideos] = useState([]);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const videoRef = useRef(null);
   const previousIndexRef = useRef(-1);
@@ -25,50 +24,28 @@ export default function HeroVideoTeaser() {
     },
   });
 
-  // Process videos on load - prioritize media fields, filter eligible
-  useEffect(() => {
-    if (!allVideos || allVideos.length === 0) {
-      setVideos([]);
-      return;
-    }
-
-    // Filter videos with at least one valid media URL
-    const eligibleVideos = allVideos.filter(video => {
-      const mediaUrl = getPriorityMediaUrl(video);
-      return !!mediaUrl;
-    }).slice(0, 12); // Limit to 12 videos max
-
-    setVideos(eligibleVideos);
-
-    // Random initial selection
-    if (eligibleVideos.length > 0) {
-      const randomStart = Math.floor(Math.random() * eligibleVideos.length);
-      currentIndexRef.current = randomStart;
-      setCurrentVideoIndex(randomStart);
-      previousIndexRef.current = -1;
-    }
-  }, [allVideos]);
-
-  // Get media URL by priority
+  // Get media URL by priority (defined early so useMemo can use it)
   const getPriorityMediaUrl = (video) => {
-    // Priority 1: trailer_url
-    if (video.trailer_url && video.trailer_url.trim()) {
-      return video.trailer_url;
-    }
-    // Priority 2: preview_video_url
-    if (video.preview_video_url && video.preview_video_url.trim()) {
-      return video.preview_video_url;
-    }
-    // Priority 3: source_video_url
-    if (video.source_video_url && video.source_video_url.trim()) {
-      return video.source_video_url;
-    }
-    // Priority 4: src_url
-    if (video.src_url && video.src_url.trim()) {
-      return video.src_url;
-    }
+    if (video.trailer_url?.trim()) return video.trailer_url;
+    if (video.preview_video_url?.trim()) return video.preview_video_url;
+    if (video.source_video_url?.trim()) return video.source_video_url;
+    if (video.src_url?.trim()) return video.src_url;
     return null;
   };
+
+  // Compute eligible videos from query data (no setState — avoids infinite loop)
+  const videos = useMemo(() => {
+    return (allVideos || []).filter(v => !!getPriorityMediaUrl(v)).slice(0, 12);
+  }, [allVideos]);
+
+  // Set random initial index once when videos first load
+  useEffect(() => {
+    if (videos.length === 0) return;
+    const randomStart = Math.floor(Math.random() * videos.length);
+    currentIndexRef.current = randomStart;
+    setCurrentVideoIndex(randomStart);
+    previousIndexRef.current = -1;
+  }, [videos.length > 0]);
 
   // Random rotation every 8 seconds
   useEffect(() => {
