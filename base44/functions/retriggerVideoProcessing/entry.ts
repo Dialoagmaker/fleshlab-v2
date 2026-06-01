@@ -42,6 +42,8 @@ Deno.serve(async (req) => {
 
     const processorWebhookUrl = Deno.env.get('PROCESSOR_WEBHOOK_URL');
     const processorSecret = Deno.env.get('PROCESSOR_API_KEY');
+    const appBaseUrl = (Deno.env.get('APP_BASE_URL') || '').replace(/\/$/, '');
+    const callbackUrl = `${appBaseUrl}/api/functions/updateVideoProcessingResult?processor_key=${encodeURIComponent(processorSecret)}`;
 
     const keyParts = sourceAsset.r2_key.split('/');
     const studio = keyParts.length >= 2 ? keyParts[1] : 'default';
@@ -58,6 +60,7 @@ Deno.serve(async (req) => {
         src_url: signedUrl,
         video_id,
         source_asset_id: sourceAsset.id,
+        callback_url: callbackUrl,
       }),
     });
 

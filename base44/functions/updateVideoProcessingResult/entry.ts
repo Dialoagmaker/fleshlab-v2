@@ -4,8 +4,9 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Validate processor API key
-    const processorApiKey = req.headers.get('X-Processor-API-Key');
+    // Validate processor API key — accept from header OR query param
+    const url = new URL(req.url);
+    const processorApiKey = req.headers.get('X-Processor-API-Key') || url.searchParams.get('processor_key');
     const expectedApiKey = Deno.env.get('PROCESSOR_API_KEY');
     
     if (!processorApiKey || processorApiKey !== expectedApiKey) {
