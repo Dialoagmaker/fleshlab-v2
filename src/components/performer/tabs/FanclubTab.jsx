@@ -25,7 +25,13 @@ export default function FanclubTab({ performer }) {
             <p className="text-sm text-foreground">{performer.instagram_url}</p>
           </div>
         )}
-        <p className="text-xs text-muted-foreground mt-4">Fanclub management — Phase 3 (deferred)</p>
+        <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+          <p className="text-sm text-yellow-500 font-medium">Fanclub Management Not Implemented</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Fanclub payment processing, subscriber management, and content gating are deferred to a later phase.
+            No fanclub payment or management actions are available at this time.
+          </p>
+        </div>
       </div>
     </div>
   );

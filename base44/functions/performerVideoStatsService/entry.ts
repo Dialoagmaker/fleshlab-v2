@@ -65,7 +65,54 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Action 2: update_snapshot (admin-only)
+    // Action 2: create_snapshot (admin-only)
+    if (action === 'create_snapshot') {
+      const { performer_id, video_id, platform, period_month, views, likes, revenue_usd, promotion_status, admin_note } = body;
+
+      if (!video_id || !platform || !period_month) {
+        return Response.json({ error: 'Missing required fields: video_id, platform, period_month' }, { status: 400 });
+      }
+
+      // Verify video belongs to performer
+      const videoPerformer = await base44.asServiceRole.entities.VideoPerformer.filter({
+        performer_id,
+        video_id
+      });
+
+      if (!videoPerformer || videoPerformer.length === 0) {
+        return Response.json({ error: 'Video not linked to this performer' }, { status: 400 });
+      }
+
+      // Create snapshot
+      const snapshot = await base44.asServiceRole.entities.VideoStatSnapshot.create({
+        video_id,
+        platform,
+        period_month,
+        views: views || 0,
+        likes: likes || 0,
+        favourites: 0,
+        revenue_usd: revenue_usd || 0,
+        promotion_status: promotion_status || 'none',
+        admin_note: admin_note || '',
+        import_source: 'manual_admin_entry'
+      });
+
+      // Audit log
+      await base44.asServiceRole.entities.AuditLog.create({
+        entity_type: 'VideoStatSnapshot',
+        entity_id: snapshot.id,
+        actor_id: user.id,
+        actor_role: user.role,
+        action: 'video_stat_snapshot_created',
+        changes_json: JSON.stringify({ video_id, platform, period_month }),
+        ip_address: null,
+        notes: `Video stat snapshot created by admin`
+      });
+
+      return Response.json({ success: true, snapshot_id: snapshot.id });
+    }
+
+    // Action 3: update_snapshot (admin-only)
     if (action === 'update_snapshot') {
       const { snapshot_id, data } = body;
 

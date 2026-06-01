@@ -6,14 +6,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Pencil, RefreshCw } from "lucide-react";
+import { Pencil, RefreshCw, Plus } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from "@/components/ui/dialog";
 
 export default function VideoStatsTab({ performerId }) {
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState({ period_month: '', platform: '', promotion_status: '' });
   const [editingSnapshot, setEditingSnapshot] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const { data: statsData, isLoading, refetch } = useQuery({
     queryKey: ['performer-video-stats', performerId, filters],
@@ -39,6 +49,20 @@ export default function VideoStatsTab({ performerId }) {
     onSuccess: () => {
       refetch();
       setEditingSnapshot(null);
+    }
+  });
+
+  const createSnapshot = useMutation({
+    mutationFn: async (data) => {
+      return await base44.functions.invoke('performerVideoStatsService', {
+        action: 'create_snapshot',
+        performer_id: performerId,
+        ...data
+      });
+    },
+    onSuccess: () => {
+      refetch();
+      setShowAddModal(false);
     }
   });
 
@@ -119,7 +143,13 @@ export default function VideoStatsTab({ performerId }) {
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Loading stats...</p>
           ) : !stats || stats.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No stats found for this performer.</p>
+            <div className="text-center py-8 border border-dashed rounded-lg">
+              <p className="text-sm text-muted-foreground mb-4">No stats found for this performer.</p>
+              <Button onClick={() => setShowAddModal(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Video Stat
+              </Button>
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -201,6 +231,206 @@ export default function VideoStatsTab({ performerId }) {
           )}
         </CardContent>
       </Card>
+
+      {/* Add Video Stat Modal */}
+      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add Video Stat</DialogTitle>
+          </DialogHeader>
+          <AddVideoStatForm
+            performerId={performerId}
+            onClose={() => setShowAddModal(false)}
+            onSuccess={() => {
+              refetch();
+              setShowAddModal(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+function AddVideoStatForm({ performerId, onClose, onSuccess }) {
+  const queryClient = useQueryClient();
+  const [formData, setFormData] = useState({
+    video_id: '',
+    platform: 'xhamster',
+    period_month: new Date().toISOString().slice(0, 7),
+    views: '',
+    likes: '',
+    revenue_usd: '',
+    promotion_status: 'none',
+    admin_note: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Get performer's videos
+  const { data: videoPerformers, isLoading: videosLoading } = useQuery({
+    queryKey: ['performer-videos-for-stats', performerId],
+    queryFn: async () => {
+      const vps = await base44.entities.VideoPerformer.filter({ performer_id: performerId });
+      const videos = [];
+      for (const vp of vps) {
+        const video = await base44.entities.Video.get(vp.video_id);
+        if (video) videos.push({ id: video.id, title: video.title });
+      }
+      return videos;
+    }
+  });
+
+  const createSnapshot = useMutation({
+    mutationFn: async (data) => {
+      return await base44.functions.invoke('performerVideoStatsService', {
+        action: 'create_snapshot',
+        performer_id: performerId,
+        ...data
+      });
+    },
+    onSuccess: () => {
+      toast.success('Video stat created');
+      onSuccess();
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to create stat');
+    }
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.video_id) {
+      toast.error('Please select a video');
+      return;
+    }
+    setIsSubmitting(true);
+    createSnapshot.mutate({
+      video_id: formData.video_id,
+      platform: formData.platform,
+      period_month: formData.period_month,
+      views: parseInt(formData.views) || 0,
+      likes: parseInt(formData.likes) || 0,
+      revenue_usd: parseFloat(formData.revenue_usd) || 0,
+      promotion_status: formData.promotion_status,
+      admin_note: formData.admin_note
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid gap-2">
+        <Label htmlFor="video_id">Video</Label>
+        <Select
+          value={formData.video_id}
+          onValueChange={(value) => setFormData({ ...formData, video_id: value })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder={videosLoading ? "Loading videos..." : "Select a video"} />
+          </SelectTrigger>
+          <SelectContent>
+            {videoPerformers?.map((video) => (
+              <SelectItem key={video.id} value={video.id}>
+                {video.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="platform">Platform</Label>
+        <Select value={formData.platform} onValueChange={(v) => setFormData({ ...formData, platform: v })}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="xhamster">xhamster</SelectItem>
+            <SelectItem value="faphouse">faphouse</SelectItem>
+            <SelectItem value="internal">internal</SelectItem>
+            <SelectItem value="pornhub">pornhub</SelectItem>
+            <SelectItem value="other">other</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="period_month">Period Month</Label>
+        <Input
+          id="period_month"
+          type="month"
+          value={formData.period_month}
+          onChange={(e) => setFormData({ ...formData, period_month: e.target.value })}
+          required
+        />
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="views">Views</Label>
+        <Input
+          id="views"
+          type="number"
+          value={formData.views}
+          onChange={(e) => setFormData({ ...formData, views: e.target.value })}
+          placeholder="0"
+        />
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="likes">Likes</Label>
+        <Input
+          id="likes"
+          type="number"
+          value={formData.likes}
+          onChange={(e) => setFormData({ ...formData, likes: e.target.value })}
+          placeholder="0"
+        />
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="revenue_usd">Revenue (USD)</Label>
+        <Input
+          id="revenue_usd"
+          type="number"
+          step="0.01"
+          value={formData.revenue_usd}
+          onChange={(e) => setFormData({ ...formData, revenue_usd: e.target.value })}
+          placeholder="0.00"
+        />
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="promotion_status">Promotion Status</Label>
+        <Select value={formData.promotion_status} onValueChange={(v) => setFormData({ ...formData, promotion_status: v })}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">none</SelectItem>
+            <SelectItem value="planned">planned</SelectItem>
+            <SelectItem value="active">active</SelectItem>
+            <SelectItem value="ended">ended</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="admin_note">Admin Note</Label>
+        <Input
+          id="admin_note"
+          value={formData.admin_note}
+          onChange={(e) => setFormData({ ...formData, admin_note: e.target.value })}
+          placeholder="Optional notes"
+        />
+      </div>
+
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isSubmitting || !formData.video_id}>
+          {isSubmitting ? 'Creating...' : 'Create Video Stat'}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }

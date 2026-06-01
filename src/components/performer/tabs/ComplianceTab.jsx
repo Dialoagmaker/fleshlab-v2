@@ -14,12 +14,12 @@ export default function ComplianceTab({ performer }) {
   const queryClient = useQueryClient();
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const { data: contracts } = useQuery({
+  const { data: contracts, isLoading: contractsLoading, error: contractsError } = useQuery({
     queryKey: ["contracts", performer.id, refreshKey],
     queryFn: () => base44.entities.Contract.filter({ performer_id: performer.id }, "-created_date"),
   });
 
-  const { data: records } = useQuery({
+  const { data: records, isLoading: recordsLoading, error: recordsError } = useQuery({
     queryKey: ["complianceRecords", performer.id, refreshKey],
     queryFn: () => base44.entities.ComplianceRecord.filter({ performer_id: performer.id }, "-created_date"),
   });
@@ -29,12 +29,35 @@ export default function ComplianceTab({ performer }) {
     toast.success("Refreshed");
   };
 
+  // Show loading state
+  if (contractsLoading || recordsLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12 text-muted-foreground">Loading compliance data...</div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (contractsError || recordsError) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-6">
+          <p className="text-destructive font-medium">Error loading compliance data</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            {contractsError?.message || recordsError?.message || 'Unknown error'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <ComplianceSummaryCard performer={performer} contracts={contracts} records={records} />
+      <ComplianceSummaryCard performer={performer} contracts={contracts || []} records={records || []} />
       <KycSection performer={performer} />
-      <ContractsSection performer={performer} onRefresh={handleRefresh} />
-      <ComplianceRecordsSection performer={performer} onRefresh={handleRefresh} />
+      <ContractsSection performer={performer} contracts={contracts || []} onRefresh={handleRefresh} />
+      <ComplianceRecordsSection performer={performer} records={records || []} onRefresh={handleRefresh} />
       <AccountControlsSection performer={performer} />
       <GeoBlockingPlaceholder />
       <ComplianceActionsCard performer={performer} onRefresh={handleRefresh} />
