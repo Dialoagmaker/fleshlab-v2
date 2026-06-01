@@ -1,9 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const MAX_PER_RUN = 25;
-
+// Single-video helper (used for mode=single only — fast, synchronous)
 async function buildDraftForVideo(base44, video) {
-  // Fetch performers
   const credits = await base44.entities.VideoPerformer.filter({ video_id: video.id });
   let performerNames = [];
   if (credits.length > 0) {
@@ -13,19 +11,15 @@ async function buildDraftForVideo(base44, video) {
     performerNames = performers.filter(Boolean).map(p => p.display_name);
   }
 
-  // Fetch brand
   let brandName = '';
   if (video.brand_id) {
     const brand = await base44.entities.Brand.get(video.brand_id).catch(() => null);
     brandName = brand?.name || '';
   }
 
-  // Fetch thumbnail URL
   let thumbnailUrl = video.primary_thumbnail_url || null;
   const thumbnailAssets = await base44.entities.VideoAsset.filter({ video_id: video.id, asset_type: 'thumbnail' });
-  if (thumbnailAssets.length > 0 && thumbnailAssets[0].cdn_url) {
-    thumbnailUrl = thumbnailAssets[0].cdn_url;
-  }
+  if (thumbnailAssets.length > 0 && thumbnailAssets[0].cdn_url) thumbnailUrl = thumbnailAssets[0].cdn_url;
 
   const contextBlock = [
     `Working title: ${video.title || 'Untitled'}`,
@@ -52,30 +46,23 @@ Generate a complete metadata package. Reply ONLY in this exact JSON:
   "seo_title": "SEO page title under 60 chars — format: [Act] | FLESHLAB",
   "seo_description": "Meta description 120-158 chars with soft CTA",
   "categories": ["2-4 broad category names, e.g. Asian, Filipino, Solo, Twink"],
-  "tags": ["8-15 lowercase specific tags"],
-  "ppv_price": 6.99
+  "tags": ["8-15 lowercase specific tags"]
 }
 
-Duration context for tone/pacing only: ${video.duration_seconds ? Math.round(video.duration_seconds / 60) + ' minutes' : 'unknown'}. Do NOT include ppv_price in your response.
-
+Duration context: ${video.duration_seconds ? Math.round(video.duration_seconds / 60) + ' minutes' : 'unknown'}.
 AVOID: generic intros, "Don't miss", "HD studio quality", clichés.`,
     response_json_schema: {
       type: 'object',
       properties: {
-        title: { type: 'string' },
-        description: { type: 'string' },
-        short_teaser: { type: 'string' },
-        seo_title: { type: 'string' },
-        seo_description: { type: 'string' },
+        title: { type: 'string' }, description: { type: 'string' }, short_teaser: { type: 'string' },
+        seo_title: { type: 'string' }, seo_description: { type: 'string' },
         categories: { type: 'array', items: { type: 'string' } },
         tags: { type: 'array', items: { type: 'string' } },
-
       },
       required: ['title', 'description', 'short_teaser', 'seo_title', 'seo_description', 'categories', 'tags']
     }
   });
 
-  // Calculate PPV price from real duration — never guess
   let ppv_price = null;
   if (video.duration_seconds) {
     const mins = video.duration_seconds / 60;
@@ -85,12 +72,7 @@ AVOID: generic intros, "Don't miss", "HD studio quality", clichés.`,
     else ppv_price = 14.99;
   }
 
-  return {
-    ...draft,
-    ppv_price,
-    duration_missing: !video.duration_seconds,
-    _source: 'backfill',
-  };
+  return { ...draft, ppv_price, duration_missing: !video.duration_seconds, _source: 'backfill' };
 }
 
 Deno.serve(async (req) => {
@@ -101,74 +83,43 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized: Admin access required' }, { status: 403 });
     }
 
-    const { video_id, mode = 'missing_only', overwrite_existing = false } = await req.json();
+    const { video_id, mode = 'missing_only', overwrite_existing = false, limit = 25 } = await req.json();
 
-    // Build candidate list
-    let candidates = [];
-
+    // ── Single video: run synchronously (just 1 LLM call, fast) ──────────────
     if (mode === 'single') {
-      if (!video_id) {
-        return Response.json({ error: 'video_id required for mode=single' }, { status: 400 });
-      }
-      const v = await base44.entities.Video.get(video_id);
-      if (!v) return Response.json({ error: 'Video not found' }, { status: 404 });
-      candidates = [v];
-    } else if (mode === 'missing_only') {
-      const all = await base44.entities.Video.list('-created_date', 200);
-      candidates = all.filter(v => !v.ai_metadata_draft);
-    } else if (mode === 'all') {
-      candidates = await base44.entities.Video.list('-created_date', 200);
-    } else {
-      return Response.json({ error: 'Invalid mode. Use: single | missing_only | all' }, { status: 400 });
+      if (!video_id) return Response.json({ error: 'video_id required for mode=single' }, { status: 400 });
+      const video = await base44.entities.Video.get(video_id);
+      if (!video) return Response.json({ error: 'Video not found' }, { status: 404 });
+
+      const draft = await buildDraftForVideo(base44, video);
+      await base44.entities.Video.update(video.id, {
+        ai_metadata_draft: JSON.stringify(draft),
+        ai_metadata_generated_at: new Date().toISOString(),
+        processing_status: 'draft_ready',
+      });
+
+      return Response.json({ status: 'ok', mode: 'single', processed: 1, draft });
     }
 
-    // Apply overwrite filter unless overwrite_existing = true
-    if (!overwrite_existing && mode !== 'single') {
-      candidates = candidates.filter(v => !v.ai_metadata_draft);
-    }
+    // ── Batch modes: create job + fire-and-forget ─────────────────────────────
+    const job = await base44.entities.JobQueue.create({
+      job_type: 'backfill_video_metadata_batch',
+      status: 'pending',
+      priority: 5,
+      entity_type: 'Video',
+      payload: JSON.stringify({ mode, overwrite_existing, limit }),
+      result: JSON.stringify({ processed: 0, skipped: 0, failed: 0, errors: [], remaining_ids: null }),
+    });
 
-    // Hard cap
-    const batch = candidates.slice(0, MAX_PER_RUN);
-    const skippedDueToCap = candidates.length - batch.length;
-
-    let processed = 0;
-    let skipped = 0;
-    const errors = [];
-
-    for (const video of batch) {
-      // Skip if has draft and overwrite not requested
-      if (video.ai_metadata_draft && !overwrite_existing) {
-        skipped++;
-        continue;
-      }
-
-      try {
-        const draft = await buildDraftForVideo(base44, video);
-
-        await base44.entities.Video.update(video.id, {
-          ai_metadata_draft: JSON.stringify(draft),
-          ai_metadata_generated_at: new Date().toISOString(),
-          processing_status: 'draft_ready',
-        });
-
-        processed++;
-      } catch (err) {
-        console.error(`backfill failed for video ${video.id}:`, err.message);
-        errors.push({ video_id: video.id, title: video.title, error: err.message });
-      }
-    }
+    // Kick off first batch immediately (fire-and-forget)
+    base44.asServiceRole.functions.invoke('processBackfillBatch', { job_id: job.id }).catch(err =>
+      console.error('processBackfillBatch kick-off failed:', err?.message)
+    );
 
     return Response.json({
-      status: 'ok',
-      mode,
-      overwrite_existing,
-      total_candidates: candidates.length,
-      batch_size: batch.length,
-      skipped_due_to_cap: skippedDueToCap,
-      processed,
-      skipped,
-      failed: errors.length,
-      errors,
+      success: true,
+      job_id: job.id,
+      message: 'Backfill queued — processing in background',
     });
 
   } catch (error) {

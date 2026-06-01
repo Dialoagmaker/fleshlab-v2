@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   RefreshCw, Edit2, Trash2, CheckCircle2, Clock, ChevronDown, ChevronUp,
-  Sparkles, Database, AlertTriangle, ChevronRight
+  Sparkles, Database, AlertTriangle, ChevronRight, Loader2
 } from "lucide-react";
 
 // ── Backfill Panel ──────────────────────────────────────────────────────────
@@ -16,22 +16,70 @@ function BackfillPanel() {
   const [open, setOpen] = useState(true);
   const [mode, setMode] = useState('missing_only');
   const [overwrite, setOverwrite] = useState(false);
-  const [result, setResult] = useState(null);
   const [running, setRunning] = useState(false);
+  const [singleRunning, setSingleRunning] = useState(false);
+  const [singleResult, setSingleResult] = useState(null);
+  const [jobId, setJobId] = useState(null);
+  const [jobStatus, setJobStatus] = useState(null);
+
+  const pollJob = async (id) => {
+    const poll = setInterval(async () => {
+      try {
+        const jobs = await base44.entities.JobQueue.filter({ id });
+        const job = jobs[0];
+        if (!job) return;
+        let progress = {};
+        try { progress = JSON.parse(job.result || '{}'); } catch {}
+        setJobStatus({ status: job.status, error_message: job.error_message, ...progress });
+        if (job.status === 'completed' || job.status === 'failed') {
+          clearInterval(poll);
+          setRunning(false);
+        }
+      } catch (err) {
+        console.error('poll error:', err);
+      }
+    }, 3000);
+  };
 
   const run = async () => {
     setRunning(true);
-    setResult(null);
+    setJobStatus(null);
+    setSingleResult(null);
     try {
-      const res = await base44.functions.invoke('backfillVideoMetadata', {
-        mode,
-        overwrite_existing: overwrite,
-      });
-      setResult(res.data);
+      const res = await base44.functions.invoke('backfillVideoMetadata', { mode, overwrite_existing: overwrite, limit: 25 });
+      const data = res.data;
+      if (data?.job_id) {
+        setJobId(data.job_id);
+        setJobStatus({ status: 'pending', processed: 0, skipped: 0, failed: 0, errors: [] });
+        pollJob(data.job_id);
+      } else {
+        setRunning(false);
+        setJobStatus({ status: 'failed', error_message: data?.error || 'No job_id returned' });
+      }
     } catch (err) {
-      setResult({ error: err.message });
-    } finally {
       setRunning(false);
+      setJobStatus({ status: 'failed', error_message: err.message });
+    }
+  };
+
+  const runSingle = async () => {
+    setSingleRunning(true);
+    setSingleResult(null);
+    try {
+      const all = await base44.entities.Video.list('-created_date', 100);
+      const target = all.find(v => !v.ai_metadata_draft);
+      if (!target) {
+        setSingleResult({ ok: true, msg: 'All videos already have AI drafts.' });
+        return;
+      }
+      const res = await base44.functions.invoke('backfillVideoMetadata', { mode: 'single', video_id: target.id });
+      setSingleResult(res.data?.processed === 1
+        ? { ok: true, msg: `✓ Done: "${target.title}"` }
+        : { ok: false, msg: res.data?.error || 'Failed' });
+    } catch (err) {
+      setSingleResult({ ok: false, msg: err.message });
+    } finally {
+      setSingleRunning(false);
     }
   };
 
@@ -85,58 +133,64 @@ function BackfillPanel() {
                 className="gap-2 h-8"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${running ? 'animate-spin' : ''}`} />
-                {running ? 'Running… (up to 25 videos)' : 'Run Backfill'}
+                {running ? 'Queuing…' : 'Run Backfill (Queue)'}
               </Button>
             </div>
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Max 25 videos per run · Only writes <code className="bg-muted px-1 rounded">ai_metadata_draft</code> · Never touches live title/description/tags/covers
+            Max 25 videos per run · Queue-basiert (kein Timeout) · BATCH_SIZE=1 (Debug)
           </p>
 
-          {/* Results */}
-          {result && !result.error && (
+          {/* Single Video Debug Button */}
+          <div className="flex items-center gap-3 pt-1 border-t border-border">
+            <div className="flex-1">
+              <p className="text-xs text-muted-foreground mb-1">Debug: 1 Video synchron testen</p>
+              {singleResult && (
+                <p className={`text-xs mt-1 ${singleResult.ok ? 'text-green-400' : 'text-destructive'}`}>{singleResult.msg}</p>
+              )}
+            </div>
+            <Button size="sm" variant="outline" disabled={singleRunning} onClick={runSingle}
+              className="gap-2 h-8 border-blue-500/30 text-blue-400 hover:text-blue-300 shrink-0">
+              <RefreshCw className={`w-3.5 h-3.5 ${singleRunning ? 'animate-spin' : ''}`} />
+              {singleRunning ? 'Processing 1…' : 'Backfill 1 Video Now'}
+            </Button>
+          </div>
+
+          {/* Job Status */}
+          {jobStatus && (
             <div className="bg-muted/30 border border-border rounded-lg p-4 space-y-3">
-              <div className="flex items-center gap-4 flex-wrap">
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-green-400" />
-                  <span className="text-sm font-semibold text-foreground">{result.processed}</span>
-                  <span className="text-xs text-muted-foreground">processed</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-semibold text-foreground">{result.skipped}</span>
-                  <span className="text-xs text-muted-foreground">skipped (already had draft)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-semibold text-foreground">{result.failed}</span>
-                  <span className="text-xs text-muted-foreground">failed</span>
-                </div>
-                {result.skipped_due_to_cap > 0 && (
-                  <div className="flex items-center gap-1.5 text-yellow-400">
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    <span className="text-xs">{result.skipped_due_to_cap} more videos not processed (cap reached — run again)</span>
-                  </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                {jobStatus.status === 'running' && <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />}
+                {jobStatus.status === 'completed' && <CheckCircle2 className="w-4 h-4 text-green-400" />}
+                {jobStatus.status === 'failed' && <AlertTriangle className="w-4 h-4 text-red-400" />}
+                {jobStatus.status === 'pending' && <Clock className="w-4 h-4 text-yellow-400 animate-pulse" />}
+                <span className="text-xs font-semibold text-foreground capitalize">{jobStatus.status}</span>
+                {jobId && <span className="text-xs text-muted-foreground font-mono">Job: {jobId.slice(0, 8)}…</span>}
+                <span className="text-sm font-semibold text-foreground">{jobStatus.processed ?? 0}</span>
+                <span className="text-xs text-muted-foreground">processed</span>
+                <span className="text-sm font-semibold text-foreground">{jobStatus.skipped ?? 0}</span>
+                <span className="text-xs text-muted-foreground">skipped</span>
+                <span className="text-sm font-semibold text-foreground">{jobStatus.failed ?? 0}</span>
+                <span className="text-xs text-muted-foreground">failed</span>
+                {jobStatus.remaining_ids?.length > 0 && (
+                  <span className="text-xs text-yellow-400">{jobStatus.remaining_ids.length} remaining…</span>
                 )}
               </div>
-
-              {result.errors?.length > 0 && (
+              {jobStatus.error_message && (
+                <p className="text-xs text-destructive">{jobStatus.error_message}</p>
+              )}
+              {jobStatus.errors?.length > 0 && (
                 <div className="space-y-1">
-                  <p className="text-xs text-destructive font-medium">Errors:</p>
-                  {result.errors.map((e, i) => (
+                  {jobStatus.errors.map((e, i) => (
                     <div key={i} className="text-xs bg-destructive/10 border border-destructive/20 rounded px-3 py-1.5 flex gap-3">
-                      <span className="text-muted-foreground font-mono shrink-0">{e.video_id?.slice(0, 8)}…</span>
-                      <span className="text-foreground/80 truncate">{e.title}</span>
+                      <span className="font-mono shrink-0 text-muted-foreground">{e.video_id?.slice(0, 8)}…</span>
+                      <span className="truncate text-foreground/80">{e.title}</span>
                       <span className="text-destructive ml-auto shrink-0">{e.error}</span>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
-          )}
-
-          {result?.error && (
-            <div className="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded px-3 py-2">
-              Error: {result.error}
             </div>
           )}
         </div>
