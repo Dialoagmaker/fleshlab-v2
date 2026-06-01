@@ -10,6 +10,7 @@ export default function HeroVideoTeaser() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const videoRef = useRef(null);
   const previousIndexRef = useRef(-1);
+  const currentIndexRef = useRef(0);
 
   // Fetch published videos with valid media URLs
   const { data: allVideos = [] } = useQuery({
@@ -42,6 +43,7 @@ export default function HeroVideoTeaser() {
     // Random initial selection
     if (eligibleVideos.length > 0) {
       const randomStart = Math.floor(Math.random() * eligibleVideos.length);
+      currentIndexRef.current = randomStart;
       setCurrentVideoIndex(randomStart);
       previousIndexRef.current = -1;
     }
@@ -83,7 +85,8 @@ export default function HeroVideoTeaser() {
           nextIndex = Math.floor(Math.random() * videos.length);
         } while (nextIndex === previousIndexRef.current && videos.length > 1);
         
-        previousIndexRef.current = currentVideoIndex;
+        previousIndexRef.current = currentIndexRef.current;
+        currentIndexRef.current = nextIndex;
         setCurrentVideoIndex(nextIndex);
         
         // Fade in
@@ -95,7 +98,7 @@ export default function HeroVideoTeaser() {
 
     const interval = setInterval(rotateTeaser, 8000);
     return () => clearInterval(interval);
-  }, [videos.length, currentVideoIndex]);
+  }, [videos.length]);
 
   // Handle video errors - skip to next (memoized)
   const handleVideoError = useCallback(() => {
@@ -107,11 +110,12 @@ export default function HeroVideoTeaser() {
         nextIndex = Math.floor(Math.random() * videos.length);
       } while (nextIndex === previousIndexRef.current && videos.length > 1);
       
-      previousIndexRef.current = currentVideoIndex;
+      previousIndexRef.current = currentIndexRef.current;
+      currentIndexRef.current = nextIndex;
       setCurrentVideoIndex(nextIndex);
       setTimeout(() => setIsTransitioning(false), 1000);
     }, 500);
-  }, [videos.length, currentVideoIndex]);
+  }, [videos.length]);
 
   // No eligible videos - static fallback
   if (videos.length === 0) {
