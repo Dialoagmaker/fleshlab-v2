@@ -48,7 +48,10 @@ Deno.serve(async (req) => {
     const keyParts = sourceAsset.r2_key.split('/');
     const studio = keyParts.length >= 2 ? keyParts[1] : 'default';
     const file = keyParts[keyParts.length - 1];
-    const basename = file.replace(/\.[^.]+$/, '');
+    // Use the UUID directory (second-to-last segment) as basename to ensure unique output paths.
+    // Without this, all videos named "source.mov" would overwrite each other's thumbnails.
+    const uuidDir = keyParts.length >= 2 ? keyParts[keyParts.length - 2] : null;
+    const basename = (uuidDir && uuidDir !== 'videos') ? uuidDir : file.replace(/\.[^.]+$/, '');
 
     const processorResponse = await fetch(`${processorWebhookUrl}/regenerate`, {
       method: 'POST',
@@ -57,6 +60,7 @@ Deno.serve(async (req) => {
         secret: processorSecret,
         studio,
         file,
+        basename,
         src_url: signedUrl,
         video_id,
         source_asset_id: sourceAsset.id,
