@@ -10,6 +10,14 @@ import { toast } from "sonner";
 
 export default function ProfileTab({ performer }) {
   const queryClient = useQueryClient();
+  
+  // Track original values to detect changes
+  const [originalValues] = useState({
+    onlyfans_url: performer.onlyfans_url || "",
+    twitter_url: performer.twitter_url || "",
+    instagram_url: performer.instagram_url || "",
+  });
+
   const [formData, setFormData] = useState({
     display_name: performer.display_name || "",
     slug: performer.slug || "",
@@ -31,8 +39,12 @@ export default function ProfileTab({ performer }) {
     availability_notes: performer.availability_notes || "",
   });
 
-  const updatePerformer = useMutation({
-    mutationFn: (data) => base44.entities.Performer.update(performer.id, data),
+  // Mutation for basic profile fields (non-audited)
+  const updateBasicProfile = useMutation({
+    mutationFn: async (data) => {
+      const res = await base44.entities.Performer.update(performer.id, data);
+      return res;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["performer", performer.id] });
       toast.success("Profile saved successfully");
@@ -42,8 +54,111 @@ export default function ProfileTab({ performer }) {
     },
   });
 
+  // Mutation for platform accounts (audited via performerAdminService)
+  const updatePlatformAccounts = useMutation({
+    mutationFn: async (platformData) => {
+      const res = await base44.functions.invoke("performerAdminService", {
+        action: "update_platform_accounts",
+        performer_id: performer.id,
+        ...platformData,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["performer", performer.id] });
+      toast.success("Platform accounts updated (audit-logged)");
+    },
+    onError: (error) => {
+      toast.error(`Failed to update: ${error.message}`);
+    },
+  });
+
   const handleSave = () => {
-    updatePerformer.mutate(formData);
+    // Detect platform account changes
+    const platformChanges = {};
+    let hasPlatformChanges = false;
+
+    if (formData.onlyfans_url !== originalValues.onlyfans_url) {
+      platformChanges.onlyfans_url = formData.onlyfans_url;
+      hasPlatformChanges = true;
+    }
+    if (formData.twitter_url !== originalValues.twitter_url) {
+      platformChanges.twitter_url = formData.twitter_url;
+      hasPlatformChanges = true;
+    }
+    if (formData.instagram_url !== originalValues.instagram_url) {
+      platformChanges.instagram_url = formData.instagram_url;
+      hasPlatformChanges = true;
+    }
+
+    // Separate basic fields from platform accounts
+    const basicFields = {
+      display_name: formData.display_name,
+      slug: formData.slug,
+      bio: formData.bio,
+      nationality: formData.nationality,
+      date_of_birth: formData.date_of_birth,
+      status: formData.status,
+      verified: formData.verified,
+      featured: formData.featured,
+      profile_image_url: formData.profile_image_url,
+      cover_image_url: formData.cover_image_url,
+      meta_title: formData.meta_title,
+      meta_description: formData.meta_description,
+      internal_notes: formData.internal_notes,
+      production_preferences: formData.production_preferences,
+      availability_notes: formData.availability_notes,
+    };
+
+    // Save based on what changed
+    if (hasPlatformChanges && Object.values(basicFields).some((v, i) => v !== Object.values({
+      display_name: performer.display_name || "",
+      slug: performer.slug || "",
+      bio: performer.bio || "",
+      nationality: performer.nationality || "",
+      date_of_birth: performer.date_of_birth || "",
+      status: performer.status || "active",
+      verified: performer.verified || false,
+      featured: performer.featured || false,
+      profile_image_url: performer.profile_image_url || "",
+      cover_image_url: performer.cover_image_url || "",
+      meta_title: performer.meta_title || "",
+      meta_description: performer.meta_description || "",
+      internal_notes: performer.internal_notes || "",
+      production_preferences: performer.production_preferences || "",
+      availability_notes: performer.availability_notes || "",
+    })[i])) {
+      // Both basic and platform changes - save platform first, then basic
+      updatePlatformAccounts.mutate(platformChanges, {
+        onSuccess: () => {
+          updateBasicProfile.mutate(basicFields);
+        },
+      });
+    } else if (hasPlatformChanges) {
+      // Only platform changes
+      updatePlatformAccounts.mutate(platformChanges);
+    } else if (Object.values(basicFields).some((v, i) => v !== Object.values({
+      display_name: performer.display_name || "",
+      slug: performer.slug || "",
+      bio: performer.bio || "",
+      nationality: performer.nationality || "",
+      date_of_birth: performer.date_of_birth || "",
+      status: performer.status || "active",
+      verified: performer.verified || false,
+      featured: performer.featured || false,
+      profile_image_url: performer.profile_image_url || "",
+      cover_image_url: performer.cover_image_url || "",
+      meta_title: performer.meta_title || "",
+      meta_description: performer.meta_description || "",
+      internal_notes: performer.internal_notes || "",
+      production_preferences: performer.production_preferences || "",
+      availability_notes: performer.availability_notes || "",
+    })[i])) {
+      // Only basic changes
+      updateBasicProfile.mutate(basicFields);
+    } else {
+      toast.info("No changes detected");
+    }
   };
 
   const handleFieldChange = (field, value) => {
@@ -166,9 +281,15 @@ export default function ProfileTab({ performer }) {
         </div>
       </div>
 
-      {/* Platform Accounts */}
+      {/* Platform Accounts - AUDITED */}
       <div className="bg-card border border-border rounded-xl p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-foreground">Platform Accounts</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-foreground">Platform Accounts</h3>
+          <Badge variant="outline" className="text-xs">Audit-Logged</Badge>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Changes to platform accounts are audit-logged for compliance.
+        </p>
 
         <div className="space-y-2">
           <Label htmlFor="onlyfans_url">OnlyFans URL</Label>
@@ -272,12 +393,12 @@ export default function ProfileTab({ performer }) {
       <div className="flex items-center gap-3 pb-8">
         <Button
           onClick={handleSave}
-          disabled={updatePerformer.isPending}
+          disabled={updateBasicProfile.isPending || updatePlatformAccounts.isPending}
           className="gap-2"
         >
-          {updatePerformer.isPending ? "Saving..." : "Save Profile"}
+          {(updateBasicProfile.isPending || updatePlatformAccounts.isPending) ? "Saving..." : "Save Profile"}
         </Button>
-        {updatePerformer.isPending && (
+        {(updateBasicProfile.isPending || updatePlatformAccounts.isPending) && (
           <p className="text-xs text-muted-foreground">Saving changes...</p>
         )}
       </div>
