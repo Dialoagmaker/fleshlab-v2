@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Plus, Edit, Search, Trash2, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
+import { Plus, Edit, Search, Trash2, ChevronLeft, ChevronRight, AlertCircle, UserX } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,11 +111,18 @@ export default function Performers() {
             )}
           </p>
         </div>
-        <Link to="/admin/performers/new">
-          <Button className="gap-2">
-            <Plus className="w-4 h-4" /> New Performer
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link to="/admin/unlinked-performers">
+            <Button variant="outline" className="gap-2">
+              <UserX className="w-4 h-4" /> Unlinked Performers
+            </Button>
+          </Link>
+          <Link to="/admin/performers/new">
+            <Button className="gap-2">
+              <Plus className="w-4 h-4" /> New Performer
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}

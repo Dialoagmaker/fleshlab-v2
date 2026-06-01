@@ -3,14 +3,17 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { User, Link as LinkIcon, UserX } from "lucide-react";
 import BasicInfoSection from "../profile/BasicInfoSection";
 import ProfileImagesSection from "../profile/ProfileImagesSection";
 import PlatformAccountsSection from "../profile/PlatformAccountsSection";
 import SeoSection from "../profile/SeoSection";
 import InternalNotesSection from "../profile/InternalNotesSection";
+import LinkUserModal from "../profile/LinkUserModal";
 
 export default function ProfileTab({ performer }) {
   const queryClient = useQueryClient();
+  const [showLinkModal, setShowLinkModal] = useState(false);
   
   // Track original values to detect changes
   const [originalValues] = useState({
@@ -156,6 +159,49 @@ export default function ProfileTab({ performer }) {
 
   return (
     <div className="space-y-6">
+      {/* User Linking Card */}
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <User className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Linked User Account</h3>
+              <p className="text-xs text-muted-foreground">
+                {performer.user_id 
+                  ? "This performer is linked to a user account for dashboard access"
+                  : "No user linked - performer cannot access dashboard"}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant={performer.user_id ? "outline" : "default"}
+            size="sm"
+            onClick={() => setShowLinkModal(true)}
+            className="gap-2"
+          >
+            <LinkIcon className="w-4 h-4" />
+            {performer.user_id ? "Change / Unlink" : "Link User"}
+          </Button>
+        </div>
+        
+        {performer.user_id && (
+          <div className="bg-muted rounded-lg p-3">
+            <p className="text-xs font-mono text-foreground">User ID: {performer.user_id}</p>
+          </div>
+        )}
+        
+        {!performer.user_id && (
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+            <p className="text-xs text-yellow-200">
+              ⚠️ This performer profile is not linked to any user account. 
+              Link a user to enable dashboard access.
+            </p>
+          </div>
+        )}
+      </div>
+
       <BasicInfoSection formData={formData} onFieldChange={handleFieldChange} />
       <ProfileImagesSection formData={formData} onFieldChange={handleFieldChange} />
       <PlatformAccountsSection formData={formData} onFieldChange={handleFieldChange} />
@@ -175,6 +221,18 @@ export default function ProfileTab({ performer }) {
           <p className="text-xs text-muted-foreground">Saving changes...</p>
         )}
       </div>
+
+      {/* Link User Modal */}
+      {showLinkModal && (
+        <LinkUserModal
+          performerId={performer.id}
+          currentUserId={performer.user_id}
+          onClose={() => setShowLinkModal(false)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["performer", performer.id] });
+          }}
+        />
+      )}
     </div>
   );
 }

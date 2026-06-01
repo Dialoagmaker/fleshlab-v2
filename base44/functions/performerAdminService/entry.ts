@@ -7,6 +7,8 @@
 //   set_kyc_status — Updates kyc_status (not_started, pending, approved, rejected, expired)
 //   set_revenue_split — Sets revenue_split_pct
 //   update_platform_accounts — Updates onlyfans_url, twitter_url, instagram_url
+//   link_user — Links a user account to this performer (sets user_id)
+//   unlink_user — Removes user_id link from performer
 //
 // Security:
 // - Server-side role checks via base44.auth.me()
@@ -360,6 +362,110 @@ Deno.serve(async (req) => {
         message: 'Platform accounts updated',
         performer_id,
         updated_fields: Object.keys(updates),
+      });
+    }
+
+    // Action: link_user
+    if (action === 'link_user') {
+      const { user_id } = body;
+      
+      // Validation: user_id required
+      if (!user_id) {
+        return Response.json({ error: 'user_id is required' }, { status: 400 });
+      }
+
+      // Validate user exists
+      const targetUser = await base44.asServiceRole.entities.User.get(user_id);
+      if (!targetUser) {
+        return Response.json({ error: 'User not found' }, { status: 404 });
+      }
+
+      // Check if this user is already linked to another performer
+      const existingLink = await base44.asServiceRole.entities.Performer.filter({
+        user_id
+      });
+      
+      if (existingLink && existingLink.length > 0 && existingLink[0].id !== performer_id) {
+        return Response.json({ 
+          error: `User is already linked to performer "${existingLink[0].display_name}"`,
+          existing_performer_id: existingLink[0].id,
+          existing_performer_name: existingLink[0].display_name
+        }, { status: 400 });
+      }
+
+      // Check if performer is already linked to a different user
+      if (performer.user_id && performer.user_id !== user_id) {
+        return Response.json({ 
+          error: 'Performer is already linked to a different user',
+          current_user_id: performer.user_id
+        }, { status: 400 });
+      }
+
+      // Capture before state
+      const before = {
+        user_id: performer.user_id || null
+      };
+
+      // Update performer with user_id
+      await base44.asServiceRole.entities.Performer.update(performer_id, { user_id });
+
+      // Capture after state
+      const after = {
+        user_id
+      };
+
+      // Append AuditLog
+      await appendAuditLog({
+        action: 'link_user',
+        changes_json: { before, after },
+        notes: `User ${targetUser.email} linked to performer ${performer.display_name}`,
+      });
+
+      return Response.json({
+        success: true,
+        message: 'User linked to performer',
+        performer_id,
+        user_id,
+      });
+    }
+
+    // Action: unlink_user
+    if (action === 'unlink_user') {
+      // Check if performer has a linked user
+      if (!performer.user_id) {
+        return Response.json({ 
+          error: 'Performer is not linked to any user',
+          already_unlinked: true
+        }, { status: 400 });
+      }
+
+      // Capture before state
+      const before = {
+        user_id: performer.user_id
+      };
+
+      // Remove user_id link
+      await base44.asServiceRole.entities.Performer.update(performer_id, { 
+        user_id: null 
+      });
+
+      // Capture after state
+      const after = {
+        user_id: null
+      };
+
+      // Append AuditLog
+      await appendAuditLog({
+        action: 'unlink_user',
+        changes_json: { before, after },
+        notes: `User unlinked from performer ${performer.display_name}`,
+      });
+
+      return Response.json({
+        success: true,
+        message: 'User unlinked from performer',
+        performer_id,
+        previous_user_id: before.user_id,
       });
     }
 

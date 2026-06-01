@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   LayoutDashboard, Video, Upload, Users, Tag, Newspaper,
   Link2, Database, Menu, Play, ChevronRight, Globe, FileText, ClipboardList,
-  AlertCircle, Settings
+  AlertCircle, Settings, UserX
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -26,6 +26,7 @@ const NAV_GROUPS = [
     label: "Operations",
     items: [
       { href: "/admin/applications",                  label: "Applications",    icon: FileText },
+      { href: "/admin/unlinked-performers",           label: "Unlinked Perf.",  icon: UserX },
       { href: "/admin/draft-review",                  label: "Draft Review",    icon: ClipboardList },
       { href: "/admin/missing-performer-assignments", label: "Missing Assign.", icon: AlertCircle },
       { href: "/admin/video-upload",                  label: "Video Upload",    icon: Upload },

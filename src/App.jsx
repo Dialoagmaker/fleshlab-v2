@@ -31,6 +31,7 @@ import MissingPerformerAssignments from './pages/admin/MissingPerformerAssignmen
 import Applications from './pages/admin/Applications';
 import VideoUploadTest from './pages/admin/VideoUploadTest';
 import DraftReview from './pages/admin/DraftReview';
+import UnlinkedPerformers from './pages/admin/UnlinkedPerformers';
 import ComingSoon from './pages/ComingSoon';
 import PerformerDashboard from './pages/performer/PerformerDashboard';
 // Public pages
@@ -112,6 +113,7 @@ const AuthenticatedApp = () => {
             <Route path="/admin/applications" element={<Applications />} />
             <Route path="/admin/performers" element={<Performers />} />
             <Route path="/admin/performers/new" element={<PerformerEdit />} />
+            <Route path="/admin/unlinked-performers" element={<UnlinkedPerformers />} />
             {/* Performer OS 6-tab shell — single route, tabs are internal UI state */}
             <Route path="/admin/performers/:id" element={
               <PerformerLayout>
