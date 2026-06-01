@@ -64,6 +64,11 @@ export default function AddContractModal({ performerId, onClose, onSuccess }) {
     onError: (error) => {
       console.error('[createContract] onError:', error);
       toast.error(`Failed to create contract: ${error.message}`);
+      setIsUploading(false);
+      setUploadProgress(0);
+    },
+    onSettled: () => {
+      console.log('[createContract] onSettled called');
     },
   });
 
@@ -138,16 +143,29 @@ export default function AddContractModal({ performerId, onClose, onSuccess }) {
 
       console.log('[AddContractModal] Upload completed. object_key:', uploadResult.object_key);
 
-      // Create contract
+      // Create contract and wait for it to complete
       console.log('[AddContractModal] Creating contract...');
-      createContract.mutate({
-        ...formData,
-        document_url: uploadResult.object_key, // Store R2 key, not signed URL
+      await new Promise((resolve, reject) => {
+        createContract.mutate({
+          ...formData,
+          document_url: uploadResult.object_key, // Store R2 key, not signed URL
+        }, {
+          onSuccess: () => {
+            console.log('[AddContractModal] Contract created successfully');
+            resolve();
+          },
+          onError: (error) => {
+            console.error('[AddContractModal] Contract creation failed:', error);
+            reject(error);
+          }
+        });
       });
     } catch (error) {
       console.error("[AddContractModal] Contract upload error:", error);
       console.error("[AddContractModal] Error stack:", error.stack);
       toast.error(`Upload failed: ${error.message}`);
+    } finally {
+      console.log('[AddContractModal] Finally block - resetting upload state');
       setIsUploading(false);
       setUploadProgress(0);
     }
@@ -159,7 +177,7 @@ export default function AddContractModal({ performerId, onClose, onSuccess }) {
         <DialogHeader>
           <DialogTitle>Add New Contract</DialogTitle>
           <DialogDescription>
-            Create a new contract for this performer. Title and Document URL are required.
+            Create a new contract for this performer. Title and file upload are required.
           </DialogDescription>
         </DialogHeader>
 
