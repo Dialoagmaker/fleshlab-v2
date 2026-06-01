@@ -18,16 +18,31 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { action, performer_id, ...data } = body;
+    const { action, performer_id, contract_id, record_id, ...data } = body;
 
-    if (!performer_id) {
-      return Response.json({ error: 'performer_id is required' }, { status: 400 });
+    // For create actions, performer_id is required
+    if (action === 'create_contract' || action === 'create_record') {
+      if (!performer_id) {
+        return Response.json({ error: 'performer_id is required' }, { status: 400 });
+      }
+      const performer = await base44.asServiceRole.entities.Performer.get(performer_id);
+      if (!performer) {
+        return Response.json({ error: 'Performer not found' }, { status: 404 });
+      }
     }
 
-    // Verify performer exists
-    const performer = await base44.asServiceRole.entities.Performer.get(performer_id);
-    if (!performer) {
-      return Response.json({ error: 'Performer not found' }, { status: 404 });
+    // For update actions, verify entity exists
+    if (action.includes('update_contract') && contract_id) {
+      const contract = await base44.asServiceRole.entities.Contract.get(contract_id);
+      if (!contract) {
+        return Response.json({ error: 'Contract not found' }, { status: 404 });
+      }
+    }
+    if (action.includes('update_record') && record_id) {
+      const record = await base44.asServiceRole.entities.ComplianceRecord.get(record_id);
+      if (!record) {
+        return Response.json({ error: 'ComplianceRecord not found' }, { status: 404 });
+      }
     }
 
     if (action === 'create_contract') {
