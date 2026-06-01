@@ -32,6 +32,7 @@ import Applications from './pages/admin/Applications';
 import VideoUploadTest from './pages/admin/VideoUploadTest';
 import DraftReview from './pages/admin/DraftReview';
 import ComingSoon from './pages/ComingSoon';
+import PerformerDashboard from './pages/performer/PerformerDashboard';
 // Public pages
 import PublicVideos from './pages/Videos';
 import VideoDetail from './pages/VideoDetail';
@@ -91,10 +92,10 @@ const AuthenticatedApp = () => {
         <Route path="/guest-production" element={<ComingSoon title="Guest Production" />} />
         <Route path="/become-performer" element={<BecomePerformer />} />
       </Route>
-      {/* Protected placeholder routes for non-admin roles */}
+      {/* Protected routes for non-admin roles */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/account" element={<ComingSoon title="My Account" />} />
-        <Route path="/performer/dashboard" element={<ComingSoon title="Performer Dashboard" />} />
+        <Route path="/performer/dashboard" element={<PerformerDashboard />} />
       </Route>
       {/* Admin routes — auth + admin role required */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
