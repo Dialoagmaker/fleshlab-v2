@@ -86,6 +86,17 @@ Deno.serve(async (req) => {
         notes: `Contract uploaded: ${title} (${contract_type})`,
       });
 
+      // Trigger compliance lock re-evaluation
+      try {
+        await base44.asServiceRole.functions.invoke('performerComplianceService', {
+          action: 'lock_evaluation',
+          performer_id,
+        });
+      } catch (e) {
+        // Log but don't fail the upload
+        console.error('Lock evaluation failed:', e.message);
+      }
+
       return Response.json({
         success: true,
         contract_id: contract.id,
@@ -94,7 +105,9 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'update_contract_status') {
-      const { contract_id, status } = data;
+      const { contract_id: cid, status: st } = data;
+      const contract_id = cid || body.contract_id;
+      const status = st || body.status;
 
       if (!contract_id || !status) {
         return Response.json({ 
@@ -129,6 +142,19 @@ Deno.serve(async (req) => {
         notes: `Contract status changed from ${oldStatus} to ${status}`,
       });
 
+      // Trigger compliance lock re-evaluation if status change is compliance-relevant
+      if (['signed', 'expired', 'cancelled'].includes(status)) {
+        try {
+          const contract = await base44.asServiceRole.entities.Contract.get(contract_id);
+          await base44.asServiceRole.functions.invoke('performerComplianceService', {
+            action: 'lock_evaluation',
+            performer_id: contract.performer_id,
+          });
+        } catch (e) {
+          console.error('Lock evaluation failed:', e.message);
+        }
+      }
+
       return Response.json({
         success: true,
         contract_id,
@@ -137,7 +163,9 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'update_contract_expiry') {
-      const { contract_id, expires_at } = data;
+      const { contract_id: cid, expires_at: ea } = data;
+      const contract_id = cid || body.contract_id;
+      const expires_at = ea || body.expires_at;
 
       if (!contract_id || !expires_at) {
         return Response.json({ 
@@ -171,6 +199,17 @@ Deno.serve(async (req) => {
         }),
         notes: `Contract expiry changed from ${oldExpiry || 'none'} to ${expires_at}`,
       });
+
+      // Trigger compliance lock re-evaluation (expiry changes can affect compliance)
+      try {
+        const contract = await base44.asServiceRole.entities.Contract.get(contract_id);
+        await base44.asServiceRole.functions.invoke('performerComplianceService', {
+          action: 'lock_evaluation',
+          performer_id: contract.performer_id,
+        });
+      } catch (e) {
+        console.error('Lock evaluation failed:', e.message);
+      }
 
       return Response.json({
         success: true,

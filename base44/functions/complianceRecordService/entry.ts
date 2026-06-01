@@ -88,6 +88,16 @@ Deno.serve(async (req) => {
         notes: `Compliance record uploaded: ${document_type}`,
       });
 
+      // Trigger compliance lock re-evaluation
+      try {
+        await base44.asServiceRole.functions.invoke('performerComplianceService', {
+          action: 'lock_evaluation',
+          performer_id,
+        });
+      } catch (e) {
+        console.error('Lock evaluation failed:', e.message);
+      }
+
       return Response.json({
         success: true,
         record_id: record.id,
@@ -96,7 +106,9 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'update_record_status') {
-      const { record_id, status } = data;
+      const { record_id: rid, status: st } = data;
+      const record_id = rid || body.record_id;
+      const status = st || body.status;
 
       if (!record_id || !status) {
         return Response.json({ 
@@ -131,6 +143,19 @@ Deno.serve(async (req) => {
         notes: `Compliance record status changed from ${oldStatus} to ${status}`,
       });
 
+      // Trigger compliance lock re-evaluation if status change is compliance-relevant
+      if (['valid', 'expired', 'revoked'].includes(status)) {
+        try {
+          const record = await base44.asServiceRole.entities.ComplianceRecord.get(record_id);
+          await base44.asServiceRole.functions.invoke('performerComplianceService', {
+            action: 'lock_evaluation',
+            performer_id: record.performer_id,
+          });
+        } catch (e) {
+          console.error('Lock evaluation failed:', e.message);
+        }
+      }
+
       return Response.json({
         success: true,
         record_id,
@@ -139,7 +164,9 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'update_record_expiry') {
-      const { record_id, expires_at } = data;
+      const { record_id: rid, expires_at: ea } = data;
+      const record_id = rid || body.record_id;
+      const expires_at = ea || body.expires_at;
 
       if (!record_id || !expires_at) {
         return Response.json({ 
@@ -173,6 +200,17 @@ Deno.serve(async (req) => {
         }),
         notes: `Compliance record expiry changed from ${oldExpiry || 'none'} to ${expires_at}`,
       });
+
+      // Trigger compliance lock re-evaluation (expiry changes can affect compliance)
+      try {
+        const record = await base44.asServiceRole.entities.ComplianceRecord.get(record_id);
+        await base44.asServiceRole.functions.invoke('performerComplianceService', {
+          action: 'lock_evaluation',
+          performer_id: record.performer_id,
+        });
+      } catch (e) {
+        console.error('Lock evaluation failed:', e.message);
+      }
 
       return Response.json({
         success: true,
