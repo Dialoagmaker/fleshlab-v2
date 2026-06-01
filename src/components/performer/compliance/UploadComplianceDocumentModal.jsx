@@ -114,7 +114,7 @@ export default function UploadComplianceDocumentModal({ performerId, onClose, on
       setUploadProgress(0);
 
       // Step 1: Get upload URL
-      const res = await base44.functions.invoke("getComplianceUploadUrl", {
+      const res = await base44.functions.invoke('getUploadUrl', {
         performer_id: performerId,
         file_name: selectedFile.name,
         file_size_bytes: selectedFile.size,

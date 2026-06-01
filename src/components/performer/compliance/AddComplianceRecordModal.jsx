@@ -54,7 +54,8 @@ export default function AddComplianceRecordModal({ performerId, onClose, onSucce
         else reject(new Error(`Upload failed: ${xhr.status}`));
       });
       xhr.addEventListener('error', () => reject(new Error('Upload failed')));
-      xhr.open('PUT', uploadUrl);
+      xhr.addEventListener('abort', () => reject(new Error('Upload aborted')));
+      xhr.open('PUT', uploadUrl, true);
       xhr.setRequestHeader('Content-Type', file.type);
       xhr.send(file);
     });
@@ -83,12 +84,13 @@ export default function AddComplianceRecordModal({ performerId, onClose, onSucce
       setIsUploading(true);
       setUploadProgress(0);
 
-      const { upload_url, r2_key } = await base44.functions.invoke("getComplianceUploadUrl", {
+      const res = await base44.functions.invoke('getUploadUrl', {
         performer_id: performerId,
         file_name: selectedFile.name,
         file_size_bytes: selectedFile.size,
         mime_type: selectedFile.type,
       });
+      const { upload_url, r2_key } = res.data;
 
       await uploadFile(upload_url, selectedFile);
 
