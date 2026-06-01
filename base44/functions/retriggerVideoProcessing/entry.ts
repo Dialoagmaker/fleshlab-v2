@@ -62,39 +62,16 @@ Deno.serve(async (req) => {
       }, { status: 502 });
     }
 
-    // Pre-compute expected CDN URLs and store on video
-    const cdnBase = (Deno.env.get('R2_PUBLIC_BUCKET_URL') || '').replace(/\/$/, '');
-    const expectedThumbnailUrl = `${cdnBase}/studios/${studio}/thumbnails/${basename}.jpg`;
-    const expectedPreviewUrl = `${cdnBase}/studios/${studio}/previews/${basename}-preview.mp4`;
-
-    await base44.entities.Video.update(video_id, {
-      primary_thumbnail_url: expectedThumbnailUrl,
-      trailer_url: expectedPreviewUrl,
-    });
-
-    // Upsert thumbnail asset
-    const existingThumb = await base44.entities.VideoAsset.filter({ video_id, asset_type: 'thumbnail' });
-    if (existingThumb.length > 0) {
-      await base44.entities.VideoAsset.update(existingThumb[0].id, { cdn_url: expectedThumbnailUrl, status: 'processing' });
-    } else {
-      await base44.entities.VideoAsset.create({ video_id, asset_type: 'thumbnail', r2_key: `studios/${studio}/thumbnails/${basename}.jpg`, cdn_url: expectedThumbnailUrl, status: 'processing' });
-    }
-
-    // Upsert preview asset
-    const existingPreview = await base44.entities.VideoAsset.filter({ video_id, asset_type: 'preview' });
-    if (existingPreview.length > 0) {
-      await base44.entities.VideoAsset.update(existingPreview[0].id, { cdn_url: expectedPreviewUrl, status: 'processing' });
-    } else {
-      await base44.entities.VideoAsset.create({ video_id, asset_type: 'preview', r2_key: `studios/${studio}/previews/${basename}-preview.mp4`, cdn_url: expectedPreviewUrl, status: 'processing' });
-    }
+    // NOTE: We do NOT pre-write expected URLs to the video entity here.
+    // The updateVideoProcessingResult webhook will set correct URLs once the processor confirms completion.
+    // Pre-writing causes wrong assets to appear while processing is ongoing.
 
     return Response.json({
       status: 'accepted',
       studio,
       file,
-      expected_thumbnail_url: expectedThumbnailUrl,
-      expected_preview_url: expectedPreviewUrl,
-      message: 'Processor accepted job. Assets will be available shortly.',
+      source_r2_key: sourceAsset.r2_key,
+      message: `Processor job accepted. Assets will update automatically via webhook when done. Source: ${sourceAsset.r2_key}`,
     });
 
   } catch (error) {
