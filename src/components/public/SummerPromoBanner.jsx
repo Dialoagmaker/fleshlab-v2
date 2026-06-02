@@ -53,10 +53,10 @@ export default function SummerPromoBanner() {
           </div>
           
           {/* Left Speech Bubble - Live Cam Creator */}
-          <div className="hidden lg:block absolute left-[8%] top-[46%] max-w-[290px]">
+          <div className="hidden lg:block absolute left-[12%] top-[38%] max-w-[260px]">
             <div className="relative bg-black/68 backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-xl p-4 shadow-xl shadow-rose-600/40">
-              {/* Arrow pointer toward model */}
-              <div className="absolute -bottom-2 left-7 w-4 h-4 bg-black/68 border-r border-b border-[rgba(236,18,86,0.55)] transform rotate-45" />
+              {/* Arrow pointer toward model's mouth */}
+              <div className="absolute -bottom-2 left-6 w-4 h-4 bg-black/68 border-r border-b border-[rgba(236,18,86,0.55)] transform rotate-45" />
               <p className="text-white text-[14px] font-semibold leading-snug">
                 I'm always in cam mode 🔴
               </p>
@@ -64,10 +64,10 @@ export default function SummerPromoBanner() {
           </div>
           
           {/* Right Speech Bubble - Premium Creator */}
-          <div className="hidden lg:block absolute right-[10%] top-[46%] max-w-[300px]">
+          <div className="hidden lg:block absolute right-[18%] top-[36%] max-w-[270px]">
             <div className="relative bg-black/68 backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-xl p-4 shadow-xl shadow-rose-600/40">
-              {/* Arrow pointer toward model */}
-              <div className="absolute -bottom-2 right-7 w-4 h-4 bg-black/68 border-l border-b border-[rgba(236,18,86,0.55)] transform rotate-45" />
+              {/* Arrow pointer toward model's mouth */}
+              <div className="absolute -bottom-2 right-6 w-4 h-4 bg-black/68 border-l border-b border-[rgba(236,18,86,0.55)] transform rotate-45" />
               <p className="text-white text-[14px] font-semibold leading-snug">
                 Guest productions available
               </p>
