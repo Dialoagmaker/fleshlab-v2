@@ -8,12 +8,12 @@ export default function SummerPromoBanner() {
         <img
           src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/e9aeecccb_ChatGPTImageJun3202602_34_57AM.png"
           alt=""
-          className="w-full h-full object-cover opacity-50"
+          className="w-full h-full object-cover opacity-70"
           style={{ 
             objectPosition: "50% 35%"
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60" />
       </div>
       
       {/* Content - Sharp HTML Text */}
