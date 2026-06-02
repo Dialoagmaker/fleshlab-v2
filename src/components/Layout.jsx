@@ -19,6 +19,7 @@ const footerLinks = [
 ];
 
 export default function Layout() {
+  console.log('PUBLIC_LAYOUT_RENDER_START', window.location.pathname);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
 

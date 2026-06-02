@@ -21,6 +21,7 @@ async function fetchPublicVideosAndBrands() {
 }
 
 export default function Videos() {
+  console.log('VIDEOS_COMPONENT_RENDER_START');
   const [filters, setFilters] = useState({
     search: "",
     brand: "all",
@@ -90,12 +91,13 @@ export default function Videos() {
   }
 
   if (error) {
+    console.error('VIDEOS_FETCH_ERROR', error?.message);
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 text-center px-4">
-        <AlertCircle className="w-12 h-12 text-muted-foreground" />
-        <h2 className="text-xl font-semibold text-foreground">Could not load videos</h2>
-        <p className="text-sm text-muted-foreground">Please try refreshing the page.</p>
-        <button onClick={() => window.location.reload()} className="text-sm text-primary underline">Reload</button>
+      <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 40, textAlign: 'center' }}>
+        <AlertCircle style={{ width: 48, height: 48, color: '#e53e3e' }} />
+        <h2 style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>Could not load videos</h2>
+        <p style={{ color: '#a0a0a0', fontSize: 14 }}>{error?.message || 'Check console for VIDEOS_FETCH_ERROR'}</p>
+        <button onClick={() => window.location.reload()} style={{ color: '#e63946', textDecoration: 'underline', fontSize: 14, cursor: 'pointer' }}>Reload</button>
       </div>
     );
   }

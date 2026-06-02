@@ -35,7 +35,11 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
       setIsLoadingAuth(false);
       setIsLoadingPublicSettings(false);
-      setAuthChecked(false); // keep false — ProtectedRoute will call checkUserAuth if user later navigates to admin
+      // CRITICAL: set authChecked=true so ProtectedRoute.useEffect (which fires when
+      // authChecked=false && !isLoadingAuth) does NOT call checkUserAuth() and trigger
+      // an unnecessary User/me 401 request on public pages.
+      // ProtectedRoute still redirects correctly: authChecked=true + isAuthenticated=false = redirect to login.
+      setAuthChecked(true);
       setAuthError(null);
       console.log('AUTH_CONTEXT_FINISH', 'public_skip');
       return;
@@ -65,6 +69,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
+      console.trace('USER_ME_CALL_TRACE', window.location.pathname);
       setIsLoadingAuth(true);
       const storedToken = appParams.token;
       if (!storedToken) {

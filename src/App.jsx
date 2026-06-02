@@ -88,7 +88,7 @@ const AuthenticatedApp = () => {
       {/* Public routes */}
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/videos" element={<PublicVideos />} />
+        <Route path="/videos" element={<>{console.log('ROUTE_MATCH_VIDEOS') || null}<PublicVideos /></>} />
         <Route path="/videos/:slug" element={<VideoDetail />} />
         <Route path="/performers" element={<PublicPerformers />} />
         <Route path="/performers/:slug" element={<PerformerDetail />} />
