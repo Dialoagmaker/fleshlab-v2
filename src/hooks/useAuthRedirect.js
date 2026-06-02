@@ -16,6 +16,11 @@ export function useAuthRedirect() {
 
     const path = window.location.pathname;
     
+    // CRITICAL: Never redirect away from performer login pages
+    if (path === '/performerlogin' || path === '/performer/login') {
+      return;
+    }
+    
     // Redirect admins from "/" to dashboard
     if (user.role === 'admin' && path === '/') {
       console.log('AUTO_REDIRECT_ADMIN', { role: user.role });
@@ -34,8 +39,8 @@ export function useAuthRedirect() {
       window.location.href = '/account';
     }
     
-    // Redirect non-performers away from /performer/* routes (except login)
-    if (path.startsWith('/performer/') && path !== '/performer/login') {
+    // Redirect non-performers away from /performer/* routes (except login pages)
+    if (path.startsWith('/performer/') && path !== '/performer/login' && path !== '/performerlogin') {
       if (user.role !== 'performer' && !user.performer_profile_id && !user.performer_id) {
         console.log('PERFORMER_ROUTE_DENIED', { role: user.role, path });
         window.location.href = '/performer/login?from=' + encodeURIComponent(path);
