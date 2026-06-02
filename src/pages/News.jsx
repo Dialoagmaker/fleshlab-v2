@@ -86,22 +86,24 @@ export default function News() {
               </div>
 
               {/* Category Chips */}
-              <div className="flex flex-wrap gap-2">
-                {categories.map(cat => (
-                  <Button
-                    key={cat.value}
-                    variant={category === cat.value ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      setCategory(cat.value);
-                      setPage(1);
-                    }}
-                    className={category === cat.value ? "bg-primary hover:bg-primary/90" : ""}
-                  >
-                    {cat.label}
-                  </Button>
-                ))}
-              </div>
+               <div className="overflow-x-auto scrollbar-hide">
+                 <div className="flex gap-2 pb-2">
+                   {categories.map(cat => (
+                     <Button
+                       key={cat.value}
+                       variant={category === cat.value ? "default" : "outline"}
+                       size="sm"
+                       onClick={() => {
+                         setCategory(cat.value);
+                         setPage(1);
+                       }}
+                       className={`whitespace-nowrap ${category === cat.value ? "bg-primary hover:bg-primary/90" : ""}`}
+                     >
+                       {cat.label}
+                     </Button>
+                   ))}
+                 </div>
+               </div>
             </div>
           </div>
         </div>
