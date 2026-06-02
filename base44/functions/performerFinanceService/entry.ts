@@ -7,7 +7,12 @@ Deno.serve(async (req) => {
     const { action } = body;
 
     // Admin auth check (after body consumed)
-    const user = await base44.auth.me();
+    let user;
+    try {
+      user = await base44.auth.me();
+    } catch (e) {
+      return Response.json({ error: 'Authentication required' }, { status: 401 });
+    }
 
     if (!user || !['admin', 'super_admin'].includes(user.role)) {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
