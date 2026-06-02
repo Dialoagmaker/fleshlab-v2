@@ -52,23 +52,23 @@ export default function SummerPromoBanner() {
             </div>
           </div>
           
-          {/* Left Speech Bubble - Live Cam Creator */}
-          <div className="hidden lg:block absolute left-[12%] top-[38%] max-w-[260px]">
-            <div className="relative bg-black/68 backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-xl p-4 shadow-xl shadow-rose-600/40">
+          {/* Left Speech Bubble - Live Cam Creator (mouth-aligned) */}
+          <div className="hidden lg:block absolute left-[18%] top-[32%] max-w-[260px] translate-x-[-5%] translate-y-[-50%] z-10">
+            <div className="relative bg-[rgba(0,0,0,0.68)] backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-[14px] px-4 py-3 shadow-[0_0_24px_rgba(236,18,86,0.35)]">
               {/* Arrow pointer toward model's mouth */}
-              <div className="absolute -bottom-2 left-6 w-4 h-4 bg-black/68 border-r border-b border-[rgba(236,18,86,0.55)] transform rotate-45" />
-              <p className="text-white text-[14px] font-semibold leading-snug">
+              <div className="absolute left-[18px] bottom-[-8px] w-[14px] h-[14px] bg-[rgba(0,0,0,0.68)] border-r border-b border-[rgba(236,18,86,0.55)] transform rotate-45" />
+              <p className="text-white text-[14px] font-bold leading-snug whitespace-nowrap">
                 I'm always in cam mode 🔴
               </p>
             </div>
           </div>
           
-          {/* Right Speech Bubble - Premium Creator */}
-          <div className="hidden lg:block absolute right-[18%] top-[36%] max-w-[270px]">
-            <div className="relative bg-black/68 backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-xl p-4 shadow-xl shadow-rose-600/40">
+          {/* Right Speech Bubble - Premium Creator (mouth-aligned) */}
+          <div className="hidden lg:block absolute right-[18%] top-[31%] max-w-[260px] translate-x-[5%] translate-y-[-50%] z-10">
+            <div className="relative bg-[rgba(0,0,0,0.68)] backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-[14px] px-4 py-3 shadow-[0_0_24px_rgba(236,18,86,0.35)]">
               {/* Arrow pointer toward model's mouth */}
-              <div className="absolute -bottom-2 right-6 w-4 h-4 bg-black/68 border-l border-b border-[rgba(236,18,86,0.55)] transform rotate-45" />
-              <p className="text-white text-[14px] font-semibold leading-snug">
+              <div className="absolute right-[18px] bottom-[-8px] w-[14px] h-[14px] bg-[rgba(0,0,0,0.68)] border-r border-b border-[rgba(236,18,86,0.55)] transform rotate-45" />
+              <p className="text-white text-[14px] font-bold leading-snug whitespace-nowrap">
                 Guest productions available
               </p>
             </div>
