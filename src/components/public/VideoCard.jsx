@@ -1,6 +1,5 @@
 import React from "react";
 import { Play, Clock, Crown, Star } from "lucide-react";
-import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 export default function VideoCard({ video, brands = [], performers = [] }) {
@@ -10,7 +9,7 @@ export default function VideoCard({ video, brands = [], performers = [] }) {
   const secs = video.duration_seconds ? String(video.duration_seconds % 60).padStart(2, '0') : null;
 
   return (
-    <Link to={`/videos/${video.slug}`} className="group block">
+    <a href={`/videos/${video.slug}`} className="group block">
       <div className="rounded-xl overflow-hidden bg-[#111] border border-white/[0.07] hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(180,30,50,0.2)]">
 
         {/* Thumbnail */}
@@ -96,6 +95,6 @@ export default function VideoCard({ video, brands = [], performers = [] }) {
           </div>
         </div>
       </div>
-    </Link>
+    </a>
   );
 }

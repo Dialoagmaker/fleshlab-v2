@@ -32,12 +32,12 @@ export default function TubeHeader({ onMenuToggle }) {
       <div className="max-w-[1920px] mx-auto px-4">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo */}
-          <Link to="/" className="flex-shrink-0 group">
+          <a href="/" className="flex-shrink-0 group">
             <div className="flex items-center gap-0.5">
               <span className="text-white font-extrabold text-2xl tracking-tight group-hover:text-rose-500 transition-colors">FLESH</span>
               <span className="bg-gradient-to-r from-rose-600 to-rose-700 text-white font-extrabold text-2xl px-3 py-1 rounded-md shadow-lg group-hover:shadow-rose-600/40 transition-shadow">LAB</span>
             </div>
-          </Link>
+          </a>
 
           {/* Search Bar - Enhanced */}
           <div className="hidden md:flex flex-1 max-w-3xl mx-4">
@@ -108,23 +108,23 @@ export default function TubeHeader({ onMenuToggle }) {
               )}
             </div>
 
-            <Link to="/login" className="hidden sm:block">
+            <a href="/login" className="hidden sm:block">
               <Button variant="ghost" size="sm" className="text-white/80 hover:text-white hover:bg-white/10 h-9 px-4 border border-white/10">
                 <LogIn className="w-4 h-4 mr-2" />
                 {t('nav.login')}
               </Button>
-            </Link>
-            <Link to="/register">
+            </a>
+            <a href="/register">
               <Button size="sm" className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-semibold h-9 px-4 shadow-lg shadow-rose-600/30">
                 {t('nav.register')}
               </Button>
-            </Link>
-            <Link to="/fanclub" className="hidden lg:block">
+            </a>
+            <a href="/fanclub" className="hidden lg:block">
               <Button size="sm" variant="outline" className="border-rose-600/50 text-rose-500 hover:bg-rose-600/10 hover:border-rose-600 h-9 px-4">
                 <Star className="w-4 h-4 mr-2 fill-current" />
                 {t('nav.fanclub')}
               </Button>
-            </Link>
+            </a>
             <Button
               variant="ghost"
               size="icon"
@@ -141,8 +141,8 @@ export default function TubeHeader({ onMenuToggle }) {
       <div className="bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] border-t border-rose-600/10">
         <div className="max-w-[1920px] mx-auto px-4">
           <nav className="flex items-center gap-1 py-2.5">
-            <Link
-              to="/"
+            <a
+              href="/"
               className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                 isActive("/")
                   ? "text-rose-500 bg-rose-600/15 border border-rose-600/30 shadow-lg shadow-rose-600/20"
@@ -150,9 +150,9 @@ export default function TubeHeader({ onMenuToggle }) {
               }`}
             >
               {t('nav.home')}
-            </Link>
-            <Link
-              to="/videos"
+            </a>
+            <a
+              href="/videos"
               className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                 isActive("/videos")
                   ? "text-rose-500 bg-rose-600/15 border border-rose-600/30 shadow-lg shadow-rose-600/20"
@@ -160,9 +160,9 @@ export default function TubeHeader({ onMenuToggle }) {
               }`}
             >
               {t('nav.videos')}
-            </Link>
-            <Link
-              to="/performers"
+            </a>
+            <a
+              href="/performers"
               className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                 isActive("/performers")
                   ? "text-rose-500 bg-rose-600/15 border border-rose-600/30 shadow-lg shadow-rose-600/20"
@@ -170,9 +170,9 @@ export default function TubeHeader({ onMenuToggle }) {
               }`}
             >
               {t('nav.performers')}
-            </Link>
-            <Link
-              to="/fanclub"
+            </a>
+            <a
+              href="/fanclub"
               className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                 isActive("/fanclub")
                   ? "text-rose-500 bg-rose-600/15 border border-rose-600/30 shadow-lg shadow-rose-600/20"
@@ -180,9 +180,9 @@ export default function TubeHeader({ onMenuToggle }) {
               }`}
             >
               {t('nav.fanclub')}
-            </Link>
-            <Link
-              to="/news"
+            </a>
+            <a
+              href="/news"
               className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                 isActive("/news")
                   ? "text-rose-500 bg-rose-600/15 border border-rose-600/30 shadow-lg shadow-rose-600/20"
@@ -190,9 +190,9 @@ export default function TubeHeader({ onMenuToggle }) {
               }`}
             >
               {t('nav.news')}
-            </Link>
-            <Link
-              to="/become-performer"
+            </a>
+            <a
+              href="/become-performer"
               className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                 isActive("/become-performer")
                   ? "text-rose-500 bg-rose-600/15 border border-rose-600/30 shadow-lg shadow-rose-600/20"
@@ -200,7 +200,7 @@ export default function TubeHeader({ onMenuToggle }) {
               }`}
             >
               {t('nav.becomePerformer')}
-            </Link>
+            </a>
           </nav>
         </div>
       </div>

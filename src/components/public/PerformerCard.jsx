@@ -1,5 +1,4 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import { CheckCircle2, MapPin, Film, ArrowRight, Star } from "lucide-react";
 
 export default function PerformerCard({ performer, brands = [], videoCount = 0 }) {
@@ -8,7 +7,7 @@ export default function PerformerCard({ performer, brands = [], videoCount = 0 }
     : null;
 
   return (
-    <Link to={`/performers/${performer.slug}`} className="group block">
+    <a href={`/performers/${performer.slug}`} className="group block">
       <div className="rounded-xl overflow-hidden bg-[#111] border border-white/[0.07] hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(180,30,50,0.2)]">
 
         {/* Portrait image */}
@@ -75,6 +74,6 @@ export default function PerformerCard({ performer, brands = [], videoCount = 0 }
           </span>
         </div>
       </div>
-    </Link>
+    </a>
   );
 }

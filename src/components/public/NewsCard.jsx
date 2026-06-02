@@ -1,10 +1,9 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import { Calendar, ArrowRight } from "lucide-react";
 
 export default function NewsCard({ article }) {
   return (
-    <Link to={`/news/${article.slug}`} className="group block">
+    <a href={`/news/${article.slug}`} className="group block">
       <div className="rounded-xl overflow-hidden bg-[#111] border border-white/[0.07] hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(180,30,50,0.15)]">
         {/* Cover image */}
         <div className="relative aspect-[16/9] overflow-hidden bg-[#0a0a0a]">
@@ -52,6 +51,6 @@ export default function NewsCard({ article }) {
           </div>
         </div>
       </div>
-    </Link>
+    </a>
   );
 }

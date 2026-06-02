@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { useI18n } from "@/i18n/i18n.jsx";
 
 export default function TubeFooter() {
@@ -12,12 +11,12 @@ export default function TubeFooter() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 mb-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <Link to="/" className="inline-block mb-3">
+            <a href="/" className="inline-block mb-3">
               <div className="flex items-center gap-0.5">
                 <span className="text-white font-extrabold text-lg md:text-xl tracking-tight">FLESH</span>
                 <span className="bg-gradient-to-r from-rose-600 to-rose-700 text-white font-extrabold text-lg md:text-xl px-2.5 py-1 rounded-md shadow-lg shadow-rose-600/30">LAB</span>
               </div>
-            </Link>
+            </a>
             <p className="text-xs md:text-sm text-white/60 leading-relaxed">
               {t('footer.description')}
             </p>
@@ -28,24 +27,24 @@ export default function TubeFooter() {
             <h4 className="text-xs md:text-sm font-semibold text-white mb-3">{t('footer.explore')}</h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/videos" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                <a href="/videos" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
                   {t('nav.videos')}
-                </Link>
+                </a>
               </li>
               <li>
-                <Link to="/performers" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                <a href="/performers" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
                   {t('nav.performers')}
-                </Link>
+                </a>
               </li>
               <li>
-                <Link to="/fanclub" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                <a href="/fanclub" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
                   {t('nav.fanclub')}
-                </Link>
+                </a>
               </li>
               <li>
-                <Link to="/news" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                <a href="/news" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
                   {t('nav.news')}
-                </Link>
+                </a>
               </li>
             </ul>
           </div>
@@ -55,24 +54,24 @@ export default function TubeFooter() {
             <h4 className="text-xs md:text-sm font-semibold text-white mb-3">{t('footer.community')}</h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/become-performer" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                <a href="/become-performer" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
                   {t('nav.becomePerformer')}
-                </Link>
+                </a>
               </li>
               <li>
-                <Link to="/guest-production" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                <a href="/guest-production" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
                   Guest Production
-                </Link>
+                </a>
               </li>
               <li>
-                <Link to="/how-it-works" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                <a href="/how-it-works" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
                   {t('nav.howItWorks')}
-                </Link>
+                </a>
               </li>
               <li>
-                <Link to="/faq" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                <a href="/faq" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
                   FAQ
-                </Link>
+                </a>
               </li>
             </ul>
           </div>
@@ -82,24 +81,24 @@ export default function TubeFooter() {
             <h4 className="text-xs md:text-sm font-semibold text-white mb-3">{t('footer.legal')}</h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/terms" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                <a href="/terms" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
                   {t('footer.terms')}
-                </Link>
+                </a>
               </li>
               <li>
-                <Link to="/privacy" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                <a href="/privacy" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
                   {t('footer.privacy')}
-                </Link>
+                </a>
               </li>
               <li>
-                <Link to="/dmca" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                <a href="/dmca" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
                   {t('footer.dmca')}
-                </Link>
+                </a>
               </li>
               <li>
-                <Link to="/2257" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                <a href="/2257" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
                   {t('footer.compliance2257')}
-                </Link>
+                </a>
               </li>
             </ul>
           </div>
