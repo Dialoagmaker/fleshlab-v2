@@ -27,5 +27,11 @@ export function useAuthRedirect() {
       console.log('AUTO_REDIRECT_PERFORMER', { role: user.role });
       window.location.href = '/performer/dashboard';
     }
+    
+    // Redirect clients from "/" to account page
+    if (user.role === 'client' && path === '/') {
+      console.log('AUTO_REDIRECT_CLIENT', { role: user.role });
+      window.location.href = '/account';
+    }
   }, [authChecked, isLoadingAuth, isAuthenticated, user]);
 }

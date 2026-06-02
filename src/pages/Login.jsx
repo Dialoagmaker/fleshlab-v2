@@ -23,9 +23,10 @@ export default function Login() {
     if (fromParam && fromParam.startsWith("/admin")) {
       return role === "admin" ? "/admin/dashboard" : "/account";
     }
-    // Default role-based redirects - ALWAYS redirect admin to dashboard
+    // Default role-based redirects
     if (role === "admin") return "/admin/dashboard";
     if (role === "performer") return "/performer/dashboard";
+    if (role === "client") return "/account";
     return fromParam || "/";
   };
 

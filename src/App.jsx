@@ -41,6 +41,7 @@ import PerformerSupport from './pages/admin/PerformerSupport';
 import ComingSoon from './pages/ComingSoon';
 import PerformerDashboard from './pages/performer/PerformerDashboard';
 import PerformerLogin from './pages/performer/PerformerLogin';
+import Account from './pages/Account';
 // Public pages
 import PublicVideos from './pages/Videos';
 import VideoDetail from './pages/VideoDetail';
@@ -333,7 +334,7 @@ const AuthenticatedApp = () => {
       </Route>
       {/* Protected routes for non-admin roles */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
-        <Route path="/account" element={<ComingSoon title="My Account" />} />
+        <Route path="/account" element={<Account />} />
         <Route path="/performer/dashboard" element={<PerformerDashboard />} />
         <Route path="/performerlogin" element={<PerformerLogin />} />
       </Route>
