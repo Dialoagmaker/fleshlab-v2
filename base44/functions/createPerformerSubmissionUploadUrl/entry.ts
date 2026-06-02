@@ -2,7 +2,6 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
     const body = await req.json();
     const { performer_id, performer_token, title, content_type, file_name, file_size_bytes, mime_type } = body;
 
@@ -10,6 +9,9 @@ Deno.serve(async (req) => {
     if (!performer_id || !performer_token) {
       return Response.json({ error: 'Unauthorized - performer session required' }, { status: 401 });
     }
+
+    // Create Base44 client for service-role operations (not requiring user auth)
+    const base44 = createClientFromRequest(req);
 
     // Verify the session token is valid
     const sessions = await base44.asServiceRole.entities.PerformerSession.filter({
