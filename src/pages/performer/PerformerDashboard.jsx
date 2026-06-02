@@ -17,18 +17,26 @@ export default function PerformerDashboard() {
   const checkAuthAndLoad = async () => {
     try {
       const token = localStorage.getItem("performer_session_token");
-      if (!token) {
+      const performerData = localStorage.getItem("performer_data");
+      
+      if (!token || !performerData) {
         navigate("/performer/login");
         return;
       }
 
-      // Load dashboard data
+      const performer = JSON.parse(performerData);
+
+      // Load dashboard data (pass performer_id and token)
       const [dashboardRes, statsRes] = await Promise.all([
         base44.functions.invoke("performerDashboardService", {
-          action: "get_dashboard_summary"
+          action: "get_dashboard_summary",
+          performer_id: performer.id,
+          performer_token: token
         }),
         base44.functions.invoke("performerDashboardService", {
-          action: "get_career_statistics"
+          action: "get_career_statistics",
+          performer_id: performer.id,
+          performer_token: token
         })
       ]);
 

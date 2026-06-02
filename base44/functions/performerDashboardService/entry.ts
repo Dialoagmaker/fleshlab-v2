@@ -3,24 +3,36 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const body = await req.json();
+    const { action, performer_id, performer_token } = body;
 
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    // Validate performer session token
+    if (!performer_id || !performer_token) {
+      return Response.json({ error: 'Unauthorized - performer session required' }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { action } = body;
-
-    // Find performer linked to this user via user_id field
-    const performers = await base44.asServiceRole.entities.Performer.filter({
-      user_id: user.id
+    // Verify the session token is valid (owned by this performer)
+    const sessions = await base44.asServiceRole.entities.PerformerSession.filter({
+      performer_id,
+      token: performer_token,
+      revoked: false
     });
-    const myPerformer = performers[0] || null;
+
+    if (!sessions || sessions.length === 0) {
+      return Response.json({ error: 'Invalid or expired performer session' }, { status: 401 });
+    }
+
+    const session = sessions[0];
+    if (new Date(session.expires_at) < new Date()) {
+      return Response.json({ error: 'Performer session expired' }, { status: 401 });
+    }
+
+    // Get performer by ID
+    const myPerformer = await base44.asServiceRole.entities.Performer.get(performer_id);
 
     if (!myPerformer) {
       return Response.json({ 
-        error: 'No performer profile linked to your account. Please contact management.'
+        error: 'Performer profile not found'
       }, { status: 403 });
     }
 
@@ -469,8 +481,8 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.AuditLog.create({
           entity_type: entityName,
           entity_id: document_id,
-          actor_id: user.id,
-          actor_role: user.role,
+          actor_id: myPerformer.id,
+          actor_role: 'performer',
           action: 'performer_document_signed_url_created',
           changes_json: JSON.stringify({
             performer_id: myPerformer.id,
@@ -493,8 +505,8 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.AuditLog.create({
           entity_type: entityName,
           entity_id: document_id,
-          actor_id: user.id,
-          actor_role: user.role,
+          actor_id: myPerformer.id,
+          actor_role: 'performer',
           action: 'performer_document_signed_url_failed',
           changes_json: JSON.stringify({
             performer_id: myPerformer.id,
