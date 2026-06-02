@@ -102,7 +102,7 @@ const AuthenticatedApp = () => {
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/account" element={<ComingSoon title="My Account" />} />
         <Route path="/performer/dashboard" element={<PerformerDashboard />} />
-        <Route path="/performer/login" element={<PerformerLogin />} />
+        <Route path="/performerlogin" element={<PerformerLogin />} />
       </Route>
       {/* Admin routes — auth + admin role required */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>

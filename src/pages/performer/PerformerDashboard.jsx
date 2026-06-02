@@ -18,7 +18,7 @@ export default function PerformerDashboard() {
     try {
       const token = localStorage.getItem("performer_session_token");
       if (!token) {
-        navigate("/performer/login");
+        navigate("/performerlogin");
         return;
       }
 
@@ -80,7 +80,7 @@ export default function PerformerDashboard() {
     <div className="min-h-screen bg-background">
       <DashboardHeader 
         performer={performer} 
-        onLogout={() => { localStorage.removeItem("performer_session_token"); localStorage.removeItem("performer_data"); navigate("/performer/login"); }} 
+        onLogout={() => { localStorage.removeItem("performer_session_token"); localStorage.removeItem("performer_data"); navigate("/performerlogin"); }} 
       />
       <PerformerDashboardTabs performer={performer} />
     </div>
