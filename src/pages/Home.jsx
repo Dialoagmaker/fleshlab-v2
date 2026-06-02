@@ -7,7 +7,7 @@ import TubeNav from "@/components/tube/TubeNav";
 import CategoryChips from "@/components/tube/CategoryChips";
 import PromoBanner from "@/components/tube/PromoBanner";
 import TubeVideoCard from "@/components/tube/TubeVideoCard";
-import PerformerStrip from "@/components/tube/PerformerStrip";
+import PerformerCarousel from "@/components/tube/PerformerCarousel";
 import FanclubBanner from "@/components/tube/FanclubBanner";
 import StudioJournal from "@/components/tube/StudioJournal";
 import TubeFooter from "@/components/tube/TubeFooter";
@@ -45,6 +45,9 @@ export default function Home() {
 
   // Get featured video for banner (first video or featured)
   const featuredVideo = videos.find(v => v.featured) || videos[0];
+  
+  // Debug: Log video data
+  console.log("Homepage videos:", videos?.length, "Featured:", featuredVideo?.title);
 
   return (
     <>
@@ -97,8 +100,8 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Performer Strip */}
-        <PerformerStrip performers={performers} />
+        {/* Performer Carousel */}
+        <PerformerCarousel performers={performers} />
 
         {/* Fanclub Banner */}
         <FanclubBanner />
