@@ -48,6 +48,8 @@ import PublicBrands from './pages/Brands';
 import BrandDetail from './pages/BrandDetail';
 import PublicNews from './pages/News';
 import NewsDetail from './pages/NewsDetail';
+import NewsDirectTest from './pages/NewsDirectTest';
+import VideosDirectTest from './pages/VideosDirectTest';
 import BecomePerformer from './pages/BecomePerformer';
 import GlobalErrorBoundary from './components/GlobalErrorBoundary';
 import LegacyVideoRedirect from './pages/LegacyVideoRedirect';
@@ -69,8 +71,11 @@ const AuthenticatedApp = () => {
 
   return (
     <>
-      <div style={{ background: 'yellow', color: 'black', padding: 12, position: 'fixed', top: 0, left: 0, zIndex: 999999 }}>
-        APP JSX IS ACTIVE · BUILD V5 · {window.location.pathname}
+      <div style={{ background: 'yellow', color: 'black', padding: 12, position: 'fixed', top: 0, left: 0, zIndex: 9999999 }}>
+        APP JSX IS ACTIVE · BUILD V6 · {window.location.pathname}
+      </div>
+      <div style={{ background: 'lime', color: 'black', padding: 12, position: 'fixed', top: 50, left: 0, zIndex: 9999999 }}>
+        BEFORE ROUTES RENDER · BUILD V6
       </div>
       <Routes>
       {/* Auth routes */}
@@ -91,25 +96,9 @@ const AuthenticatedApp = () => {
       <Route path="/VideoDetail" element={<LegacyVideoRedirect />} />
       <Route path="/ActorDetail" element={<LegacyActorRedirect />} />
       <Route path="/ArticleReader" element={<LegacyArticleRedirect />} />
-      {/* ISOLATION TEST BUILD V5 — direct routes, no Layout/Outlet */}
-      <Route
-        path="/news"
-        element={
-          <div style={{ minHeight: '100vh', background: '#001f1f', color: 'white', padding: '80px', fontSize: '32px', fontFamily: 'Arial', position: 'relative', zIndex: 999999 }}>
-            {console.log('DIRECT_APP_NEWS_ROUTE_RENDER_BUILD_V5') || null}
-            DIRECT APP ROUTE NEWS IS RENDERING · BUILD V5
-          </div>
-        }
-      />
-      <Route
-        path="/videos"
-        element={
-          <div style={{ minHeight: '100vh', background: '#2a0000', color: 'white', padding: '80px', fontSize: '32px', fontFamily: 'Arial', position: 'relative', zIndex: 999999 }}>
-            {console.log('DIRECT_APP_VIDEOS_ROUTE_RENDER_BUILD_V5') || null}
-            DIRECT APP ROUTE VIDEOS IS RENDERING · BUILD V5
-          </div>
-        }
-      />
+      {/* ISOLATION TEST BUILD V6 — direct component routes, no Layout/Outlet */}
+      <Route path="/news" element={<NewsDirectTest />} />
+      <Route path="/videos" element={<VideosDirectTest />} />
       {/* Public routes */}
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
@@ -174,6 +163,9 @@ const AuthenticatedApp = () => {
       {/* /:slug moved inside Layout group above — removed from top level to prevent overriding static routes */}
       <Route path="*" element={<div style={{ color: "white", padding: 40, background: "#050505", minHeight: "100vh" }}>ROUTE NOT FOUND: {window.location.pathname}</div>} />
     </Routes>
+    <div style={{ background: 'orange', color: 'black', padding: 12, position: 'fixed', top: 100, left: 0, zIndex: 9999999 }}>
+      AFTER ROUTES RENDER · BUILD V6
+    </div>
     </>
   );
 };
