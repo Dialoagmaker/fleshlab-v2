@@ -20,7 +20,11 @@ async function fetchPublicVideosAndBrands() {
   return resp.json();
 }
 
+const VIDEOS_BUILD_ID = "2026-06-02-BUILD-V3";
+
 export default function Videos() {
+  window.__FLESHLAB_BUILD_ID__ = VIDEOS_BUILD_ID;
+  console.log("VIDEOS_BUILD_ID", VIDEOS_BUILD_ID);
   console.log('VIDEOS_COMPONENT_RENDER_START');
   const [filters, setFilters] = useState({
     search: "",
@@ -84,8 +88,8 @@ export default function Videos() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div style={{ minHeight: '100vh', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: 'white', fontSize: 16, fontFamily: 'Arial' }}>Loading videos...</div>
       </div>
     );
   }
@@ -104,6 +108,10 @@ export default function Videos() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* RENDER VERIFICATION — remove after confirming production deploy */}
+      <div id="videos-render-marker" style={{ background: '#1a0a0a', color: '#e63946', padding: '6px 16px', fontSize: 11, fontFamily: 'monospace', borderBottom: '1px solid #2a0a0a' }}>
+        VIDEOS_ROUTE_IS_RENDERING · build: {VIDEOS_BUILD_ID}
+      </div>
       {/* Hero */}
       <div className="bg-gradient-to-b from-primary/10 via-primary/5 to-background border-b border-border py-16 px-4">
         <div className="max-w-7xl mx-auto">

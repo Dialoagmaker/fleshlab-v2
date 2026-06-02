@@ -96,7 +96,7 @@ const AuthenticatedApp = () => {
         <Route path="/brands/:slug" element={<BrandDetail />} />
         <Route path="/fanclub" element={<ComingSoon title="Fanclub" />} />
         <Route path="/fanclub/:slug" element={<ComingSoon title="Performer Fanclub" />} />
-        <Route path="/news" element={<PublicNews />} />
+        <Route path="/news" element={<>{console.log('ROUTE_MATCH_NEWS') || null}<PublicNews /></>} />
         <Route path="/news/:slug" element={<NewsDetail />} />
         <Route path="/search" element={<ComingSoon title="Search" />} />
         <Route path="/guest-production" element={<ComingSoon title="Guest Production" />} />

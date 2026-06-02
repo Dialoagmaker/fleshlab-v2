@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Newspaper, Search, X, Loader2, AlertCircle } from "lucide-react";
 
 // PUBLIC_NEWS_BUILD_VERSION_2026_06_02_AUTH_FIX
+const NEWS_BUILD_ID = "2026-06-02-BUILD-V3";
 // Calls a backend function (service role) — never touches User/me or any entity endpoint directly.
 async function fetchPublicNews() {
   const url = `/api/apps/${appParams.appId}/functions/getPublicNews`;
@@ -21,6 +22,8 @@ async function fetchPublicNews() {
 }
 
 export default function News() {
+  window.__FLESHLAB_BUILD_ID__ = NEWS_BUILD_ID;
+  console.log("NEWS_BUILD_ID", NEWS_BUILD_ID);
   console.log("NEWS_COMPONENT_RENDER_START");
   const [search, setSearch] = useState("");
 
@@ -46,27 +49,30 @@ export default function News() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div style={{ minHeight: '100vh', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: 'white', fontSize: 16, fontFamily: 'Arial' }}>Loading news...</div>
       </div>
     );
   }
 
   if (error) {
+    console.error('NEWS_FETCH_ERROR', error?.message);
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 text-center px-4">
-        <AlertCircle className="w-12 h-12 text-muted-foreground" />
-        <h2 className="text-xl font-semibold text-foreground">Could not load news</h2>
-        <p className="text-sm text-muted-foreground">Please try refreshing the page.</p>
-        <button onClick={() => window.location.reload()} className="text-sm text-primary underline">Reload</button>
+      <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 40, textAlign: 'center' }}>
+        <div style={{ fontSize: 40 }}>⚠️</div>
+        <h2 style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>Could not load news</h2>
+        <p style={{ color: '#a0a0a0', fontSize: 14 }}>{error?.message || 'Check console for NEWS_FETCH_ERROR'}</p>
+        <button onClick={() => window.location.reload()} style={{ color: '#e63946', textDecoration: 'underline', fontSize: 14, cursor: 'pointer' }}>Reload</button>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Build marker — remove after confirming production deploy */}
-      <div id="build-marker" style={{ display: 'none' }}>PUBLIC_NEWS_BUILD_VERSION_2026_06_02_AUTH_FIX</div>
+      {/* RENDER VERIFICATION — remove after confirming production deploy */}
+      <div id="news-render-marker" style={{ background: '#0a1a1a', color: '#38b2ac', padding: '6px 16px', fontSize: 11, fontFamily: 'monospace', borderBottom: '1px solid #0a2a2a' }}>
+        NEWS_ROUTE_IS_RENDERING · build: {NEWS_BUILD_ID}
+      </div>
 
       {/* Hero */}
       <div className="bg-gradient-to-b from-primary/10 to-background py-12 px-4">
