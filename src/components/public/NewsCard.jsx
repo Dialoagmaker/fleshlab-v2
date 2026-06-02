@@ -14,6 +14,9 @@ export default function NewsCard({ article }) {
               alt={article.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               loading="lazy"
+              decoding="async"
+              width="640"
+              height="360"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] flex items-center justify-center">

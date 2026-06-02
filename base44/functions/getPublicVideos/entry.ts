@@ -1,15 +1,29 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 // Public endpoint — no user auth required.
-// Uses service role to fetch published Video records.
+// Uses service role to fetch published Video records with pagination.
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const body = await req.json().catch(() => ({}));
+    const page = Math.max(1, parseInt(body.page) || 1);
+    const limit = Math.min(48, Math.max(1, parseInt(body.limit) || 24));
+    const skip = (page - 1) * limit;
 
+    // Get total count first
+    const allVideos = await base44.asServiceRole.entities.Video.filter(
+      { status: 'published' },
+      '-release_date',
+      1000
+    );
+    const total = allVideos?.length || 0;
+
+    // Get paginated videos
     const videos = await base44.asServiceRole.entities.Video.filter(
       { status: 'published' },
       '-release_date',
-      200
+      limit,
+      skip
     );
 
     const brands = await base44.asServiceRole.entities.Brand.list('-created_date', 100);
@@ -23,7 +37,6 @@ Deno.serve(async (req) => {
       brand_id: v.brand_id,
       categories: v.categories,
       tags: v.tags,
-      status: v.status,
       access_tier: v.access_tier,
       release_date: v.release_date,
       duration_seconds: v.duration_seconds,
@@ -34,7 +47,6 @@ Deno.serve(async (req) => {
       view_count: v.view_count,
       featured: v.featured,
       is_exclusive: v.is_exclusive,
-      created_date: v.created_date,
     }));
 
     const safeBrands = (brands || []).map(b => ({
@@ -45,9 +57,16 @@ Deno.serve(async (req) => {
       status: b.status,
     }));
 
-    return Response.json({ videos: safeVideos, brands: safeBrands });
+    return Response.json({
+      videos: safeVideos,
+      brands: safeBrands,
+      total,
+      page,
+      limit,
+      hasMore: skip + safeVideos.length < total
+    });
   } catch (error) {
     console.error('getPublicVideos error:', error);
-    return Response.json({ videos: [], brands: [], error: error.message }, { status: 200 });
+    return Response.json({ videos: [], brands: [], total: 0, page: 1, limit: 24, hasMore: false, error: error.message }, { status: 200 });
   }
 });
