@@ -11,7 +11,7 @@ export default function PromoBanner({ video, performers = [] }) {
   const featuredPerformer = performers.find(p => p.featured) || performers[0];
 
   return (
-    <div className="relative py-3 bg-[#0a0a0a]">
+    <div className="relative py-2 bg-[#0a0a0a]">
       <div className="max-w-[1920px] mx-auto px-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Main Banner (70%) - Featured Video */}

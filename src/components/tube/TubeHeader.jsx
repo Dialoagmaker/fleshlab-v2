@@ -1,18 +1,32 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Search, Menu, LogIn, Star } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { Search, Menu, LogIn, Star, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+const navItems = [
+  { label: "Home", href: "/" },
+  { label: "Videos", href: "/videos" },
+  { label: "Performers", href: "/performers" },
+  { label: "Fanclub", href: "/fanclub" },
+  { label: "News", href: "/news" },
+  { label: "Become a Performer", href: "/become-performer" },
+];
+
 export default function TubeHeader({ onMenuToggle }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const location = useLocation();
+
+  const isActive = (href) => {
+    return location.pathname === href || (href !== "/" && location.pathname.startsWith(href + "/"));
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-[#0f0f0f] border-b border-white/10">
       {/* Top Row: Logo + Search + Actions */}
       <div className="max-w-[1920px] mx-auto px-4">
         <div className="flex items-center justify-between h-16 gap-4">
-          {/* Logo */}
+          {/* Logo - FLESH LAB block style */}
           <Link to="/" className="flex-shrink-0 group">
             <div className="flex items-center gap-0.5">
               <span className="text-white font-extrabold text-2xl tracking-tight group-hover:text-rose-500 transition-colors">FLESH</span>
@@ -67,9 +81,30 @@ export default function TubeHeader({ onMenuToggle }) {
         </div>
       </div>
 
+      {/* Second Row: Navigation */}
+      <div className="hidden md:block border-t border-white/5">
+        <div className="max-w-[1920px] mx-auto px-4">
+          <nav className="flex items-center gap-1 py-2">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                  isActive(item.href)
+                    ? "text-rose-500 bg-rose-600/10"
+                    : "text-white/70 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </div>
+
       {/* Mobile Search */}
-      <div className="md:hidden px-4 pb-3">
-        <div className="relative">
+      <div className="md:hidden px-4 pb-3 border-t border-white/5">
+        <div className="relative pt-3">
           <Input
             type="text"
             placeholder="Search videos..."

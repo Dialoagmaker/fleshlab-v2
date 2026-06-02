@@ -1,17 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { callPublicFunction } from "@/lib/publicApi";
 import SEOMeta from "@/components/SEOMeta";
 import TubeHeader from "@/components/tube/TubeHeader";
-import TubeNav from "@/components/tube/TubeNav";
-import CategoryChips from "@/components/tube/CategoryChips";
 import PromoBanner from "@/components/tube/PromoBanner";
 import TubeVideoCard from "@/components/tube/TubeVideoCard";
 import PerformerCarousel from "@/components/tube/PerformerCarousel";
 import FanclubBanner from "@/components/tube/FanclubBanner";
 import StudioJournal from "@/components/tube/StudioJournal";
 import TubeFooter from "@/components/tube/TubeFooter";
-import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -24,12 +21,6 @@ export default function Home() {
     staleTime: 30000,
   });
   const videos = videosData?.videos || [];
-  
-  // Debug logging
-  console.log("Home.jsx - videosData:", videosData);
-  console.log("Home.jsx - videos count:", videos?.length);
-  console.log("Home.jsx - isLoading:", videosLoading);
-  console.log("Home.jsx - error:", videosError);
 
   // Fetch performers
   const { data: performersData, isLoading: performersLoading } = useQuery({
@@ -51,9 +42,6 @@ export default function Home() {
 
   // Get featured video for banner (first video or featured)
   const featuredVideo = videos.find(v => v.featured) || videos[0];
-  
-  // Debug: Log video data
-  console.log("Homepage videos:", videos?.length, "Featured:", featuredVideo?.title);
 
   return (
     <>
@@ -72,40 +60,40 @@ export default function Home() {
       />
 
       <div className="min-h-screen bg-[#0a0a0a]">
-        {/* Unified Tube Header */}
+        {/* Unified Tube Header with Navigation */}
         <TubeHeader onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
 
         {/* Promo Banner */}
         <PromoBanner video={featuredVideo} />
 
-        {/* Main Video Grid - Show videos immediately */}
-        <section className="py-6">
+        {/* Main Video Grid - Compact spacing for density */}
+        <section className="py-2">
           <div className="max-w-[1920px] mx-auto px-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-white">Latest Videos</h2>
-              <a href="/videos" className="text-sm text-rose-500 hover:text-rose-400 font-medium flex items-center gap-1">
-                View All <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-lg font-bold text-white">Latest Videos</h2>
+              <a href="/videos" className="text-xs text-rose-500 hover:text-rose-400 font-medium flex items-center gap-1">
+                View All <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </a>
             </div>
 
             {videosLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                {[...Array(15)].map((_, i) => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+                {[...Array(20)].map((_, i) => (
                   <div key={i} className="aspect-video bg-[#1a1a1a] rounded animate-pulse" />
                 ))}
               </div>
             ) : videosError ? (
-              <div className="text-center py-8 text-white/60">
+              <div className="text-center py-4 text-white/60">
                 <p>Error loading videos</p>
               </div>
             ) : videos.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                {videos.slice(0, 24).map(video => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+                {videos.slice(0, 30).map(video => (
                   <TubeVideoCard key={video.id} video={video} brands={videosData?.brands || []} />
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-white/60">
+              <div className="text-center py-4 text-white/60">
                 <p>No videos available</p>
               </div>
             )}
