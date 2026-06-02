@@ -4,52 +4,52 @@ import { useI18n } from "@/i18n/i18n.jsx";
 export default function SummerPromoBanner() {
   const { t } = useI18n();
   return (
-    <section className="relative w-full h-[320px] sm:h-[340px] md:h-[400px] lg:h-[420px] overflow-hidden">
+    <section className="relative w-full h-[360px] sm:h-[380px] md:h-[420px] lg:h-[460px] overflow-hidden">
       {/* Background Image - Fixed, Do Not Change */}
       <div className="absolute inset-0">
         <img
           src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/e9aeecccb_ChatGPTImageJun3202602_34_57AM.png"
           alt=""
-          className="w-full h-full object-cover brightness-125"
+          className="w-full h-full object-cover brightness-110 saturate-110"
           style={{ objectPosition: "50% 35%" }}
         />
         {/* Enhance saturation and warmth */}
-        <div className="absolute inset-0 bg-gradient-to-r from-rose-600/10 via-transparent to-purple-600/10 mix-blend-overlay" />
+        <div className="absolute inset-0 bg-gradient-to-r from-rose-600/8 via-transparent to-purple-600/8 mix-blend-overlay" />
       </div>
       
-      {/* Gradient Overlay - VERY light for maximum visibility */}
+      {/* Gradient Overlay - Optimized for all mobile devices */}
       <div 
         className="absolute inset-0"
         style={{
           background: `
             linear-gradient(
               90deg,
-              rgba(0,0,0,0.05) 0%,
-              rgba(0,0,0,0.15) 30%,
-              rgba(0,0,0,0.25) 50%,
-              rgba(0,0,0,0.15) 70%,
-              rgba(0,0,0,0.05) 100%
+              rgba(0,0,0,0.08) 0%,
+              rgba(0,0,0,0.18) 30%,
+              rgba(0,0,0,0.28) 50%,
+              rgba(0,0,0,0.18) 70%,
+              rgba(0,0,0,0.08) 100%
             )
           `
         }}
       />
       
       {/* Subtle bottom fade for text readability */}
-      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/25 to-transparent" />
       
       {/* Content Layer - All Sharp HTML/CSS */}
-      <div className="relative z-10 h-full flex flex-col items-center justify-center px-3 sm:px-4">
+      <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 sm:px-6">
         <div className="max-w-5xl w-full text-center">
           
-          {/* Top Badges Row - Flex for mobile, hidden on small screens */}
-          <div className="flex items-center justify-center gap-2 sm:gap-4 mb-2 sm:mb-0 sm:absolute sm:top-4 sm:left-4 sm:right-4 flex-wrap sm:flex-nowrap">
+          {/* Top Badges Row - Centered on mobile, corners on desktop */}
+          <div className="flex items-center justify-center gap-2 mb-3 sm:gap-4 sm:mb-0 sm:absolute sm:top-4 sm:left-6 sm:right-6 flex-wrap">
             {/* Left Badge */}
-            <div className="bg-gradient-to-r from-rose-600 to-rose-700 text-white text-xs font-black px-3 py-1.5 sm:px-4 sm:py-2 rounded-full shadow-lg shadow-rose-600/60 uppercase tracking-wider whitespace-nowrap">
+            <div className="bg-gradient-to-r from-rose-600 to-rose-700 text-white text-[11px] sm:text-xs font-black px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-lg shadow-rose-600/60 uppercase tracking-wider whitespace-nowrap">
               {t('homepage.promoBadge1')}
             </div>
             
             {/* Right Badge */}
-            <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-black px-3 py-1.5 sm:px-4 sm:py-2 rounded-full shadow-lg shadow-purple-600/60 uppercase tracking-wider whitespace-nowrap">
+            <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white text-[11px] sm:text-xs font-black px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-lg shadow-purple-600/60 uppercase tracking-wider whitespace-nowrap">
               {t('homepage.promoBadge2')}
             </div>
           </div>
@@ -57,8 +57,8 @@ export default function SummerPromoBanner() {
 
           
           {/* Main Offer - Dominant Typography */}
-          <div className="mb-1 sm:mb-2">
-            <h1 className="text-3xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-black text-white drop-shadow-2xl leading-tight">
+          <div className="mb-2 sm:mb-3">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-black text-white drop-shadow-2xl leading-tight">
               <span className="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 bg-clip-text text-transparent">
                 {t('homepage.discount')}
               </span>
@@ -66,21 +66,21 @@ export default function SummerPromoBanner() {
           </div>
           
           {/* Subheadline */}
-          <div className="mb-2 sm:mb-4">
-            <p className="text-lg sm:text-2xl md:text-4xl lg:text-5xl font-black text-white drop-shadow-xl">
+          <div className="mb-3 sm:mb-4">
+            <p className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-black text-white drop-shadow-xl">
               {t('homepage.discountSub')}
             </p>
           </div>
           
           {/* Summer Special Badge */}
-          <div className="mb-3 sm:mb-6">
+          <div className="mb-4 sm:mb-6">
             <span className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black text-xs sm:text-sm md:text-base font-black px-4 sm:px-5 py-1.5 sm:py-2 rounded-full shadow-lg uppercase tracking-widest">
               {t('homepage.specialBadge')}
             </span>
           </div>
           
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-4 px-2 sm:px-0">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-4 w-full sm:w-auto">
             <Link 
               to="/register" 
               className="w-full sm:w-auto bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black text-sm sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-xl shadow-2xl shadow-rose-600/60 transform hover:scale-105 transition-all border-2 border-rose-500/50"
@@ -96,7 +96,7 @@ export default function SummerPromoBanner() {
           </div>
           
           {/* Trust Row */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-xs text-white/70 font-medium">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-[11px] sm:text-xs text-white/70 font-medium">
             <span>{t('homepage.trustInstant')}</span>
             <span className="hidden sm:inline">•</span>
             <span className="hidden sm:inline">{t('homepage.trustPremium')}</span>
