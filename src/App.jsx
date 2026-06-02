@@ -103,6 +103,8 @@ const AuthenticatedApp = () => {
         <Route path="/become-performer" element={<BecomePerformer />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/faq" element={<FAQ />} />
+        {/* V1 root performer slugs — MUST be last inside Layout so static paths above win */}
+        <Route path="/:slug" element={<LegacyPerformerSlug />} />
       </Route>
       {/* Protected routes for non-admin roles */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
@@ -144,8 +146,7 @@ const AuthenticatedApp = () => {
           </Route>
         </Route>
       </Route>
-      {/* V1 root performer slugs: /jameson-official → /performers/jameson-official */}
-      <Route path="/:slug" element={<LegacyPerformerSlug />} />
+      {/* /:slug moved inside Layout group above — removed from top level to prevent overriding static routes */}
       <Route path="*" element={<div style={{ color: "white", padding: 40, background: "#050505", minHeight: "100vh" }}>ROUTE NOT FOUND: {window.location.pathname}</div>} />
     </Routes>
   );
