@@ -60,25 +60,7 @@ import HowItWorks from './pages/HowItWorks';
 import FAQ from './pages/FAQ';
 import PublicPageShell from './components/PublicPageShell';
 
-// TODO: Temporary manual public route dispatch until React Router is rebuilt cleanly.
-function RouterLocationProbe() {
-  const location = useLocation();
-  console.log("=== ROUTER_LOCATION_PROBE BUILD V7 ===");
-  console.log("ROUTER_PATHNAME", location.pathname);
-  console.log("ROUTER_SEARCH", location.search);
-  console.log("ROUTER_HASH", location.hash);
-  console.log("ROUTER_STATE", location.state);
-  console.log("======================================");
-  return (
-    <div style={{ background: 'blue', color: 'white', padding: 12, position: 'fixed', top: 150, left: 0, zIndex: 9999999 }}>
-      ROUTER LOCATION · BUILD V7 · {location.pathname}
-    </div>
-  );
-}
-
 const AuthenticatedApp = () => {
-  console.log("=== APP_RENDER_START BUILD V9 ===");
-  console.log("WINDOW_LOCATION_PATHNAME", window.location.pathname);
   const { authError } = useAuth();
 
   if (authError?.type === 'user_not_registered') {
@@ -89,7 +71,6 @@ const AuthenticatedApp = () => {
   const path = window.location.pathname;
 
   if (path === "/news") {
-    console.log("MANUAL_NEWS_DISPATCH_BUILD_V9");
     return (
       <PublicPageShell>
         <PublicNews />
@@ -98,7 +79,6 @@ const AuthenticatedApp = () => {
   }
 
   if (path === "/videos") {
-    console.log("MANUAL_VIDEOS_DISPATCH_BUILD_V9");
     return (
       <PublicPageShell>
         <PublicVideos />
@@ -107,7 +87,6 @@ const AuthenticatedApp = () => {
   }
 
   if (path === "/performers") {
-    console.log("MANUAL_PERFORMERS_DISPATCH_BUILD_V9");
     return (
       <PublicPageShell>
         <PublicPerformers />
@@ -116,7 +95,6 @@ const AuthenticatedApp = () => {
   }
 
   if (path === "/become-performer") {
-    console.log("MANUAL_BECOME_PERFORMER_DISPATCH_BUILD_V9");
     return (
       <PublicPageShell>
         <BecomePerformer />
@@ -125,7 +103,6 @@ const AuthenticatedApp = () => {
   }
 
   if (path === "/fanclub") {
-    console.log("MANUAL_FANCLUB_DISPATCH_BUILD_V9");
     return (
       <PublicPageShell>
         <ComingSoon title="Fanclub" />
@@ -134,7 +111,6 @@ const AuthenticatedApp = () => {
   }
 
   if (path === "/") {
-    console.log("MANUAL_HOME_DISPATCH_BUILD_V9");
     return (
       <PublicPageShell>
         <Home />

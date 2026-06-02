@@ -6,9 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Newspaper, Search, X, Loader2, AlertCircle } from "lucide-react";
 
-// PUBLIC_NEWS_BUILD_VERSION_2026_06_02_AUTH_FIX
-const NEWS_BUILD_ID = "2026-06-02-BUILD-V10";
-console.log("REAL_PUBLIC_NEWS_COMPONENT_RENDERED_BUILD_V10");
 // Calls a backend function (service role) — never touches User/me or any entity endpoint directly.
 async function fetchPublicNews() {
   const url = `/api/apps/${appParams.appId}/functions/getPublicNews`;
@@ -23,13 +20,6 @@ async function fetchPublicNews() {
 }
 
 export default function News() {
-  window.__FLESHLAB_BUILD_ID__ = NEWS_BUILD_ID;
-  console.log("=== NEWS_PAGE_DIAGNOSTIC ===");
-  console.log("ROUTE_MATCH_NEWS");
-  console.log("NEWS_BUILD_ID", NEWS_BUILD_ID);
-  console.log("WINDOW_LOCATION_PATHNAME", window.location.pathname);
-  console.log("REAL_PUBLIC_NEWS_COMPONENT_RENDERED_BUILD_V10");
-  console.log("============================");
   const [search, setSearch] = useState("");
 
   const { data: articles = [], isLoading, error } = useQuery({
@@ -74,11 +64,6 @@ export default function News() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* RENDER VERIFICATION — remove after confirming production deploy */}
-      <div id="news-render-marker" style={{ background: '#0a1a1a', color: '#38b2ac', padding: '6px 16px', fontSize: 11, fontFamily: 'monospace', borderBottom: '1px solid #0a2a2a' }}>
-        NEWS_ROUTE_IS_RENDERING · build: {NEWS_BUILD_ID}
-      </div>
-
       {/* Hero */}
       <div className="bg-gradient-to-b from-primary/10 to-background py-12 px-4">
         <div className="max-w-7xl mx-auto text-center">
