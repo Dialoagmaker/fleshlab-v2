@@ -144,14 +144,10 @@ Deno.serve(async (req) => {
     const sessionToken = crypto.randomUUID();
     
     // Create session record
-    await base44.asServiceRole.entities.create({
-      entity_name: 'PerformerSession',
-      data: {
-        performer_id: performer.id,
-        token: sessionToken,
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        created_at: new Date().toISOString()
-      }
+    await base44.asServiceRole.entities.PerformerSession.create({
+      performer_id: performer.id,
+      token: sessionToken,
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     });
 
     // Check if user has linked Base44 account
