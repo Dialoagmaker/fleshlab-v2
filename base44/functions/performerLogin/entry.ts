@@ -1,44 +1,91 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import bcrypt from 'npm:bcryptjs@2.4.3';
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
-    const { username, password } = body;
+    const { identifier, password } = body;
 
-    if (!username || !password) {
+    if (!identifier || !password) {
       return Response.json({ 
-        error: 'Username and password are required' 
-      }, { status: 400 });
-    }
-
-    // Find performer by username
-    const performers = await base44.asServiceRole.entities.Performer.filter({
-      performer_username: username
-    });
-
-    if (!performers || performers.length === 0) {
-      // Generic error to prevent username enumeration
-      return Response.json({ 
-        error: 'Invalid username or password' 
+        error: 'Invalid performer username or password' 
       }, { status: 401 });
     }
 
-    const performer = performers[0];
+    // Find performer by multiple possible identifiers:
+    // - performer_username
+    // - slug (stage name)
+    // - display_name
+    // - linked user email (fallback)
+    let performer = null;
+    
+    // Try performer_username first
+    const byUsername = await base44.asServiceRole.entities.Performer.filter({
+      performer_username: identifier
+    });
+    if (byUsername && byUsername.length > 0) {
+      performer = byUsername[0];
+    }
+    
+    // Try slug (stage name)
+    if (!performer) {
+      const bySlug = await base44.asServiceRole.entities.Performer.filter({
+        slug: identifier
+      });
+      if (bySlug && bySlug.length > 0) {
+        performer = bySlug[0];
+      }
+    }
+    
+    // Try display_name
+    if (!performer) {
+      const byDisplayName = await base44.asServiceRole.entities.Performer.filter({
+        display_name: identifier
+      });
+      if (byDisplayName && byDisplayName.length > 0) {
+        performer = byDisplayName[0];
+      }
+    }
+    
+    // Fallback: try to find by linked user email
+    if (!performer) {
+      const users = await base44.asServiceRole.entities.User.filter({
+        email: identifier
+      });
+      if (users && users.length > 0) {
+        const user = users[0];
+        if (user.performer_profile_id || user.performer_id) {
+          const performerId = user.performer_profile_id || user.performer_id;
+          const performerRecords = await base44.asServiceRole.entities.Performer.filter({
+            id: performerId
+          });
+          if (performerRecords && performerRecords.length > 0) {
+            performer = performerRecords[0];
+          }
+        }
+      }
+    }
+
+    // If no performer found, return generic error
+    if (!performer) {
+      return Response.json({ 
+        error: 'Invalid performer username or password' 
+      }, { status: 401 });
+    }
 
     // Check if login is enabled
     if (!performer.performer_login_enabled) {
       return Response.json({ 
-        error: 'Login is disabled for this account. Please contact management.' 
-      }, { status: 403 });
+        error: 'Invalid performer username or password' 
+      }, { status: 401 });
     }
 
     // Check account status
     if (performer.account_status !== 'active') {
       return Response.json({ 
-        error: `Account is ${performer.account_status}. Please contact management.` 
-      }, { status: 403 });
+        error: 'Invalid performer username or password' 
+      }, { status: 401 });
     }
 
     // Verify password with bcrypt
@@ -107,10 +154,17 @@ Deno.serve(async (req) => {
       }
     });
 
+    // Check if user has linked Base44 account
+    let linkedUserId = null;
+    if (performer.user_id) {
+      linkedUserId = performer.user_id;
+    }
+
     return Response.json({
       success: true,
       token: sessionToken,
       performer: safePerformer,
+      user_id: linkedUserId,
       message: performer.performer_must_change_password ? 
         'Login successful. Password change required.' : 
         'Login successful'

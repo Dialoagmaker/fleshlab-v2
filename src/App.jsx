@@ -39,8 +39,11 @@ import ContentReview from './pages/admin/ContentReview';
 import PromoKitDetail from './pages/admin/PromoKitDetail';
 import PerformerSupport from './pages/admin/PerformerSupport';
 import ComingSoon from './pages/ComingSoon';
+import PerformerRouteHandler from './components/PerformerRouteHandler';
 import PerformerDashboard from './pages/performer/PerformerDashboard';
 import PerformerLogin from './pages/performer/PerformerLogin';
+import PerformerLoginPage from './pages/performer/PerformerLoginPage';
+import PerformerGuard from './components/PerformerGuard';
 import Account from './pages/Account';
 // Public pages
 import PublicVideos from './pages/Videos';
@@ -312,6 +315,11 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      {/* Performer login - dedicated route */}
+      <Route path="/performer/login" element={<PerformerLoginPage />} />
+      <Route path="/performerlogin" element={<Navigate to="/performer/login" replace />} />
+      {/* Performer login route */}
+      <Route path="/performer/login" element={<PerformerLoginPage />} />
       {/* V1 → V2 static path compatibility redirects */}
       <Route path="/Videos" element={<Navigate to="/videos" replace />} />
       <Route path="/Actors" element={<Navigate to="/performers" replace />} />
@@ -335,8 +343,17 @@ const AuthenticatedApp = () => {
       {/* Protected routes for non-admin roles */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/account" element={<Account />} />
-        <Route path="/performer/dashboard" element={<PerformerDashboard />} />
-        <Route path="/performerlogin" element={<PerformerLogin />} />
+        <Route path="/performer/dashboard" element={
+          <PerformerRouteHandler>
+            <PerformerDashboard />
+          </PerformerRouteHandler>
+        } />
+        {/* Performer routes - require performer role */}
+        <Route element={<PerformerGuard />}>
+          <Route path="/performer/dashboard" element={<PerformerDashboard />} />
+        </Route>
+        {/* Legacy performer login redirect */}
+        <Route path="/performerlogin" element={<Navigate to="/performer/login" replace />} />
       </Route>
       {/* Admin routes are now handled by manual dispatch above to prevent public route interception */}
       {/* Wildcard route */}
