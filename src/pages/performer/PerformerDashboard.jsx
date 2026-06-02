@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useAuth } from "@/lib/AuthContext";
+import { useNavigate } from "react-router-dom";
 import DashboardHeader from "@/components/performerDashboard/DashboardHeader";
 import PerformerDashboardTabs from "@/components/performerDashboard/PerformerDashboardTabs";
 
 export default function PerformerDashboard() {
-  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [performer, setPerformer] = useState(null);
   const [error, setError] = useState(null);
@@ -16,9 +16,9 @@ export default function PerformerDashboard() {
 
   const checkAuthAndLoad = async () => {
     try {
-      const isAuthenticated = await base44.auth.isAuthenticated();
-      if (!isAuthenticated) {
-        base44.auth.redirectToLogin(window.location.href);
+      const token = localStorage.getItem("performer_session_token");
+      if (!token) {
+        navigate("/performer/login");
         return;
       }
 
@@ -80,7 +80,7 @@ export default function PerformerDashboard() {
     <div className="min-h-screen bg-background">
       <DashboardHeader 
         performer={performer} 
-        onLogout={() => logout()} 
+        onLogout={() => { localStorage.removeItem("performer_session_token"); localStorage.removeItem("performer_data"); navigate("/performer/login"); }} 
       />
       <PerformerDashboardTabs performer={performer} />
     </div>

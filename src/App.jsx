@@ -38,6 +38,7 @@ import PromoKitDetail from './pages/admin/PromoKitDetail';
 import PerformerSupport from './pages/admin/PerformerSupport';
 import ComingSoon from './pages/ComingSoon';
 import PerformerDashboard from './pages/performer/PerformerDashboard';
+import PerformerLogin from './pages/performer/PerformerLogin';
 // Public pages
 import PublicVideos from './pages/Videos';
 import VideoDetail from './pages/VideoDetail';
@@ -101,6 +102,7 @@ const AuthenticatedApp = () => {
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/account" element={<ComingSoon title="My Account" />} />
         <Route path="/performer/dashboard" element={<PerformerDashboard />} />
+        <Route path="/performer/login" element={<PerformerLogin />} />
       </Route>
       {/* Admin routes — auth + admin role required */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
