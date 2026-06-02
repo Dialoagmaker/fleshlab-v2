@@ -3,15 +3,21 @@ import { appParams } from '@/lib/app-params';
 
 const { appId, functionsVersion, appBaseUrl } = appParams;
 
-// IMPORTANT: Client is intentionally created WITHOUT a token.
-// Passing the stored localStorage token here causes stale-token 401 spam on public entity calls
-// (Video.list, Brand.list, etc.) before auth validation has completed, which triggers the
-// Base44 SDK interceptor retry loop and log-user-in-app 429 errors.
+// CRITICAL: The Base44 SDK reads 'base44_access_token' from localStorage internally
+// when createClient() is called — independent of the 'token' param we pass.
+// If a stale token exists, the SDK auto-calls entities/User/me, gets 401, and
+// enters its log-user-in-app retry loop causing 429 errors and a black page for
+// anonymous visitors.
 //
-// Instead: AuthContext.checkUserAuth() reads the stored token, validates it via
-// base44.auth.setToken() + base44.auth.me(), and only sets it on the client if valid.
-// Public routes get anonymous entity access. Private routes get authenticated access
-// only after ProtectedRoute confirms auth state.
+// Fix: clear localStorage BEFORE createClient() runs. appParams.js evaluates first
+// (it is imported above), so appParams.token already captured the stored value.
+// AuthContext.checkUserAuth() validates appParams.token via raw fetch and calls
+// base44.auth.setToken() + restores localStorage ONLY if the token is confirmed valid.
+if (typeof localStorage !== 'undefined') {
+  localStorage.removeItem('base44_access_token');
+  localStorage.removeItem('token');
+}
+
 export const base44 = createClient({
   appId,
   token: null,

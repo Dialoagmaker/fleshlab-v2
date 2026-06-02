@@ -64,14 +64,14 @@ export const AuthProvider = ({ children }) => {
 
       if (resp.ok) {
         const currentUser = await resp.json();
-        // Token confirmed valid — now set it on the entity client for authenticated calls
+        // Token confirmed valid — set on SDK client AND restore to localStorage
+        // (base44Client.js cleared it at init time to prevent SDK auto-auth with stale token)
         base44.auth.setToken(storedToken);
+        localStorage.setItem('base44_access_token', storedToken);
         setUser(currentUser);
         setIsAuthenticated(true);
       } else {
-        // Invalid/expired token — clear from localStorage, leave client anonymous
-        localStorage.removeItem('base44_access_token');
-        localStorage.removeItem('token');
+        // Invalid/expired — already cleared from localStorage in base44Client.js init
         setIsAuthenticated(false);
       }
       setIsLoadingAuth(false);
