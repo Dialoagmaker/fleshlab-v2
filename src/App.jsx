@@ -1,7 +1,8 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -66,13 +67,44 @@ import PublicPageShell from './components/PublicPageShell';
 
 const AuthenticatedApp = () => {
   const { authError } = useAuth();
+  const [path, setPath] = useState(window.location.pathname);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setPath(window.location.pathname);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    
+    // Also watch for hash changes and direct URL manipulation
+    const observer = new MutationObserver(() => {
+      if (window.location.pathname !== path) {
+        setPath(window.location.pathname);
+      }
+    });
+    
+    // Use a simpler approach: check on every click
+    const handleClick = () => {
+      setTimeout(() => {
+        if (window.location.pathname !== path) {
+          setPath(window.location.pathname);
+        }
+      }, 0);
+    };
+    
+    document.addEventListener('click', handleClick);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      document.removeEventListener('click', handleClick);
+    };
+  }, [path]);
 
   if (authError?.type === 'user_not_registered') {
     return <UserNotRegisteredError />;
   }
 
   // Temporary manual public route dispatch until React Router is rebuilt cleanly.
-  const path = window.location.pathname;
 
   // Static public pages
   if (path === "/") {
