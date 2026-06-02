@@ -66,7 +66,11 @@ const AuthenticatedApp = () => {
   }
 
   return (
-    <Routes>
+    <>
+      <div style={{ background: 'yellow', color: 'black', padding: 12, position: 'fixed', top: 0, left: 0, zIndex: 999999 }}>
+        APP JSX IS ACTIVE · BUILD V5 · {window.location.pathname}
+      </div>
+      <Routes>
       {/* Auth routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -85,10 +89,29 @@ const AuthenticatedApp = () => {
       <Route path="/VideoDetail" element={<LegacyVideoRedirect />} />
       <Route path="/ActorDetail" element={<LegacyActorRedirect />} />
       <Route path="/ArticleReader" element={<LegacyArticleRedirect />} />
+      {/* ISOLATION TEST BUILD V5 — direct routes, no Layout/Outlet */}
+      <Route
+        path="/news"
+        element={
+          <div style={{ minHeight: '100vh', background: '#001f1f', color: 'white', padding: '80px', fontSize: '32px', fontFamily: 'Arial', position: 'relative', zIndex: 999999 }}>
+            {console.log('DIRECT_APP_NEWS_ROUTE_RENDER_BUILD_V5') || null}
+            DIRECT APP ROUTE NEWS IS RENDERING · BUILD V5
+          </div>
+        }
+      />
+      <Route
+        path="/videos"
+        element={
+          <div style={{ minHeight: '100vh', background: '#2a0000', color: 'white', padding: '80px', fontSize: '32px', fontFamily: 'Arial', position: 'relative', zIndex: 999999 }}>
+            {console.log('DIRECT_APP_VIDEOS_ROUTE_RENDER_BUILD_V5') || null}
+            DIRECT APP ROUTE VIDEOS IS RENDERING · BUILD V5
+          </div>
+        }
+      />
       {/* Public routes */}
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/videos" element={<PublicVideos />} />
+        {/* /videos moved to direct top-level route for isolation test */}
         <Route path="/videos/:slug" element={<VideoDetail />} />
         <Route path="/performers" element={<PublicPerformers />} />
         <Route path="/performers/:slug" element={<PerformerDetail />} />
@@ -96,7 +119,7 @@ const AuthenticatedApp = () => {
         <Route path="/brands/:slug" element={<BrandDetail />} />
         <Route path="/fanclub" element={<ComingSoon title="Fanclub" />} />
         <Route path="/fanclub/:slug" element={<ComingSoon title="Performer Fanclub" />} />
-        <Route path="/news" element={<PublicNews />} />
+        {/* /news moved to direct top-level route for isolation test */}
         <Route path="/news/:slug" element={<NewsDetail />} />
         <Route path="/search" element={<ComingSoon title="Search" />} />
         <Route path="/guest-production" element={<ComingSoon title="Guest Production" />} />
@@ -149,6 +172,7 @@ const AuthenticatedApp = () => {
       {/* /:slug moved inside Layout group above — removed from top level to prevent overriding static routes */}
       <Route path="*" element={<div style={{ color: "white", padding: 40, background: "#050505", minHeight: "100vh" }}>ROUTE NOT FOUND: {window.location.pathname}</div>} />
     </Routes>
+    </>
   );
 };
 
