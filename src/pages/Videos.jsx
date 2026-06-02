@@ -9,6 +9,7 @@ import { Film, Loader2, Play } from "lucide-react";
 const VIDEOS_PER_PAGE = 12;
 
 export default function Videos() {
+  console.log('PUBLIC_VIDEOS_RENDER_START', window.location.pathname);
   const [filters, setFilters] = useState({
     search: "",
     brand: "all",

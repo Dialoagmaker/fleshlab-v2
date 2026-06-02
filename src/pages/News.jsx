@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Newspaper, Search, X, Loader2 } from "lucide-react";
 
 export default function News() {
+  console.log('PUBLIC_NEWS_RENDER_START', window.location.pathname);
   const [search, setSearch] = useState("");
 
   // Fetch news articles

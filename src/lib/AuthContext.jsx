@@ -19,39 +19,61 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const checkAppState = async () => {
-    // Make ZERO API calls on startup.
-    // Any auth API call (including the public-settings check) triggers the Base44 SDK’s
-    // internal interceptor which calls entities/User/me on 401 — crashing public pages.
-    //
-    // Auth is now fully lazy:
-    //   • Public pages: render immediately, anonymous entity calls, no auth dependency.
-    //   • Private pages: ProtectedRoute.useEffect calls checkUserAuth() when first rendered.
-    //
-    // This is the ONLY way to guarantee zero User/me calls on public routes.
+    console.log('AUTH_CONTEXT_START', window.location.pathname);
+
+    // Pathname guard: public routes never need auth.
+    // Exit immediately — zero API calls, zero User/me, no auth blocking.
+    const publicPaths = ['/', '/videos', '/news', '/performers', '/become-performer',
+      '/fanclub', '/brands', '/how-it-works', '/faq', '/guest-production', '/search'];
+    const isPublicRoute = publicPaths.some(p =>
+      window.location.pathname === p || window.location.pathname.startsWith(p + '/')
+    );
+
+    if (isPublicRoute) {
+      console.log('PUBLIC_ROUTE_SKIP_USER_ME', window.location.pathname);
+      setUser(null);
+      setIsAuthenticated(false);
+      setIsLoadingAuth(false);
+      setIsLoadingPublicSettings(false);
+      setAuthChecked(false); // keep false — ProtectedRoute will call checkUserAuth if user later navigates to admin
+      setAuthError(null);
+      console.log('AUTH_CONTEXT_FINISH', 'public_skip');
+      return;
+    }
+
+    // Non-public routes: auth is lazy — ProtectedRoute triggers checkUserAuth when rendered.
     setIsLoadingPublicSettings(false);
     setIsLoadingAuth(false);
-    setAuthChecked(false); // false → ProtectedRoute will call checkUserAuth() when needed
+    setAuthChecked(false);
     setIsAuthenticated(false);
     setAuthError(null);
+    console.log('AUTH_CONTEXT_FINISH', 'deferred_to_protected_route');
   };
 
   const checkUserAuth = async () => {
+    // Second guard: if somehow called on a public route, bail immediately
+    const publicPaths = ['/', '/videos', '/news', '/performers', '/become-performer',
+      '/fanclub', '/brands', '/how-it-works', '/faq', '/guest-production', '/search'];
+    const isPublicRoute = publicPaths.some(p =>
+      window.location.pathname === p || window.location.pathname.startsWith(p + '/')
+    );
+    if (isPublicRoute) {
+      console.log('PUBLIC_ROUTE_SKIP_USER_ME', window.location.pathname);
+      setIsLoadingAuth(false);
+      setAuthChecked(true);
+      return;
+    }
+
     try {
       setIsLoadingAuth(true);
       const storedToken = appParams.token;
       if (!storedToken) {
-        // No stored token — anonymous visitor, skip auth check entirely
         setIsLoadingAuth(false);
         setIsAuthenticated(false);
         setAuthChecked(true);
         return;
       }
 
-      // Validate the token via a raw fetch — intentionally NOT using base44.auth.setToken()
-      // before validation. setToken() propagates to the entity client (Video.list, etc.),
-      // so calling it with a stale token would cause 401s on concurrent public entity calls
-      // and trigger the SDK interceptor's log-user-in-app retry loop → 429.
-      // Only set the token on the client AFTER confirming it is valid.
       const resp = await fetch(
         `/api/apps/${appParams.appId}/entities/User/me`,
         {
@@ -64,20 +86,17 @@ export const AuthProvider = ({ children }) => {
 
       if (resp.ok) {
         const currentUser = await resp.json();
-        // Token confirmed valid — set on SDK client AND restore to localStorage
-        // (base44Client.js cleared it at init time to prevent SDK auto-auth with stale token)
         base44.auth.setToken(storedToken);
         localStorage.setItem('base44_access_token', storedToken);
         setUser(currentUser);
         setIsAuthenticated(true);
       } else {
-        // Invalid/expired — already cleared from localStorage in base44Client.js init
         setIsAuthenticated(false);
       }
       setIsLoadingAuth(false);
       setAuthChecked(true);
     } catch (error) {
-      console.error('User auth check failed:', error);
+      console.warn('USER_ME_FAILED_SAFE', error?.status || error?.response?.status, error);
       setIsLoadingAuth(false);
       setIsAuthenticated(false);
       setAuthChecked(true);
