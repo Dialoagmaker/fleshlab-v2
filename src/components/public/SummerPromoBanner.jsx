@@ -52,20 +52,21 @@ export default function SummerPromoBanner() {
             </div>
           </div>
           
-          {/* Left Live-Chat Card - Creator Status Overlay */}
-          <div className="hidden lg:block absolute left-[12%] top-[38%] max-w-[220px] translate-y-[-50%] z-15">
-            <div className="bg-[rgba(0,0,0,0.72)] backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-[12px] px-[14px] py-[10px] shadow-[0_0_18px_rgba(236,18,86,0.25)]">
-              <p className="text-white text-[13px] font-bold leading-[1.2] whitespace-nowrap">
-                I'm always in cam mode 🔴
+          {/* Live-Chat Overlay Card - Lower Left */}
+          <div className="hidden lg:block absolute left-[5%] bottom-[18%] max-w-[200px] z-15 space-y-2">
+            <div className="bg-[rgba(0,0,0,0.72)] backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-[10px] px-[12px] py-[8px] shadow-[0_0_18px_rgba(236,18,86,0.25)]">
+              <p className="text-white text-[12.5px] font-bold leading-[1.2]">
+                🔥 I'm always in cam mode
               </p>
             </div>
-          </div>
-          
-          {/* Right Creator Card - Guest Production Info */}
-          <div className="hidden lg:block absolute right-[13%] top-[35%] max-w-[220px] translate-y-[-50%] z-15">
-            <div className="bg-[rgba(0,0,0,0.72)] backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-[12px] px-[14px] py-[10px] shadow-[0_0_18px_rgba(236,18,86,0.25)]">
-              <p className="text-white text-[13px] font-bold leading-[1.2] whitespace-nowrap">
-                Guest productions available
+            <div className="bg-[rgba(0,0,0,0.72)] backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-[10px] px-[12px] py-[8px] shadow-[0_0_18px_rgba(236,18,86,0.25)]">
+              <p className="text-white text-[12.5px] font-bold leading-[1.2]">
+                😍 You look amazing
+              </p>
+            </div>
+            <div className="bg-[rgba(0,0,0,0.72)] backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-[10px] px-[12px] py-[8px] shadow-[0_0_18px_rgba(236,18,86,0.25)]">
+              <p className="text-white text-[12.5px] font-bold leading-[1.2]">
+                💬 Say hi to me
               </p>
             </div>
           </div>
