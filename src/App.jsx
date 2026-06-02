@@ -51,7 +51,6 @@ import NewsDetail from './pages/NewsDetail';
 import NewsDirectTest from './pages/NewsDirectTest';
 import VideosDirectTest from './pages/VideosDirectTest';
 import BecomePerformer from './pages/BecomePerformer';
-import Fanclub from './pages/Fanclub';
 import GlobalErrorBoundary from './components/GlobalErrorBoundary';
 import LegacyVideoRedirect from './pages/LegacyVideoRedirect';
 import LegacyActorRedirect from './pages/LegacyActorRedirect';
@@ -110,7 +109,7 @@ const AuthenticatedApp = () => {
 
   if (path === "/fanclub") {
     console.log("MANUAL_FANCLUB_DISPATCH_BUILD_V9");
-    return <Fanclub />;
+    return <ComingSoon title="Fanclub" />;
   }
 
   return (
