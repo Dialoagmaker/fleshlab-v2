@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { appParams } from "@/lib/app-params";
 import VideoCard from "@/components/public/VideoCard";
@@ -6,15 +6,14 @@ import VideoFilters from "@/components/public/VideoFilters";
 import { Button } from "@/components/ui/button";
 import { Film, Play, AlertCircle } from "lucide-react";
 import SEOMeta from "@/components/SEOMeta";
+import { useI18n } from "@/i18n/i18n";
 
 const VIDEOS_PER_PAGE = 24;
 
-// Calls a backend function (service role) — never touches User/me or any entity endpoint directly.
-async function fetchPublicVideosAndBrands(page = 1) {
-  const cacheKey = `publicVideos_page_${page}_limit_${VIDEOS_PER_PAGE}`;
-  const cacheTTL = 60 * 1000; // 60 seconds
+async function fetchPublicVideosAndBrands(page = 1, filters = {}) {
+  const cacheKey = `publicVideos_page_${page}_filters_${JSON.stringify(filters)}`;
+  const cacheTTL = 60 * 1000;
   
-  // Check sessionStorage cache
   try {
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
@@ -27,17 +26,15 @@ async function fetchPublicVideosAndBrands(page = 1) {
     // Ignore cache errors
   }
   
-  // Fetch from API
   const url = `/api/apps/${appParams.appId}/functions/getPublicVideos`;
   const resp = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ page, limit: VIDEOS_PER_PAGE }),
+    body: JSON.stringify({ page, limit: VIDEOS_PER_PAGE, ...filters }),
   });
   if (!resp.ok) throw new Error(`Videos fetch failed: ${resp.status}`);
   const data = await resp.json();
   
-  // Cache the response
   try {
     sessionStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: Date.now() }));
   } catch (e) {
@@ -48,88 +45,67 @@ async function fetchPublicVideosAndBrands(page = 1) {
 }
 
 export default function Videos() {
+  const { t } = useI18n();
   const [filters, setFilters] = useState({
     search: "",
-    brand: "all",
+    category: null,
+    access_tier: null,
+    brand: null,
+    duration: null,
     sort: "newest",
   });
   const [page, setPage] = useState(1);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['public-videos-fn', page],
-    queryFn: () => fetchPublicVideosAndBrands(page),
+    queryKey: ['public-videos-fn', page, filters],
+    queryFn: () => fetchPublicVideosAndBrands(page, filters),
     retry: 0,
   });
-
-
 
   const videos = data?.videos || [];
   const brands = data?.brands || [];
   const total = data?.total || 0;
   const hasMore = data?.hasMore || false;
 
-  // Filter and sort videos (client-side filtering on current page)
-  const filteredVideos = useMemo(() => {
-    let result = [...videos];
-
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      result = result.filter(v =>
-        v.title?.toLowerCase().includes(searchLower) ||
-        (v.short_summary && v.short_summary.toLowerCase().includes(searchLower))
-      );
-    }
-
-    if (filters.brand !== "all") {
-      result = result.filter(v => v.brand_id === filters.brand);
-    }
-
-    switch (filters.sort) {
-      case "newest":
-        // Already sorted by backend
-        break;
-      case "oldest":
-        result.sort((a, b) => new Date(a.release_date || a.created_date) - new Date(b.release_date || b.created_date));
-        break;
-      case "title":
-        result.sort((a, b) => a.title.localeCompare(b.title));
-        break;
-      case "views":
-        result.sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
-        break;
-      default:
-        break;
-    }
-
-    return result;
-  }, [videos, filters]);
+  // Reset page when filters change
+  const handleFilterChange = useCallback((newFilters) => {
+    setFilters(newFilters);
+    setPage(1);
+  }, []);
 
   const handleClearFilters = () => {
-    setFilters({ search: "", brand: "all", sort: "newest" });
+    setFilters({
+      search: "",
+      category: null,
+      access_tier: null,
+      brand: null,
+      duration: null,
+      sort: "newest",
+    });
     setPage(1);
   };
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="bg-gradient-to-b from-primary/10 via-primary/5 to-background border-b border-border py-16 px-4">
+      <div className="min-h-screen bg-[#0a0a0a]">
+        <div className="bg-gradient-to-b from-[#0f0f0f] via-[#0a0a0a] to-[#0a0a0a] border-b border-rose-600/20 py-16 px-4">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
-                <Play className="w-6 h-6 text-primary fill-current" />
+              <div className="w-12 h-12 bg-rose-600/20 rounded-full flex items-center justify-center">
+                <Play className="w-6 h-6 text-rose-500 fill-current" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold text-foreground">Video Library</h1>
-                <p className="text-muted-foreground text-sm">Error loading videos</p>
+                <h1 className="text-4xl font-bold text-white">Video Library</h1>
+                <p className="text-white/60 text-sm">Error loading videos</p>
               </div>
             </div>
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="text-center py-20 bg-card/50 rounded-xl border border-border">
-            <AlertCircle className="w-16 h-16 mx-auto mb-4 text-destructive" />
-            <h2 className="text-xl font-semibold mb-2 text-foreground">Could not load videos</h2>
-            <p className="text-muted-foreground mb-4">{error?.message || 'Check console for VIDEOS_FETCH_ERROR'}</p>
+          <div className="text-center py-20 bg-[#121212] rounded-xl border border-white/10">
+            <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
+            <h2 className="text-xl font-semibold mb-2 text-white">Could not load videos</h2>
+            <p className="text-white/60 mb-4">{error?.message || 'Check console for error'}</p>
             <Button variant="outline" onClick={() => window.location.reload()}>Reload Page</Button>
           </div>
         </div>
@@ -137,89 +113,92 @@ export default function Videos() {
     );
   }
 
-  // Show page shell immediately with skeleton while loading
   return (
     <>
       <SEOMeta
-        title="Video Library — FLESHLAB | Asian Twink Videos"
-        description="Browse our collection of premium Asian twink videos. Exclusive studio productions, verified performers, new releases weekly."
+        title="Asian Gay Videos & Studio Previews - FLESHLAB"
+        description="Browse FLESHLAB Asian gay studio previews, Filipino twink videos, performer releases, fanclub exclusives and PPV scenes."
         canonical="/videos"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "CollectionPage",
           "name": "FLESHLAB Video Library",
-          "description": "Premium Asian twink video collection"
+          "description": "Premium Asian gay video collection"
         }}
       />
-      <div className="min-h-screen bg-background">
-      {/* Hero */}
-      <div className="bg-gradient-to-b from-primary/10 via-primary/5 to-background border-b border-border py-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
-              <Play className="w-6 h-6 text-primary fill-current" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold text-foreground">Video Library</h1>
-              <p className="text-muted-foreground text-sm">
-                {isLoading ? 'Loading videos...' : `${total} ${total === 1 ? 'video' : 'videos'} total • Showing page ${page} ${hasMore ? `(1-${page * VIDEOS_PER_PAGE})` : ''}`}
-              </p>
+      <div className="min-h-screen bg-[#0a0a0a]">
+        {/* Hero */}
+        <div className="bg-gradient-to-b from-[#0f0f0f] via-[#0a0a0a] to-[#0a0a0a] border-b border-rose-600/20 py-16 px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-rose-600/20 rounded-full flex items-center justify-center">
+                <Play className="w-6 h-6 text-rose-500 fill-current" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold text-white">Video Library</h1>
+                <p className="text-white/60 text-sm">
+                  Browse FLESHLAB public previews, studio releases, fanclub content and PPV scenes.
+                </p>
+                {isLoading ? (
+                  <p className="text-white/40 text-xs mt-1">Loading videos...</p>
+                ) : (
+                  <p className="text-white/40 text-xs mt-1">
+                    {total} {total === 1 ? 'video' : 'videos'} total · Showing page {page} {hasMore ? `(1-${page * VIDEOS_PER_PAGE})` : ''}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="rounded-xl bg-[#111] border border-white/[0.05] overflow-hidden animate-pulse">
-                <div className="aspect-video bg-white/[0.04]" />
-                <div className="p-3 space-y-2">
-                  <div className="h-3 bg-white/[0.06] rounded w-3/4" />
-                  <div className="h-3 bg-white/[0.04] rounded w-1/2" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : filteredVideos.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredVideos.map(video => (
-                <VideoCard key={video.id} video={video} brands={brands} />
+        {/* Content */}
+        <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+          {/* Filters */}
+          <VideoFilters onFilterChange={handleFilterChange} brands={brands} />
+
+          {isLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
+              {[...Array(24)].map((_, i) => (
+                <div key={i} className="aspect-video bg-[#121212] rounded-xl animate-pulse border border-white/5" />
               ))}
             </div>
-
-            {hasMore && (
-              <div className="text-center pt-8 pb-4">
-                <Button
-                  onClick={() => setPage(p => p + 1)}
-                  className="px-8 bg-primary hover:bg-primary/90"
-                  size="lg"
-                >
-                  Load More Videos
-                  <span className="ml-2 text-xs opacity-80">
-                    ({total - page * VIDEOS_PER_PAGE} remaining)
-                  </span>
-                </Button>
+          ) : videos.length > 0 ? (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
+                {videos.map(video => (
+                  <VideoCard key={video.id} video={video} brands={brands} />
+                ))}
               </div>
-            )}
-          </>
-        ) : (
-          <div className="text-center py-20 bg-card/50 rounded-xl border border-border">
-            <Film className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h2 className="text-xl font-semibold mb-2 text-foreground">No videos found</h2>
-            <p className="text-muted-foreground mb-4">
-              Try adjusting your search or filters
-            </p>
-            <Button variant="outline" onClick={handleClearFilters}>
-              Clear All Filters
-            </Button>
-          </div>
-        )}
-      </div>
+
+              {hasMore && (
+                <div className="text-center pt-8 pb-4">
+                  <Button
+                    onClick={() => setPage(p => p + 1)}
+                    className="px-8 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-semibold shadow-lg shadow-rose-600/30"
+                    size="lg"
+                  >
+                    Load More Videos
+                    <span className="ml-2 text-xs opacity-80">
+                      ({total - page * VIDEOS_PER_PAGE} remaining)
+                    </span>
+                  </Button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-20 bg-[#121212] rounded-xl border border-white/10">
+              <Film className="w-16 h-16 mx-auto mb-4 text-white/40 opacity-50" />
+              <h2 className="text-xl font-semibold mb-2 text-white">No videos found</h2>
+              <p className="text-white/60 mb-4">
+                Try another search term or clear filters.
+              </p>
+              <Button variant="outline" onClick={handleClearFilters} className="border-white/20 text-white hover:bg-white/10">
+                Clear All Filters
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     </>
   );

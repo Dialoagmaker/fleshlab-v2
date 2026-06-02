@@ -2,16 +2,13 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { callPublicFunction } from "@/lib/publicApi";
 import SEOMeta from "@/components/SEOMeta";
-import TubeHeader from "@/components/tube/TubeHeader";
 import SummerPromoBanner from "@/components/public/SummerPromoBanner";
 import TubeVideoCard from "@/components/tube/TubeVideoCard";
 import PerformerCarousel from "@/components/tube/PerformerCarousel";
 import FanclubBanner from "@/components/tube/FanclubBanner";
 import StudioJournal from "@/components/tube/StudioJournal";
-import TubeFooter from "@/components/tube/TubeFooter";
 
 export default function Home() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Fetch videos
   const { data: videosData, isLoading: videosLoading, error: videosError } = useQuery({
@@ -56,11 +53,7 @@ export default function Home() {
         }}
       />
 
-      <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a]">
-        {/* Unified Tube Header with Navigation */}
-        <TubeHeader onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
-
-        {/* Summer Promo Banner */}
+      {/* Summer Promo Banner */}
         <SummerPromoBanner />
 
         {/* Main Video Grid - Tight spacing below banner */}
@@ -113,10 +106,6 @@ export default function Home() {
 
         {/* Studio Journal */}
         <StudioJournal articles={articles} />
-
-        {/* Footer */}
-        <TubeFooter />
-      </div>
     </>
   );
 }
