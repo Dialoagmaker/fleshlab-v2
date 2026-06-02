@@ -1,21 +1,24 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, Menu, LogIn, Star } from "lucide-react";
+import { Search, Menu, LogIn, Star, Globe, ChevronDown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useI18n } from "@/i18n/i18n.jsx";
 
-const navItems = [
-  { label: "Home", href: "/" },
-  { label: "Videos", href: "/videos" },
-  { label: "Performers", href: "/performers" },
-  { label: "Fanclub", href: "/fanclub" },
-  { label: "News", href: "/news" },
-  { label: "Become a Performer", href: "/become-performer" },
+const languages = [
+  { code: 'en', label: 'English', native: 'English' },
+  { code: 'tl', label: 'Tagalog', native: 'Tagalog' },
+  { code: 'zh-TW', label: 'Traditional Chinese', native: '繁體中文' },
+  { code: 'th', label: 'Thai', native: 'ไทย' },
+  { code: 'vi', label: 'Vietnamese', native: 'Tiếng Việt' },
 ];
 
 export default function TubeHeader({ onMenuToggle }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [langOpen, setLangOpen] = useState(false);
   const location = useLocation();
+  const { locale, setLocale, t } = useI18n();
+  const currentLang = languages.find(l => l.code === locale) || languages[0];
 
   const isActive = (href) => {
     return location.pathname === href || (href !== "/" && location.pathname.startsWith(href + "/"));
@@ -41,7 +44,7 @@ export default function TubeHeader({ onMenuToggle }) {
             <div className="relative w-full">
               <Input
                 type="text"
-                placeholder="Search videos, performers..."
+                placeholder={t('nav.search')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-[#121212] border border-rose-600/20 text-white placeholder:text-white/40 h-11 pl-5 pr-14 rounded-lg focus:outline-none focus:border-rose-600/50 focus:ring-2 focus:ring-rose-600/20 transition-all"
@@ -54,21 +57,72 @@ export default function TubeHeader({ onMenuToggle }) {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            {/* Language Switcher */}
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setLangOpen(!langOpen)}
+                className="gap-2 bg-transparent border-white/20 hover:bg-white/10 hover:border-rose-600/60 text-white h-9 px-3"
+              >
+                <Globe className="w-4 h-4" />
+                <span className="hidden lg:inline text-sm">{currentLang.native}</span>
+                <ChevronDown className={`w-3 h-3 transition-transform ${langOpen ? 'rotate-180' : ''}`} />
+              </Button>
+
+              {langOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setLangOpen(false)}
+                  />
+                  <div className="absolute right-0 mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
+                    {languages.map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => {
+                          setLocale(lang.code);
+                          setLangOpen(false);
+                        }}
+                        className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors flex items-center justify-between group ${
+                          locale === lang.code ? 'bg-rose-600/20' : ''
+                        }`}
+                      >
+                        <div>
+                          <div className={`text-sm font-semibold ${
+                            locale === lang.code ? 'text-rose-500' : 'text-white'
+                          }`}>
+                            {lang.native}
+                          </div>
+                          {lang.label !== lang.native && (
+                            <div className="text-xs text-white/50">{lang.label}</div>
+                          )}
+                        </div>
+                        {locale === lang.code && (
+                          <Check className="w-4 h-4 text-rose-500" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
             <Link to="/login" className="hidden sm:block">
               <Button variant="ghost" size="sm" className="text-white/80 hover:text-white hover:bg-white/10 h-9 px-4 border border-white/10">
                 <LogIn className="w-4 h-4 mr-2" />
-                Log In
+                {t('nav.login')}
               </Button>
             </Link>
             <Link to="/register">
               <Button size="sm" className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-semibold h-9 px-4 shadow-lg shadow-rose-600/30">
-                Sign Up
+                {t('nav.register')}
               </Button>
             </Link>
             <Link to="/fanclub" className="hidden lg:block">
               <Button size="sm" variant="outline" className="border-rose-600/50 text-rose-500 hover:bg-rose-600/10 hover:border-rose-600 h-9 px-4">
                 <Star className="w-4 h-4 mr-2 fill-current" />
-                Fanclub
+                {t('nav.fanclub')}
               </Button>
             </Link>
             <Button
@@ -87,19 +141,66 @@ export default function TubeHeader({ onMenuToggle }) {
       <div className="bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] border-t border-rose-600/10">
         <div className="max-w-[1920px] mx-auto px-4">
           <nav className="flex items-center gap-1 py-2.5">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
-                  isActive(item.href)
-                    ? "text-rose-500 bg-rose-600/15 border border-rose-600/30 shadow-lg shadow-rose-600/20"
-                    : "text-white/70 hover:text-white hover:bg-white/5"
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
+            <Link
+              to="/"
+              className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+                isActive("/")
+                  ? "text-rose-500 bg-rose-600/15 border border-rose-600/30 shadow-lg shadow-rose-600/20"
+                  : "text-white/70 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              {t('nav.home')}
+            </Link>
+            <Link
+              to="/videos"
+              className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+                isActive("/videos")
+                  ? "text-rose-500 bg-rose-600/15 border border-rose-600/30 shadow-lg shadow-rose-600/20"
+                  : "text-white/70 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              {t('nav.videos')}
+            </Link>
+            <Link
+              to="/performers"
+              className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+                isActive("/performers")
+                  ? "text-rose-500 bg-rose-600/15 border border-rose-600/30 shadow-lg shadow-rose-600/20"
+                  : "text-white/70 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              {t('nav.performers')}
+            </Link>
+            <Link
+              to="/fanclub"
+              className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+                isActive("/fanclub")
+                  ? "text-rose-500 bg-rose-600/15 border border-rose-600/30 shadow-lg shadow-rose-600/20"
+                  : "text-white/70 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              {t('nav.fanclub')}
+            </Link>
+            <Link
+              to="/news"
+              className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+                isActive("/news")
+                  ? "text-rose-500 bg-rose-600/15 border border-rose-600/30 shadow-lg shadow-rose-600/20"
+                  : "text-white/70 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              {t('nav.news')}
+            </Link>
+            <Link
+              to="/become-performer"
+              className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+                isActive("/become-performer")
+                  ? "text-rose-500 bg-rose-600/15 border border-rose-600/30 shadow-lg shadow-rose-600/20"
+                  : "text-white/70 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              {t('nav.becomePerformer')}
+            </Link>
           </nav>
         </div>
       </div>
@@ -109,7 +210,7 @@ export default function TubeHeader({ onMenuToggle }) {
         <div className="relative pt-3">
           <Input
             type="text"
-            placeholder="Search videos..."
+            placeholder={t('nav.search')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-[#121212] border border-rose-600/20 text-white placeholder:text-white/40 h-11 pl-5 pr-14 rounded-lg focus:outline-none focus:border-rose-600/50"

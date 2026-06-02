@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
+import { useI18n } from "@/i18n/i18n.jsx";
 
 export default function SummerPromoBanner() {
+  const { t } = useI18n();
   return (
     <section className="relative w-full h-[320px] md:h-[340px] lg:h-[360px] overflow-hidden">
       {/* Background Image - Fixed, Do Not Change */}
@@ -43,12 +45,12 @@ export default function SummerPromoBanner() {
           <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
             {/* Left Badge */}
             <div className="bg-gradient-to-r from-rose-600 to-rose-700 text-white text-xs font-black px-4 py-2 rounded-full shadow-lg shadow-rose-600/60 uppercase tracking-wider whitespace-nowrap">
-              🔴 LIVE CAMS
+              {t('homepage.promoBadge1')}
             </div>
             
             {/* Right Badge */}
             <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-black px-4 py-2 rounded-full shadow-lg shadow-purple-600/60 uppercase tracking-wider whitespace-nowrap">
-              ⭐ PREMIUM VIDEOS
+              {t('homepage.promoBadge2')}
             </div>
           </div>
           
@@ -58,7 +60,7 @@ export default function SummerPromoBanner() {
           <div className="mb-2">
             <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black text-white drop-shadow-2xl leading-tight">
               <span className="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 bg-clip-text text-transparent">
-                50% OFF
+                {t('homepage.discount')}
               </span>
             </h1>
           </div>
@@ -66,14 +68,14 @@ export default function SummerPromoBanner() {
           {/* Subheadline */}
           <div className="mb-4">
             <p className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white drop-shadow-xl">
-              FANCLUB ACCESS
+              {t('homepage.discountSub')}
             </p>
           </div>
           
           {/* Summer Special Badge */}
           <div className="mb-6">
             <span className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black text-sm md:text-base font-black px-5 py-2 rounded-full shadow-lg uppercase tracking-widest">
-              Summer Studio Special
+              {t('homepage.specialBadge')}
             </span>
           </div>
           
@@ -83,23 +85,23 @@ export default function SummerPromoBanner() {
               to="/register" 
               className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black text-lg px-8 py-4 rounded-xl shadow-2xl shadow-rose-600/60 transform hover:scale-105 transition-all border-2 border-rose-500/50"
             >
-              JOIN NOW →
+              {t('homepage.joinNow')}
             </Link>
             <Link 
               to="/videos" 
               className="bg-black/40 backdrop-blur-md hover:bg-black/60 text-white font-bold text-lg px-8 py-4 rounded-xl border-2 border-rose-600/60 hover:border-rose-500 transform hover:scale-105 transition-all"
             >
-              BROWSE PREVIEWS
+              {t('homepage.browsePreviews')}
             </Link>
           </div>
           
           {/* Trust Row */}
           <div className="flex items-center justify-center gap-4 text-xs md:text-sm text-white/80 font-medium">
-            <span>✓ Instant Access</span>
+            <span>{t('homepage.trustInstant')}</span>
             <span className="hidden sm:inline">•</span>
-            <span className="hidden sm:inline">✓ Premium Quality</span>
+            <span className="hidden sm:inline">{t('homepage.trustPremium')}</span>
             <span className="hidden sm:inline">•</span>
-            <span>✓ Secure Payment</span>
+            <span>{t('homepage.trustSecure')}</span>
           </div>
           
         </div>

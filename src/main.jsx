@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from '@/App.jsx'
 import '@/index.css'
+import { I18nProvider } from '@/i18n/i18n.jsx'
 
 // Static fallback so #root is never empty even if React crashes
 const rootEl = document.getElementById("root");
@@ -54,6 +55,8 @@ class RootErrorBoundary extends React.Component {
 // Mount React
 ReactDOM.createRoot(rootEl).render(
   <RootErrorBoundary>
-    <App />
+    <I18nProvider>
+      <App />
+    </I18nProvider>
   </RootErrorBoundary>
 );

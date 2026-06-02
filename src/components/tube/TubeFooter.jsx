@@ -1,27 +1,8 @@
 import { Link } from "react-router-dom";
-
-const footerLinks = {
-  explore: [
-    { label: "Videos", href: "/videos" },
-    { label: "Performers", href: "/performers" },
-    { label: "Fanclub", href: "/fanclub" },
-    { label: "News", href: "/news" },
-  ],
-  community: [
-    { label: "Become a Performer", href: "/become-performer" },
-    { label: "Guest Production", href: "/guest-production" },
-    { label: "How It Works", href: "/how-it-works" },
-    { label: "FAQ", href: "/faq" },
-  ],
-  legal: [
-    { label: "Terms of Service", href: "/terms" },
-    { label: "Privacy Policy", href: "/privacy" },
-    { label: "DMCA", href: "/dmca" },
-    { label: "2257 Compliance", href: "/2257" },
-  ],
-};
+import { useI18n } from "@/i18n/i18n.jsx";
 
 export default function TubeFooter() {
+  const { t } = useI18n();
   const currentYear = new Date().getFullYear();
 
   return (
@@ -38,58 +19,88 @@ export default function TubeFooter() {
               </div>
             </Link>
             <p className="text-xs md:text-sm text-white/60 leading-relaxed">
-              Premium Asian gay adult studio featuring verified performers and exclusive productions.
+              {t('footer.description')}
             </p>
           </div>
 
           {/* Explore */}
           <div>
-            <h4 className="text-xs md:text-sm font-semibold text-white mb-3">Explore</h4>
+            <h4 className="text-xs md:text-sm font-semibold text-white mb-3">{t('footer.explore')}</h4>
             <ul className="space-y-2">
-              {footerLinks.explore.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    to={link.href}
-                    className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link to="/videos" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  {t('nav.videos')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/performers" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  {t('nav.performers')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/fanclub" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  {t('nav.fanclub')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/news" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  {t('nav.news')}
+                </Link>
+              </li>
             </ul>
           </div>
 
           {/* Community */}
           <div>
-            <h4 className="text-xs md:text-sm font-semibold text-white mb-3">Community</h4>
+            <h4 className="text-xs md:text-sm font-semibold text-white mb-3">{t('footer.community')}</h4>
             <ul className="space-y-2">
-              {footerLinks.community.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    to={link.href}
-                    className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link to="/become-performer" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  {t('nav.becomePerformer')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/guest-production" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  Guest Production
+                </Link>
+              </li>
+              <li>
+                <Link to="/how-it-works" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  {t('nav.howItWorks')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/faq" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  FAQ
+                </Link>
+              </li>
             </ul>
           </div>
 
           {/* Legal */}
           <div>
-            <h4 className="text-xs md:text-sm font-semibold text-white mb-3">Legal</h4>
+            <h4 className="text-xs md:text-sm font-semibold text-white mb-3">{t('footer.legal')}</h4>
             <ul className="space-y-2">
-              {footerLinks.legal.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    to={link.href}
-                    className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link to="/terms" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  {t('footer.terms')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/privacy" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  {t('footer.privacy')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/dmca" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  {t('footer.dmca')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/2257" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  {t('footer.compliance2257')}
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
@@ -98,10 +109,10 @@ export default function TubeFooter() {
         <div className="border-t border-white/8 pt-8">
           <div className="text-center">
             <p className="text-xs text-white/50 leading-relaxed mb-2">
-              <strong className="text-white/70">18 U.S.C. 2257 Compliance Notice:</strong> All performers depicted on this website were at least 18 years of age at the time of production.
+              <strong className="text-white/70">18 U.S.C. 2257 Compliance Notice:</strong> {t('footer.ageStatement')}
             </p>
             <p className="text-xs text-white/40">
-              © {currentYear} FLESHLAB Studio. All rights reserved.
+              {t('footer.copyright').replace('{year}', currentYear)}
             </p>
           </div>
         </div>
