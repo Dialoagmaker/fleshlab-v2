@@ -53,10 +53,10 @@ export default function SummerPromoBanner() {
           </div>
           
           {/* Left Speech Bubble - Live Cam Creator (mouth-aligned) */}
-          <div className="hidden lg:block absolute left-[14%] top-[38%] max-w-[230px] translate-y-[-50%] z-10">
-            <div className="relative bg-[rgba(0,0,0,0.70)] backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-[14px] px-[14px] py-[10px] shadow-[0_0_24px_rgba(236,18,86,0.35)]">
-              {/* Arrow pointer pointing up-left toward model's mouth */}
-              <div className="absolute left-[18px] top-[-6px] w-[12px] h-[12px] bg-[rgba(0,0,0,0.70)] border-l border-t border-[rgba(236,18,86,0.55)] transform rotate-45" />
+          <div className="hidden lg:block absolute left-[17%] top-[28%] max-w-[230px] translate-y-[-50%] z-10">
+            <div className="relative bg-[rgba(0,0,0,0.72)] backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-[14px] px-[14px] py-[10px] shadow-[0_0_24px_rgba(236,18,86,0.35)]">
+              {/* Tail pointing to left model's mouth (left side, 60% down) */}
+              <div className="absolute left-[-6px] top-[60%] w-[12px] h-[12px] -translate-y-1/2 bg-[rgba(0,0,0,0.72)] border-l border-b border-[rgba(236,18,86,0.55)] transform rotate-45" />
               <p className="text-white text-[13px] font-bold leading-snug whitespace-nowrap">
                 I'm always in cam mode 🔴
               </p>
@@ -64,10 +64,10 @@ export default function SummerPromoBanner() {
           </div>
           
           {/* Right Speech Bubble - Premium Creator (mouth-aligned) */}
-          <div className="hidden lg:block absolute right-[13%] top-[37%] max-w-[230px] translate-y-[-50%] z-10">
-            <div className="relative bg-[rgba(0,0,0,0.70)] backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-[14px] px-[14px] py-[10px] shadow-[0_0_24px_rgba(236,18,86,0.35)]">
-              {/* Arrow pointer pointing up-right toward model's mouth */}
-              <div className="absolute right-[18px] top-[-6px] w-[12px] h-[12px] bg-[rgba(0,0,0,0.70)] border-r border-t border-[rgba(236,18,86,0.55)] transform rotate-45" />
+          <div className="hidden lg:block absolute right-[22%] top-[26%] max-w-[230px] translate-y-[-50%] z-10">
+            <div className="relative bg-[rgba(0,0,0,0.72)] backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-[14px] px-[14px] py-[10px] shadow-[0_0_24px_rgba(236,18,86,0.35)]">
+              {/* Tail pointing to right model's mouth (right side, 60% down) */}
+              <div className="absolute right-[-6px] top-[60%] w-[12px] h-[12px] -translate-y-1/2 bg-[rgba(0,0,0,0.72)] border-r border-t border-[rgba(236,18,86,0.55)] transform rotate-45" />
               <p className="text-white text-[13px] font-bold leading-snug whitespace-nowrap">
                 Guest productions available
               </p>
