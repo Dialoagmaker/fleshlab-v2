@@ -34,17 +34,25 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
+      // Login and save token
       await base44.auth.loginViaEmailPassword(email, password);
+      
+      // Get user data to determine role
       const user = await base44.auth.me();
-      console.log("LOGIN_USER_DATA", user); // Debug: Check user role
+      console.log("LOGIN_SUCCESS", { role: user?.role, email: user?.email });
+      
       // If non-admin tried to access admin, show error
       if (fromParam && fromParam.startsWith("/admin") && user?.role !== "admin") {
         setError("Access denied: Admin access required");
         setLoading(false);
         return;
       }
+      
+      // Determine redirect URL
       const redirectUrl = getRedirectForRole(user?.role);
-      console.log("LOGIN_REDIRECT", { role: user?.role, fromParam, redirectUrl });
+      console.log("LOGIN_REDIRECT", { redirectUrl });
+      
+      // Force reload to ensure AuthContext picks up the new token
       window.location.href = redirectUrl;
     } catch (err) {
       console.error("LOGIN_ERROR", err);

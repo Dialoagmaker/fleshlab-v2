@@ -102,12 +102,7 @@ const AuthenticatedApp = () => {
     };
   }, [path]);
 
-  // Auto-redirect authenticated admin users from "/" to dashboard
-  useEffect(() => {
-    if (isAuthenticated && user?.role === 'admin' && path === '/') {
-      window.location.href = '/admin/dashboard';
-    }
-  }, [isAuthenticated, user, path]);
+
 
   if (authError?.type === 'user_not_registered') {
     return <UserNotRegisteredError />;

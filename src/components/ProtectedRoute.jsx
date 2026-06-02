@@ -10,14 +10,8 @@ const DefaultFallback = () => (
 );
 
 export default function ProtectedRoute({ fallback = <DefaultFallback />, unauthenticatedElement }) {
-  const { isAuthenticated, isLoadingAuth, authChecked, authError, checkUserAuth, user } = useAuth();
+  const { isAuthenticated, isLoadingAuth, authChecked, authError, user } = useAuth();
   const location = useLocation();
-
-  useEffect(() => {
-    if (!authChecked && !isLoadingAuth) {
-      checkUserAuth();
-    }
-  }, [authChecked, isLoadingAuth, checkUserAuth]);
 
   if (isLoadingAuth || !authChecked) {
     return fallback;
