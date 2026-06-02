@@ -33,9 +33,9 @@ export default function TubeFooter() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="inline-block mb-4">
-              <div className="flex items-center gap-1">
-                <span className="text-white font-bold text-xl tracking-tight">FLESH</span>
-                <span className="bg-rose-600 text-white font-bold text-xl px-2 py-0.5 rounded">LAB</span>
+              <div className="flex items-center gap-0.5">
+                <span className="text-white font-extrabold text-xl tracking-tight">FLESH</span>
+                <span className="bg-gradient-to-r from-rose-600 to-rose-700 text-white font-extrabold text-xl px-2.5 py-1 rounded-md">LAB</span>
               </div>
             </Link>
             <p className="text-sm text-white/60 mb-4">

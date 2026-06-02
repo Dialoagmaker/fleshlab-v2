@@ -30,71 +30,77 @@ export default function TubeVideoCard({ video, brands = [] }) {
 
   return (
     <Link to={`/videos/${video.slug}`} className="group block">
-      <div className="relative mb-2">
-        {/* Thumbnail */}
-        <div className="aspect-video relative overflow-hidden rounded bg-[#1a1a1a]">
+      {/* Thumbnail Container */}
+      <div className="relative mb-2 overflow-hidden rounded-lg bg-[#1a1a1a] border border-white/5 group-hover:border-rose-600/50 transition-colors">
+        <div className="aspect-video relative">
+          {/* Image */}
           {video.primary_thumbnail_url ? (
             <img
               src={video.primary_thumbnail_url}
               alt={video.title}
               loading="lazy"
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-rose-900/40 to-[#1a1a1a]" />
+            <div className="w-full h-full bg-gradient-to-br from-rose-900/60 to-[#1a1a1a]" />
           )}
           
-          {/* Duration Badge */}
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+          
+          {/* Duration Badge - Bottom Right */}
           {video.duration_seconds && (
-            <div className="absolute top-2 right-2 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded font-medium">
+            <div className="absolute bottom-2 right-2 bg-black/90 text-white text-xs font-bold px-1.5 py-0.5 rounded">
               {formatDuration(video.duration_seconds)}
             </div>
           )}
 
-          {/* Access Tier Badge */}
-          <div className={`absolute top-2 left-2 ${accessBadge.color} text-white text-xs px-2 py-0.5 rounded font-medium`}>
+          {/* Access Tier Badge - Top Right */}
+          <div className={`absolute top-2 right-2 ${accessBadge.color} text-white text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shadow-lg`}>
             {accessBadge.label}
           </div>
 
-          {/* Play Overlay (on hover) */}
-          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <div className="w-12 h-12 rounded-full bg-rose-600 flex items-center justify-center">
-              <Play className="w-6 h-6 text-white fill-current" />
+          {/* Play Button Overlay (on hover) */}
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center">
+            <div className="w-14 h-14 rounded-full bg-rose-600 hover:bg-rose-700 flex items-center justify-center transform group-hover:scale-110 transition-transform shadow-xl">
+              <Play className="w-7 h-7 text-white fill-current ml-0.5" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Info */}
-      <div className="space-y-1">
-        <h3 className="text-sm font-medium text-white line-clamp-2 group-hover:text-rose-500 transition-colors">
+      {/* Info Section */}
+      <div className="space-y-1.5">
+        {/* Title */}
+        <h3 className="text-sm font-semibold text-white line-clamp-2 leading-tight group-hover:text-rose-500 transition-colors">
           {video.title}
         </h3>
         
+        {/* Brand/Studio */}
         {brand && (
-          <p className="text-xs text-white/60 line-clamp-1">
+          <p className="text-xs text-white/50 line-clamp-1">
             {brand.name}
           </p>
         )}
         
-        <div className="flex items-center gap-2 text-xs text-white/50">
-          {video.view_count !== undefined && (
-            <span>
-              {video.view_count >= 1000 
-                ? `${(video.view_count / 1000).toFixed(1)}K views`
-                : `${video.view_count} views`
-              }
-            </span>
-          )}
-          {video.published_at && (
-            <span>•</span>
+        {/* Metadata Row */}
+        <div className="flex items-center gap-1.5 text-xs text-white/40">
+          {video.view_count !== undefined && video.view_count > 0 && (
+            <>
+              <span>
+                {video.view_count >= 1000 
+                  ? `${(video.view_count / 1000).toFixed(1)}K`
+                  : video.view_count
+                }
+              </span>
+              {video.published_at && <span>•</span>}
+            </>
           )}
           {video.published_at && (
             <span>
               {new Date(video.published_at).toLocaleDateString("en-US", {
                 month: "short",
-                day: "numeric",
-                year: "numeric"
+                day: "numeric"
               })}
             </span>
           )}

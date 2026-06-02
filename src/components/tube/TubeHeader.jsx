@@ -14,9 +14,9 @@ export default function TubeHeader({ onMenuToggle }) {
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo */}
           <Link to="/" className="flex-shrink-0">
-            <div className="flex items-center gap-1">
-              <span className="text-white font-bold text-2xl tracking-tight">FLESH</span>
-              <span className="bg-rose-600 text-white font-bold text-2xl px-2 py-0.5 rounded">LAB</span>
+            <div className="flex items-center gap-0.5">
+              <span className="text-white font-extrabold text-2xl tracking-tight">FLESH</span>
+              <span className="bg-gradient-to-r from-rose-600 to-rose-700 text-white font-extrabold text-2xl px-2.5 py-1 rounded-md shadow-lg">LAB</span>
             </div>
           </Link>
 

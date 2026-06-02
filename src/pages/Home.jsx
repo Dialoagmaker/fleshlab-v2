@@ -71,38 +71,29 @@ export default function Home() {
         {/* Promo Banner */}
         <PromoBanner video={featuredVideo} />
 
-        {/* Main Video Grid */}
-        <section className="py-8">
+        {/* Main Video Grid - Show videos immediately */}
+        <section className="py-6">
           <div className="max-w-[1920px] mx-auto px-4">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Latest Videos</h2>
-              <a href="/videos" className="text-sm text-rose-500 hover:text-rose-400 font-medium">
-                View All →
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-white">Latest Videos</h2>
+              <a href="/videos" className="text-sm text-rose-500 hover:text-rose-400 font-medium flex items-center gap-1">
+                View All <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </a>
             </div>
 
             {videosLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {[...Array(20)].map((_, i) => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                {[...Array(15)].map((_, i) => (
                   <div key={i} className="aspect-video bg-[#1a1a1a] rounded animate-pulse" />
                 ))}
               </div>
             ) : videos.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {videos.slice(0, 20).map(video => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                {videos.slice(0, 25).map(video => (
                   <TubeVideoCard key={video.id} video={video} brands={videosData?.brands || []} />
                 ))}
               </div>
-            ) : (
-              <div className="text-center py-16 bg-[#1a1a1a] rounded-lg">
-                <p className="text-white/60 mb-4">New content coming soon</p>
-                <a href="/videos">
-                  <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
-                    Browse All Videos
-                  </Button>
-                </a>
-              </div>
-            )}
+            ) : null}
           </div>
         </section>
 
