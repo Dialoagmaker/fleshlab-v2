@@ -15,18 +15,18 @@ export default function SummerPromoBanner() {
         <div className="absolute inset-0 bg-gradient-to-r from-rose-600/10 via-transparent to-purple-600/10 mix-blend-overlay" />
       </div>
       
-      {/* Gradient Overlay - Lighter on sides (models), darker in center (text zone) */}
+      {/* Gradient Overlay - Lighter on sides (models visible), darker in center (text readable) */}
       <div 
         className="absolute inset-0"
         style={{
           background: `
             linear-gradient(
               90deg,
-              rgba(0,0,0,0.25) 0%,
-              rgba(0,0,0,0.55) 38%,
-              rgba(0,0,0,0.60) 50%,
-              rgba(0,0,0,0.55) 62%,
-              rgba(0,0,0,0.25) 100%
+              rgba(0,0,0,0.18) 0%,
+              rgba(0,0,0,0.45) 35%,
+              rgba(0,0,0,0.58) 50%,
+              rgba(0,0,0,0.45) 65%,
+              rgba(0,0,0,0.18) 100%
             )
           `
         }}
@@ -53,23 +53,23 @@ export default function SummerPromoBanner() {
           </div>
           
           {/* Left Speech Bubble - Live Cam Creator */}
-          <div className="hidden lg:block absolute left-[8%] top-[50%] max-w-[300px]">
-            <div className="relative bg-black/68 backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-2xl p-5 shadow-xl shadow-rose-600/40">
+          <div className="hidden lg:block absolute left-[8%] top-[46%] max-w-[290px]">
+            <div className="relative bg-black/68 backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-xl p-4 shadow-xl shadow-rose-600/40">
               {/* Arrow pointer toward model */}
-              <div className="absolute -bottom-2.5 left-8 w-5 h-5 bg-black/68 border-r border-b border-[rgba(236,18,86,0.55)] transform rotate-45" />
-              <p className="text-white text-[15px] font-semibold leading-snug">
+              <div className="absolute -bottom-2 left-7 w-4 h-4 bg-black/68 border-r border-b border-[rgba(236,18,86,0.55)] transform rotate-45" />
+              <p className="text-white text-[14px] font-semibold leading-snug">
                 I'm always in cam mode 🔴
               </p>
             </div>
           </div>
           
           {/* Right Speech Bubble - Premium Creator */}
-          <div className="hidden lg:block absolute right-[10%] top-[50%] max-w-[320px]">
-            <div className="relative bg-black/68 backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-2xl p-5 shadow-xl shadow-rose-600/40">
+          <div className="hidden lg:block absolute right-[10%] top-[46%] max-w-[300px]">
+            <div className="relative bg-black/68 backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-xl p-4 shadow-xl shadow-rose-600/40">
               {/* Arrow pointer toward model */}
-              <div className="absolute -bottom-2.5 right-8 w-5 h-5 bg-black/68 border-l border-b border-[rgba(236,18,86,0.55)] transform rotate-45" />
-              <p className="text-white text-[15px] font-semibold leading-snug">
-                Fans can join productions
+              <div className="absolute -bottom-2 right-7 w-4 h-4 bg-black/68 border-l border-b border-[rgba(236,18,86,0.55)] transform rotate-45" />
+              <p className="text-white text-[14px] font-semibold leading-snug">
+                Guest productions available
               </p>
             </div>
           </div>
