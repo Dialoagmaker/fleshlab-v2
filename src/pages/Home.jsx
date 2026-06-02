@@ -2,20 +2,15 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { callPublicFunction } from "@/lib/publicApi";
 import SEOMeta from "@/components/SEOMeta";
-import StudioGate from "@/components/public/StudioGate";
-import StudioHeaderCompact from "@/components/public/StudioHeaderCompact";
-import StudioMobileMenu from "@/components/public/StudioMobileMenu";
-import StudioDropsRail from "@/components/public/StudioDropsRail";
-import PreviewWall from "@/components/public/PreviewWall";
-import PerformerWorldsGrid from "@/components/public/PerformerWorldsGrid";
-import StudioJournalPreview from "@/components/public/StudioJournalPreview";
-import JoinTheVault from "@/components/public/JoinTheVault";
-import StudioFooter from "@/components/public/StudioFooter";
+import VideoCard from "@/components/public/VideoCard";
+import PerformerCard from "@/components/public/PerformerCard";
+import NewsCard from "@/components/public/NewsCard";
+import { Button } from "@/components/ui/button";
+import { Play, Users, Newspaper, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [gateVisible, setGateVisible] = useState(true);
 
   // Fetch videos
   const { data: videosData } = useQuery({
@@ -23,7 +18,7 @@ export default function Home() {
     queryFn: () => callPublicFunction('getPublicVideos'),
     retry: 0,
   });
-  const allVideos = videosData?.videos || [];
+  const videos = videosData?.videos || [];
 
   // Fetch performers
   const { data: performersData } = useQuery({
@@ -31,7 +26,7 @@ export default function Home() {
     queryFn: () => callPublicFunction('getPublicPerformers'),
     retry: 0,
   });
-  const allPerformers = performersData?.performers || [];
+  const performers = performersData?.performers || [];
 
   // Fetch news
   const { data: newsData } = useQuery({
@@ -39,9 +34,8 @@ export default function Home() {
     queryFn: () => callPublicFunction('getPublicNews'),
     retry: 0,
   });
-  const allArticles = newsData?.articles || [];
+  const articles = newsData?.articles || [];
 
-  // Handle scroll for header
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 100);
@@ -51,23 +45,11 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Check gate state on mount
-  useEffect(() => {
-    const hasEntered = sessionStorage.getItem('vaultEntered');
-    if (hasEntered) {
-      setGateVisible(false);
-    }
-  }, []);
-
-  const handleGateEnter = () => {
-    setGateVisible(false);
-  };
-
   return (
     <>
       <SEOMeta
-        title="FLESHLAB — Private Studio Archive | Asian Gay Content"
-        description="FLESHLAB is a premium gay adult studio featuring verified Asian performers, exclusive productions, and member-only content. Enter the vault."
+        title="FLESHLAB — Premium Asian Gay Adult Studio"
+        description="FLESHLAB is a premium gay adult studio featuring verified Asian performers, exclusive productions, and member-only content."
         canonical="/"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
@@ -80,43 +62,125 @@ export default function Home() {
       />
 
       <div className="min-h-screen bg-[#0A0A0A]">
-        {/* Studio Gate (first visit only) */}
-        {gateVisible && <StudioGate onEnter={handleGateEnter} />}
-
-        {/* Compact Header (visible when gate is not showing) */}
-        {!gateVisible && (
-          <>
-            <StudioHeaderCompact
-              scrolled={scrolled}
-              onMenuToggle={() => setMobileMenuOpen(true)}
+        {/* Hero Section */}
+        <section className="relative h-[80vh] flex items-center justify-center overflow-hidden">
+          {/* Background */}
+          <div className="absolute inset-0 bg-gradient-to-b from-rose-900/20 via-[#0A0A0A]/80 to-[#0A0A0A] z-10" />
+          {videos.length > 0 && videos[0].cover_image_url && (
+            <img
+              src={videos[0].cover_image_url}
+              alt="Featured content"
+              className="absolute inset-0 w-full h-full object-cover opacity-30"
             />
-            <StudioMobileMenu
-              open={mobileMenuOpen}
-              onClose={() => setMobileMenuOpen(false)}
-            />
-          </>
-        )}
+          )}
+          
+          {/* Content */}
+          <div className="relative z-20 text-center px-4 max-w-4xl mx-auto">
+            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6">
+              FLESHLAB
+            </h1>
+            <p className="text-xl md:text-2xl text-[#F5F5F5]/80 mb-8">
+              Premium Asian Gay Adult Studio
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/videos">
+                <Button size="lg" className="bg-rose-600 hover:bg-rose-700 text-white px-8">
+                  <Play className="w-5 h-5 mr-2" />
+                  Browse Videos
+                </Button>
+              </Link>
+              <Link to="/performers">
+                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-8">
+                  <Users className="w-5 h-5 mr-2" />
+                  Meet Performers
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
 
-        {/* Main Content */}
-        <div className={!gateVisible ? "pt-16" : ""}>
-          {/* Studio Drops */}
-          <StudioDropsRail videos={allVideos} />
+        {/* Latest Videos */}
+        <section className="py-16 px-4 bg-[#0F0F0F]">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-white mb-2">Latest Productions</h2>
+                <p className="text-[#F5F5F5]/60">New releases weekly</p>
+              </div>
+              <Link to="/videos">
+                <Button variant="ghost" className="text-rose-500 hover:text-rose-400">
+                  View All <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {videos.slice(0, 8).map(video => (
+                <VideoCard key={video.id} video={video} brands={videosData?.brands || []} />
+              ))}
+            </div>
+          </div>
+        </section>
 
-          {/* Preview Wall */}
-          <PreviewWall videos={allVideos} />
+        {/* Featured Performers */}
+        <section className="py-16 px-4 bg-[#0A0A0A]">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-white mb-2">Featured Artists</h2>
+                <p className="text-[#F5F5F5]/60">Verified Asian talent</p>
+              </div>
+              <Link to="/performers">
+                <Button variant="ghost" className="text-rose-500 hover:text-rose-400">
+                  View All <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+              {performers.filter(p => p.featured).slice(0, 8).map(performer => (
+                <PerformerCard key={performer.id} performer={performer} />
+              ))}
+            </div>
+          </div>
+        </section>
 
-          {/* Performer Worlds */}
-          <PerformerWorldsGrid performers={allPerformers} />
+        {/* Studio Journal */}
+        <section className="py-16 px-4 bg-[#0F0F0F]">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-white mb-2">Studio Journal</h2>
+                <p className="text-[#F5F5F5]/60">News and updates</p>
+              </div>
+              <Link to="/news">
+                <Button variant="ghost" className="text-rose-500 hover:text-rose-400">
+                  View All <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {articles.slice(0, 3).map(article => (
+                <NewsCard key={article.id} article={article} />
+              ))}
+            </div>
+          </div>
+        </section>
 
-          {/* Studio Journal */}
-          <StudioJournalPreview articles={allArticles} />
-
-          {/* Join the Vault */}
-          <JoinTheVault />
-
-          {/* Footer */}
-          <StudioFooter />
-        </div>
+        {/* CTA Section */}
+        <section className="py-20 px-4 bg-gradient-to-b from-[#0A0A0A] to-rose-950/30">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-4xl font-bold text-white mb-4">
+              Join the Vault
+            </h2>
+            <p className="text-xl text-[#F5F5F5]/70 mb-8">
+              Access exclusive content, behind-the-scenes footage, and member-only productions
+            </p>
+            <Link to="/register">
+              <Button size="lg" className="bg-rose-600 hover:bg-rose-700 text-white px-8">
+                Create Free Account
+              </Button>
+            </Link>
+          </div>
+        </section>
       </div>
     </>
   );
