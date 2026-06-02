@@ -90,6 +90,45 @@ const AuthenticatedApp = () => {
     return <UserNotRegisteredError />;
   }
 
+  // BUILD V8 — Manual dispatcher: bypass React Router for public routes
+  const path = window.location.pathname;
+
+  if (path === "/news") {
+    console.log("MANUAL_NEWS_DISPATCH_RENDER_BUILD_V8");
+    return (
+      <div style={{
+        minHeight: "100vh",
+        background: "#003333",
+        color: "white",
+        padding: "100px",
+        fontSize: "36px",
+        fontFamily: "Arial",
+        position: "relative",
+        zIndex: 999999
+      }}>
+        MANUAL NEWS DISPATCH IS VISIBLE · BUILD V8 · /news
+      </div>
+    );
+  }
+
+  if (path === "/videos") {
+    console.log("MANUAL_VIDEOS_DISPATCH_RENDER_BUILD_V8");
+    return (
+      <div style={{
+        minHeight: "100vh",
+        background: "#330000",
+        color: "white",
+        padding: "100px",
+        fontSize: "36px",
+        fontFamily: "Arial",
+        position: "relative",
+        zIndex: 999999
+      }}>
+        MANUAL VIDEOS DISPATCH IS VISIBLE · BUILD V8 · /videos
+      </div>
+    );
+  }
+
   return (
     <>
       <div style={{ background: 'yellow', color: 'black', padding: 12, position: 'fixed', top: 0, left: 0, zIndex: 9999999 }}>
