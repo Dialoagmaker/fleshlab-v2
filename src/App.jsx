@@ -58,8 +58,9 @@ import LegacyArticleRedirect from './pages/LegacyArticleRedirect';
 import LegacyPerformerSlug from './pages/LegacyPerformerSlug';
 import HowItWorks from './pages/HowItWorks';
 import FAQ from './pages/FAQ';
+import PublicPageShell from './components/PublicPageShell';
 
-// BUILD V7 — Router location probe
+// TODO: Temporary manual public route dispatch until React Router is rebuilt cleanly.
 function RouterLocationProbe() {
   const location = useLocation();
   console.log("=== ROUTER_LOCATION_PROBE BUILD V7 ===");
@@ -84,32 +85,61 @@ const AuthenticatedApp = () => {
     return <UserNotRegisteredError />;
   }
 
-  // BUILD V9 — MANUAL PUBLIC ROUTE DISPATCH (bypass broken React Router)
+  // TODO: Temporary manual public route dispatch until React Router is rebuilt cleanly.
   const path = window.location.pathname;
 
   if (path === "/news") {
     console.log("MANUAL_NEWS_DISPATCH_BUILD_V9");
-    return <PublicNews />;
+    return (
+      <PublicPageShell>
+        <PublicNews />
+      </PublicPageShell>
+    );
   }
 
   if (path === "/videos") {
     console.log("MANUAL_VIDEOS_DISPATCH_BUILD_V9");
-    return <PublicVideos />;
+    return (
+      <PublicPageShell>
+        <PublicVideos />
+      </PublicPageShell>
+    );
   }
 
   if (path === "/performers") {
     console.log("MANUAL_PERFORMERS_DISPATCH_BUILD_V9");
-    return <PublicPerformers />;
+    return (
+      <PublicPageShell>
+        <PublicPerformers />
+      </PublicPageShell>
+    );
   }
 
   if (path === "/become-performer") {
     console.log("MANUAL_BECOME_PERFORMER_DISPATCH_BUILD_V9");
-    return <BecomePerformer />;
+    return (
+      <PublicPageShell>
+        <BecomePerformer />
+      </PublicPageShell>
+    );
   }
 
   if (path === "/fanclub") {
     console.log("MANUAL_FANCLUB_DISPATCH_BUILD_V9");
-    return <ComingSoon title="Fanclub" />;
+    return (
+      <PublicPageShell>
+        <ComingSoon title="Fanclub" />
+      </PublicPageShell>
+    );
+  }
+
+  if (path === "/") {
+    console.log("MANUAL_HOME_DISPATCH_BUILD_V9");
+    return (
+      <PublicPageShell>
+        <Home />
+      </PublicPageShell>
+    );
   }
 
   return (
@@ -133,9 +163,8 @@ const AuthenticatedApp = () => {
       <Route path="/VideoDetail" element={<LegacyVideoRedirect />} />
       <Route path="/ActorDetail" element={<LegacyActorRedirect />} />
       <Route path="/ArticleReader" element={<LegacyArticleRedirect />} />
-      {/* Public routes (Layout wrapper) */}
+      {/* Public routes (Layout wrapper) — static paths only, root dispatch handled manually above */}
       <Route element={<Layout />}>
-        <Route path="/" element={<Home />} />
         <Route path="/videos/:slug" element={<VideoDetail />} />
         <Route path="/performers/:slug" element={<PerformerDetail />} />
         <Route path="/brands" element={<PublicBrands />} />
