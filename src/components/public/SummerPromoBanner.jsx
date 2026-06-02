@@ -52,20 +52,20 @@ export default function SummerPromoBanner() {
             </div>
           </div>
           
-          {/* Live-Chat Overlay Card - Lower Left */}
-          <div className="hidden lg:block absolute left-[5%] bottom-[18%] max-w-[200px] z-15 space-y-2">
-            <div className="bg-[rgba(0,0,0,0.72)] backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-[10px] px-[12px] py-[8px] shadow-[0_0_18px_rgba(236,18,86,0.25)]">
-              <p className="text-white text-[12.5px] font-bold leading-[1.2]">
+          {/* Live-Chat Overlay - Left Side Cam Interaction */}
+          <div className="hidden lg:block absolute left-[4%] bottom-[18%] max-w-[220px] z-15 flex flex-col gap-[6px]">
+            <div className="px-[11px] py-[7px] rounded-[999px] bg-[rgba(0,0,0,0.72)] backdrop-blur-md border border-[rgba(236,18,86,0.45)] shadow-[0_0_14px_rgba(236,18,86,0.22)]">
+              <p className="text-white text-[12px] font-bold leading-[1.1] whitespace-nowrap">
                 🔥 I'm always in cam mode
               </p>
             </div>
-            <div className="bg-[rgba(0,0,0,0.72)] backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-[10px] px-[12px] py-[8px] shadow-[0_0_18px_rgba(236,18,86,0.25)]">
-              <p className="text-white text-[12.5px] font-bold leading-[1.2]">
+            <div className="px-[11px] py-[7px] rounded-[999px] bg-[rgba(0,0,0,0.72)] backdrop-blur-md border border-[rgba(236,18,86,0.45)] shadow-[0_0_14px_rgba(236,18,86,0.22)]">
+              <p className="text-white text-[12px] font-bold leading-[1.1] whitespace-nowrap">
                 😍 You look amazing
               </p>
             </div>
-            <div className="bg-[rgba(0,0,0,0.72)] backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-[10px] px-[12px] py-[8px] shadow-[0_0_18px_rgba(236,18,86,0.25)]">
-              <p className="text-white text-[12.5px] font-bold leading-[1.2]">
+            <div className="px-[11px] py-[7px] rounded-[999px] bg-[rgba(0,0,0,0.72)] backdrop-blur-md border border-[rgba(236,18,86,0.45)] shadow-[0_0_14px_rgba(236,18,86,0.22)]">
+              <p className="text-white text-[12px] font-bold leading-[1.1] whitespace-nowrap">
                 💬 Say hi to me
               </p>
             </div>
