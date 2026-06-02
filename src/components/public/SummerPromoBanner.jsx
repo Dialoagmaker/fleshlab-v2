@@ -52,24 +52,7 @@ export default function SummerPromoBanner() {
             </div>
           </div>
           
-          {/* Live-Chat Panel - Connected Module */}
-          <div className="hidden lg:block absolute left-[4.5%] top-[40%] z-15 flex flex-col gap-[6px] p-[8px] rounded-[16px] bg-[rgba(0,0,0,0.52)] backdrop-blur-md border border-[rgba(236,18,86,0.35)] shadow-[0_0_22px_rgba(236,18,86,0.22)]">
-            <div className="px-[10px] py-[6px] rounded-[999px] bg-[rgba(0,0,0,0.55)]">
-              <p className="text-white text-[12px] font-bold leading-[1.1] whitespace-nowrap">
-                🔥 I'm always in cam mode
-              </p>
-            </div>
-            <div className="px-[10px] py-[6px] rounded-[999px] bg-[rgba(0,0,0,0.55)]">
-              <p className="text-white text-[12px] font-bold leading-[1.1] whitespace-nowrap">
-                😍 You look amazing
-              </p>
-            </div>
-            <div className="px-[10px] py-[6px] rounded-[999px] bg-[rgba(0,0,0,0.55)]">
-              <p className="text-white text-[12px] font-bold leading-[1.1] whitespace-nowrap">
-                💬 Say hi to me
-              </p>
-            </div>
-          </div>
+
           
           {/* Main Offer - Dominant Typography */}
           <div className="mb-2">
