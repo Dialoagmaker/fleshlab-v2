@@ -316,8 +316,8 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/performer/login" element={<PerformerLoginPage />} />
-      <Route path="/performerlogin" element={<Navigate to="/performer/login" replace />} />
+      <Route path="/performerlogin" element={<PerformerLoginPage />} />
+      <Route path="/performer/login" element={<Navigate to="/performerlogin" replace />} />
       {/* V1 → V2 static path compatibility redirects */}
       <Route path="/Videos" element={<Navigate to="/videos" replace />} />
       <Route path="/Actors" element={<Navigate to="/performers" replace />} />
