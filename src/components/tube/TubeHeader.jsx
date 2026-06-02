@@ -138,9 +138,9 @@ export default function TubeHeader({ onMenuToggle }) {
       </div>
 
       {/* Navigation Bar - Enhanced */}
-      <div className="bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] border-t border-rose-600/10">
+      <div className="hidden md:block bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] border-t border-rose-600/10">
         <div className="max-w-[1920px] mx-auto px-4">
-          <nav className="flex items-center gap-1 py-2.5">
+          <nav className="flex items-center gap-1 py-2.5 overflow-x-auto scrollbar-hide">
             <a
               href="/"
               className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
