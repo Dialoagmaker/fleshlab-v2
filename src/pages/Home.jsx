@@ -17,13 +17,19 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Fetch videos
-  const { data: videosData, isLoading: videosLoading } = useQuery({
+  const { data: videosData, isLoading: videosLoading, error: videosError } = useQuery({
     queryKey: ['public-videos-fn'],
     queryFn: () => callPublicFunction('getPublicVideos'),
-    retry: 0,
+    retry: 1,
     staleTime: 30000,
   });
   const videos = videosData?.videos || [];
+  
+  // Debug logging
+  console.log("Home.jsx - videosData:", videosData);
+  console.log("Home.jsx - videos count:", videos?.length);
+  console.log("Home.jsx - isLoading:", videosLoading);
+  console.log("Home.jsx - error:", videosError);
 
   // Fetch performers
   const { data: performersData, isLoading: performersLoading } = useQuery({
@@ -66,10 +72,8 @@ export default function Home() {
       />
 
       <div className="min-h-screen bg-[#0a0a0a]">
-        {/* Header & Navigation */}
+        {/* Unified Tube Header */}
         <TubeHeader onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
-        <TubeNav />
-        <CategoryChips />
 
         {/* Promo Banner */}
         <PromoBanner video={featuredVideo} />
@@ -90,13 +94,21 @@ export default function Home() {
                   <div key={i} className="aspect-video bg-[#1a1a1a] rounded animate-pulse" />
                 ))}
               </div>
+            ) : videosError ? (
+              <div className="text-center py-8 text-white/60">
+                <p>Error loading videos</p>
+              </div>
             ) : videos.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                {videos.slice(0, 25).map(video => (
+                {videos.slice(0, 24).map(video => (
                   <TubeVideoCard key={video.id} video={video} brands={videosData?.brands || []} />
                 ))}
               </div>
-            ) : null}
+            ) : (
+              <div className="text-center py-8 text-white/60">
+                <p>No videos available</p>
+              </div>
+            )}
           </div>
         </section>
 
