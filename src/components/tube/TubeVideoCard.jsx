@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import { Play } from "lucide-react";
+import { useState } from "react";
 
 export default function TubeVideoCard({ video, brands = [] }) {
+  const [isHovered, setIsHovered] = useState(false);
   const brand = brands.find(b => b.id === video.brand_id);
   
   // Format duration
@@ -11,6 +13,9 @@ export default function TubeVideoCard({ video, brands = [] }) {
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
+
+  // Get preview URL (GIF or trailer)
+  const previewUrl = video.preview_gif_url || video.trailer_url || null;
 
   // Access tier badge - Banner-matching colors
   const getAccessBadge = (tier) => {
@@ -29,20 +34,38 @@ export default function TubeVideoCard({ video, brands = [] }) {
   const accessBadge = getAccessBadge(video.access_tier);
 
   return (
-    <Link to={`/videos/${video.slug}`} className="group block">
+    <Link 
+      to={`/videos/${video.slug}`} 
+      className="group block"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       {/* Thumbnail Container - Darker base, stronger border */}
       <div className="relative mb-2.5 overflow-hidden rounded-xl bg-[#0f0f0f] border border-white/10 group-hover:border-rose-600/60 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-rose-600/20">
         <div className="aspect-video relative">
-          {/* Image */}
+          {/* Thumbnail Image */}
           {video.primary_thumbnail_url ? (
             <img
               src={video.primary_thumbnail_url}
               alt={video.title}
               loading="lazy"
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+              className={`w-full h-full object-cover transition-transform duration-700 ${isHovered ? 'scale-105' : 'scale-100'}`}
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-rose-900/60 to-[#0f0f0f]" />
+          )}
+          
+          {/* Preview Video/GIF on Hover */}
+          {isHovered && previewUrl && (
+            <video
+              src={previewUrl}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="none"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
           )}
           
           {/* Gradient Overlay - Stronger contrast */}
@@ -60,12 +83,14 @@ export default function TubeVideoCard({ video, brands = [] }) {
             {accessBadge.label}
           </div>
 
-          {/* Play Button Overlay - Stronger on hover */}
-          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 flex items-center justify-center transform group-hover:scale-110 transition-all duration-300 shadow-2xl shadow-rose-600/50 border-2 border-white/30">
-              <Play className="w-8 h-8 text-white fill-current ml-0.5" />
+          {/* Play Button Overlay - Stronger on hover (only if no preview) */}
+          {!previewUrl && (
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 flex items-center justify-center transform group-hover:scale-110 transition-all duration-300 shadow-2xl shadow-rose-600/50 border-2 border-white/30">
+                <Play className="w-8 h-8 text-white fill-current ml-0.5" />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
