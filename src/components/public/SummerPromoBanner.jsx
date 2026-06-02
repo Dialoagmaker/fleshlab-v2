@@ -6,9 +6,9 @@ export default function SummerPromoBanner() {
       {/* Background Image - Blurred for atmosphere */}
       <div className="absolute inset-0">
         <img
-          src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/733ec8128_generated_image.png"
+          src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/e9aeecccb_ChatGPTImageJun3202602_34_57AM.png"
           alt=""
-          className="w-full h-full object-cover opacity-40 blur-sm"
+          className="w-full h-full object-cover opacity-50"
           style={{ 
             objectPosition: "50% 35%"
           }}
