@@ -3,15 +3,22 @@ import { Link } from "react-router-dom";
 export default function SummerPromoBanner() {
   return (
     <section className="relative w-full bg-[#050505]">
-      {/* Banner Container - No Crop, Natural Image Ratio */}
-      <div className="relative w-full overflow-visible">
+      {/* Full-Viewport Width Banner Container */}
+      <div 
+        className="relative w-[100vw] overflow-hidden"
+        style={{ 
+          height: "380px",
+          marginLeft: "calc(50% - 50vw)",
+          marginRight: "calc(50% - 50vw)"
+        }}
+      >
         
-        {/* Banner Image - Full Width, Natural Height, No Cropping */}
+        {/* Banner Image - Full Width, Proper Height */}
         <img
           src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/4b873d4a1_image.png"
           alt="FLESHLAB Summer Studio Special - 50% OFF Fanclub Access"
-          className="w-full h-auto block"
-          style={{ maxHeight: "420px", objectFit: "contain" }}
+          className="w-full h-full object-cover"
+          style={{ objectPosition: "center 42%" }}
         />
 
         {/* Invisible Click Zones for CTAs - Positioned over button areas */}
@@ -29,8 +36,8 @@ export default function SummerPromoBanner() {
           <Link to="/videos" className="flex-1 h-full cursor-pointer" aria-label="Premium Videos" />
         </div>
 
-        {/* Subtle Bottom Fade - Only at very bottom, doesn't cover content */}
-        <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-[#0a0a0a] to-transparent pointer-events-none" style={{ opacity: 0.6 }} />
+        {/* Subtle Bottom Fade - Only at very bottom edge */}
+        <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-[#0a0a0a] to-transparent pointer-events-none" style={{ opacity: 0.5 }} />
       </div>
     </section>
   );
