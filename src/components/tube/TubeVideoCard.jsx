@@ -83,9 +83,9 @@ export default function TubeVideoCard({ video, brands = [] }) {
           </p>
         )}
         
-        {/* Metadata Row */}
+        {/* Metadata Row - Only show real data */}
         <div className="flex items-center gap-2 text-xs text-white/50 font-medium">
-          {video.view_count !== undefined && video.view_count > 0 && (
+          {video.view_count && video.view_count > 0 ? (
             <>
               <span className="text-white/60">
                 {video.view_count >= 1000 
@@ -95,7 +95,7 @@ export default function TubeVideoCard({ video, brands = [] }) {
               </span>
               {video.published_at && <span className="text-rose-600/60">•</span>}
             </>
-          )}
+          ) : null}
           {video.published_at && (
             <span className="text-white/60">
               {new Date(video.published_at).toLocaleDateString("en-US", {
