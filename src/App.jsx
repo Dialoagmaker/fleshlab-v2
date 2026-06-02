@@ -59,6 +59,8 @@ import FAQ from './pages/FAQ';
 
 const AuthenticatedApp = () => {
   console.log("APP_RENDER_START", window.location.pathname);
+  console.log("WINDOW_LOCATION_HREF", window.location.href);
+  console.log("WINDOW_LOCATION_PATHNAME", window.location.pathname);
   const { authError } = useAuth();
 
   if (authError?.type === 'user_not_registered') {

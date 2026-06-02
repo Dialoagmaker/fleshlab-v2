@@ -7,6 +7,8 @@ import '@/index.css'
 window.__FLESHLAB_BUILD_MARKER__ = "ROOT_BOOTSTRAP_FIX_2026_06_02";
 console.log(window.__FLESHLAB_BUILD_MARKER__);
 console.log("MAIN_BOOTSTRAP_LOADED");
+console.log("WINDOW_LOCATION_HREF", window.location.href);
+console.log("WINDOW_LOCATION_PATHNAME", window.location.pathname);
 
 // ── STEP 2: Static fallback so #root is never empty even if React crashes ───
 const rootEl = document.getElementById("root");
