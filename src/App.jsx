@@ -58,8 +58,7 @@ import HowItWorks from './pages/HowItWorks';
 import FAQ from './pages/FAQ';
 
 const AuthenticatedApp = () => {
-  // No global loading spinner — public routes render immediately without waiting for auth.
-  // ProtectedRoute handles its own loading/auth state for private and admin routes.
+  console.log("APP_RENDER_START", window.location.pathname);
   const { authError } = useAuth();
 
   if (authError?.type === 'user_not_registered') {
@@ -97,7 +96,7 @@ const AuthenticatedApp = () => {
         <Route path="/brands/:slug" element={<BrandDetail />} />
         <Route path="/fanclub" element={<ComingSoon title="Fanclub" />} />
         <Route path="/fanclub/:slug" element={<ComingSoon title="Performer Fanclub" />} />
-        <Route path="/news" element={<PublicNews />} />
+        <Route path="/news" element={<><div style={{ color: "white", padding: 40, background: "#050505", position: "fixed", top: 0, left: 0, zIndex: 9999 }}>NEWS ROUTE IS RENDERING</div>{console.log("ROUTE_MATCH_NEWS") || <PublicNews />}</>} />
         <Route path="/news/:slug" element={<NewsDetail />} />
         <Route path="/search" element={<ComingSoon title="Search" />} />
         <Route path="/guest-production" element={<ComingSoon title="Guest Production" />} />
@@ -147,7 +146,7 @@ const AuthenticatedApp = () => {
       </Route>
       {/* V1 root performer slugs: /jameson-official → /performers/jameson-official */}
       <Route path="/:slug" element={<LegacyPerformerSlug />} />
-      <Route path="*" element={<PageNotFound />} />
+      <Route path="*" element={<div style={{ color: "white", padding: 40, background: "#050505", minHeight: "100vh" }}>ROUTE NOT FOUND: {window.location.pathname}</div>} />
     </Routes>
   );
 };

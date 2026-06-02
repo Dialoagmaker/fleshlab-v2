@@ -21,6 +21,7 @@ async function fetchPublicNews() {
 }
 
 export default function News() {
+  console.log("NEWS_COMPONENT_RENDER_START");
   const [search, setSearch] = useState("");
 
   const { data: articles = [], isLoading, error } = useQuery({
