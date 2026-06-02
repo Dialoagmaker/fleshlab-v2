@@ -114,7 +114,9 @@ const AuthenticatedApp = () => {
           <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
             <Route element={<AdminGuard />}>
               <Route element={<AdminLayout />}>
-                <Route path="/admin" element={<Dashboard />} />
+                {/* /admin redirects to /admin/dashboard */}
+                <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+                <Route path="/admin/dashboard" element={<Dashboard />} />
                 <Route path="/admin/videos" element={<Videos />} />
                 <Route path="/admin/videos/:id" element={<VideoEdit />} />
                 <Route path="/admin/video-performer-match" element={<VideoPerformerMatch />} />

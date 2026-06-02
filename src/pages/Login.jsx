@@ -14,10 +14,18 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Get redirect destination from URL parameter
+  const from = new URLSearchParams(window.location.search).get("from") || "/";
+
   const getRedirectForRole = (role) => {
+    // If user came from admin route and is admin, redirect to admin dashboard
+    if (from.startsWith("/admin")) {
+      return role === "admin" ? "/admin/dashboard" : "/account";
+    }
+    // Default role-based redirects
     if (role === "admin") return "/admin";
     if (role === "performer") return "/performer/dashboard";
-    return "/account";
+    return from;
   };
 
   const handleSubmit = async (e) => {
@@ -27,7 +35,14 @@ export default function Login() {
     try {
       await base44.auth.loginViaEmailPassword(email, password);
       const user = await base44.auth.me();
-      window.location.href = getRedirectForRole(user?.role);
+      const redirectUrl = getRedirectForRole(user?.role);
+      // If non-admin tried to access admin, show error
+      if (from.startsWith("/admin") && user?.role !== "admin") {
+        setError("Access denied: Admin access required");
+        setLoading(false);
+        return;
+      }
+      window.location.href = redirectUrl;
     } catch (err) {
       setError(err.message || "Invalid email or password");
     } finally {

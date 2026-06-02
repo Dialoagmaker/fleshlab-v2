@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
-import { Outlet, Navigate } from "react-router-dom";
+import { Outlet, Navigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { Button } from "@/components/ui/button";
 
 export default function AdminGuard() {
   const [state, setState] = useState("loading"); // "loading" | "admin" | "denied"
 
   useEffect(() => {
     base44.auth.me()
-      .then(user => setState(user?.role === "admin" ? "admin" : "denied"))
+      .then(user => {
+        console.log("ADMIN_GUARD_USER", user); // Debug log for admin role field
+        setState(user?.role === "admin" ? "admin" : "denied");
+      })
       .catch(() => setState("denied"));
   }, []);
 
@@ -19,7 +23,27 @@ export default function AdminGuard() {
     );
   }
 
-  if (state === "denied") return <Navigate to="/account" replace />;
+  if (state === "denied") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center space-y-6">
+          <div className="text-6xl mb-4">🔒</div>
+          <h1 className="text-2xl font-bold text-foreground">Access Denied</h1>
+          <p className="text-muted-foreground">
+            You do not have permission to access the admin area.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Button asChild>
+              <Link to="/">Go Home</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/account">My Account</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return <Outlet />;
 }
