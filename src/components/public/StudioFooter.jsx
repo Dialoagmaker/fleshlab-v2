@@ -6,15 +6,15 @@ import { Instagram, Twitter, Mail } from "lucide-react";
  */
 export default function StudioFooter() {
   const currentYear = new Date().getFullYear();
-  
+
   return (
     <footer className="bg-[#0F0F0F] border-t border-white/[0.05] py-12">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-rose-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-rose-600 to-rose-800 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">F</span>
               </div>
               <span className="text-white font-bold text-xl">FLESHLAB</span>
@@ -48,7 +48,7 @@ export default function StudioFooter() {
               </a>
             </div>
           </div>
-          
+
           {/* Quick Links */}
           <div>
             <h4 className="text-sm font-semibold text-white mb-4">Explore</h4>
@@ -75,7 +75,7 @@ export default function StudioFooter() {
               </li>
             </ul>
           </div>
-          
+
           {/* Legal */}
           <div>
             <h4 className="text-sm font-semibold text-white mb-4">Legal</h4>
@@ -103,7 +103,7 @@ export default function StudioFooter() {
             </ul>
           </div>
         </div>
-        
+
         {/* Compliance */}
         <div className="mt-12 pt-8 border-t border-white/[0.05]">
           <div className="text-center space-y-4">
