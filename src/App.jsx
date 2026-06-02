@@ -104,6 +104,51 @@ const AuthenticatedApp = () => {
     return <UserNotRegisteredError />;
   }
 
+  // CRITICAL: Admin routes must NOT be handled by public dispatch
+  // Let React Router handle all /admin routes with ProtectedRoute + AdminGuard
+  if (path.startsWith("/admin")) {
+    return (
+      <>
+        <Routes>
+          {/* Admin routes — auth + admin role required */}
+          <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+            <Route element={<AdminGuard />}>
+              <Route element={<AdminLayout />}>
+                <Route path="/admin" element={<Dashboard />} />
+                <Route path="/admin/videos" element={<Videos />} />
+                <Route path="/admin/videos/:id" element={<VideoEdit />} />
+                <Route path="/admin/video-performer-match" element={<VideoPerformerMatch />} />
+                <Route path="/admin/video-metadata-completion" element={<VideoMetadataCompletion />} />
+                <Route path="/admin/video-upload" element={<VideoUploadTest />} />
+                <Route path="/admin/draft-review" element={<DraftReview />} />
+                <Route path="/admin/missing-performer-assignments" element={<MissingPerformerAssignments />} />
+                <Route path="/admin/applications" element={<Applications />} />
+                <Route path="/admin/performers" element={<Performers />} />
+                <Route path="/admin/performers/new" element={<PerformerEdit />} />
+                <Route path="/admin/unlinked-performers" element={<UnlinkedPerformers />} />
+                {/* Performer OS 6-tab shell — single route, tabs are internal UI state */}
+                <Route path="/admin/performers/:id" element={
+                  <PerformerLayout>
+                    <PerformerDetailWrapper />
+                  </PerformerLayout>
+                } />
+                <Route path="/admin/brands" element={<Brands />} />
+                <Route path="/admin/brands/:id" element={<BrandEdit />} />
+                <Route path="/admin/news" element={<ComingSoon title="News Management" />} />
+                <Route path="/admin/seo" element={<ComingSoon title="SEO Management" />} />
+                <Route path="/admin/migration" element={<ComingSoon title="Migration Tools" />} />
+                <Route path="/admin/monthly-closeout" element={<MonthlyCloseout />} />
+                <Route path="/admin/content-review" element={<ContentReview />} />
+                <Route path="/admin/promo-kit/:video_id" element={<PromoKitDetail />} />
+                <Route path="/admin/performer-support" element={<PerformerSupport />} />
+              </Route>
+            </Route>
+          </Route>
+        </Routes>
+      </>
+    );
+  }
+
   // Temporary manual public route dispatch until React Router is rebuilt cleanly.
 
   // Static public pages
@@ -286,40 +331,7 @@ const AuthenticatedApp = () => {
         <Route path="/performer/dashboard" element={<PerformerDashboard />} />
         <Route path="/performerlogin" element={<PerformerLogin />} />
       </Route>
-      {/* Admin routes — auth + admin role required */}
-      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
-        <Route element={<AdminGuard />}>
-          <Route element={<AdminLayout />}>
-            <Route path="/admin" element={<Dashboard />} />
-            <Route path="/admin/videos" element={<Videos />} />
-            <Route path="/admin/videos/:id" element={<VideoEdit />} />
-            <Route path="/admin/video-performer-match" element={<VideoPerformerMatch />} />
-            <Route path="/admin/video-metadata-completion" element={<VideoMetadataCompletion />} />
-            <Route path="/admin/video-upload" element={<VideoUploadTest />} />
-            <Route path="/admin/draft-review" element={<DraftReview />} />
-            <Route path="/admin/missing-performer-assignments" element={<MissingPerformerAssignments />} />
-            <Route path="/admin/applications" element={<Applications />} />
-            <Route path="/admin/performers" element={<Performers />} />
-            <Route path="/admin/performers/new" element={<PerformerEdit />} />
-            <Route path="/admin/unlinked-performers" element={<UnlinkedPerformers />} />
-            {/* Performer OS 6-tab shell — single route, tabs are internal UI state */}
-            <Route path="/admin/performers/:id" element={
-              <PerformerLayout>
-                <PerformerDetailWrapper />
-              </PerformerLayout>
-            } />
-            <Route path="/admin/brands" element={<Brands />} />
-            <Route path="/admin/brands/:id" element={<BrandEdit />} />
-            <Route path="/admin/news" element={<ComingSoon title="News Management" />} />
-            <Route path="/admin/seo" element={<ComingSoon title="SEO Management" />} />
-            <Route path="/admin/migration" element={<ComingSoon title="Migration Tools" />} />
-            <Route path="/admin/monthly-closeout" element={<MonthlyCloseout />} />
-            <Route path="/admin/content-review" element={<ContentReview />} />
-            <Route path="/admin/promo-kit/:video_id" element={<PromoKitDetail />} />
-            <Route path="/admin/performer-support" element={<PerformerSupport />} />
-          </Route>
-        </Route>
-      </Route>
+      {/* Admin routes are now handled by manual dispatch above to prevent public route interception */}
       {/* Wildcard route */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
