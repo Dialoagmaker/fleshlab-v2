@@ -63,6 +63,12 @@ class RootErrorBoundary extends React.Component {
 
 // ── STEP 5: Mount React ──────────────────────────────────────────────────────
 console.log("ABOUT_TO_RENDER_REACT_APP");
+console.log("=== PATH DIAGNOSTIC main.jsx ===");
+console.log("WINDOW_LOCATION_HREF", window.location.href);
+console.log("WINDOW_LOCATION_PATHNAME", window.location.pathname);
+console.log("WINDOW_LOCATION_HASH", window.location.hash);
+console.log("WINDOW_LOCATION_SEARCH", window.location.search);
+console.log("==============================");
 ReactDOM.createRoot(rootEl).render(
   <RootErrorBoundary>
     <App />

@@ -19,7 +19,11 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const checkAppState = async () => {
+    console.log("=== PATH DIAGNOSTIC AuthContext.jsx ===");
+    console.log("WINDOW_LOCATION_HREF", window.location.href);
+    console.log("WINDOW_LOCATION_PATHNAME", window.location.pathname);
     console.log('AUTH_CONTEXT_START', window.location.pathname);
+    console.log("==============================");
 
     // Pathname guard: public routes never need auth.
     // Exit immediately — zero API calls, zero User/me, no auth blocking.

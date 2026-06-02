@@ -19,10 +19,14 @@ const footerLinks = [
 ];
 
 export default function Layout() {
-  console.log('PUBLIC_LAYOUT_RENDER_START', window.location.pathname);
-  console.log('ROUTER_LOCATION_PATHNAME', location.pathname);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  console.log("=== PATH DIAGNOSTIC Layout.jsx ===");
+  console.log("WINDOW_LOCATION_HREF", window.location.href);
+  console.log("WINDOW_LOCATION_PATHNAME", window.location.pathname);
+  console.log("ROUTER_LOCATION_PATHNAME", location.pathname);
+  console.log("PUBLIC_LAYOUT_RENDER_START", window.location.pathname);
+  console.log("==============================");
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
