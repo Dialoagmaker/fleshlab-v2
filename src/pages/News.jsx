@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { appParams } from "@/lib/app-params";
 import NewsCard from "@/components/public/NewsCard";
@@ -11,6 +11,25 @@ const ARTICLES_PER_PAGE = 12;
 
 // Calls a backend function (service role) — never touches User/me or any entity endpoint directly.
 async function fetchPublicNews(page = 1) {
+  const cacheKey = `publicNews_page_${page}_limit_${ARTICLES_PER_PAGE}`;
+  const cacheTTL = 60 * 1000; // 60 seconds
+  
+  // Check sessionStorage cache
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < cacheTTL) {
+        console.log('NEWS_PAGE cache hit', { page, ageMs: Date.now() - timestamp });
+        return data;
+      }
+    }
+  } catch (e) {
+    // Ignore cache errors
+  }
+  
+  // Fetch from API
+  console.time('GET_PUBLIC_NEWS_FETCH');
   const url = `/api/apps/${appParams.appId}/functions/getPublicNews`;
   const resp = await fetch(url, {
     method: 'POST',
@@ -19,10 +38,20 @@ async function fetchPublicNews(page = 1) {
   });
   if (!resp.ok) throw new Error(`News fetch failed: ${resp.status}`);
   const data = await resp.json();
+  console.timeEnd('GET_PUBLIC_NEWS_FETCH');
+  
+  // Cache the response
+  try {
+    sessionStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: Date.now() }));
+  } catch (e) {
+    // Ignore cache errors
+  }
+  
   return data;
 }
 
 export default function News() {
+  console.time('NEWS_PAGE_TOTAL_LOAD');
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
@@ -31,6 +60,13 @@ export default function News() {
     queryFn: () => fetchPublicNews(page),
     retry: 0,
   });
+
+  // Log total load time when data arrives
+  React.useEffect(() => {
+    if (data && !isLoading) {
+      console.timeEnd('NEWS_PAGE_TOTAL_LOAD');
+    }
+  }, [data, isLoading]);
 
   const articles = data?.articles || [];
   const total = data?.total || 0;
@@ -50,25 +86,7 @@ export default function News() {
 
   const handleClear = () => setSearch("");
 
-  if (isLoading) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: 'white', fontSize: 16, fontFamily: 'Arial' }}>Loading news...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 40, textAlign: 'center' }}>
-        <AlertCircle style={{ width: 48, height: 48, color: '#e53e3e' }} />
-        <h2 style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>Could not load news</h2>
-        <p style={{ color: '#a0a0a0', fontSize: 14 }}>{error?.message || 'Check console for NEWS_FETCH_ERROR'}</p>
-        <button onClick={() => window.location.reload()} style={{ color: '#e63946', textDecoration: 'underline', fontSize: 14, cursor: 'pointer' }}>Reload</button>
-      </div>
-    );
-  }
-
+  // Show page shell immediately with skeleton while loading
   return (
     <>
       <SEOMeta
@@ -90,7 +108,7 @@ export default function News() {
           <Newspaper className="w-12 h-12 mx-auto mb-4 text-primary" />
           <h1 className="text-4xl font-bold mb-2">News</h1>
           <p className="text-muted-foreground">
-            {total} {total === 1 ? 'article' : 'articles'} total • Showing page {page}
+            {isLoading ? 'Loading articles...' : `${total} ${total === 1 ? 'article' : 'articles'} total • Showing page ${page}`}
           </p>
         </div>
       </div>
@@ -106,9 +124,10 @@ export default function News() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
+              disabled={isLoading}
             />
           </div>
-          {search && (
+          {search && !isLoading && (
             <Button variant="outline" size="icon" onClick={handleClear}>
               <X className="w-4 h-4" />
             </Button>
@@ -116,7 +135,26 @@ export default function News() {
         </div>
 
         {/* Grid */}
-        {filteredArticles.length > 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="rounded-xl bg-[#111] border border-white/[0.05] overflow-hidden animate-pulse">
+                <div className="aspect-[16/9] bg-white/[0.04]" />
+                <div className="p-4 space-y-2">
+                  <div className="h-3 bg-white/[0.06] rounded w-3/4" />
+                  <div className="h-3 bg-white/[0.04] rounded w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-20 bg-card/50 rounded-xl border border-border">
+            <AlertCircle className="w-16 h-16 mx-auto mb-4 text-destructive" />
+            <h2 className="text-xl font-semibold mb-2 text-foreground">Could not load news</h2>
+            <p className="text-muted-foreground mb-4">{error?.message || 'Check console for NEWS_FETCH_ERROR'}</p>
+            <Button variant="outline" onClick={() => window.location.reload()}>Reload Page</Button>
+          </div>
+        ) : filteredArticles.length > 0 ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredArticles.map(article => (
@@ -140,10 +178,10 @@ export default function News() {
             )}
           </>
         ) : (
-          <div className="text-center py-20">
-            <Newspaper className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-xl font-semibold mb-2">No articles found</h2>
-            <p className="text-muted-foreground">
+          <div className="text-center py-20 bg-card/50 rounded-xl border border-border">
+            <Newspaper className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <h2 className="text-xl font-semibold mb-2 text-foreground">No articles found</h2>
+            <p className="text-muted-foreground mb-4">
               {search ? 'Try adjusting your search' : 'Check back soon for updates'}
             </p>
           </div>

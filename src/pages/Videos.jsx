@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { appParams } from "@/lib/app-params";
 import VideoCard from "@/components/public/VideoCard";
@@ -11,6 +11,25 @@ const VIDEOS_PER_PAGE = 24;
 
 // Calls a backend function (service role) — never touches User/me or any entity endpoint directly.
 async function fetchPublicVideosAndBrands(page = 1) {
+  const cacheKey = `publicVideos_page_${page}_limit_${VIDEOS_PER_PAGE}`;
+  const cacheTTL = 60 * 1000; // 60 seconds
+  
+  // Check sessionStorage cache
+  try {
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      const { data, timestamp } = JSON.parse(cached);
+      if (Date.now() - timestamp < cacheTTL) {
+        console.log('VIDEOS_PAGE cache hit', { page, ageMs: Date.now() - timestamp });
+        return data;
+      }
+    }
+  } catch (e) {
+    // Ignore cache errors
+  }
+  
+  // Fetch from API
+  console.time('GET_PUBLIC_VIDEOS_FETCH');
   const url = `/api/apps/${appParams.appId}/functions/getPublicVideos`;
   const resp = await fetch(url, {
     method: 'POST',
@@ -18,10 +37,21 @@ async function fetchPublicVideosAndBrands(page = 1) {
     body: JSON.stringify({ page, limit: VIDEOS_PER_PAGE }),
   });
   if (!resp.ok) throw new Error(`Videos fetch failed: ${resp.status}`);
-  return resp.json();
+  const data = await resp.json();
+  console.timeEnd('GET_PUBLIC_VIDEOS_FETCH');
+  
+  // Cache the response
+  try {
+    sessionStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: Date.now() }));
+  } catch (e) {
+    // Ignore cache errors
+  }
+  
+  return data;
 }
 
 export default function Videos() {
+  console.time('VIDEOS_PAGE_TOTAL_LOAD');
   const [filters, setFilters] = useState({
     search: "",
     brand: "all",
@@ -34,6 +64,13 @@ export default function Videos() {
     queryFn: () => fetchPublicVideosAndBrands(page),
     retry: 0,
   });
+
+  // Log total load time when data arrives
+  React.useEffect(() => {
+    if (data && !isLoading) {
+      console.timeEnd('VIDEOS_PAGE_TOTAL_LOAD');
+    }
+  }, [data, isLoading]);
 
   const videos = data?.videos || [];
   const brands = data?.brands || [];
@@ -81,25 +118,35 @@ export default function Videos() {
     setPage(1);
   };
 
-  if (isLoading) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: 'white', fontSize: 16, fontFamily: 'Arial' }}>Loading videos...</div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 40, textAlign: 'center' }}>
-        <AlertCircle style={{ width: 48, height: 48, color: '#e53e3e' }} />
-        <h2 style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>Could not load videos</h2>
-        <p style={{ color: '#a0a0a0', fontSize: 14 }}>{error?.message || 'Check console for VIDEOS_FETCH_ERROR'}</p>
-        <button onClick={() => window.location.reload()} style={{ color: '#e63946', textDecoration: 'underline', fontSize: 14, cursor: 'pointer' }}>Reload</button>
+      <div className="min-h-screen bg-background">
+        <div className="bg-gradient-to-b from-primary/10 via-primary/5 to-background border-b border-border py-16 px-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+                <Play className="w-6 h-6 text-primary fill-current" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold text-foreground">Video Library</h1>
+                <p className="text-muted-foreground text-sm">Error loading videos</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="text-center py-20 bg-card/50 rounded-xl border border-border">
+            <AlertCircle className="w-16 h-16 mx-auto mb-4 text-destructive" />
+            <h2 className="text-xl font-semibold mb-2 text-foreground">Could not load videos</h2>
+            <p className="text-muted-foreground mb-4">{error?.message || 'Check console for VIDEOS_FETCH_ERROR'}</p>
+            <Button variant="outline" onClick={() => window.location.reload()}>Reload Page</Button>
+          </div>
+        </div>
       </div>
     );
   }
 
+  // Show page shell immediately with skeleton while loading
   return (
     <>
       <SEOMeta
@@ -125,7 +172,7 @@ export default function Videos() {
             <div>
               <h1 className="text-4xl font-bold text-foreground">Video Library</h1>
               <p className="text-muted-foreground text-sm">
-                {total} {total === 1 ? 'video' : 'videos'} total • Showing page {page} {hasMore ? `(1-${page * VIDEOS_PER_PAGE})` : ''}
+                {isLoading ? 'Loading videos...' : `${total} ${total === 1 ? 'video' : 'videos'} total • Showing page ${page} ${hasMore ? `(1-${page * VIDEOS_PER_PAGE})` : ''}`}
               </p>
             </div>
           </div>
@@ -134,17 +181,19 @@ export default function Videos() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-        <VideoFilters
-          brands={brands}
-          filters={filters}
-          onFiltersChange={(newFilters) => {
-            setFilters(newFilters);
-            setPage(1);
-          }}
-          onClear={handleClearFilters}
-        />
-
-        {filteredVideos.length > 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="rounded-xl bg-[#111] border border-white/[0.05] overflow-hidden animate-pulse">
+                <div className="aspect-video bg-white/[0.04]" />
+                <div className="p-3 space-y-2">
+                  <div className="h-3 bg-white/[0.06] rounded w-3/4" />
+                  <div className="h-3 bg-white/[0.04] rounded w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredVideos.length > 0 ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredVideos.map(video => (
