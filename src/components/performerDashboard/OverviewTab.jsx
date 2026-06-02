@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import ActionRequiredCard from "./ActionRequiredCard";
 import MonthlyCloseoutCard from "./MonthlyCloseoutCard";
@@ -9,34 +9,27 @@ import LatestVideosCard from "./LatestVideosCard";
 import ComplianceSummaryCard from "./ComplianceSummaryCard";
 import CareerStatisticsCard from "./CareerStatisticsCard";
 
-export default function OverviewTab({ data }) {
-  const performer = data?.performer;
-  const careerStats = data?.career_stats;
-
+export default function OverviewTab({ performer, career_stats }) {
   if (!performer) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">No performer data available</p>
-      </div>
+      <Card className="bg-card border-border">
+        <CardContent className="py-12 text-center">
+          <p className="text-muted-foreground">Your performer profile is not fully connected yet.</p>
+          <p className="text-sm text-muted-foreground mt-2">Please contact studio management.</p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Action Required */}
       <ActionRequiredCard performer={performer} />
-
-      {/* Career Statistics */}
-      <CareerStatisticsCard stats={careerStats} />
-
-      {/* Top row - Monthly Closeout, Production Goal, Payout Readiness */}
+      <CareerStatisticsCard stats={career_stats} />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <MonthlyCloseoutCard performerId={performer.id} />
         <ProductionGoalCard performerId={performer.id} />
         <PayoutReadinessCard performer={performer} />
       </div>
-
-      {/* Second row - Studio Advance, Latest Videos, Compliance Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <StudioAdvanceCard performer={performer} />
         <LatestVideosCard performerId={performer.id} />

@@ -26,7 +26,7 @@ export default function PerformerDashboard() {
 
       const performer = JSON.parse(performerData);
 
-      // Load dashboard data (pass performer_id and token)
+      // Load dashboard data
       const [dashboardRes, statsRes] = await Promise.all([
         base44.functions.invoke("performerDashboardService", {
           action: "get_dashboard_summary",
@@ -47,7 +47,7 @@ export default function PerformerDashboard() {
       }
 
       setPerformer({
-        ...dashboardRes.data,
+        performer: dashboardRes.data.performer,
         career_stats: statsRes.data.stats
       });
       setLoading(false);
@@ -87,7 +87,7 @@ export default function PerformerDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader 
-        performer={performer} 
+        performer={performer?.performer} 
         onLogout={() => { localStorage.removeItem("performer_session_token"); localStorage.removeItem("performer_data"); navigate("/performerlogin"); }} 
       />
       <PerformerDashboardTabs performer={performer} />

@@ -1,0 +1,112 @@
+{
+  "name": "ContentSubmission",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "linked_user_id": {
+      "type": "string",
+      "title": "Linked User ID",
+      "description": "Base44 user ID if performer has linked account"
+    },
+    "title": {
+      "type": "string",
+      "title": "Submission Title"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description / Notes",
+      "format": "textarea"
+    },
+    "content_type": {
+      "type": "string",
+      "enum": [
+        "raw_video",
+        "photos",
+        "behind_the_scenes",
+        "fanclub_preview",
+        "other"
+      ],
+      "title": "Content Type"
+    },
+    "file_name": {
+      "type": "string",
+      "title": "File Name"
+    },
+    "file_size_bytes": {
+      "type": "integer",
+      "title": "File Size (bytes)"
+    },
+    "mime_type": {
+      "type": "string",
+      "title": "MIME Type"
+    },
+    "r2_object_key": {
+      "type": "string",
+      "title": "R2 Object Key"
+    },
+    "upload_status": {
+      "type": "string",
+      "enum": [
+        "pending_upload",
+        "uploaded",
+        "failed"
+      ],
+      "title": "Upload Status",
+      "default": "pending_upload"
+    },
+    "review_status": {
+      "type": "string",
+      "enum": [
+        "pending_review",
+        "approved",
+        "rejected",
+        "needs_changes"
+      ],
+      "title": "Review Status",
+      "default": "pending_review"
+    },
+    "admin_notes": {
+      "type": "string",
+      "title": "Admin Notes (Internal)",
+      "format": "textarea",
+      "description": "Internal admin-only notes - never shown to performers"
+    },
+    "performer_visible_message": {
+      "type": "string",
+      "title": "Performer Visible Message",
+      "format": "textarea",
+      "description": "Message that can be shown to the performer"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Reviewed At"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "title": "Reviewed By User ID"
+    },
+    "linked_video_id": {
+      "type": "string",
+      "title": "Linked Video ID",
+      "description": "If approved and linked to a video"
+    },
+    "uploaded_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Uploaded At"
+    }
+  },
+  "required": [
+    "performer_id",
+    "title",
+    "content_type",
+    "file_name",
+    "file_size_bytes",
+    "mime_type",
+    "r2_object_key"
+  ]
+}

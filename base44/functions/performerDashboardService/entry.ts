@@ -550,6 +550,40 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Action: get_content_submissions
+    if (action === 'get_content_submissions') {
+      const submissions = await base44.asServiceRole.entities.ContentSubmission.filter({
+        performer_id: myPerformer.id
+      });
+
+      // Sort by created_date descending
+      const sorted = submissions.sort((a, b) => 
+        new Date(b.created_date) - new Date(a.created_date)
+      );
+
+      // Sanitize - remove admin-only fields
+      const safeSubmissions = sorted.map(s => ({
+        id: s.id,
+        title: s.title,
+        content_type: s.content_type,
+        file_name: s.file_name,
+        file_size_bytes: s.file_size_bytes,
+        upload_status: s.upload_status,
+        review_status: s.review_status,
+        performer_visible_message: s.performer_visible_message,
+        created_date: s.created_date,
+        uploaded_at: s.uploaded_at,
+        reviewed_at: s.reviewed_at,
+        linked_video_id: s.linked_video_id
+      }));
+
+      return Response.json({ 
+        success: true, 
+        submissions: safeSubmissions,
+        total_count: safeSubmissions.length
+      });
+    }
+
     // Action: get_video_stats (performer read-only)
     if (action === 'get_video_stats') {
       const { period_month } = body;
@@ -602,6 +636,60 @@ Deno.serve(async (req) => {
         success: true, 
         stats: sorted, 
         total_count: sorted.length 
+      });
+    }
+
+    // Action: update_submission_uploaded
+    if (action === 'update_submission_uploaded') {
+      const { submission_id } = body;
+      
+      if (!submission_id) {
+        return Response.json({ error: 'submission_id required' }, { status: 400 });
+      }
+
+      const submission = await base44.asServiceRole.entities.ContentSubmission.get(submission_id);
+      
+      if (!submission) {
+        return Response.json({ error: 'Submission not found' }, { status: 404 });
+      }
+
+      if (submission.performer_id !== myPerformer.id) {
+        return Response.json({ error: 'Access denied' }, { status: 403 });
+      }
+
+      await base44.asServiceRole.entities.ContentSubmission.update(submission_id, {
+        upload_status: 'uploaded',
+        uploaded_at: new Date().toISOString()
+      });
+
+      return Response.json({ success: true });
+    }
+
+    // Action: create_support_request
+    if (action === 'create_support_request') {
+      const { subject, category, message } = body;
+
+      if (!subject || !category || !message) {
+        return Response.json({ 
+          error: 'subject, category, and message are required' 
+        }, { status: 400 });
+      }
+
+      // Create support request
+      const supportRequest = await base44.asServiceRole.entities.PerformerSupportRequest.create({
+        performer_id: myPerformer.id,
+        user_id: myPerformer.user_id || null,
+        subject: subject.slice(0, 120),
+        category,
+        message: message.slice(0, 4000),
+        status: 'open',
+        priority: 'normal'
+      });
+
+      return Response.json({
+        success: true,
+        request_id: supportRequest.id,
+        message: 'Support request submitted successfully'
       });
     }
 
