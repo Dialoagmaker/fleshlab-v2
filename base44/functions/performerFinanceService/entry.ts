@@ -3,14 +3,16 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const body = await req.json().catch(() => ({}));
+    const { action } = body;
+
+    // Admin auth check (after body consumed)
     const user = await base44.auth.me();
 
     if (!user || !['admin', 'super_admin'].includes(user.role)) {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const body = await req.json();
-    const { action } = body;
     const data = body;
 
     // Action 1: create_earning
