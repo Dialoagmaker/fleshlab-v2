@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import { useEffect, useState } from 'react';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { useAuthRedirect } from './hooks/useAuthRedirect';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -66,7 +67,8 @@ import Compliance2257 from './pages/Compliance2257';
 import PublicPageShell from './components/PublicPageShell';
 
 const AuthenticatedApp = () => {
-  const { authError } = useAuth();
+  useAuthRedirect();
+  const { authError, isAuthenticated, user } = useAuth();
   const [path, setPath] = useState(window.location.pathname);
 
   useEffect(() => {
@@ -99,6 +101,13 @@ const AuthenticatedApp = () => {
       document.removeEventListener('click', handleClick);
     };
   }, [path]);
+
+  // Auto-redirect authenticated admin users from "/" to dashboard
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'admin' && path === '/') {
+      window.location.href = '/admin/dashboard';
+    }
+  }, [isAuthenticated, user, path]);
 
   if (authError?.type === 'user_not_registered') {
     return <UserNotRegisteredError />;

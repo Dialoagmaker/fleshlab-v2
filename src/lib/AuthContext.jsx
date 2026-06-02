@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
     console.log('AUTH_CONTEXT_START', window.location.pathname);
     console.log("==============================");
 
-    // Pathname guard: public routes never need auth.
+    // Pathname guard: public routes never need auth BUT still check if user is logged in
     // Exit immediately — zero API calls, zero User/me, no auth blocking.
     const publicPaths = ['/', '/videos', '/news', '/performers', '/become-performer',
       '/fanclub', '/brands', '/how-it-works', '/faq', '/guest-production', '/search'];
@@ -34,19 +34,50 @@ export const AuthProvider = ({ children }) => {
     );
 
     if (isPublicRoute) {
-      console.log('PUBLIC_ROUTE_SKIP_USER_ME', window.location.pathname);
-      setUser(null);
-      setIsAuthenticated(false);
-      setIsLoadingAuth(false);
-      setIsLoadingPublicSettings(false);
-      // CRITICAL: set authChecked=true so ProtectedRoute.useEffect (which fires when
-      // authChecked=false && !isLoadingAuth) does NOT call checkUserAuth() and trigger
-      // an unnecessary User/me 401 request on public pages.
-      // ProtectedRoute still redirects correctly: authChecked=true + isAuthenticated=false = redirect to login.
-      setAuthChecked(true);
-      setAuthError(null);
-      console.log('AUTH_CONTEXT_FINISH', 'public_skip');
-      return;
+      console.log('PUBLIC_ROUTE_CHECK_AUTH', window.location.pathname);
+      // Still check if user is authenticated (for auto-redirect to dashboard)
+      const storedToken = appParams.token || localStorage.getItem('base44_access_token');
+      if (storedToken) {
+        // Try to get user data
+        fetch(`/api/apps/${appParams.appId}/entities/User/me`, {
+          headers: {
+            'Authorization': `Bearer ${storedToken}`,
+            'X-App-Id': appParams.appId,
+          }
+        }).then(async (resp) => {
+          if (resp.ok) {
+            const currentUser = await resp.json();
+            base44.auth.setToken(storedToken);
+            setUser(currentUser);
+            setIsAuthenticated(true);
+          } else {
+            setUser(null);
+            setIsAuthenticated(false);
+            localStorage.removeItem('base44_access_token');
+          }
+          setIsLoadingAuth(false);
+          setAuthChecked(true);
+          console.log('AUTH_CONTEXT_FINISH', 'public_with_auth_check');
+        }).catch(() => {
+          setUser(null);
+          setIsAuthenticated(false);
+          setIsLoadingAuth(false);
+          setAuthChecked(true);
+          localStorage.removeItem('base44_access_token');
+          console.log('AUTH_CONTEXT_FINISH', 'public_auth_failed');
+        });
+        return;
+      } else {
+        // No token - not authenticated
+        setUser(null);
+        setIsAuthenticated(false);
+        setIsLoadingAuth(false);
+        setIsLoadingPublicSettings(false);
+        setAuthChecked(true);
+        setAuthError(null);
+        console.log('AUTH_CONTEXT_FINISH', 'public_no_token');
+        return;
+      }
     }
 
     // Non-public routes: auth is lazy — ProtectedRoute triggers checkUserAuth when rendered.
