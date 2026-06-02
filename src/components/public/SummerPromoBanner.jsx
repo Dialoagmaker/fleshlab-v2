@@ -17,25 +17,25 @@ export default function SummerPromoBanner() {
         <div className="absolute inset-0 bg-gradient-to-r from-rose-600/10 via-transparent to-purple-600/10 mix-blend-overlay" />
       </div>
       
-      {/* Gradient Overlay - Lighter on sides (models visible), darker in center (text readable) */}
+      {/* Gradient Overlay - Much lighter so models are visible */}
       <div 
         className="absolute inset-0"
         style={{
           background: `
             linear-gradient(
               90deg,
-              rgba(0,0,0,0.25) 0%,
-              rgba(0,0,0,0.50) 35%,
-              rgba(0,0,0,0.65) 50%,
-              rgba(0,0,0,0.50) 65%,
-              rgba(0,0,0,0.25) 100%
+              rgba(0,0,0,0.15) 0%,
+              rgba(0,0,0,0.25) 30%,
+              rgba(0,0,0,0.35) 50%,
+              rgba(0,0,0,0.25) 70%,
+              rgba(0,0,0,0.15) 100%
             )
           `
         }}
       />
       
       {/* Subtle bottom fade for text readability */}
-      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/30 to-transparent" />
       
       {/* Content Layer - All Sharp HTML/CSS */}
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-3 sm:px-4">
