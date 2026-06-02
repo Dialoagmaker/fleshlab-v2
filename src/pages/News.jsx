@@ -51,7 +51,6 @@ export default function News() {
   }
 
   if (error) {
-    console.error('NEWS_FETCH_ERROR', error?.message);
     return (
       <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 40, textAlign: 'center' }}>
         <div style={{ fontSize: 40 }}>⚠️</div>

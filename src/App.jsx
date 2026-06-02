@@ -48,8 +48,6 @@ import PublicBrands from './pages/Brands';
 import BrandDetail from './pages/BrandDetail';
 import PublicNews from './pages/News';
 import NewsDetail from './pages/NewsDetail';
-import NewsDirectTest from './pages/NewsDirectTest';
-import VideosDirectTest from './pages/VideosDirectTest';
 import BecomePerformer from './pages/BecomePerformer';
 import GlobalErrorBoundary from './components/GlobalErrorBoundary';
 import LegacyVideoRedirect from './pages/LegacyVideoRedirect';
