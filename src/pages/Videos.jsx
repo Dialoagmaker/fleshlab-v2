@@ -5,6 +5,7 @@ import VideoCard from "@/components/public/VideoCard";
 import VideoFilters from "@/components/public/VideoFilters";
 import { Button } from "@/components/ui/button";
 import { Film, Play, AlertCircle } from "lucide-react";
+import SEOMeta from "@/components/SEOMeta";
 
 const VIDEOS_PER_PAGE = 24;
 
@@ -100,7 +101,20 @@ export default function Videos() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <SEOMeta
+        title="Video Library — FLESHLAB | Asian Twink Videos"
+        description="Browse our collection of premium Asian twink videos. Exclusive studio productions, verified performers, new releases weekly."
+        canonical="/videos"
+        ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          "name": "FLESHLAB Video Library",
+          "description": "Premium Asian twink video collection"
+        }}
+      />
+      <div className="min-h-screen bg-background">
       {/* Hero */}
       <div className="bg-gradient-to-b from-primary/10 via-primary/5 to-background border-b border-border py-16 px-4">
         <div className="max-w-7xl mx-auto">
@@ -166,6 +180,7 @@ export default function Videos() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }

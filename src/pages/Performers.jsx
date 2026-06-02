@@ -5,6 +5,7 @@ import PerformerCard from "@/components/public/PerformerCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Users, Search, X, Loader2, Sparkles } from "lucide-react";
+import SEOMeta from "@/components/SEOMeta";
 
 export default function Performers() {
   const [search, setSearch] = useState("");
@@ -39,7 +40,20 @@ export default function Performers() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <SEOMeta
+        title="Asian Twink Performers — FLESHLAB | Filipino Stars"
+        description="Meet our roster of verified Asian twink performers. Filipino and Asian talent, exclusive content, professional productions."
+        canonical="/performers"
+        ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          "name": "FLESHLAB Performers",
+          "description": "Asian twink performer roster"
+        }}
+      />
+      <div className="min-h-screen bg-background">
       {/* Hero - Tube Style */}
       <div className="bg-gradient-to-b from-primary/10 via-primary/5 to-background border-b border-border py-16 px-4">
         <div className="max-w-7xl mx-auto">
@@ -104,6 +118,7 @@ export default function Performers() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }

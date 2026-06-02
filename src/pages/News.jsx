@@ -5,6 +5,7 @@ import NewsCard from "@/components/public/NewsCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Newspaper, Search, X, AlertCircle } from "lucide-react";
+import SEOMeta from "@/components/SEOMeta";
 
 const ARTICLES_PER_PAGE = 12;
 
@@ -69,7 +70,20 @@ export default function News() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <SEOMeta
+        title="News — FLESHLAB | Studio Updates & Announcements"
+        description="Latest news, announcements, and behind-the-scenes updates from FLESHLAB studio."
+        canonical="/news"
+        ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          "name": "FLESHLAB News",
+          "description": "Studio news and updates"
+        }}
+      />
+      <div className="min-h-screen bg-background">
       {/* Hero */}
       <div className="bg-gradient-to-b from-primary/10 to-background py-12 px-4">
         <div className="max-w-7xl mx-auto text-center">
@@ -135,6 +149,7 @@ export default function News() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Play, Check, Star, Film, Heart, Globe, TrendingUp, DollarSign } from "lucide-react";
+import SEOMeta from "@/components/SEOMeta";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -96,7 +97,20 @@ export default function BecomePerformer() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <SEOMeta
+        title="Become a Performer — FLESHLAB | Asian Twink Talent"
+        description="Join FLESHLAB as a performer. Gay/bi/queer Asian guys wanted. Create content, build fans, earn revenue. Apply in 3 minutes."
+        canonical="/become-performer"
+        ogImage="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          "name": "Become a FLESHLAB Performer",
+          "description": "Performer application page"
+        }}
+      />
+      <div className="min-h-screen bg-background">
       {/* ACT 1: HERO - Cinematic Production Environment */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <div 
@@ -564,5 +578,6 @@ export default function BecomePerformer() {
         </div>
       </section>
     </div>
+    </>
   );
 }

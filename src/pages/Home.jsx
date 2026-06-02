@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { callPublicFunction } from "@/lib/publicApi";
 import { Play, ArrowRight, Film, Users, Camera, CheckCircle2 } from "lucide-react";
+import SEOMeta from "@/components/SEOMeta";
 import VideoCard from "@/components/public/VideoCard";
 import PerformerCard from "@/components/public/PerformerCard";
 import PremiumTeaserBlock from "@/components/public/PremiumTeaserBlock";
@@ -53,7 +54,21 @@ export default function Home() {
     null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <SEOMeta
+        title="FLESHLAB — Premium Gay Studio | Asian Twink Videos"
+        description="FLESHLAB is a premium gay adult studio featuring verified Asian twink performers, exclusive studio videos, fanclub content and more."
+        canonical="/"
+        ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "FLESHLAB",
+          "url": "https://fleshlab.online",
+          "description": "Premium gay adult studio featuring verified Asian twink performers, exclusive studio videos and fanclub content."
+        }}
+      />
+      <div className="min-h-screen bg-background">
 
       {/* ─────────────────────────────────────────────────────────
           1. CINEMATIC HERO
@@ -318,5 +333,6 @@ export default function Home() {
         </div>
       </section>
     </div>
+    </>
   );
 }
