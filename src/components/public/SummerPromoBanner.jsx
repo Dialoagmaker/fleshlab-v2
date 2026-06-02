@@ -52,47 +52,19 @@ export default function SummerPromoBanner() {
             </div>
           </div>
           
-          {/* Mouth Anchor Points (Debug - hidden in production) */}
-          <div className="mouth-anchor hidden absolute w-[8px] h-[8px] rounded-full bg-lime-500 z-20 pointer-events-none" style={{ left: "14.5%", top: "35%", transform: "translate(-50%, -50%)" }} />
-          <div className="mouth-anchor hidden absolute w-[8px] h-[8px] rounded-full bg-lime-500 z-20 pointer-events-none" style={{ left: "82.5%", top: "31%", transform: "translate(-50%, -50%)" }} />
-          
-          {/* SVG Connector Lines */}
-          <svg className="hidden lg:block absolute inset-0 w-full h-full z-14 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-            {/* Left connector: from bubble (17%, 38%) to mouth (14.5%, 35%) */}
-            <line
-              x1="17"
-              y1="38"
-              x2="14.5"
-              y2="35"
-              stroke="rgba(236,18,86,0.75)"
-              strokeWidth="0.22"
-              style={{ filter: "drop-shadow(0 0 4px rgba(236,18,86,0.7))" }}
-            />
-            {/* Right connector: from bubble (70%, 33%) to mouth (82.5%, 31%) */}
-            <line
-              x1="70"
-              y1="33"
-              x2="82.5"
-              y2="31"
-              stroke="rgba(236,18,86,0.75)"
-              strokeWidth="0.22"
-              style={{ filter: "drop-shadow(0 0 4px rgba(236,18,86,0.7))" }}
-            />
-          </svg>
-          
-          {/* Left Speech Bubble - Live Cam Creator (mouth-aligned) */}
-          <div className="hidden lg:block absolute left-[17%] top-[38%] max-w-[220px] translate-y-[-50%] z-15">
-            <div className="relative bg-[rgba(0,0,0,0.72)] backdrop-blur-md border border-[rgba(236,18,86,0.65)] rounded-[14px] px-[14px] py-[10px] shadow-[0_0_22px_rgba(236,18,86,0.35)]">
-              <p className="text-white text-[13px] font-bold leading-[1.15] whitespace-nowrap">
+          {/* Left Live-Chat Card - Creator Status Overlay */}
+          <div className="hidden lg:block absolute left-[12%] top-[38%] max-w-[220px] translate-y-[-50%] z-15">
+            <div className="bg-[rgba(0,0,0,0.72)] backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-[12px] px-[14px] py-[10px] shadow-[0_0_18px_rgba(236,18,86,0.25)]">
+              <p className="text-white text-[13px] font-bold leading-[1.2] whitespace-nowrap">
                 I'm always in cam mode 🔴
               </p>
             </div>
           </div>
           
-          {/* Right Speech Bubble - Premium Creator (mouth-aligned) */}
-          <div className="hidden lg:block absolute left-[70%] top-[33%] max-w-[220px] translate-y-[-50%] z-15">
-            <div className="relative bg-[rgba(0,0,0,0.72)] backdrop-blur-md border border-[rgba(236,18,86,0.65)] rounded-[14px] px-[14px] py-[10px] shadow-[0_0_22px_rgba(236,18,86,0.35)]">
-              <p className="text-white text-[13px] font-bold leading-[1.15] whitespace-nowrap">
+          {/* Right Creator Card - Guest Production Info */}
+          <div className="hidden lg:block absolute right-[13%] top-[35%] max-w-[220px] translate-y-[-50%] z-15">
+            <div className="bg-[rgba(0,0,0,0.72)] backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-[12px] px-[14px] py-[10px] shadow-[0_0_18px_rgba(236,18,86,0.25)]">
+              <p className="text-white text-[13px] font-bold leading-[1.2] whitespace-nowrap">
                 Guest productions available
               </p>
             </div>
