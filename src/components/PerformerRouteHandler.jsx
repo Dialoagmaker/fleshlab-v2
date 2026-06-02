@@ -19,6 +19,17 @@ export default function PerformerRouteHandler({ children }) {
 
   const checkPerformerAccess = async () => {
     try {
+      // Check for performer session token first (independent from Base44 auth)
+      const performerToken = localStorage.getItem('performer_session_token');
+      const performerData = localStorage.getItem('performer_data');
+      
+      if (performerToken && performerData) {
+        // Valid performer session - allow access
+        setCheckComplete(true);
+        return;
+      }
+      
+      // No performer session - check Base44 auth
       const isAuthenticated = await base44.auth.isAuthenticated();
       
       if (!isAuthenticated) {

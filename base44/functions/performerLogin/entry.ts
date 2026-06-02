@@ -82,21 +82,6 @@ Deno.serve(async (req) => {
       performer_last_login_at: new Date().toISOString()
     });
 
-    // Create AuditLog entry
-    await base44.asServiceRole.entities.AuditLog.create({
-      entity_type: 'Performer',
-      entity_id: performer.id,
-      actor_id: performer.id,
-      actor_role: 'performer',
-      action: 'performer_login',
-      changes_json: JSON.stringify({
-        performer_id: performer.id,
-        username: performer.performer_username,
-        timestamp: new Date().toISOString()
-      }),
-      notes: 'Performer logged in successfully'
-    });
-
     // Return safe performer object (NO password hash, NO admin-only fields)
     const safePerformer = {
       id: performer.id,
