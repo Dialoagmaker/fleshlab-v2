@@ -8,24 +8,19 @@ import { Film, Loader2, Play, AlertCircle } from "lucide-react";
 
 const VIDEOS_PER_PAGE = 12;
 
-async function fetchPublicVideos() {
-  const url = `/api/apps/${appParams.appId}/entities/Video?sort=-release_date&limit=200`;
-  const resp = await fetch(url, { headers: { 'X-App-Id': appParams.appId } });
-  if (!resp.ok) throw new Error(`Video fetch failed: ${resp.status}`);
-  const data = await resp.json();
-  return Array.isArray(data) ? data : (data.results ?? data.items ?? []);
-}
-
-async function fetchPublicBrands() {
-  const url = `/api/apps/${appParams.appId}/entities/Brand?limit=100`;
-  const resp = await fetch(url, { headers: { 'X-App-Id': appParams.appId } });
-  if (!resp.ok) return [];
-  const data = await resp.json();
-  return Array.isArray(data) ? data : (data.results ?? data.items ?? []);
+// Calls a backend function (service role) — never touches User/me or any entity endpoint directly.
+async function fetchPublicVideosAndBrands() {
+  const url = `/api/apps/${appParams.appId}/functions/getPublicVideos`;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  if (!resp.ok) throw new Error(`Videos fetch failed: ${resp.status}`);
+  return resp.json();
 }
 
 export default function Videos() {
-  console.log('PUBLIC_VIDEOS_RENDER_START', window.location.pathname);
   const [filters, setFilters] = useState({
     search: "",
     brand: "all",
@@ -33,37 +28,31 @@ export default function Videos() {
   });
   const [page, setPage] = useState(1);
 
-  const { data: videos = [], isLoading: videosLoading, error: videosError } = useQuery({
-    queryKey: ['public-videos-direct'],
-    queryFn: fetchPublicVideos,
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-videos-fn'],
+    queryFn: fetchPublicVideosAndBrands,
     retry: 0,
   });
 
-  const { data: brands = [] } = useQuery({
-    queryKey: ['public-brands-direct'],
-    queryFn: fetchPublicBrands,
-    retry: 0,
-  });
+  const videos = data?.videos || [];
+  const brands = data?.brands || [];
 
   // Filter and sort videos
   const filteredVideos = useMemo(() => {
     let result = [...videos];
 
-    // Search filter
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      result = result.filter(v => 
-        v.title.toLowerCase().includes(searchLower) ||
+      result = result.filter(v =>
+        v.title?.toLowerCase().includes(searchLower) ||
         (v.short_summary && v.short_summary.toLowerCase().includes(searchLower))
       );
     }
 
-    // Brand filter
     if (filters.brand !== "all") {
       result = result.filter(v => v.brand_id === filters.brand);
     }
 
-    // Sort
     switch (filters.sort) {
       case "newest":
         result.sort((a, b) => new Date(b.release_date || b.created_date) - new Date(a.release_date || a.created_date));
@@ -84,22 +73,15 @@ export default function Videos() {
     return result;
   }, [videos, filters]);
 
-  // Pagination
-  const totalPages = Math.ceil(filteredVideos.length / VIDEOS_PER_PAGE);
   const paginatedVideos = filteredVideos.slice(0, page * VIDEOS_PER_PAGE);
-
   const hasMore = paginatedVideos.length < filteredVideos.length;
 
   const handleClearFilters = () => {
-    setFilters({
-      search: "",
-      brand: "all",
-      sort: "newest",
-    });
+    setFilters({ search: "", brand: "all", sort: "newest" });
     setPage(1);
   };
 
-  if (videosLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -107,7 +89,7 @@ export default function Videos() {
     );
   }
 
-  if (videosError) {
+  if (error) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 text-center px-4">
         <AlertCircle className="w-12 h-12 text-muted-foreground" />
@@ -120,7 +102,7 @@ export default function Videos() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero - Tube-style */}
+      {/* Hero */}
       <div className="bg-gradient-to-b from-primary/10 via-primary/5 to-background border-b border-border py-16 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-3 mb-4">
@@ -139,7 +121,6 @@ export default function Videos() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-        {/* Filters */}
         <VideoFilters
           brands={brands}
           filters={filters}
@@ -150,7 +131,6 @@ export default function Videos() {
           onClear={handleClearFilters}
         />
 
-        {/* Video Grid */}
         {paginatedVideos.length > 0 ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -159,7 +139,6 @@ export default function Videos() {
               ))}
             </div>
 
-            {/* Load More */}
             {hasMore && (
               <div className="text-center pt-8 pb-4">
                 <Button

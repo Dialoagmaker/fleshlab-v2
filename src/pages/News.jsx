@@ -6,40 +6,38 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Newspaper, Search, X, Loader2, AlertCircle } from "lucide-react";
 
-// Direct fetch — bypasses the Base44 SDK entirely so no User/me interceptor fires.
+// PUBLIC_NEWS_BUILD_VERSION_2026_06_02_AUTH_FIX
+// Calls a backend function (service role) — never touches User/me or any entity endpoint directly.
 async function fetchPublicNews() {
-  const url = `/api/apps/${appParams.appId}/entities/NewsArticle?sort=-published_at&limit=100`;
-  const resp = await fetch(url, { headers: { 'X-App-Id': appParams.appId } });
+  const url = `/api/apps/${appParams.appId}/functions/getPublicNews`;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  });
   if (!resp.ok) throw new Error(`News fetch failed: ${resp.status}`);
   const data = await resp.json();
-  return Array.isArray(data) ? data : (data.results ?? data.items ?? []);
+  return data.articles || [];
 }
 
 export default function News() {
-  console.log('PUBLIC_NEWS_RENDER_START', window.location.pathname);
   const [search, setSearch] = useState("");
 
   const { data: articles = [], isLoading, error } = useQuery({
-    queryKey: ['public-news-direct'],
+    queryKey: ['public-news-fn'],
     queryFn: fetchPublicNews,
     retry: 0,
   });
 
-  // Filter and sort articles (published only, newest first)
   const filteredArticles = useMemo(() => {
-    let result = articles.filter(a => a.status === 'published');
-    
+    let result = [...articles];
     if (search) {
       const searchLower = search.toLowerCase();
-      result = result.filter(a => 
-        a.title.toLowerCase().includes(searchLower) ||
+      result = result.filter(a =>
+        a.title?.toLowerCase().includes(searchLower) ||
         (a.excerpt && a.excerpt.toLowerCase().includes(searchLower))
       );
     }
-    
-    // Sort by published_at (newest first)
-    result.sort((a, b) => new Date(b.published_at || b.created_date) - new Date(a.published_at || a.created_date));
-    
     return result;
   }, [articles, search]);
 
@@ -66,6 +64,9 @@ export default function News() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Build marker — remove after confirming production deploy */}
+      <div id="build-marker" style={{ display: 'none' }}>PUBLIC_NEWS_BUILD_VERSION_2026_06_02_AUTH_FIX</div>
+
       {/* Hero */}
       <div className="bg-gradient-to-b from-primary/10 to-background py-12 px-4">
         <div className="max-w-7xl mx-auto text-center">
