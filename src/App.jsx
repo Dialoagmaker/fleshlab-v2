@@ -40,11 +40,10 @@ import PromoKitDetail from './pages/admin/PromoKitDetail';
 import PerformerSupport from './pages/admin/PerformerSupport';
 import ComingSoon from './pages/ComingSoon';
 import PerformerRouteHandler from './components/PerformerRouteHandler';
-import PerformerLoginPage from './pages/performer/PerformerLoginPage';
 import PerformerGuard from './components/PerformerGuard';
+import PerformerLoginPage from './pages/performer/PerformerLoginPage';
 import PerformerDashboard from './pages/performer/PerformerDashboard';
 import PerformerLogin from './pages/performer/PerformerLogin';
-import PerformerLoginPage from './pages/performer/PerformerLoginPage';
 
 import Account from './pages/Account';
 // Public pages
@@ -318,11 +317,7 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/performer/login" element={<PerformerLoginPage />} />
-      {/* Performer login - dedicated route */}
-      <Route path="/performer/login" element={<PerformerLoginPage />} />
       <Route path="/performerlogin" element={<Navigate to="/performer/login" replace />} />
-      {/* Performer login route */}
-      <Route path="/performer/login" element={<PerformerLoginPage />} />
       {/* V1 → V2 static path compatibility redirects */}
       <Route path="/Videos" element={<Navigate to="/videos" replace />} />
       <Route path="/Actors" element={<Navigate to="/performers" replace />} />
