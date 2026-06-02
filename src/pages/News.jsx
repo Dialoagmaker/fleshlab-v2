@@ -23,6 +23,7 @@ async function fetchPublicNews() {
 
 export default function News() {
   window.__FLESHLAB_BUILD_ID__ = NEWS_BUILD_ID;
+  console.log("ROUTE_MATCH_NEWS");
   console.log("NEWS_BUILD_ID", NEWS_BUILD_ID);
   console.log("NEWS_COMPONENT_RENDER_START");
   const [search, setSearch] = useState("");

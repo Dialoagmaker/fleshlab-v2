@@ -24,6 +24,7 @@ const VIDEOS_BUILD_ID = "2026-06-02-BUILD-V3";
 
 export default function Videos() {
   window.__FLESHLAB_BUILD_ID__ = VIDEOS_BUILD_ID;
+  console.log("ROUTE_MATCH_VIDEOS");
   console.log("VIDEOS_BUILD_ID", VIDEOS_BUILD_ID);
   console.log('VIDEOS_COMPONENT_RENDER_START');
   const [filters, setFilters] = useState({
