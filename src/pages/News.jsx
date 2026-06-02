@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Newspaper, Search, X, Loader2, AlertCircle } from "lucide-react";
 
 // PUBLIC_NEWS_BUILD_VERSION_2026_06_02_AUTH_FIX
-const NEWS_BUILD_ID = "2026-06-02-BUILD-V3";
+const NEWS_BUILD_ID = "2026-06-02-BUILD-V10";
+console.log("REAL_PUBLIC_NEWS_COMPONENT_RENDERED_BUILD_V10");
 // Calls a backend function (service role) — never touches User/me or any entity endpoint directly.
 async function fetchPublicNews() {
   const url = `/api/apps/${appParams.appId}/functions/getPublicNews`;
@@ -23,9 +24,12 @@ async function fetchPublicNews() {
 
 export default function News() {
   window.__FLESHLAB_BUILD_ID__ = NEWS_BUILD_ID;
+  console.log("=== NEWS_PAGE_DIAGNOSTIC ===");
   console.log("ROUTE_MATCH_NEWS");
   console.log("NEWS_BUILD_ID", NEWS_BUILD_ID);
-  console.log("NEWS_COMPONENT_RENDER_START");
+  console.log("WINDOW_LOCATION_PATHNAME", window.location.pathname);
+  console.log("REAL_PUBLIC_NEWS_COMPONENT_RENDERED_BUILD_V10");
+  console.log("============================");
   const [search, setSearch] = useState("");
 
   const { data: articles = [], isLoading, error } = useQuery({
