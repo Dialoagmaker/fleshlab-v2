@@ -51,6 +51,7 @@ import NewsDetail from './pages/NewsDetail';
 import NewsDirectTest from './pages/NewsDirectTest';
 import VideosDirectTest from './pages/VideosDirectTest';
 import BecomePerformer from './pages/BecomePerformer';
+import Fanclub from './pages/Fanclub';
 import GlobalErrorBoundary from './components/GlobalErrorBoundary';
 import LegacyVideoRedirect from './pages/LegacyVideoRedirect';
 import LegacyActorRedirect from './pages/LegacyActorRedirect';
@@ -76,68 +77,44 @@ function RouterLocationProbe() {
 }
 
 const AuthenticatedApp = () => {
-  console.log("=== APP_RENDER_START BUILD V7 ===");
-  console.log("WINDOW_LOCATION_HREF", window.location.href);
+  console.log("=== APP_RENDER_START BUILD V9 ===");
   console.log("WINDOW_LOCATION_PATHNAME", window.location.pathname);
-  console.log("ROUTE_TREE_PRINT:");
-  console.log("  /news → NewsDirectTest");
-  console.log("  /videos → VideosDirectTest");
-  console.log("  /* → WildcardTest");
-  console.log("=================================");
   const { authError } = useAuth();
 
   if (authError?.type === 'user_not_registered') {
     return <UserNotRegisteredError />;
   }
 
-  // BUILD V8 — Manual dispatcher: bypass React Router for public routes
+  // BUILD V9 — MANUAL PUBLIC ROUTE DISPATCH (bypass broken React Router)
   const path = window.location.pathname;
 
   if (path === "/news") {
-    console.log("MANUAL_NEWS_DISPATCH_RENDER_BUILD_V8");
-    return (
-      <div style={{
-        minHeight: "100vh",
-        background: "#003333",
-        color: "white",
-        padding: "100px",
-        fontSize: "36px",
-        fontFamily: "Arial",
-        position: "relative",
-        zIndex: 999999
-      }}>
-        MANUAL NEWS DISPATCH IS VISIBLE · BUILD V8 · /news
-      </div>
-    );
+    console.log("MANUAL_NEWS_DISPATCH_BUILD_V9");
+    return <PublicNews />;
   }
 
   if (path === "/videos") {
-    console.log("MANUAL_VIDEOS_DISPATCH_RENDER_BUILD_V8");
-    return (
-      <div style={{
-        minHeight: "100vh",
-        background: "#330000",
-        color: "white",
-        padding: "100px",
-        fontSize: "36px",
-        fontFamily: "Arial",
-        position: "relative",
-        zIndex: 999999
-      }}>
-        MANUAL VIDEOS DISPATCH IS VISIBLE · BUILD V8 · /videos
-      </div>
-    );
+    console.log("MANUAL_VIDEOS_DISPATCH_BUILD_V9");
+    return <PublicVideos />;
+  }
+
+  if (path === "/performers") {
+    console.log("MANUAL_PERFORMERS_DISPATCH_BUILD_V9");
+    return <PublicPerformers />;
+  }
+
+  if (path === "/become-performer") {
+    console.log("MANUAL_BECOME_PERFORMER_DISPATCH_BUILD_V9");
+    return <BecomePerformer />;
+  }
+
+  if (path === "/fanclub") {
+    console.log("MANUAL_FANCLUB_DISPATCH_BUILD_V9");
+    return <Fanclub />;
   }
 
   return (
     <>
-      <div style={{ background: 'yellow', color: 'black', padding: 12, position: 'fixed', top: 0, left: 0, zIndex: 9999999 }}>
-        APP JSX IS ACTIVE · BUILD V7 · {window.location.pathname}
-      </div>
-      <div style={{ background: 'lime', color: 'black', padding: 12, position: 'fixed', top: 50, left: 0, zIndex: 9999999 }}>
-        BEFORE ROUTES RENDER · BUILD V7
-      </div>
-      <RouterLocationProbe />
       <Routes>
       {/* Auth routes */}
       <Route path="/login" element={<Login />} />
@@ -157,25 +134,17 @@ const AuthenticatedApp = () => {
       <Route path="/VideoDetail" element={<LegacyVideoRedirect />} />
       <Route path="/ActorDetail" element={<LegacyActorRedirect />} />
       <Route path="/ArticleReader" element={<LegacyArticleRedirect />} />
-      {/* ISOLATION TEST BUILD V7 — direct component routes, no Layout/Outlet */}
-      <Route path="/news" element={<NewsDirectTest />} />
-      <Route path="/videos" element={<VideosDirectTest />} />
-      {/* Public routes */}
+      {/* Public routes (Layout wrapper) */}
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
-        {/* /videos moved to direct top-level route for isolation test */}
         <Route path="/videos/:slug" element={<VideoDetail />} />
-        <Route path="/performers" element={<PublicPerformers />} />
         <Route path="/performers/:slug" element={<PerformerDetail />} />
         <Route path="/brands" element={<PublicBrands />} />
         <Route path="/brands/:slug" element={<BrandDetail />} />
-        <Route path="/fanclub" element={<ComingSoon title="Fanclub" />} />
         <Route path="/fanclub/:slug" element={<ComingSoon title="Performer Fanclub" />} />
-        {/* /news moved to direct top-level route for isolation test */}
         <Route path="/news/:slug" element={<NewsDetail />} />
         <Route path="/search" element={<ComingSoon title="Search" />} />
         <Route path="/guest-production" element={<ComingSoon title="Guest Production" />} />
-        <Route path="/become-performer" element={<BecomePerformer />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/faq" element={<FAQ />} />
         {/* V1 root performer slugs — MUST be last inside Layout so static paths above win */}
@@ -221,30 +190,9 @@ const AuthenticatedApp = () => {
           </Route>
         </Route>
       </Route>
-      {/* WILDCARD TEST BUILD V7 — inside Routes block */}
-      <Route
-        path="*"
-        element={
-          <div style={{
-            minHeight: "100vh",
-            background: "#111",
-            color: "yellow",
-            padding: "100px",
-            fontSize: "32px",
-            position: "relative",
-            zIndex: 999999
-          }}>
-            WILDCARD ROUTE MATCHED · BUILD V7 · {window.location.pathname}
-            <div style={{ marginTop: '20px', fontSize: '16px', color: '#38b2ac' }}>
-              If you see this, the /news or /videos route is missing or not matching.
-            </div>
-          </div>
-        }
-      />
+      {/* Wildcard route */}
+      <Route path="*" element={<PageNotFound />} />
     </Routes>
-    <div style={{ background: 'orange', color: 'black', padding: 12, position: 'fixed', top: 100, left: 0, zIndex: 9999999 }}>
-      AFTER ROUTES RENDER · BUILD V7
-    </div>
     </>
   );
 };
