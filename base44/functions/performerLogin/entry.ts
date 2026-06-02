@@ -17,7 +17,6 @@ Deno.serve(async (req) => {
     // - performer_username
     // - slug (stage name)
     // - display_name
-    // - linked user email (fallback)
     let performer = null;
     
     // Try performer_username first
@@ -45,25 +44,6 @@ Deno.serve(async (req) => {
       });
       if (byDisplayName && byDisplayName.length > 0) {
         performer = byDisplayName[0];
-      }
-    }
-    
-    // Fallback: try to find by linked user email
-    if (!performer) {
-      const users = await base44.asServiceRole.entities.User.filter({
-        email: identifier
-      });
-      if (users && users.length > 0) {
-        const user = users[0];
-        if (user.performer_profile_id || user.performer_id) {
-          const performerId = user.performer_profile_id || user.performer_id;
-          const performerRecords = await base44.asServiceRole.entities.Performer.filter({
-            id: performerId
-          });
-          if (performerRecords && performerRecords.length > 0) {
-            performer = performerRecords[0];
-          }
-        }
       }
     }
 
