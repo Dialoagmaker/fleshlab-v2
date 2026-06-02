@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { callPublicFunction } from "@/lib/publicApi";
 import BrandCard from "@/components/public/BrandCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,12 @@ import { Building2, Search, X, Loader2, Crown } from "lucide-react";
 export default function Brands() {
   const [search, setSearch] = useState("");
 
-  // Fetch brands
-  const { data: brands = [], isLoading } = useQuery({
-    queryKey: ['public-brands'],
-    queryFn: () => base44.entities.Brand.list(),
+  const { data: publicData, isLoading } = useQuery({
+    queryKey: ['public-brands-fn'],
+    queryFn: () => callPublicFunction('getPublicBrands'),
+    retry: 0,
   });
+  const brands = publicData?.brands || [];
 
   // Filter brands
   const filteredBrands = useMemo(() => {

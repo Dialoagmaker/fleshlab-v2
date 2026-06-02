@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { callPublicFunction } from "@/lib/publicApi";
 import PerformerCard from "@/components/public/PerformerCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,31 +9,13 @@ import { Users, Search, X, Loader2, Sparkles } from "lucide-react";
 export default function Performers() {
   const [search, setSearch] = useState("");
 
-  // Fetch performers, brands, and VideoPerformer records
-  const { data: performers = [], isLoading } = useQuery({
-    queryKey: ['public-performers'],
-    queryFn: () => base44.entities.Performer.list(),
+  const { data: publicData, isLoading } = useQuery({
+    queryKey: ['public-performers-fn'],
+    queryFn: () => callPublicFunction('getPublicPerformers'),
+    retry: 0,
   });
-
-  const { data: brands = [] } = useQuery({
-    queryKey: ['public-brands'],
-    queryFn: () => base44.entities.Brand.list(),
-  });
-
-  const { data: videoPerformers = [] } = useQuery({
-    queryKey: ['public-video-performers'],
-    queryFn: () => base44.entities.VideoPerformer.list(),
-  });
-
-  // Count videos per performer using VideoPerformer as source of truth
-  const performerVideoCounts = useMemo(() => {
-    const counts = {};
-    videoPerformers.forEach(vp => {
-      const performerId = vp.performer_id;
-      counts[performerId] = (counts[performerId] || 0) + 1;
-    });
-    return counts;
-  }, [videoPerformers]);
+  const performers = publicData?.performers || [];
+  const brands = publicData?.brands || [];
 
   // Filter performers
   const filteredPerformers = useMemo(() => {
@@ -103,7 +85,7 @@ export default function Performers() {
                 key={performer.id} 
                 performer={performer} 
                 brands={brands}
-                videoCount={performerVideoCounts[performer.id] || 0}
+                videoCount={performer.video_count || 0}
               />
             ))}
           </div>

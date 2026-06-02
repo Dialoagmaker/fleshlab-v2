@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { callPublicFunction } from "@/lib/publicApi";
 import VideoCard from "@/components/public/VideoCard";
 import SEOMeta from "@/components/SEOMeta";
 import PremiumTeaserBlock from "@/components/public/PremiumTeaserBlock";
@@ -23,16 +23,13 @@ export default function BrandDetail() {
   const [brand, setBrand] = useState(null);
   const [brandVideos, setBrandVideos] = useState([]);
 
-  // Fetch all data
-  const { data: brands = [] } = useQuery({
-    queryKey: ['public-brands'],
-    queryFn: () => base44.entities.Brand.list(),
+  const { data: publicData } = useQuery({
+    queryKey: ['public-brands-fn'],
+    queryFn: () => callPublicFunction('getPublicBrands'),
+    retry: 0,
   });
-
-  const { data: videos = [] } = useQuery({
-    queryKey: ['public-videos'],
-    queryFn: () => base44.entities.Video.list(),
-  });
+  const brands = publicData?.brands || [];
+  const videos = publicData?.videos || [];
 
   useEffect(() => {
     if (brands.length > 0 && slug) {

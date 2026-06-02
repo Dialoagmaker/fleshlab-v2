@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { callPublicFunction } from "@/lib/publicApi";
 import { Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -13,15 +13,12 @@ export default function HeroVideoTeaser() {
 
   // Fetch published videos with valid media URLs
   const { data: allVideos = [] } = useQuery({
-    queryKey: ["hero-teaser-videos"],
+    queryKey: ['public-videos-fn'],
     queryFn: async () => {
-      const response = await base44.entities.Video.filter(
-        { status: "published" },
-        "-release_date",
-        50
-      );
-      return response || [];
+      const data = await callPublicFunction('getPublicVideos');
+      return data?.videos || [];
     },
+    retry: 0,
   });
 
   // Get media URL by priority (defined early so useMemo can use it)

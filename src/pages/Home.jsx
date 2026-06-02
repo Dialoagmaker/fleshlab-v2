@@ -1,7 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { callPublicFunction } from "@/lib/publicApi";
 import { Play, ArrowRight, Film, Users, Crown, Sparkles, Camera } from "lucide-react";
 import VideoCard from "@/components/public/VideoCard";
 import PerformerCard from "@/components/public/PerformerCard";
@@ -14,38 +14,31 @@ import HeroVideoTeaser from "@/components/public/HeroVideoTeaser";
 
 export default function Home() {
 
-  const { data: latestVideos = [], isLoading: videosLoading } = useQuery({
-    queryKey: ["public-videos-latest"],
-    queryFn: () => base44.entities.Video.filter({ status: "published" }, "-release_date", 12),
+  const { data: videosData, isLoading: videosLoading } = useQuery({
+    queryKey: ['public-videos-fn'],
+    queryFn: () => callPublicFunction('getPublicVideos'),
     retry: 0,
   });
+  const allVideos = videosData?.videos || [];
+  const brands = videosData?.brands || [];
+  const latestVideos = allVideos.slice(0, 12);
+  const featuredVideos = allVideos.filter(v => v.featured).slice(0, 8);
 
-  const { data: featuredVideos = [] } = useQuery({
-    queryKey: ["public-videos-featured"],
-    queryFn: () => base44.entities.Video.filter({ status: "published", featured: true }, "-created_date", 8),
+  const { data: performersData } = useQuery({
+    queryKey: ['public-performers-fn'],
+    queryFn: () => callPublicFunction('getPublicPerformers'),
     retry: 0,
   });
-
-  const { data: allPerformers = [] } = useQuery({
-    queryKey: ["public-performers"],
-    queryFn: () => base44.entities.Performer.filter({ status: "active" }, "-created_date", 20),
-    retry: 0,
-  });
-
-  const { data: brands = [] } = useQuery({
-    queryKey: ["public-brands"],
-    queryFn: () => base44.entities.Brand.list(),
-    retry: 0,
-  });
-
+  const allPerformers = performersData?.performers || [];
   const featuredPerformers = allPerformers.filter(p => p.featured).slice(0, 8);
-  const activePerformers = allPerformers.filter(p => p.status === "active").slice(0, 12);
+  const activePerformers = allPerformers.slice(0, 12);
 
-  const { data: latestNews = [] } = useQuery({
-    queryKey: ["public-news"],
-    queryFn: () => base44.entities.NewsArticle.filter({ status: "published" }, "-published_at", 3),
+  const { data: newsData } = useQuery({
+    queryKey: ['public-news-fn'],
+    queryFn: () => callPublicFunction('getPublicNews'),
     retry: 0,
   });
+  const latestNews = (newsData?.articles || []).slice(0, 3);
 
   // Get Filipino performers for dedicated rail
   const filipinoPerformers = allPerformers.filter(p => 
