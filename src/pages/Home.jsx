@@ -56,51 +56,57 @@ export default function Home() {
         }}
       />
 
-      <div className="min-h-screen bg-[#0a0a0a]">
+      <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a]">
         {/* Unified Tube Header with Navigation */}
         <TubeHeader onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
 
         {/* Summer Promo Banner */}
         <SummerPromoBanner />
 
-        {/* Main Video Grid - Compact spacing for density */}
-        <section className="py-2">
+        {/* Main Video Grid - Tight spacing, connected to banner */}
+        <section className="py-4">
           <div className="max-w-[1920px] mx-auto px-4">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-bold text-white">Latest Videos</h2>
-              <a href="/videos" className="text-xs text-rose-500 hover:text-rose-400 font-medium flex items-center gap-1">
-                View All <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            {/* Section Header with Banner-Matching Style */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-black text-white tracking-tight">
+                  <span className="text-rose-500">LATEST</span> VIDEOS
+                </h2>
+                <div className="h-px w-24 bg-gradient-to-r from-rose-600/50 to-transparent" />
+              </div>
+              <a href="/videos" className="text-xs text-rose-500 hover:text-rose-400 font-semibold flex items-center gap-1.5 uppercase tracking-wide">
+                View All <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </a>
             </div>
 
             {videosLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {[...Array(20)].map((_, i) => (
-                  <div key={i} className="aspect-video bg-[#1a1a1a] rounded animate-pulse" />
+                  <div key={i} className="aspect-video bg-[#1a1a1a] rounded-lg animate-pulse" />
                 ))}
               </div>
             ) : videosError ? (
-              <div className="text-center py-4 text-white/60">
+              <div className="text-center py-8 text-white/60">
                 <p>Error loading videos</p>
               </div>
             ) : videos.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                 {videos.slice(0, 30).map(video => (
                   <TubeVideoCard key={video.id} video={video} brands={videosData?.brands || []} />
                 ))}
               </div>
             ) : (
-              <div className="text-center py-4 text-white/60">
+              <div className="text-center py-8 text-white/60">
                 <p>No videos available</p>
               </div>
             )}
           </div>
         </section>
 
-        {/* Performer Carousel */}
+        {/* Performer Carousel - Tube Style */}
         <PerformerCarousel performers={performers} />
 
-        {/* Fanclub Banner */}
+        {/* Fanclub Banner - Summer Match */}
         <FanclubBanner />
 
         {/* Studio Journal */}
