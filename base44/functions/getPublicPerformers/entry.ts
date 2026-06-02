@@ -3,6 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    await req.json().catch(() => ({})); // Consume body (not used, but required for SDK init)
 
     const [performers, brands, videoPerformers] = await Promise.all([
       base44.asServiceRole.entities.Performer.filter({ status: 'active' }, 'display_name', 200),
