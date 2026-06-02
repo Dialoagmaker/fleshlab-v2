@@ -54,6 +54,8 @@ import LegacyVideoRedirect from './pages/LegacyVideoRedirect';
 import LegacyActorRedirect from './pages/LegacyActorRedirect';
 import LegacyArticleRedirect from './pages/LegacyArticleRedirect';
 import LegacyPerformerSlug from './pages/LegacyPerformerSlug';
+import HowItWorks from './pages/HowItWorks';
+import FAQ from './pages/FAQ';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -115,6 +117,8 @@ const AuthenticatedApp = () => {
         <Route path="/search" element={<ComingSoon title="Search" />} />
         <Route path="/guest-production" element={<ComingSoon title="Guest Production" />} />
         <Route path="/become-performer" element={<BecomePerformer />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
+        <Route path="/faq" element={<FAQ />} />
       </Route>
       {/* Protected routes for non-admin roles */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>

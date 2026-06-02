@@ -13,6 +13,8 @@ const navLinks = [
 const footerLinks = [
   ...navLinks,
   { href: "/guest-production", label: "Guest Production" },
+  { href: "/how-it-works", label: "How It Works" },
+  { href: "/faq", label: "FAQ" },
 ];
 
 export default function Layout() {
