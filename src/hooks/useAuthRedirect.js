@@ -34,11 +34,11 @@ export function useAuthRedirect() {
       window.location.href = '/account';
     }
     
-    // Redirect non-performers away from /performer/* routes
+    // Redirect non-performers away from /performer/* routes (except login)
     if (path.startsWith('/performer/') && path !== '/performer/login') {
       if (user.role !== 'performer' && !user.performer_profile_id && !user.performer_id) {
         console.log('PERFORMER_ROUTE_DENIED', { role: user.role, path });
-        window.location.href = '/login?from=' + encodeURIComponent(path);
+        window.location.href = '/performer/login?from=' + encodeURIComponent(path);
       }
     }
   }, [authChecked, isLoadingAuth, isAuthenticated, user]);
