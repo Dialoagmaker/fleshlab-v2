@@ -49,6 +49,11 @@ import BrandDetail from './pages/BrandDetail';
 import PublicNews from './pages/News';
 import NewsDetail from './pages/NewsDetail';
 import BecomePerformer from './pages/BecomePerformer';
+import GlobalErrorBoundary from './components/GlobalErrorBoundary';
+import LegacyVideoRedirect from './pages/LegacyVideoRedirect';
+import LegacyActorRedirect from './pages/LegacyActorRedirect';
+import LegacyArticleRedirect from './pages/LegacyArticleRedirect';
+import LegacyPerformerSlug from './pages/LegacyPerformerSlug';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -81,6 +86,19 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      {/* V1 → V2 static path compatibility redirects */}
+      <Route path="/Videos" element={<Navigate to="/videos" replace />} />
+      <Route path="/Actors" element={<Navigate to="/performers" replace />} />
+      <Route path="/News" element={<Navigate to="/news" replace />} />
+      <Route path="/NewsCenter" element={<Navigate to="/news" replace />} />
+      <Route path="/Brands" element={<Navigate to="/brands" replace />} />
+      <Route path="/BecomePerformer" element={<Navigate to="/become-performer" replace />} />
+      <Route path="/HowItWorks" element={<Navigate to="/how-it-works" replace />} />
+      <Route path="/Home" element={<Navigate to="/" replace />} />
+      {/* V1 query-param legacy routes — lookup entity and redirect to clean V2 URL */}
+      <Route path="/VideoDetail" element={<LegacyVideoRedirect />} />
+      <Route path="/ActorDetail" element={<LegacyActorRedirect />} />
+      <Route path="/ArticleReader" element={<LegacyArticleRedirect />} />
       {/* Public routes */}
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
@@ -138,6 +156,8 @@ const AuthenticatedApp = () => {
           </Route>
         </Route>
       </Route>
+      {/* V1 root performer slugs: /jameson-official → /performers/jameson-official */}
+      <Route path="/:slug" element={<LegacyPerformerSlug />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
@@ -151,7 +171,9 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <ScrollToTop />
-          <AuthenticatedApp />
+          <GlobalErrorBoundary>
+            <AuthenticatedApp />
+          </GlobalErrorBoundary>
         </Router>
         <Toaster />
       </QueryClientProvider>
