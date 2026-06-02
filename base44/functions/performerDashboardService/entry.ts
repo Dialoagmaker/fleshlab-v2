@@ -665,6 +665,83 @@ Deno.serve(async (req) => {
       return Response.json({ success: true });
     }
 
+    // Action: admin_update_submission (Admin only)
+    if (action === 'admin_update_submission') {
+      const { submission_id, data } = body;
+      
+      if (!submission_id || !data) {
+        return Response.json({ error: 'submission_id and data required' }, { status: 400 });
+      }
+
+      // Admin auth check
+      const user = await base44.auth.me();
+      if (!user || user.role !== 'admin') {
+        return Response.json({ error: 'Admin access required' }, { status: 403 });
+      }
+
+      const submission = await base44.asServiceRole.entities.ContentSubmission.get(submission_id);
+      
+      if (!submission) {
+        return Response.json({ error: 'Submission not found' }, { status: 404 });
+      }
+
+      // Update submission
+      const updateData = {
+        ...data,
+        reviewed_by: user.id
+      };
+
+      await base44.asServiceRole.entities.ContentSubmission.update(submission_id, updateData);
+
+      return Response.json({ success: true });
+    }
+
+    // Action: get_submission_download_url (Admin only)
+    if (action === 'get_submission_download_url') {
+      const { submission_id } = body;
+      
+      if (!submission_id) {
+        return Response.json({ error: 'submission_id required' }, { status: 400 });
+      }
+
+      // Admin auth check
+      const user = await base44.auth.me();
+      if (!user || user.role !== 'admin') {
+        return Response.json({ error: 'Admin access required' }, { status: 403 });
+      }
+
+      const submission = await base44.asServiceRole.entities.ContentSubmission.get(submission_id);
+      
+      if (!submission || !submission.r2_object_key) {
+        return Response.json({ error: 'Submission or file not found' }, { status: 404 });
+      }
+
+      // Generate signed download URL (1 hour expiry)
+      const { S3Client, GetObjectCommand } = await import('npm:@aws-sdk/client-s3@3.1057.0');
+      const { getSignedUrl } = await import('npm:@aws-sdk/s3-request-presigner@3.1057.0');
+
+      const bucketName = Deno.env.get('R2_BUCKET_NAME') || 'fleshlab-v2';
+      const r2AccountId = Deno.env.get('R2_ACCOUNT_ID');
+
+      const s3Client = new S3Client({
+        region: 'auto',
+        endpoint: `https://${r2AccountId}.r2.cloudflarestorage.com`,
+        credentials: {
+          accessKeyId: Deno.env.get('R2_ACCESS_KEY_ID') || '',
+          secretAccessKey: Deno.env.get('R2_SECRET_ACCESS_KEY') || ''
+        }
+      });
+
+      const getCommand = new GetObjectCommand({
+        Bucket: bucketName,
+        Key: submission.r2_object_key
+      });
+
+      const signedUrl = await getSignedUrl(s3Client, getCommand, { expiresIn: 3600 });
+
+      return Response.json({ signed_url: signedUrl });
+    }
+
     // Action: create_support_request
     if (action === 'create_support_request') {
       const { subject, category, message } = body;

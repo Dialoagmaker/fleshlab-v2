@@ -28,6 +28,7 @@ const NAV_GROUPS = [
       { href: "/admin/applications",                  label: "Applications",    icon: FileText },
       { href: "/admin/unlinked-performers",           label: "Unlinked Perf.",  icon: UserX },
       { href: "/admin/content-review",                label: "Content Review",  icon: ClipboardList },
+      { href: "/admin/performer-submissions",         label: "Performer Submissions", icon: Users },
       { href: "/admin/missing-performer-assignments", label: "Missing Assign.", icon: AlertCircle },
       { href: "/admin/video-upload",                  label: "Video Upload",    icon: Upload },
       { href: "/admin/video-performer-match",         label: "Quick Match",     icon: Link2 },

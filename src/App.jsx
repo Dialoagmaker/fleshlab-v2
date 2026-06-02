@@ -36,6 +36,7 @@ import DraftReview from './pages/admin/DraftReview';
 import UnlinkedPerformers from './pages/admin/UnlinkedPerformers';
 import MonthlyCloseout from './pages/admin/MonthlyCloseout';
 import ContentReview from './pages/admin/ContentReview';
+import PerformerSubmissionsReview from './pages/admin/PerformerSubmissionsReview';
 import PromoKitDetail from './pages/admin/PromoKitDetail';
 import PerformerSupport from './pages/admin/PerformerSupport';
 import ComingSoon from './pages/ComingSoon';
@@ -150,6 +151,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/migration" element={<ComingSoon title="Migration Tools" />} />
                 <Route path="/admin/monthly-closeout" element={<MonthlyCloseout />} />
                 <Route path="/admin/content-review" element={<ContentReview />} />
+                <Route path="/admin/performer-submissions" element={<PerformerSubmissionsReview />} />
                 <Route path="/admin/promo-kit/:video_id" element={<PromoKitDetail />} />
                 <Route path="/admin/performer-support" element={<PerformerSupport />} />
               </Route>
