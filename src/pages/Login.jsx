@@ -15,18 +15,18 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   // Get redirect destination from URL parameter
-  const from = new URLSearchParams(window.location.search).get("from") || "/";
+  const fromParam = new URLSearchParams(window.location.search).get("from");
 
   const getRedirectForRole = (role) => {
-    console.log("GET_REDIRECT_FOR_ROLE", { role, from });
+    console.log("GET_REDIRECT_FOR_ROLE", { role, fromParam });
     // If user came from admin route and is admin, redirect to admin dashboard
-    if (from.startsWith("/admin")) {
+    if (fromParam && fromParam.startsWith("/admin")) {
       return role === "admin" ? "/admin/dashboard" : "/account";
     }
     // Default role-based redirects - ALWAYS redirect admin to dashboard
     if (role === "admin") return "/admin/dashboard";
     if (role === "performer") return "/performer/dashboard";
-    return from || "/";
+    return fromParam || "/";
   };
 
   const handleSubmit = async (e) => {
@@ -38,13 +38,13 @@ export default function Login() {
       const user = await base44.auth.me();
       console.log("LOGIN_USER_DATA", user); // Debug: Check user role
       // If non-admin tried to access admin, show error
-      if (from.startsWith("/admin") && user?.role !== "admin") {
+      if (fromParam && fromParam.startsWith("/admin") && user?.role !== "admin") {
         setError("Access denied: Admin access required");
         setLoading(false);
         return;
       }
       const redirectUrl = getRedirectForRole(user?.role);
-      console.log("LOGIN_REDIRECT", { role: user?.role, from, redirectUrl });
+      console.log("LOGIN_REDIRECT", { role: user?.role, fromParam, redirectUrl });
       window.location.href = redirectUrl;
     } catch (err) {
       console.error("LOGIN_ERROR", err);
@@ -57,7 +57,8 @@ export default function Login() {
   const handleGoogle = () => {
     // Pass the intended destination (from param) to Google OAuth
     // After login, user will be redirected back to this destination
-    base44.auth.loginWithProvider("google", from);
+    const redirectUrl = fromParam || "/";
+    base44.auth.loginWithProvider("google", redirectUrl);
   };
 
   return (
