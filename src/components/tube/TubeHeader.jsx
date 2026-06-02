@@ -19,90 +19,17 @@ export default function TubeHeader({ onMenuToggle }) {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#0a0a0a]">
-      {/* Main Promotional Banner */}
-      <div className="relative h-48 md:h-56 bg-gradient-to-r from-red-900/60 via-red-800/50 to-red-900/60 overflow-hidden">
-        {/* Left Performer */}
-        <div className="absolute left-0 top-0 h-full w-0 md:w-48 pointer-events-none">
-          <div className="h-full w-full bg-gradient-to-r from-[#0a0a0a] via-transparent to-transparent absolute z-10" />
-          <img 
-            src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a0eee0b31_generated_image.png"
-            alt="" 
-            className="h-full w-full object-cover"
-          />
-        </div>
-
-        {/* Right Performer */}
-        <div className="absolute right-0 top-0 h-full w-0 md:w-48 pointer-events-none">
-          <div className="h-full w-full bg-gradient-to-l from-[#0a0a0a] via-transparent to-transparent absolute z-10" />
-          <img 
-            src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a4e9ed257_generated_image.png"
-            alt="" 
-            className="h-full w-full object-cover"
-          />
-        </div>
-
-        {/* Center Content */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-4">
-          <Link to="/" className="mb-3 group">
-            <div className="flex items-center gap-0.5">
-              <span className="text-white font-extrabold text-3xl md:text-4xl tracking-tight">FLESH</span>
-              <span className="bg-rose-600 text-white font-extrabold text-3xl md:text-4xl px-4 py-2 rounded-lg shadow-lg">LAB</span>
-            </div>
-          </Link>
-
-          {/* Live Badge & Tagline */}
-          <div className="flex items-center gap-3 mb-2">
-            <div className="flex items-center gap-1.5 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold animate-pulse">
-              <span className="w-2 h-2 bg-white rounded-full"></span>
-              LIVE
-            </div>
-            <div className="text-white text-xl md:text-2xl font-bold">Summer Heat</div>
-          </div>
-
-          <p className="text-white/90 text-sm md:text-base mb-4 font-semibold">Premium Gay Content 🔥</p>
-
-          {/* CTA Buttons */}
-          <div className="flex gap-3 justify-center flex-wrap">
-            <Button className="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-2 rounded-full text-sm md:text-base h-auto">
-              <Zap className="w-4 h-4 mr-2" />
-              Let's Play Now
-            </Button>
-            <Button variant="outline" className="border-white/60 text-white hover:bg-white/10 font-semibold px-6 py-2 rounded-full text-sm md:text-base h-auto">
-              Join Fanclub
-            </Button>
-          </div>
-
-          {/* Discount Badge */}
-          <div className="absolute top-4 right-4 md:right-8 bg-yellow-500 text-black px-4 py-2 rounded-full font-bold text-sm">
-            50% OFF
-          </div>
-        </div>
-      </div>
-
-      {/* Category Navigation */}
-      <div className="bg-black border-t border-white/10">
-        <div className="max-w-[1920px] mx-auto px-4">
-          <div className="flex items-center gap-2 py-3 overflow-x-auto scrollbar-hide">
-            {categories.map((cat, idx) => (
-              <button
-                key={idx}
-                className="flex-shrink-0 px-4 py-1.5 rounded-full bg-[#1a1a1a] text-white text-xs md:text-sm font-medium hover:bg-rose-600 transition-colors whitespace-nowrap border border-white/10"
-              >
-                {cat}
-              </button>
-            ))}
-            <button className="flex-shrink-0 h-8 w-8 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center">
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-
+    <header className="sticky top-0 z-50 bg-black">
       {/* Top Navigation Bar */}
       <div className="bg-black border-b border-white/10">
         <div className="max-w-[1920px] mx-auto px-4">
           <div className="flex items-center justify-between h-12 gap-4">
+            {/* Logo */}
+            <Link to="/" className="flex-shrink-0 flex items-center gap-1">
+              <span className="text-white font-bold text-xl">FLESH</span>
+              <span className="bg-rose-600 text-white font-bold px-2 py-0.5 rounded text-sm">LAB</span>
+            </Link>
+
             {/* Search */}
             <div className="flex-1 max-w-md">
               <div className="relative">
@@ -141,6 +68,82 @@ export default function TubeHeader({ onMenuToggle }) {
                 <Menu className="w-5 h-5" />
               </Button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Promotional Banner */}
+      <div className="relative h-40 md:h-48 bg-gradient-to-r from-red-900 via-red-800 to-red-900 overflow-hidden">
+        {/* Left Performer */}
+        <div className="absolute left-0 top-0 h-full w-24 md:w-40 pointer-events-none">
+          <div className="h-full w-full bg-gradient-to-r from-black via-transparent to-transparent absolute z-10" />
+          <img 
+            src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a0eee0b31_generated_image.png"
+            alt="" 
+            className="h-full w-full object-cover"
+          />
+        </div>
+
+        {/* Right Performer */}
+        <div className="absolute right-0 top-0 h-full w-24 md:w-40 pointer-events-none">
+          <div className="h-full w-full bg-gradient-to-l from-black via-transparent to-transparent absolute z-10" />
+          <img 
+            src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a4e9ed257_generated_image.png"
+            alt="" 
+            className="h-full w-full object-cover"
+          />
+        </div>
+
+        {/* Center Content */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-4 gap-1.5">
+          {/* Branding */}
+          <div className="text-center">
+            <div className="text-white/80 text-xs mb-0.5">无良夏日</div>
+            <div className="text-white font-bold text-2xl">火辣激情</div>
+          </div>
+
+          {/* Badges Row */}
+          <div className="flex items-center gap-3 justify-center flex-wrap">
+            <div className="flex items-center gap-1.5 bg-red-600 text-white px-2.5 py-0.5 rounded font-bold text-xs animate-pulse">
+              <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+              LIVE
+            </div>
+            <div className="text-3xl">☀️</div>
+            <div className="bg-yellow-500 text-black px-3 py-0.5 rounded font-bold text-xs">
+              50% 折扣
+            </div>
+            <Button className="bg-green-500 hover:bg-green-600 text-white font-bold px-3 py-0.5 rounded text-xs h-auto">
+              一起来玩
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Branding Bar */}
+      <div className="bg-black border-t border-white/10">
+        <div className="max-w-[1920px] mx-auto px-4">
+          <div className="h-10 flex items-center text-white/70 text-sm">
+            <span className="font-semibold">Gay Porn Videos Internationally</span>
+            <span className="ml-2 text-blue-400">✓</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Category Navigation */}
+      <div className="bg-black border-t border-white/10">
+        <div className="max-w-[1920px] mx-auto px-4">
+          <div className="flex items-center gap-2 py-2.5 overflow-x-auto scrollbar-hide">
+            {categories.map((cat, idx) => (
+              <button
+                key={idx}
+                className="flex-shrink-0 px-3 py-1 rounded-full bg-[#1a1a1a] text-white text-xs font-medium hover:bg-rose-600 transition-colors whitespace-nowrap border border-white/10"
+              >
+                {cat}
+              </button>
+            ))}
+            <button className="flex-shrink-0 h-7 w-7 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center flex-shrink-0 ml-auto">
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </div>
