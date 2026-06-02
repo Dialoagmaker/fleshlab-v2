@@ -17,21 +17,25 @@ export default function Home() {
   const { data: latestVideos = [], isLoading: videosLoading } = useQuery({
     queryKey: ["public-videos-latest"],
     queryFn: () => base44.entities.Video.filter({ status: "published" }, "-release_date", 12),
+    retry: 0,
   });
 
   const { data: featuredVideos = [] } = useQuery({
     queryKey: ["public-videos-featured"],
     queryFn: () => base44.entities.Video.filter({ status: "published", featured: true }, "-created_date", 8),
+    retry: 0,
   });
 
   const { data: allPerformers = [] } = useQuery({
     queryKey: ["public-performers"],
     queryFn: () => base44.entities.Performer.filter({ status: "active" }, "-created_date", 20),
+    retry: 0,
   });
 
   const { data: brands = [] } = useQuery({
     queryKey: ["public-brands"],
     queryFn: () => base44.entities.Brand.list(),
+    retry: 0,
   });
 
   const featuredPerformers = allPerformers.filter(p => p.featured).slice(0, 8);
@@ -40,6 +44,7 @@ export default function Home() {
   const { data: latestNews = [] } = useQuery({
     queryKey: ["public-news"],
     queryFn: () => base44.entities.NewsArticle.filter({ status: "published" }, "-published_at", 3),
+    retry: 0,
   });
 
   // Get Filipino performers for dedicated rail
