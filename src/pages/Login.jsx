@@ -18,14 +18,15 @@ export default function Login() {
   const from = new URLSearchParams(window.location.search).get("from") || "/";
 
   const getRedirectForRole = (role) => {
+    console.log("GET_REDIRECT_FOR_ROLE", { role, from });
     // If user came from admin route and is admin, redirect to admin dashboard
     if (from.startsWith("/admin")) {
       return role === "admin" ? "/admin/dashboard" : "/account";
     }
-    // Default role-based redirects
-    if (role === "admin") return "/admin";
+    // Default role-based redirects - ALWAYS redirect admin to dashboard
+    if (role === "admin") return "/admin/dashboard";
     if (role === "performer") return "/performer/dashboard";
-    return from;
+    return from || "/";
   };
 
   const handleSubmit = async (e) => {
@@ -35,15 +36,18 @@ export default function Login() {
     try {
       await base44.auth.loginViaEmailPassword(email, password);
       const user = await base44.auth.me();
-      const redirectUrl = getRedirectForRole(user?.role);
+      console.log("LOGIN_USER_DATA", user); // Debug: Check user role
       // If non-admin tried to access admin, show error
       if (from.startsWith("/admin") && user?.role !== "admin") {
         setError("Access denied: Admin access required");
         setLoading(false);
         return;
       }
+      const redirectUrl = getRedirectForRole(user?.role);
+      console.log("LOGIN_REDIRECT", { role: user?.role, from, redirectUrl });
       window.location.href = redirectUrl;
     } catch (err) {
+      console.error("LOGIN_ERROR", err);
       setError(err.message || "Invalid email or password");
     } finally {
       setLoading(false);
