@@ -55,8 +55,9 @@ export default function Login() {
   };
 
   const handleGoogle = () => {
-    // Google OAuth lands on /, where AuthenticatedApp will handle role redirect
-    base44.auth.loginWithProvider("google", "/");
+    // Pass the intended destination (from param) to Google OAuth
+    // After login, user will be redirected back to this destination
+    base44.auth.loginWithProvider("google", from);
   };
 
   return (

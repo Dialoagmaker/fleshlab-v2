@@ -10,7 +10,7 @@ const DefaultFallback = () => (
 );
 
 export default function ProtectedRoute({ fallback = <DefaultFallback />, unauthenticatedElement }) {
-  const { isAuthenticated, isLoadingAuth, authChecked, authError, checkUserAuth } = useAuth();
+  const { isAuthenticated, isLoadingAuth, authChecked, authError, checkUserAuth, user } = useAuth();
   const location = useLocation();
 
   useEffect(() => {
@@ -34,6 +34,22 @@ export default function ProtectedRoute({ fallback = <DefaultFallback />, unauthe
     // Redirect to login with current path as "from" parameter
     const from = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?from=${from}`} replace />;
+  }
+
+  // If user is authenticated and on /login or /, redirect based on role
+  if (isAuthenticated && user) {
+    const fromParam = new URLSearchParams(location.search).get('from');
+    if (fromParam) {
+      // Redirect to intended destination
+      return <Navigate to={decodeURIComponent(fromParam)} replace />;
+    }
+    // Default role-based redirect
+    if (user.role === 'admin') {
+      return <Navigate to="/admin/dashboard" replace />;
+    }
+    if (user.role === 'performer') {
+      return <Navigate to="/performer/dashboard" replace />;
+    }
   }
 
   return <Outlet />;
