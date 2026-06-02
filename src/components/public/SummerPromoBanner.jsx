@@ -4,38 +4,38 @@ import { useI18n } from "@/i18n/i18n.jsx";
 export default function SummerPromoBanner() {
   const { t } = useI18n();
   return (
-    <section className="relative w-full h-[280px] sm:h-[320px] md:h-[340px] lg:h-[360px] overflow-hidden">
+    <section className="relative w-full h-[320px] sm:h-[340px] md:h-[400px] lg:h-[420px] overflow-hidden">
       {/* Background Image - Fixed, Do Not Change */}
       <div className="absolute inset-0">
         <img
           src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/e9aeecccb_ChatGPTImageJun3202602_34_57AM.png"
           alt=""
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover brightness-125"
           style={{ objectPosition: "50% 35%" }}
         />
         {/* Enhance saturation and warmth */}
         <div className="absolute inset-0 bg-gradient-to-r from-rose-600/10 via-transparent to-purple-600/10 mix-blend-overlay" />
       </div>
       
-      {/* Gradient Overlay - Much lighter so models are visible */}
+      {/* Gradient Overlay - VERY light for maximum visibility */}
       <div 
         className="absolute inset-0"
         style={{
           background: `
             linear-gradient(
               90deg,
-              rgba(0,0,0,0.15) 0%,
-              rgba(0,0,0,0.25) 30%,
-              rgba(0,0,0,0.35) 50%,
-              rgba(0,0,0,0.25) 70%,
-              rgba(0,0,0,0.15) 100%
+              rgba(0,0,0,0.05) 0%,
+              rgba(0,0,0,0.15) 30%,
+              rgba(0,0,0,0.25) 50%,
+              rgba(0,0,0,0.15) 70%,
+              rgba(0,0,0,0.05) 100%
             )
           `
         }}
       />
       
       {/* Subtle bottom fade for text readability */}
-      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/30 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent" />
       
       {/* Content Layer - All Sharp HTML/CSS */}
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-3 sm:px-4">
