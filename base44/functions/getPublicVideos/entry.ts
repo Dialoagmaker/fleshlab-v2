@@ -58,7 +58,6 @@ Deno.serve(async (req) => {
     return Response.json({
       videos: safeVideos,
       brands: safeBrands,
-      total: returnedCount, // Approximate for pagination display
       page,
       limit,
       hasMore
