@@ -63,16 +63,18 @@ export default function Home() {
         {/* Summer Promo Banner */}
         <SummerPromoBanner />
 
-        {/* Main Video Grid - Tight spacing, connected to banner */}
-        <section className="py-4">
+        {/* Main Video Grid - Minimal gap from banner */}
+        <section className="py-1.5">
           <div className="max-w-[1920px] mx-auto px-4">
-            {/* Section Header with Banner-Matching Style */}
-            <div className="flex items-center justify-between mb-4">
+            {/* Section Header with Banner-Matching Style - Tight spacing */}
+            <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
+                {/* Red accent line before title */}
+                <div className="w-1.5 h-8 bg-gradient-to-b from-rose-600 to-rose-700 rounded-full shadow-lg shadow-rose-600/40" />
                 <h2 className="text-xl font-black text-white tracking-tight">
                   <span className="text-rose-500">LATEST</span> VIDEOS
                 </h2>
-                <div className="h-px w-24 bg-gradient-to-r from-rose-600/50 to-transparent" />
+                <div className="h-px w-32 bg-gradient-to-r from-rose-600/50 to-transparent" />
               </div>
               <a href="/videos" className="text-xs text-rose-500 hover:text-rose-400 font-semibold flex items-center gap-1.5 uppercase tracking-wide">
                 View All <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
@@ -80,9 +82,9 @@ export default function Home() {
             </div>
 
             {videosLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                {[...Array(20)].map((_, i) => (
-                  <div key={i} className="aspect-video bg-[#1a1a1a] rounded-lg animate-pulse" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
+                {[...Array(24)].map((_, i) => (
+                  <div key={i} className="aspect-video bg-[#121212] rounded-xl animate-pulse border border-white/5" />
                 ))}
               </div>
             ) : videosError ? (
@@ -90,8 +92,8 @@ export default function Home() {
                 <p>Error loading videos</p>
               </div>
             ) : videos.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                {videos.slice(0, 30).map(video => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
+                {videos.slice(0, 36).map(video => (
                   <TubeVideoCard key={video.id} video={video} brands={videosData?.brands || []} />
                 ))}
               </div>

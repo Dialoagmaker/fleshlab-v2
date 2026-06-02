@@ -3,18 +3,19 @@ import { Link } from "react-router-dom";
 export default function SummerPromoBanner() {
   return (
     <section className="relative w-full overflow-hidden">
-      {/* Banner Container - Full Width, Proper Height */}
-      <div className="relative w-full" style={{ height: "320px" }}>
+      {/* Banner Container - Full Width, Proper Height for Content */}
+      <div className="relative w-full" style={{ height: "360px" }}>
         
-        {/* User's Banner Image - Object Fit Cover */}
+        {/* Banner Image - Centered to preserve headline and CTAs */}
         <img
           src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/4b873d4a1_image.png"
           alt="FLESHLAB Summer Promo - 50% OFF Fanclub Access"
           className="w-full h-full object-cover"
+          style={{ objectPosition: "center 35%" }}
         />
 
         {/* Invisible Click Zones for CTAs */}
-        <div className="absolute inset-0 flex">
+        <div className="absolute inset-0 flex items-center">
           {/* Left Zone - Live Cams → Fanclub */}
           <Link to="/fanclub" className="flex-1 h-full cursor-pointer" aria-label="Live Cams" />
           
@@ -28,8 +29,8 @@ export default function SummerPromoBanner() {
           <Link to="/videos" className="flex-1 h-full cursor-pointer" aria-label="Premium Videos" />
         </div>
 
-        {/* Bottom Gradient Fade into Video Grid */}
-        <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-[#0a0a0a] to-transparent pointer-events-none" />
+        {/* Bottom Gradient Fade into Video Grid - Subtle */}
+        <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent pointer-events-none" />
       </div>
     </section>
   );
