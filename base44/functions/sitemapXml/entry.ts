@@ -94,6 +94,11 @@ Deno.serve(async (req) => {
       { path: '/guest-production', changefreq: 'weekly',  priority: '0.8' },
       { path: '/how-it-works',     changefreq: 'monthly', priority: '0.7' },
       { path: '/faq',              changefreq: 'monthly', priority: '0.7' },
+      { path: '/fanclub',          changefreq: 'weekly',  priority: '0.5' },
+      { path: '/terms',            changefreq: 'yearly',  priority: '0.3' },
+      { path: '/privacy',          changefreq: 'yearly',  priority: '0.3' },
+      { path: '/dmca',             changefreq: 'yearly',  priority: '0.3' },
+      { path: '/2257',             changefreq: 'yearly',  priority: '0.3' },
     ];
     for (const page of staticPages) {
       urls.push(urlEntry(`${BASE_URL}${page.path}`, today, page.changefreq, page.priority));

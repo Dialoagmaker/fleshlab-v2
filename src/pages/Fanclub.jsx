@@ -15,7 +15,19 @@ export default function Fanclub() {
           "@context": "https://schema.org",
           "@type": "WebPage",
           "name": "FLESHLAB Fanclub",
-          "description": "Exclusive studio access membership"
+          "description": "Exclusive studio access membership with full-length HD videos and behind-the-scenes content",
+          "hasPart": {
+            "@type": "Offer",
+            "name": "FLESHLAB Fanclub Membership",
+            "description": "Monthly membership for exclusive content access",
+            "category": "Adult Entertainment",
+            "availability": "https://schema.org/InStock",
+            "eligibleRegion": {
+              "@type": "Country",
+              "name": "Worldwide"
+            },
+            "ageRestriction": "18+"
+          }
         }}
       />
       <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a]">

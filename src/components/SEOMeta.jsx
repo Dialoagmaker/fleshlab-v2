@@ -12,6 +12,7 @@ export default function SEOMeta({
   ogImage,
   ogType = "website",
   twitterCard = "summary_large_image",
+  twitterSite = "@fleshlabasia",
   jsonLd,
   noIndex = false  // Explicit noindex for admin/protected pages
 }) {
@@ -83,6 +84,7 @@ export default function SEOMeta({
       'twitter:card': twitterCard,
       'twitter:title': title,
       'twitter:description': description,
+      'twitter:site': twitterSite,
     };
     
     if (ogImage) {

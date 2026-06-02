@@ -1,0 +1,104 @@
+{
+  "name": "PerformerProfilePrivate",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "legal_first_name": {
+      "type": "string",
+      "title": "Legal First Name"
+    },
+    "legal_last_name": {
+      "type": "string",
+      "title": "Legal Last Name"
+    },
+    "address_line_1": {
+      "type": "string",
+      "title": "Address Line 1"
+    },
+    "address_line_2": {
+      "type": "string",
+      "title": "Address Line 2"
+    },
+    "city": {
+      "type": "string",
+      "title": "City"
+    },
+    "region": {
+      "type": "string",
+      "title": "Region/State"
+    },
+    "postal_code": {
+      "type": "string",
+      "title": "Postal Code"
+    },
+    "country": {
+      "type": "string",
+      "title": "Country"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Phone / Contact"
+    },
+    "preferred_language": {
+      "type": "string",
+      "title": "Preferred Language"
+    },
+    "timezone": {
+      "type": "string",
+      "title": "Timezone"
+    },
+    "payout_method": {
+      "type": "string",
+      "enum": [
+        "bank_transfer",
+        "paypal",
+        "gcash",
+        "paymaya",
+        "wise",
+        "other"
+      ],
+      "title": "Payout Method"
+    },
+    "payout_details_encrypted": {
+      "type": "string",
+      "title": "Payout Details (Encrypted)",
+      "description": "Encrypted JSON of payout account details"
+    },
+    "payout_status": {
+      "type": "string",
+      "enum": [
+        "not_set",
+        "pending_verification",
+        "verified",
+        "needs_update"
+      ],
+      "title": "Payout Status",
+      "default": "not_set"
+    },
+    "payout_verified": {
+      "type": "boolean",
+      "title": "Payout Verified",
+      "default": false
+    },
+    "payout_verified_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Payout Verified At"
+    },
+    "payout_verified_by": {
+      "type": "string",
+      "title": "Payout Verified By User ID"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Updated At"
+    }
+  },
+  "required": [
+    "performer_id"
+  ]
+}

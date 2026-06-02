@@ -105,6 +105,17 @@ export default function VideoDetail() {
     "uploadDate": video.release_date || video.created_date,
     "duration": video.duration_seconds ? `PT${video.duration_seconds}S` : undefined,
     "embedUrl": video.trailer_url,
+    "contentRating": "18+",
+    "actor": performers.map(p => ({
+      "@type": "Person",
+      "name": p.display_name
+    })),
+    "genre": video.categories || [],
+    "interactionStatistic": video.view_count ? {
+      "@type": "InteractionCounter",
+      "interactionType": "https://schema.org/WatchAction",
+      "userInteractionCount": video.view_count
+    } : undefined
   };
 
   const unlockLabel =

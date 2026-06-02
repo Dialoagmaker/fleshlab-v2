@@ -42,15 +42,15 @@ export default function Performers() {
   return (
     <>
       <SEOMeta
-        title="Asian Twink Performers — FLESHLAB | Filipino Stars"
-        description="Meet our roster of verified Asian twink performers. Filipino and Asian talent, exclusive content, professional productions."
+        title="Asian Gay Performers — FLESHLAB | Verified 18+ Filipino Stars"
+        description="Meet FLESHLAB's roster of verified 18+ Asian gay performers. Filipino twink stars, exclusive content, professional studio productions. Browse performer profiles and videos."
         canonical="/performers"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "CollectionPage",
           "name": "FLESHLAB Performers",
-          "description": "Asian twink performer roster"
+          "description": "Verified 18+ Asian gay performer roster featuring Filipino and Asian talent"
         }}
       />
       <div className="min-h-screen bg-background">

@@ -1,0 +1,76 @@
+{
+  "name": "ProfileChangeRequest",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "requested_by_user_id": {
+      "type": "string",
+      "title": "Requested By User ID"
+    },
+    "change_type": {
+      "type": "string",
+      "enum": [
+        "contact_info",
+        "legal_name",
+        "address",
+        "payout_method",
+        "other"
+      ],
+      "title": "Change Type"
+    },
+    "requested_fields": {
+      "type": "string",
+      "title": "Requested Fields (JSON)",
+      "description": "JSON string of fields to update"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending_review",
+        "approved",
+        "rejected",
+        "needs_more_info"
+      ],
+      "title": "Status",
+      "default": "pending_review"
+    },
+    "performer_note": {
+      "type": "string",
+      "title": "Performer Note",
+      "format": "textarea"
+    },
+    "admin_notes_private": {
+      "type": "string",
+      "title": "Admin Notes (Private)",
+      "format": "textarea"
+    },
+    "performer_visible_message": {
+      "type": "string",
+      "title": "Performer Visible Message",
+      "format": "textarea"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "title": "Reviewed By User ID"
+    },
+    "created_date": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created Date"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Reviewed At"
+    }
+  },
+  "required": [
+    "performer_id",
+    "requested_by_user_id",
+    "change_type",
+    "requested_fields"
+  ]
+}

@@ -67,9 +67,15 @@ export default function PerformerDetail() {
     "@context": "https://schema.org",
     "@type": "Person",
     "name": performer.display_name,
-    "description": performer.bio,
+    "description": performer.meta_description || performer.bio?.substring(0, 160),
     "image": performer.profile_image_url,
     "nationality": performer.nationality,
+    "birthDate": performer.date_of_birth,
+    "sameAs": [
+      performer.twitter_url,
+      performer.instagram_url,
+      performer.onlyfans_url
+    ].filter(Boolean)
   } : undefined;
 
   const canonicalUrl = performer ? `https://fleshlab.online/performers/${performer.slug}` : undefined;
@@ -92,7 +98,7 @@ export default function PerformerDetail() {
     <>
       <SEOMeta
         title={performer.meta_title || `${performer.display_name} | FLESHLAB Asia`}
-        description={performer.meta_description || performer.bio?.substring(0, 160)}
+        description={performer.meta_description || (performer.bio ? performer.bio.substring(0, 157) + '...' : `Meet ${performer.display_name}, verified 18+ Asian gay performer with FLESHLAB studio.`)}
         canonical={canonicalUrl}
         ogImage={performer.profile_image_url || performer.cover_image_url}
         ogType="profile"
