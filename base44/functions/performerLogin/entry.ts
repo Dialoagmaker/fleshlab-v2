@@ -3,9 +3,13 @@ import bcrypt from 'npm:bcryptjs@2.4.3';
 
 Deno.serve(async (req) => {
   try {
+    // Initialize SDK in service role mode (no user auth required for performer login)
     const base44 = createClientFromRequest(req);
     const body = await req.json();
     const { identifier, password } = body;
+
+    // IMPORTANT: This is a public endpoint - no user auth check needed
+    // We use asServiceRole for all entity operations
 
     if (!identifier || !password) {
       return Response.json({ 

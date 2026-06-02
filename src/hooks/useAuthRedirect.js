@@ -16,8 +16,8 @@ export function useAuthRedirect() {
 
     const path = window.location.pathname;
     
-    // CRITICAL: Never redirect away from performer login pages
-    if (path === '/performerlogin' || path === '/performer/login') {
+    // CRITICAL: Never redirect away from performer login pages or dashboard
+    if (path === '/performerlogin' || path === '/performer/login' || path === '/performer/dashboard') {
       return;
     }
     
