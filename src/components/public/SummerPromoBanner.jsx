@@ -25,23 +25,16 @@ export default function SummerPromoBanner() {
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-4">
         <div className="max-w-5xl w-full text-center">
           
-          {/* Top Badges Row */}
-          <div className="flex items-center justify-between mb-4 w-full">
+          {/* Top Badges Row - Fixed Position Corners */}
+          <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
             {/* Left Badge */}
-            <div className="hidden lg:block">
-              <div className="bg-gradient-to-r from-rose-600 to-rose-700 text-white text-xs font-black px-4 py-2 rounded-full shadow-lg shadow-rose-600/60 uppercase tracking-wider">
-                🔴 LIVE CAMS
-              </div>
+            <div className="bg-gradient-to-r from-rose-600 to-rose-700 text-white text-xs font-black px-4 py-2 rounded-full shadow-lg shadow-rose-600/60 uppercase tracking-wider whitespace-nowrap">
+              🔴 LIVE CAMS
             </div>
             
-            {/* Spacer for mobile */}
-            <div className="lg:hidden flex-1" />
-            
             {/* Right Badge */}
-            <div className="hidden lg:block ml-auto">
-              <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-black px-4 py-2 rounded-full shadow-lg shadow-purple-600/60 uppercase tracking-wider">
-                ⭐ PREMIUM VIDEOS
-              </div>
+            <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-black px-4 py-2 rounded-full shadow-lg shadow-purple-600/60 uppercase tracking-wider whitespace-nowrap">
+              ⭐ PREMIUM VIDEOS
             </div>
           </div>
           
