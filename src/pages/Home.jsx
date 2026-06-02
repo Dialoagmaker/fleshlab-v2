@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { callPublicFunction } from "@/lib/publicApi";
 import SEOMeta from "@/components/SEOMeta";
 import TubeHeader from "@/components/tube/TubeHeader";
-import PromoBanner from "@/components/tube/PromoBanner";
+import SummerPromoBanner from "@/components/public/SummerPromoBanner";
 import TubeVideoCard from "@/components/tube/TubeVideoCard";
 import PerformerCarousel from "@/components/tube/PerformerCarousel";
 import FanclubBanner from "@/components/tube/FanclubBanner";
@@ -40,9 +40,6 @@ export default function Home() {
   });
   const articles = newsData?.articles || [];
 
-  // Get featured video for banner (first video or featured)
-  const featuredVideo = videos.find(v => v.featured) || videos[0];
-
   return (
     <>
       <SEOMeta
@@ -63,8 +60,8 @@ export default function Home() {
         {/* Unified Tube Header with Navigation */}
         <TubeHeader onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
 
-        {/* Promo Banner */}
-        <PromoBanner video={featuredVideo} />
+        {/* Summer Promo Banner */}
+        <SummerPromoBanner />
 
         {/* Main Video Grid - Compact spacing for density */}
         <section className="py-2">
