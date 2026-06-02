@@ -20,7 +20,6 @@ async function fetchPublicNews(page = 1) {
     if (cached) {
       const { data, timestamp } = JSON.parse(cached);
       if (Date.now() - timestamp < cacheTTL) {
-        console.log('NEWS_PAGE cache hit', { page, ageMs: Date.now() - timestamp });
         return data;
       }
     }
@@ -29,7 +28,6 @@ async function fetchPublicNews(page = 1) {
   }
   
   // Fetch from API
-  console.time('GET_PUBLIC_NEWS_FETCH');
   const url = `/api/apps/${appParams.appId}/functions/getPublicNews`;
   const resp = await fetch(url, {
     method: 'POST',
@@ -38,7 +36,6 @@ async function fetchPublicNews(page = 1) {
   });
   if (!resp.ok) throw new Error(`News fetch failed: ${resp.status}`);
   const data = await resp.json();
-  console.timeEnd('GET_PUBLIC_NEWS_FETCH');
   
   // Cache the response
   try {
@@ -51,7 +48,6 @@ async function fetchPublicNews(page = 1) {
 }
 
 export default function News() {
-  console.time('NEWS_PAGE_TOTAL_LOAD');
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
@@ -61,12 +57,7 @@ export default function News() {
     retry: 0,
   });
 
-  // Log total load time when data arrives
-  React.useEffect(() => {
-    if (data && !isLoading) {
-      console.timeEnd('NEWS_PAGE_TOTAL_LOAD');
-    }
-  }, [data, isLoading]);
+
 
   const articles = data?.articles || [];
   const total = data?.total || 0;

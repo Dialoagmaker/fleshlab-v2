@@ -65,7 +65,7 @@ const AuthenticatedApp = () => {
     return <UserNotRegisteredError />;
   }
 
-  // TODO: Temporary manual public route dispatch until React Router is rebuilt cleanly.
+  // Temporary manual public route dispatch until React Router is rebuilt cleanly.
   const path = window.location.pathname;
 
   if (path === "/news") {

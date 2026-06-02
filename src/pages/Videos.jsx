@@ -20,7 +20,6 @@ async function fetchPublicVideosAndBrands(page = 1) {
     if (cached) {
       const { data, timestamp } = JSON.parse(cached);
       if (Date.now() - timestamp < cacheTTL) {
-        console.log('VIDEOS_PAGE cache hit', { page, ageMs: Date.now() - timestamp });
         return data;
       }
     }
@@ -29,7 +28,6 @@ async function fetchPublicVideosAndBrands(page = 1) {
   }
   
   // Fetch from API
-  console.time('GET_PUBLIC_VIDEOS_FETCH');
   const url = `/api/apps/${appParams.appId}/functions/getPublicVideos`;
   const resp = await fetch(url, {
     method: 'POST',
@@ -38,7 +36,6 @@ async function fetchPublicVideosAndBrands(page = 1) {
   });
   if (!resp.ok) throw new Error(`Videos fetch failed: ${resp.status}`);
   const data = await resp.json();
-  console.timeEnd('GET_PUBLIC_VIDEOS_FETCH');
   
   // Cache the response
   try {
@@ -51,7 +48,6 @@ async function fetchPublicVideosAndBrands(page = 1) {
 }
 
 export default function Videos() {
-  console.time('VIDEOS_PAGE_TOTAL_LOAD');
   const [filters, setFilters] = useState({
     search: "",
     brand: "all",
@@ -65,12 +61,7 @@ export default function Videos() {
     retry: 0,
   });
 
-  // Log total load time when data arrives
-  React.useEffect(() => {
-    if (data && !isLoading) {
-      console.timeEnd('VIDEOS_PAGE_TOTAL_LOAD');
-    }
-  }, [data, isLoading]);
+
 
   const videos = data?.videos || [];
   const brands = data?.brands || [];

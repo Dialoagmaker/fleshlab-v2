@@ -4,30 +4,24 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 // Uses service role to fetch published NewsArticle records with pagination.
 Deno.serve(async (req) => {
   try {
-    const perfStart = Date.now();
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
     const page = Math.max(1, parseInt(body.page) || 1);
     const limit = Math.min(24, Math.max(1, parseInt(body.limit) || 12));
-    console.log(`PUBLIC_PERF getPublicNews start - page:${page} limit:${limit}`);
     const skip = (page - 1) * limit;
 
     // OPTIMIZATION: Fetch limit+1 to determine hasMore without separate count query
     const queryLimit = limit + 1;
-    const articlesStart = Date.now();
     const articles = await base44.asServiceRole.entities.NewsArticle.filter(
       { status: 'published' },
       '-published_at',
       queryLimit,
       skip
     );
-    const articlesMs = Date.now() - articlesStart;
-    console.log(`PUBLIC_PERF getPublicNews dbListMs=${articlesMs}`);
 
     // Determine hasMore from extra record
     const hasMore = articles.length > limit;
     const limitedArticles = hasMore ? articles.slice(0, limit) : articles;
-    const returnedCount = limitedArticles.length;
 
     // Return only safe public fields (no full content body)
     const safe = limitedArticles.map(a => ({
@@ -40,9 +34,6 @@ Deno.serve(async (req) => {
       tags: a.tags,
       category: a.category,
     }));
-
-    const totalMs = Date.now() - perfStart;
-    console.log(`PUBLIC_PERF getPublicNews totalMs=${totalMs} returnedCount=${returnedCount} hasMore=${hasMore}`);
 
     return Response.json({
       articles: safe,
