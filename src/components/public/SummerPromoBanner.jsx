@@ -52,6 +52,28 @@ export default function SummerPromoBanner() {
             </div>
           </div>
           
+          {/* Left Speech Bubble - Live Cam Creator */}
+          <div className="hidden lg:block absolute left-[8%] top-[52%] max-w-[260px]">
+            <div className="relative bg-black/55 backdrop-blur-sm border border-rose-500/40 rounded-2xl p-4 shadow-lg shadow-rose-600/30">
+              {/* Arrow pointer */}
+              <div className="absolute -bottom-2 left-6 w-4 h-4 bg-black/55 border-r border-b border-rose-500/40 transform rotate-45" />
+              <p className="text-white text-sm font-semibold leading-snug">
+                I'm always in cam mode 🔴
+              </p>
+            </div>
+          </div>
+          
+          {/* Right Speech Bubble - Premium Creator */}
+          <div className="hidden lg:block absolute right-[8%] top-[52%] max-w-[280px]">
+            <div className="relative bg-black/55 backdrop-blur-sm border border-purple-500/40 rounded-2xl p-4 shadow-lg shadow-purple-600/30">
+              {/* Arrow pointer */}
+              <div className="absolute -bottom-2 right-6 w-4 h-4 bg-black/55 border-l border-b border-purple-500/40 transform rotate-45" />
+              <p className="text-white text-sm font-semibold leading-snug">
+                Fan guest productions available
+              </p>
+            </div>
+          </div>
+          
           {/* Main Offer - Dominant Typography */}
           <div className="mb-2">
             <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black text-white drop-shadow-2xl leading-tight">
