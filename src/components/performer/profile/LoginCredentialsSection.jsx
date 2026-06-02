@@ -205,9 +205,9 @@ export default function LoginCredentialsSection({ performer }) {
       ) : null}
 
       {/* Create Login Modal */}
-      {showCreateModal && (
+      <Dialog open={showCreateModal} onOpenChange={(open) => { if (!open) { setShowCreateModal(false); setTemporaryPassword(null); } }}>
         <CreateLoginModal
-          onClose={() => setShowCreateModal(false)}
+          onClose={() => { setShowCreateModal(false); setTemporaryPassword(null); }}
           onSubmit={(data) => createLogin.mutate(data)}
           isLoading={createLogin.isPending}
           temporaryPassword={temporaryPassword}
@@ -216,12 +216,12 @@ export default function LoginCredentialsSection({ performer }) {
             setShowCreateModal(false);
           }}
         />
-      )}
+      </Dialog>
 
       {/* Reset Password Modal */}
-      {showResetModal && (
+      <Dialog open={showResetModal} onOpenChange={(open) => { if (!open) { setShowResetModal(false); setTemporaryPassword(null); } }}>
         <ResetPasswordModal
-          onClose={() => setShowResetModal(false)}
+          onClose={() => { setShowResetModal(false); setTemporaryPassword(null); }}
           onSubmit={(data) => resetPassword.mutate(data)}
           isLoading={resetPassword.isPending}
           temporaryPassword={temporaryPassword}
@@ -230,7 +230,7 @@ export default function LoginCredentialsSection({ performer }) {
             setShowResetModal(false);
           }}
         />
-      )}
+      </Dialog>
     </div>
   );
 }
