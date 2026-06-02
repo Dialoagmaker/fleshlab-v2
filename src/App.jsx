@@ -349,13 +349,14 @@ const AuthenticatedApp = () => {
       {/* Protected routes for non-admin roles */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/account" element={<Account />} />
-        {/* Performer dashboard - protected by PerformerRouteHandler */}
-        <Route path="/performer/dashboard" element={
-          <PerformerRouteHandler>
-            <PerformerDashboard />
-          </PerformerRouteHandler>
-        } />
       </Route>
+      
+      {/* Performer dashboard - uses PerformerRouteHandler (independent from Base44 auth) */}
+      <Route path="/performer/dashboard" element={
+        <PerformerRouteHandler>
+          <PerformerDashboard />
+        </PerformerRouteHandler>
+      } />
       {/* Admin routes are now handled by manual dispatch above to prevent public route interception */}
       {/* Wildcard route */}
       <Route path="*" element={<PageNotFound />} />
