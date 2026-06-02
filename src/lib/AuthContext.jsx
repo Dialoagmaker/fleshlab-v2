@@ -30,8 +30,10 @@ export const AuthProvider = ({ children }) => {
         headers: {
           'X-App-Id': appParams.appId
         },
-        token: appParams.token, // Include token if available
-        interceptResponses: true
+        // No token here — this is a public endpoint and doesn't need auth.
+        // Passing the stale token with interceptResponses:true can trigger
+        // log-user-in-app retry loops on 401.
+        interceptResponses: false
       });
       
       try {
@@ -102,12 +104,34 @@ export const AuthProvider = ({ children }) => {
         setAuthChecked(true);
         return;
       }
-      // Set the token on the SDK client for this validation call.
-      // The client was created without a token to prevent stale-token 401 spam.
-      base44.auth.setToken(storedToken);
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-      setIsAuthenticated(true);
+
+      // Validate the token via a raw fetch — intentionally NOT using base44.auth.setToken()
+      // before validation. setToken() propagates to the entity client (Video.list, etc.),
+      // so calling it with a stale token would cause 401s on concurrent public entity calls
+      // and trigger the SDK interceptor's log-user-in-app retry loop → 429.
+      // Only set the token on the client AFTER confirming it is valid.
+      const resp = await fetch(
+        `/api/apps/${appParams.appId}/entities/User/me`,
+        {
+          headers: {
+            'Authorization': `Bearer ${storedToken}`,
+            'X-App-Id': appParams.appId,
+          }
+        }
+      );
+
+      if (resp.ok) {
+        const currentUser = await resp.json();
+        // Token confirmed valid — now set it on the entity client for authenticated calls
+        base44.auth.setToken(storedToken);
+        setUser(currentUser);
+        setIsAuthenticated(true);
+      } else {
+        // Invalid/expired token — clear from localStorage, leave client anonymous
+        localStorage.removeItem('base44_access_token');
+        localStorage.removeItem('token');
+        setIsAuthenticated(false);
+      }
       setIsLoadingAuth(false);
       setAuthChecked(true);
     } catch (error) {
@@ -115,20 +139,8 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingAuth(false);
       setIsAuthenticated(false);
       setAuthChecked(true);
-      
-      // Stale/expired token — clear it so public entity calls work without auth
-      if (error.status === 401 || error.status === 403) {
-        try {
-          // Clear from SDK memory and localStorage so subsequent entity calls are anonymous
-          base44.auth.logout();
-          localStorage.removeItem('base44_access_token');
-          localStorage.removeItem('token');
-        } catch (_) {}
-        setAuthError({
-          type: 'auth_required',
-          message: 'Authentication required'
-        });
-      }
+      localStorage.removeItem('base44_access_token');
+      localStorage.removeItem('token');
     }
   };
 
