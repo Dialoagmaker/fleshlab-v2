@@ -95,36 +95,32 @@ export default function TubeHeader({ onMenuToggle }) {
         </div>
 
         {/* Center Content */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-4 gap-1.5">
-          {/* Branding */}
-          <div className="text-center">
-            <div className="text-white/80 text-xs mb-0.5">无良夏日</div>
-            <div className="text-white font-bold text-2xl">火辣激情</div>
-          </div>
-
-          {/* Badges Row */}
-          <div className="flex items-center gap-3 justify-center flex-wrap">
-            <div className="flex items-center gap-1.5 bg-red-600 text-white px-2.5 py-0.5 rounded font-bold text-xs animate-pulse">
-              <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 px-4 gap-2">
+          {/* Live Badge & Tagline */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold animate-pulse">
+              <span className="w-2 h-2 bg-white rounded-full"></span>
               LIVE
             </div>
-            <div className="text-3xl">☀️</div>
-            <div className="bg-yellow-500 text-black px-3 py-0.5 rounded font-bold text-xs">
-              50% 折扣
-            </div>
-            <Button className="bg-green-500 hover:bg-green-600 text-white font-bold px-3 py-0.5 rounded text-xs h-auto">
-              一起来玩
+            <div className="text-white text-xl md:text-2xl font-bold">Summer Heat</div>
+          </div>
+
+          <p className="text-white/90 text-sm md:text-base font-semibold">Premium Gay Content 🔥</p>
+
+          {/* CTA Buttons */}
+          <div className="flex gap-3 justify-center flex-wrap">
+            <Button className="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-2 rounded-full text-sm md:text-base h-auto">
+              <Zap className="w-4 h-4 mr-2" />
+              Let's Play Now
+            </Button>
+            <Button variant="outline" className="border-white/60 text-white hover:bg-white/10 font-semibold px-6 py-2 rounded-full text-sm md:text-base h-auto">
+              Join Fanclub
             </Button>
           </div>
-        </div>
-      </div>
 
-      {/* Branding Bar */}
-      <div className="bg-black border-t border-white/10">
-        <div className="max-w-[1920px] mx-auto px-4">
-          <div className="h-10 flex items-center text-white/70 text-sm">
-            <span className="font-semibold">Gay Porn Videos Internationally</span>
-            <span className="ml-2 text-blue-400">✓</span>
+          {/* Discount Badge */}
+          <div className="absolute top-4 right-4 md:right-8 bg-yellow-500 text-black px-4 py-2 rounded-full font-bold text-sm">
+            50% OFF
           </div>
         </div>
       </div>
