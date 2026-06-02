@@ -54,7 +54,7 @@ export default function HowItWorks() {
         title="How Fleshlab Studios Works | Premium Gay Creator Network"
         description="Learn how Fleshlab Studios works — for fans, performers, and creators. Premium Asian twink content, verified performers, fanclub access, and professional production standards."
         canonical="https://fleshlab.online/how-it-works"
-        ogImage="https://fleshlab.online/og-default.jpg"
+        ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         ogType="website"
         jsonLd={jsonLd}
       />

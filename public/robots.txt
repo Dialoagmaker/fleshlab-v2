@@ -26,6 +26,7 @@ Disallow: /register
 Disallow: /forgot-password
 Disallow: /reset-password
 Disallow: /account
+Allow: /api/functions/sitemapXml
 Disallow: /api/
 Disallow: /functions/
 

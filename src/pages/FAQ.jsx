@@ -133,7 +133,7 @@ export default function FAQ() {
         title="FAQ — Fleshlab Studios | Common Questions Answered"
         description="Find answers to common questions about Fleshlab Studios — content, performers, fanclubs, becoming a creator, safety standards, and account support."
         canonical="https://fleshlab.online/faq"
-        ogImage="https://fleshlab.online/og-default.jpg"
+        ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         ogType="website"
         jsonLd={jsonLd}
       />
