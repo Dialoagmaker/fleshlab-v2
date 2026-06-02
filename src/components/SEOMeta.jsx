@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { canonicalUrl, getRobotsDirective } from "@/lib/seoConfig";
 
 /**
  * SEO Meta Component
@@ -27,25 +28,38 @@ export default function SEOMeta({
       }
     }
 
-    // Canonical URL
+    // Canonical URL — always points to production domain, never staging/Base44
     if (canonical) {
+      const productionCanonical = canonicalUrl(canonical);
       const linkCanonical = document.querySelector('link[rel="canonical"]');
       if (linkCanonical) {
-        linkCanonical.setAttribute('href', canonical);
+        linkCanonical.setAttribute('href', productionCanonical);
       } else {
         const link = document.createElement('link');
         link.rel = 'canonical';
-        link.href = canonical;
+        link.href = productionCanonical;
         document.head.appendChild(link);
       }
     }
+
+    // Robots — always noindex on staging/Base44, correct on production
+    const robotsDirective = getRobotsDirective();
+    ['robots', 'googlebot'].forEach(name => {
+      let meta = document.querySelector(`meta[name="${name}"]`);
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', name);
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', robotsDirective);
+    });
 
     // Open Graph Tags
     const ogTags = {
       'og:title': title,
       'og:description': description,
       'og:type': ogType,
-      'og:url': window.location.href,
+      'og:url': canonicalUrl(window.location.pathname),
     };
     
     if (ogImage) {

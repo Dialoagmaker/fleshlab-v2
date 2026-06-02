@@ -71,7 +71,7 @@ export default function NewsDetail() {
     },
   } : undefined;
 
-  const canonicalUrl = article ? `${window.location.origin}/news/${article.slug}` : undefined;
+  const canonicalUrl = article ? `https://fleshlab.online/news/${article.slug}` : undefined;
 
   if (!article) {
     return (

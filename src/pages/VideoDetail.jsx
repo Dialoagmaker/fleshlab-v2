@@ -276,7 +276,7 @@ export default function VideoDetail() {
 
   const brand = brands.find(b => b.id === video.brand_id);
   const primaryPerformer = detectionInfo?.detectedPerformer || null;
-  const canonicalUrl = `${window.location.origin}/videos/${video.slug}`;
+  const canonicalUrl = `https://fleshlab.online/videos/${video.slug}`;
 
   // Related videos (same brand or tags)
   const relatedVideos = videos

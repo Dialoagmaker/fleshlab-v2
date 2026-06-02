@@ -72,7 +72,7 @@ export default function PerformerDetail() {
     "nationality": performer.nationality,
   } : undefined;
 
-  const canonicalUrl = performer ? `${window.location.origin}/performers/${performer.slug}` : undefined;
+  const canonicalUrl = performer ? `https://fleshlab.online/performers/${performer.slug}` : undefined;
 
   if (!performer) {
     return (
