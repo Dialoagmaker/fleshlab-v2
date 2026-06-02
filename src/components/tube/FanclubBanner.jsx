@@ -35,20 +35,20 @@ export default function FanclubBanner() {
             </p>
             
             {/* CTA Buttons - Enhanced */}
-            <div className="flex flex-wrap gap-4 justify-center mb-6">
-              <Link to="/fanclub">
-                <Button size="lg" className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 py-3 rounded-full text-base h-auto shadow-xl shadow-rose-600/50 border-2 border-white/20 transition-all hover:scale-105">
-                  <Star className="w-5 h-5 mr-2 fill-current" />
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-6 px-2 sm:px-0">
+              <Link to="/fanclub" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-6 sm:px-8 py-2 sm:py-3 rounded-full text-sm sm:text-base h-auto shadow-xl shadow-rose-600/50 border-2 border-white/20 transition-all hover:scale-105">
+                  <Star className="w-4 sm:w-5 h-4 sm:h-5 mr-2 fill-current" />
                   Join Fanclub
                 </Button>
               </Link>
-              <Link to="/register">
-                <Button size="lg" variant="outline" className="border-2 border-white/40 text-white hover:bg-white/15 font-bold px-8 py-3 rounded-full text-base h-auto backdrop-blur-sm transition-all hover:scale-105">
+              <Link to="/register" className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="w-full border-2 border-white/40 text-white hover:bg-white/15 font-bold px-6 sm:px-8 py-2 sm:py-3 rounded-full text-sm sm:text-base h-auto backdrop-blur-sm transition-all hover:scale-105">
                   Create Free Account
                 </Button>
               </Link>
-              <Link to="/videos">
-                <Button size="lg" variant="ghost" className="text-rose-500 hover:text-rose-400 font-bold px-8 py-3 rounded-full text-base h-auto transition-all hover:scale-105 hover:bg-rose-600/10">
+              <Link to="/videos" className="w-full sm:w-auto">
+                <Button size="lg" variant="ghost" className="w-full text-rose-500 hover:text-rose-400 font-bold px-6 sm:px-8 py-2 sm:py-3 rounded-full text-sm sm:text-base h-auto transition-all hover:scale-105 hover:bg-rose-600/10">
                   Browse Previews
                 </Button>
               </Link>

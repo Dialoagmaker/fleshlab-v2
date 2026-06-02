@@ -80,16 +80,16 @@ export default function SummerPromoBanner() {
           </div>
           
           {/* CTA Buttons */}
-          <div className="flex flex-wrap items-center justify-center gap-4 mb-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-4 px-2 sm:px-0">
             <Link 
               to="/register" 
-              className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black text-lg px-8 py-4 rounded-xl shadow-2xl shadow-rose-600/60 transform hover:scale-105 transition-all border-2 border-rose-500/50"
+              className="w-full sm:w-auto bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black text-sm sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-xl shadow-2xl shadow-rose-600/60 transform hover:scale-105 transition-all border-2 border-rose-500/50"
             >
               {t('homepage.joinNow')}
             </Link>
             <Link 
               to="/videos" 
-              className="bg-black/40 backdrop-blur-md hover:bg-black/60 text-white font-bold text-lg px-8 py-4 rounded-xl border-2 border-rose-600/60 hover:border-rose-500 transform hover:scale-105 transition-all"
+              className="w-full sm:w-auto bg-black/40 backdrop-blur-md hover:bg-black/60 text-white font-bold text-sm sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-xl border-2 border-rose-600/60 hover:border-rose-500 transform hover:scale-105 transition-all"
             >
               {t('homepage.browsePreviews')}
             </Link>
