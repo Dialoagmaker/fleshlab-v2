@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+// TODO: PublicPageShell uses normal anchors while manual public route dispatch is active. Restore React Router NavLink after router rebuild.
 import { useState } from "react";
 import { Menu, X, Search, Play } from "lucide-react";
 
@@ -18,8 +18,13 @@ const footerLinks = [
 ];
 
 export default function PublicPageShell({ children }) {
-  const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Helper to check if a link is active based on current pathname
+  const isActive = (href) => {
+    const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
+    return pathname === href || pathname.startsWith(href + '/');
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -29,23 +34,23 @@ export default function PublicPageShell({ children }) {
           <div className="flex items-center justify-between h-16 lg:h-[68px]">
 
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-3 shrink-0">
+            <a href="/" className="flex items-center gap-3 shrink-0">
               <div className="w-8 h-8 bg-primary rounded flex items-center justify-center shadow-lg shadow-primary/40">
                 <Play className="w-4 h-4 text-white fill-white" />
               </div>
               <span className="text-xl font-black tracking-[0.18em] text-white uppercase">
                 Fleshlab
               </span>
-            </Link>
+            </a>
 
             {/* Desktop Nav */}
             <nav className="hidden lg:flex items-center gap-1">
               {navLinks.map(link => {
-                const active = location.pathname === link.href || location.pathname.startsWith(link.href + '/');
+                const active = isActive(link.href);
                 return (
-                  <Link
+                  <a
                     key={link.href}
-                    to={link.href}
+                    href={link.href}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                       active
                         ? "text-white bg-primary/15 border border-primary/30"
@@ -53,26 +58,26 @@ export default function PublicPageShell({ children }) {
                     }`}
                   >
                     {link.label}
-                  </Link>
+                  </a>
                 );
               })}
             </nav>
 
             {/* Right actions */}
             <div className="flex items-center gap-2 sm:gap-3">
-              <Link
-                to="/search"
+              <a
+                href="/search"
                 className="p-2 text-white/50 hover:text-white transition-colors"
                 aria-label="Search"
               >
                 <Search className="w-5 h-5" />
-              </Link>
-              <Link
-                to="/fanclub"
+              </a>
+              <a
+                href="/fanclub"
                 className="hidden sm:inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-2 rounded-lg transition-all duration-200 shadow-lg shadow-primary/25"
               >
                 Join Fanclub
-              </Link>
+              </a>
               <button
                 className="lg:hidden p-2 text-white/60 hover:text-white"
                 onClick={() => setMobileOpen(!mobileOpen)}
@@ -88,28 +93,28 @@ export default function PublicPageShell({ children }) {
         {mobileOpen && (
           <div className="lg:hidden border-t border-white/[0.06] bg-black/95 px-4 py-4 space-y-1">
             {navLinks.map(link => {
-              const active = location.pathname === link.href;
+              const active = isActive(link.href);
               return (
-                <Link
+                <a
                   key={link.href}
-                  to={link.href}
+                  href={link.href}
                   onClick={() => setMobileOpen(false)}
                   className={`block px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                     active ? "text-white bg-primary/15" : "text-white/60 hover:text-white hover:bg-white/[0.06]"
                   }`}
                 >
                   {link.label}
-                </Link>
+                </a>
               );
             })}
             <div className="pt-2">
-              <Link
-                to="/fanclub"
+              <a
+                href="/fanclub"
                 onClick={() => setMobileOpen(false)}
                 className="block w-full text-center bg-primary hover:bg-primary/90 text-white text-sm font-bold px-4 py-3 rounded-lg transition-colors"
               >
                 Join Fanclub
-              </Link>
+              </a>
             </div>
           </div>
         )}
@@ -136,13 +141,13 @@ export default function PublicPageShell({ children }) {
             </div>
             <nav className="flex flex-wrap gap-x-6 gap-y-2">
               {footerLinks.map(link => (
-                <Link
+                <a
                   key={link.href}
-                  to={link.href}
+                  href={link.href}
                   className="text-sm text-white/40 hover:text-white/80 transition-colors"
                 >
                   {link.label}
-                </Link>
+                </a>
               ))}
             </nav>
           </div>
