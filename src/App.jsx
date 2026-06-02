@@ -74,10 +74,11 @@ const AuthenticatedApp = () => {
   // Temporary manual public route dispatch until React Router is rebuilt cleanly.
   const path = window.location.pathname;
 
-  if (path === "/news") {
+  // Static public pages
+  if (path === "/") {
     return (
       <PublicPageShell>
-        <PublicNews />
+        <Home />
       </PublicPageShell>
     );
   }
@@ -98,26 +99,18 @@ const AuthenticatedApp = () => {
     );
   }
 
+  if (path === "/news") {
+    return (
+      <PublicPageShell>
+        <PublicNews />
+      </PublicPageShell>
+    );
+  }
+
   if (path === "/become-performer") {
     return (
       <PublicPageShell>
         <BecomePerformer />
-      </PublicPageShell>
-    );
-  }
-
-  if (path === "/fanclub") {
-    return (
-      <PublicPageShell>
-        <ComingSoon title="Fanclub" />
-      </PublicPageShell>
-    );
-  }
-
-  if (path === "/") {
-    return (
-      <PublicPageShell>
-        <Home />
       </PublicPageShell>
     );
   }
@@ -186,6 +179,47 @@ const AuthenticatedApp = () => {
     );
   }
 
+  // Dynamic public routes (detail pages)
+  if (path.startsWith("/videos/")) {
+    return (
+      <PublicPageShell>
+        <VideoDetail />
+      </PublicPageShell>
+    );
+  }
+
+  if (path.startsWith("/performers/")) {
+    return (
+      <PublicPageShell>
+        <PerformerDetail />
+      </PublicPageShell>
+    );
+  }
+
+  if (path.startsWith("/brands/")) {
+    return (
+      <PublicPageShell>
+        <BrandDetail />
+      </PublicPageShell>
+    );
+  }
+
+  if (path.startsWith("/news/")) {
+    return (
+      <PublicPageShell>
+        <NewsDetail />
+      </PublicPageShell>
+    );
+  }
+
+  if (path.startsWith("/fanclub/")) {
+    return (
+      <PublicPageShell>
+        <ComingSoon title="Performer Fanclub" />
+      </PublicPageShell>
+    );
+  }
+
   return (
     <>
       <Routes>
@@ -207,16 +241,11 @@ const AuthenticatedApp = () => {
       <Route path="/VideoDetail" element={<LegacyVideoRedirect />} />
       <Route path="/ActorDetail" element={<LegacyActorRedirect />} />
       <Route path="/ArticleReader" element={<LegacyArticleRedirect />} />
-      {/* Public routes (Layout wrapper) — static paths only, root dispatch handled manually above */}
+      {/* Public routes — dynamic detail pages handled manually above */}
       <Route element={<Layout />}>
-        <Route path="/videos/:slug" element={<VideoDetail />} />
-        <Route path="/performers/:slug" element={<PerformerDetail />} />
         <Route path="/brands" element={<PublicBrands />} />
-        <Route path="/brands/:slug" element={<BrandDetail />} />
-        <Route path="/fanclub/:slug" element={<ComingSoon title="Performer Fanclub" />} />
-        <Route path="/news/:slug" element={<NewsDetail />} />
         <Route path="/search" element={<ComingSoon title="Search" />} />
-        {/* V1 root performer slugs — MUST be last inside Layout so static paths above win */}
+        {/* V1 root performer slugs — MUST be last so static paths above win */}
         <Route path="/:slug" element={<LegacyPerformerSlug />} />
       </Route>
       {/* Protected routes for non-admin roles */}
