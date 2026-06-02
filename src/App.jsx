@@ -163,6 +163,10 @@ const AuthenticatedApp = () => {
   // Temporary manual public route dispatch until React Router is rebuilt cleanly.
 
   // Static public pages
+  if (path === "/performerlogin") {
+    return <PerformerLoginPage />;
+  }
+
   if (path === "/") {
     return (
       <PublicPageShell>
