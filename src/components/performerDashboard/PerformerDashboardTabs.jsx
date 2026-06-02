@@ -7,6 +7,7 @@ import ComplianceTab from "./ComplianceTab";
 import ContentUploadTab from "./ContentUploadTab";
 import MySubmissionsTab from "./MySubmissionsTab";
 import SupportTab from "./SupportTab";
+import ProfileAndPayoutTab from "./ProfileAndPayoutTab";
 
 export default function PerformerDashboardTabs({ performer }) {
   const [activeTab, setActiveTab] = useState("overview");
@@ -25,13 +26,14 @@ export default function PerformerDashboardTabs({ performer }) {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+        <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="videos">My Videos</TabsTrigger>
           <TabsTrigger value="stats">Platform Stats</TabsTrigger>
           <TabsTrigger value="compliance">Compliance</TabsTrigger>
           <TabsTrigger value="upload">Upload</TabsTrigger>
           <TabsTrigger value="submissions">My Submissions</TabsTrigger>
+          <TabsTrigger value="profile">Profile & Payout</TabsTrigger>
           <TabsTrigger value="support">Support</TabsTrigger>
         </TabsList>
 
@@ -57,6 +59,10 @@ export default function PerformerDashboardTabs({ performer }) {
 
         <TabsContent value="submissions">
           <MySubmissionsTab performerId={performerId} performerToken={performerToken} />
+        </TabsContent>
+
+        <TabsContent value="profile">
+          <ProfileAndPayoutTab performer={performer} performerToken={performerToken} />
         </TabsContent>
 
         <TabsContent value="support">

@@ -35,6 +35,7 @@ const NAV_GROUPS = [
       { href: "/admin/video-metadata-completion",     label: "Metadata Fill",   icon: FileText },
       { href: "/admin/monthly-closeout",              label: "Monthly Closeout", icon: DollarSign },
       { href: "/admin/performer-support",             label: "Performer Support", icon: MessageSquare },
+      { href: "/admin/payout-requests",               label: "Payout Requests", icon: DollarSign },
     ],
   },
   {
