@@ -1,195 +1,124 @@
+import { useState } from "react";
+import { HelpCircle, ChevronDown } from "lucide-react";
 import SEOMeta from "@/components/SEOMeta";
 
-const FAQ_CATEGORIES = [
-  {
-    category: "About Fleshlab Studios",
-    faqs: [
-      {
-        q: "What is Fleshlab Studios?",
-        a: "Fleshlab Studios is a premium gay adult creator network specializing in verified Asian male performers. We produce original studio content, manage creator fanclubs, and operate a curated video library with verified 18+ performers.",
-      },
-      {
-        q: "What kind of content does Fleshlab Studios produce?",
-        a: "We produce premium gay adult content including solo series, studio-directed scenes, partner productions, and creator-managed fanclub content. All content features verified performers and is produced under professional safety and consent standards.",
-      },
-      {
-        q: "Is Fleshlab Studios an amateur tube site?",
-        a: "No. Fleshlab Studios is a curated creator network and production studio, not a user-generated tube site. Every piece of content is produced by verified performers with documented consent and studio compliance standards.",
-      },
-    ],
-  },
-  {
-    category: "Videos and Content",
-    faqs: [
-      {
-        q: "Is content on Fleshlab Studios free to watch?",
-        a: "Selected trailers and preview clips are available free. Full scenes are available through fanclub memberships or pay-per-view. Access tiers are clearly labeled on every video.",
-      },
-      {
-        q: "What video quality does Fleshlab Studios offer?",
-        a: "Studio productions are available in HD and 4K depending on the production. We maintain consistent quality standards across our library with professional production values.",
-      },
-      {
-        q: "How often is new content released?",
-        a: "New content is released weekly across the library. Fanclub subscribers typically receive exclusive early-access content on a more frequent schedule depending on the performer.",
-      },
-      {
-        q: "Can I download videos from Fleshlab Studios?",
-        a: "Download options depend on the content tier and individual performer settings. PPV and fanclub content may include download rights. Check individual content listings for download availability.",
-      },
-    ],
-  },
-  {
-    category: "Performers and Creators",
-    faqs: [
-      {
-        q: "Who are Fleshlab Studios performers?",
-        a: "Fleshlab Studios works with verified Asian male performers — primarily from the Philippines, Southeast Asia, and the broader Asia-Pacific region. All performers are 18+ identity verified and professionally managed.",
-      },
-      {
-        q: "How are performers verified?",
-        a: "Every performer provides government-issued identification for age and identity verification. They sign model release agreements and complete compliance requirements before any content is published under their name.",
-      },
-      {
-        q: "Can I interact directly with performers?",
-        a: "Select performers offer direct messaging and interaction through their fanclub. This varies by performer and is listed on their individual profile page.",
-      },
-    ],
-  },
-  {
-    category: "Fanclub and Subscriptions",
-    faqs: [
-      {
-        q: "What is a Fleshlab Studios fanclub?",
-        a: "A fanclub is a performer's private subscription channel. Members get exclusive access to content not available in the public library — private series, behind-the-scenes content, early releases, and sometimes direct performer messaging.",
-      },
-      {
-        q: "How do I join a performer's fanclub?",
-        a: "Visit the performer's profile page and select the fanclub join option. Fanclubs are billed monthly and can be cancelled at any time. Each performer sets their own fanclub content schedule.",
-      },
-    ],
-  },
-  {
-    category: "Become a Performer",
-    faqs: [
-      {
-        q: "Can I apply to become a Fleshlab Studios performer?",
-        a: "Yes. Fleshlab Studios accepts applications from male creators 18+. We welcome gay, bisexual, and queer creators from Southeast Asia and beyond. Visit our Become a Performer page to apply.",
-      },
-      {
-        q: "Do I need professional equipment or experience to apply?",
-        a: "No prior experience or professional equipment is required. Many performers start with just a smartphone. Fleshlab Studios provides guidance, strategy, and production support as your creator career develops.",
-      },
-      {
-        q: "Is my personal information kept confidential if I apply?",
-        a: "Yes. All applications are handled confidentially. Your identity documents are used only for age and identity verification and are never made public. Only authorized staff access application data.",
-      },
-    ],
-  },
-  {
-    category: "Safety, Consent and Compliance",
-    faqs: [
-      {
-        q: "How does Fleshlab Studios handle performer consent?",
-        a: "Performer consent is documented before each production and is ongoing — performers can withdraw consent and request content removal at any time. Model release agreements are required for all published content.",
-      },
-      {
-        q: "Are all performers verified as 18 or older?",
-        a: "Yes. Age verification is mandatory and enforced before any content is published. Government-issued ID is required from every performer. Fleshlab Studios maintains compliance records for all published content.",
-      },
-    ],
-  },
-  {
-    category: "Account and Support",
-    faqs: [
-      {
-        q: "How do I contact Fleshlab Studios support?",
-        a: "For support, use the contact options available on our site. Performer-specific support requests can be submitted through the performer portal. We aim to respond to all support requests within 48 hours.",
-      },
-      {
-        q: "What do I do if content is posted without my consent?",
-        a: "Contact Fleshlab Studios support immediately. We take content consent violations seriously. All takedown requests are reviewed urgently and actioned under our consent and compliance policy.",
-      },
-    ],
-  },
-];
-
-const allFaqs = FAQ_CATEGORIES.flatMap(c => c.faqs);
-
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": allFaqs.map(f => ({
-    "@type": "Question",
-    "name": f.q,
-    "acceptedAnswer": { "@type": "Answer", "text": f.a },
-  })),
-};
-
 export default function FAQ() {
+  const [openIndex, setOpenIndex] = useState(null);
+
+  const faqs = [
+    {
+      question: "Is FLESHLAB free?",
+      answer: "Public previews are completely free to watch with no account required. Full-length scenes and exclusive content require Fanclub membership, PPV purchase, or subscription access."
+    },
+    {
+      question: "What is Fanclub?",
+      answer: "Fanclub is FLESHLAB's membership program that provides access to full-length HD videos, exclusive behind-the-scenes content, extended cuts, and member-only productions. Members support the studio directly and get priority access to new releases."
+    },
+    {
+      question: "How do performers apply?",
+      answer: "Performers can apply through our Become a Performer page. We're looking for gay/bi/queer Asian creators aged 18+. The application takes 3 minutes and requires age verification. We accept both beginners and experienced performers."
+    },
+    {
+      question: "What is Guest Production?",
+      answer: "Guest Production is our professional studio program for verified 18+ performers to participate in studio-controlled productions. This requires application, compatibility review, legal contracts, and studio approval. All productions are filmed under professional supervision with full consent documentation."
+    },
+    {
+      question: "Are performers verified 18+?",
+      answer: "Yes. All FLESHLAB performers are verified 18+ through government ID and age verification. We maintain 18 U.S.C. 2257 compliance records for all performers as required by law."
+    },
+    {
+      question: "How do I report content?",
+      answer: "If you need to report content for any reason, please contact us at info@fleshlab.online with details about the content and your concern. We take all reports seriously and will respond within 48 hours."
+    },
+    {
+      question: "How do I request takedown/DMCA?",
+      answer: "For DMCA takedown requests, please email info@fleshlab.online with: (1) identification of the copyrighted work, (2) location of infringing content, (3) your contact information, (4) statement of good faith belief, and (5) your signature. We process all valid DMCA requests promptly."
+    },
+    {
+      question: "How do I contact support?",
+      answer: "Contact us at info@fleshlab.online for any questions, concerns, or support requests. We typically respond within 48 hours. For urgent matters, include 'URGENT' in your subject line."
+    },
+    {
+      question: "What payment methods do you accept?",
+      answer: "We accept major credit cards and secure payment processors. All transactions are discreet and appear as billing descriptor on statements. Payment processing is handled through secure, PCI-compliant systems."
+    },
+    {
+      question: "Can I cancel my membership?",
+      answer: "Yes, you can cancel your Fanclub membership at any time. Your access will continue until the end of your current billing period. No refunds are provided for partial periods, but you retain access until the period ends."
+    }
+  ];
+
   return (
     <>
       <SEOMeta
-        title="FAQ — Fleshlab Studios | Common Questions Answered"
-        description="Find answers to common questions about Fleshlab Studios — content, performers, fanclubs, becoming a creator, safety standards, and account support."
-        canonical="https://fleshlab.online/faq"
+        title="FLESHLAB FAQ"
+        description="Frequently asked questions about FLESHLAB studio. Learn about Fanclub access, performer applications, guest production, payments, and more."
+        canonical="/faq"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
-        ogType="website"
-        jsonLd={jsonLd}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "name": "FLESHLAB FAQ"
+        }}
       />
-
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a]">
         {/* Hero */}
-        <section className="border-b border-border bg-card/30 py-16 px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <p className="text-primary text-sm font-semibold uppercase tracking-widest mb-4">Help Center</p>
-            <h1 className="text-4xl sm:text-5xl font-black text-foreground mb-6 leading-tight">
-              Frequently Asked Questions
+        <section className="relative py-20 px-4 border-b border-white/8">
+          <div className="max-w-[1280px] mx-auto text-center">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-r from-rose-600 to-rose-700 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-rose-600/50">
+              <HelpCircle className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tight">
+              FREQUENTLY <span className="text-rose-500">ASKED</span>
             </h1>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-              Common questions about Fleshlab Studios — for fans, performers, creators, and anyone curious about how we operate.
+            <p className="text-xl text-white/70 max-w-3xl mx-auto">
+              Answers to common questions about FLESHLAB studio, Fanclub, performer applications, and more.
             </p>
           </div>
         </section>
 
-        <div className="max-w-3xl mx-auto px-4 py-16 space-y-14">
-          {FAQ_CATEGORIES.map((cat) => (
-            <section key={cat.category}>
-              <h2 className="text-lg font-bold text-foreground mb-5 pb-3 border-b border-border">
-                {cat.category}
-              </h2>
-              <div className="space-y-3">
-                {cat.faqs.map((faq) => (
-                  <details key={faq.q} className="group bg-card border border-border rounded-xl">
-                    <summary className="flex items-center justify-between cursor-pointer px-5 py-4 font-semibold text-foreground text-sm list-none gap-4">
-                      <span>{faq.q}</span>
-                      <span className="text-muted-foreground group-open:rotate-180 transition-transform shrink-0 text-lg leading-none">↓</span>
-                    </summary>
-                    <div className="px-5 pb-4 text-sm text-muted-foreground leading-relaxed border-t border-border pt-4">
-                      {faq.a}
+        {/* FAQ List */}
+        <section className="py-20 px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="space-y-4">
+              {faqs.map((faq, idx) => (
+                <div
+                  key={idx}
+                  className="bg-[#0f0f0f] border border-white/8 rounded-2xl overflow-hidden"
+                >
+                  <button
+                    onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
+                    className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-white/5 transition-colors"
+                  >
+                    <span className="text-white font-bold text-lg pr-4">{faq.question}</span>
+                    <ChevronDown
+                      className={`w-6 h-6 text-rose-500 transition-transform ${
+                        openIndex === idx ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  {openIndex === idx && (
+                    <div className="px-6 pb-5">
+                      <p className="text-white/70 leading-relaxed">{faq.answer}</p>
                     </div>
-                  </details>
-                ))}
-              </div>
-            </section>
-          ))}
-
-          {/* CTA */}
-          <section className="bg-primary/5 border border-primary/20 rounded-xl p-8 text-center">
-            <h3 className="font-bold text-foreground mb-2">Still have questions?</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Learn more about how we operate or apply to become a performer.
-            </p>
-            <div className="flex flex-wrap gap-3 justify-center">
-              <a href="/how-it-works" className="bg-primary text-primary-foreground font-semibold text-sm px-5 py-2.5 rounded-lg hover:bg-primary/90 transition-colors">
-                How It Works
-              </a>
-              <a href="/become-performer" className="border border-border text-foreground font-semibold text-sm px-5 py-2.5 rounded-lg hover:bg-muted transition-colors">
-                Become a Performer
-              </a>
+                  )}
+                </div>
+              ))}
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
+
+        {/* Contact */}
+        <section className="py-20 px-4 bg-[#0f0f0f] border-y border-white/8">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-6">
+              STILL HAVE <span className="text-rose-500">QUESTIONS</span>?
+            </h2>
+            <p className="text-xl text-white/70 mb-8">
+              Contact us at info@fleshlab.online and we'll respond within 48 hours.
+            </p>
+          </div>
+        </section>
       </div>
     </>
   );

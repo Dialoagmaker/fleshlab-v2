@@ -56,6 +56,12 @@ import LegacyArticleRedirect from './pages/LegacyArticleRedirect';
 import LegacyPerformerSlug from './pages/LegacyPerformerSlug';
 import HowItWorks from './pages/HowItWorks';
 import FAQ from './pages/FAQ';
+import Fanclub from './pages/Fanclub';
+import GuestProduction from './pages/GuestProduction';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+import DMCA from './pages/DMCA';
+import Compliance2257 from './pages/Compliance2257';
 import PublicPageShell from './components/PublicPageShell';
 
 const AuthenticatedApp = () => {
@@ -116,6 +122,70 @@ const AuthenticatedApp = () => {
     );
   }
 
+  if (path === "/fanclub") {
+    return (
+      <PublicPageShell>
+        <Fanclub />
+      </PublicPageShell>
+    );
+  }
+
+  if (path === "/guest-production") {
+    return (
+      <PublicPageShell>
+        <GuestProduction />
+      </PublicPageShell>
+    );
+  }
+
+  if (path === "/how-it-works") {
+    return (
+      <PublicPageShell>
+        <HowItWorks />
+      </PublicPageShell>
+    );
+  }
+
+  if (path === "/faq") {
+    return (
+      <PublicPageShell>
+        <FAQ />
+      </PublicPageShell>
+    );
+  }
+
+  if (path === "/terms") {
+    return (
+      <PublicPageShell>
+        <Terms />
+      </PublicPageShell>
+    );
+  }
+
+  if (path === "/privacy") {
+    return (
+      <PublicPageShell>
+        <Privacy />
+      </PublicPageShell>
+    );
+  }
+
+  if (path === "/dmca") {
+    return (
+      <PublicPageShell>
+        <DMCA />
+      </PublicPageShell>
+    );
+  }
+
+  if (path === "/2257") {
+    return (
+      <PublicPageShell>
+        <Compliance2257 />
+      </PublicPageShell>
+    );
+  }
+
   return (
     <>
       <Routes>
@@ -146,9 +216,6 @@ const AuthenticatedApp = () => {
         <Route path="/fanclub/:slug" element={<ComingSoon title="Performer Fanclub" />} />
         <Route path="/news/:slug" element={<NewsDetail />} />
         <Route path="/search" element={<ComingSoon title="Search" />} />
-        <Route path="/guest-production" element={<ComingSoon title="Guest Production" />} />
-        <Route path="/how-it-works" element={<HowItWorks />} />
-        <Route path="/faq" element={<FAQ />} />
         {/* V1 root performer slugs — MUST be last inside Layout so static paths above win */}
         <Route path="/:slug" element={<LegacyPerformerSlug />} />
       </Route>

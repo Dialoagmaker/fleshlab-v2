@@ -4,7 +4,6 @@ const footerLinks = {
   explore: [
     { label: "Videos", href: "/videos" },
     { label: "Performers", href: "/performers" },
-    { label: "Categories", href: "/videos" },
     { label: "Fanclub", href: "/fanclub" },
     { label: "News", href: "/news" },
   ],
@@ -15,10 +14,10 @@ const footerLinks = {
     { label: "FAQ", href: "/faq" },
   ],
   legal: [
-    { label: "Terms of Service", href: "#" },
-    { label: "Privacy Policy", href: "#" },
-    { label: "DMCA", href: "#" },
-    { label: "2257 Compliance", href: "#" },
+    { label: "Terms of Service", href: "/terms" },
+    { label: "Privacy Policy", href: "/privacy" },
+    { label: "DMCA", href: "/dmca" },
+    { label: "2257 Compliance", href: "/2257" },
   ],
 };
 
