@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 export default function SummerPromoBanner() {
   return (
     <section className="w-full bg-[#050505]" style={{ lineHeight: 0 }}>
-      {/* Banner Image - Natural Height, Full Width */}
+      {/* High-Res Banner Image - Natural Height, Full Width */}
       <img
-        src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/4b873d4a1_image.png"
+        src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/2fa4de78e_generated_image.png"
         alt="FLESHLAB Summer Studio Special - 50% OFF Fanclub Access"
         className="w-full h-auto block max-w-none"
         style={{ 
