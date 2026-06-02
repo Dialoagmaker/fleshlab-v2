@@ -53,23 +53,23 @@ export default function SummerPromoBanner() {
           </div>
           
           {/* Left Speech Bubble - Live Cam Creator */}
-          <div className="hidden lg:block absolute left-[8%] top-[52%] max-w-[260px]">
-            <div className="relative bg-black/55 backdrop-blur-sm border border-rose-500/40 rounded-2xl p-4 shadow-lg shadow-rose-600/30">
-              {/* Arrow pointer */}
-              <div className="absolute -bottom-2 left-6 w-4 h-4 bg-black/55 border-r border-b border-rose-500/40 transform rotate-45" />
-              <p className="text-white text-sm font-semibold leading-snug">
+          <div className="hidden lg:block absolute left-[8%] top-[50%] max-w-[300px]">
+            <div className="relative bg-black/68 backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-2xl p-5 shadow-xl shadow-rose-600/40">
+              {/* Arrow pointer toward model */}
+              <div className="absolute -bottom-2.5 left-8 w-5 h-5 bg-black/68 border-r border-b border-[rgba(236,18,86,0.55)] transform rotate-45" />
+              <p className="text-white text-[15px] font-semibold leading-snug">
                 I'm always in cam mode 🔴
               </p>
             </div>
           </div>
           
           {/* Right Speech Bubble - Premium Creator */}
-          <div className="hidden lg:block absolute right-[8%] top-[52%] max-w-[280px]">
-            <div className="relative bg-black/55 backdrop-blur-sm border border-purple-500/40 rounded-2xl p-4 shadow-lg shadow-purple-600/30">
-              {/* Arrow pointer */}
-              <div className="absolute -bottom-2 right-6 w-4 h-4 bg-black/55 border-l border-b border-purple-500/40 transform rotate-45" />
-              <p className="text-white text-sm font-semibold leading-snug">
-                Fan guest productions available
+          <div className="hidden lg:block absolute right-[10%] top-[50%] max-w-[320px]">
+            <div className="relative bg-black/68 backdrop-blur-md border border-[rgba(236,18,86,0.55)] rounded-2xl p-5 shadow-xl shadow-rose-600/40">
+              {/* Arrow pointer toward model */}
+              <div className="absolute -bottom-2.5 right-8 w-5 h-5 bg-black/68 border-l border-b border-[rgba(236,18,86,0.55)] transform rotate-45" />
+              <p className="text-white text-[15px] font-semibold leading-snug">
+                Fans can join productions
               </p>
             </div>
           </div>
