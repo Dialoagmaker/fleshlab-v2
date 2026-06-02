@@ -93,8 +93,18 @@ export const AuthProvider = ({ children }) => {
 
   const checkUserAuth = async () => {
     try {
-      // Now check if the user is authenticated
       setIsLoadingAuth(true);
+      const storedToken = appParams.token;
+      if (!storedToken) {
+        // No stored token — anonymous visitor, skip auth check entirely
+        setIsLoadingAuth(false);
+        setIsAuthenticated(false);
+        setAuthChecked(true);
+        return;
+      }
+      // Set the token on the SDK client for this validation call.
+      // The client was created without a token to prevent stale-token 401 spam.
+      base44.auth.setToken(storedToken);
       const currentUser = await base44.auth.me();
       setUser(currentUser);
       setIsAuthenticated(true);

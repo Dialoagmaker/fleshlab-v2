@@ -58,25 +58,14 @@ import HowItWorks from './pages/HowItWorks';
 import FAQ from './pages/FAQ';
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  // No global loading spinner — public routes render immediately without waiting for auth.
+  // ProtectedRoute handles its own loading/auth state for private and admin routes.
+  const { authError } = useAuth();
 
-  // Show loading spinner while checking app public settings or auth
-  if (isLoadingPublicSettings || isLoadingAuth) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  // Only block for user_not_registered — all other states (including auth_required)
-  // fall through to Routes so public pages and /login itself can render.
-  // ProtectedRoute handles private routes individually.
-  if (authError && authError.type === 'user_not_registered') {
+  if (authError?.type === 'user_not_registered') {
     return <UserNotRegisteredError />;
   }
 
-  // Render the main app
   return (
     <Routes>
       {/* Auth routes */}
