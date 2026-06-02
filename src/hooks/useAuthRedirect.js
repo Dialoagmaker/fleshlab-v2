@@ -40,9 +40,13 @@ export function useAuthRedirect() {
     }
     
     // Redirect non-performers away from /performer/* routes (except login pages)
+    // BUT: Check for performer session token first (independent from Base44 auth)
     if (path.startsWith('/performer/') && path !== '/performer/login' && path !== '/performerlogin') {
-      if (user.role !== 'performer' && !user.performer_profile_id && !user.performer_id) {
-        console.log('PERFORMER_ROUTE_DENIED', { role: user.role, path });
+      const performerToken = localStorage.getItem('performer_session_token');
+      const isPerformer = user?.role === 'performer' || user?.performer_profile_id || user?.performer_id || performerToken;
+      
+      if (!isPerformer) {
+        console.log('PERFORMER_ROUTE_DENIED', { role: user.role, path, hasPerformerToken: !!performerToken });
         window.location.href = '/performer/login?from=' + encodeURIComponent(path);
       }
     }

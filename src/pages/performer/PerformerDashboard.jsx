@@ -18,7 +18,7 @@ export default function PerformerDashboard() {
     try {
       const token = localStorage.getItem("performer_session_token");
       if (!token) {
-        navigate("/performerlogin");
+        navigate("/performer/login");
         return;
       }
 
