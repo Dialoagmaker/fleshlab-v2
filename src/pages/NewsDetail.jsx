@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
-import NewsCard from "@/components/public/NewsCard";
+import { callPublicFunction } from "@/lib/publicApi";
 import SEOMeta from "@/components/SEOMeta";
 import ShareArticle from "@/components/public/ShareArticle";
+import NewsCard from "@/components/public/NewsCard";
 import { 
   ArrowLeft, 
   Loader2, 
@@ -14,48 +14,36 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useI18n } from "@/i18n/i18n.jsx";
 
 export default function NewsDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const [article, setArticle] = useState(null);
-  const [relatedArticles, setRelatedArticles] = useState([]);
+  const { t } = useI18n();
 
-  // Fetch news articles
-  const { data: articles = [] } = useQuery({
-    queryKey: ['public-news'],
-    queryFn: () => base44.entities.NewsArticle.list(),
+  // Fetch article by slug
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-news-article', slug],
+    queryFn: () => callPublicFunction('getPublicNewsArticleBySlug', { slug }),
+    enabled: !!slug,
   });
 
-  useEffect(() => {
-    if (articles.length > 0 && slug) {
-      const foundArticle = articles.find(a => a.slug === slug);
-      if (foundArticle) {
-        setArticle(foundArticle);
-        
-        // Find related articles (same tags or recent)
-        const related = articles
-          .filter(a => 
-            a.id !== foundArticle.id &&
-            a.status === 'published' &&
-            (a.tags?.some(t => foundArticle.tags?.includes(t)))
-          )
-          .slice(0, 3);
-        
-        // If no tag matches, get recent articles
-        if (related.length === 0) {
-          setRelatedArticles(
-            articles
-              .filter(a => a.id !== foundArticle.id && a.status === 'published')
-              .sort((a, b) => new Date(b.published_at) - new Date(a.published_at))
-              .slice(0, 3)
-          );
-        } else {
-          setRelatedArticles(related);
-        }
-      }
-    }
-  }, [articles, slug]);
+  const article = data?.article;
+
+  // Fetch related articles
+  const { data: allNewsData } = useQuery({
+    queryKey: ['public-news-list'],
+    queryFn: () => callPublicFunction('getPublicNews', { page: 1, limit: 10 }),
+  });
+
+  const relatedArticles = article && allNewsData?.articles
+    ? allNewsData.articles
+        .filter(a => 
+          a.id !== article.id &&
+          (a.tags?.some(t => article.tags?.includes(t)) || a.category === article.category)
+        )
+        .slice(0, 3)
+    : [];
 
   const jsonLd = article ? {
     "@context": "https://schema.org",
@@ -64,7 +52,6 @@ export default function NewsDetail() {
     "description": article.excerpt || article.content?.substring(0, 160),
     "image": article.cover_image_url,
     "datePublished": article.published_at,
-    "dateModified": article.updated_date,
     "author": {
       "@type": "Organization",
       "name": "FLESHLAB"
@@ -73,10 +60,24 @@ export default function NewsDetail() {
 
   const canonicalUrl = article ? `https://fleshlab.online/news/${article.slug}` : undefined;
 
-  if (!article) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error || !article) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Newspaper className="w-12 h-12 mx-auto text-muted-foreground opacity-20" />
+          <h1 className="text-2xl font-bold text-white">Article not found</h1>
+          <Button onClick={() => navigate('/news')} variant="outline">
+            Back to News
+          </Button>
+        </div>
       </div>
     );
   }
@@ -98,7 +99,7 @@ export default function NewsDetail() {
             <Button
               variant="ghost"
               onClick={() => navigate('/news')}
-              className="gap-2"
+              className="gap-2 text-white hover:text-white"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to News
@@ -120,11 +121,18 @@ export default function NewsDetail() {
               </div>
             )}
 
+            {/* Category Badge */}
+            {article.category && (
+              <Badge className="bg-primary/10 text-primary">
+                {article.category}
+              </Badge>
+            )}
+
             {/* Title */}
-            <h1 className="text-4xl font-bold">{article.title}</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-white">{article.title}</h1>
 
             {/* Meta */}
-            <div className="flex flex-wrap gap-4 text-muted-foreground">
+            <div className="flex flex-wrap gap-4 text-muted-foreground text-sm">
               {article.published_at && (
                 <span className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
@@ -135,13 +143,6 @@ export default function NewsDetail() {
                   })}
                 </span>
               )}
-              <span className={`px-2 py-1 rounded-full text-xs ${
-                article.status === 'published' 
-                  ? 'bg-green-500/10 text-green-500' 
-                  : 'bg-muted text-muted-foreground'
-              }`}>
-                {article.status}
-              </span>
             </div>
 
             {/* Tags */}
@@ -175,10 +176,10 @@ export default function NewsDetail() {
 
         {/* Related Articles */}
         {relatedArticles.length > 0 && (
-          <div className="max-w-7xl mx-auto px-4 py-12">
+          <div className="max-w-7xl mx-auto px-4 py-12 border-t border-border">
             <div className="flex items-center gap-2 mb-6">
               <Newspaper className="w-6 h-6 text-primary" />
-              <h2 className="text-2xl font-bold">Related Articles</h2>
+              <h2 className="text-2xl font-bold text-white">Related Articles</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {relatedArticles.map(a => (

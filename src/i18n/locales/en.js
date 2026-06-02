@@ -36,9 +36,12 @@ export default {
     publicFree: "Public previews are free",
     fullScenesRequire: "Full scenes require fanclub access",
     studioJournal: "STUDIO JOURNAL",
+    studioJournalSubtitle: "News, creator updates and FLESHLAB stories.",
+    viewAllNews: "View All News",
     readMore: "Read More",
     noVideos: "No videos available",
     errorLoading: "Error loading",
+    updatesComingSoon: "Studio updates coming soon",
   },
   // Video cards
   videoCard: {
@@ -81,12 +84,26 @@ export default {
   },
   // News page
   news: {
-    title: "Studio News",
-    searchPlaceholder: "Search articles...",
+    title: "News",
+    subtitle: "Studio updates, creator stories and FLESHLAB announcements.",
+    searchPlaceholder: "Search news...",
     noResults: "No articles found",
-    readMore: "Read Full Article",
+    readMore: "Read Article",
     publishedOn: "Published on",
     errorLoading: "Error loading news",
+    viewAll: "View All News",
+    backToNews: "Back to News",
+    relatedArticles: "Related Articles",
+    loadMore: "Load More",
+    articleNotFound: "Article not found",
+    categories: {
+      all: "All",
+      studio: "Studio Updates",
+      creator: "Creator Stories",
+      fanclub: "Fanclub",
+      guest: "Guest Production",
+      behind: "Behind the Scenes",
+    },
   },
   // Fanclub page
   fanclub: {

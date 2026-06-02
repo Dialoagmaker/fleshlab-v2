@@ -28,12 +28,12 @@ export default function Home() {
   });
   const performers = performersData?.performers || [];
 
-  // Fetch news
+  // Fetch news (latest 6)
   const { data: newsData, isLoading: newsLoading } = useQuery({
-    queryKey: ['public-news-fn'],
-    queryFn: () => callPublicFunction('getPublicNews'),
+    queryKey: ['public-news-fn-home'],
+    queryFn: () => callPublicFunction('getPublicNews', { page: 1, limit: 6 }),
     retry: 0,
-    staleTime: 30000,
+    staleTime: 60000,
   });
   const articles = newsData?.articles || [];
 
