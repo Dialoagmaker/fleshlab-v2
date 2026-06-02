@@ -77,6 +77,7 @@ export const AuthProvider = ({ children }) => {
         }
         setIsLoadingPublicSettings(false);
         setIsLoadingAuth(false);
+        setAuthChecked(true); // ensure ProtectedRoute never spins forever
       }
     } catch (error) {
       console.error('Unexpected error:', error);
@@ -86,6 +87,7 @@ export const AuthProvider = ({ children }) => {
       });
       setIsLoadingPublicSettings(false);
       setIsLoadingAuth(false);
+      setAuthChecked(true); // ensure ProtectedRoute never spins forever
     }
   };
 
@@ -104,8 +106,14 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
       setAuthChecked(true);
       
-      // If user auth fails, it might be an expired token
+      // Stale/expired token — clear it so public entity calls work without auth
       if (error.status === 401 || error.status === 403) {
+        try {
+          // Clear from SDK memory and localStorage so subsequent entity calls are anonymous
+          base44.auth.logout();
+          localStorage.removeItem('base44_access_token');
+          localStorage.removeItem('token');
+        } catch (_) {}
         setAuthError({
           type: 'auth_required',
           message: 'Authentication required'
