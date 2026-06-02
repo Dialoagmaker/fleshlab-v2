@@ -127,7 +127,17 @@ All admin pages are protected by:
 - `/admin/monthly-closeout`
 - `/admin/content-review`
 
-✅ **Confirmed**: Admin pages are NOT publicly accessible and rely on authentication, not robots tags
+**SEOMeta Component Enhancement**:
+Admin pages now explicitly use `noIndex={true}` prop in SEOMeta component:
+```jsx
+<SEOMeta
+  title="Dashboard — FLESHLAB Admin"
+  canonical="/admin"
+  noIndex={true}  // Explicit noindex,nofollow
+/>
+```
+
+✅ **Confirmed**: Admin pages use explicit `noindex,nofollow` even though behind authentication
 
 ---
 
@@ -155,7 +165,8 @@ All admin pages are protected by:
 - [x] `/admin/*` routes protected by authentication
 - [x] `/performer/*` routes protected by authentication
 - [x] `/account` routes protected by authentication
-- [x] No special noindex needed (auth-gated)
+- [x] Admin pages explicitly use `noIndex={true}` in SEOMeta
+- [x] All protected pages: `noindex,nofollow`
 
 ---
 
@@ -175,8 +186,9 @@ All admin pages are protected by:
 
 ## CONCLUSION
 
-**All required public pages are indexable on fleshlab.online:**
+### Three-Tier Robots Strategy
 
+**Tier 1: Public Production Pages (fleshlab.online)**
 ✅ `/` — index,follow  
 ✅ `/videos` — index,follow  
 ✅ `/news` — index,follow  
@@ -184,7 +196,12 @@ All admin pages are protected by:
 ✅ `/become-performer` — index,follow  
 ✅ `/fanclub` — index,follow  
 
-**Admin/internal pages are protected by authentication, not robots tags.**
+**Tier 2: Staging/Preview/Base44 Domains**
+✅ All pages automatically `noindex,nofollow` via `getRobotsDirective()`
+
+**Tier 3: Admin/Protected/Internal Pages**
+✅ Explicit `noIndex={true}` prop in SEOMeta component
+✅ All protected pages: `noindex,nofollow` (even on production)
 
 **Staging/Base44 environments automatically use `noindex,nofollow` to prevent competition with production.**
 

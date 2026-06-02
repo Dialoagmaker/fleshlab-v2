@@ -12,7 +12,8 @@ export default function SEOMeta({
   ogImage,
   ogType = "website",
   twitterCard = "summary_large_image",
-  jsonLd
+  jsonLd,
+  noIndex = false  // Explicit noindex for admin/protected pages
 }) {
   useEffect(() => {
     // Document Title
@@ -42,8 +43,8 @@ export default function SEOMeta({
       }
     }
 
-    // Robots — always noindex on staging/Base44, correct on production
-    const robotsDirective = getRobotsDirective();
+    // Robots — explicit noindex for admin/protected, otherwise environment-based
+    const robotsDirective = noIndex ? 'noindex,nofollow' : getRobotsDirective();
     ['robots', 'googlebot'].forEach(name => {
       let meta = document.querySelector(`meta[name="${name}"]`);
       if (!meta) {

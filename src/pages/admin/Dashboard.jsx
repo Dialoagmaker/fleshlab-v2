@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useState } from "react";
+import SEOMeta from "@/components/SEOMeta";
 import {
   Video, Users, Tag, Newspaper, Link2, ArrowRight, Globe,
   Plus, Database, AlertCircle, RefreshCw, CheckCircle2
@@ -114,8 +115,16 @@ export default function Dashboard() {
     : null;
 
   return (
-    <div className="space-y-8 max-w-5xl">
-      <div className="flex items-start justify-between">
+    <>
+      {/* Admin page — explicitly noindex,nofollow even though behind login */}
+      <SEOMeta
+        title="Dashboard — FLESHLAB Admin"
+        description="FLESHLAB V2 admin dashboard and console."
+        canonical="/admin"
+        noIndex={true}
+      />
+      <div className="space-y-8 max-w-5xl">
+        <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground text-sm mt-1">FLESHLAB V2 — Admin Console</p>
@@ -212,5 +221,6 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
+    </>
   );
 }
