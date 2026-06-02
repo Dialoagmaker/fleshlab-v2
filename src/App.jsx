@@ -347,8 +347,6 @@ const AuthenticatedApp = () => {
             <PerformerDashboard />
           </PerformerRouteHandler>
         } />
-        {/* Legacy performer login redirect */}
-        <Route path="/performerlogin" element={<Navigate to="/performer/login" replace />} />
       </Route>
       {/* Admin routes are now handled by manual dispatch above to prevent public route interception */}
       {/* Wildcard route */}
