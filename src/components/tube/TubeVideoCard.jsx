@@ -49,7 +49,7 @@ export default function TubeVideoCard({ video, brands = [] }) {
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-70 group-hover:opacity-50 transition-opacity" />
           
           {/* Duration Badge - Bottom Right, Cleaner */}
-          {video.duration_seconds && (
+          {video.duration_seconds && video.duration_seconds > 0 && (
             <div className="absolute bottom-2 right-2 bg-black/95 text-white text-[10px] font-bold px-2 py-1 rounded-md border border-white/20 shadow-lg">
               {formatDuration(video.duration_seconds)}
             </div>

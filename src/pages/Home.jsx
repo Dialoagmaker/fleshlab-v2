@@ -63,8 +63,8 @@ export default function Home() {
         {/* Summer Promo Banner */}
         <SummerPromoBanner />
 
-        {/* Main Video Grid - Direct connection to banner */}
-        <section className="py-3">
+        {/* Main Video Grid - Tight spacing below banner */}
+        <section className="py-2">
           <div className="max-w-[1920px] mx-auto px-4">
             {/* Section Header with Banner-Matching Style - Tight spacing */}
             <div className="flex items-center justify-between mb-3">
