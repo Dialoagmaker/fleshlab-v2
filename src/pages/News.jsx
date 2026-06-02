@@ -1,19 +1,28 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { appParams } from "@/lib/app-params";
 import NewsCard from "@/components/public/NewsCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Newspaper, Search, X, Loader2 } from "lucide-react";
+import { Newspaper, Search, X, Loader2, AlertCircle } from "lucide-react";
+
+// Direct fetch — bypasses the Base44 SDK entirely so no User/me interceptor fires.
+async function fetchPublicNews() {
+  const url = `/api/apps/${appParams.appId}/entities/NewsArticle?sort=-published_at&limit=100`;
+  const resp = await fetch(url, { headers: { 'X-App-Id': appParams.appId } });
+  if (!resp.ok) throw new Error(`News fetch failed: ${resp.status}`);
+  const data = await resp.json();
+  return Array.isArray(data) ? data : (data.results ?? data.items ?? []);
+}
 
 export default function News() {
   console.log('PUBLIC_NEWS_RENDER_START', window.location.pathname);
   const [search, setSearch] = useState("");
 
-  // Fetch news articles
-  const { data: articles = [], isLoading } = useQuery({
-    queryKey: ['public-news'],
-    queryFn: () => base44.entities.NewsArticle.list(),
+  const { data: articles = [], isLoading, error } = useQuery({
+    queryKey: ['public-news-direct'],
+    queryFn: fetchPublicNews,
+    retry: 0,
   });
 
   // Filter and sort articles (published only, newest first)
@@ -40,6 +49,17 @@ export default function News() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 text-center px-4">
+        <AlertCircle className="w-12 h-12 text-muted-foreground" />
+        <h2 className="text-xl font-semibold text-foreground">Could not load news</h2>
+        <p className="text-sm text-muted-foreground">Please try refreshing the page.</p>
+        <button onClick={() => window.location.reload()} className="text-sm text-primary underline">Reload</button>
       </div>
     );
   }

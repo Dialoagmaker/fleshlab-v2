@@ -13,9 +13,13 @@ const { appId, functionsVersion, appBaseUrl } = appParams;
 // (it is imported above), so appParams.token already captured the stored value.
 // AuthContext.checkUserAuth() validates appParams.token via raw fetch and calls
 // base44.auth.setToken() + restores localStorage ONLY if the token is confirmed valid.
-if (typeof localStorage !== 'undefined') {
+try {
+  // Clear stored tokens BEFORE createClient() so the SDK cannot auto-call User/me
+  // with a stale token. appParams.token already captured the value above.
   localStorage.removeItem('base44_access_token');
   localStorage.removeItem('token');
+} catch (_) {
+  // Ignore: localStorage may throw in restricted iframe/private contexts
 }
 
 export const base44 = createClient({
