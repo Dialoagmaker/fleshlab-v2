@@ -11,15 +11,29 @@ export default function SummerPromoBanner() {
           className="w-full h-full object-cover"
           style={{ objectPosition: "50% 35%" }}
         />
+        {/* Enhance saturation and warmth */}
+        <div className="absolute inset-0 bg-gradient-to-r from-rose-600/10 via-transparent to-purple-600/10 mix-blend-overlay" />
       </div>
       
-      {/* Dark Overlay for Text Readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
+      {/* Gradient Overlay - Lighter on sides (models), darker in center (text zone) */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          background: `
+            linear-gradient(
+              90deg,
+              rgba(0,0,0,0.25) 0%,
+              rgba(0,0,0,0.55) 38%,
+              rgba(0,0,0,0.60) 50%,
+              rgba(0,0,0,0.55) 62%,
+              rgba(0,0,0,0.25) 100%
+            )
+          `
+        }}
+      />
       
-      {/* Center Content Backdrop - Radial gradient behind text only */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-full max-w-4xl h-2/3 bg-gradient-to-b from-black/80 via-black/60 to-black/80 rounded-3xl blur-xl" />
-      </div>
+      {/* Subtle bottom fade for text readability */}
+      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/50 to-transparent" />
       
       {/* Content Layer - All Sharp HTML/CSS */}
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-4">
