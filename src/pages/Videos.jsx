@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { appParams } from "@/lib/app-params";
 import VideoCard from "@/components/public/VideoCard";
 import VideoFilters from "@/components/public/VideoFilters";
@@ -46,6 +47,7 @@ async function fetchPublicVideosAndBrands(page = 1, filters = {}) {
 
 export default function Videos() {
   const { t } = useI18n();
+  const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState({
     search: "",
     category: null,
@@ -55,6 +57,14 @@ export default function Videos() {
     sort: "newest",
   });
   const [page, setPage] = useState(1);
+
+  // Read search query from URL on mount
+  useEffect(() => {
+    const urlSearch = searchParams.get('search');
+    if (urlSearch && urlSearch.trim()) {
+      setFilters(prev => ({ ...prev, search: urlSearch.trim() }));
+    }
+  }, [searchParams]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['public-videos-fn', page, filters],

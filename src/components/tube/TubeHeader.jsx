@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Search, Menu, LogIn, Star, Globe, ChevronDown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,11 +17,24 @@ export default function TubeHeader({ onMenuToggle }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [langOpen, setLangOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { locale, setLocale, t } = useI18n();
   const currentLang = languages.find(l => l.code === locale) || languages[0];
 
   const isActive = (href) => {
     return location.pathname === href || (href !== "/" && location.pathname.startsWith(href + "/"));
+  };
+
+  const handleSearchSubmit = () => {
+    if (searchQuery.trim()) {
+      navigate(`/videos?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSearchSubmit();
+    }
   };
 
   return (
@@ -47,9 +60,13 @@ export default function TubeHeader({ onMenuToggle }) {
                 placeholder={t('nav.search')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
                 className="w-full bg-[#121212] border border-rose-600/20 text-white placeholder:text-white/40 h-11 pl-5 pr-14 rounded-lg focus:outline-none focus:border-rose-600/50 focus:ring-2 focus:ring-rose-600/20 transition-all"
               />
-              <button className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 rounded-lg flex items-center justify-center text-white transition-all shadow-lg shadow-rose-600/30">
+              <button 
+                onClick={handleSearchSubmit}
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 rounded-lg flex items-center justify-center text-white transition-all shadow-lg shadow-rose-600/30"
+              >
                 <Search className="w-5 h-5" />
               </button>
             </div>
@@ -213,9 +230,13 @@ export default function TubeHeader({ onMenuToggle }) {
             placeholder={t('nav.search')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
             className="w-full bg-[#121212] border border-rose-600/20 text-white placeholder:text-white/40 h-11 pl-5 pr-14 rounded-lg focus:outline-none focus:border-rose-600/50"
           />
-          <button className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 bg-gradient-to-r from-rose-600 to-rose-700 rounded-lg flex items-center justify-center text-white">
+          <button 
+            onClick={handleSearchSubmit}
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 bg-gradient-to-r from-rose-600 to-rose-700 rounded-lg flex items-center justify-center text-white"
+          >
             <Search className="w-5 h-5" />
           </button>
         </div>

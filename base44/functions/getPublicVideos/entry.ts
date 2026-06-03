@@ -36,16 +36,41 @@ Deno.serve(async (req) => {
       500 // Fetch up to 500 for filtering
     );
     
+    // Fetch brands and performer relationships for search matching
+    const allBrands = await base44.asServiceRole.entities.Brand.list('-created_date', 100);
+    const allVideoPerformers = await base44.asServiceRole.entities.VideoPerformer.filter({});
+    const allPerformers = await base44.asServiceRole.entities.Performer.filter({ status: 'active' }, '-created_date', 500);
+    
+    // Create lookup maps
+    const brandMap = new Map(allBrands.map(b => [b.id, b]));
+    const performerMap = new Map(allPerformers.map(p => [p.id, p]));
+    
     // Filter by search
     let filteredVideos = allVideos;
     if (search) {
       const searchLower = search.toLowerCase();
       filteredVideos = filteredVideos.filter(v => {
+        // Video fields
         const titleMatch = v.title?.toLowerCase().includes(searchLower);
         const summaryMatch = v.short_summary?.toLowerCase().includes(searchLower);
         const categoryMatch = v.categories?.some(c => c.toLowerCase().includes(searchLower));
         const tagMatch = v.tags?.some(t => t.toLowerCase().includes(searchLower));
-        return titleMatch || summaryMatch || categoryMatch || tagMatch;
+        
+        // Brand name match
+        const brand = brandMap.get(v.brand_id);
+        const brandMatch = brand?.name?.toLowerCase().includes(searchLower);
+        
+        // Performer name match (check VideoPerformer relationships)
+        const videoPerformerIds = allVideoPerformers
+          .filter(vp => vp.video_id === v.id)
+          .map(vp => vp.performer_id);
+        const performerNames = videoPerformerIds
+          .map(id => performerMap.get(id))
+          .filter(Boolean)
+          .map(p => p.display_name?.toLowerCase() || '');
+        const performerMatch = performerNames.some(name => name.includes(searchLower));
+        
+        return titleMatch || summaryMatch || categoryMatch || tagMatch || brandMatch || performerMatch;
       });
     }
     
@@ -100,8 +125,8 @@ Deno.serve(async (req) => {
     const hasMore = paginatedVideos.length > limit;
     const limitedVideos = hasMore ? paginatedVideos.slice(0, limit) : paginatedVideos;
     
-    // Fetch brands
-    const brands = await base44.asServiceRole.entities.Brand.list('-created_date', 100);
+    // Brands already fetched above for search
+    const brands = allBrands;
     
     // Return only safe public fields
     const safeVideos = limitedVideos.map(v => ({
