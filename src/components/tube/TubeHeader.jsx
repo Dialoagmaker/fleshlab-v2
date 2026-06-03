@@ -25,6 +25,9 @@ export default function TubeHeader({ onMenuToggle }) {
     return location.pathname === href || (href !== "/" && location.pathname.startsWith(href + "/"));
   };
 
+  // Hide global search bar on /videos page to avoid duplicate search bars
+  const isVideosPage = location.pathname === '/videos';
+
   const handleSearchSubmit = () => {
     if (searchQuery.trim()) {
       navigate(`/videos?search=${encodeURIComponent(searchQuery.trim())}`);
@@ -52,25 +55,27 @@ export default function TubeHeader({ onMenuToggle }) {
             </div>
           </a>
 
-          {/* Search Bar - Enhanced */}
-          <div className="hidden md:flex flex-1 max-w-3xl mx-4">
-            <div className="relative w-full">
-              <Input
-                type="text"
-                placeholder={t('nav.search')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={handleSearchKeyDown}
-                className="w-full bg-[#121212] border border-rose-600/20 text-white placeholder:text-white/40 h-11 pl-5 pr-14 rounded-lg focus:outline-none focus:border-rose-600/50 focus:ring-2 focus:ring-rose-600/20 transition-all"
-              />
-              <button 
-                onClick={handleSearchSubmit}
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 rounded-lg flex items-center justify-center text-white transition-all shadow-lg shadow-rose-600/30"
-              >
-                <Search className="w-5 h-5" />
-              </button>
+          {/* Search Bar - Enhanced (hidden on /videos page) */}
+          {!isVideosPage && (
+            <div className="hidden md:flex flex-1 max-w-3xl mx-4">
+              <div className="relative w-full">
+                <Input
+                  type="text"
+                  placeholder={t('nav.search')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  className="w-full bg-[#121212] border border-rose-600/20 text-white placeholder:text-white/40 h-11 pl-5 pr-14 rounded-lg focus:outline-none focus:border-rose-600/50 focus:ring-2 focus:ring-rose-600/20 transition-all"
+                />
+                <button 
+                  onClick={handleSearchSubmit}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 rounded-lg flex items-center justify-center text-white transition-all shadow-lg shadow-rose-600/30"
+                >
+                  <Search className="w-5 h-5" />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Actions */}
           <div className="flex items-center gap-2">
@@ -222,25 +227,27 @@ export default function TubeHeader({ onMenuToggle }) {
         </div>
       </div>
 
-      {/* Mobile Search */}
-      <div className="md:hidden px-4 pb-3 border-t border-rose-600/10">
-        <div className="relative pt-3">
-          <Input
-            type="text"
-            placeholder={t('nav.search')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-            className="w-full bg-[#121212] border border-rose-600/20 text-white placeholder:text-white/40 h-11 pl-5 pr-14 rounded-lg focus:outline-none focus:border-rose-600/50"
-          />
-          <button 
-            onClick={handleSearchSubmit}
-            className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 bg-gradient-to-r from-rose-600 to-rose-700 rounded-lg flex items-center justify-center text-white"
-          >
-            <Search className="w-5 h-5" />
-          </button>
+      {/* Mobile Search (hidden on /videos page) */}
+      {!isVideosPage && (
+        <div className="md:hidden px-4 pb-3 border-t border-rose-600/10">
+          <div className="relative pt-3">
+            <Input
+              type="text"
+              placeholder={t('nav.search')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              className="w-full bg-[#121212] border border-rose-600/20 text-white placeholder:text-white/40 h-11 pl-5 pr-14 rounded-lg focus:outline-none focus:border-rose-600/50"
+            />
+            <button 
+              onClick={handleSearchSubmit}
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 bg-gradient-to-r from-rose-600 to-rose-700 rounded-lg flex items-center justify-center text-white"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </header>
   );
 }
