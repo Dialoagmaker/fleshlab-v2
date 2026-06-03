@@ -7,19 +7,19 @@ export default function Fanclub() {
   return (
     <>
       <SEOMeta
-        title="Gay Fanclub & Free Gay Fanclub Access | FLESHLAB Studios"
-        description="Join the gay fanclub for exclusive gay videos, full-length gay videos, premium gay content, creator access, behind-the-scenes content and exclusive studio productions from FLESHLAB Studios."
+        title="FLESHLAB Fanclub | Exclusive Gay Videos & Creator Access"
+        description="Join FLESHLAB Fanclub for exclusive gay videos, full-length gay videos, premium gay content, creator access, behind-the-scenes content and exclusive studio productions. Free public previews available."
         canonical="/fanclub"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "WebPage",
-          "name": "FLESHLAB Gay Fanclub",
-          "description": "Exclusive gay fanclub membership with full-length HD gay videos and behind-the-scenes content",
+          "name": "FLESHLAB Fanclub",
+          "description": "Exclusive fanclub membership with full-length HD gay videos and behind-the-scenes content",
           "hasPart": {
             "@type": "Offer",
-            "name": "FLESHLAB Gay Fanclub Membership",
-            "description": "Monthly gay adult content membership for exclusive access",
+            "name": "FLESHLAB Fanclub Membership",
+            "description": "Monthly membership for exclusive content access",
             "category": "Adult Entertainment",
             "availability": "https://schema.org/InStock",
             "eligibleRegion": {
@@ -38,10 +38,10 @@ export default function Fanclub() {
               <Lock className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tight">
-              GAY <span className="text-rose-500">FANCLUB</span> ACCESS
+              FANCLUB <span className="text-rose-500">ACCESS</span>
             </h1>
             <p className="text-xl text-white/70 max-w-3xl mx-auto mb-8">
-              Free gay fanclub previews. Full-length gay videos, premium gay content and exclusive creator access require membership.
+              Watch free public previews. Full-length videos, premium content and exclusive creator access require membership.
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
               <Link to="/register">

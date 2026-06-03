@@ -138,7 +138,7 @@ export default function Videos() {
               <div>
                 <h1 className="text-4xl font-bold text-white">Asian Gay Videos, Filipino Twinks & Full-Length Studio Scenes</h1>
                 <p className="text-white/60 text-sm">
-                  Browse verified 18+ Asian and Filipino gay adult videos including solo scenes, shower videos, outdoor shoots, bareback scenes, oral and anal content, full-length gay fucking and sucking scenes, studio-produced gay porn and exclusive fanclub releases.
+                  Browse verified 18+ Asian and Filipino gay adult videos including solo scenes, shower videos, outdoor shoots, bareback scenes, oral and anal content, full-length gay adult scenes including solo, oral, anal, bareback, shower and studio productions, and exclusive fanclub releases.
                 </p>
                 {isLoading ? (
                   <p className="text-white/40 text-xs mt-1">Loading videos...</p>
