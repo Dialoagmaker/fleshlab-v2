@@ -102,12 +102,14 @@ export default function SEOMeta({
       meta.setAttribute('content', content);
     });
 
-    // JSON-LD Structured Data
+    // JSON-LD Structured Data — always use a dedicated page-level script tag
+    // Never overwrite the static index.html block (Organization + WebSite)
     if (jsonLd) {
-      let script = document.querySelector('script[type="application/ld+json"]');
+      let script = document.querySelector('script[data-page-jsonld]');
       if (!script) {
         script = document.createElement('script');
         script.type = 'application/ld+json';
+        script.setAttribute('data-page-jsonld', 'true');
         document.head.appendChild(script);
       }
       script.textContent = JSON.stringify(jsonLd);

@@ -44,9 +44,13 @@
         "@type": "WebSite",
         "name": "FLESHLAB Studios",
         "url": "https://fleshlab.online",
+        "description": "Premium gay adult studio featuring verified Asian performers, exclusive studio productions and fanclub content.",
         "potentialAction": {
           "@type": "SearchAction",
-          "target": "https://fleshlab.online/search?q={search_term_string}",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://fleshlab.online/search?q={search_term_string}"
+          },
           "query-input": "required name=search_term_string"
         }
       }
