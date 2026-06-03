@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { callPublicFunction } from "@/lib/publicApi";
 import SEOMeta from "@/components/SEOMeta";
 import VideoRail from "@/components/public/VideoRail";
 import PerformerSection from "@/components/public/PerformerSection";
@@ -24,30 +23,73 @@ const ACCESS_TIER = {
   ppv:     { label: 'Premium PPV',        color: 'bg-primary/10 text-primary' },
 };
 
+// Sanitize a video record — only safe public fields
+const safeVideo = (v) => v ? {
+  id: v.id, slug: v.slug, title: v.title, description: v.description,
+  short_summary: v.short_summary, brand_id: v.brand_id, categories: v.categories,
+  tags: v.tags, access_tier: v.access_tier, release_date: v.release_date,
+  duration_seconds: v.duration_seconds, primary_thumbnail_url: v.primary_thumbnail_url,
+  cover_image_url: v.cover_image_url, trailer_url: v.trailer_url,
+  preview_gif_url: v.preview_gif_url, view_count: v.view_count, featured: v.featured,
+  is_exclusive: v.is_exclusive, ppv_enabled: v.ppv_enabled, created_date: v.created_date,
+  meta_title: v.meta_title, meta_description: v.meta_description,
+} : null;
+
 export default function VideoDetail() {
   const { slug } = useParams();
-
   const navigate = useNavigate();
   const [playbackUrl, setPlaybackUrl] = useState(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [unlockError, setUnlockError] = useState(null);
 
-  // Single public API call — no entity access, no auth required
-  const { data, isLoading } = useQuery({
-    queryKey: ['video-detail', slug],
-    queryFn: () => callPublicFunction('getPublicVideoDetail', { slug }),
-    enabled: !!slug,
+  // Fetch directly via entity SDK — same as PerformerDetail, works headless/Googlebot
+  const { data: allVideos = [], isLoading: videosLoading } = useQuery({
+    queryKey: ['public-all-videos'],
+    queryFn: () => base44.entities.Video.filter({ status: 'published' }, '-release_date', 100),
+    staleTime: 5 * 60 * 1000,
     retry: 2,
+  });
+
+  const { data: allBrands = [] } = useQuery({
+    queryKey: ['public-all-brands'],
+    queryFn: () => base44.entities.Brand.filter({ status: 'active' }),
     staleTime: 5 * 60 * 1000,
   });
 
-  const video       = data?.video       || null;
-  const brand       = data?.brand       || null;
-  const performers  = data?.performers  || [];
-  const brands      = data?.brands      || [];
-  const studioVideos  = data?.studioVideos  || [];
-  const similarVideos = data?.similarVideos || [];
-  const relatedVideos = data?.relatedVideos || [];
+  const { data: allPerformers = [] } = useQuery({
+    queryKey: ['public-all-performers'],
+    queryFn: () => base44.entities.Performer.filter({ status: 'active' }),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: allVideoPerformers = [] } = useQuery({
+    queryKey: ['public-all-video-performers'],
+    queryFn: () => base44.entities.VideoPerformer.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const isLoading = videosLoading;
+
+  // Resolve video from slug
+  const videoRaw = allVideos.find(v => v.slug === slug) || null;
+  const video = safeVideo(videoRaw);
+
+  // Resolve brand
+  const brand = video ? (allBrands.find(b => b.id === video.brand_id) || null) : null;
+  const safeBrand = brand ? { id: brand.id, name: brand.name, slug: brand.slug, logo_url: brand.logo_url, cover_image_url: brand.cover_image_url, description: brand.description } : null;
+
+  // Resolve performers for this video
+  const performerIds = video ? allVideoPerformers.filter(vp => vp.video_id === video.id).map(vp => vp.performer_id) : [];
+  const performers = allPerformers
+    .filter(p => performerIds.includes(p.id))
+    .map(p => ({ id: p.id, display_name: p.display_name, slug: p.slug, profile_image_url: p.profile_image_url, nationality: p.nationality, verified: p.verified, fanclub_enabled: p.fanclub_enabled }));
+
+  // Related video sets
+  const otherVideos = allVideos.filter(v => v.slug !== slug);
+  const studioVideos = video ? otherVideos.filter(v => v.brand_id === video.brand_id).slice(0, 6).map(safeVideo) : [];
+  const similarVideos = video ? otherVideos.filter(v => v.tags?.some(t => video.tags?.includes(t))).slice(0, 4).map(safeVideo) : [];
+  const relatedVideos = video ? otherVideos.filter(v => v.brand_id === video.brand_id || v.tags?.some(t => video.tags?.includes(t))).slice(0, 6).map(safeVideo) : [];
+  const brands = allBrands.map(b => ({ id: b.id, name: b.name, slug: b.slug, logo_url: b.logo_url }));
 
   const handleUnlock = async () => {
     setUnlockError(null);
@@ -70,19 +112,17 @@ export default function VideoDetail() {
     setIsUnlocking(false);
   };
 
-  // During loading, render a content-rich skeleton with the slug-derived title
-  // so Googlebot/headless fetchers see meaningful content even before async resolves.
+  // Loading state — render slug-derived content so Googlebot sees real H1 immediately
   if (isLoading) {
     const titleFromSlug = slug
       ? slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
       : 'Loading Video';
-    const canonicalFromSlug = `https://fleshlab.online/videos/${slug}`;
     return (
       <>
         <SEOMeta
           title={`${titleFromSlug} | FLESHLAB Studios`}
           description={`Watch ${titleFromSlug} on FLESHLAB Studios. Premium gay adult content featuring verified Asian performers.`}
-          canonical={canonicalFromSlug}
+          canonical={`https://fleshlab.online/videos/${slug}`}
         />
         <div className="min-h-screen bg-background">
           <div className="bg-card border-b border-border">
@@ -301,12 +341,12 @@ export default function VideoDetail() {
                 <PerformerSection performer={primaryPerformer} videoCount={1} />
               ) : null}
 
-              {studioVideos.length > 0 && brand && (
+              {studioVideos.length > 0 && safeBrand && (
                 <VideoRail
-                  title={`More from ${brand.name}`}
+                  title={`More from ${safeBrand.name}`}
                   subtitle={`${studioVideos.length} videos available`}
                   videos={studioVideos} brands={brands} performers={performers}
-                  viewAllLink={`/brands/${brand.slug}`} viewAllText="View Studio"
+                  viewAllLink={`/brands/${safeBrand.slug}`} viewAllText="View Studio"
                 />
               )}
 
@@ -420,8 +460,8 @@ export default function VideoDetail() {
                 <Link to="/fanclub"><Button className="w-full bg-primary hover:bg-primary/90 text-sm">Join Fanclub</Button></Link>
               </div>
 
-              {studioVideos.length > 0 && brand && (
-                <StudioVideosMiniList brand={brand} videos={studioVideos} performers={performers} />
+              {studioVideos.length > 0 && safeBrand && (
+                <StudioVideosMiniList brand={safeBrand} videos={studioVideos} performers={performers} />
               )}
             </div>
           </div>
