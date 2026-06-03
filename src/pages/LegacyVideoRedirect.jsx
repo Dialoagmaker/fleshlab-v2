@@ -2,6 +2,16 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 
+function injectNoIndex() {
+  ['robots', 'googlebot'].forEach(name => {
+    let meta = document.querySelector(`meta[name="${name}"]`);
+    if (!meta) { meta = document.createElement('meta'); meta.setAttribute('name', name); document.head.appendChild(meta); }
+    meta.setAttribute('content', 'noindex,nofollow');
+  });
+  const canonical = document.querySelector('link[rel="canonical"]');
+  if (canonical) canonical.remove();
+}
+
 /**
  * LegacyVideoRedirect
  * Handles V1 URL: /VideoDetail?id=<db_id>
@@ -11,6 +21,7 @@ export default function LegacyVideoRedirect() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    injectNoIndex();
     const params = new URLSearchParams(window.location.search);
     const id = params.get('id');
 

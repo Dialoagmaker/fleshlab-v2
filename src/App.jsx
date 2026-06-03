@@ -63,6 +63,7 @@ import LegacyVideoRedirect from './pages/LegacyVideoRedirect';
 import LegacyActorRedirect from './pages/LegacyActorRedirect';
 import LegacyArticleRedirect from './pages/LegacyArticleRedirect';
 import LegacyPerformerSlug from './pages/LegacyPerformerSlug';
+import GhostRoute from './pages/GhostRoute';
 import HowItWorks from './pages/HowItWorks';
 import FAQ from './pages/FAQ';
 import Fanclub from './pages/Fanclub';
@@ -320,6 +321,17 @@ const AuthenticatedApp = () => {
     );
   }
 
+  // Ghost routes — V1/old tool paths that must NOT fall into /:slug wildcard
+  // These are dead paths; render noindex 404 immediately.
+  const GHOST_PATHS = [
+    '/AdminSmartThumbnails', '/AuthGateway', '/PerformerVideoStats',
+    '/AdminVideos', '/AdminApplications', '/PerformerDashboard',
+    '/SEOAuditPhase1Report',
+  ];
+  if (GHOST_PATHS.includes(path)) {
+    return <GhostRoute />;
+  }
+
   return (
     <>
       <Routes>
@@ -343,6 +355,16 @@ const AuthenticatedApp = () => {
       <Route path="/VideoDetail" element={<LegacyVideoRedirect />} />
       <Route path="/ActorDetail" element={<LegacyActorRedirect />} />
       <Route path="/ArticleReader" element={<LegacyArticleRedirect />} />
+      {/* /guest-productions (plural) → /guest-production (canonical) */}
+      <Route path="/guest-productions" element={<Navigate to="/guest-production" replace />} />
+      {/* Ghost routes — V1/old tool paths blocked before /:slug wildcard */}
+      <Route path="/AdminSmartThumbnails" element={<GhostRoute />} />
+      <Route path="/AuthGateway" element={<GhostRoute />} />
+      <Route path="/PerformerVideoStats" element={<GhostRoute />} />
+      <Route path="/AdminVideos" element={<GhostRoute />} />
+      <Route path="/AdminApplications" element={<GhostRoute />} />
+      <Route path="/PerformerDashboard" element={<GhostRoute />} />
+      <Route path="/SEOAuditPhase1Report" element={<GhostRoute />} />
       {/* Public routes — dynamic detail pages handled manually above */}
       <Route element={<Layout />}>
         <Route path="/brands" element={<PublicBrands />} />

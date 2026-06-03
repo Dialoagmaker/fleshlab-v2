@@ -2,6 +2,16 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 
+function injectNoIndex() {
+  ['robots', 'googlebot'].forEach(name => {
+    let meta = document.querySelector(`meta[name="${name}"]`);
+    if (!meta) { meta = document.createElement('meta'); meta.setAttribute('name', name); document.head.appendChild(meta); }
+    meta.setAttribute('content', 'noindex,nofollow');
+  });
+  const canonical = document.querySelector('link[rel="canonical"]');
+  if (canonical) canonical.remove();
+}
+
 /**
  * LegacyActorRedirect
  * Handles V1 URL: /ActorDetail?slug=<db_id_or_name>
@@ -16,6 +26,7 @@ export default function LegacyActorRedirect() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    injectNoIndex();
     const params = new URLSearchParams(window.location.search);
     const slugParam = params.get('slug');
 

@@ -2,6 +2,16 @@ import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 
+function injectNoIndex() {
+  ['robots', 'googlebot'].forEach(name => {
+    let meta = document.querySelector(`meta[name="${name}"]`);
+    if (!meta) { meta = document.createElement('meta'); meta.setAttribute('name', name); document.head.appendChild(meta); }
+    meta.setAttribute('content', 'noindex,nofollow');
+  });
+  const canonical = document.querySelector('link[rel="canonical"]');
+  if (canonical) canonical.remove();
+}
+
 /**
  * LegacyPerformerSlug
  * Handles V1 root performer URLs like /jameson-official
@@ -17,6 +27,7 @@ export default function LegacyPerformerSlug() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    injectNoIndex();
     if (!slug) {
       navigate('/', { replace: true });
       return;

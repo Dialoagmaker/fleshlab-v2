@@ -1,36 +1,21 @@
 User-agent: *
+Allow: /
 
-# ---- PUBLIC PAGES — allowed for indexing ----
-Allow: /$
-Allow: /videos$
-Allow: /videos/
-Allow: /performers$
-Allow: /performers/
-Allow: /news$
-Allow: /news/
-Allow: /brands$
-Allow: /brands/
-Allow: /become-performer$
-Allow: /guest-production$
-Allow: /how-it-works$
-Allow: /faq$
-
-# ---- ADMIN / INTERNAL — never index ----
-Disallow: /admin
 Disallow: /admin/
-Disallow: /dashboard
-Disallow: /performer/dashboard
-Disallow: /performerlogin
 Disallow: /login
 Disallow: /register
 Disallow: /forgot-password
 Disallow: /reset-password
 Disallow: /account
-Allow: /api/functions/sitemapXml
-Disallow: /api/
-Disallow: /functions/
+Disallow: /performer/login
+Disallow: /performer/dashboard
+Disallow: /Admin
+Disallow: /AdminSmartThumbnails
+Disallow: /AdminVideos
+Disallow: /AdminApplications
+Disallow: /AuthGateway
+Disallow: /PerformerDashboard
+Disallow: /PerformerVideoStats
+Disallow: /SEOAuditPhase1Report
 
-# NOTE: Do NOT add Disallow: /*?* — that blocks crawlable query-param compatibility redirects.
-
-# Sitemap (proxied production URL — see deployment notes for CDN proxy setup)
-Sitemap: https://fleshlab.online/api/functions/sitemapXml
+Sitemap: https://fleshlab.online/sitemap.xml
