@@ -177,8 +177,13 @@ const AuthenticatedApp = () => {
   }
 
   if (path === "/guest-productions") {
-    window.location.replace("/guest-production");
-    return null;
+    // Render the real page for headless/non-JS fetchers (SEO safe with canonical + noindex)
+    // JS-capable browsers will see the canonical meta and follow it; no duplicate indexing occurs
+    return (
+      <PublicPageShell>
+        <GuestProduction canonical="/guest-production" noIndex={true} />
+      </PublicPageShell>
+    );
   }
 
   if (path === "/") {
