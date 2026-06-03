@@ -45,14 +45,16 @@ Deno.serve(async (req) => {
     const brandMap = new Map(allBrands.map(b => [b.id, b]));
     const performerMap = new Map(allPerformers.map(p => [p.id, p]));
     
-    // Filter by search
+    // Filter by search - STRICT matching on searchable fields only
     let filteredVideos = allVideos;
     if (search) {
-      const searchLower = search.toLowerCase();
+      const searchLower = search.toLowerCase().trim();
       filteredVideos = filteredVideos.filter(v => {
         // Video fields
         const titleMatch = v.title?.toLowerCase().includes(searchLower);
+        const metaTitleMatch = v.meta_title?.toLowerCase().includes(searchLower);
         const summaryMatch = v.short_summary?.toLowerCase().includes(searchLower);
+        const descriptionMatch = v.description?.toLowerCase().includes(searchLower);
         const categoryMatch = v.categories?.some(c => c.toLowerCase().includes(searchLower));
         const tagMatch = v.tags?.some(t => t.toLowerCase().includes(searchLower));
         
@@ -70,7 +72,9 @@ Deno.serve(async (req) => {
           .map(p => p.display_name?.toLowerCase() || '');
         const performerMatch = performerNames.some(name => name.includes(searchLower));
         
-        return titleMatch || summaryMatch || categoryMatch || tagMatch || brandMatch || performerMatch;
+        // STRICT: only include if at least one field matches
+        const matches = titleMatch || metaTitleMatch || summaryMatch || descriptionMatch || categoryMatch || tagMatch || brandMatch || performerMatch;
+        return matches;
       });
     }
     
