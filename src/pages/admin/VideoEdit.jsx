@@ -14,6 +14,7 @@ import PerformerMultiSelect from "@/components/admin/PerformerMultiSelect";
 import VideoStatsSection from "@/components/admin/video/VideoStatsSection";
 import VideoDealsSection from "@/components/admin/video/VideoDealsSection";
 import { normalizeMetadata, BLOCKED_SPAM_TAGS, SENSITIVE_CATEGORIES } from "@/lib/videoMetadataGuardrails";
+import { checkPublishReadiness } from "@/lib/publishReadinessGuardrails";
 
 const EMPTY_FORM = {
   title: "", slug: "", description: "", short_summary: "", brand_id: "",
@@ -221,6 +222,15 @@ export default function VideoEdit() {
       errs.metadata = validation.errors.join(' ');
       errs.categories = validation.removed.categories;
       errs.tags = validation.removed.tags;
+    }
+    
+    // Phase 2D P0: Validate publish readiness if status is changing to published
+    if (form.status === 'published' && video?.status !== 'published') {
+      const publishCheck = checkPublishReadiness(form, { videoPerformers: selectedPerformerIds });
+      if (!publishCheck.canPublish && publishCheck.errors.length > 0) {
+        errs.publish = publishCheck.errors.join(' ');
+        errs.publishDetails = publishCheck;
+      }
     }
     
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
@@ -683,6 +693,16 @@ export default function VideoEdit() {
           <Link to="/admin/videos">
             <Button type="button" variant="outline">Cancel</Button>
           </Link>
+          {form.status === 'published' && errors.publish && (
+            <div className="ml-auto text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 max-w-md">
+              <p className="font-semibold mb-1">Cannot Publish - Missing Required Items:</p>
+              <ul className="list-disc list-inside space-y-0.5">
+                {errors.publishDetails?.missingItems?.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </form>
     </div>

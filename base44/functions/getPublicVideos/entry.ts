@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
     // Filters
     const { search, category, access_tier, exclusive, brand, duration, sort } = body;
     
-    // Build filter query
+    // Build filter query - Phase 2D P0: Filter by publish readiness, not just status
     const baseQuery = { status: 'published' };
     
     // Access tier filter
@@ -50,8 +50,26 @@ Deno.serve(async (req) => {
     const brandMap = new Map(allBrands.map(b => [b.id, b]));
     const performerMap = new Map(allPerformers.map(p => [p.id, p]));
     
+    // Phase 2D P0: Filter by publish readiness first (before any other filters)
+    const readyVideos = allVideos.filter(v => {
+      // Must have required fields for public display
+      if (!v.source_video_url || !v.primary_thumbnail_url) return false;
+      if (!v.trailer_url && !v.source_video_url) return false;
+      if (!v.duration_seconds || v.duration_seconds <= 0) return false;
+      if (!v.access_tier || !['free', 'fanclub', 'ppv'].includes(v.access_tier)) return false;
+      if (!v.title || v.title.trim().length < 3) return false;
+      
+      // Must have at least one performer
+      const videoPerformerIds = allVideoPerformers
+        .filter(vp => vp.video_id === v.id)
+        .map(vp => vp.performer_id);
+      if (videoPerformerIds.length === 0) return false;
+      
+      return true;
+    });
+    
     // Filter by search - STRICT matching on searchable fields only
-    let filteredVideos = allVideos;
+    let filteredVideos = readyVideos;
     if (search) {
       const searchLower = search.toLowerCase().trim();
       filteredVideos = filteredVideos.filter(v => {

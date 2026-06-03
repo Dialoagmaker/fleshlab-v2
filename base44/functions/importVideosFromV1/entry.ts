@@ -220,6 +220,22 @@ Deno.serve(async (req) => {
         }
       })();
       
+      // Phase 2D P0: Validate publish readiness if importing as published
+      const publishErrors = [];
+      if (status === 'published') {
+        if (!sourceVideoUrl) publishErrors.push('Source video URL is missing');
+        if (!raw.thumbnail_url) publishErrors.push('Thumbnail URL is missing');
+        if (!raw.preview_video_url && !sourceVideoUrl) publishErrors.push('Trailer URL is missing');
+        if (!raw.duration_seconds || raw.duration_seconds <= 0) publishErrors.push('Duration is missing or invalid');
+        if (performerIds.length === 0) publishErrors.push('At least one performer must be assigned');
+        
+        if (publishErrors.length > 0) {
+          // Force to draft status if not ready for publish
+          warnings.push(`Video cannot be published: ${publishErrors.join(', ')}. Changed status to draft.`);
+          status = 'draft';
+        }
+      }
+      
       const payload = {
         v1_id,
         title: raw.title.trim(),

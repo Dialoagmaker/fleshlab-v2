@@ -63,11 +63,12 @@ Deno.serve(async (req) => {
     const today = new Date().toISOString().substring(0, 10);
 
     // Fetch all public data using service role (no user auth required for sitemap)
-    const [videos, performers, articles, brands] = await Promise.all([
+    const [videos, performers, articles, brands, allVideoPerformers] = await Promise.all([
       base44.asServiceRole.entities.Video.filter({ status: 'published' }, '-updated_date', 1000),
       base44.asServiceRole.entities.Performer.filter({ status: 'active' }, '-updated_date', 500),
       base44.asServiceRole.entities.NewsArticle.filter({ status: 'published' }, '-published_at', 200),
       base44.asServiceRole.entities.Brand.filter({ status: 'active' }, 'name', 100),
+      base44.asServiceRole.entities.VideoPerformer.filter({}),
     ]);
 
     const urls = [];
@@ -106,8 +107,26 @@ Deno.serve(async (req) => {
     }
 
     // --- Video pages ---
+    // Phase 2D P0: Only include videos with complete publish readiness
     const seenVideoSlugs = new Set();
     for (const video of videos) {
+      // Skip if missing required fields for public display
+      if (!video.source_video_url || !video.primary_thumbnail_url) {
+        stats.skipped_videos++; continue;
+      }
+      if (!video.trailer_url && !video.source_video_url) {
+        stats.skipped_videos++; continue;
+      }
+      if (!video.duration_seconds || video.duration_seconds <= 0) {
+        stats.skipped_videos++; continue;
+      }
+      
+      // Phase 2D P0: Check performer relations
+      const videoPerformerCount = allVideoPerformers.filter(vp => vp.video_id === video.id).length;
+      if (videoPerformerCount === 0) {
+        stats.skipped_videos++; continue;
+      }
+      
       if (!isValidSlug(video.slug)) { stats.skipped_videos++; continue; }
       if (seenVideoSlugs.has(video.slug)) { stats.skipped_videos++; continue; }
       seenVideoSlugs.add(video.slug);

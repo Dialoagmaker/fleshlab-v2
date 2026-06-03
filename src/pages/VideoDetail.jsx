@@ -88,6 +88,31 @@ export default function VideoDetail() {
     window.history.replaceState(null, '', canonicalPath);
   }
   
+  // Phase 2D P0: Check if video is complete enough to display publicly
+  // Even if status is 'published', hide if critical fields are missing
+  if (videoRaw) {
+    const hasRequiredFields = 
+      videoRaw.source_video_url &&
+      videoRaw.primary_thumbnail_url &&
+      (videoRaw.trailer_url || videoRaw.source_video_url) &&
+      videoRaw.duration_seconds &&
+      videoRaw.duration_seconds > 0 &&
+      videoRaw.access_tier &&
+      ['free', 'fanclub', 'ppv'].includes(videoRaw.access_tier) &&
+      videoRaw.title &&
+      videoRaw.title.trim().length >= 3;
+    
+    // Check performer relations
+    const videoPerformerIds = allVideoPerformers
+      .filter(vp => vp.video_id === videoRaw.id)
+      .map(vp => vp.performer_id);
+    
+    if (!hasRequiredFields || videoPerformerIds.length === 0) {
+      // Video is incomplete - treat as not found
+      videoRaw = null;
+    }
+  }
+  
   const video = safeVideo(videoRaw);
 
   // Resolve brand
