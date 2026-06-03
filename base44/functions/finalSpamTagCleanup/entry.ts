@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
-// Fix the last remaining oral tag issue on compilation video
+// Final cleanup - remove all spam tags and unsupported oral tags
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -18,42 +18,34 @@ Deno.serve(async (req) => {
     }
 
     const currentTags = video.tags || [];
-    const currentCategories = video.categories || [];
     
-    // Remove oral/blowjob categories - no evidence in description
-    const newCategories = currentCategories.filter(c => 
-      !['Oral', 'Blowjob'].includes(c)
-    );
-    
-    // Remove spam SEO tags from title
-    const spamTags = [
+    // Remove ALL spam SEO tags and unsupported sex act tags
+    const spamPatterns = [
       'free porn', 'adult toys', 'best porn sites', 
       'adult movie downloads', 'adult videos', 'X-rated videos',
       'fleshlight reviews', 'buy fleshlight online', 
       'best male masturbation devices', 'lube for fleshlights',
       'best fleshlights', 'gay twink', 'twinks cumshot',
       'gay cum compilation', 'twink sex videos', 'twink tube',
-      'amateur gay twinks', 'twink anal', 'best gay porn sites'
+      'amateur gay twinks', 'twink anal', 'best gay porn sites',
+      'blowjob', 'oral'  // Remove these tags - no evidence
     ];
     
     const newTags = currentTags.filter(t => 
-      !spamTags.some(spam => t.toLowerCase().includes(spam.toLowerCase()))
+      !spamPatterns.some(spam => t.toLowerCase().includes(spam.toLowerCase()))
     );
 
     await base44.asServiceRole.entities.Video.update(videoId, {
-      categories: newCategories,
       tags: newTags
     });
 
     return Response.json({
-      message: 'Fixed compilation video - removed oral/blowjob tags without evidence',
+      message: 'Final cleanup complete - all spam tags removed',
       video_id: videoId,
       title: video.title,
-      oldCategories: currentCategories,
-      newCategories,
       oldTags: currentTags,
       newTags,
-      removed: currentCategories.filter(c => !newCategories.includes(c))
+      removed: currentTags.filter(t => !newTags.includes(t))
     });
 
   } catch (error) {
