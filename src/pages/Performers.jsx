@@ -26,12 +26,12 @@ export default function Performers() {
       const nameLower = performer.display_name.toLowerCase().replace(/[_\s-]/g, '');
       const slugLower = performer.slug.toLowerCase().replace(/[_\s-]/g, '');
       
-      // Match Fitmaker variants (with/without "the")
-      const isFitmaker = nameLower.includes('fitmaker') || slugLower.includes('fitmaker');
+      // Match Fitmaster variants (with/without "the")
+      const isFitmaster = nameLower.includes('fitmaster') || slugLower.includes('fitmaster');
       // Match Jameson
       const isJameson = nameLower.includes('jameson') || slugLower.includes('jameson');
       
-      if (isFitmaker || isJameson) {
+      if (isFitmaster || isJameson) {
         priority.push(performer);
       }
     }
