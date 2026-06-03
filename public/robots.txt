@@ -9,7 +9,7 @@ Disallow: /reset-password
 Disallow: /account
 Disallow: /performer/login
 Disallow: /performer/dashboard
-Disallow: /Admin
+Disallow: /performerlogin
 Disallow: /AdminSmartThumbnails
 Disallow: /AdminVideos
 Disallow: /AdminApplications
@@ -18,4 +18,4 @@ Disallow: /PerformerDashboard
 Disallow: /PerformerVideoStats
 Disallow: /SEOAuditPhase1Report
 
-Sitemap: https://fleshlab.online/sitemap.xml
+Sitemap: https://fleshlab.online/api/functions/sitemapXml
