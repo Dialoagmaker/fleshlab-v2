@@ -55,21 +55,21 @@ export default function Performers() {
       />
       <div className="min-h-screen bg-background">
         {/* Cinematic Hero */}
-        <div className="relative bg-gradient-to-b from-[#0f0f0f] via-[#0a0a0a] to-background border-b border-rose-600/20 pb-8 pt-12 px-4 overflow-hidden">
+        <div className="relative bg-gradient-to-b from-[#0f0f0f] via-[#0a0a0a] to-background border-b border-rose-600/20 pb-10 pt-14 px-4 overflow-hidden">
           {/* Subtle rose glow */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-rose-600/5 rounded-full blur-[100px] pointer-events-none" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-rose-600/5 rounded-full blur-[120px] pointer-events-none" />
           
-          <div className="max-w-7xl mx-auto relative z-10">
+          <div className="max-w-[1800px] mx-auto relative z-10">
             {/* Icon + Title */}
-            <div className="flex items-start gap-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-rose-600 to-rose-700 rounded-xl flex items-center justify-center shadow-lg shadow-rose-600/25 flex-shrink-0">
-                <Users className="w-6 h-6 text-white" />
+            <div className="flex items-start gap-4 mb-5">
+              <div className="w-14 h-14 bg-gradient-to-br from-rose-600 to-rose-700 rounded-xl flex items-center justify-center shadow-lg shadow-rose-600/25 flex-shrink-0">
+                <Users className="w-7 h-7 text-white" />
               </div>
               <div className="flex-1">
-                <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight mb-2">
+                <h1 className="text-3xl md:text-5xl font-bold text-white tracking-tight leading-tight mb-2">
                   FLESHLAB Studios Performer Roster
                 </h1>
-                <p className="text-white/60 text-sm leading-relaxed max-w-3xl">
+                <p className="text-white/60 text-base leading-relaxed max-w-4xl">
                   Verified 18+ Asian gay performers, Filipino twink talent, and exclusive studio artists. 
                   Discover professional profiles, fanclub access, and premium gay adult content.
                 </p>
@@ -77,40 +77,40 @@ export default function Performers() {
             </div>
 
             {/* Stats Row */}
-            <div className="flex flex-wrap gap-3 mb-5">
-              <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-                <div className="w-8 h-8 bg-rose-600/15 rounded-md flex items-center justify-center">
+            <div className="flex flex-wrap gap-4 mb-2">
+              <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-white/[0.02] border border-white/[0.06]">
+                <div className="w-9 h-9 bg-rose-600/15 rounded-md flex items-center justify-center">
                   <Users className="w-4 h-4 text-rose-500" />
                 </div>
                 <div className="leading-tight">
-                  <p className="text-white font-semibold text-xs">{performers.length}</p>
+                  <p className="text-white font-semibold text-sm">{performers.length}</p>
                   <p className="text-white/40 text-[10px]">Performers</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-                <div className="w-8 h-8 bg-purple-600/15 rounded-md flex items-center justify-center">
+              <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-white/[0.02] border border-white/[0.06]">
+                <div className="w-9 h-9 bg-purple-600/15 rounded-md flex items-center justify-center">
                   <Star className="w-4 h-4 text-purple-500" />
                 </div>
                 <div className="leading-tight">
-                  <p className="text-white font-semibold text-xs">{performers.filter(p => p.fanclub_enabled).length}</p>
+                  <p className="text-white font-semibold text-sm">{performers.filter(p => p.fanclub_enabled).length}</p>
                   <p className="text-white/40 text-[10px]">Fanclub</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-                <div className="w-8 h-8 bg-emerald-600/15 rounded-md flex items-center justify-center">
+              <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-white/[0.02] border border-white/[0.06]">
+                <div className="w-9 h-9 bg-emerald-600/15 rounded-md flex items-center justify-center">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                 </div>
                 <div className="leading-tight">
-                  <p className="text-white font-semibold text-xs">{performers.filter(p => p.verified).length}</p>
+                  <p className="text-white font-semibold text-sm">{performers.filter(p => p.verified).length}</p>
                   <p className="text-white/40 text-[10px]">Verified</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-                <div className="w-8 h-8 bg-amber-600/15 rounded-md flex items-center justify-center">
+              <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-white/[0.02] border border-white/[0.06]">
+                <div className="w-9 h-9 bg-amber-600/15 rounded-md flex items-center justify-center">
                   <Film className="w-4 h-4 text-amber-500" />
                 </div>
                 <div className="leading-tight">
-                  <p className="text-white font-semibold text-xs">100%</p>
+                  <p className="text-white font-semibold text-sm">100%</p>
                   <p className="text-white/40 text-[10px]">Exclusive</p>
                 </div>
               </div>
@@ -119,20 +119,20 @@ export default function Performers() {
         </div>
 
         {/* Content */}
-        <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6">
+        <div className="max-w-[1800px] mx-auto px-4 py-8 space-y-8">
           {/* Search Bar */}
-          <div className="relative max-w-2xl mx-auto">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-rose-500 transition-colors" />
+          <div className="relative max-w-3xl mx-auto">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-rose-500 transition-colors" />
             <Input
               placeholder="Search performers by name or nationality..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-[#1a1a1a]/50 backdrop-blur-sm border border-white/8 text-white placeholder:text-white/40 h-12 pl-12 pr-12 rounded-lg focus:outline-none focus:border-rose-600/40 focus:ring-2 focus:ring-rose-600/15 transition-all"
+              className="w-full bg-[#1a1a1a]/50 backdrop-blur-sm border border-white/8 text-white placeholder:text-white/40 h-14 pl-14 pr-12 rounded-lg focus:outline-none focus:border-rose-600/40 focus:ring-2 focus:ring-rose-600/15 transition-all"
             />
             {search && (
               <button
                 onClick={handleClear}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
               >
                 <X className="w-4 h-4 text-white/60" />
               </button>
@@ -142,11 +142,11 @@ export default function Performers() {
           {/* Featured Performers Row */}
           {filteredPerformers.length > 0 && (
             <>
-              <div className="pt-4 pb-2">
-                <h2 className="text-lg font-bold text-white/90 mb-1">Featured Talent</h2>
-                <p className="text-white/50 text-xs">Top verified performers and fanclub exclusives</p>
+              <div className="pt-2 pb-3">
+                <h2 className="text-xl font-bold text-white/90 mb-1">Featured Talent</h2>
+                <p className="text-white/50 text-sm">Top verified performers and fanclub exclusives</p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                 {(performers.filter(p => p.verified || p.fanclub_enabled).slice(0, 4)).map(performer => (
                   <PerformerCard 
                     key={performer.id} 
@@ -163,11 +163,11 @@ export default function Performers() {
           {/* Main Grid */}
           {filteredPerformers.length > 0 ? (
             <>
-              <div className="pt-6 pb-2 border-t border-white/5">
-                <h2 className="text-lg font-bold text-white/90 mb-1">All Performers</h2>
-                <p className="text-white/50 text-xs">Browse complete roster ({filteredPerformers.length} performers)</p>
+              <div className="pt-4 pb-3 border-t border-white/5">
+                <h2 className="text-xl font-bold text-white/90 mb-1">All Performers</h2>
+                <p className="text-white/50 text-sm">Browse complete roster ({filteredPerformers.length} performers)</p>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4">
                 {filteredPerformers.map(performer => (
                   <PerformerCard 
                     key={performer.id} 

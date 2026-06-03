@@ -32,29 +32,29 @@ export default function PerformerCard({ performer, brands = [], videoCount = 0, 
           {/* Stronger gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
 
-          {/* Fanclub badge */}
+          {/* Fanclub badge - larger for featured */}
           {performer.fanclub_enabled && (
             <div className={`absolute top-3 left-3 flex items-center gap-1.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-full shadow-lg ${featured ? 'opacity-100' : 'opacity-95'}`}>
               <Star className="w-2.5 h-2.5 fill-current" /> FANCLUB
             </div>
           )}
 
-          {/* Verified badge */}
+          {/* Verified badge - larger for featured */}
           {performer.verified && (
             <div className={`absolute top-3 right-3 bg-gradient-to-br from-rose-500 to-rose-600 p-1.5 rounded-full shadow-lg ${featured ? 'opacity-100' : 'opacity-95'}`}>
-              <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+              <CheckCircle2 className={`w-3.5 h-3.5 text-white ${featured ? 'w-4 h-4' : ''}`} />
             </div>
           )}
 
           {/* Name overlay at bottom - larger for featured */}
           <div className={`absolute bottom-0 left-0 right-0 p-3 ${featured ? 'p-4' : ''}`}>
-            <h3 className={`font-black text-white leading-tight group-hover:text-primary transition-colors line-clamp-1 ${featured ? 'text-base' : 'text-sm'}`}>
+            <h3 className={`font-black text-white leading-tight group-hover:text-primary transition-colors line-clamp-1 ${featured ? 'text-lg' : 'text-sm'}`}>
               {performer.display_name}
             </h3>
-            <div className={`flex items-center gap-2 mt-1 text-white/50 ${featured ? 'text-xs' : 'text-[11px]'}`}>
+            <div className={`flex items-center gap-2 mt-1 text-white/50 ${featured ? 'text-sm' : 'text-[11px]'}`}>
               {performer.nationality && (
                 <span className="flex items-center gap-1 truncate">
-                  <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
+                  <MapPin className={`w-2.5 h-2.5 flex-shrink-0 ${featured ? 'w-3 h-3' : ''}`} />
                   <span className="truncate">{performer.nationality}</span>
                 </span>
               )}
@@ -68,14 +68,14 @@ export default function PerformerCard({ performer, brands = [], videoCount = 0, 
         {/* Card footer - more prominent for featured */}
         <div className={`px-3 py-2.5 flex items-center justify-between ${featured ? 'px-4 py-3' : ''}`}>
           <div className="flex items-center gap-1.5 text-[11px] text-white/40">
-            <Film className="w-3 h-3 text-primary/60" />
+            <Film className={`w-3 h-3 text-primary/60 ${featured ? 'w-4 h-4' : ''}`} />
             {videoCount > 0
               ? <span><span className="text-white/70 font-semibold">{videoCount}</span> video{videoCount !== 1 ? 's' : ''}</span>
               : <span className="italic">Coming soon</span>
             }
           </div>
-          <span className={`group-hover:text-primary transition-colors flex items-center gap-0.5 font-semibold ${featured ? 'text-sm' : 'text-[11px] text-primary/70'}`}>
-            Profile <ArrowRight className={`w-2.5 h-2.5 ${featured ? '' : ''}`} />
+          <span className={`group-hover:text-primary transition-colors flex items-center gap-0.5 font-semibold ${featured ? 'text-base' : 'text-[11px] text-primary/70'}`}>
+            Profile <ArrowRight className={`w-2.5 h-2.5 ${featured ? 'w-3 h-3' : ''}`} />
           </span>
         </div>
       </div>
