@@ -1,5 +1,5 @@
 import React from "react";
-import { Play, Clock, Crown, Star } from "lucide-react";
+import { Play, Clock, Crown, Star, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function VideoCard({ video, brands = [], performers = [] }) {
@@ -11,7 +11,7 @@ export default function VideoCard({ video, brands = [], performers = [] }) {
 
   return (
     <a href={`/videos/${video.slug}`} className="group block">
-      <div className="rounded-xl overflow-hidden bg-[#111] border border-white/[0.07] hover:border-primary/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(180,30,50,0.2)]">
+      <div className="rounded-2xl overflow-hidden bg-[#111] border border-white/[0.08] hover:border-rose-500/50 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_16px_48px_rgba(225,29,72,0.25)]">
 
         {/* Thumbnail */}
         <div className="relative aspect-video overflow-hidden bg-[#0a0a0a]">
@@ -19,77 +19,82 @@ export default function VideoCard({ video, brands = [], performers = [] }) {
             <img
               src={video.primary_thumbnail_url}
               alt={video.title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               loading="lazy"
               decoding="async"
               width="640"
               height="360"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Play className="w-12 h-12 text-white/20" />
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a]">
+              <Play className="w-16 h-16 text-white/10" />
             </div>
           )}
 
-          {/* Cinematic gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+          {/* Cinematic gradient overlay - enhanced */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
 
-          {/* Hover play button */}
+          {/* Enhanced hover play button with glow */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className={cn(
-              "w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-2xl shadow-primary/60",
-              "opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300"
+              "w-16 h-16 bg-gradient-to-br from-rose-600 to-rose-700 rounded-full flex items-center justify-center shadow-2xl shadow-rose-600/50",
+              "opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300",
+              "hover:shadow-[0_0_40px_rgba(225,29,72,0.6)]"
             )}>
-              <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+              <Play className="w-6 h-6 text-white fill-white ml-0.5" />
             </div>
           </div>
 
-          {/* Top-left badges */}
-          <div className="absolute top-2 left-2 flex flex-col gap-1">
+          {/* Top-left badges - enhanced hierarchy */}
+          <div className="absolute top-2 left-2 flex flex-col gap-1.5">
             {video.featured && (
-              <span className="flex items-center gap-1 bg-primary text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg">
-                <Crown className="w-2.5 h-2.5" /> FEATURED
+              <span className="flex items-center gap-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-lg shadow-amber-600/30">
+                <Crown className="w-3 h-3" /> FEATURED
               </span>
             )}
             {video.is_exclusive && (
-              <span className="bg-purple-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg">
-                EXCLUSIVE
+              <span className="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-lg shadow-purple-600/30">
+                <Zap className="w-3 h-3" /> EXCLUSIVE
               </span>
             )}
           </div>
 
-          {/* Access tier — top right */}
+          {/* Access tier — top right - enhanced */}
           {video.access_tier && video.access_tier !== 'free' && (
             <div className={cn(
-              "absolute top-2 right-2 text-[10px] font-bold px-2 py-1 rounded shadow-lg",
-              video.access_tier === 'fanclub' ? 'bg-purple-700 text-white' : 'bg-red-700 text-white'
+              "absolute top-2 right-2 text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-lg backdrop-blur-sm",
+              video.access_tier === 'fanclub' ? 'bg-purple-600/90 text-white shadow-purple-600/30' : 'bg-red-600/90 text-white shadow-red-600/30'
             )}>
-              {video.access_tier === 'fanclub' ? 'FANCLUB' : 'PPV'}
+              {video.access_tier === 'fanclub' ? (
+                <span className="flex items-center gap-1"><Crown className="w-2.5 h-2.5" /> FANCLUB</span>
+              ) : (
+                <span className="flex items-center gap-1"><Star className="w-2.5 h-2.5" /> PPV</span>
+              )}
             </div>
           )}
 
-          {/* Duration — bottom right */}
+          {/* Duration — bottom right - enhanced visibility */}
           {hasValidDuration && (
-            <div className="absolute bottom-2 right-2 bg-black/90 text-white text-[11px] font-mono font-bold px-2 py-1 rounded flex items-center gap-1 border border-white/10">
-              <Clock className="w-2.5 h-2.5" />{mins}:{secs}
+            <div className="absolute bottom-2 right-2 bg-black/95 backdrop-blur-sm text-white text-[11px] font-mono font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 border border-white/15 shadow-lg">
+              <Clock className="w-3 h-3" />{mins}:{secs}
             </div>
           )}
         </div>
 
-        {/* Card body */}
-        <div className="p-3 space-y-2">
-          <h3 className="font-bold text-white/90 text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors min-h-[2.5rem]">
+        {/* Card body - improved spacing */}
+        <div className="p-3.5 space-y-2.5">
+          <h3 className="font-bold text-white/95 text-sm leading-snug line-clamp-2 group-hover:text-rose-500 transition-colors duration-300 min-h-[2.5rem]">
             {video.title}
           </h3>
 
-          <div className="flex items-center justify-between gap-2 text-[11px] text-white/35">
+          <div className="flex items-center justify-between gap-2 text-[11px] text-white/40">
             {brand ? (
-              <span className="bg-white/[0.06] text-white/50 font-semibold px-2 py-0.5 rounded">
+              <span className="bg-white/[0.08] text-white/60 font-semibold px-2.5 py-1 rounded-md border border-white/10">
                 {brand.name}
               </span>
             ) : <span />}
             {video.release_date && (
-              <span>
+              <span className="text-white/30">
                 {new Date(video.release_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </span>
             )}

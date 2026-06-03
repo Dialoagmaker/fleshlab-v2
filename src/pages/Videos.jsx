@@ -5,7 +5,7 @@ import { appParams } from "@/lib/app-params";
 import VideoCard from "@/components/public/VideoCard";
 import VideoFilters from "@/components/public/VideoFilters";
 import { Button } from "@/components/ui/button";
-import { Film, Play, AlertCircle } from "lucide-react";
+import { Film, Play, AlertCircle, Users, Clock, Crown, Sparkles } from "lucide-react";
 import SEOMeta from "@/components/SEOMeta";
 import { useI18n } from "@/i18n/i18n";
 
@@ -138,58 +138,108 @@ export default function Videos() {
         }}
       />
       <div className="min-h-screen bg-[#0a0a0a]">
-        {/* Hero */}
-        <div className="bg-gradient-to-b from-[#0f0f0f] via-[#0a0a0a] to-[#0a0a0a] border-b border-rose-600/20 py-16 px-4">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-rose-600/20 rounded-full flex items-center justify-center">
-                <Play className="w-6 h-6 text-rose-500 fill-current" />
+        {/* Enhanced Hero Section */}
+        <div className="relative bg-gradient-to-b from-[#0f0f0f] via-[#0a0a0a] to-[#0a0a0a] border-b border-rose-600/30 pb-8 pt-12 px-4 overflow-hidden">
+          {/* Subtle animated glow effect */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-rose-600/5 rounded-full blur-[120px] pointer-events-none" />
+          
+          <div className="max-w-7xl mx-auto relative z-10">
+            {/* Icon + Title */}
+            <div className="flex items-start gap-4 mb-5">
+              <div className="w-14 h-14 bg-gradient-to-br from-rose-600 to-rose-700 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-600/30 flex-shrink-0">
+                <Play className="w-7 h-7 text-white fill-white" />
               </div>
-              <div>
-                <h1 className="text-4xl font-bold text-white">Asian Gay Videos, Filipino Twinks & Full-Length Studio Scenes</h1>
-                <p className="text-white/60 text-sm">
+              <div className="flex-1">
+                <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight leading-tight mb-3">
+                  Premium Asian Gay Videos & Filipino Twink Scenes
+                </h1>
+                <p className="text-white/70 text-base leading-relaxed max-w-4xl">
                   Browse verified 18+ Asian and Filipino gay adult videos including solo scenes, shower videos, outdoor shoots, bareback scenes, oral and anal content, full-length gay adult scenes including solo, oral, anal, bareback, shower and studio productions, and exclusive fanclub releases.
                 </p>
-                {isLoading ? (
-                  <p className="text-white/40 text-xs mt-1">Loading videos...</p>
-                ) : (
-                  <p className="text-white/40 text-xs mt-1">
-                    {total} {total === 1 ? 'video' : 'videos'} total · Showing page {page} {hasMore ? `(1-${page * VIDEOS_PER_PAGE})` : ''}
-                  </p>
-                )}
               </div>
             </div>
+
+            {/* Stats Row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-xl p-4 flex items-center gap-3">
+                <div className="w-10 h-10 bg-rose-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Users className="w-5 h-5 text-rose-500" />
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm">Verified 18+</p>
+                  <p className="text-white/50 text-xs">Performers</p>
+                </div>
+              </div>
+              <div className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-xl p-4 flex items-center gap-3">
+                <div className="w-10 h-10 bg-purple-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Crown className="w-5 h-5 text-purple-500" />
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm">Full-Length</p>
+                  <p className="text-white/50 text-xs">Studio Scenes</p>
+                </div>
+              </div>
+              <div className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-xl p-4 flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-5 h-5 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm">Fanclub</p>
+                  <p className="text-white/50 text-xs">Exclusives</p>
+                </div>
+              </div>
+              <div className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-xl p-4 flex items-center gap-3">
+                <div className="w-10 h-10 bg-emerald-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-5 h-5 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="text-white font-bold text-sm">Updated</p>
+                  <p className="text-white/50 text-xs">Weekly</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Live counter */}
+            {isLoading ? (
+              <p className="text-white/40 text-xs">Loading videos...</p>
+            ) : (
+              <p className="text-white/50 text-sm">
+                <span className="font-semibold text-white">{total}</span> {total === 1 ? 'video' : 'videos'} available
+                {hasMore && <span className="mx-1">·</span>}
+                {hasMore && <span>Showing page {page} (1-{page * VIDEOS_PER_PAGE})</span>}
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Content */}
-        <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        {/* Content - Reduced padding to bring videos higher */}
+        <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-5">
           {/* Filters */}
           <VideoFilters onFilterChange={handleFilterChange} brands={brands} />
 
           {isLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3">
               {[...Array(24)].map((_, i) => (
                 <div key={i} className="aspect-video bg-[#121212] rounded-xl animate-pulse border border-white/5" />
               ))}
             </div>
           ) : videos.length > 0 ? (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3">
                 {videos.map(video => (
                   <VideoCard key={video.id} video={video} brands={brands} />
                 ))}
               </div>
 
               {hasMore && (
-                <div className="text-center pt-8 pb-4">
+                <div className="text-center pt-6 pb-4">
                   <Button
                     onClick={() => setPage(p => p + 1)}
-                    className="px-8 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-semibold shadow-lg shadow-rose-600/30"
+                    className="px-10 py-3 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold text-sm rounded-xl shadow-xl shadow-rose-600/40 transition-all hover:scale-105"
                     size="lg"
                   >
                     Load More Videos
-                    <span className="ml-2 text-xs opacity-80">
+                    <span className="ml-2 text-xs opacity-80 font-medium">
                       ({total - page * VIDEOS_PER_PAGE} remaining)
                     </span>
                   </Button>
