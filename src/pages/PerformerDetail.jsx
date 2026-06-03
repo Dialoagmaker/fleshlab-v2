@@ -126,6 +126,13 @@ export default function PerformerDetail() {
   // Check for exclusive/fanclub videos
   const hasExclusiveVideos = performerVideos.some(v => v.is_exclusive || v.access_tier === 'fanclub' || v.access_tier === 'ppv');
   const fanclubOrExclusive = performer?.fanclub_enabled || hasExclusiveVideos;
+  
+  // Get featured video (first exclusive/fanclub video, or first video)
+  const featuredVideo = performerVideos.find(v => v.is_exclusive || v.access_tier === 'fanclub' || v.access_tier === 'ppv') || performerVideos[0];
+  
+  // Identity line for hero
+  const nationalityShort = performer.nationality ? performer.nationality.split(',')[0].trim() : '';
+  const identityLine = `Verified 18+ ${nationalityShort ? nationalityShort + ' performer' : 'performer'} · FLESHLAB Studios`;
 
   // Loading state
   // Not found state
@@ -175,173 +182,284 @@ export default function PerformerDetail() {
       />
       
       <div className="min-h-screen bg-background">
-        {/* Cinematic Hero Section */}
-        <div className="relative bg-gradient-to-b from-[#0f0f0f] via-[#0a0a0a] to-background border-b border-rose-600/20 pb-8 overflow-hidden">
-          {/* Subtle rose glow */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-rose-600/5 rounded-full blur-[120px] pointer-events-none" />
+        {/* Two-Column Sales Hero */}
+        <div className="relative bg-gradient-to-b from-[#0a0a0a] via-[#0d0d0d] to-background border-b border-rose-600/20 overflow-hidden">
+          {/* Cinematic glow effects */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-rose-600/5 rounded-full blur-[140px] pointer-events-none" />
           
-          <div className="max-w-[1400px] mx-auto px-4 pt-8 pb-6 relative z-10">
+          <div className="max-w-[1400px] mx-auto px-4 pt-6 pb-10 relative z-10">
             {/* Back Navigation */}
             <Button
               variant="ghost"
               onClick={() => navigate('/performers')}
-              className="gap-2 text-white/60 hover:text-white mb-6"
+              className="gap-2 text-white/50 hover:text-white mb-6 -ml-2"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Performers
+              <span className="text-sm">Back to Performers</span>
             </Button>
 
-            <div className="grid lg:grid-cols-3 gap-8">
-              {/* Large Profile Image */}
-              <div className="lg:col-span-1">
-                <div className="bg-card/50 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-rose-900/20">
-                  <div className="aspect-[3/4] bg-secondary relative group">
-                    {performer.profile_image_url ? (
-                      <img
-                        src={performer.profile_image_url}
-                        alt={performer.display_name}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-gradient-to-br from-secondary to-muted">
-                        <Users className="w-24 h-24 opacity-50" />
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+              {/* Left: Large Profile Image */}
+              <div className="order-2 lg:order-1">
+                <div className="relative">
+                  <div className="bg-gradient-to-br from-rose-600/20 to-purple-600/20 rounded-3xl p-1 shadow-2xl shadow-rose-900/30">
+                    <div className="bg-[#0a0a0a] rounded-[22px] overflow-hidden">
+                      <div className="aspect-[4/5] relative group">
+                        {performer.profile_image_url ? (
+                          <img
+                            src={performer.profile_image_url}
+                            alt={performer.display_name}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a]">
+                            <Users className="w-32 h-32 opacity-30" />
+                          </div>
+                        )}
+                        
+                        {/* Overlay badges */}
+                        <div className="absolute top-4 left-4 flex flex-col gap-2">
+                          {performer.verified && (
+                            <div className="bg-primary/95 backdrop-blur-sm text-white px-3 py-2 rounded-full shadow-lg flex items-center gap-1.5">
+                              <Verified className="w-4 h-4" />
+                              <span className="text-xs font-bold uppercase">Verified 18+</span>
+                            </div>
+                          )}
+                          {performer.status === 'active' && (
+                            <div className="bg-emerald-500/95 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-1.5">
+                              <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                              ACTIVE
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Studio badge */}
+                        {performerBrand && (
+                          <div className="absolute bottom-4 left-4 bg-rose-600/95 backdrop-blur-sm text-white px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2">
+                            <Crown className="w-4 h-4" />
+                            <span className="text-sm font-bold">{performerBrand.name}</span>
+                          </div>
+                        )}
+                        
+                        {/* Video count badge */}
+                        {performerVideos.length > 0 && (
+                          <div className="absolute bottom-4 right-4 bg-black/80 backdrop-blur-sm text-white px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2">
+                            <Film className="w-4 h-4 text-rose-500" />
+                            <span className="text-sm font-bold">{performerVideos.length} {performerVideos.length === 1 ? 'Scene' : 'Scenes'}</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    
-                    {/* Verified badge */}
-                    {performer.verified && (
-                      <div className="absolute top-4 right-4 bg-primary text-white p-2.5 rounded-full shadow-lg shadow-rose-600/30">
-                        <Verified className="w-5 h-5" />
-                      </div>
-                    )}
-                    
-                    {/* Active status */}
-                    {performer.status === 'active' && (
-                      <div className="absolute top-4 left-4 bg-emerald-500/90 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
-                        ACTIVE
-                      </div>
-                    )}
-                    
-                    {/* Gradient overlay at bottom */}
-                    <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Performer Info & CTAs */}
-              <div className="lg:col-span-2 flex flex-col justify-center">
-                <div className="space-y-6">
-                  {/* Name + Verified */}
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight">{performer.display_name}</h1>
-                    {performer.verified && (
-                      <div className="flex items-center gap-2 bg-primary/20 text-primary px-3 py-1.5 rounded-full border border-primary/30">
-                        <Verified className="w-4 h-4" />
-                        <span className="text-xs font-bold uppercase tracking-wide">Verified 18+</span>
+              {/* Right: Sales Content & CTAs */}
+              <div className="order-1 lg:order-2 space-y-6">
+                {/* Name + Identity */}
+                <div>
+                  <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight mb-3">
+                    {performer.display_name}
+                  </h1>
+                  <p className="text-white/60 text-lg mb-4">{identityLine}</p>
+                  
+                  {/* Fanclub/Exclusive badges */}
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {performer.fanclub_enabled && (
+                      <div className="bg-purple-600/20 text-purple-400 border border-purple-600/40 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5">
+                        <Crown className="w-3.5 h-3.5" />
+                        FANCLUB AVAILABLE
                       </div>
                     )}
-                  </div>
-
-                  {/* Quick Stats Row */}
-                  <div className="flex flex-wrap gap-4 text-white/70">
-                    {performer.nationality && (
-                      <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">
-                        <Globe className="w-4 h-4 text-rose-500" />
-                        <span className="font-medium text-white text-sm">{performer.nationality}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">
-                      <Film className="w-4 h-4 text-rose-500" />
-                      <span className="font-medium text-white text-sm">{performerVideos.length} {performerVideos.length === 1 ? 'video' : 'videos'}</span>
-                    </div>
-                    {performerBrand && (
-                      <div className="flex items-center gap-2 bg-rose-600/20 px-3 py-1.5 rounded-lg border border-rose-600/30">
-                        <Crown className="w-4 h-4 text-rose-500" />
-                        <span className="font-medium text-white text-sm">{performerBrand.name}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Short punchy intro */}
-                  <p className="text-white/70 leading-relaxed text-lg max-w-2xl">
-                    {seoIntro}
-                  </p>
-
-                  {/* Trust Badges */}
-                  <PerformerBadges performer={performer} />
-
-                  {/* Primary CTAs */}
-                  <div className="flex flex-wrap gap-3 pt-4">
-                    {performerVideos.length > 0 ? (
-                      <Link to="/videos">
-                        <Button className="bg-rose-600 hover:bg-rose-700 text-white px-8 py-6 text-base font-semibold shadow-lg shadow-rose-600/30 gap-2">
-                          <Play className="w-5 h-5" />
-                          Watch Videos
-                        </Button>
-                      </Link>
-                    ) : null}
-                    
-                    {fanclubOrExclusive && (
-                      <Link to="/fanclub">
-                        <Button variant="outline" className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 border-purple-600/40 px-8 py-6 text-base font-semibold gap-2">
-                          <Crown className="w-5 h-5" />
-                          Join Fanclub
-                        </Button>
-                      </Link>
-                    )}
-                    
                     {hasExclusiveVideos && (
-                      <Link to="/videos">
-                        <Button variant="outline" className="bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 border-amber-600/40 px-6 py-6 text-base font-semibold gap-2">
-                          <Star className="w-5 h-5" />
-                          Exclusive Scenes
-                        </Button>
-                      </Link>
+                      <div className="bg-amber-600/20 text-amber-400 border border-amber-600/40 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5">
+                        <Star className="w-3.5 h-3.5" />
+                        EXCLUSIVE SCENES
+                      </div>
                     )}
                   </div>
+                </div>
+
+                {/* Short seductive intro - max 2 lines */}
+                <p className="text-white/70 text-lg leading-relaxed line-clamp-2">
+                  {seoIntro}
+                </p>
+
+                {/* Primary CTA Row - IMMEDIATELY after intro */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  {performerVideos.length > 0 && (
+                    <Link to="/videos" className="flex-1">
+                      <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white px-8 py-7 text-lg font-bold shadow-xl shadow-rose-600/30 gap-2.5 rounded-xl">
+                        <Play className="w-6 h-6" />
+                        Watch Videos
+                      </Button>
+                    </Link>
+                  )}
+                  
+                  {fanclubOrExclusive && (
+                    <Link to="/fanclub" className="flex-1">
+                      <Button variant="outline" className="w-full bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 border-purple-600/40 px-8 py-7 text-lg font-bold gap-2.5 rounded-xl">
+                        <Crown className="w-6 h-6" />
+                        Join Fanclub
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+
+                {/* Secondary CTA - Exclusive Scenes */}
+                {hasExclusiveVideos && performerVideos.length > 0 && (
+                  <Link to="/videos">
+                    <Button variant="outline" className="w-full sm:w-auto bg-amber-600/10 hover:bg-amber-600/20 text-amber-400 border-amber-600/30 px-6 py-4 font-semibold gap-2 rounded-xl">
+                      <Lock className="w-4 h-4" />
+                      Unlock Exclusive Scenes
+                    </Button>
+                  </Link>
+                )}
+
+                {/* Trust Badges */}
+                <div className="pt-4">
+                  <PerformerBadges performer={performer} />
                 </div>
               </div>
             </div>
           </div>
         </div>
 
+        {/* Featured Scene - BEFORE biography */}
+        {featuredVideo && (
+          <div className="max-w-[1400px] mx-auto px-4 py-10">
+            <div className="bg-gradient-to-br from-rose-900/20 via-rose-800/10 to-transparent rounded-3xl border border-rose-600/30 p-6 lg:p-8 relative overflow-hidden">
+              {/* Glow effect */}
+              <div className="absolute top-0 right-0 w-96 h-96 bg-rose-600/10 rounded-full blur-[100px] pointer-events-none" />
+              
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-rose-600/20 rounded-xl flex items-center justify-center">
+                    <Play className="w-5 h-5 text-rose-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl lg:text-3xl font-bold text-white">Featured Scene</h2>
+                    <p className="text-white/50 text-sm">Watch {performer.display_name}'s latest release</p>
+                  </div>
+                </div>
+                
+                <div className="grid lg:grid-cols-2 gap-6 items-center">
+                  {/* Video card - larger than normal */}
+                  <div className="relative group">
+                    <Link to={`/videos/${featuredVideo.slug}`}>
+                      <div className="aspect-video bg-[#0a0a0a] rounded-2xl overflow-hidden border border-white/10 shadow-xl">
+                        <img
+                          src={featuredVideo.primary_thumbnail_url || featuredVideo.cover_image_url}
+                          alt={featuredVideo.title}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        {/* Play overlay */}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <div className="w-16 h-16 bg-rose-600 rounded-full flex items-center justify-center shadow-lg">
+                            <Play className="w-8 h-8 text-white ml-1" />
+                          </div>
+                        </div>
+                        {/* Access tier badge */}
+                        {(featuredVideo.is_exclusive || featuredVideo.access_tier === 'fanclub' || featuredVideo.access_tier === 'ppv') && (
+                          <div className="absolute top-3 right-3 bg-amber-600/95 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
+                            <Lock className="w-3 h-3" />
+                            EXCLUSIVE
+                          </div>
+                        )}
+                        {/* Duration badge */}
+                        {featuredVideo.duration_seconds && (
+                          <div className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-sm text-white px-2.5 py-1 rounded-md text-xs font-bold">
+                            {Math.floor(featuredVideo.duration_seconds / 60)}:{String(featuredVideo.duration_seconds % 60).padStart(2, '0')}
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  </div>
+                  
+                  {/* Video info + CTA */}
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-xl lg:text-2xl font-bold text-white mb-2">{featuredVideo.title}</h3>
+                      <p className="text-white/60 text-sm line-clamp-2">{featuredVideo.short_summary || featuredVideo.description}</p>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      {featuredVideo.access_tier === 'free' && (
+                        <Badge className="bg-emerald-600/20 text-emerald-400 border-emerald-600/40">
+                          Free to Watch
+                        </Badge>
+                      )}
+                      {featuredVideo.access_tier === 'fanclub' && (
+                        <Badge className="bg-purple-600/20 text-purple-400 border-purple-600/40">
+                          Fanclub Only
+                        </Badge>
+                      )}
+                      {featuredVideo.access_tier === 'ppv' && (
+                        <Badge className="bg-amber-600/20 text-amber-400 border-amber-600/40">
+                          Premium Rental
+                        </Badge>
+                      )}
+                      {featuredVideo.is_exclusive && (
+                        <Badge className="bg-rose-600/20 text-rose-400 border-rose-600/40">
+                          Exclusive
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <Link to={`/videos/${featuredVideo.slug}`}>
+                      <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white px-6 py-6 text-base font-bold shadow-lg shadow-rose-600/30 gap-2 rounded-xl">
+                        <Play className="w-5 h-5" />
+                        {featuredVideo.access_tier === 'free' ? 'Watch Scene' : 'Unlock Scene'}
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Content Sections */}
-        <div className="max-w-[1400px] mx-auto px-4 py-8">
-          {/* Full Biography */}
+        <div className="max-w-[1400px] mx-auto px-4 py-8 space-y-10">
+          {/* Full Biography - MOVED LOWER */}
           {performer.bio && (
-            <div className="mb-10">
-              <div className="bg-card/30 backdrop-blur-sm rounded-2xl border border-white/10 p-6 lg:p-8">
-                <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-rose-500" />
+            <div>
+              <div className="bg-card/30 backdrop-blur-sm rounded-2xl border border-white/10 p-6 lg:p-10">
+                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                  <Heart className="w-6 h-6 text-rose-500" />
                   About {performer.display_name}
                 </h2>
-                <p className="text-white/70 whitespace-pre-wrap leading-relaxed text-base lg:text-lg">
-                  {performer.bio}
-                </p>
+                <div className="prose prose-invert max-w-none">
+                  <p className="text-white/70 whitespace-pre-wrap leading-relaxed text-base lg:text-lg max-w-3xl">
+                    {performer.bio}
+                  </p>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Videos Section */}
+          {/* Videos Section - STRONGER */}
           {performerVideos.length > 0 ? (
-            <div className="mb-10">
+            <div>
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-2xl lg:text-3xl font-bold text-white mb-1">
-                    Videos with {performer.display_name}
+                  <h2 className="text-3xl lg:text-4xl font-bold text-white mb-1">
+                    All Scenes with {performer.display_name}
                   </h2>
                   <p className="text-white/50 text-sm">
-                    {performerVideos.length} {performerVideos.length === 1 ? 'scene' : 'scenes'} available now
+                    {performerVideos.length} {performerVideos.length === 1 ? 'exclusive scene' : 'exclusive scenes'} available now
                   </p>
                 </div>
                 <Link to="/videos">
-                  <Button variant="outline" className="gap-2 border-white/20 text-white hover:bg-white/10">
+                  <Button variant="outline" className="gap-2 border-white/20 text-white hover:bg-white/10 rounded-xl">
                     Browse All Videos
                     <ExternalLink className="w-4 h-4" />
                   </Button>
                 </Link>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              
+              {/* Grid - larger for single video */}
+              <div className={`grid gap-6 ${performerVideos.length === 1 ? 'grid-cols-1 max-w-3xl' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}>
                 {performerVideos.map(video => (
                   <VideoCard key={video.id} video={video} brands={brands} />
                 ))}
@@ -349,34 +467,34 @@ export default function PerformerDetail() {
             </div>
           ) : (
             /* Empty State - No Videos */
-            <div className="mb-10">
-              <div className="bg-gradient-to-br from-card/50 to-card/30 backdrop-blur-sm rounded-2xl border border-white/10 p-12 text-center">
-                <div className="w-20 h-20 bg-rose-600/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Film className="w-10 h-10 text-rose-500" />
+            <div>
+              <div className="bg-gradient-to-br from-card/50 to-card/30 backdrop-blur-sm rounded-3xl border border-white/10 p-12 lg:p-16 text-center">
+                <div className="w-24 h-24 bg-rose-600/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Film className="w-12 h-12 text-rose-500" />
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-3">
+                <h2 className="text-3xl font-bold text-white mb-3">
                   Exclusive Scenes Coming Soon
                 </h2>
-                <p className="text-white/60 mb-8 max-w-lg mx-auto">
+                <p className="text-white/60 mb-8 max-w-lg mx-auto text-lg">
                   {performer.display_name}'s premium content is being added to the library. 
                   Be the first to know when new scenes drop by joining the fanclub.
                 </p>
                 <div className="flex flex-wrap gap-3 justify-center">
                   <Link to="/videos">
-                    <Button variant="outline" className="gap-2 border-white/20 text-white hover:bg-white/10">
+                    <Button variant="outline" className="gap-2 border-white/20 text-white hover:bg-white/10 rounded-xl">
                       <Play className="w-4 h-4" />
                       Browse All Videos
                     </Button>
                   </Link>
                   <Link to="/performers">
-                    <Button variant="outline" className="gap-2 border-white/20 text-white hover:bg-white/10">
+                    <Button variant="outline" className="gap-2 border-white/20 text-white hover:bg-white/10 rounded-xl">
                       <Users className="w-4 h-4" />
                       View All Performers
                     </Button>
                   </Link>
                   {performer.fanclub_enabled && (
                     <Link to="/fanclub">
-                      <Button className="gap-2 bg-purple-600 hover:bg-purple-700 text-white">
+                      <Button className="gap-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl">
                         <Crown className="w-4 h-4" />
                         Join Fanclub
                       </Button>
@@ -387,60 +505,74 @@ export default function PerformerDetail() {
             </div>
           )}
 
-          {/* Enhanced Fanclub Promo */}
-          {performer.fanclub_enabled && (
-            <div className="mb-10">
-              <div className="relative bg-gradient-to-br from-purple-900/30 to-purple-800/20 rounded-2xl border border-purple-500/30 p-8 overflow-hidden">
-                {/* Decorative elements */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/10 rounded-full blur-[80px] pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-rose-600/10 rounded-full blur-[80px] pointer-events-none" />
+          {/* Enhanced Fanclub Promo - MORE COMMERCIAL */}
+          {fanclubOrExclusive && (
+            <div>
+              <div className="relative bg-gradient-to-br from-purple-900/40 via-purple-800/20 to-transparent rounded-3xl border border-purple-500/40 p-8 lg:p-12 overflow-hidden">
+                {/* Decorative blurs */}
+                <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/15 rounded-full blur-[120px] pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-96 h-96 bg-rose-600/15 rounded-full blur-[120px] pointer-events-none" />
                 
-                <div className="relative z-10 grid lg:grid-cols-2 gap-8 items-center">
+                <div className="relative z-10 grid lg:grid-cols-2 gap-10 items-center">
                   <div>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 bg-purple-600/20 rounded-xl flex items-center justify-center">
-                        <Crown className="w-6 h-6 text-purple-400" />
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-14 h-14 bg-purple-600/25 rounded-2xl flex items-center justify-center">
+                        <Crown className="w-7 h-7 text-purple-400" />
                       </div>
                       <div>
-                        <h3 className="text-2xl font-bold text-white">
+                        <h3 className="text-3xl font-bold text-white">
                           Join {performer.display_name}'s Fanclub
                         </h3>
-                        <p className="text-purple-300/80 text-sm">
-                          Unlock exclusive premium content
+                        <p className="text-purple-300/70 text-base">
+                          Unlock exclusive member-only content
                         </p>
                       </div>
                     </div>
-                    <ul className="space-y-3 mb-6">
-                      <li className="flex items-center gap-3 text-white/80">
-                        <div className="w-5 h-5 bg-purple-600/30 rounded-full flex items-center justify-center">
-                          <Lock className="w-3 h-3 text-purple-300" />
+                    
+                    <ul className="space-y-4 mb-8">
+                      <li className="flex items-start gap-4 text-white/85">
+                        <div className="w-6 h-6 bg-purple-600/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Lock className="w-3.5 h-3.5 text-purple-300" />
                         </div>
-                        <span>Exclusive scenes not available anywhere else</span>
+                        <div>
+                          <span className="font-semibold text-white">Exclusive scenes</span>
+                          <p className="text-white/60 text-sm">Full-length videos not available anywhere else</p>
+                        </div>
                       </li>
-                      <li className="flex items-center gap-3 text-white/80">
-                        <div className="w-5 h-5 bg-purple-600/30 rounded-full flex items-center justify-center">
-                          <Zap className="w-3 h-3 text-purple-300" />
+                      <li className="flex items-start gap-4 text-white/85">
+                        <div className="w-6 h-6 bg-purple-600/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Zap className="w-3.5 h-3.5 text-purple-300" />
                         </div>
-                        <span>Early access to new releases before public launch</span>
+                        <div>
+                          <span className="font-semibold text-white">Early access</span>
+                          <p className="text-white/60 text-sm">Watch new releases before public launch</p>
+                        </div>
                       </li>
-                      <li className="flex items-center gap-3 text-white/80">
-                        <div className="w-5 h-5 bg-purple-600/30 rounded-full flex items-center justify-center">
-                          <Heart className="w-3 h-3 text-purple-300" />
+                      <li className="flex items-start gap-4 text-white/85">
+                        <div className="w-6 h-6 bg-purple-600/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Heart className="w-3.5 h-3.5 text-purple-300" />
                         </div>
-                        <span>Behind the scenes content and performer updates</span>
+                        <div>
+                          <span className="font-semibold text-white">Behind the scenes</span>
+                          <p className="text-white/60 text-sm">Exclusive BTS content and performer updates</p>
+                        </div>
                       </li>
-                      <li className="flex items-center gap-3 text-white/80">
-                        <div className="w-5 h-5 bg-purple-600/30 rounded-full flex items-center justify-center">
-                          <Star className="w-3 h-3 text-purple-300" />
+                      <li className="flex items-start gap-4 text-white/85">
+                        <div className="w-6 h-6 bg-purple-600/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Star className="w-3.5 h-3.5 text-purple-300" />
                         </div>
-                        <span>Direct support for {performer.display_name}</span>
+                        <div>
+                          <span className="font-semibold text-white">Member-only perks</span>
+                          <p className="text-white/60 text-sm">Direct support for {performer.display_name} and special rewards</p>
+                        </div>
                       </li>
                     </ul>
                   </div>
-                  <div className="flex lg:justify-end">
+                  
+                  <div className="flex lg:justify-center">
                     <Link to="/fanclub">
-                      <Button className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 text-lg font-semibold shadow-lg shadow-purple-600/30 gap-2">
-                        <Crown className="w-5 h-5" />
+                      <Button className="w-full lg:w-auto bg-purple-600 hover:bg-purple-700 text-white px-10 py-8 text-xl font-bold shadow-2xl shadow-purple-600/40 gap-3 rounded-2xl">
+                        <Crown className="w-7 h-7" />
                         Join Fanclub Now
                       </Button>
                     </Link>
