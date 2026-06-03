@@ -1,0 +1,17 @@
+{
+  "name": "FLESHLAB Studios",
+  "short_name": "FLESHLAB",
+  "description": "Premium Asian gay adult studio featuring verified 18+ Filipino twink performers and exclusive studio productions",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#be183f",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://fleshlab.online/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}
