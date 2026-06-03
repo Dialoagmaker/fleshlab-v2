@@ -5,6 +5,8 @@ import { base44 } from "@/api/base44Client";
 import VideoCard from "@/components/public/VideoCard";
 import SEOMeta from "@/components/SEOMeta";
 import PremiumTeaserBlock from "@/components/public/PremiumTeaserBlock";
+import PerformerBadges from "@/components/public/PerformerBadges";
+import { generatePerformerTitle, generatePerformerMetaDescription, generatePerformerSEOBio, isFilipino, isAsian } from "@/lib/performerSeoUtils";
 import { 
   ArrowLeft, 
   Loader2, 
@@ -14,7 +16,8 @@ import {
   Verified,
   Globe,
   MapPin,
-  Crown
+  Crown,
+  Play
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -67,10 +70,15 @@ export default function PerformerDetail() {
     "@context": "https://schema.org",
     "@type": "Person",
     "name": performer.display_name,
-    "description": performer.meta_description || performer.bio?.substring(0, 160),
+    "description": performer.meta_description || generatePerformerMetaDescription(performer),
     "image": performer.profile_image_url,
+    "url": `https://fleshlab.online/performers/${performer.slug}`,
     "nationality": performer.nationality,
-    "birthDate": performer.date_of_birth,
+    "worksFor": {
+      "@type": "Organization",
+      "name": "FLESHLAB Studios",
+      "url": "https://fleshlab.online"
+    },
     "sameAs": [
       performer.twitter_url,
       performer.instagram_url,
@@ -79,6 +87,11 @@ export default function PerformerDetail() {
   } : undefined;
 
   const canonicalUrl = performer ? `https://fleshlab.online/performers/${performer.slug}` : undefined;
+  
+  // Generate SEO content
+  const seoTitle = performer.meta_title || generatePerformerTitle(performer);
+  const seoDescription = performer.meta_description || generatePerformerMetaDescription(performer);
+  const seoIntro = generatePerformerSEOBio(performer);
 
   if (!performer) {
     return (
@@ -97,8 +110,8 @@ export default function PerformerDetail() {
   return (
     <>
       <SEOMeta
-        title={performer.meta_title || `${performer.display_name} | FLESHLAB Studios`}
-        description={performer.meta_description || (performer.bio ? performer.bio.substring(0, 157) + '...' : `Meet ${performer.display_name}, a verified 18+ FLESHLAB Studios performer featured in Asian gay videos, Filipino/Pinoy creator content, solo scenes, fanclub updates and studio-produced adult scenes.`)}
+        title={seoTitle}
+        description={seoDescription}
         canonical={canonicalUrl}
         ogImage={performer.profile_image_url || performer.cover_image_url}
         ogType="profile"
@@ -166,7 +179,16 @@ export default function PerformerDetail() {
                   )}
                 </div>
 
-                <div className="flex flex-wrap gap-4 text-muted-foreground pb-4 border-b border-border">
+                {/* SEO Intro Paragraph */}
+                <p className="text-muted-foreground leading-relaxed mb-4 pb-4 border-b border-border">
+                  {seoIntro}
+                </p>
+
+                {/* Trust/Content Badges */}
+                <PerformerBadges performer={performer} />
+
+                {/* Quick Stats */}
+                <div className="flex flex-wrap gap-4 text-muted-foreground pt-4">
                   {performer.nationality && (
                     <span className="flex items-center gap-1.5">
                       <Globe className="w-4 h-4" />
@@ -176,7 +198,7 @@ export default function PerformerDetail() {
                   {age && age >= 18 && (
                     <span className="flex items-center gap-1.5">
                       <Calendar className="w-4 h-4" />
-                      <span className="font-medium text-foreground">{age} years old</span>
+                      <span className="font-medium text-foreground">Verified 18+</span>
                     </span>
                   )}
                   <span className="flex items-center gap-1.5">
@@ -240,15 +262,29 @@ export default function PerformerDetail() {
               </div>
             </div>
           ) : (
-            <div className="bg-card/50 rounded-2xl p-12 border border-border text-center">
-              <Film className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <h3 className="text-xl font-bold mb-2 text-foreground">Videos Coming Soon</h3>
-              <p className="text-muted-foreground mb-6">
-                {performer.display_name}'s scenes are being added to the library
-              </p>
-              <Button onClick={() => navigate('/videos')} variant="outline">
-                Browse Other Videos
-              </Button>
+            <div className="pt-8 border-t border-border">
+              <div className="bg-card/50 rounded-2xl p-12 border border-border text-center">
+                <Film className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <h3 className="text-xl font-bold mb-2 text-foreground">Videos Coming Soon</h3>
+                <p className="text-muted-foreground mb-6">
+                  {performer.display_name}'s exclusive scenes are being added to the library. 
+                  Explore our full video collection and discover more verified performers.
+                </p>
+                <div className="flex flex-wrap gap-3 justify-center">
+                  <Button onClick={() => navigate('/videos')} variant="outline" className="gap-2">
+                    <Play className="w-4 h-4" />
+                    Browse All Videos
+                  </Button>
+                  <Button onClick={() => navigate('/performers')} variant="outline" className="gap-2">
+                    <Users className="w-4 h-4" />
+                    View All Performers
+                  </Button>
+                  <Button onClick={() => navigate('/fanclub')} variant="outline" className="gap-2">
+                    <Crown className="w-4 h-4" />
+                    Fanclub Access
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </div>
