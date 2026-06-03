@@ -9,6 +9,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
+import { getStoredAuthIntent, buildRedirectUrl } from "@/lib/authRedirect";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -44,7 +45,17 @@ export default function Register() {
       const result = await base44.auth.verifyOtp({ email, otpCode });
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
+        
+        // Check for stored intent and redirect accordingly
+        const storedIntent = getStoredAuthIntent();
+        if (storedIntent) {
+          console.log("REGISTER_INTENT_FOUND", storedIntent);
+          const redirectUrl = buildRedirectUrl(storedIntent);
+          window.location.href = redirectUrl;
+          return;
+        }
       }
+      // Fallback to homepage if no intent
       window.location.href = "/";
     } catch (err) {
       setError(err.message || "Invalid verification code");
@@ -67,6 +78,15 @@ export default function Register() {
   };
 
   const handleGoogle = () => {
+    // Check for stored intent
+    const storedIntent = getStoredAuthIntent();
+    if (storedIntent) {
+      const redirectUrl = buildRedirectUrl(storedIntent);
+      console.log("GOOGLE_REGISTER_INTENT", redirectUrl);
+      base44.auth.loginWithProvider("google", redirectUrl);
+      return;
+    }
+    // Fallback
     base44.auth.loginWithProvider("google", "/");
   };
 

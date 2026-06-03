@@ -1,5 +1,6 @@
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
+import { storeAuthIntent, createFanclubIntent, createPPVIntent, createGuestProductionIntent, createFreeWatchIntent } from '@/lib/authRedirect';
 
 /**
  * Pricing configuration for FLESHLAB Studios
@@ -81,8 +82,30 @@ export function useAccessControl() {
    * Redirect to signup/login with return URL
    * @param {string} nextUrl - URL to redirect to after auth
    */
-  const requireSignup = (nextUrl) => {
+  const requireSignup = (nextUrl, actionType = null, metadata = {}) => {
     if (!isAuthenticated) {
+      // Store intent before redirect
+      if (actionType) {
+        let intent;
+        switch (actionType) {
+          case 'fanclub':
+            intent = createFanclubIntent(metadata.planId, nextUrl);
+            break;
+          case 'ppv':
+            intent = createPPVIntent(metadata.videoId, metadata.videoSlug, metadata.priceTier, nextUrl);
+            break;
+          case 'guest-production':
+            intent = createGuestProductionIntent(nextUrl);
+            break;
+          case 'free-watch':
+            intent = createFreeWatchIntent(metadata.videoSlug, nextUrl);
+            break;
+          default:
+            intent = { actionType: 'general', nextUrl };
+        }
+        storeAuthIntent(intent);
+      }
+      
       // Use Base44 auth redirect with return URL
       const redirectUrl = nextUrl || window.location.pathname;
       base44.auth.redirectToLogin(redirectUrl);
@@ -104,28 +127,34 @@ export function useAccessControl() {
         case 'fanclub':
           return {
             text: 'Create Account to Join Fanclub',
-            action: () => requireSignup('/fanclub'),
+            action: () => requireSignup('/fanclub', 'fanclub', { planId: metadata.planId || 'fanclub_monthly' }),
             variant: 'default',
             requiresAuth: true
           };
         case 'ppv':
           return {
             text: 'Create Account to Unlock',
-            action: () => requireSignup(window.location.pathname),
+            action: () => requireSignup(window.location.pathname, 'ppv', {
+              videoId: metadata.videoId,
+              videoSlug: metadata.videoSlug,
+              priceTier: metadata.priceTier || 'standard'
+            }),
             variant: 'default',
             requiresAuth: true
           };
         case 'guest-production':
           return {
             text: 'Create Account to Apply',
-            action: () => requireSignup('/guest-production'),
+            action: () => requireSignup('/guest-production', 'guest-production'),
             variant: 'default',
             requiresAuth: true
           };
         case 'full-video':
           return {
             text: 'Sign Up to Watch',
-            action: () => requireSignup(window.location.pathname),
+            action: () => requireSignup(window.location.pathname, 'free-watch', {
+              videoSlug: metadata.videoSlug
+            }),
             variant: 'default',
             requiresAuth: true
           };

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,27 +7,47 @@ import { Label } from "@/components/ui/label";
 import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
+import { getStoredAuthIntent, buildRedirectUrl, validateRedirectUrl } from "@/lib/authRedirect";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Get redirect destination from URL parameter
   const fromParam = new URLSearchParams(window.location.search).get("from");
 
   const getRedirectForRole = (role) => {
     console.log("GET_REDIRECT_FOR_ROLE", { role, fromParam });
-    // If user came from admin route and is admin, redirect to admin dashboard
-    if (fromParam && fromParam.startsWith("/admin")) {
-      return role === "admin" ? "/admin/dashboard" : "/account";
+    
+    // Priority 1: Check stored auth intent (from monetization CTAs)
+    const storedIntent = getStoredAuthIntent();
+    if (storedIntent) {
+      console.log("LOGIN_INTENT_FOUND", storedIntent);
+      return buildRedirectUrl(storedIntent);
     }
-    // Default role-based redirects
+    
+    // Priority 2: URL from parameter (validated)
+    if (fromParam) {
+      const validated = validateRedirectUrl(fromParam);
+      if (validated !== '/') {
+        // Admin route handling
+        if (validated.startsWith("/admin")) {
+          return role === "admin" ? "/admin/dashboard" : "/account";
+        }
+        return validated;
+      }
+    }
+    
+    // Priority 3: Role-based defaults
     if (role === "admin") return "/admin/dashboard";
     if (role === "performer") return "/performer/dashboard";
     if (role === "client") return "/account";
-    return fromParam || "/";
+    
+    // Fallback
+    return "/";
   };
 
   const handleSubmit = async (e) => {
@@ -64,9 +84,17 @@ export default function Login() {
   };
 
   const handleGoogle = () => {
-    // Pass the intended destination (from param) to Google OAuth
-    // After login, user will be redirected back to this destination
-    const redirectUrl = fromParam || "/";
+    // Priority 1: Check stored auth intent
+    const storedIntent = getStoredAuthIntent();
+    if (storedIntent) {
+      const redirectUrl = buildRedirectUrl(storedIntent);
+      console.log("GOOGLE_LOGIN_INTENT", redirectUrl);
+      base44.auth.loginWithProvider("google", redirectUrl);
+      return;
+    }
+    
+    // Priority 2: Use from param (validated)
+    const redirectUrl = fromParam ? validateRedirectUrl(fromParam) : "/";
     base44.auth.loginWithProvider("google", redirectUrl);
   };
 
