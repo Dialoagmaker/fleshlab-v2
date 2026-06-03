@@ -6,16 +6,48 @@ import { base44 } from '@/api/base44Client';
  * All prices in USD
  */
 export const PRICING = {
-  fanclub: {
-    monthly: 12.99,
-    label: 'Fanclub Membership',
+  free: {
+    price: 0,
+    label: 'Free Account',
     features: [
-      'Exclusive fanclub videos',
+      'Public performer profiles',
+      'Free previews/trailers',
+      'Selected short free videos',
+      'Studio updates',
+      'Ability to unlock PPV scenes',
+      'Ability to apply for Guest Production'
+    ]
+  },
+  fanclub: {
+    monthly: {
+      price: 12.99,
+      label: 'Monthly',
+      sublabel: 'Flexible monthly access',
+      period: 'month'
+    },
+    sixMonths: {
+      price: 59.99,
+      label: '6 Months',
+      sublabel: 'Save 23%',
+      period: '6 months',
+      pricePerMonth: 9.99
+    },
+    annual: {
+      price: 99.99,
+      label: '12 Months',
+      sublabel: 'Best Value',
+      period: 'year',
+      pricePerMonth: 8.33,
+      badge: 'BEST VALUE'
+    },
+    features: [
+      'Fanclub videos',
       'Early releases',
       'Behind the scenes',
       'Performer updates',
       'Member-only posts',
-      'Bonus clips'
+      'Bonus clips',
+      'Selected exclusive scenes'
     ]
   },
   ppv: {
