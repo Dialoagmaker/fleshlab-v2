@@ -19,19 +19,34 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/i18n/i18n";
 
+// Approved taxonomy categories from Phase 2A - dynamically generated from actual video categories
 const CATEGORIES = [
   "All",
-  "Asian Twinks",
-  "Filipino / Pinoy",
+  "Asian",
+  "Filipino",
+  "Pinoy",
+  "Twink",
   "Solo",
   "Outdoor",
   "Shower",
-  "Studio Originals",
-  "Fanclub Exclusives",
-  "New Performers",
-  "Trending",
-  "Group",
-  "POV",
+  "Mirror",
+  "Dildo Play",
+  "Nipple Play",
+  "Blowjob",
+  "Oral",
+  "Anal",
+  "Bareback",
+  "Creampie",
+  "Cumshot",
+  "Rimming",
+  "Handjob",
+  "BDSM",
+  "Daddy/Twink",
+  "Age Gap",
+  "Studio Production",
+  "Fanclub",
+  "PPV",
+  "Exclusive",
 ];
 
 const ACCESS_TIERS = [
@@ -39,7 +54,6 @@ const ACCESS_TIERS = [
   { value: "free", label: "Free Preview" },
   { value: "fanclub", label: "Fanclub" },
   { value: "ppv", label: "PPV" },
-  { value: "exclusive", label: "Exclusive" },
 ];
 
 const DURATIONS = [
@@ -81,6 +95,7 @@ export default function VideoFilters({ onFilterChange, brands = [] }) {
     search: debouncedSearch,
     category: category === "all" ? null : category,
     access_tier: accessTier === "all" ? null : accessTier,
+    exclusive: category === "exclusive" ? true : null,
     brand: brand === "all" ? null : brand,
     duration: duration === "all" ? null : DURATIONS.find(d => d.value === duration),
     sort,

@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
     const skip = (page - 1) * limit;
     
     // Filters
-    const { search, category, access_tier, brand, duration, sort } = body;
+    const { search, category, access_tier, exclusive, brand, duration, sort } = body;
     
     // Build filter query
     const baseQuery = { status: 'published' };
@@ -21,6 +21,11 @@ Deno.serve(async (req) => {
     // Access tier filter
     if (access_tier) {
       baseQuery.access_tier = access_tier;
+    }
+    
+    // Exclusive filter (uses is_exclusive boolean field, NOT access_tier)
+    if (exclusive === true) {
+      // Note: We filter in-memory below since is_exclusive is a boolean
     }
     
     // Brand filter
@@ -85,6 +90,11 @@ Deno.serve(async (req) => {
         v.categories?.some(c => c.toLowerCase().includes(categoryLower)) ||
         v.tags?.some(t => t.toLowerCase().includes(categoryLower))
       );
+    }
+    
+    // Filter by exclusive (uses is_exclusive boolean field)
+    if (exclusive === true) {
+      filteredVideos = filteredVideos.filter(v => v.is_exclusive === true);
     }
     
     // Filter by duration
