@@ -16,6 +16,21 @@ export default function SEOMeta({
   jsonLd,
   noIndex = false  // Explicit noindex for admin/protected pages
 }) {
+  // CRITICAL: Inject robots meta synchronously BEFORE useEffect to prevent Google from seeing noindex
+  // This runs during initial render, ensuring raw HTML has correct robots directive
+  if (typeof document !== 'undefined') {
+    const robotsDirective = noIndex ? 'noindex,nofollow' : 'index,follow';
+    ['robots', 'googlebot'].forEach(name => {
+      let meta = document.querySelector(`meta[name="${name}"]`);
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', name);
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', robotsDirective);
+    });
+  }
+
   useEffect(() => {
     // Document Title
     if (title) {
@@ -44,8 +59,8 @@ export default function SEOMeta({
       }
     }
 
-    // Robots — explicit noindex for admin/protected, otherwise environment-based
-    const robotsDirective = noIndex ? 'noindex,nofollow' : getRobotsDirective();
+    // Robots — re-apply in useEffect for dynamic navigation (already set synchronously above)
+    const robotsDirective = noIndex ? 'noindex,nofollow' : 'index,follow';
     ['robots', 'googlebot'].forEach(name => {
       let meta = document.querySelector(`meta[name="${name}"]`);
       if (!meta) {
