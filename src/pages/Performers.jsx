@@ -4,7 +4,7 @@ import { callPublicFunction } from "@/lib/publicApi";
 import PerformerCard from "@/components/public/PerformerCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Users, Search, X, Loader2, Sparkles } from "lucide-react";
+import { Users, Search, X, Loader2, Sparkles, CheckCircle2, Star, Film } from "lucide-react";
 import SEOMeta from "@/components/SEOMeta";
 
 export default function Performers() {
@@ -54,79 +54,145 @@ export default function Performers() {
         }}
       />
       <div className="min-h-screen bg-background">
-      {/* Hero - Tube Style */}
-      <div className="bg-gradient-to-b from-primary/10 via-primary/5 to-background border-b border-border py-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
-              <Users className="w-6 h-6 text-primary" />
+        {/* Cinematic Hero */}
+        <div className="relative bg-gradient-to-b from-[#0f0f0f] via-[#0a0a0a] to-background border-b border-rose-600/20 pb-8 pt-12 px-4 overflow-hidden">
+          {/* Subtle rose glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-rose-600/5 rounded-full blur-[100px] pointer-events-none" />
+          
+          <div className="max-w-7xl mx-auto relative z-10">
+            {/* Icon + Title */}
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-rose-600 to-rose-700 rounded-xl flex items-center justify-center shadow-lg shadow-rose-600/25 flex-shrink-0">
+                <Users className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight mb-2">
+                  FLESHLAB Studios Performer Roster
+                </h1>
+                <p className="text-white/60 text-sm leading-relaxed max-w-3xl">
+                  Verified 18+ Asian gay performers, Filipino twink talent, and exclusive studio artists. 
+                  Discover professional profiles, fanclub access, and premium gay adult content.
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-4xl font-bold text-foreground">Verified Asian Gay Performers & Filipino Twinks</h1>
-              <p className="text-muted-foreground text-sm">
-                {filteredPerformers.length} {filteredPerformers.length === 1 ? 'performer' : 'performers'} • Asian, Filipino/Pinoy, twink, bisexual, top/bottom/versatile, fanclub-ready creators from FLESHLAB Studios
-              </p>
+
+            {/* Stats Row */}
+            <div className="flex flex-wrap gap-3 mb-5">
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.06]">
+                <div className="w-8 h-8 bg-rose-600/15 rounded-md flex items-center justify-center">
+                  <Users className="w-4 h-4 text-rose-500" />
+                </div>
+                <div className="leading-tight">
+                  <p className="text-white font-semibold text-xs">{performers.length}</p>
+                  <p className="text-white/40 text-[10px]">Performers</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.06]">
+                <div className="w-8 h-8 bg-purple-600/15 rounded-md flex items-center justify-center">
+                  <Star className="w-4 h-4 text-purple-500" />
+                </div>
+                <div className="leading-tight">
+                  <p className="text-white font-semibold text-xs">{performers.filter(p => p.fanclub_enabled).length}</p>
+                  <p className="text-white/40 text-[10px]">Fanclub</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.06]">
+                <div className="w-8 h-8 bg-emerald-600/15 rounded-md flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                </div>
+                <div className="leading-tight">
+                  <p className="text-white font-semibold text-xs">{performers.filter(p => p.verified).length}</p>
+                  <p className="text-white/40 text-[10px]">Verified</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-white/[0.02] border border-white/[0.06]">
+                <div className="w-8 h-8 bg-amber-600/15 rounded-md flex items-center justify-center">
+                  <Film className="w-4 h-4 text-amber-500" />
+                </div>
+                <div className="leading-tight">
+                  <p className="text-white font-semibold text-xs">100%</p>
+                  <p className="text-white/40 text-[10px]">Exclusive</p>
+                </div>
+              </div>
             </div>
-          </div>
-          {/* SEO Content Block */}
-          <div className="mt-8 prose prose-invert max-w-none">
-            <p className="text-muted-foreground leading-relaxed">
-              Browse verified 18+ Asian gay performers and Filipino twink talent at FLESHLAB Studios. 
-              Our roster includes hot Pinoy performers, bisexual creators, femboy performers, and versatile top/bottom talent from the Philippines and across Asia. 
-              All performers are verified professionals with exclusive studio-produced content, solo scenes, fanclub access, and full-length gay adult videos. 
-              Discover performer profiles, explore content preferences, and connect with your favorite Asian twink and Filipino gay adult creators.
-            </p>
           </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-        {/* Search */}
-        <div className="flex gap-4 items-center">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        {/* Content */}
+        <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6">
+          {/* Search Bar */}
+          <div className="relative max-w-2xl mx-auto">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-rose-500 transition-colors" />
             <Input
-              placeholder="Search by name or nationality..."
+              placeholder="Search performers by name or nationality..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 bg-card border-border"
+              className="w-full bg-[#1a1a1a]/50 backdrop-blur-sm border border-white/8 text-white placeholder:text-white/40 h-12 pl-12 pr-12 rounded-lg focus:outline-none focus:border-rose-600/40 focus:ring-2 focus:ring-rose-600/15 transition-all"
             />
-          </div>
-          {search && (
-            <Button variant="outline" size="icon" onClick={handleClear} className="border-border">
-              <X className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
-
-        {/* Grid */}
-         {filteredPerformers.length > 0 ? (
-           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {filteredPerformers.map(performer => (
-              <PerformerCard 
-                key={performer.id} 
-                performer={performer} 
-                brands={brands}
-                videoCount={performer.video_count || 0}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-20 bg-card/50 rounded-xl border border-border">
-            <Users className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h2 className="text-xl font-semibold mb-2 text-foreground">No performers found</h2>
-            <p className="text-muted-foreground mb-4">
-              {search ? 'Try adjusting your search' : 'No performers available'}
-            </p>
             {search && (
-              <Button variant="outline" onClick={handleClear}>
-                Clear Search
-              </Button>
+              <button
+                onClick={handleClear}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
+              >
+                <X className="w-4 h-4 text-white/60" />
+              </button>
             )}
           </div>
-        )}
-      </div>
+
+          {/* Featured Performers Row */}
+          {filteredPerformers.length > 0 && (
+            <>
+              <div className="pt-4 pb-2">
+                <h2 className="text-lg font-bold text-white/90 mb-1">Featured Talent</h2>
+                <p className="text-white/50 text-xs">Top verified performers and fanclub exclusives</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {(performers.filter(p => p.verified || p.fanclub_enabled).slice(0, 4)).map(performer => (
+                  <PerformerCard 
+                    key={performer.id} 
+                    performer={performer} 
+                    brands={brands}
+                    videoCount={performer.video_count || 0}
+                    featured
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Main Grid */}
+          {filteredPerformers.length > 0 ? (
+            <>
+              <div className="pt-6 pb-2 border-t border-white/5">
+                <h2 className="text-lg font-bold text-white/90 mb-1">All Performers</h2>
+                <p className="text-white/50 text-xs">Browse complete roster ({filteredPerformers.length} performers)</p>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                {filteredPerformers.map(performer => (
+                  <PerformerCard 
+                    key={performer.id} 
+                    performer={performer} 
+                    brands={brands}
+                    videoCount={performer.video_count || 0}
+                  />
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-20 bg-[#121212] rounded-xl border border-white/10">
+              <Users className="w-16 h-16 mx-auto mb-4 text-white/40 opacity-50" />
+              <h2 className="text-xl font-semibold mb-2 text-white">No performers found</h2>
+              <p className="text-white/60 mb-4">
+                {search ? 'Try adjusting your search' : 'No performers available'}
+              </p>
+              {search && (
+                <Button variant="outline" onClick={handleClear} className="border-white/20 text-white hover:bg-white/10">
+                  Clear Search
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
