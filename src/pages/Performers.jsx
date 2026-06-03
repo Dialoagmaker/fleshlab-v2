@@ -42,15 +42,15 @@ export default function Performers() {
   return (
     <>
       <SEOMeta
-        title="Gay Adult Performers & Creators | FLESHLAB Studios"
-        description="Meet verified 18+ gay adult performers and creators from FLESHLAB Studios. Asian twink talent, professional profiles, exclusive content and studio productions."
+        title="Asian Twink Performers & Filipino Gay Talent | FLESHLAB Studios"
+        description="Browse verified 18+ Asian twink performers and Filipino gay adult talent at FLESHLAB Studios. Professional profiles, exclusive content, and studio productions featuring hot Asian stars."
         canonical="/performers"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "CollectionPage",
           "name": "FLESHLAB Studios Performers",
-          "description": "Verified 18+ gay adult performer roster featuring Asian twink talent"
+          "description": "Verified 18+ Asian twink performers and Filipino gay adult talent"
         }}
       />
       <div className="min-h-screen bg-background">
@@ -64,9 +64,17 @@ export default function Performers() {
             <div>
               <h1 className="text-4xl font-bold text-foreground">Asian Twink Performers</h1>
               <p className="text-muted-foreground text-sm">
-                {filteredPerformers.length} {filteredPerformers.length === 1 ? 'performer' : 'performers'} • Meet the hottest Filipino and Asian stars
+                {filteredPerformers.length} {filteredPerformers.length === 1 ? 'performer' : 'performers'} • Verified 18+ Filipino and Asian gay adult performers from FLESHLAB Studios
               </p>
             </div>
+          </div>
+          {/* SEO Content Block */}
+          <div className="mt-8 prose prose-invert max-w-none">
+            <p className="text-muted-foreground leading-relaxed">
+              Discover our roster of verified 18+ Asian twink performers and Filipino gay adult talent. 
+              FLESHLAB Studios features professional profiles of hot Asian stars from the Philippines and across Asia, 
+              with exclusive studio-produced content and fanclub access. All performers are verified professionals.
+            </p>
           </div>
         </div>
       </div>

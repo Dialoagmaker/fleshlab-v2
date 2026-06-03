@@ -63,10 +63,10 @@ export default function News() {
           <div className="max-w-7xl mx-auto px-4 py-12">
             <div className="flex items-center gap-3 mb-4">
               <Newspaper className="w-8 h-8 text-primary" />
-              <h1 className="text-3xl font-bold text-white">News</h1>
+              <h1 className="text-3xl font-bold text-white">FLESHLAB Studios News & Updates</h1>
             </div>
             <p className="text-muted-foreground max-w-3xl">
-              Studio updates, creator stories and FLESHLAB announcements.
+              Studio updates, creator stories, fanclub news and announcements from FLESHLAB Studios.
             </p>
 
             {/* Search and Filters */}

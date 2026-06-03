@@ -97,8 +97,8 @@ export default function PerformerDetail() {
   return (
     <>
       <SEOMeta
-        title={performer.meta_title || `${performer.display_name} | FLESHLAB Asia`}
-        description={performer.meta_description || (performer.bio ? performer.bio.substring(0, 157) + '...' : `Meet ${performer.display_name}, verified 18+ Asian gay performer with FLESHLAB studio.`)}
+        title={performer.meta_title || `${performer.display_name} | FLESHLAB Studios`}
+        description={performer.meta_description || (performer.bio ? performer.bio.substring(0, 157) + '...' : `Meet ${performer.display_name}, verified 18+ Asian gay performer with FLESHLAB Studios.`)}
         canonical={canonicalUrl}
         ogImage={performer.profile_image_url || performer.cover_image_url}
         ogType="profile"

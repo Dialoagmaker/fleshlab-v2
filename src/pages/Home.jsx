@@ -40,8 +40,8 @@ export default function Home() {
   return (
     <>
       <SEOMeta
-        title="FLESHLAB Studios | Premium Gay Adult Content & Creator Platform"
-        description="Explore premium gay adult content, verified performer profiles, studio-produced videos, fanclub access, and professional creator features from FLESHLAB Studios."
+        title="FLESHLAB Studios | Premium Gay Adult Content & Verified Asian Performers"
+        description="Explore premium studio-produced gay adult videos featuring verified 18+ Asian gay performers and Filipino talent. Professional creator platform with exclusive fanclub content from FLESHLAB Studios."
         canonical="/"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
@@ -49,9 +49,23 @@ export default function Home() {
           "@type": "WebSite",
           "name": "FLESHLAB Studios",
           "url": "https://fleshlab.online",
-          "description": "Premium gay adult studio featuring verified Asian performers, exclusive productions and member-only content."
+          "description": "Premium gay adult studio featuring verified 18+ Asian performers, Filipino talent, exclusive productions and member-only content."
         }}
       />
+
+      {/* SEO Content Block - Natural keyword integration */}
+      <section className="py-8 border-b border-border">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="prose prose-invert max-w-none">
+            <h2 className="text-2xl font-bold text-foreground mb-4">Premium Gay Adult Content from FLESHLAB Studios</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              FLESHLAB Studios produces professional gay adult content featuring verified 18+ Asian performers and Filipino talent. 
+              Our studio-produced videos showcase authentic performances from the Philippines and across Asia, with exclusive fanclub access 
+              and premium member-only content. Discover our roster of verified performers and explore our growing library of high-quality adult productions.
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Summer Promo Banner */}
         <SummerPromoBanner />
