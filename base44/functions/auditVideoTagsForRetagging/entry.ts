@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
-// Admin-only audit function to propose clean tags for all videos
+// Admin-only DRY RUN - proposes tag changes based on title/description/categories only
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -10,25 +10,19 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    // Fetch all published videos
     const allVideos = await base44.asServiceRole.entities.Video.filter(
       { status: 'published' },
       '-created_date',
       1000
     );
 
-    // Fetch performer relationships
     const allVideoPerformers = await base44.asServiceRole.entities.VideoPerformer.filter({});
     const allPerformers = await base44.asServiceRole.entities.Performer.filter({ status: 'active' }, '-created_date', 500);
     const performerMap = new Map(allPerformers.map(p => [p.id, p]));
 
-    const auditResults = {
-      totalVideos: allVideos.length,
-      videosNeedingRetagging: 0,
-      videosAlreadyCorrect: 0,
-      totalTagChangesProposed: 0,
-      videosProposals: []
-    };
+    const proposals = [];
+    let totalTagsToRemove = 0;
+    let totalTagsToAdd = 0;
 
     for (const video of allVideos) {
       const currentTags = video.tags || [];
@@ -36,226 +30,220 @@ Deno.serve(async (req) => {
       const summary = (video.short_summary || '').toLowerCase();
       const description = (video.description || '').toLowerCase();
       const categories = (video.categories || []).map(c => c.toLowerCase());
-      const combinedText = `${title} ${summary} ${description} ${categories.join(' ')}`;
+      
+      // Combine all text for analysis
+      const text = `${title} ${summary || ''} ${description || ''}`.toLowerCase();
+      const categoryText = categories.join(' ').toLowerCase();
 
-      // Get performer names for this video
+      // Get performer names
       const videoPerformerIds = allVideoPerformers
         .filter(vp => vp.video_id === video.id)
         .map(vp => vp.performer_id);
       const performerNames = videoPerformerIds
         .map(id => performerMap.get(id))
         .filter(Boolean)
-        .map(p => p.display_name?.toLowerCase() || '');
+        .map(p => p.display_name || '');
 
-      const suggestedTags = [];
       const tagsToRemove = [];
       const tagsToAdd = [];
       const reasons = [];
 
-      // === SUGGEST TAGS BASED ON CONTENT ===
-      
-      // Core identity tags
-      if (combinedText.includes('filipino') || combinedText.includes('pinoy')) {
-        suggestedTags.push('Filipino');
-      }
-      if (combinedText.includes('asian')) {
-        suggestedTags.push('Asian');
-      }
-      if (combinedText.includes('twink')) {
-        suggestedTags.push('Twink');
-      }
-      if (combinedText.includes('smooth')) {
-        suggestedTags.push('Smooth');
-      }
-      if (combinedText.includes('fit') || combinedText.includes('muscular')) {
-        suggestedTags.push('Fit');
-      }
-      if (combinedText.includes('hunk')) {
-        suggestedTags.push('Hunk');
-      }
-
-      // Scene type tags
-      if (combinedText.includes('shower') || combinedText.includes('bathroom') || combinedText.includes('wet')) {
-        suggestedTags.push('Shower Solo');
-      }
-      if (combinedText.includes('solo') || combinedText.includes('masturbat') || combinedText.includes('jerk')) {
-        suggestedTags.push('Solo');
-        suggestedTags.push('Masturbation');
-      }
-      if (combinedText.includes('edg')) {
-        suggestedTags.push('Edging');
-      }
-      if (combinedText.includes('nipple')) {
-        suggestedTags.push('Nipple Play');
-      }
-      if (combinedText.includes('dildo') || combinedText.includes('toy')) {
-        suggestedTags.push('Dildo Play');
-      }
-      if (combinedText.includes('cumshot') || combinedText.includes('cum shot') || combinedText.includes('messy')) {
-        suggestedTags.push('Cumshot');
-      }
-      if (combinedText.includes('handjob') || combinedText.includes('stroke')) {
-        suggestedTags.push('Handjob');
-      }
-
-      // Sex act tags - ONLY if clearly supported
-      if (combinedText.includes('blow') || combinedText.includes('oral') || combinedText.includes('suck')) {
-        suggestedTags.push('Gay Blowjob');
-        suggestedTags.push('Oral');
-      }
-      if (combinedText.includes('deepthroat')) {
-        suggestedTags.push('Deepthroat');
-      }
-      if (combinedText.includes('anal') || combinedText.includes('backdoor') || combinedText.includes('ass')) {
-        suggestedTags.push('Anal');
-      }
-      if (combinedText.includes('bare') || combinedText.includes('raw') || combinedText.includes('without condom')) {
-        suggestedTags.push('Bareback');
-      }
-      if (combinedText.includes('fuck') || combinedText.includes('pound') || combinedText.includes('sex')) {
-        suggestedTags.push('Gay Fucking');
-      }
-      if (combinedText.includes('creampie') || combinedText.includes('cum inside')) {
-        suggestedTags.push('Creampie');
-      }
-
-      // Role tags
-      if (combinedText.includes('top') || combinedText.includes('dominant') || combinedText.includes('muscle')) {
-        suggestedTags.push('Top');
-      }
-      if (combinedText.includes('bottom') || combinedText.includes('submissive')) {
-        suggestedTags.push('Bottom');
-      }
-      if (combinedText.includes('daddy')) {
-        suggestedTags.push('Daddy');
-      }
-
-      // Production tags
-      if (video.access_tier === 'fanclub') {
-        suggestedTags.push('Fanclub');
-      }
-      if (video.access_tier === 'ppv') {
-        suggestedTags.push('PPV');
-      }
-      if (video.is_exclusive) {
-        suggestedTags.push('Exclusive');
-      }
-
-      // Performer name tags
-      performerNames.forEach(name => {
-        if (name && name.trim()) {
-          suggestedTags.push(name);
-        }
-      });
-
-      // === IDENTIFY TAGS TO REMOVE ===
-      const currentTagsLower = currentTags.map(t => t.toLowerCase());
-      const suggestedTagsLower = suggestedTags.map(t => t.toLowerCase());
-
-      // Remove tags not supported by content
+      // === TAGS TO REMOVE ===
       for (const tag of currentTags) {
         const tagLower = tag.toLowerCase();
-        
-        // Always remove forbidden tags
-        if (tagLower.includes('lesbian') || tagLower.includes('teen') || tagLower.includes('barely legal') ||
-            tagLower.includes('dating') || tagLower.includes('fleshlight') || tagLower.includes('adult film') ||
-            tagLower.includes('gay cam') || tagLower.includes('gay chat') || tagLower.includes('lgbt')) {
+
+        // Forbidden/spam tags (always remove)
+        if (tagLower.includes('teen') || tagLower.includes('barely legal')) {
           tagsToRemove.push(tag);
-          reasons.push(`Remove "${tag}": forbidden/spam tag`);
+          reasons.push(`Remove "${tag}": forbidden age-related term`);
+          continue;
+        }
+        if (tagLower.includes('lesbian')) {
+          tagsToRemove.push(tag);
+          reasons.push(`Remove "${tag}": misleading category`);
+          continue;
+        }
+        if (tagLower.includes('dating') || tagLower.includes('fleshlight') || 
+            tagLower.includes('adult film') || tagLower.includes('gay cam') || 
+            tagLower.includes('lgbt')) {
+          tagsToRemove.push(tag);
+          reasons.push(`Remove "${tag}": spam/SEO term`);
           continue;
         }
 
-        // Remove sex act tags not supported by content
-        if ((tagLower === 'bareback' || tagLower === 'bareback anal') && 
-            !combinedText.includes('bare') && !combinedText.includes('raw')) {
-          tagsToRemove.push(tag);
-          reasons.push(`Remove "${tag}": not supported by content (solo/shower video)`);
-          continue;
+        // Sex act tags - remove if NOT supported by content
+        if ((tagLower === 'bareback' || tagLower === 'bareback anal')) {
+          const hasAnal = text.includes('anal') || text.includes('backdoor') || text.includes('ass fuck');
+          const hasBare = text.includes('bare') || text.includes('raw') || text.includes('without condom');
+          if (!hasAnal || !hasBare) {
+            tagsToRemove.push(tag);
+            reasons.push(`Remove "${tag}": no anal/bareback described in content`);
+            continue;
+          }
         }
 
-        if ((tagLower === 'anal' || tagLower === 'bareback anal') && 
-            !combinedText.includes('anal') && !combinedText.includes('backdoor') && !combinedText.includes('ass')) {
-          tagsToRemove.push(tag);
-          reasons.push(`Remove "${tag}": not supported by content`);
-          continue;
+        if (tagLower === 'shower' || tagLower === 'shower solo') {
+          if (!text.includes('shower') && !text.includes('bathroom') && !text.includes('wet')) {
+            tagsToRemove.push(tag);
+            reasons.push(`Remove "${tag}": no shower described`);
+            continue;
+          }
         }
 
-        if ((tagLower === 'blowjob' || tagLower === 'oral' || tagLower === 'deepthroat') && 
-            !combinedText.includes('blow') && !combinedText.includes('oral') && !combinedText.includes('suck')) {
-          tagsToRemove.push(tag);
-          reasons.push(`Remove "${tag}": not supported by content`);
-          continue;
+        if (tagLower === 'solo' || tagLower === 'masturbation') {
+          const hasPartner = text.includes('partner') || text.includes('top') || 
+                            text.includes('bottom') || text.includes('fuck') || 
+                            text.includes('anal sex');
+          if (hasPartner) {
+            tagsToRemove.push(tag);
+            reasons.push(`Remove "${tag}": partner sex described, not solo`);
+            continue;
+          }
         }
 
-        if (tagLower === 'creampie' && 
-            !combinedText.includes('creampie') && !combinedText.includes('cum inside')) {
-          tagsToRemove.push(tag);
-          reasons.push(`Remove "${tag}": not supported by content`);
-          continue;
+        if (tagLower.includes('blowjob') || tagLower.includes('oral') || tagLower === 'deepthroat') {
+          if (!text.includes('blow') && !text.includes('suck') && !text.includes('oral') && 
+              !text.includes('throat') && !categoryText.includes('oral')) {
+            tagsToRemove.push(tag);
+            reasons.push(`Remove "${tag}": no oral described`);
+            continue;
+          }
         }
 
-        if ((tagLower.includes('fuck') || tagLower === 'gay fucking') && 
-            !combinedText.includes('fuck') && !combinedText.includes('pound') && !combinedText.includes('sex')) {
-          tagsToRemove.push(tag);
-          reasons.push(`Remove "${tag}": not supported by content`);
-          continue;
+        if (tagLower === 'creampie') {
+          if (!text.includes('creampie') && !text.includes('cum inside') && !text.includes('fill')) {
+            tagsToRemove.push(tag);
+            reasons.push(`Remove "${tag}": no creampie described`);
+            continue;
+          }
+        }
+
+        if (tagLower === 'dildo play' || tagLower.includes('dildo') || tagLower.includes('toy')) {
+          if (!text.includes('dildo') && !text.includes('toy') && !text.includes('fleshlight')) {
+            tagsToRemove.push(tag);
+            reasons.push(`Remove "${tag}": no toy/dildo described`);
+            continue;
+          }
+        }
+
+        if (tagLower === 'nipple play' || tagLower.includes('nipple')) {
+          if (!text.includes('nipple') && !text.includes('clamp') && !text.includes('torture')) {
+            tagsToRemove.push(tag);
+            reasons.push(`Remove "${tag}": no nipple play described`);
+            continue;
+          }
         }
       }
 
-      // === IDENTIFY TAGS TO ADD ===
-      for (const tag of suggestedTags) {
-        const tagLower = tag.toLowerCase();
-        if (!currentTagsLower.includes(tagLower)) {
-          tagsToAdd.push(tag);
-          reasons.push(`Add "${tag}": supported by content`);
+      // === TAGS TO ADD ===
+      const currentTagsLower = currentTags.map(t => t.toLowerCase());
+      const tagsToRemoveLower = tagsToRemove.map(t => t.toLowerCase());
+
+      // Solo - only if NO partner described
+      const hasPartner = text.includes('partner') || text.includes('top ') || 
+                        text.includes('bottom ') || text.includes('fuck') || 
+                        text.includes('anal sex') || text.includes('with ');
+      if ((text.includes('solo') || text.includes('masturbat') || text.includes('jerk') || 
+           text.includes('stroke')) && !hasPartner) {
+        if (!currentTagsLower.includes('solo') && !tagsToRemoveLower.includes('solo')) {
+          tagsToAdd.push('Solo');
+          reasons.push('Add "Solo": masturbation described, no partner');
         }
       }
 
-      // Count changes
-      const totalChanges = tagsToRemove.length + tagsToAdd.length;
-      if (totalChanges > 0) {
-        auditResults.videosNeedingRetagging++;
-        auditResults.totalTagChangesProposed += totalChanges;
-        
-        auditResults.videosProposals.push({
+      // Shower
+      if ((text.includes('shower') || text.includes('bathroom') || text.includes('wet')) &&
+          !currentTagsLower.includes('shower') && !currentTagsLower.includes('shower solo') &&
+          !tagsToRemoveLower.includes('shower') && !tagsToRemoveLower.includes('shower solo')) {
+        tagsToAdd.push('Shower');
+        reasons.push('Add "Shower": shower/bathroom described');
+      }
+
+      // Blowjob/Oral
+      if ((text.includes('blowjob') || text.includes('blow job') || text.includes('suck') || 
+           text.includes('deepthroat') || categoryText.includes('oral')) &&
+          !currentTagsLower.some(t => t.includes('blowjob') || t.includes('oral')) &&
+          !tagsToRemoveLower.some(t => t.includes('blowjob') || t.includes('oral'))) {
+        tagsToAdd.push('Blowjob');
+        tagsToAdd.push('Oral');
+        reasons.push('Add "Blowjob/Oral": oral sex described');
+      }
+
+      // Creampie
+      if ((text.includes('creampie') || text.includes('cum inside') || text.includes('fill him')) &&
+          !currentTagsLower.includes('creampie') && !tagsToRemoveLower.includes('creampie')) {
+        tagsToAdd.push('Creampie');
+        reasons.push('Add "Creampie": creampie described');
+      }
+
+      // Dildo Play
+      if ((text.includes('dildo') || text.includes('toy') || text.includes('fleshlight')) &&
+          !currentTagsLower.some(t => t.includes('dildo') || t.includes('toy')) &&
+          !tagsToRemoveLower.some(t => t.includes('dildo') || t.includes('toy'))) {
+        tagsToAdd.push('Dildo Play');
+        reasons.push('Add "Dildo Play": toy/dildo described');
+      }
+
+      // Nipple Play
+      if ((text.includes('nipple') || text.includes('clamp') || text.includes('torture')) &&
+          !currentTagsLower.some(t => t.includes('nipple')) &&
+          !tagsToRemoveLower.some(t => t.includes('nipple'))) {
+        tagsToAdd.push('Nipple Play');
+        reasons.push('Add "Nipple Play": nipple play described');
+      }
+
+      // Bareback - STRICT: only if anal + bare/raw
+      const hasAnal = text.includes('anal') || text.includes('backdoor') || text.includes('ass fuck');
+      const hasBare = text.includes('bare') || text.includes('raw') || text.includes('without condom');
+      if (hasAnal && hasBare &&
+          !currentTagsLower.includes('bareback') && !tagsToRemoveLower.includes('bareback')) {
+        tagsToAdd.push('Bareback');
+        reasons.push('Add "Bareback": bareback anal described');
+      }
+
+      totalTagsToRemove += tagsToRemove.length;
+      totalTagsToAdd += tagsToAdd.length;
+
+      if (tagsToRemove.length > 0 || tagsToAdd.length > 0) {
+        proposals.push({
           video_id: video.id,
           title: video.title,
           slug: video.slug,
-          currentTags: currentTags,
-          short_summary: video.short_summary,
-          categories: video.categories,
-          suggestedTags: [...new Set(suggestedTags)],
-          tagsToRemove: [...new Set(tagsToRemove)],
-          tagsToAdd: [...new Set(tagsToAdd)],
-          reasons: reasons,
-          totalChanges: totalChanges
+          currentTags,
+          short_summary: video.short_summary || '',
+          description: video.description || '',
+          categories: video.categories || [],
+          tagsToRemove,
+          tagsToAdd,
+          reasons,
+          totalChanges: tagsToRemove.length + tagsToAdd.length
         });
-      } else {
-        auditResults.videosAlreadyCorrect++;
       }
     }
 
     // Sort by most changes
-    auditResults.videosProposals.sort((a, b) => b.totalChanges - a.totalChanges);
+    proposals.sort((a, b) => b.totalChanges - a.totalChanges);
 
-    // Get top 20
-    const top20 = auditResults.videosProposals.slice(0, 20);
+    const videosNeedingChanges = proposals.length;
+    const videosAlreadyCorrect = allVideos.length - videosNeedingChanges;
 
     return Response.json({
       summary: {
-        totalVideosChecked: auditResults.totalVideos,
-        videosNeedingRetagging: auditResults.videosNeedingRetagging,
-        videosAlreadyCorrect: auditResults.videosAlreadyCorrect,
-        totalTagChangesProposed: auditResults.totalTagChangesProposed,
-        averageChangesPerVideo: auditResults.videosNeedingRetagging > 0 ? 
-          (auditResults.totalTagChangesProposed / auditResults.videosNeedingRetagging).toFixed(1) : '0'
+        totalVideosChecked: allVideos.length,
+        videosNeedingRetagging: videosNeedingChanges,
+        videosAlreadyCorrect,
+        totalTagsToRemove,
+        totalTagsToAdd,
+        totalTagChanges: totalTagsToRemove + totalTagsToAdd,
+        averageChangesPerVideo: videosNeedingChanges > 0 ? 
+          ((totalTagsToRemove + totalTagsToAdd) / videosNeedingChanges).toFixed(1) : '0'
       },
-      top20MostChangedVideos: top20,
-      allVideosProposals: auditResults.videosProposals
+      top20MostChangedVideos: proposals.slice(0, 20),
+      allProposals: proposals
     });
 
   } catch (error) {
-    console.error('Video retagging audit error:', error);
+    console.error('Retagging audit error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
