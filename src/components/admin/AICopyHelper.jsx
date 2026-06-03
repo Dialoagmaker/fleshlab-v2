@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, ChevronDown, ChevronUp, CheckCircle2, Loader2 } from "lucide-react";
+import { Sparkles, ChevronDown, ChevronUp, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
+import { normalizeMetadata } from "@/lib/videoMetadataGuardrails";
 
 // ---------------------------------------------------------------------------
 // FLESHLAB Architecture — Single LLM Call
@@ -58,15 +59,40 @@ function ArrayDraftField({ label, items, onApply }) {
   );
 }
 
-function DraftPanel({ draft, onApply }) {
+function DraftPanel({ draft, onApply, form }) {
   if (!draft) return null;
 
-  const handleApplyAll = () => {
+  const handleApplyAll = async () => {
+    // Phase 2C P0: Validate AI output before applying
+    const validation = normalizeMetadata({
+      categories: draft.suggested_categories || [],
+      tags: draft.tags || [],
+      title: draft.title || (form?.title || ''),
+      description: draft.description || '',
+      short_summary: draft.short_teaser || '',
+      strict: false, // Auto-fix what we can
+    });
+    
+    if (!validation.valid && validation.errors.length > 0) {
+      const confirmApply = window.confirm(
+        `AI metadata has ${validation.errors.length} issues:\n\n${validation.errors.slice(0, 3).join('\n')}${validation.errors.length > 3 ? '\n...' : ''}\n\nApply cleaned version? (Invalid items will be removed)`
+      );
+      if (!confirmApply) return;
+    }
+    
+    // Apply normalized values
     FIELD_MAP.forEach(({ key, formField }) => {
       if (draft[key]) onApply(formField, draft[key]);
     });
-    if (draft.tags?.length) onApply("tags", draft.tags);
-    if (draft.suggested_categories?.length) onApply("categories", draft.suggested_categories);
+    if (draft.tags?.length) onApply("tags", validation.normalized.tags || draft.tags);
+    if (draft.suggested_categories?.length) onApply("categories", validation.normalized.categories || draft.suggested_categories);
+    
+    if (validation.removed?.categories?.length || validation.removed?.tags?.length) {
+      console.warn('AI metadata cleanup:', {
+        removed_categories: validation.removed.categories,
+        removed_tags: validation.removed.tags,
+      });
+    }
   };
 
   return (
@@ -213,7 +239,7 @@ export default function AICopyHelper({ form, performerNames, brandName, thumbnai
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           {/* Results */}
-          {draft && <DraftPanel draft={draft} onApply={onApply} />}
+          {draft && <DraftPanel draft={draft} onApply={onApply} form={form} />}
 
         </div>
       )}

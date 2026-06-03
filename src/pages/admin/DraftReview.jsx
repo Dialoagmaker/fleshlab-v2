@@ -387,12 +387,31 @@ export default function DraftReview() {
   const applyDraft = async (videoId, draft) => {
     setApplyingId(videoId);
     try {
+      // Phase 2C P0: Validate AI draft before applying
+      const validationResp = await base44.functions.invoke('validateVideoMetadata', {
+        categories: draft.categories || [],
+        tags: draft.tags || [],
+        title: draft.title,
+        description: draft.description,
+        short_summary: draft.short_teaser,
+        strict: false,
+      });
+      
+      const validation = validationResp.data;
+      
+      if (!validation.valid && validation.errors.length > 0) {
+        const confirmApply = window.confirm(
+          `AI draft has ${validation.errors.length} issues:\n\n${validation.errors.slice(0, 3).join('\n')}${validation.errors.length > 3 ? '\n...' : ''}\n\nApply cleaned version? (Invalid items will be removed)`
+        );
+        if (!confirmApply) return;
+      }
+      
       await base44.entities.Video.update(videoId, {
         title: draft.title,
         description: draft.description,
         short_summary: draft.short_teaser,
-        categories: draft.categories || [],
-        tags: draft.tags || [],
+        categories: validation.normalized?.categories || draft.categories || [],
+        tags: validation.normalized?.tags || draft.tags || [],
         meta_title: draft.seo_title,
         meta_description: draft.seo_description,
         ...(draft.ppv_price ? { download_price: draft.ppv_price } : {}),

@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import { S3Client, HeadObjectCommand, GetObjectCommand } from 'npm:@aws-sdk/client-s3';
 import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner';
 
@@ -16,6 +16,29 @@ Deno.serve(async (req) => {
 
     if (!asset_id || !video_id) {
       return Response.json({ error: 'Missing required fields: asset_id, video_id' }, { status: 400 });
+    }
+
+    // Phase 2C P0: Validate video metadata before finalizing
+    const video = await base44.entities.Video.get(video_id);
+    if (video) {
+      const validationResp = await base44.functions.invoke('validateVideoMetadata', {
+        categories: video.categories || [],
+        tags: video.tags || [],
+        title: video.title || '',
+        description: video.description || '',
+        short_summary: video.short_summary || '',
+        strict: false,
+      });
+      
+      const validation = validationResp.data;
+      if (!validation.valid && validation.errors.length > 0) {
+        console.warn('finalizeUploadedVideo: metadata validation warnings', validation.errors);
+        // Auto-apply normalized values
+        await base44.entities.Video.update(video_id, {
+          categories: validation.normalized?.categories || video.categories,
+          tags: validation.normalized?.tags || video.tags,
+        });
+      }
     }
 
     // Fetch asset to get R2 key

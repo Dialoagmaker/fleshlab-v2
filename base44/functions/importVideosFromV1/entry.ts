@@ -145,6 +145,81 @@ Deno.serve(async (req) => {
         warnings.push(`No performer_ids — video will have no VideoPerformer records. Admin links manually.`);
       }
 
+      // Phase 2C P0: Validate imported metadata - do not preserve V1 spam
+      const validation = (() => {
+        try {
+          // Inline normalizeMetadata for import (can't import from lib in Deno)
+          const APPROVED_CATEGORIES = [
+            'Asian', 'Filipino', 'Pinoy', 'Twink', 'Solo', 'Outdoor', 'Shower', 'Mirror',
+            'Dildo Play', 'Nipple Play', 'Blowjob', 'Oral', 'Anal', 'Bareback', 'Creampie',
+            'Cumshot', 'Rimming', 'Handjob', 'BDSM', 'Daddy/Twink', 'Age Gap', 'Studio Production',
+          ];
+          const BLOCKED_SPAM = [
+            'porn', 'gay porn', 'twink porn', 'hardcore porn', 'xxx', 'explicit', 'hot', 'sexy',
+            'amateur porn', 'gay sex', 'adult', 'nsfw', 'viral', 'trending',
+            'studio originals', 'asian twinks', 'fanclub exclusives', 'new performers',
+            'group', 'pov', 'fanclub', 'ppv', 'exclusive', 'free',
+          ];
+          const approvedLower = APPROVED_CATEGORIES.map(c => c.toLowerCase());
+          const approvedMap = new Map(APPROVED_CATEGORIES.map(c => [c.toLowerCase(), c]));
+          
+          const normalizedCategories = [];
+          const normalizedTags = [];
+          const removedCategories = [];
+          const removedTags = [];
+          
+          // Validate categories
+          const rawCategories = Array.isArray(raw.categories) ? raw.categories : [];
+          for (const cat of rawCategories) {
+            const trimmed = cat.trim();
+            const lower = trimmed.toLowerCase();
+            if (['fanclub', 'ppv', 'exclusive', 'free'].includes(lower)) {
+              removedCategories.push({ value: trimmed, reason: 'access_tier_not_category' });
+              continue;
+            }
+            if (BLOCKED_SPAM.includes(lower)) {
+              removedCategories.push({ value: trimmed, reason: 'blocked_spam' });
+              continue;
+            }
+            const canonical = approvedMap.get(lower);
+            if (!canonical) {
+              removedCategories.push({ value: trimmed, reason: 'unknown_category' });
+              continue;
+            }
+            normalizedCategories.push(canonical);
+          }
+          
+          // Validate tags
+          const rawTags = Array.isArray(raw.tags) ? raw.tags : [];
+          for (const tag of rawTags) {
+            const trimmed = tag.trim();
+            const lower = trimmed.toLowerCase();
+            if (BLOCKED_SPAM.includes(lower)) {
+              removedTags.push({ value: trimmed, reason: 'blocked_spam' });
+              continue;
+            }
+            normalizedTags.push(trimmed.toLowerCase());
+          }
+          
+          return {
+            normalized: {
+              categories: normalizedCategories,
+              tags: normalizedTags,
+            },
+            removed: {
+              categories: removedCategories,
+              tags: removedTags,
+            },
+          };
+        } catch (e) {
+          console.error('Import validation error:', e);
+          return {
+            normalized: { categories: raw.categories || [], tags: raw.tags || [] },
+            removed: { categories: [], tags: [] },
+          };
+        }
+      })();
+      
       const payload = {
         v1_id,
         title: raw.title.trim(),
@@ -152,8 +227,8 @@ Deno.serve(async (req) => {
         description: raw.description || null,
         short_summary: raw.short_summary || null,
         brand_id: resolvedBrandId,
-        categories: Array.isArray(raw.categories) ? raw.categories : [],
-        tags: Array.isArray(raw.tags) ? raw.tags : [],
+        categories: validation.normalized.categories,
+        tags: validation.normalized.tags,
         status,
         access_tier: accessTier,
         release_date: raw.release_date || null,
@@ -174,6 +249,19 @@ Deno.serve(async (req) => {
       };
 
       if (warnings.length) report.warnings.push({ v1_id, title: raw.title, warnings });
+      
+      // Phase 2C P0: Report validation cleanup
+      if (validation.removed.categories.length || validation.removed.tags.length) {
+        report.warnings.push({
+          v1_id,
+          title: raw.title,
+          warnings: [
+            `Phase 2C P0: Removed ${validation.removed.categories.length} invalid categories and ${validation.removed.tags.length} invalid tags from V1 import`,
+          ],
+          removed_categories: validation.removed.categories,
+          removed_tags: validation.removed.tags,
+        });
+      }
 
       const action = isExisting ? 'update' : 'create';
       let v2VideoId = isExisting ? videoByV1Id[v1_id].id : null;

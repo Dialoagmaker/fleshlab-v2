@@ -13,6 +13,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
  * - Dry-run mode is the default. Pass { dryRun: false } to apply writes.
  * - Class B videos (trailer/preview only, no full source_video_url) are
  *   always skipped for duration updates.
+ * - Phase 2C P0: Validates categories/tags before any metadata changes.
  */
 Deno.serve(async (req) => {
   try {
@@ -80,6 +81,25 @@ Deno.serve(async (req) => {
       // Verify record existence (belt-and-suspenders — we already have it, but we confirm id)
       const recordExists = !!video.id;
 
+      // Phase 2C P0: Validate existing categories/tags before generating metadata
+      const validationResp = await base44.functions.invoke('validateVideoMetadata', {
+        categories: video.categories || [],
+        tags: video.tags || [],
+        title: video.title || '',
+        description: video.description || '',
+        short_summary: video.short_summary || '',
+        strict: false,
+      });
+      
+      const validation = validationResp.data;
+      const metadataValidationWarnings = [];
+      if (validation.removed?.categories?.length) {
+        metadataValidationWarnings.push(`${validation.removed.categories.length} invalid categories would be removed`);
+      }
+      if (validation.removed?.tags?.length) {
+        metadataValidationWarnings.push(`${validation.removed.tags.length} invalid tags would be removed`);
+      }
+
       // Generate conservative placeholder suggestions
       const rawTitle = (video.title || '').trim();
       const brandName = brandMap[video.brand_id] || 'FLESHLAB Studios';
@@ -96,6 +116,9 @@ Deno.serve(async (req) => {
       const qualityWarnings = [];
       if (titleLen < 30 || titleLen > 70) qualityWarnings.push(`meta_title length ${titleLen} (ideal: 45–65)`);
       if (descLen < 100 || descLen > 165) qualityWarnings.push(`meta_description length ${descLen} (ideal: 120–155)`);
+      if (metadataValidationWarnings.length) {
+        qualityWarnings.push(...metadataValidationWarnings);
+      }
 
       metadataPlan.push({
         video_id: video.id,
@@ -110,6 +133,8 @@ Deno.serve(async (req) => {
         planned_meta_title_length: titleLen,
         planned_meta_description_length: descLen,
         quality_warnings: qualityWarnings,
+        validation_normalized_categories: validation.normalized?.categories || video.categories,
+        validation_normalized_tags: validation.normalized?.tags || video.tags,
         will_update: recordExists && !!suggestedTitle && !!suggestedDescription,
         skip_reason: !recordExists ? 'Record not found in DB' : (!suggestedTitle ? 'Cannot generate title (empty video title)' : null),
       });
@@ -168,12 +193,16 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Perform the update — ONLY allowed fields
+        // Perform the update — ONLY allowed fields + normalized categories/tags
         try {
-          await base44.entities.Video.update(plan.video_id, {
+          const updatePayload = {
             meta_title: plan.planned_meta_title,
             meta_description: plan.planned_meta_description,
-          });
+            // Phase 2C P0: Apply normalized categories/tags if they differ
+            ...(JSON.stringify(plan.validation_normalized_categories) !== JSON.stringify(plan.categories) ? { categories: plan.validation_normalized_categories } : {}),
+            ...(JSON.stringify(plan.validation_normalized_tags) !== JSON.stringify(plan.tags) ? { tags: plan.validation_normalized_tags } : {}),
+          };
+          await base44.entities.Video.update(plan.video_id, updatePayload);
         } catch (e) {
           updateResults.metadata.failed.push({
             video_id: plan.video_id,
