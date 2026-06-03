@@ -298,7 +298,7 @@ const AuthenticatedApp = () => {
   const GHOST_PATHS = [
     '/AdminSmartThumbnails', '/AuthGateway', '/PerformerVideoStats',
     '/AdminVideos', '/AdminApplications', '/PerformerDashboard',
-    '/SEOAuditPhase1Report',
+    '/SEOAuditPhase1Report', '/AdminSEOReport', '/AdminPerformers',
   ];
   if (GHOST_PATHS.includes(path)) {
     return <GhostRoute />;
@@ -337,6 +337,8 @@ const AuthenticatedApp = () => {
       <Route path="/AdminApplications" element={<GhostRoute />} />
       <Route path="/PerformerDashboard" element={<GhostRoute />} />
       <Route path="/SEOAuditPhase1Report" element={<GhostRoute />} />
+      <Route path="/AdminSEOReport" element={<GhostRoute />} />
+      <Route path="/AdminPerformers" element={<GhostRoute />} />
       {/* Dynamic detail pages — use PublicPageShell + React Router so useParams() works */}
       <Route path="/videos/:slug" element={<PublicPageShell><VideoDetail /></PublicPageShell>} />
       <Route path="/performers/:slug" element={<PublicPageShell><PerformerDetail /></PublicPageShell>} />
