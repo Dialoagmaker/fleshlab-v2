@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/i18n/i18n";
 
 // Approved taxonomy categories from Phase 2A - dynamically generated from actual video categories
+// Note: Fanclub and PPV are access tiers, not categories - they exist only in ACCESS_TIERS
 const CATEGORIES = [
   "All",
   "Asian",
@@ -44,8 +45,6 @@ const CATEGORIES = [
   "Daddy/Twink",
   "Age Gap",
   "Studio Production",
-  "Fanclub",
-  "PPV",
   "Exclusive",
 ];
 
