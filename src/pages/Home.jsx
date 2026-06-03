@@ -40,8 +40,8 @@ export default function Home() {
   return (
     <>
       <SEOMeta
-        title="FLESHLAB Studios | Premium Gay Adult Content & Verified Asian Performers"
-        description="Explore premium studio-produced gay adult videos featuring verified 18+ Asian gay performers and Filipino talent. Professional creator platform with exclusive fanclub content from FLESHLAB Studios."
+        title="FLESHLAB Studios | Asian Gay Videos, Filipino Twinks & Verified Performers"
+        description="Watch Asian gay videos, Filipino twink scenes, verified 18+ performer profiles, studio-produced gay adult content and exclusive fanclub updates from FLESHLAB Studios. Professional gay creator platform."
         canonical="/"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
@@ -49,7 +49,7 @@ export default function Home() {
           "@type": "WebSite",
           "name": "FLESHLAB Studios",
           "url": "https://fleshlab.online",
-          "description": "Premium gay adult studio featuring verified 18+ Asian performers, Filipino talent, exclusive productions and member-only content."
+          "description": "Premium gay adult studio featuring verified 18+ Asian performers, Filipino twink talent, exclusive productions and member-only content."
         }}
       />
 
@@ -57,11 +57,11 @@ export default function Home() {
       <section className="py-8 border-b border-border">
         <div className="max-w-7xl mx-auto px-4">
           <div className="prose prose-invert max-w-none">
-            <h2 className="text-2xl font-bold text-foreground mb-4">Premium Gay Adult Content from FLESHLAB Studios</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              FLESHLAB Studios produces professional gay adult content featuring verified 18+ Asian performers and Filipino talent. 
-              Our studio-produced videos showcase authentic performances from the Philippines and across Asia, with exclusive fanclub access 
-              and premium member-only content. Discover our roster of verified performers and explore our growing library of high-quality adult productions.
+            <h1 className="text-3xl sm:text-4xl font-black text-foreground mb-4">Asian Gay Videos & Verified Filipino Twink Performers</h1>
+            <p className="text-muted-foreground leading-relaxed text-lg">
+              FLESHLAB Studios is a professional gay adult studio producing premium Asian gay videos featuring verified 18+ Filipino twink performers and Asian gay talent. 
+              Our studio-produced gay adult content includes exclusive fanclub videos, full-length scenes, solo content, and behind-the-scenes footage from the Philippines and across Asia. 
+              Discover our roster of verified performers, explore our growing library of gay adult videos, and access premium creator content through our gay fanclub membership.
             </p>
           </div>
         </div>

@@ -42,15 +42,15 @@ export default function Performers() {
   return (
     <>
       <SEOMeta
-        title="Asian Twink Performers & Filipino Gay Talent | FLESHLAB Studios"
-        description="Browse verified 18+ Asian twink performers and Filipino gay adult talent at FLESHLAB Studios. Professional profiles, exclusive content, and studio productions featuring hot Asian stars."
+        title="Asian Gay Performers, Filipino Twinks & Verified 18+ Creators | FLESHLAB Studios"
+        description="Meet verified 18+ Asian gay performers, Filipino twink talent, Pinoy performers, bisexual performers, top/bottom/versatile creators, and femboy performers at FLESHLAB Studios. Professional profiles with fanclub access."
         canonical="/performers"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "CollectionPage",
           "name": "FLESHLAB Studios Performers",
-          "description": "Verified 18+ Asian twink performers and Filipino gay adult talent"
+          "description": "Verified 18+ Asian gay performers, Filipino twinks, Pinoy talent and bisexual creators"
         }}
       />
       <div className="min-h-screen bg-background">
@@ -62,18 +62,19 @@ export default function Performers() {
               <Users className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-foreground">Asian Twink Performers</h1>
+              <h1 className="text-4xl font-bold text-foreground">Verified Asian Gay Performers & Filipino Twinks</h1>
               <p className="text-muted-foreground text-sm">
-                {filteredPerformers.length} {filteredPerformers.length === 1 ? 'performer' : 'performers'} • Verified 18+ Filipino and Asian gay adult performers from FLESHLAB Studios
+                {filteredPerformers.length} {filteredPerformers.length === 1 ? 'performer' : 'performers'} • Asian, Filipino/Pinoy, twink, bisexual, top/bottom/versatile, fanclub-ready creators from FLESHLAB Studios
               </p>
             </div>
           </div>
           {/* SEO Content Block */}
           <div className="mt-8 prose prose-invert max-w-none">
             <p className="text-muted-foreground leading-relaxed">
-              Discover our roster of verified 18+ Asian twink performers and Filipino gay adult talent. 
-              FLESHLAB Studios features professional profiles of hot Asian stars from the Philippines and across Asia, 
-              with exclusive studio-produced content and fanclub access. All performers are verified professionals.
+              Browse verified 18+ Asian gay performers and Filipino twink talent at FLESHLAB Studios. 
+              Our roster includes hot Pinoy performers, bisexual creators, femboy performers, and versatile top/bottom talent from the Philippines and across Asia. 
+              All performers are verified professionals with exclusive studio-produced content, solo scenes, fanclub access, and full-length gay adult videos. 
+              Discover performer profiles, explore content preferences, and connect with your favorite Asian twink and Filipino gay adult creators.
             </p>
           </div>
         </div>

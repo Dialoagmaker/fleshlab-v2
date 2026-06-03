@@ -116,15 +116,15 @@ export default function Videos() {
   return (
     <>
       <SEOMeta
-        title="Premium Gay Adult Videos | FLESHLAB Studios"
-        description="Browse premium gay adult videos, Asian twink content, verified performer profiles, studio productions, fanclub exclusives and PPV scenes from FLESHLAB Studios."
+        title="Asian Gay Videos, Filipino Twink Scenes & Gay Solo Content | FLESHLAB Studios"
+        description="Watch Asian gay videos, Filipino twink videos, gay solo scenes, shower solo, outdoor solo, gay blowjob, gay anal, gay bareback, and full-length gay adult videos from verified 18+ performers at FLESHLAB Studios."
         canonical="/videos"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "CollectionPage",
           "name": "FLESHLAB Studios Video Library",
-          "description": "Premium gay adult video collection featuring Asian twink performers"
+          "description": "Asian gay videos, Filipino twink scenes, gay solo content and full-length gay adult videos"
         }}
       />
       <div className="min-h-screen bg-[#0a0a0a]">
@@ -136,9 +136,9 @@ export default function Videos() {
                 <Play className="w-6 h-6 text-rose-500 fill-current" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold text-white">Video Library</h1>
+                <h1 className="text-4xl font-bold text-white">Asian Gay Videos, Filipino Twinks & Full-Length Studio Scenes</h1>
                 <p className="text-white/60 text-sm">
-                  Browse FLESHLAB public previews, studio releases, fanclub content and PPV scenes.
+                  Browse verified 18+ Asian and Filipino gay adult videos including solo scenes, shower videos, outdoor shoots, bareback scenes, oral and anal content, full-length gay fucking and sucking scenes, studio-produced gay porn and exclusive fanclub releases.
                 </p>
                 {isLoading ? (
                   <p className="text-white/40 text-xs mt-1">Loading videos...</p>

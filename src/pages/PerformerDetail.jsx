@@ -98,7 +98,7 @@ export default function PerformerDetail() {
     <>
       <SEOMeta
         title={performer.meta_title || `${performer.display_name} | FLESHLAB Studios`}
-        description={performer.meta_description || (performer.bio ? performer.bio.substring(0, 157) + '...' : `Meet ${performer.display_name}, verified 18+ Asian gay performer with FLESHLAB Studios.`)}
+        description={performer.meta_description || (performer.bio ? performer.bio.substring(0, 157) + '...' : `Meet ${performer.display_name}, a verified 18+ FLESHLAB Studios performer featured in Asian gay videos, Filipino/Pinoy creator content, solo scenes, fanclub updates and studio-produced adult scenes.`)}
         canonical={canonicalUrl}
         ogImage={performer.profile_image_url || performer.cover_image_url}
         ogType="profile"
