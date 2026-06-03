@@ -13,6 +13,7 @@ import VideoIdentificationPanel from "@/components/admin/VideoIdentificationPane
 import PerformerMultiSelect from "@/components/admin/PerformerMultiSelect";
 import VideoStatsSection from "@/components/admin/video/VideoStatsSection";
 import VideoDealsSection from "@/components/admin/video/VideoDealsSection";
+import { normalizeMetadata, BLOCKED_SPAM_TAGS, SENSITIVE_CATEGORIES } from "@/lib/videoMetadataGuardrails";
 
 const EMPTY_FORM = {
   title: "", slug: "", description: "", short_summary: "", brand_id: "",
@@ -205,9 +206,29 @@ export default function VideoEdit() {
     URL_FIELDS.forEach(f => {
       if (!isValidUrl(form[f])) errs[f] = "Must be a valid http/https URL.";
     });
+    
+    // P0: Validate metadata before save
+    const validation = normalizeMetadata({
+      categories: form.categories,
+      tags: form.tags,
+      title: form.title,
+      description: form.description,
+      short_summary: form.short_summary,
+      strict: true,
+    });
+    
+    if (!validation.valid) {
+      errs.metadata = validation.errors.join(' ');
+      errs.categories = validation.removed.categories;
+      errs.tags = validation.removed.tags;
+    }
+    
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setErrors({});
     const data = { ...form };
+    // Apply normalized values
+    data.categories = validation.normalized.categories;
+    data.tags = validation.normalized.tags;
     if (data.duration_seconds) data.duration_seconds = parseInt(data.duration_seconds, 10);
     else delete data.duration_seconds;
     
@@ -540,7 +561,8 @@ export default function VideoEdit() {
         <section className="bg-card border border-border rounded-xl p-6 space-y-5">
           <h2 className="text-sm font-semibold text-foreground">Categories and Tags</h2>
           <div className="space-y-2">
-            <Label>Categories</Label>
+            <Label>Categories (Approved Taxonomy Only)</Label>
+            <p className="text-xs text-muted-foreground">Select from approved categories. Free text entry disabled to prevent spam/invalid entries.</p>
             <div className="flex flex-wrap gap-2 mb-2">
               {form.categories.map(c => (
                 <span key={c} className="flex items-center gap-1 bg-muted border border-border text-xs rounded-full px-3 py-1">
@@ -551,14 +573,38 @@ export default function VideoEdit() {
                 </span>
               ))}
             </div>
-            <div className="flex gap-2">
-              <Input value={categoryInput} onChange={e => setCategoryInput(e.target.value)} placeholder="Add category…"
-                onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addChip("categories", categoryInput, setCategoryInput); } }} />
-              <Button type="button" variant="outline" onClick={() => addChip("categories", categoryInput, setCategoryInput)}>Add</Button>
-            </div>
+            {/* P0: Category selector dropdown instead of free text */}
+            <Select onValueChange={(val) => {
+              if (val && !form.categories.some(c => c.toLowerCase() === val.toLowerCase())) {
+                const canonical = val.split('|')[1] || val;
+                set("categories", [...form.categories, canonical]);
+              }
+            }} value="">
+              <SelectTrigger className="w-full max-w-sm">
+                <SelectValue placeholder="+ Add category from approved list" />
+              </SelectTrigger>
+              <SelectContent>
+                {['Asian', 'Filipino', 'Pinoy', 'Twink', 'Solo', 'Outdoor', 'Shower', 'Mirror', 'Dildo Play', 'Nipple Play', 'Blowjob', 'Oral', 'Anal', 'Bareback', 'Creampie', 'Cumshot', 'Rimming', 'Handjob', 'BDSM', 'Daddy/Twink', 'Age Gap', 'Studio Production'].map(cat => (
+                  <SelectItem key={cat} value={cat} className={SENSITIVE_CATEGORIES.includes(cat) ? 'text-yellow-600' : ''}>
+                    {cat}{SENSITIVE_CATEGORIES.includes(cat) ? ' ⚠️' : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.categories && errors.categories.length > 0 && (
+              <div className="text-xs text-destructive mt-1">
+                <p>Removed categories:</p>
+                <ul className="list-disc list-inside">
+                  {errors.categories.map((c, i) => (
+                    <li key={i}>"{c.value}" - {c.reason.replace(/_/g, ' ')}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
           <div className="space-y-2">
             <Label>Tags</Label>
+            <p className="text-xs text-muted-foreground">Spam patterns and sensitive terms without evidence will be blocked.</p>
             <div className="flex flex-wrap gap-2 mb-2">
               {form.tags.map(t => (
                 <span key={t} className="flex items-center gap-1 bg-muted border border-border text-xs rounded-full px-3 py-1">
@@ -574,6 +620,16 @@ export default function VideoEdit() {
                 onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addChip("tags", tagInput, setTagInput); } }} />
               <Button type="button" variant="outline" onClick={() => addChip("tags", tagInput, setTagInput)}>Add</Button>
             </div>
+            {errors.tags && errors.tags.length > 0 && (
+              <div className="text-xs text-destructive mt-1">
+                <p>Removed tags:</p>
+                <ul className="list-disc list-inside">
+                  {errors.tags.map((t, i) => (
+                    <li key={i}>"{t.value}" - {t.reason.replace(/_/g, ' ')}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </section>
 
