@@ -58,7 +58,15 @@ export default function FAQ() {
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "FAQPage",
-          "name": "FLESHLAB Studios FAQ"
+          "name": "FLESHLAB Studios FAQ",
+          "mainEntity": faqs.map(faq => ({
+            "@type": "Question",
+            "name": faq.question,
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": faq.answer
+            }
+          }))
         }}
       />
       <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a]">
