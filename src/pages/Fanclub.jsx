@@ -1,9 +1,17 @@
 import { Link } from "react-router-dom";
-import { Lock, Star, Play } from "lucide-react";
+import { Lock, Star, Play, Check } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
+import { useAccessControl, PRICING } from "@/lib/useAccessControl";
 import SEOMeta from "@/components/SEOMeta";
 import { Button } from "@/components/ui/button";
 
 export default function Fanclub() {
+  const { isAuthenticated } = useAuth();
+  const { requireSignup } = useAccessControl();
+  
+  const handleJoinFanclub = () => {
+    requireSignup('/fanclub');
+  };
   return (
     <>
       <SEOMeta
@@ -44,12 +52,10 @@ export default function Fanclub() {
               Watch free public previews. Full-length videos, premium content and exclusive creator access require membership.
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
-              <Link to="/register">
-                <Button size="lg" className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 py-6 rounded-full text-base h-auto shadow-xl shadow-rose-600/50">
-                  <Star className="w-5 h-5 mr-2 fill-current" />
-                  Join Fanclub
-                </Button>
-              </Link>
+              <Button size="lg" onClick={handleJoinFanclub} className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 py-6 rounded-full text-base h-auto shadow-xl shadow-rose-600/50">
+                <Star className="w-5 h-5 mr-2 fill-current" />
+                {isAuthenticated ? `Join Fanclub — $${PRICING.fanclub.monthly}/month` : 'Create Account to Join Fanclub'}
+              </Button>
               <Link to="/videos">
                 <Button size="lg" variant="outline" className="border-2 border-white/40 text-white hover:bg-white/15 font-bold px-8 py-6 rounded-full text-base h-auto backdrop-blur-sm">
                   Browse Previews
@@ -89,6 +95,43 @@ export default function Fanclub() {
                   <p className="text-white/60">{item.desc}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing */}
+        <section className="py-20 px-4">
+          <div className="max-w-[1280px] mx-auto">
+            <h2 className="text-4xl md:text-5xl font-black text-white text-center mb-4">
+              SIMPLE <span className="text-rose-500">PRICING</span>
+            </h2>
+            <p className="text-xl text-white/70 text-center mb-12">
+              One membership. All exclusive content.
+            </p>
+            <div className="max-w-md mx-auto bg-gradient-to-br from-rose-900/20 to-rose-800/10 border border-rose-600/30 rounded-3xl p-8">
+              <div className="text-center mb-6">
+                <div className="text-5xl font-black text-white mb-2">
+                  ${PRICING.fanclub.monthly}
+                  <span className="text-lg text-white/60 font-medium">/month</span>
+                </div>
+                <p className="text-white/70 text-sm">Cancel anytime. No hidden fees.</p>
+              </div>
+              <ul className="space-y-3 mb-8">
+                {PRICING.fanclub.features.map((feature, idx) => (
+                  <li key={idx} className="flex items-start gap-3 text-white/80">
+                    <Check className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <Button size="lg" onClick={handleJoinFanclub} className="w-full bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 py-6 rounded-full text-base h-auto shadow-xl shadow-rose-600/50">
+                {isAuthenticated ? 'Join Fanclub Now' : 'Create Free Account'}
+              </Button>
+              {!isAuthenticated && (
+                <p className="text-white/50 text-xs text-center mt-3">
+                  Sign up required before checkout
+                </p>
+              )}
             </div>
           </div>
         </section>

@@ -1,9 +1,17 @@
 import { Link } from "react-router-dom";
-import { Users, Film, FileText, CheckCircle } from "lucide-react";
+import { Users, Film, FileText, CheckCircle, DollarSign } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
+import { useAccessControl, PRICING } from "@/lib/useAccessControl";
 import SEOMeta from "@/components/SEOMeta";
 import { Button } from "@/components/ui/button";
 
 export default function GuestProduction() {
+  const { isAuthenticated } = useAuth();
+  const { requireSignup } = useAccessControl();
+  
+  const handleApply = () => {
+    requireSignup('/guest-production');
+  };
   return (
     <>
       <SEOMeta
@@ -32,11 +40,9 @@ export default function GuestProduction() {
               Professional 18+ guest performer participation in FLESHLAB studio productions. Studio-controlled filming with full consent and safety protocols.
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
-              <Link to="/become-performer">
-                <Button size="lg" className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 py-6 rounded-full text-base h-auto shadow-xl shadow-rose-600/50">
-                  Apply for Guest Production
-                </Button>
-              </Link>
+              <Button size="lg" onClick={handleApply} className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 py-6 rounded-full text-base h-auto shadow-xl shadow-rose-600/50">
+                {isAuthenticated ? 'Request Guest Production Quote' : 'Create Account to Apply'}
+              </Button>
               <Link to="/faq">
                 <Button size="lg" variant="outline" className="border-2 border-white/40 text-white hover:bg-white/15 font-bold px-8 py-6 rounded-full text-base h-auto backdrop-blur-sm">
                   Learn More
@@ -81,6 +87,83 @@ export default function GuestProduction() {
                   <p className="text-white/60 text-sm">{item.desc}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing */}
+        <section className="py-20 px-4 bg-[#0f0f0f] border-y border-white/8">
+          <div className="max-w-[1280px] mx-auto">
+            <h2 className="text-4xl md:text-5xl font-black text-white text-center mb-4">
+              PRODUCTION <span className="text-rose-500">PRICING</span>
+            </h2>
+            <p className="text-xl text-white/60 text-center mb-12 max-w-3xl mx-auto">
+              Professional studio productions with full compliance, safety protocols, and performer coordination
+            </p>
+            
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {/* Starting Price Card */}
+              <div className="bg-[#0a0a0a] border border-rose-600/30 rounded-2xl p-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-rose-600/20 rounded-xl flex items-center justify-center">
+                    <Film className="w-6 h-6 text-rose-500" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white">Guest Production</h3>
+                </div>
+                <div className="mb-6">
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <span className="text-5xl font-black text-white">$999</span>
+                    <span className="text-white/60 text-lg">starting</span>
+                  </div>
+                  <p className="text-white/60 text-sm">
+                    Final quote depends on production scope, compliance, filming time, performer compatibility and post-production.
+                  </p>
+                </div>
+                <ul className="space-y-3 mb-8">
+                  {['Studio-controlled filming', '18+ verification required', 'Performer compatibility review', 'Legal contracts & releases', 'Safety protocols', 'Professional post-production'].map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-3">
+                      <div className="w-5 h-5 bg-rose-600/30 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                        <svg className="w-3 h-3 text-rose-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <span className="text-white/80 text-sm">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Link to="/become-performer">
+                  <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-4 rounded-xl">
+                    Request Quote
+                  </Button>
+                </Link>
+              </div>
+              
+              {/* What's Included Card */}
+              <div className="bg-[#0a0a0a] border border-white/8 rounded-2xl p-8">
+                <h3 className="text-xl font-bold text-white mb-6">What's Included</h3>
+                <div className="space-y-4">
+                  {[
+                    { label: 'Pre-production consultation', desc: 'Scope review and planning' },
+                    { label: 'Performer coordination', desc: 'Compatibility matching' },
+                    { label: 'Legal documentation', desc: 'Contracts and releases' },
+                    { label: 'Professional filming', desc: 'Studio or location' },
+                    { label: 'Post-production', desc: 'Editing and finishing' },
+                    { label: 'Compliance verification', desc: '2257 and age verification' }
+                  ].map((item, idx) => (
+                    <div key={idx} className="border-b border-white/5 pb-3 last:border-0">
+                      <p className="text-white font-semibold text-sm mb-1">{item.label}</p>
+                      <p className="text-white/50 text-xs">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            {/* Important Notice */}
+            <div className="mt-12 bg-amber-600/10 border border-amber-600/30 rounded-xl p-6 max-w-3xl mx-auto">
+              <p className="text-amber-200 text-sm leading-relaxed">
+                <strong className="font-bold">Important:</strong> Guest Production inquiries start from $999. Application, 18+ verification, studio approval and performer approval required. Final quote depends on production scope, compliance, filming time, performer compatibility and post-production. This is a professional studio program — not a dating, hookup, or escort service.
+              </p>
             </div>
           </div>
         </section>
@@ -192,11 +275,14 @@ export default function GuestProduction() {
             <p className="text-xl text-white/70 mb-8">
               Submit your application for guest production consideration.
             </p>
-            <Link to="/become-performer">
-              <Button size="lg" className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-10 py-6 rounded-full text-lg h-auto shadow-xl shadow-rose-600/50">
-                Submit Application
-              </Button>
-            </Link>
+            <Button size="lg" onClick={handleApply} className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-10 py-6 rounded-full text-lg h-auto shadow-xl shadow-rose-600/50">
+              {isAuthenticated ? 'Submit Application' : 'Create Account to Apply'}
+            </Button>
+            {!isAuthenticated && (
+              <p className="text-white/50 text-sm mt-4">
+                Account required before application
+              </p>
+            )}
           </div>
         </section>
       </div>

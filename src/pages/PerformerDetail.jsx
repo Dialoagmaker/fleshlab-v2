@@ -2,6 +2,8 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
+import { useAccessControl } from "@/lib/useAccessControl";
 import VideoCard from "@/components/public/VideoCard";
 import SEOMeta from "@/components/SEOMeta";
 import PremiumTeaserBlock from "@/components/public/PremiumTeaserBlock";
@@ -30,8 +32,19 @@ import { Badge } from "@/components/ui/badge";
 export default function PerformerDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const { requireSignup } = useAccessControl();
   const [performer, setPerformer] = useState(null);
   const [performerVideos, setPerformerVideos] = useState([]);
+  
+  // Auth-gated handlers
+  const handleWatchVideos = () => {
+    requireSignup('/videos');
+  };
+  
+  const handleJoinFanclub = () => {
+    requireSignup('/fanclub');
+  };
 
   // Fetch all data
   const { data: performers = [] } = useQuery({
@@ -288,21 +301,17 @@ export default function PerformerDetail() {
                 {/* Primary CTA Row - IMMEDIATELY after intro */}
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   {performerVideos.length > 0 && (
-                    <Link to="/videos" className="flex-1">
-                      <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white px-8 py-7 text-lg font-bold shadow-xl shadow-rose-600/30 gap-2.5 rounded-xl">
-                        <Play className="w-6 h-6" />
-                        Watch Videos
-                      </Button>
-                    </Link>
+                    <Button onClick={handleWatchVideos} className="w-full bg-rose-600 hover:bg-rose-700 text-white px-8 py-7 text-lg font-bold shadow-xl shadow-rose-600/30 gap-2.5 rounded-xl">
+                      <Play className="w-6 h-6" />
+                      {isAuthenticated ? 'Watch Videos' : 'Create Account to Watch'}
+                    </Button>
                   )}
                   
                   {fanclubOrExclusive && (
-                    <Link to="/fanclub" className="flex-1">
-                      <Button variant="outline" className="w-full bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 border-purple-600/40 px-8 py-7 text-lg font-bold gap-2.5 rounded-xl">
-                        <Crown className="w-6 h-6" />
-                        Join Fanclub
-                      </Button>
-                    </Link>
+                    <Button onClick={handleJoinFanclub} variant="outline" className="w-full bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 border-purple-600/40 px-8 py-7 text-lg font-bold gap-2.5 rounded-xl">
+                      <Crown className="w-6 h-6" />
+                      {isAuthenticated ? 'Join Fanclub — $12.99/month' : 'Create Account to Join Fanclub'}
+                    </Button>
                   )}
                 </div>
 
@@ -406,12 +415,10 @@ export default function PerformerDetail() {
                       )}
                     </div>
                     
-                    <Link to={`/videos/${featuredVideo.slug}`}>
-                      <Button className="w-full bg-rose-600 hover:bg-rose-700 text-white px-6 py-6 text-base font-bold shadow-lg shadow-rose-600/30 gap-2 rounded-xl">
-                        <Play className="w-5 h-5" />
-                        {featuredVideo.access_tier === 'free' ? 'Watch Scene' : 'Unlock Scene'}
-                      </Button>
-                    </Link>
+                    <Button onClick={handleWatchVideos} className="w-full bg-rose-600 hover:bg-rose-700 text-white px-6 py-6 text-base font-bold shadow-lg shadow-rose-600/30 gap-2 rounded-xl">
+                      <Play className="w-5 h-5" />
+                      {isAuthenticated ? (featuredVideo.access_tier === 'free' ? 'Watch Scene' : 'Unlock Scene') : 'Create Account to Watch'}
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -570,12 +577,10 @@ export default function PerformerDetail() {
                   </div>
                   
                   <div className="flex lg:justify-center">
-                    <Link to="/fanclub">
-                      <Button className="w-full lg:w-auto bg-purple-600 hover:bg-purple-700 text-white px-10 py-8 text-xl font-bold shadow-2xl shadow-purple-600/40 gap-3 rounded-2xl">
-                        <Crown className="w-7 h-7" />
-                        Join Fanclub Now
-                      </Button>
-                    </Link>
+                    <Button onClick={handleJoinFanclub} className="w-full lg:w-auto bg-purple-600 hover:bg-purple-700 text-white px-10 py-8 text-xl font-bold shadow-2xl shadow-purple-600/40 gap-3 rounded-2xl">
+                      <Crown className="w-7 h-7" />
+                      {isAuthenticated ? 'Join Fanclub — $12.99/month' : 'Create Account to Join Fanclub'}
+                    </Button>
                   </div>
                 </div>
               </div>

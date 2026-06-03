@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
+import { useAccessControl, PRICING } from "@/lib/useAccessControl";
 import SEOMeta from "@/components/SEOMeta";
 import VideoRail from "@/components/public/VideoRail";
 import PerformerSection from "@/components/public/PerformerSection";
@@ -38,6 +40,8 @@ const safeVideo = (v) => v ? {
 export default function VideoDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const { requireSignup, getCTA } = useAccessControl();
   const [playbackUrl, setPlaybackUrl] = useState(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [unlockError, setUnlockError] = useState(null);
@@ -134,11 +138,18 @@ export default function VideoDetail() {
 
   const handleUnlock = async () => {
     setUnlockError(null);
-    const isAuth = await base44.auth.isAuthenticated();
-    if (!isAuth) {
-      base44.auth.redirectToLogin(window.location.pathname);
+    
+    // Check auth using access control
+    const cta = getCTA(video.access_tier === 'fanclub' ? 'fanclub' : 'ppv', {
+      price: video.access_tier === 'ppv' ? PRICING.ppv.standard.price : undefined
+    });
+    
+    if (cta.requiresAuth) {
+      cta.action();
       return;
     }
+    
+    // User is authenticated, proceed with unlock
     setIsUnlocking(true);
     try {
       const res = await base44.functions.invoke('getVideoPlaybackUrl', { videoId: video.id });
@@ -203,6 +214,9 @@ export default function VideoDetail() {
   const tierInfo = ACCESS_TIER[video.access_tier] || { label: video.access_tier, color: 'bg-muted text-muted-foreground' };
   const primaryPerformer = performers[0] || null;
   const canonicalUrl = `https://fleshlab.online/videos/${video.slug}`;
+  
+  // Get CTA based on auth state and access tier
+  const cta = getCTA(video.access_tier === 'fanclub' ? 'fanclub' : video.access_tier === 'ppv' ? 'ppv' : 'full-video');
 
   // JSON-LD: never include source/full video URL
   const jsonLd = {
@@ -300,11 +314,13 @@ export default function VideoDetail() {
                       <div className="flex flex-wrap gap-3 justify-center">
                         <Button onClick={handleUnlock} disabled={isUnlocking} className="bg-primary hover:bg-primary/90 gap-2">
                           {isUnlocking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
-                          {unlockLabel}
+                          {cta.primaryText}
                         </Button>
-                        <Button variant="outline" onClick={() => navigate('/register')} className="border-white/30 text-white hover:bg-white/10">
-                          Create Account
-                        </Button>
+                        {!isAuthenticated && (
+                          <Button variant="outline" onClick={() => navigate('/register')} className="border-white/30 text-white hover:bg-white/10">
+                            Create Free Account
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -469,10 +485,13 @@ export default function VideoDetail() {
                       : 'Create a free account or subscribe to watch the full video.'}
                   </p>
                   {unlockError && <p className="text-red-400 text-xs mb-2">{unlockError}</p>}
-                  <Button onClick={handleUnlock} disabled={isUnlocking} className="w-full bg-primary hover:bg-primary/90 text-sm gap-2">
+                  <Button onClick={cta.action} disabled={isUnlocking} className="w-full bg-primary hover:bg-primary/90 text-sm gap-2">
                     {isUnlocking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
-                    {unlockLabel}
+                    {cta.primaryText}
                   </Button>
+                  {!isAuthenticated && (
+                    <p className="text-xs text-muted-foreground mt-2 text-center">{cta.secondaryText}</p>
+                  )}
                 </div>
               )}
 
