@@ -2,10 +2,7 @@ import { useState } from "react";
 import { HelpCircle, ChevronDown } from "lucide-react";
 import SEOMeta from "@/components/SEOMeta";
 
-export default function FAQ() {
-  const [openIndex, setOpenIndex] = useState(null);
-
-  const faqs = [
+const faqs = [
     {
       question: "Is FLESHLAB free?",
       answer: "Public previews are completely free to watch with no account required. Full-length scenes and exclusive content require Fanclub membership, PPV purchase, or subscription access."
@@ -46,7 +43,24 @@ export default function FAQ() {
       question: "Can I cancel my membership?",
       answer: "Yes, you can cancel your Fanclub membership at any time. Your access will continue until the end of your current billing period. No refunds are provided for partial periods, but you retain access until the period ends."
     }
-  ];
+];
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "name": "FLESHLAB Studios FAQ",
+  "mainEntity": faqs.map(faq => ({
+    "@type": "Question",
+    "name": faq.question,
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": faq.answer
+    }
+  }))
+};
+
+export default function FAQ() {
+  const [openIndex, setOpenIndex] = useState(null);
 
   return (
     <>
@@ -55,19 +69,7 @@ export default function FAQ() {
         description="Frequently asked questions about FLESHLAB Studios. Learn about Fanclub access, performer applications, guest production, payments, and more."
         canonical="/faq"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
-        jsonLd={{
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          "name": "FLESHLAB Studios FAQ",
-          "mainEntity": faqs.map(faq => ({
-            "@type": "Question",
-            "name": faq.question,
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": faq.answer
-            }
-          }))
-        }}
+        jsonLd={faqJsonLd}
       />
       <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a]">
         {/* Hero */}
