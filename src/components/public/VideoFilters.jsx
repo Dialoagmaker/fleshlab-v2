@@ -259,8 +259,8 @@ export default function VideoFilters({ onFilterChange, brands = [] }) {
   );
 
   return (
-    <div className="space-y-4">
-      {/* Search Bar - Enhanced */}
+    <div className="space-y-3.5">
+      {/* Search Bar */}
       <div className="relative group">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-rose-500 transition-colors" />
         <Input
@@ -268,23 +268,23 @@ export default function VideoFilters({ onFilterChange, brands = [] }) {
           placeholder="Search videos, performers, studios, categories..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-[#1a1a1a]/80 backdrop-blur-sm border border-white/10 text-white placeholder:text-white/40 h-14 pl-12 pr-4 rounded-2xl focus:outline-none focus:border-rose-600/60 focus:ring-2 focus:ring-rose-600/25 transition-all shadow-lg shadow-black/20"
+          className="w-full bg-[#1a1a1a]/60 backdrop-blur-sm border border-white/10 text-white placeholder:text-white/40 h-12 pl-12 pr-4 rounded-xl focus:outline-none focus:border-rose-600/50 focus:ring-2 focus:ring-rose-600/20 transition-all"
         />
       </div>
 
-      {/* Active Filter Chips - Enhanced */}
+      {/* Active Filter Chips */}
       {activeFilters.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           {activeFilters.map((filter, idx) => (
             <Badge
               key={idx}
               variant="secondary"
-              className="bg-gradient-to-r from-rose-600/25 to-rose-600/15 text-rose-400 border border-rose-600/30 px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-rose-900/20"
+              className="bg-rose-600/15 text-rose-400 border border-rose-600/25 px-2.5 py-1 text-xs font-medium flex items-center gap-1"
             >
               {filter.label}
               <button
                 onClick={() => clearFilter(filter.type)}
-                className="hover:bg-rose-600/30 rounded-full p-0.5 transition-colors"
+                className="hover:bg-rose-600/25 rounded-full p-0.5 transition-colors"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -294,21 +294,20 @@ export default function VideoFilters({ onFilterChange, brands = [] }) {
             variant="ghost"
             size="sm"
             onClick={clearAll}
-            className="text-white/50 hover:text-white hover:bg-white/10 h-8 text-xs font-medium transition-all"
+            className="text-white/50 hover:text-white hover:bg-white/8 h-7 text-xs transition-all"
           >
             Clear all
           </Button>
         </div>
       )}
 
-      {/* Desktop Filters - Enhanced */}
-      <div className="hidden lg:flex items-center gap-2.5 flex-wrap">
-        {/* Category Select */}
+      {/* Desktop Filters */}
+      <div className="hidden lg:flex items-center gap-2 flex-wrap">
         <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger className="w-40 bg-[#1a1a1a]/80 backdrop-blur-sm border border-white/10 text-white h-11 rounded-xl focus:ring-2 focus:ring-rose-600/20 transition-all">
+          <SelectTrigger className="w-40 bg-[#1a1a1a]/60 backdrop-blur-sm border border-white/10 text-white h-10 rounded-lg focus:ring-2 focus:ring-rose-600/15 transition-all">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
-          <SelectContent className="bg-[#1a1a1a] border-white/10 backdrop-blur-sm">
+          <SelectContent className="bg-[#1a1a1a] border-white/10">
             {CATEGORIES.map((cat) => (
               <SelectItem key={cat} value={cat === "All" ? "all" : cat.toLowerCase()} className="text-white hover:bg-white/10">
                 {cat}
@@ -317,12 +316,11 @@ export default function VideoFilters({ onFilterChange, brands = [] }) {
           </SelectContent>
         </Select>
 
-        {/* Access Tier */}
         <Select value={accessTier} onValueChange={setAccessTier}>
-          <SelectTrigger className="w-36 bg-[#1a1a1a]/80 backdrop-blur-sm border border-white/10 text-white h-11 rounded-xl focus:ring-2 focus:ring-rose-600/20 transition-all">
+          <SelectTrigger className="w-36 bg-[#1a1a1a]/60 backdrop-blur-sm border border-white/10 text-white h-10 rounded-lg focus:ring-2 focus:ring-rose-600/15 transition-all">
             <SelectValue placeholder="Access" />
           </SelectTrigger>
-          <SelectContent className="bg-[#1a1a1a] border-white/10 backdrop-blur-sm">
+          <SelectContent className="bg-[#1a1a1a] border-white/10">
             {ACCESS_TIERS.map((tier) => (
               <SelectItem key={tier.value} value={tier.value} className="text-white hover:bg-white/10">
                 {tier.label}
@@ -331,13 +329,12 @@ export default function VideoFilters({ onFilterChange, brands = [] }) {
           </SelectContent>
         </Select>
 
-        {/* Brand */}
         {brands.length > 0 && (
           <Select value={brand} onValueChange={setBrand}>
-            <SelectTrigger className="w-40 bg-[#1a1a1a]/80 backdrop-blur-sm border border-white/10 text-white h-11 rounded-xl focus:ring-2 focus:ring-rose-600/20 transition-all">
+            <SelectTrigger className="w-40 bg-[#1a1a1a]/60 backdrop-blur-sm border border-white/10 text-white h-10 rounded-lg focus:ring-2 focus:ring-rose-600/15 transition-all">
               <SelectValue placeholder="Brand" />
             </SelectTrigger>
-            <SelectContent className="bg-[#1a1a1a] border-white/10 backdrop-blur-sm">
+            <SelectContent className="bg-[#1a1a1a] border-white/10">
               <SelectItem value="all" className="text-white hover:bg-white/10">All Brands</SelectItem>
               {brands.map((b) => (
                 <SelectItem key={b.id} value={b.id} className="text-white hover:bg-white/10">
@@ -348,12 +345,11 @@ export default function VideoFilters({ onFilterChange, brands = [] }) {
           </Select>
         )}
 
-        {/* Duration */}
         <Select value={duration} onValueChange={setDuration}>
-          <SelectTrigger className="w-36 bg-[#1a1a1a]/80 backdrop-blur-sm border border-white/10 text-white h-11 rounded-xl focus:ring-2 focus:ring-rose-600/20 transition-all">
+          <SelectTrigger className="w-36 bg-[#1a1a1a]/60 backdrop-blur-sm border border-white/10 text-white h-10 rounded-lg focus:ring-2 focus:ring-rose-600/15 transition-all">
             <SelectValue placeholder="Duration" />
           </SelectTrigger>
-          <SelectContent className="bg-[#1a1a1a] border-white/10 backdrop-blur-sm">
+          <SelectContent className="bg-[#1a1a1a] border-white/10">
             {DURATIONS.map((d) => (
               <SelectItem key={d.value} value={d.value} className="text-white hover:bg-white/10">
                 {d.label}
@@ -362,12 +358,11 @@ export default function VideoFilters({ onFilterChange, brands = [] }) {
           </SelectContent>
         </Select>
 
-        {/* Sort */}
         <Select value={sort} onValueChange={setSort}>
-          <SelectTrigger className="w-36 bg-[#1a1a1a]/80 backdrop-blur-sm border border-white/10 text-white h-11 rounded-xl focus:ring-2 focus:ring-rose-600/20 transition-all">
+          <SelectTrigger className="w-36 bg-[#1a1a1a]/60 backdrop-blur-sm border border-white/10 text-white h-10 rounded-lg focus:ring-2 focus:ring-rose-600/15 transition-all">
             <SelectValue placeholder="Sort" />
           </SelectTrigger>
-          <SelectContent className="bg-[#1a1a1a] border-white/10 backdrop-blur-sm">
+          <SelectContent className="bg-[#1a1a1a] border-white/10">
             {SORTS.map((s) => (
               <SelectItem key={s.value} value={s.value} className="text-white hover:bg-white/10">
                 {s.label}
@@ -377,18 +372,18 @@ export default function VideoFilters({ onFilterChange, brands = [] }) {
         </Select>
       </div>
 
-      {/* Mobile Filter Button - Enhanced */}
+      {/* Mobile Filter Button */}
       <div className="lg:hidden">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
             <Button
               variant="outline"
-              className="w-full bg-[#1a1a1a]/80 backdrop-blur-sm border border-white/10 text-white hover:bg-white/10 hover:border-rose-600/40 h-11 rounded-xl transition-all shadow-lg shadow-black/20"
+              className="w-full bg-[#1a1a1a]/60 backdrop-blur-sm border border-white/10 text-white hover:bg-white/10 h-10 rounded-lg transition-all"
             >
               <Filter className="w-4 h-4 mr-2" />
-              <span className="font-semibold">Filters</span>
+              Filters
               {(category !== "all" || accessTier !== "all" || exclusive === true || brand !== "all" || duration !== "all" || sort !== "newest") && (
-                <Badge className="ml-2 bg-gradient-to-r from-rose-600 to-rose-700 text-white text-[10px] font-bold px-2 py-0.5 shadow-lg">
+                <Badge className="ml-2 bg-rose-600 text-white text-[10px] px-2 py-0.5 rounded-full">
                   Active
                 </Badge>
               )}
@@ -396,7 +391,7 @@ export default function VideoFilters({ onFilterChange, brands = [] }) {
           </SheetTrigger>
           <SheetContent side="bottom" className="bg-[#0a0a0a] border-white/10 max-h-[85vh] overflow-y-auto">
             <SheetHeader>
-              <SheetTitle className="text-white text-lg font-bold">Filter Videos</SheetTitle>
+              <SheetTitle className="text-white">Filter Videos</SheetTitle>
             </SheetHeader>
             <div className="py-6">
               <FilterContent />

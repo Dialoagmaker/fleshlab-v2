@@ -138,63 +138,63 @@ export default function Videos() {
         }}
       />
       <div className="min-h-screen bg-[#0a0a0a]">
-        {/* Enhanced Hero Section */}
-        <div className="relative bg-gradient-to-b from-[#0f0f0f] via-[#0a0a0a] to-[#0a0a0a] border-b border-rose-600/30 pb-8 pt-12 px-4 overflow-hidden">
-          {/* Subtle animated glow effect */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-rose-600/5 rounded-full blur-[120px] pointer-events-none" />
+        {/* Cinematic Hero Section */}
+        <div className="relative bg-gradient-to-b from-[#0f0f0f] via-[#0a0a0a] to-[#0a0a0a] border-b border-rose-600/20 pb-6 pt-10 px-4 overflow-hidden">
+          {/* Subtle rose glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-rose-600/5 rounded-full blur-[100px] pointer-events-none" />
           
           <div className="max-w-7xl mx-auto relative z-10">
             {/* Icon + Title */}
-            <div className="flex items-start gap-4 mb-5">
-              <div className="w-14 h-14 bg-gradient-to-br from-rose-600 to-rose-700 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-600/30 flex-shrink-0">
-                <Play className="w-7 h-7 text-white fill-white" />
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-rose-600 to-rose-700 rounded-xl flex items-center justify-center shadow-lg shadow-rose-600/25 flex-shrink-0">
+                <Play className="w-6 h-6 text-white fill-white" />
               </div>
               <div className="flex-1">
-                <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight leading-tight mb-3">
+                <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight mb-2.5">
                   Premium Asian Gay Videos & Filipino Twink Scenes
                 </h1>
-                <p className="text-white/70 text-base leading-relaxed max-w-4xl">
+                <p className="text-white/60 text-sm leading-relaxed max-w-4xl">
                   Browse verified 18+ Asian and Filipino gay adult videos including solo scenes, shower videos, outdoor shoots, bareback scenes, oral and anal content, full-length gay adult scenes including solo, oral, anal, bareback, shower and studio productions, and exclusive fanclub releases.
                 </p>
               </div>
             </div>
 
-            {/* Stats Row */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-xl p-4 flex items-center gap-3">
-                <div className="w-10 h-10 bg-rose-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Users className="w-5 h-5 text-rose-500" />
+            {/* Stats Row - Sleeker */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+              <div className="bg-white/[0.02] backdrop-blur-sm border border-white/5 rounded-lg p-3 flex items-center gap-2.5">
+                <div className="w-9 h-9 bg-rose-600/15 rounded-md flex items-center justify-center flex-shrink-0">
+                  <Users className="w-4 h-4 text-rose-500" />
                 </div>
                 <div>
-                  <p className="text-white font-bold text-sm">Verified 18+</p>
-                  <p className="text-white/50 text-xs">Performers</p>
+                  <p className="text-white font-semibold text-xs">Verified 18+</p>
+                  <p className="text-white/40 text-[10px]">Performers</p>
                 </div>
               </div>
-              <div className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-xl p-4 flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Crown className="w-5 h-5 text-purple-500" />
+              <div className="bg-white/[0.02] backdrop-blur-sm border border-white/5 rounded-lg p-3 flex items-center gap-2.5">
+                <div className="w-9 h-9 bg-purple-600/15 rounded-md flex items-center justify-center flex-shrink-0">
+                  <Crown className="w-4 h-4 text-purple-500" />
                 </div>
                 <div>
-                  <p className="text-white font-bold text-sm">Full-Length</p>
-                  <p className="text-white/50 text-xs">Studio Scenes</p>
+                  <p className="text-white font-semibold text-xs">Full-Length</p>
+                  <p className="text-white/40 text-[10px]">Scenes</p>
                 </div>
               </div>
-              <div className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-xl p-4 flex items-center gap-3">
-                <div className="w-10 h-10 bg-amber-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-5 h-5 text-amber-500" />
+              <div className="bg-white/[0.02] backdrop-blur-sm border border-white/5 rounded-lg p-3 flex items-center gap-2.5">
+                <div className="w-9 h-9 bg-amber-600/15 rounded-md flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
                 </div>
                 <div>
-                  <p className="text-white font-bold text-sm">Fanclub</p>
-                  <p className="text-white/50 text-xs">Exclusives</p>
+                  <p className="text-white font-semibold text-xs">Fanclub</p>
+                  <p className="text-white/40 text-[10px]">Exclusives</p>
                 </div>
               </div>
-              <div className="bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-xl p-4 flex items-center gap-3">
-                <div className="w-10 h-10 bg-emerald-600/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-5 h-5 text-emerald-500" />
+              <div className="bg-white/[0.02] backdrop-blur-sm border border-white/5 rounded-lg p-3 flex items-center gap-2.5">
+                <div className="w-9 h-9 bg-emerald-600/15 rounded-md flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-4 h-4 text-emerald-500" />
                 </div>
                 <div>
-                  <p className="text-white font-bold text-sm">Updated</p>
-                  <p className="text-white/50 text-xs">Weekly</p>
+                  <p className="text-white font-semibold text-xs">Updated</p>
+                  <p className="text-white/40 text-[10px]">Weekly</p>
                 </div>
               </div>
             </div>
@@ -203,45 +203,49 @@ export default function Videos() {
             {isLoading ? (
               <p className="text-white/40 text-xs">Loading videos...</p>
             ) : (
-              <p className="text-white/50 text-sm">
+              <p className="text-white/50 text-xs">
                 <span className="font-semibold text-white">{total}</span> {total === 1 ? 'video' : 'videos'} available
                 {hasMore && <span className="mx-1">·</span>}
-                {hasMore && <span>Showing page {page} (1-{page * VIDEOS_PER_PAGE})</span>}
+                {hasMore && <span>Page {page}</span>}
               </p>
             )}
           </div>
         </div>
 
-        {/* Content - Reduced padding to bring videos higher */}
-        <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-5">
+        {/* Content */}
+        <div className="max-w-[1400px] mx-auto px-4 py-5 space-y-4">
           {/* Filters */}
           <VideoFilters onFilterChange={handleFilterChange} brands={brands} />
 
           {isLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
               {[...Array(24)].map((_, i) => (
                 <div key={i} className="aspect-video bg-[#121212] rounded-xl animate-pulse border border-white/5" />
               ))}
             </div>
           ) : videos.length > 0 ? (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                {videos.map(video => (
-                  <VideoCard key={video.id} video={video} brands={brands} />
+              {/* First row emphasis */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
+                {videos.map((video, idx) => (
+                  <div key={video.id} className={idx < 6 ? "ring-1 ring-white/5 rounded-2xl" : ""}>
+                    <VideoCard video={video} brands={brands} />
+                  </div>
                 ))}
               </div>
-
               {hasMore && (
-                <div className="text-center pt-6 pb-4">
+                <div className="text-center pt-5 pb-3">
                   <Button
                     onClick={() => setPage(p => p + 1)}
-                    className="px-10 py-3 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold text-sm rounded-xl shadow-xl shadow-rose-600/40 transition-all hover:scale-105"
+                    className="px-8 py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-semibold text-sm rounded-lg shadow-lg shadow-rose-600/30 transition-all hover:scale-[1.02]"
                     size="lg"
                   >
                     Load More Videos
-                    <span className="ml-2 text-xs opacity-80 font-medium">
-                      ({total - page * VIDEOS_PER_PAGE} remaining)
-                    </span>
+                    {total - page * VIDEOS_PER_PAGE > 0 && (
+                      <span className="ml-2 text-xs opacity-70">
+                        ({total - page * VIDEOS_PER_PAGE} left)
+                      </span>
+                    )}
                   </Button>
                 </div>
               )}
