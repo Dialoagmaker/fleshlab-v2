@@ -21,6 +21,7 @@ import { useI18n } from "@/i18n/i18n";
 
 // Approved taxonomy categories from Phase 2A - dynamically generated from actual video categories
 // Note: Fanclub and PPV are access tiers, not categories - they exist only in ACCESS_TIERS
+// Note: Exclusive is a boolean flag (is_exclusive), not a category - it has its own toggle filter
 const CATEGORIES = [
   "All",
   "Asian",
@@ -45,7 +46,6 @@ const CATEGORIES = [
   "Daddy/Twink",
   "Age Gap",
   "Studio Production",
-  "Exclusive",
 ];
 
 const ACCESS_TIERS = [
@@ -76,6 +76,7 @@ export default function VideoFilters({ onFilterChange, brands = [] }) {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [accessTier, setAccessTier] = useState("all");
+  const [exclusive, setExclusive] = useState(false);
   const [brand, setBrand] = useState("all");
   const [duration, setDuration] = useState("all");
   const [sort, setSort] = useState("newest");
@@ -94,7 +95,7 @@ export default function VideoFilters({ onFilterChange, brands = [] }) {
     search: debouncedSearch,
     category: category === "all" ? null : category,
     access_tier: accessTier === "all" ? null : accessTier,
-    exclusive: category === "exclusive" ? true : null,
+    exclusive: exclusive === true ? true : null,
     brand: brand === "all" ? null : brand,
     duration: duration === "all" ? null : DURATIONS.find(d => d.value === duration),
     sort,
@@ -110,6 +111,7 @@ export default function VideoFilters({ onFilterChange, brands = [] }) {
   if (debouncedSearch) activeFilters.push({ type: "search", label: `Search: "${debouncedSearch}"` });
   if (category !== "all") activeFilters.push({ type: "category", label: `Category: ${category}` });
   if (accessTier !== "all") activeFilters.push({ type: "access", label: `Access: ${ACCESS_TIERS.find(a => a.value === accessTier)?.label}` });
+  if (exclusive === true) activeFilters.push({ type: "exclusive", label: "Exclusive" });
   if (brand !== "all") activeFilters.push({ type: "brand", label: `Brand: ${brands.find(b => b.id === brand)?.name || brand}` });
   if (duration !== "all") activeFilters.push({ type: "duration", label: `Duration: ${DURATIONS.find(d => d.value === duration)?.label}` });
   if (sort !== "newest") activeFilters.push({ type: "sort", label: `Sort: ${SORTS.find(s => s.value === sort)?.label}` });
@@ -119,6 +121,7 @@ export default function VideoFilters({ onFilterChange, brands = [] }) {
       case "search": setSearch(""); break;
       case "category": setCategory("all"); break;
       case "access": setAccessTier("all"); break;
+      case "exclusive": setExclusive(false); break;
       case "brand": setBrand("all"); break;
       case "duration": setDuration("all"); break;
       case "sort": setSort("newest"); break;
@@ -130,6 +133,7 @@ export default function VideoFilters({ onFilterChange, brands = [] }) {
     setSearch("");
     setCategory("all");
     setAccessTier("all");
+    setExclusive(false);
     setBrand("all");
     setDuration("all");
     setSort("newest");
@@ -173,6 +177,21 @@ export default function VideoFilters({ onFilterChange, brands = [] }) {
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Exclusive Toggle */}
+      <div>
+        <label className="text-xs font-semibold text-white/70 mb-2 block">Exclusive Content</label>
+        <button
+          onClick={() => setExclusive(!exclusive)}
+          className={`w-full px-4 py-2.5 rounded-lg border text-sm font-semibold transition-all ${
+            exclusive === true
+              ? "bg-purple-600/20 border-purple-600/50 text-purple-400 shadow-lg shadow-purple-600/20"
+              : "bg-[#1a1a1a] border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
+          }`}
+        >
+          {exclusive === true ? "✓ Exclusive Only" : "Show Exclusive Only"}
+        </button>
       </div>
 
       {/* Brand */}
@@ -360,7 +379,7 @@ export default function VideoFilters({ onFilterChange, brands = [] }) {
             >
               <Filter className="w-4 h-4 mr-2" />
               Filters
-              {(category !== "all" || accessTier !== "all" || brand !== "all" || duration !== "all" || sort !== "newest") && (
+              {(category !== "all" || accessTier !== "all" || exclusive === true || brand !== "all" || duration !== "all" || sort !== "newest") && (
                 <Badge className="ml-2 bg-rose-600 text-white text-[10px]">
                   Active
                 </Badge>
