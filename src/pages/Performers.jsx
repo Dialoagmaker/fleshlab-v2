@@ -20,19 +20,18 @@ export default function Performers() {
 
   // Featured Talent selection: ONLY The_Fitmaker and Jameson
   const featuredPerformers = useMemo(() => {
-    // Priority performers (match by display_name or slug, case-insensitive)
-    const priorityNames = ['the_fitmaker', 'the fitmaker', 'fitmaker', 'jameson'];
-    
     const priority = [];
     
     for (const performer of performers) {
-      const nameLower = performer.display_name.toLowerCase();
-      const slugLower = performer.slug.toLowerCase();
-      const isPriority = priorityNames.some(name => 
-        nameLower.includes(name) || slugLower.includes(name)
-      );
+      const nameLower = performer.display_name.toLowerCase().replace(/[_\s-]/g, '');
+      const slugLower = performer.slug.toLowerCase().replace(/[_\s-]/g, '');
       
-      if (isPriority) {
+      // Match Fitmaker variants (with/without "the")
+      const isFitmaker = nameLower.includes('fitmaker') || slugLower.includes('fitmaker');
+      // Match Jameson
+      const isJameson = nameLower.includes('jameson') || slugLower.includes('jameson');
+      
+      if (isFitmaker || isJameson) {
         priority.push(performer);
       }
     }
