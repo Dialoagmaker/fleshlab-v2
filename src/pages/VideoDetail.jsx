@@ -25,7 +25,12 @@ const ACCESS_TIER = {
 };
 
 export default function VideoDetail() {
-  const { slug } = useParams();
+  // useParams() only works when rendered inside a <Route path="/videos/:slug">.
+  // The manual path.startsWith dispatch in App.jsx renders this outside such a route,
+  // so useParams() returns {}. Fall back to parsing window.location.pathname directly.
+  const { slug: paramSlug } = useParams();
+  const slug = paramSlug || window.location.pathname.split('/videos/')[1]?.split('/')[0] || null;
+
   const navigate = useNavigate();
   const [playbackUrl, setPlaybackUrl] = useState(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
@@ -36,7 +41,8 @@ export default function VideoDetail() {
     queryKey: ['video-detail', slug],
     queryFn: () => callPublicFunction('getPublicVideoDetail', { slug }),
     enabled: !!slug,
-    retry: 0,
+    retry: 2,
+    staleTime: 5 * 60 * 1000,
   });
 
   const video       = data?.video       || null;
