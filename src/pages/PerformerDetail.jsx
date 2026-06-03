@@ -11,11 +11,10 @@ import {
   ArrowLeft, 
   Loader2, 
   Users, 
-  Calendar, 
+  Calendar,
   Film,
   Verified,
   Globe,
-  MapPin,
   Crown,
   Play
 } from "lucide-react";
@@ -102,10 +101,6 @@ export default function PerformerDetail() {
   }
 
   const brand = brands.find(b => b.id === performer.brand_id);
-  
-  // Calculate age if DOB available
-  const age = performer.date_of_birth ? 
-    Math.floor((new Date() - new Date(performer.date_of_birth)) / (1000 * 60 * 60 * 24 * 365.25)) : null;
 
   return (
     <>
@@ -195,12 +190,11 @@ export default function PerformerDetail() {
                       <span className="font-medium text-foreground">{performer.nationality}</span>
                     </span>
                   )}
-                  {age && age >= 18 && (
-                    <span className="flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4" />
-                      <span className="font-medium text-foreground">Verified 18+</span>
-                    </span>
-                  )}
+                  {/* Always show "Verified 18+" for all performers - no exact age displayed */}
+                  <span className="flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4" />
+                    <span className="font-medium text-foreground">Verified 18+</span>
+                  </span>
                   <span className="flex items-center gap-1.5">
                     <Film className="w-4 h-4" />
                     <span className="font-medium text-foreground">{performerVideos.length} {performerVideos.length === 1 ? 'video' : 'videos'}</span>
