@@ -18,13 +18,12 @@ export default function Performers() {
   const performers = publicData?.performers || [];
   const brands = publicData?.brands || [];
 
-  // Featured Talent selection: prioritize The_Fitmaker and Jameson
+  // Featured Talent selection: ONLY The_Fitmaker and Jameson
   const featuredPerformers = useMemo(() => {
     // Priority performers (match by display_name or slug, case-insensitive)
     const priorityNames = ['the_fitmaker', 'the fitmaker', 'fitmaker', 'jameson'];
     
     const priority = [];
-    const remaining = [];
     
     for (const performer of performers) {
       const nameLower = performer.display_name.toLowerCase();
@@ -35,21 +34,11 @@ export default function Performers() {
       
       if (isPriority) {
         priority.push(performer);
-      } else {
-        remaining.push(performer);
       }
     }
     
-    // Sort priority performers first, then fill with verified/fanclub performers
-    const verifiedOrFanclub = remaining.filter(p => p.verified || p.fanclub_enabled);
-    
-    // Take priority performers (up to 2), then fill to 3 with verified/fanclub
-    const result = [...priority.slice(0, 2)];
-    if (result.length < 3) {
-      result.push(...verifiedOrFanclub.slice(0, 3 - result.length));
-    }
-    
-    return result;
+    // ONLY show priority performers (max 2), NO fallbacks
+    return priority.slice(0, 2);
   }, [performers]);
 
   // Filter performers
@@ -180,7 +169,7 @@ export default function Performers() {
                 <h2 className="text-lg font-bold text-white/90 mb-0.5">Featured Talent</h2>
                 <p className="text-white/50 text-xs">Top verified performers and fanclub exclusives</p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
                 {featuredPerformers.map(performer => (
                   <PerformerCard 
                     key={performer.id} 
