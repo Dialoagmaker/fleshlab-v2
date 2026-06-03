@@ -85,7 +85,7 @@ export default function NewsDetail() {
   return (
     <>
       <SEOMeta
-        title={article.meta_title || `${article.title} | FLESHLAB`}
+        title={article.meta_title || `${article.title} | FLESHLAB Studios`}
         description={article.meta_description || article.excerpt || article.content?.substring(0, 160)}
         canonical={canonicalUrl}
         ogImage={article.cover_image_url}

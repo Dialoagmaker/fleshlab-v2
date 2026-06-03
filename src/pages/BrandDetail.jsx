@@ -66,7 +66,7 @@ export default function BrandDetail() {
   return (
     <>
       <SEOMeta
-        title={brand.meta_title || `${brand.name} | FLESHLAB Asia`}
+        title={brand.meta_title || `${brand.name} | FLESHLAB Studios`}
         description={brand.meta_description || brand.description}
         canonical={canonicalUrl}
         ogImage={brand.cover_image_url || brand.logo_url}

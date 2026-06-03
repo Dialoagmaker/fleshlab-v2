@@ -7,14 +7,14 @@ export default function GuestProduction() {
   return (
     <>
       <SEOMeta
-        title="FLESHLAB Guest Production Program"
-        description="Professional 18+ guest performer participation in FLESHLAB studio productions. Verified applicants, compatibility review, contracts, and studio-controlled filming."
+        title="Gay Adult Guest Production | FLESHLAB Studios"
+        description="Professional 18+ guest performer participation in FLESHLAB Studios productions. Verified applicants, compatibility review, contracts, and studio-controlled filming."
         canonical="/guest-production"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "WebPage",
-          "name": "FLESHLAB Guest Production",
+          "name": "FLESHLAB Studios Guest Production",
           "description": "Guest performer production program"
         }}
       />

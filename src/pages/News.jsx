@@ -46,15 +46,15 @@ export default function News() {
   return (
     <>
       <SEOMeta
-        title="FLESHLAB News & Studio Journal"
-        description="Read FLESHLAB studio updates, Asian gay creator stories, fanclub news, guest production updates and behind-the-scenes articles."
+        title="Gay Adult Studio News & Updates | FLESHLAB Studios"
+        description="Read FLESHLAB Studios updates, creator stories, fanclub news, guest production announcements and behind-the-scenes articles from the studio."
         canonical="/news"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "CollectionPage",
-          "name": "FLESHLAB News",
-          "description": "Latest news, updates, and announcements from FLESHLAB studio."
+          "name": "FLESHLAB Studios News",
+          "description": "Latest news, updates, and announcements from FLESHLAB Studios."
         }}
       />
       <div className="min-h-screen bg-background">

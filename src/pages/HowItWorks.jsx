@@ -7,14 +7,14 @@ export default function HowItWorks() {
   return (
     <>
       <SEOMeta
-        title="How FLESHLAB Works"
-        description="Learn how FLESHLAB studio operates. Browse public previews, join fanclub, apply as performer, or participate in guest productions. Verified 18+ content."
+        title="How FLESHLAB Studios Works | Access Guide"
+        description="Learn how FLESHLAB Studios operates. Browse public previews, join fanclub, apply as performer, or participate in guest productions. Verified 18+ content."
         canonical="/how-it-works"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "WebPage",
-          "name": "How FLESHLAB Works",
+          "name": "How FLESHLAB Studios Works",
           "description": "Studio operations and access guide"
         }}
       />

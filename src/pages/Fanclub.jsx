@@ -7,8 +7,8 @@ export default function Fanclub() {
   return (
     <>
       <SEOMeta
-        title="FLESHLAB Fanclub - Exclusive Studio Access"
-        description="Join FLESHLAB Fanclub for exclusive access to full-length scenes, behind-the-scenes content, and premium productions. Public previews free."
+        title="Gay Adult Content Membership | FLESHLAB Fanclub"
+        description="Join FLESHLAB Fanclub for exclusive access to full-length gay adult scenes, behind-the-scenes content, and premium studio productions. Public previews free."
         canonical="/fanclub"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{

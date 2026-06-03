@@ -40,14 +40,14 @@ export default function Home() {
   return (
     <>
       <SEOMeta
-        title="FLESHLAB — Premium Asian Gay Adult Studio"
-        description="FLESHLAB is a premium gay adult studio featuring verified Asian performers, exclusive productions, and member-only content."
+        title="FLESHLAB Studios | Premium Gay Adult Content & Creator Platform"
+        description="Explore premium gay adult content, verified performer profiles, studio-produced videos, fanclub access, and professional creator features from FLESHLAB Studios."
         canonical="/"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "WebSite",
-          "name": "FLESHLAB",
+          "name": "FLESHLAB Studios",
           "url": "https://fleshlab.online",
           "description": "Premium gay adult studio featuring verified Asian performers, exclusive productions and member-only content."
         }}

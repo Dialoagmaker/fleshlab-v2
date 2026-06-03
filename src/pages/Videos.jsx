@@ -116,15 +116,15 @@ export default function Videos() {
   return (
     <>
       <SEOMeta
-        title="Asian Gay Videos & Studio Previews - FLESHLAB"
-        description="Browse FLESHLAB Asian gay studio previews, Filipino twink videos, performer releases, fanclub exclusives and PPV scenes."
+        title="Premium Gay Adult Videos | FLESHLAB Studios"
+        description="Browse premium gay adult videos, Asian twink content, verified performer profiles, studio productions, fanclub exclusives and PPV scenes from FLESHLAB Studios."
         canonical="/videos"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "CollectionPage",
-          "name": "FLESHLAB Video Library",
-          "description": "Premium Asian gay video collection"
+          "name": "FLESHLAB Studios Video Library",
+          "description": "Premium gay adult video collection featuring Asian twink performers"
         }}
       />
       <div className="min-h-screen bg-[#0a0a0a]">

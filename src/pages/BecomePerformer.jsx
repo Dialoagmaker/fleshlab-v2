@@ -99,14 +99,14 @@ export default function BecomePerformer() {
   return (
     <>
       <SEOMeta
-        title="Become a Performer — FLESHLAB | Asian Twink Talent"
-        description="Join FLESHLAB as a performer. Gay/bi/queer Asian guys wanted. Create content, build fans, earn revenue. Apply in 3 minutes."
+        title="Become a Gay Adult Performer | FLESHLAB Studios"
+        description="Join FLESHLAB Studios as a performer. Gay/bi/queer Asian creators wanted. Create adult content, build fans, earn revenue. Apply in 3 minutes."
         canonical="/become-performer"
         ogImage="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "WebPage",
-          "name": "Become a FLESHLAB Performer",
+          "name": "Become a FLESHLAB Studios Performer",
           "description": "Performer application page"
         }}
       />

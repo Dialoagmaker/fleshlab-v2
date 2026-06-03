@@ -51,14 +51,14 @@ export default function FAQ() {
   return (
     <>
       <SEOMeta
-        title="FLESHLAB FAQ"
-        description="Frequently asked questions about FLESHLAB studio. Learn about Fanclub access, performer applications, guest production, payments, and more."
+        title="FLESHLAB Studios FAQ | Gay Adult Content Questions"
+        description="Frequently asked questions about FLESHLAB Studios. Learn about Fanclub access, performer applications, guest production, payments, and more."
         canonical="/faq"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "FAQPage",
-          "name": "FLESHLAB FAQ"
+          "name": "FLESHLAB Studios FAQ"
         }}
       />
       <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a]">

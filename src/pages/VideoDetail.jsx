@@ -125,7 +125,7 @@ export default function VideoDetail() {
   return (
     <>
       <SEOMeta
-        title={video.meta_title || `${video.title} | FLESHLAB`}
+        title={video.meta_title || `${video.title} | FLESHLAB Studios`}
         description={video.meta_description || video.short_summary || video.description}
         canonical={canonicalUrl}
         ogImage={video.primary_thumbnail_url || video.cover_image_url}
