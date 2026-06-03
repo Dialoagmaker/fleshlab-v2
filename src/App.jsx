@@ -290,46 +290,8 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Dynamic public routes (detail pages)
-  if (path.startsWith("/videos/")) {
-    return (
-      <PublicPageShell>
-        <VideoDetail />
-      </PublicPageShell>
-    );
-  }
-
-  if (path.startsWith("/performers/")) {
-    return (
-      <PublicPageShell>
-        <PerformerDetail />
-      </PublicPageShell>
-    );
-  }
-
-  if (path.startsWith("/brands/")) {
-    return (
-      <PublicPageShell>
-        <BrandDetail />
-      </PublicPageShell>
-    );
-  }
-
-  if (path.startsWith("/news/")) {
-    return (
-      <PublicPageShell>
-        <NewsDetail />
-      </PublicPageShell>
-    );
-  }
-
-  if (path.startsWith("/fanclub/")) {
-    return (
-      <PublicPageShell>
-        <ComingSoon title="Performer Fanclub" />
-      </PublicPageShell>
-    );
-  }
+  // Dynamic public routes — now handled by React Router <Routes> below
+  // so useParams() works correctly and slug is always available
 
   // Ghost routes — V1/old tool paths that must NOT fall into /:slug wildcard
   // These are dead paths; render noindex 404 immediately.
@@ -375,7 +337,13 @@ const AuthenticatedApp = () => {
       <Route path="/AdminApplications" element={<GhostRoute />} />
       <Route path="/PerformerDashboard" element={<GhostRoute />} />
       <Route path="/SEOAuditPhase1Report" element={<GhostRoute />} />
-      {/* Public routes — dynamic detail pages handled manually above */}
+      {/* Dynamic detail pages — use PublicPageShell + React Router so useParams() works */}
+      <Route path="/videos/:slug" element={<PublicPageShell><VideoDetail /></PublicPageShell>} />
+      <Route path="/performers/:slug" element={<PublicPageShell><PerformerDetail /></PublicPageShell>} />
+      <Route path="/news/:slug" element={<PublicPageShell><NewsDetail /></PublicPageShell>} />
+      <Route path="/brands/:slug" element={<PublicPageShell><BrandDetail /></PublicPageShell>} />
+      <Route path="/fanclub/:slug" element={<PublicPageShell><ComingSoon title="Performer Fanclub" /></PublicPageShell>} />
+      {/* Public routes */}
       <Route element={<Layout />}>
         <Route path="/brands" element={<PublicBrands />} />
         <Route path="/search" element={<ComingSoon title="Search" />} />

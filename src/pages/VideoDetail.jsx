@@ -25,11 +25,7 @@ const ACCESS_TIER = {
 };
 
 export default function VideoDetail() {
-  // useParams() only works when rendered inside a <Route path="/videos/:slug">.
-  // The manual path.startsWith dispatch in App.jsx renders this outside such a route,
-  // so useParams() returns {}. Fall back to parsing window.location.pathname directly.
-  const { slug: paramSlug } = useParams();
-  const slug = paramSlug || window.location.pathname.split('/videos/')[1]?.split('/')[0] || null;
+  const { slug } = useParams();
 
   const navigate = useNavigate();
   const [playbackUrl, setPlaybackUrl] = useState(null);
@@ -74,11 +70,37 @@ export default function VideoDetail() {
     setIsUnlocking(false);
   };
 
+  // During loading, render a content-rich skeleton with the slug-derived title
+  // so Googlebot/headless fetchers see meaningful content even before async resolves.
   if (isLoading) {
+    const titleFromSlug = slug
+      ? slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+      : 'Loading Video';
+    const canonicalFromSlug = `https://fleshlab.online/videos/${slug}`;
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <>
+        <SEOMeta
+          title={`${titleFromSlug} | FLESHLAB Studios`}
+          description={`Watch ${titleFromSlug} on FLESHLAB Studios. Premium gay adult content featuring verified Asian performers.`}
+          canonical={canonicalFromSlug}
+        />
+        <div className="min-h-screen bg-background">
+          <div className="bg-card border-b border-border">
+            <div className="max-w-7xl mx-auto px-4 py-3">
+              <Button variant="ghost" onClick={() => navigate('/videos')} className="gap-2 text-muted-foreground hover:text-foreground">
+                <ArrowLeft className="w-4 h-4" /> Back to Library
+              </Button>
+            </div>
+          </div>
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="mb-8 bg-black rounded-2xl overflow-hidden aspect-video flex items-center justify-center">
+              <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">{titleFromSlug}</h1>
+            <p className="text-muted-foreground">Premium gay adult content from FLESHLAB Studios. Featuring verified performers, exclusive studio productions, and fanclub-exclusive scenes.</p>
+          </div>
+        </div>
+      </>
     );
   }
 
