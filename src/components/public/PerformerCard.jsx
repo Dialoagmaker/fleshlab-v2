@@ -6,6 +6,9 @@ export default function PerformerCard({ performer, brands = [], videoCount = 0, 
     ? Math.floor((new Date() - new Date(performer.date_of_birth)) / (1000 * 60 * 60 * 24 * 365.25))
     : null;
 
+  // Find performer's primary brand/studio
+  const brand = performer.brand_id ? brands.find(b => b.id === performer.brand_id) : null;
+
   return (
     <a href={`/performers/${performer.slug}`} className="group block">
       <div className={`rounded-xl overflow-hidden bg-[#111] border transition-all duration-300 hover:-translate-y-1 ${
@@ -51,15 +54,29 @@ export default function PerformerCard({ performer, brands = [], videoCount = 0, 
             <h3 className={`font-black text-white leading-tight group-hover:text-primary transition-colors line-clamp-1 ${featured ? 'text-lg' : 'text-sm'}`}>
               {performer.display_name}
             </h3>
-            <div className={`flex items-center gap-2 mt-1 text-white/50 ${featured ? 'text-sm' : 'text-[11px]'}`}>
-              {performer.nationality && (
-                <span className="flex items-center gap-1 truncate">
-                  <MapPin className={`w-2.5 h-2.5 flex-shrink-0 ${featured ? 'w-3 h-3' : ''}`} />
-                  <span className="truncate">{performer.nationality}</span>
-                </span>
-              )}
-              {age && age >= 18 && (
-                <span className="text-white/40 flex-shrink-0">· {age}y</span>
+            <div className={`flex flex-col gap-1 mt-1 ${featured ? 'text-sm' : 'text-[11px]'}`}>
+              <div className="flex items-center gap-2 text-white/50 flex-wrap">
+                {performer.nationality && (
+                  <span className="flex items-center gap-1 truncate">
+                    <MapPin className={`w-2.5 h-2.5 flex-shrink-0 ${featured ? 'w-3 h-3' : ''}`} />
+                    <span className="truncate">{performer.nationality}</span>
+                  </span>
+                )}
+                {age && age >= 18 && (
+                  <span className="text-white/40 flex-shrink-0">· {age}y</span>
+                )}
+              </div>
+              {/* Studio/Brand pill - only show if available */}
+              {brand && (
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md font-medium ${
+                    featured 
+                      ? 'bg-white/[0.08] text-white/70 text-xs' 
+                      : 'bg-white/[0.06] text-white/60 text-[10px]'
+                  }`}>
+                    {brand.name}
+                  </span>
+                </div>
               )}
             </div>
           </div>

@@ -5,16 +5,40 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     await req.json().catch(() => ({})); // Consume body (not used, but required for SDK init)
 
-    const [performers, brands, videoPerformers] = await Promise.all([
+    const [performers, brands, videoPerformers, videos] = await Promise.all([
       base44.asServiceRole.entities.Performer.filter({ status: 'active' }, 'display_name', 200),
       base44.asServiceRole.entities.Brand.filter({ status: 'active' }),
       base44.asServiceRole.entities.VideoPerformer.list(),
+      base44.asServiceRole.entities.Video.filter({ status: 'published' }),
     ]);
 
-    // Count videos per performer
+    // Build video-to-brand map
+    const videoBrandMap = {};
+    for (const video of videos) {
+      if (video.brand_id) {
+        videoBrandMap[video.id] = video.brand_id;
+      }
+    }
+
+    // Count videos per performer and track brand associations
     const videoCounts = {};
+    const performerBrandCounts = {};
     for (const vp of videoPerformers) {
       videoCounts[vp.performer_id] = (videoCounts[vp.performer_id] || 0) + 1;
+      const brandId = videoBrandMap[vp.video_id];
+      if (brandId) {
+        performerBrandCounts[vp.performer_id] = performerBrandCounts[vp.performer_id] || {};
+        performerBrandCounts[vp.performer_id][brandId] = (performerBrandCounts[vp.performer_id][brandId] || 0) + 1;
+      }
+    }
+
+    // Determine primary brand for each performer (most frequent)
+    const performerPrimaryBrand = {};
+    for (const [performerId, brandCounts] of Object.entries(performerBrandCounts)) {
+      const topBrand = Object.entries(brandCounts).sort((a, b) => b[1] - a[1])[0];
+      if (topBrand) {
+        performerPrimaryBrand[performerId] = topBrand[0];
+      }
     }
 
     // Sanitize — only public-safe fields, never expose compliance/payout/internal data
@@ -31,6 +55,7 @@ Deno.serve(async (req) => {
       verified: p.verified,
       fanclub_enabled: p.fanclub_enabled,
       video_count: videoCounts[p.id] || p.video_count || 0,
+      brand_id: performerPrimaryBrand[p.id] || null,
       onlyfans_url: p.onlyfans_url,
       twitter_url: p.twitter_url,
       instagram_url: p.instagram_url,
