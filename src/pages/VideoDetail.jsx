@@ -23,7 +23,7 @@ const ACCESS_TIER = {
   ppv:     { label: 'Premium PPV',        color: 'bg-primary/10 text-primary' },
 };
 
-// Sanitize a video record — only safe public fields
+// Sanitize a video record — only safe public fields (v2)
 const safeVideo = (v) => v ? {
   id: v.id, slug: v.slug, title: v.title, description: v.description,
   short_summary: v.short_summary, brand_id: v.brand_id, categories: v.categories,
