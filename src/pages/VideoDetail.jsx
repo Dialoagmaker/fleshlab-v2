@@ -70,8 +70,24 @@ export default function VideoDetail() {
 
   const isLoading = videosLoading;
 
-  // Resolve video from slug
-  const videoRaw = allVideos.find(v => v.slug === slug) || null;
+  // Resolve video from slug — with legacy slug fallback
+  let videoRaw = allVideos.find(v => v.slug === slug) || null;
+  let foundViaLegacy = false;
+  
+  // If not found by current slug, check legacy_slugs array
+  if (!videoRaw && slug) {
+    videoRaw = allVideos.find(v => v.legacy_slugs?.includes(slug)) || null;
+    foundViaLegacy = !!videoRaw;
+  }
+  
+  // If found via legacy slug, redirect to canonical new URL
+  if (foundViaLegacy && videoRaw) {
+    const canonicalSlug = videoRaw.slug;
+    const canonicalPath = `/videos/${canonicalSlug}`;
+    // Replace state to avoid back button loop, preserve canonical URL
+    window.history.replaceState(null, '', canonicalPath);
+  }
+  
   const video = safeVideo(videoRaw);
 
   // Resolve brand
