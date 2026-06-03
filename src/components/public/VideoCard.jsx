@@ -5,8 +5,9 @@ import { cn } from "@/lib/utils";
 export default function VideoCard({ video, brands = [], performers = [] }) {
   const brand = brands.find(b => b.id === video.brand_id);
   const primaryPerformer = performers.find(p => p.id === video.performer_id);
-  const mins = video.duration_seconds ? Math.floor(video.duration_seconds / 60) : null;
-  const secs = video.duration_seconds ? String(video.duration_seconds % 60).padStart(2, '0') : null;
+  const hasValidDuration = video.duration_seconds && video.duration_seconds > 0;
+  const mins = hasValidDuration ? Math.floor(video.duration_seconds / 60) : null;
+  const secs = hasValidDuration ? String(video.duration_seconds % 60).padStart(2, '0') : null;
 
   return (
     <a href={`/videos/${video.slug}`} className="group block">
@@ -68,7 +69,7 @@ export default function VideoCard({ video, brands = [], performers = [] }) {
           )}
 
           {/* Duration — bottom right */}
-          {mins !== null && (
+          {hasValidDuration && (
             <div className="absolute bottom-2 right-2 bg-black/90 text-white text-[11px] font-mono font-bold px-2 py-1 rounded flex items-center gap-1 border border-white/10">
               <Clock className="w-2.5 h-2.5" />{mins}:{secs}
             </div>
