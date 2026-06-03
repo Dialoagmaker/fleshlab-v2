@@ -176,6 +176,11 @@ const AuthenticatedApp = () => {
     return <Navigate to="/performerlogin" replace />;
   }
 
+  if (path === "/guest-productions") {
+    window.location.replace("/guest-production");
+    return null;
+  }
+
   if (path === "/") {
     return (
       <PublicPageShell>
