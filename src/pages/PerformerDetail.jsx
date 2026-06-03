@@ -8,23 +8,20 @@ import VideoCard from "@/components/public/VideoCard";
 import SEOMeta from "@/components/SEOMeta";
 import PremiumTeaserBlock from "@/components/public/PremiumTeaserBlock";
 import PerformerBadges from "@/components/public/PerformerBadges";
-import { generatePerformerTitle, generatePerformerMetaDescription, generatePerformerSEOBio, isFilipino, isAsian } from "@/lib/performerSeoUtils";
+import { generatePerformerTitle, generatePerformerMetaDescription, generatePerformerSEOBio } from "@/lib/performerSeoUtils";
 import { 
   ArrowLeft, 
   Loader2, 
   Users, 
-  Calendar,
   Film,
   Verified,
-  Globe,
   Crown,
   Play,
   Heart,
-  Sparkles,
-  ExternalLink,
   Star,
   Lock,
-  Zap
+  Zap,
+  ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +34,7 @@ export default function PerformerDetail() {
   const [performer, setPerformer] = useState(null);
   const [performerVideos, setPerformerVideos] = useState([]);
   
-  // Auth-gated handlers
+  // Auth-gated handlers - safe, no performer access
   const handleWatchVideos = () => {
     requireSignup('/videos');
   };
@@ -73,7 +70,6 @@ export default function PerformerDetail() {
       if (foundPerformer) {
         setPerformer(foundPerformer);
         
-        // Find videos assigned to this performer via VideoPerformer records (source of truth)
         const assignedVideoIds = videoPerformers
           .filter(vp => vp.performer_id === foundPerformer.id)
           .map(vp => vp.video_id);
@@ -81,12 +77,45 @@ export default function PerformerDetail() {
         const assignedVideos = videos.filter(v => assignedVideoIds.includes(v.id));
         setPerformerVideos(assignedVideos);
       } else {
-        // Performer not found - set to null explicitly
         setPerformer(null);
       }
     }
   }, [performers, slug, videos, videoPerformers]);
 
+  // Check for exclusive/fanclub videos - safe
+  const hasExclusiveVideos = performerVideos.some(v => v.is_exclusive || v.access_tier === 'fanclub' || v.access_tier === 'ppv');
+  const fanclubOrExclusive = performer?.fanclub_enabled || hasExclusiveVideos;
+  
+  // Get featured video
+  const featuredVideo = performerVideos.find(v => v.is_exclusive || v.access_tier === 'fanclub' || v.access_tier === 'ppv') || performerVideos[0];
+
+  // Calculate performer's primary brand - NULL SAFE
+  const performerBrand = useMemo(() => {
+    if (!performer || !brands.length) return null;
+    const brandCounts = {};
+    performerVideos.forEach(video => {
+      if (video.brand_id) {
+        brandCounts[video.brand_id] = (brandCounts[video.brand_id] || 0) + 1;
+      }
+    });
+    
+    let maxCount = 0;
+    let primaryBrandId = null;
+    Object.entries(brandCounts).forEach(([brandId, count]) => {
+      if (count > maxCount) {
+        maxCount = count;
+        primaryBrandId = brandId;
+      }
+    });
+    
+    return primaryBrandId ? brands.find(b => b.id === primaryBrandId) : null;
+  }, [performer, performerVideos, brands]);
+
+  // Identity line for hero - NULL SAFE (moved BEFORE loading check)
+  const nationalityShort = performer?.nationality ? performer.nationality.split(',')[0].trim() : '';
+  const identityLine = `Verified 18+ ${nationalityShort ? nationalityShort + ' performer' : 'performer'} · FLESHLAB Studios`;
+  
+  // JSON-LD - NULL SAFE
   const jsonLd = performer ? {
     "@context": "https://schema.org",
     "@type": "Person",
@@ -109,45 +138,11 @@ export default function PerformerDetail() {
 
   const canonicalUrl = performer ? `https://fleshlab.online/performers/${performer.slug}` : undefined;
   
-  // Generate SEO content - NULL SAFE (only after performer exists)
-  const seoTitle = performer && performer.meta_title ? performer.meta_title : generatePerformerTitle(performer || {});
-  const seoDescription = performer && performer.meta_description ? performer.meta_description : generatePerformerMetaDescription(performer || {});
+  // Generate SEO content - NULL SAFE
+  const seoTitle = performer?.meta_title || generatePerformerTitle(performer || {});
+  const seoDescription = performer?.meta_description || generatePerformerMetaDescription(performer || {});
   const seoIntro = performer ? generatePerformerSEOBio(performer) : '';
 
-  // Calculate performer's primary brand from public videos (VideoPerformer -> Video -> Brand)
-  const performerBrand = useMemo(() => {
-    if (!performer || !brands.length) return null;
-    const brandCounts = {};
-    performerVideos.forEach(video => {
-      if (video.brand_id) {
-        brandCounts[video.brand_id] = (brandCounts[video.brand_id] || 0) + 1;
-      }
-    });
-    
-    let maxCount = 0;
-    let primaryBrandId = null;
-    Object.entries(brandCounts).forEach(([brandId, count]) => {
-      if (count > maxCount) {
-        maxCount = count;
-        primaryBrandId = brandId;
-      }
-    });
-    
-    return primaryBrandId ? brands.find(b => b.id === primaryBrandId) : null;
-  }, [performer, performerVideos, brands]);
-
-  // Check for exclusive/fanclub videos
-  const hasExclusiveVideos = performerVideos.some(v => v.is_exclusive || v.access_tier === 'fanclub' || v.access_tier === 'ppv');
-  const fanclubOrExclusive = performer?.fanclub_enabled || hasExclusiveVideos;
-  
-  // Get featured video (first exclusive/fanclub video, or first video)
-  const featuredVideo = performerVideos.find(v => v.is_exclusive || v.access_tier === 'fanclub' || v.access_tier === 'ppv') || performerVideos[0];
-  
-  // Identity line for hero
-  const nationalityShort = performer.nationality ? performer.nationality.split(',')[0].trim() : '';
-  const identityLine = `Verified 18+ ${nationalityShort ? nationalityShort + ' performer' : 'performer'} · FLESHLAB Studios`;
-
-  // Loading state
   // Not found state
   if (performer === null && performers.length > 0 && slug) {
     return (
@@ -183,6 +178,7 @@ export default function PerformerDetail() {
     );
   }
 
+  // Performer exists - render page
   return (
     <>
       <SEOMeta
@@ -197,7 +193,6 @@ export default function PerformerDetail() {
       <div className="min-h-screen bg-background">
         {/* Two-Column Sales Hero */}
         <div className="relative bg-gradient-to-b from-[#0a0a0a] via-[#0d0d0d] to-background border-b border-rose-600/20 overflow-hidden">
-          {/* Cinematic glow effects */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-rose-600/5 rounded-full blur-[140px] pointer-events-none" />
           
           <div className="max-w-[1400px] mx-auto px-4 pt-6 pb-10 relative z-10">
@@ -293,12 +288,12 @@ export default function PerformerDetail() {
                   </div>
                 </div>
 
-                {/* Short seductive intro - max 2 lines */}
+                {/* Short seductive intro */}
                 <p className="text-white/70 text-lg leading-relaxed line-clamp-2">
                   {seoIntro}
                 </p>
 
-                {/* Primary CTA Row - IMMEDIATELY after intro */}
+                {/* Primary CTA Row */}
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   {performerVideos.length > 0 && (
                     <Button onClick={handleWatchVideos} className="w-full bg-rose-600 hover:bg-rose-700 text-white px-8 py-7 text-lg font-bold shadow-xl shadow-rose-600/30 gap-2.5 rounded-xl">
@@ -334,11 +329,10 @@ export default function PerformerDetail() {
           </div>
         </div>
 
-        {/* Featured Scene - BEFORE biography */}
+        {/* Featured Scene */}
         {featuredVideo && (
           <div className="max-w-[1400px] mx-auto px-4 py-10">
             <div className="bg-gradient-to-br from-rose-900/20 via-rose-800/10 to-transparent rounded-3xl border border-rose-600/30 p-6 lg:p-8 relative overflow-hidden">
-              {/* Glow effect */}
               <div className="absolute top-0 right-0 w-96 h-96 bg-rose-600/10 rounded-full blur-[100px] pointer-events-none" />
               
               <div className="relative z-10">
@@ -353,7 +347,6 @@ export default function PerformerDetail() {
                 </div>
                 
                 <div className="grid lg:grid-cols-2 gap-6 items-center">
-                  {/* Video card - larger than normal */}
                   <div className="relative group">
                     <Link to={`/videos/${featuredVideo.slug}`}>
                       <div className="aspect-video bg-[#0a0a0a] rounded-2xl overflow-hidden border border-white/10 shadow-xl">
@@ -362,20 +355,17 @@ export default function PerformerDetail() {
                           alt={featuredVideo.title}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
-                        {/* Play overlay */}
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <div className="w-16 h-16 bg-rose-600 rounded-full flex items-center justify-center shadow-lg">
                             <Play className="w-8 h-8 text-white ml-1" />
                           </div>
                         </div>
-                        {/* Access tier badge */}
                         {(featuredVideo.is_exclusive || featuredVideo.access_tier === 'fanclub' || featuredVideo.access_tier === 'ppv') && (
                           <div className="absolute top-3 right-3 bg-amber-600/95 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
                             <Lock className="w-3 h-3" />
                             EXCLUSIVE
                           </div>
                         )}
-                        {/* Duration badge */}
                         {featuredVideo.duration_seconds && (
                           <div className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-sm text-white px-2.5 py-1 rounded-md text-xs font-bold">
                             {Math.floor(featuredVideo.duration_seconds / 60)}:{String(featuredVideo.duration_seconds % 60).padStart(2, '0')}
@@ -385,7 +375,6 @@ export default function PerformerDetail() {
                     </Link>
                   </div>
                   
-                  {/* Video info + CTA */}
                   <div className="space-y-4">
                     <div>
                       <h3 className="text-xl lg:text-2xl font-bold text-white mb-2">{featuredVideo.title}</h3>
@@ -428,7 +417,7 @@ export default function PerformerDetail() {
 
         {/* Content Sections */}
         <div className="max-w-[1400px] mx-auto px-4 py-8 space-y-10">
-          {/* Full Biography - MOVED LOWER */}
+          {/* Biography */}
           {performer.bio && (
             <div>
               <div className="bg-card/30 backdrop-blur-sm rounded-2xl border border-white/10 p-6 lg:p-10">
@@ -445,7 +434,7 @@ export default function PerformerDetail() {
             </div>
           )}
 
-          {/* Videos Section - STRONGER */}
+          {/* Videos Section */}
           {performerVideos.length > 0 ? (
             <div>
               <div className="flex items-center justify-between mb-6">
@@ -465,7 +454,6 @@ export default function PerformerDetail() {
                 </Link>
               </div>
               
-              {/* Grid - larger for single video */}
               <div className={`grid gap-6 ${performerVideos.length === 1 ? 'grid-cols-1 max-w-3xl' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}>
                 {performerVideos.map(video => (
                   <VideoCard key={video.id} video={video} brands={brands} />
@@ -473,7 +461,6 @@ export default function PerformerDetail() {
               </div>
             </div>
           ) : (
-            /* Empty State - No Videos */
             <div>
               <div className="bg-gradient-to-br from-card/50 to-card/30 backdrop-blur-sm rounded-3xl border border-white/10 p-12 lg:p-16 text-center">
                 <div className="w-24 h-24 bg-rose-600/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -512,11 +499,10 @@ export default function PerformerDetail() {
             </div>
           )}
 
-          {/* Enhanced Fanclub Promo - MORE COMMERCIAL */}
+          {/* Fanclub Promo */}
           {fanclubOrExclusive && (
             <div>
               <div className="relative bg-gradient-to-br from-purple-900/40 via-purple-800/20 to-transparent rounded-3xl border border-purple-500/40 p-8 lg:p-12 overflow-hidden">
-                {/* Decorative blurs */}
                 <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/15 rounded-full blur-[120px] pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-96 h-96 bg-rose-600/15 rounded-full blur-[120px] pointer-events-none" />
                 
