@@ -56,7 +56,35 @@ Deno.serve(async (req) => {
         const keyParts = urlParts.slice(3); // Remove protocol and domain
         const r2Key = keyParts.join('/');
 
-        // Fetch video file from R2 (first 1MB should contain mvhd atom)
+        // First check if file exists with HEAD request
+        const headCommand = new GetObjectCommand({
+          Bucket: Deno.env.get('R2_BUCKET_NAME'),
+          Key: r2Key,
+        });
+
+        let fileExists = false;
+        try {
+          const headResp = await r2Client.send(headCommand);
+          fileExists = true;
+        } catch (headError) {
+          if (headError.name === 'NoSuchKey' || headError.$metadata?.httpStatusCode === 404) {
+            errors.push({
+              video_id: video.id,
+              title: video.title,
+              slug: video.slug,
+              source_url: video.source_video_url,
+              r2_key: r2Key,
+              error: 'Video file not found in R2 - manual duration required',
+              admin_url: `/admin/videos/${video.id}`
+            });
+            continue;
+          }
+          throw headError;
+        }
+
+        if (!fileExists) continue;
+
+        // Fetch first 1MB of video file (should contain mvhd atom)
         const getCommand = new GetObjectCommand({
           Bucket: Deno.env.get('R2_BUCKET_NAME'),
           Key: r2Key,
@@ -64,7 +92,9 @@ Deno.serve(async (req) => {
         });
 
         const response = await r2Client.send(getCommand);
-        const arrayBuffer = await response.Body.transformToByteArray();
+        // Convert streaming body to ArrayBuffer
+        const blob = await response.Body.transformToByteArray();
+        const arrayBuffer = blob.buffer.slice(blob.byteOffset, blob.byteOffset + blob.byteLength);
         
         // Extract duration from MP4/MOV container
         const duration = extractMp4Duration(arrayBuffer);
