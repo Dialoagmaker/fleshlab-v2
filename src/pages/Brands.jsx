@@ -5,6 +5,7 @@ import BrandCard from "@/components/public/BrandCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Building2, Search, X, Loader2, Crown } from "lucide-react";
+import SEOMeta from "@/components/SEOMeta";
 
 export default function Brands() {
   const [search, setSearch] = useState("");
@@ -38,7 +39,20 @@ export default function Brands() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <SEOMeta
+        title="FLESHLAB Studios & Asian Gay Content Brands | Premium Studio Originals"
+        description="Explore FLESHLAB Studios and partner brands producing premium Asian gay adult content, Filipino twink videos, verified 18+ performer productions, and exclusive studio releases."
+        canonical="/brands"
+        ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          "name": "FLESHLAB Studios Brands",
+          "description": "Premium Asian gay adult studio brands and production companies"
+        }}
+      />
+      <div className="min-h-screen bg-background">
       {/* Hero - Studio Showcase */}
       <div className="bg-gradient-to-b from-primary/10 via-primary/5 to-background border-b border-border py-16 px-4">
         <div className="max-w-7xl mx-auto">
@@ -99,5 +113,6 @@ export default function Brands() {
         )}
       </div>
     </div>
+    </>
   );
 }
