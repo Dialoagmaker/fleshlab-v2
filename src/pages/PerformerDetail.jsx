@@ -61,6 +61,9 @@ export default function PerformerDetail() {
         
         const assignedVideos = videos.filter(v => assignedVideoIds.includes(v.id));
         setPerformerVideos(assignedVideos);
+      } else {
+        // Performer not found - set to null explicitly
+        setPerformer(null);
       }
     }
   }, [performers, slug, videos, videoPerformers]);
@@ -68,9 +71,9 @@ export default function PerformerDetail() {
   const jsonLd = performer ? {
     "@context": "https://schema.org",
     "@type": "Person",
-    "name": performer.display_name,
+    "name": performer.display_name || 'Verified Performer',
     "description": performer.meta_description || generatePerformerMetaDescription(performer),
-    "image": performer.profile_image_url,
+    "image": performer.profile_image_url || '/placeholder-performer.jpg',
     "url": `https://fleshlab.online/performers/${performer.slug}`,
     "nationality": performer.nationality,
     "worksFor": {
@@ -87,11 +90,39 @@ export default function PerformerDetail() {
 
   const canonicalUrl = performer ? `https://fleshlab.online/performers/${performer.slug}` : undefined;
   
-  // Generate SEO content
-  const seoTitle = performer.meta_title || generatePerformerTitle(performer);
-  const seoDescription = performer.meta_description || generatePerformerMetaDescription(performer);
-  const seoIntro = generatePerformerSEOBio(performer);
+  // Generate SEO content - NULL SAFE (only after performer exists)
+  const seoTitle = performer && performer.meta_title ? performer.meta_title : generatePerformerTitle(performer || {});
+  const seoDescription = performer && performer.meta_description ? performer.meta_description : generatePerformerMetaDescription(performer || {});
+  const seoIntro = performer ? generatePerformerSEOBio(performer) : '';
 
+  // Loading state
+  // Not found state
+  if (performer === null && performers.length > 0 && slug) {
+    return (
+      <>
+        <SEOMeta
+          title="Performer Not Found | FLESHLAB Studios"
+          description="This performer profile does not exist. Browse verified 18+ performers on FLESHLAB Studios."
+          canonical="/performers"
+          noIndex={true}
+        />
+        <div className="min-h-screen bg-background flex items-center justify-center px-4">
+          <div className="text-center max-w-md">
+            <h1 className="text-3xl font-bold mb-4 text-foreground">Performer Not Found</h1>
+            <p className="text-muted-foreground mb-6">
+              The performer profile you're looking for doesn't exist or has been removed.
+            </p>
+            <Button onClick={() => navigate('/performers')} className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Performers
+            </Button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // Loading state
   if (!performer) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">

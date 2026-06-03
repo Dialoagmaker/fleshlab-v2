@@ -58,10 +58,10 @@ export function extractRoleFromBio(bio) {
  * Generate SEO title for performer profile
  */
 export function generatePerformerTitle(performer) {
-  const name = performer.display_name || 'Performer';
-  const nationality = performer.nationality;
-  const verified = performer.verified;
-  const fanclubEnabled = performer.fanclub_enabled;
+  const name = performer?.display_name || 'Performer';
+  const nationality = performer?.nationality;
+  const verified = performer?.verified;
+  const fanclubEnabled = performer?.fanclub_enabled;
   
   // Build title parts based on available data
   const parts = [name];
@@ -93,11 +93,11 @@ export function generatePerformerTitle(performer) {
  * Generate meta description for performer profile
  */
 export function generatePerformerMetaDescription(performer) {
-  const name = performer.display_name || 'Performer';
-  const nationality = performer.nationality;
-  const bio = performer.bio;
-  const fanclubEnabled = performer.fanclub_enabled;
-  const verified = performer.verified;
+  const name = performer?.display_name || 'Performer';
+  const nationality = performer?.nationality;
+  const bio = performer?.bio;
+  const fanclubEnabled = performer?.fanclub_enabled;
+  const verified = performer?.verified;
   
   // Base description
   let description = `Meet ${name}, a ${verified ? 'verified 18+ ' : ''}FLESHLAB Studios performer`;
@@ -138,10 +138,10 @@ export function generatePerformerMetaDescription(performer) {
  * Generate SEO intro paragraph for performer profile page
  */
 export function generatePerformerSEOBio(performer) {
-  const name = performer.display_name || 'Performer';
-  const nationality = performer.nationality;
-  const verified = performer.verified;
-  const fanclubEnabled = performer.fanclub_enabled;
+  const name = performer?.display_name || 'Performer';
+  const nationality = performer?.nationality;
+  const verified = performer?.verified;
+  const fanclubEnabled = performer?.fanclub_enabled;
   
   let intro = `${name} is a ${verified ? 'verified 18+ ' : ''}FLESHLAB Studios performer`;
   
