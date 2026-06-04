@@ -4,7 +4,11 @@
   "properties": {
     "applicant_name": {
       "type": "string",
-      "title": "Full Name"
+      "title": "Stage Name"
+    },
+    "legal_name": {
+      "type": "string",
+      "title": "Legal Name (Private)"
     },
     "email": {
       "type": "string",
@@ -13,29 +17,93 @@
     },
     "phone": {
       "type": "string",
-      "title": "Phone"
+      "title": "Phone / Messaging"
     },
     "nationality": {
       "type": "string",
       "title": "Nationality"
     },
+    "city": {
+      "type": "string",
+      "title": "City"
+    },
+    "experience": {
+      "type": "string",
+      "title": "Experience",
+      "format": "textarea"
+    },
+    "social_links": {
+      "type": "string",
+      "title": "Social Links"
+    },
+    "interests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Interests"
+    },
     "message": {
       "type": "string",
-      "title": "Message",
+      "title": "Message (Legacy)",
       "format": "textarea"
     },
     "package_interest": {
       "type": "string",
       "title": "Package Interest"
     },
+    "profile_photo_r2_keys": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Profile Photo R2 Keys",
+      "description": "Private R2 keys for uploaded profile/softcore/hardcore photos"
+    },
+    "intro_video_r2_key": {
+      "type": "string",
+      "title": "Body Video R2 Key",
+      "description": "Private R2 key for body/intro video"
+    },
+    "hardcore_video_r2_key": {
+      "type": "string",
+      "title": "Hardcore Video R2 Key",
+      "description": "Private R2 key for hardcore/action video"
+    },
+    "id_document_r2_key": {
+      "type": "string",
+      "title": "ID Document R2 Key",
+      "description": "Private R2 key for government ID (passport/ID/license)"
+    },
     "id_document_url": {
       "type": "string",
-      "title": "ID Document URL"
+      "title": "ID Document URL (Legacy)"
+    },
+    "media_upload_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "partial",
+        "complete"
+      ],
+      "title": "Media Upload Status",
+      "default": "none"
+    },
+    "compliance_upload_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "uploaded",
+        "verified"
+      ],
+      "title": "ID Upload Status",
+      "default": "none"
     },
     "status": {
       "type": "string",
       "enum": [
         "pending",
+        "media_pending",
         "reviewing",
         "approved",
         "rejected"
@@ -45,12 +113,28 @@
     },
     "admin_notes": {
       "type": "string",
-      "title": "Admin Notes"
+      "title": "Admin Notes",
+      "format": "textarea"
+    },
+    "contact_log": {
+      "type": "string",
+      "title": "Contact Log",
+      "format": "textarea",
+      "description": "Log of admin contact attempts"
     },
     "submitted_at": {
       "type": "string",
       "format": "date-time",
       "title": "Submitted At"
+    },
+    "media_reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Media Reviewed At"
+    },
+    "media_reviewed_by": {
+      "type": "string",
+      "title": "Media Reviewed By (User ID)"
     }
   },
   "required": [

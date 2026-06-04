@@ -1,0 +1,86 @@
+{
+  "name": "ExternalVideo",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "Video Title"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "xhamster",
+        "faphouse",
+        "boyfriendtv",
+        "zapping",
+        "other"
+      ],
+      "title": "Platform"
+    },
+    "platform_custom_name": {
+      "type": "string",
+      "title": "Custom Platform Name",
+      "description": "Used when platform = other"
+    },
+    "external_url": {
+      "type": "string",
+      "title": "External Video URL"
+    },
+    "external_video_id": {
+      "type": "string",
+      "title": "Platform Video ID"
+    },
+    "performer_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Performer IDs",
+      "description": "Internal Performer record IDs"
+    },
+    "release_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Release Date"
+    },
+    "content_owner": {
+      "type": "string",
+      "title": "Content Owner"
+    },
+    "rights_status": {
+      "type": "string",
+      "enum": [
+        "owned",
+        "licensed",
+        "distribution_only",
+        "unknown"
+      ],
+      "title": "Rights Status",
+      "default": "owned"
+    },
+    "revenue_share_model": {
+      "type": "string",
+      "enum": [
+        "rev_share",
+        "flat_fee",
+        "cpm",
+        "other"
+      ],
+      "title": "Revenue Share Model"
+    },
+    "revenue_share_notes": {
+      "type": "string",
+      "title": "Revenue Share Notes",
+      "format": "textarea"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes",
+      "format": "textarea"
+    }
+  },
+  "required": [
+    "title",
+    "platform"
+  ]
+}

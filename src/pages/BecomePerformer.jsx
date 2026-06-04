@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Check, Film, Shield, Users, TrendingUp, Star, ChevronRight, Crown } from "lucide-react";
 import SEOMeta from "@/components/SEOMeta";
@@ -12,6 +12,9 @@ import { AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import FileUploadField from "@/components/application/FileUploadField";
+import MultiPhotoUpload from "@/components/application/MultiPhotoUpload";
+
 
 // Real FLESHLAB performer thumbnails / video assets used as visual proof
 const PROOF_IMAGES = [
@@ -35,11 +38,20 @@ const TIMELINE_STEPS = [
 
 export default function BecomePerformer() {
   const navigate = useNavigate();
+  // Stable session ID for this application — used to group R2 uploads
+  // Stable session ID for grouping R2 uploads under one application folder
+  const sessionId = useMemo(() => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, []);
   const [formData, setFormData] = useState({
     stage_name: "", legal_name: "", age_confirmed: false,
     country: "", city: "", email: "", phone: "",
     interests: [], experience: "", social_links: "",
     consent_confirmed: false, privacy_accepted: false,
+  });
+  const [mediaKeys, setMediaKeys] = useState({
+    profile_photo_r2_keys: [],
+    intro_video_r2_key: null,
+    hardcore_video_r2_key: null,
+    id_document_r2_key: null,
   });
 
   const { data: allPerformers = [] } = useQuery({
@@ -58,13 +70,17 @@ export default function BecomePerformer() {
     mutationFn: async (data) => {
       const payload = {
         applicant_name: data.stage_name,
+        legal_name: data.legal_name,
         email: data.email,
         phone: data.phone,
         nationality: data.country,
-        message: `Interests: ${data.interests.join(", ")}\nExperience: ${data.experience}\nSocial: ${data.social_links}\nLegal Name: ${data.legal_name}\nCity: ${data.city}`,
+        city: data.city,
+        experience: data.experience,
+        social_links: data.social_links,
+        interests: data.interests,
         package_interest: data.interests[0] || "not_sure",
-        status: "pending",
-        submitted_at: new Date().toISOString(),
+        // Media keys from R2 uploads
+        ...mediaKeys,
       };
       const response = await base44.functions.invoke("submitPerformerApplication", payload);
       return response.data;
@@ -78,9 +94,15 @@ export default function BecomePerformer() {
     },
   });
 
+  const mediaComplete = mediaKeys.profile_photo_r2_keys.length >= 5
+    && mediaKeys.intro_video_r2_key
+    && mediaKeys.hardcore_video_r2_key
+    && mediaKeys.id_document_r2_key;
+
   const canSubmit = () =>
     formData.stage_name && formData.legal_name && formData.age_confirmed &&
-    formData.country && formData.email && formData.consent_confirmed && formData.privacy_accepted;
+    formData.country && formData.email && formData.consent_confirmed && formData.privacy_accepted
+    && mediaComplete;
 
   return (
     <>
@@ -398,6 +420,73 @@ export default function BecomePerformer() {
                 <div className="space-y-2">
                   <Label className="text-white/70">Social Links (Optional)</Label>
                   <Textarea value={formData.social_links} onChange={(e) => setFormData({ ...formData, social_links: e.target.value })} placeholder="Twitter, Instagram, OnlyFans, etc. Or leave blank." className="min-h-[60px] bg-white/5 border-white/15 text-white" />
+                </div>
+
+                {/* ── MEDIA & ID UPLOADS ─────────────────────────────── */}
+                <div className="space-y-5 pt-6 border-t border-white/8">
+                  <div>
+                    <h3 className="text-white font-bold text-base mb-1">Required Media & Documents</h3>
+                    <p className="text-white/45 text-xs leading-relaxed">
+                      All files are uploaded securely to private storage. Only FLESHLAB admin can access them.
+                      Your application cannot be submitted until all required files are uploaded.
+                    </p>
+                  </div>
+
+                  {/* 5 photos */}
+                  <MultiPhotoUpload
+                    sessionId={sessionId}
+                    required
+                    onKeysChanged={(keys) => setMediaKeys(prev => ({ ...prev, profile_photo_r2_keys: keys }))}
+                  />
+
+                  {/* Body video */}
+                  <FileUploadField
+                    label="Body / Intro Video"
+                    hint="A video showing your body, physique and presence. Required."
+                    fileType="intro_video"
+                    sessionId={sessionId}
+                    accept="video/mp4,video/quicktime,video/webm"
+                    required
+                    onUploaded={(key) => setMediaKeys(prev => ({ ...prev, intro_video_r2_key: key }))}
+                    onCleared={() => setMediaKeys(prev => ({ ...prev, intro_video_r2_key: null }))}
+                  />
+
+                  {/* Hardcore video */}
+                  <FileUploadField
+                    label="Hardcore / Action Video"
+                    hint="A video showing explicit action, e.g. masturbation. Required."
+                    fileType="hardcore_video"
+                    sessionId={sessionId}
+                    accept="video/mp4,video/quicktime,video/webm"
+                    required
+                    onUploaded={(key) => setMediaKeys(prev => ({ ...prev, hardcore_video_r2_key: key }))}
+                    onCleared={() => setMediaKeys(prev => ({ ...prev, hardcore_video_r2_key: null }))}
+                  />
+
+                  {/* Government ID */}
+                  <FileUploadField
+                    label="Government ID Document"
+                    hint="Passport, national ID card or driver's license. Required for age verification. Strictly private — admin access only."
+                    fileType="id_document"
+                    sessionId={sessionId}
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    required
+                    onUploaded={(key) => setMediaKeys(prev => ({ ...prev, id_document_r2_key: key }))}
+                    onCleared={() => setMediaKeys(prev => ({ ...prev, id_document_r2_key: null }))}
+                  />
+
+                  {!mediaComplete && (
+                    <div className="flex items-start gap-2 bg-amber-600/10 border border-amber-600/25 rounded-xl px-4 py-3">
+                      <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <p className="text-amber-300 text-xs leading-relaxed">
+                        Please upload all required files before submitting:
+                        {mediaKeys.profile_photo_r2_keys.length < 5 && ` ${5 - mediaKeys.profile_photo_r2_keys.length} more photo(s),`}
+                        {!mediaKeys.intro_video_r2_key && " body video,"}
+                        {!mediaKeys.hardcore_video_r2_key && " hardcore video,"}
+                        {!mediaKeys.id_document_r2_key && " ID document"}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-4 pt-4 border-t border-white/8">
