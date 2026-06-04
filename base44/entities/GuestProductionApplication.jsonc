@@ -52,6 +52,17 @@
       "type": "string",
       "title": "Package Interest"
     },
+    "preferred_revenue_model": {
+      "type": "string",
+      "enum": [
+        "standard_studio_60_performer_40",
+        "network_performer_70_studio_30",
+        "undecided"
+      ],
+      "title": "Preferred Revenue Model",
+      "default": "undecided",
+      "description": "Applicant's preferred revenue split model (admin can override)"
+    },
     "profile_photo_r2_keys": {
       "type": "array",
       "items": {

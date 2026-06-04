@@ -330,6 +330,39 @@ Deno.serve(async (req) => {
       // Generate preliminary hash for placeholder (will be updated after final render)
       const preliminaryHash = 'generating...';
 
+      // Revenue model mapping - DO NOT HARDCODE 70%
+      let studio_share_percent, performer_share_percent, revenue_model_label;
+      const revenue_model = data.revenue_model || 'standard_studio_60_performer_40';
+      
+      if (revenue_model === 'standard_studio_60_performer_40') {
+        // DEFAULT: FLESHLAB builds/manages performer from scratch
+        studio_share_percent = 60;
+        performer_share_percent = 40;
+        revenue_model_label = 'Standard Management 60/40';
+      } else if (revenue_model === 'network_performer_70_studio_30') {
+        // Performer has fanbase/content, uses FLESHLAB network
+        studio_share_percent = 30;
+        performer_share_percent = 70;
+        revenue_model_label = 'Network / Distribution 70/30';
+      } else if (revenue_model === 'custom_split') {
+        // Admin-entered custom split - validate sums to 100
+        studio_share_percent = data.studio_share_percent || 0;
+        performer_share_percent = data.performer_share_percent || 0;
+        revenue_model_label = `Custom Split (${performer_share_percent}% Performer / ${studio_share_percent}% Studio)`;
+        
+        if (studio_share_percent + performer_share_percent !== 100) {
+          return Response.json({
+            error: 'Invalid revenue split: Studio share and Performer share must equal 100%',
+            details: `Studio: ${studio_share_percent}%, Performer: ${performer_share_percent}%`,
+          }, { status: 400 });
+        }
+      } else {
+        return Response.json({
+          error: 'Invalid revenue model selected',
+          details: `Unknown revenue_model: ${revenue_model}`,
+        }, { status: 400 });
+      }
+
       const variables = {
         // Core application data
         performer_legal_name: legalName,
@@ -341,13 +374,17 @@ Deno.serve(async (req) => {
         performer_phone_or_messenger: application.phone || application.whatsapp_number || '[NOT PROVIDED]',
         performer_full_residential_address: application.address || `${application.city || ''}, ${application.country || ''}`.trim(),
 
-        // Contract terms with defaults
+        // Contract terms
         effective_date: data.signing_date || today,
         contract_model_label: (data.contract_model || 'full_management').replace(/_/g, ' ').toUpperCase(),
         minimum_term_months: data.minimum_term_months || 12,
         post_termination_usage_years: data.post_termination_usage_years || 5,
-        revenue_share_percent: data.revenue_share_percent || 70,
-        studio_share_percent: 100 - (data.revenue_share_percent || 70),
+        
+        // Revenue split - DYNAMIC based on selected model
+        revenue_model_label: revenue_model_label,
+        studio_share_percent: studio_share_percent,
+        performer_share_percent: performer_share_percent,
+        revenue_share_percent: performer_share_percent, // Legacy field for template compatibility
         contract_currency: 'EUR',
         early_termination_fee_amount: 150,
         early_termination_fee_currency: 'EUR',
@@ -370,10 +407,10 @@ Deno.serve(async (req) => {
         consent_status: 'Consent Confirmed',
 
         // Content & Production placeholders
-        solo_work_allowed: 'Yes',
-        pair_work_allowed: 'Yes, subject to studio policies',
-        multi_performer_work_allowed: 'Yes, subject to studio policies',
-        live_cam_allowed: 'Yes, if included in contract',
+        solo_work_allowed: data.work_type === 'solo' ? 'Yes' : 'Subject to contract',
+        pair_work_allowed: data.work_type === 'pair' ? 'Yes, with health compliance' : 'Subject to contract',
+        multi_performer_work_allowed: 'Subject to contract and health compliance',
+        live_cam_allowed: data.contract_model?.includes('live_cam') ? 'Yes' : 'Not applicable',
         live_cam_shows_per_month: data.live_cam_required ? 2 : 'Not applicable',
         condom_required: 'Yes',
         bareback_allowed: 'No, unless specific written consent is provided per scene',
@@ -387,14 +424,14 @@ Deno.serve(async (req) => {
         payout_method: 'As configured in performer profile',
 
         // Health compliance placeholders (solo contract defaults)
-        health_compliance_required: 'Not required for solo work unless separately configured',
-        hiv_test_required: 'Not required',
-        hiv_test_status: 'N/A',
+        health_compliance_required: (data.work_type === 'pair' || data.work_type === 'multi') ? 'Required' : 'Not required for solo work',
+        hiv_test_required: (data.work_type === 'pair' || data.work_type === 'multi') ? 'Required' : 'Not required',
+        hiv_test_status: (data.work_type === 'pair' || data.work_type === 'multi') ? 'Required before filming' : 'N/A',
         hiv_test_valid_until: 'N/A',
-        syphilis_test_required: 'Not required',
-        syphilis_test_status: 'N/A',
+        syphilis_test_required: (data.work_type === 'pair' || data.work_type === 'multi') ? 'Required' : 'Not required',
+        syphilis_test_status: (data.work_type === 'pair' || data.work_type === 'multi') ? 'Required before filming' : 'N/A',
         syphilis_test_valid_until: 'N/A',
-        prep_required: 'Not required',
+        prep_required: (data.work_type === 'pair' || data.work_type === 'multi') ? 'Required for condomless work' : 'N/A',
         prep_status: 'N/A',
         
         // Release status (for release-type contracts, not applicable here)
