@@ -160,13 +160,52 @@ export default function Applications() {
     onError: (e) => toast.error(e.message),
   });
 
-  const handleStatusUpdate = (applicationId, newStatus, extra = {}) => {
-    const updates = { status: newStatus, ...extra };
-    if (newStatus === "reviewing") {
-      updates.media_reviewed_at = new Date().toISOString();
+  // Check contract readiness - returns array of missing fields
+  const checkContractReadiness = (app) => {
+    const missingFields = [];
+    
+    // Check performer profile linked
+    const hasPerformer = app.admin_notes?.includes('Performer created:');
+    if (!hasPerformer) missingFields.push('performer_profile');
+    
+    // Check required contract fields
+    if (!app.legal_name) missingFields.push('legal_name');
+    if (!app.date_of_birth) missingFields.push('date_of_birth');
+    if (!app.address) missingFields.push('full_residential_address');
+    if (!app.country) missingFields.push('country');
+    if (!app.email) missingFields.push('email');
+    
+    return missingFields;
+  };
+
+  const handleApprove = () => {
+    if (!selectedApp) return;
+    
+    // Validate contract readiness BEFORE approval
+    const hasPerformer = selectedApp.admin_notes?.includes('Performer created:');
+    const hasLegalName = !!selectedApp.legal_name;
+    const hasDOB = !!selectedApp.date_of_birth;
+    const hasFullAddress = !!selectedApp.address;
+    const hasCountry = !!selectedApp.country;
+    const hasEmail = !!selectedApp.email;
+    
+    const missingFields = [];
+    if (!hasPerformer) missingFields.push('Performer profile');
+    if (!hasLegalName) missingFields.push('Legal name');
+    if (!hasDOB) missingFields.push('Date of Birth');
+    if (!hasFullAddress) missingFields.push('Full Residential Address');
+    if (!hasCountry) missingFields.push('Country');
+    if (!hasEmail) missingFields.push('Email');
+    
+    if (missingFields.length > 0) {
+      // Do NOT approve - open contract data modal instead
+      toast.error(`Cannot approve - missing contract data: ${missingFields.join(', ')}`);
+      handleOpenEditContractData();
+      return;
     }
-    updateMutation.mutate({ id: applicationId, data: updates });
-    setSelectedApp(prev => prev ? { ...prev, ...updates } : prev);
+    
+    // All fields complete - proceed with approval
+    handleStatusUpdate(selectedApp.id, "approved");
   };
 
   const handleAddNote = () => {
@@ -904,7 +943,7 @@ export default function Applications() {
                     <MessageSquare className="w-3.5 h-3.5 mr-1" /> Start Review
                   </Button>
                   <Button variant="outline" size="sm"
-                    onClick={() => handleStatusUpdate(selectedApp.id, "approved")}
+                    onClick={handleApprove}
                     disabled={selectedApp.status === "approved"}>
                     <CheckCircle className="w-3.5 h-3.5 mr-1 text-emerald-400" /> Approve
                   </Button>
@@ -1079,7 +1118,12 @@ export default function Applications() {
                       ) : (
                         <div className="text-xs text-amber-400 flex items-start gap-1.5">
                           <AlertTriangle className="w-3.5 h-3.5 mt-0.5" />
-                          <span>Contract data incomplete — {missingContractFields.length} field(s) missing</span>
+                          <span>
+                            {selectedApp.status === 'approved' 
+                              ? 'Approved, but contract data incomplete — complete data before contract generation'
+                              : 'Contract data incomplete — complete data before approval'}
+                            ({missingContractFields.length} field(s) missing)
+                          </span>
                         </div>
                       )}
                     </div>
@@ -1414,10 +1458,17 @@ export default function Applications() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsEditingContractData(false)}>Cancel</Button>
               <Button 
-                onClick={handleSaveContractData}
+                onClick={() => handleSaveContractDataAndApprove(false)}
+                disabled={!contractFormData.legal_name || !contractFormData.date_of_birth || !contractFormData.email || !contractFormData.address || !contractFormData.country}
+                variant="outline"
+              >
+                Save Contract Data
+              </Button>
+              <Button 
+                onClick={() => handleSaveContractDataAndApprove(true)}
                 disabled={!contractFormData.legal_name || !contractFormData.date_of_birth || !contractFormData.email || !contractFormData.address || !contractFormData.country}
               >
-                <CheckCircle className="w-4 h-4 mr-2" /> Save Contract Data
+                <CheckCircle className="w-4 h-4 mr-2" /> Save & Approve
               </Button>
             </DialogFooter>
           </DialogContent>
