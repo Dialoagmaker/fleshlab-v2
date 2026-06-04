@@ -176,10 +176,15 @@ export default function SignContract() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div 
-              className="prose prose-sm max-h-[60vh] overflow-y-auto p-4 bg-muted rounded-lg border"
-              dangerouslySetInnerHTML={{ __html: contract?.generated_html || "" }}
-            />
+           <div 
+             className="max-h-[60vh] overflow-y-auto p-6 bg-card rounded-lg border border-border text-foreground text-sm leading-relaxed"
+             dangerouslySetInnerHTML={{ __html: contract?.generated_html || "" }}
+             style={{
+               wordWrap: "break-word",
+               overflowWrap: "break-word",
+               whiteSpace: "pre-wrap"
+             }}
+           />
           </CardContent>
         </Card>
 
