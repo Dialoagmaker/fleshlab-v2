@@ -213,7 +213,7 @@ export default function Fanclub() {
     return result.slice(0, 5);
   }, [publishedVideos, performersWithImage]);
 
-  // Value section: 6 image cards
+  // Value section: 6 image cards — use videos 6–11 so they differ from hero + why-join
   const valueCards = useMemo(() => {
     const defs = [
       { title: 'Exclusive fanclub videos', desc: 'Full scenes not shown on the public side.', badge: 'Members Only' },
@@ -223,20 +223,25 @@ export default function Fanclub() {
       { title: 'Performer updates',        desc: 'Updates from verified FLESHLAB performers.', badge: 'Updates' },
       { title: 'Better value',             desc: 'Fanclub = ongoing access from $12.99/month.', badge: 'Best Value' },
     ];
-    return defs.map((d, i) => ({
-      ...d,
-      src: publishedVideos[i]?.primary_thumbnail_url || publishedVideos[i]?.cover_image_url || FALLBACK_THUMBS[i % FALLBACK_THUMBS.length].src,
-    }));
+    // Offset by 6 so these images are distinct from hero (0-4) and why-join (0-2 + performer 0)
+    return defs.map((d, i) => {
+      const vid = publishedVideos[6 + i];
+      const src = vid?.primary_thumbnail_url || vid?.cover_image_url
+        || publishedVideos[i]?.primary_thumbnail_url
+        || FALLBACK_THUMBS[i % FALLBACK_THUMBS.length].src;
+      return { ...d, src };
+    });
   }, [publishedVideos]);
 
-  // PPV cards: assign a real thumbnail per tier
+  // PPV cards: use videos 12–14 so they differ from all previous sections
   const ppvTierThumb = useMemo(() => {
-    const byTier = { standard: null, premium: null, exclusive: null };
-    const keys = Object.keys(byTier);
+    const keys = ['standard', 'premium', 'exclusive'];
+    const result = {};
     keys.forEach((k, i) => {
-      byTier[k] = publishedVideos[i + 3]?.primary_thumbnail_url || FALLBACK_THUMBS[i % FALLBACK_THUMBS.length].src;
+      const vid = publishedVideos[12 + i] || publishedVideos[i + 3];
+      result[k] = vid?.primary_thumbnail_url || vid?.cover_image_url || FALLBACK_THUMBS[i % FALLBACK_THUMBS.length].src;
     });
-    return byTier;
+    return result;
   }, [publishedVideos]);
 
   // Props bundle (avoids repetition)
@@ -442,21 +447,21 @@ export default function Fanclub() {
 
             <div className="grid md:grid-cols-3 gap-5 max-w-5xl mx-auto">
               {[
-                {
-                  img: publishedVideos[0]?.primary_thumbnail_url || FALLBACK_THUMBS[0].src,
-                  title: "See more of your favorite performers",
-                  desc: "Fanclub gives you ongoing access to content from all FLESHLAB performers — not just one scene.",
-                },
-                {
-                  img: publishedVideos[1]?.primary_thumbnail_url || FALLBACK_THUMBS[1].src,
-                  title: "Get early and exclusive drops",
-                  desc: "Member content and early releases land in Fanclub before they reach the public side.",
-                },
-                {
-                  img: performersWithImage[0]?.profile_image_url || FALLBACK_THUMBS[2].src,
-                  title: "Better value if you want more than one scene",
-                  desc: "One PPV starts at $12.99. Fanclub starts at $12.99/month with ongoing member access.",
-                },
+              {
+                img: publishedVideos[3]?.primary_thumbnail_url || publishedVideos[3]?.cover_image_url || FALLBACK_THUMBS[0].src,
+                title: "See more of your favorite performers",
+                desc: "Fanclub gives you ongoing access to content from all FLESHLAB performers, not just one scene.",
+              },
+              {
+                img: publishedVideos[4]?.primary_thumbnail_url || publishedVideos[4]?.cover_image_url || FALLBACK_THUMBS[1].src,
+                title: "Get early and exclusive drops",
+                desc: "Member content and early releases land in Fanclub before they reach the public side.",
+              },
+              {
+                img: performersWithImage[1]?.profile_image_url || publishedVideos[5]?.primary_thumbnail_url || FALLBACK_THUMBS[2].src,
+                title: "Better value if you want more than one scene",
+                desc: "One PPV starts at $12.99. Fanclub starts at $12.99/month with ongoing member access.",
+              },
               ].map(({ img, title, desc }, i) => (
                 <div key={i} className="relative overflow-hidden rounded-2xl">
                   <div className="aspect-video">
