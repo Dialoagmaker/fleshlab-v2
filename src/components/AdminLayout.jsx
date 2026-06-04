@@ -3,8 +3,9 @@ import { useState } from "react";
 import {
   LayoutDashboard, Video, Upload, Users, Tag, Newspaper,
   Link2, Database, Menu, Play, ChevronRight, Globe, FileText, ClipboardList,
-  AlertCircle, Settings, UserX, DollarSign, MessageSquare
+  AlertCircle, Settings, UserX, DollarSign, MessageSquare, LogOut
 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 
 const NAV_GROUPS = [
   {
@@ -97,7 +98,7 @@ function SidebarContent({ onNavClick }) {
         ))}
       </nav>
 
-      <div className="px-3 py-4 border-t border-border">
+      <div className="px-3 py-4 border-t border-border space-y-0.5">
         <Link
           to="/"
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -105,6 +106,13 @@ function SidebarContent({ onNavClick }) {
           <Globe className="w-4 h-4" />
           <span>View Site</span>
         </Link>
+        <button
+          onClick={() => base44.auth.logout()}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-red-400 hover:bg-muted transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Logout</span>
+        </button>
       </div>
     </div>
   );
