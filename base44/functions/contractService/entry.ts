@@ -300,18 +300,21 @@ Deno.serve(async (req) => {
       
       console.log(`All required fields present for contract creation. Performer: ${performer_id}`);
 
-      // Validate required fields for contract generation
-      const requiredFields = [];
-      if (!legalName) requiredFields.push('legal_name');
-      if (!application.date_of_birth && !data.date_of_birth) requiredFields.push('date_of_birth');
-      if (!application.city && !data.address) requiredFields.push('address or city');
-      if (!application.email) requiredFields.push('email');
-      
-      if (requiredFields.length > 0) {
-        return Response.json({
-          error: `Cannot generate contract: ${requiredFields.join(', ')} is missing`,
-          missing_fields: requiredFields,
-        }, { status: 400 });
+      // Validate required fields for contract generation (only if NOT approved)
+      // If admin approved the application, they have verified the data manually
+      if (!isApproved) {
+        const requiredFields = [];
+        if (!legalName) requiredFields.push('legal_name');
+        if (!application.date_of_birth && !data.date_of_birth) requiredFields.push('date_of_birth');
+        if (!application.city && !data.address) requiredFields.push('address or city');
+        if (!application.email) requiredFields.push('email');
+        
+        if (requiredFields.length > 0) {
+          return Response.json({
+            error: `Cannot generate contract: ${requiredFields.join(', ')} is missing`,
+            missing_fields: requiredFields,
+          }, { status: 400 });
+        }
       }
 
       // Build variables from application data
