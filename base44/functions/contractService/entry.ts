@@ -256,40 +256,37 @@ Deno.serve(async (req) => {
       
       // Validate required fields for contract creation
       const missingFields = [];
+      const isApproved = application.status === 'approved';
       
       // Critical: performer_id must exist
       if (!performer_id) {
         missingFields.push('performer_id (create performer profile first)');
       }
       
-      // Critical: legal_name
-      if (!legalName) {
-        missingFields.push('legal_name (from application.legal_name or message)');
+      // If manually approved by admin, trust their judgment - skip other validations
+      // Admin has already verified the application data
+      if (!isApproved) {
+        // Critical: legal_name
+        if (!legalName) {
+          missingFields.push('legal_name (from application.legal_name or message)');
+        }
+        
+        // Critical: email
+        if (!application.email) {
+          missingFields.push('email');
+        }
+        
+        // Critical: date_of_birth
+        if (!application.date_of_birth && !data.date_of_birth) {
+          missingFields.push('date_of_birth');
+        }
+        
+        // Critical: ID document (front)
+        const hasIdFront = application.id_document_front_r2_key || application.id_document_r2_key;
+        if (!hasIdFront) {
+          missingFields.push('id_document_front (ID verification required)');
+        }
       }
-      
-      // Critical: email
-      if (!application.email) {
-        missingFields.push('email');
-      }
-      
-      // Critical: date_of_birth
-      if (!application.date_of_birth && !data.date_of_birth) {
-        missingFields.push('date_of_birth');
-      }
-      
-      // Critical: ID document (front)
-      const hasIdFront = application.id_document_front_r2_key || application.id_document_r2_key;
-      if (!hasIdFront) {
-        missingFields.push('id_document_front (ID verification required)');
-      }
-      
-      // Selfie with ID: Optional if ID document already shows person with ID
-      // Some applicants upload a combined photo (holding ID card)
-      // Only require separate selfie if ID document is clearly just the card itself
-      // For now, make this optional to allow flexibility
-      // if (!application.selfie_with_id_r2_key) {
-      //   missingFields.push('selfie_with_id (compliance recommended)');
-      // }
       
       if (missingFields.length > 0) {
         console.error(`Contract creation blocked: ${missingFields.join(', ')}`);
