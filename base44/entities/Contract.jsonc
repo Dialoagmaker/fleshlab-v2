@@ -25,12 +25,43 @@
       "enum": [
         "draft",
         "sent",
+        "viewed",
         "signed",
         "expired",
         "cancelled"
       ],
       "title": "Status",
       "default": "draft"
+    },
+    "signing_token": {
+      "type": "string",
+      "title": "Signing Token",
+      "description": "Unique secure token for signing link"
+    },
+    "signing_url": {
+      "type": "string",
+      "title": "Signing URL",
+      "description": "Full signing URL with token"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Sent At"
+    },
+    "viewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Viewed At"
+    },
+    "performer_signed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Performer Signed At"
+    },
+    "admin_signed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Admin Signed At"
     },
     "signed_at": {
       "type": "string",
@@ -42,13 +73,64 @@
       "format": "date-time",
       "title": "Expires At"
     },
+    "generated_html": {
+      "type": "string",
+      "title": "Generated HTML",
+      "format": "textarea",
+      "description": "Rendered contract HTML content"
+    },
+    "variables_json": {
+      "type": "string",
+      "title": "Variables JSON",
+      "description": "JSON string of template variables used"
+    },
+    "performer_signature_type": {
+      "type": "string",
+      "enum": [
+        "typed",
+        "drawn"
+      ],
+      "title": "Signature Type"
+    },
+    "performer_signature_text": {
+      "type": "string",
+      "title": "Signature Text"
+    },
+    "performer_signature_ip": {
+      "type": "string",
+      "title": "Signature IP Address"
+    },
+    "performer_signature_user_agent": {
+      "type": "string",
+      "title": "Signature User Agent"
+    },
+    "performer_signature_consent_checked": {
+      "type": "boolean",
+      "title": "Consent Checked",
+      "default": false
+    },
+    "performer_signature_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Signature Timestamp"
+    },
+    "admin_signature_text": {
+      "type": "string",
+      "title": "Admin Signature Text"
+    },
+    "admin_signature_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Admin Signature Timestamp"
+    },
     "document_url": {
       "type": "string",
       "title": "Document URL"
     },
     "notes": {
       "type": "string",
-      "title": "Notes"
+      "title": "Notes",
+      "format": "textarea"
     },
     "verified": {
       "type": "boolean",

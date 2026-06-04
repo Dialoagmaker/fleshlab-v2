@@ -64,6 +64,7 @@ import LegacyActorRedirect from './pages/LegacyActorRedirect';
 import LegacyArticleRedirect from './pages/LegacyArticleRedirect';
 import LegacyPerformerSlug from './pages/LegacyPerformerSlug';
 import GhostRoute from './pages/GhostRoute';
+import SignContract from './pages/SignContract';
 import HowItWorks from './pages/HowItWorks';
 import FAQ from './pages/FAQ';
 import Fanclub from './pages/Fanclub';
@@ -306,6 +307,10 @@ const AuthenticatedApp = () => {
         <CookiePolicy />
       </PublicPageShell>
     );
+  }
+
+  if (path === "/sign-contract") {
+    return <SignContract />;
   }
 
   // Dynamic public routes — now handled by React Router <Routes> below

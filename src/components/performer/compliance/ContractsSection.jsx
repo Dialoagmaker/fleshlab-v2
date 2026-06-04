@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Download, Calendar, Plus, Eye, CheckCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Upload, Download, Calendar, Plus, Eye, CheckCircle, Copy, ExternalLink, Send, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
 import AddContractModal from "./AddContractModal";
 import AdminFileViewModal from "@/components/admin/AdminFileViewModal";
 
@@ -41,6 +43,9 @@ export default function ContractsSection({ performer, contracts, onRefresh }) {
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewingContract, setViewingContract] = useState(null);
   const [verifyingContract, setVerifyingContract] = useState(null);
+  const [showAuditModal, setShowAuditModal] = useState(false);
+  const [auditContract, setAuditContract] = useState(null);
+  const [auditData, setAuditData] = useState(null);
 
   // Safe array default - prevent .map() on undefined
   const safeContracts = Array.isArray(contracts) ? contracts : [];
@@ -81,6 +86,53 @@ export default function ContractsSection({ performer, contracts, onRefresh }) {
       toast.error(`Failed to verify: ${error.message}`);
     },
   });
+
+  const fetchAudit = async (contractId) => {
+    try {
+      const res = await base44.functions.invoke("contractService", {
+        action: "get_signature_audit",
+        contract_id: contractId,
+      });
+      if (res.data?.success) {
+        setAuditData(res.data.audit);
+        setShowAuditModal(true);
+      }
+    } catch (error) {
+      toast.error(`Failed to load audit: ${error.message}`);
+    }
+  };
+
+  const sendForSignature = async (contractId) => {
+    try {
+      const res = await base44.functions.invoke("contractService", {
+        action: "send_for_signature",
+        contract_id: contractId,
+      });
+      if (res.data?.success) {
+        const signingUrl = res.data.signing_url;
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(signingUrl);
+          toast.success("Signing link copied to clipboard");
+        } else {
+          toast.success(`Signing URL: ${signingUrl}`);
+        }
+        queryClient.invalidateQueries({ queryKey: ["contracts", performer.id] });
+        onRefresh?.();
+      }
+    } catch (error) {
+      toast.error(`Failed to send: ${error.message}`);
+    }
+  };
+
+  const copySigningLink = async (contract) => {
+    const url = contract.signing_url || `${window.location.origin}/sign-contract?token=${contract.signing_token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Signing link copied");
+    } catch (error) {
+      toast.error("Failed to copy");
+    }
+  };
 
   // Early return after hooks
   if (!performer || !performer.id) {
@@ -127,7 +179,7 @@ export default function ContractsSection({ performer, contracts, onRefresh }) {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Select
                       value={c.status}
                       onValueChange={(v) => updateContractStatus.mutate({ contractId: c.id, status: v })}
@@ -141,25 +193,59 @@ export default function ContractsSection({ performer, contracts, onRefresh }) {
                         ))}
                       </SelectContent>
                     </Select>
+                    
+                    {/* Signing actions */}
+                    {['draft', 'sent', 'viewed'].includes(c.status) && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => sendForSignature(c.id)}
+                        >
+                          <Send className="w-4 h-4 mr-1" />
+                          Send
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copySigningLink(c)}
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
+                    
+                    {/* Signature audit */}
+                    {c.status === 'signed' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setAuditContract(c);
+                          fetchAudit(c.id);
+                        }}
+                      >
+                        <FileText className="w-4 h-4" />
+                      </Button>
+                    )}
+                    
                     {c.status === 'signed' && !c.verified && (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          if (window.confirm(`Verify contract "${c.title}"?\n\nThis confirms the contract has been reviewed and is valid.`)) {
+                          if (window.confirm(`Verify contract "${c.title}"?`)) {
                             verifyContract.mutate({ contractId: c.id });
                           }
                         }}
                         disabled={verifyContract.isPending}
                       >
-                        <CheckCircle className="w-4 h-4 mr-1" />
-                        {verifyContract.isPending ? "Verifying..." : "Verify"}
+                        <CheckCircle className="w-4 h-4" />
                       </Button>
                     )}
                     {c.verified && (
                       <Badge className="bg-green-500/10 text-green-500 border border-green-500/20">
                         <CheckCircle className="w-3 h-3 mr-1" />
-                        Verified
                       </Badge>
                     )}
                     {c.document_url && (
@@ -172,8 +258,7 @@ export default function ContractsSection({ performer, contracts, onRefresh }) {
                             setShowViewModal(true);
                           }}
                         >
-                          <Eye className="w-4 h-4 mr-1" />
-                          View
+                          <Eye className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -222,6 +307,64 @@ export default function ContractsSection({ performer, contracts, onRefresh }) {
           recordType="contract"
           objectKey={viewingContract.document_url}
         />
+      )}
+
+      {/* Signature Audit Modal */}
+      {showAuditModal && auditContract && (
+        <Dialog open={showAuditModal} onOpenChange={setShowAuditModal}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Signature Audit — {auditContract.title}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 text-sm">
+              {auditData ? (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Signer Name</p>
+                      <p className="font-medium">{auditData.signer_name || "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Signer Email</p>
+                      <p className="font-medium">{auditData.signer_email || "N/A"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Signature Type</p>
+                      <p className="font-medium capitalize">{auditData.signature_type || "typed"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Signed At</p>
+                      <p className="font-medium">
+                        {auditData.signed_at ? format(new Date(auditData.signed_at), "MMM d, yyyy HH:mm") : "N/A"}
+                      </p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-muted-foreground">IP Address</p>
+                      <p className="font-mono text-xs">{auditData.ip_address || "N/A"}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-muted-foreground">User Agent</p>
+                      <p className="font-mono text-xs break-all">{auditData.user_agent || "N/A"}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-muted-foreground">Consent Checkbox</p>
+                      <p className="font-medium text-green-500">
+                        {auditData.consent_checked ? "✓ Checked" : "✗ Not checked"}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Loading audit data...</p>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </>
   );

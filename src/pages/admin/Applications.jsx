@@ -126,7 +126,9 @@ export default function Applications() {
   const [contactMsg, setContactMsg] = useState("");
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isCreatePerformerOpen, setIsCreatePerformerOpen] = useState(false);
+  const [isCreateContractOpen, setIsCreateContractOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("info");
+  const [contractData, setContractData] = useState(null);
 
   const { data: applications = [], isLoading } = useQuery({
     queryKey: ['applications'],
@@ -191,6 +193,53 @@ export default function Applications() {
     setIsCreatePerformerOpen(false);
     setIsDetailOpen(false);
     navigate(`/admin/performers/${performer.id}`);
+  };
+
+  const handleCreateContract = async () => {
+    if (!selectedApp) return;
+    try {
+      const res = await base44.functions.invoke("contractService", {
+        action: "create_from_application",
+        application_id: selectedApp.id,
+        contract_type: "guest",
+        revenue_share_percentage: 70,
+      });
+
+      if (res.data?.success) {
+        setContractData({
+          id: res.data.contract_id,
+          signing_url: res.data.signing_url,
+        });
+        setIsCreateContractOpen(true);
+        toast.success("Contract created");
+      }
+    } catch (err) {
+      toast.error(`Failed to create contract: ${err.message}`);
+    }
+  };
+
+  const handleSendForSignature = async () => {
+    if (!contractData?.id) return;
+    try {
+      const res = await base44.functions.invoke("contractService", {
+        action: "send_for_signature",
+        contract_id: contractData.id,
+      });
+
+      if (res.data?.success) {
+        toast.success("Contract sent for signature");
+        setContractData({ ...contractData, signing_url: res.data.signing_url });
+      }
+    } catch (err) {
+      toast.error(`Failed to send: ${err.message}`);
+    }
+  };
+
+  const copySigningLink = () => {
+    if (contractData?.signing_url) {
+      copyToClipboard(contractData.signing_url);
+      toast.success("Signing link copied");
+    }
   };
 
   const filtered = applications.filter(app => {
@@ -647,8 +696,38 @@ export default function Applications() {
                     <AlertTriangle className="w-3.5 h-3.5" /> ID front required before moving to Review.
                   </p>
                 )}
+                {/* Contract creation */}
+                <div className="border-t border-border pt-4 mt-4">
+                  <Label className="text-xs text-muted-foreground block mb-2">Contract</Label>
+                  {contractData ? (
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-green-500/10 text-green-500">Contract Created</Badge>
+                        <span className="text-muted-foreground">ID: {contractData.id?.substr(0, 8)}...</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={copySigningLink}>
+                          <Copy className="w-3.5 h-3.5 mr-1" /> Copy Link
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={handleSendForSignature}>
+                          <Send className="w-3.5 h-3.5 mr-1" /> Send
+                        </Button>
+                        <a href={contractData.signing_url} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" size="sm">
+                            <ExternalLink className="w-3.5 h-3.5 mr-1" /> Open
+                          </Button>
+                        </a>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button variant="outline" size="sm" onClick={handleCreateContract} className="w-full">
+                      <FileText className="w-4 h-4 mr-2" /> Create Contract
+                    </Button>
+                  )}
+                </div>
+
                 {selectedApp.status === "approved" && (
-                  <Button className="w-full" onClick={() => setIsCreatePerformerOpen(true)}>
+                  <Button className="w-full mt-3" onClick={() => setIsCreatePerformerOpen(true)}>
                     <UserPlus className="w-4 h-4 mr-2" /> Create Performer Profile
                   </Button>
                 )}
@@ -674,6 +753,61 @@ export default function Applications() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreatePerformerOpen(false)}>Cancel</Button>
             <Button onClick={handleCreatePerformer}><UserPlus className="w-4 h-4 mr-1" /> Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Contract created dialog */}
+      <Dialog open={isCreateContractOpen} onOpenChange={setIsCreateContractOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-500" />
+              Contract Created
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-muted p-4 rounded-lg space-y-2 text-sm">
+              <div>
+                <p className="text-muted-foreground text-xs">Contract ID</p>
+                <p className="font-mono text-xs">{contractData?.id}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground text-xs">Applicant</p>
+                <p className="font-medium">{selectedApp?.applicant_name}</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Signing Link</Label>
+              <div className="flex gap-2">
+                <Input 
+                  value={contractData?.signing_url || ""} 
+                  readOnly 
+                  className="font-mono text-xs"
+                />
+                <Button variant="outline" size="sm" onClick={copySigningLink}>
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-xs text-blue-400">
+              <p className="font-semibold mb-1">Next Steps:</p>
+              <ol className="list-decimal list-inside space-y-1">
+                <li>Copy the signing link above</li>
+                <li>Send it to the applicant via email or WhatsApp</li>
+                <li>Or click "Send for Signature" to record it as sent</li>
+                <li>Applicant signs at their convenience</li>
+                <li>Contract status updates automatically</li>
+              </ol>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleSendForSignature}>
+              <Send className="w-4 h-4 mr-2" /> Send for Signature
+            </Button>
+            <Button onClick={() => setIsCreateContractOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
