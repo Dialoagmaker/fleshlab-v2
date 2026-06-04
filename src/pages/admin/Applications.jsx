@@ -251,6 +251,14 @@ export default function Applications() {
         }
       }
 
+      console.log('[CONTRACT] Calling contractService with:', {
+        action: 'create_from_application',
+        application_id: selectedApp.id,
+        template_id: templateId,
+        performer_id,
+        variables,
+      });
+
       const res = await base44.functions.invoke("contractService", {
         action: "create_from_application",
         application_id: selectedApp.id,
@@ -258,6 +266,8 @@ export default function Applications() {
         performer_id: performer_id || variables.performer_id,
         ...variables,
       });
+
+      console.log('[CONTRACT] Response:', res.data);
 
       if (res.data?.success) {
         setContractData({
@@ -267,8 +277,12 @@ export default function Applications() {
         });
         setIsCreateContractOpen(true);
         toast.success("Contract created");
+      } else if (res.data?.error) {
+        // Backend returned an error (400)
+        toast.error(res.data.error);
       }
     } catch (err) {
+      console.error('[CONTRACT] Error:', err);
       // Show detailed error message from backend
       const errorMsg = err.response?.data?.error || err.message || 'Failed to create contract';
       toast.error(errorMsg);
