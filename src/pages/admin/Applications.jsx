@@ -133,6 +133,18 @@ export default function Applications() {
   const [isCreateContractOpen, setIsCreateContractOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("info");
   const [contractData, setContractData] = useState(null);
+  const [isEditingContractData, setIsEditingContractData] = useState(false);
+  const [contractFormData, setContractFormData] = useState({
+    legal_name: '',
+    stage_name: '',
+    date_of_birth: '',
+    nationality: '',
+    address: '',
+    city: '',
+    country: '',
+    email: '',
+    phone: '',
+  });
 
   const { data: applications = [], isLoading } = useQuery({
     queryKey: ['applications'],
@@ -316,6 +328,47 @@ export default function Applications() {
     });
     setSelectedTemplateId("6a21d0c9e52a37dd1042e42a");
     setIsTemplateDialogOpen(true);
+  };
+
+  const handleOpenEditContractData = () => {
+    // Pre-fill form with existing application data
+    setContractFormData({
+      legal_name: selectedApp.legal_name || '',
+      stage_name: selectedApp.applicant_name || '',
+      date_of_birth: selectedApp.date_of_birth || '',
+      nationality: selectedApp.nationality || '',
+      address: selectedApp.address || '',
+      city: selectedApp.city || '',
+      country: selectedApp.country || selectedApp.nationality || '',
+      email: selectedApp.email || '',
+      phone: selectedApp.phone || selectedApp.whatsapp_number || '',
+    });
+    setIsEditingContractData(true);
+  };
+
+  const handleSaveContractData = async () => {
+    if (!selectedApp) return;
+    
+    const updates = {
+      legal_name: contractFormData.legal_name,
+      date_of_birth: contractFormData.date_of_birth,
+      nationality: contractFormData.nationality,
+      address: contractFormData.address,
+      city: contractFormData.city,
+      country: contractFormData.country,
+      phone: contractFormData.phone,
+    };
+    
+    try {
+      await base44.entities.GuestProductionApplication.update(selectedApp.id, updates);
+      await queryClient.invalidateQueries({ queryKey: ['applications'] });
+      // Update local selectedApp
+      setSelectedApp(prev => prev ? { ...prev, ...updates } : prev);
+      toast.success("Contract data updated");
+      setIsEditingContractData(false);
+    } catch (err) {
+      toast.error(`Failed to save: ${err.message}`);
+    }
   };
 
   const handleSendForSignature = async () => {
@@ -825,6 +878,17 @@ export default function Applications() {
                 {/* Contract creation */}
                 <div className="border-t border-border pt-4 mt-4">
                   <Label className="text-xs text-muted-foreground block mb-2">Contract</Label>
+                  
+                  {/* Edit Contract Data Button */}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleOpenEditContractData}
+                    className="w-full mb-3"
+                  >
+                    <FileText className="w-4 h-4 mr-2" /> Edit Contract Data
+                  </Button>
+                  
                   {contractData ? (
                     <div className="space-y-2 text-xs">
                       <div className="flex items-center gap-2">
@@ -851,9 +915,9 @@ export default function Applications() {
                       {(() => {
                         const missingFields = [];
                         const hasPerformer = selectedApp.admin_notes?.includes('Performer created:');
-                        const hasLegalName = selectedApp.legal_name || selectedApp.message?.match(/Legal Name:\s*([^\n]+)/i);
+                        const hasLegalName = selectedApp.legal_name;
                         const hasDOB = selectedApp.date_of_birth;
-                        const hasAddress = selectedApp.city || selectedApp.address;
+                        const hasAddress = selectedApp.address || (selectedApp.city && selectedApp.nationality);
                         const hasEmail = selectedApp.email;
                         const isApproved = selectedApp.status === 'approved';
                         
@@ -861,12 +925,16 @@ export default function Applications() {
                         // If manually approved by admin, trust their judgment - only require performer profile
                         if (isApproved) {
                           if (!hasPerformer) missingFields.push('Performer profile (create first)');
+                          if (!hasLegalName) missingFields.push('Legal name');
+                          if (!hasDOB) missingFields.push('Date of birth');
+                          if (!hasAddress) missingFields.push('Full address (or city + country)');
+                          if (!hasEmail) missingFields.push('Email');
                         } else {
                           // For non-approved applications, enforce all requirements
                           if (!hasPerformer) missingFields.push('Performer profile (create first)');
                           if (!hasLegalName) missingFields.push('Legal name');
                           if (!hasDOB) missingFields.push('Date of birth');
-                          if (!hasAddress) missingFields.push('Address/City');
+                          if (!hasAddress) missingFields.push('Full address (or city + country)');
                           if (!hasEmail) missingFields.push('Email');
                         }
                         
@@ -878,13 +946,16 @@ export default function Applications() {
                               <div className="mb-3 bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-xs space-y-1">
                                 <div className="text-red-400 font-semibold flex items-center gap-1.5">
                                   <AlertTriangle className="w-3.5 h-3.5" />
-                                  Missing before contract creation:
+                                  Missing before contract generation:
                                 </div>
-                                <ul className="list-disc list-inside text-red-300 ml-1">
+                                <ul className="list-disc list-inside text-red-300 ml-1 space-y-0.5">
                                   {missingFields.map(field => (
                                     <li key={field}>{field}</li>
                                   ))}
                                 </ul>
+                                <p className="text-red-300 text-xs mt-2 pl-4">
+                                  Click "Edit Contract Data" to add missing information.
+                                </p>
                               </div>
                             )}
                             <Button 
@@ -895,7 +966,11 @@ export default function Applications() {
                               disabled={!canCreate}
                             >
                               <FileText className="w-4 h-4 mr-2" /> Create Contract
-                              {!canCreate && <span className="ml-2 text-xs opacity-70">(Missing: {missingFields.slice(0, 2).join(', ')}{missingFields.length > 2 ? '...' : ''})</span>}
+                              {!canCreate && (
+                                <span className="ml-2 text-xs opacity-70">
+                                  ({missingFields.length} missing)
+                                </span>
+                              )}
                             </Button>
                           </>
                         );
@@ -1114,6 +1189,143 @@ export default function Applications() {
           </div>
         </DialogContent>
       </Dialog>
+      )}
+
+      {/* Edit Contract Data Dialog */}
+      {selectedApp && (
+        <Dialog open={isEditingContractData} onOpenChange={setIsEditingContractData}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Contract Data — {selectedApp.applicant_name}</DialogTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Fill in all required fields for contract generation. Fields marked with * are required.
+              </p>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              {/* Missing fields checklist */}
+              {(() => {
+                const missingFields = [];
+                if (!contractFormData.legal_name) missingFields.push('Legal name');
+                if (!contractFormData.date_of_birth) missingFields.push('Date of birth');
+                if (!contractFormData.address && !contractFormData.city) missingFields.push('Address or City');
+                if (!contractFormData.email) missingFields.push('Email');
+                
+                return missingFields.length > 0 ? (
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-xs">
+                    <div className="text-amber-400 font-semibold mb-2 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      Still missing ({missingFields.length}):
+                    </div>
+                    <ul className="list-disc list-inside text-amber-300 space-y-0.5">
+                      {missingFields.map(f => <li key={f}>{f}</li>)}
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 text-xs text-emerald-400 flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    All required fields complete!
+                  </div>
+                );
+              })()}
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs">Legal Name *</Label>
+                  <Input
+                    value={contractFormData.legal_name}
+                    onChange={(e) => setContractFormData({...contractFormData, legal_name: e.target.value})}
+                    placeholder="e.g. Gi-gi Ping"
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Stage Name *</Label>
+                  <Input
+                    value={contractFormData.stage_name}
+                    onChange={(e) => setContractFormData({...contractFormData, stage_name: e.target.value})}
+                    placeholder="e.g. Little Fairy"
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Date of Birth *</Label>
+                  <Input
+                    type="date"
+                    value={contractFormData.date_of_birth}
+                    onChange={(e) => setContractFormData({...contractFormData, date_of_birth: e.target.value})}
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Nationality</Label>
+                  <Input
+                    value={contractFormData.nationality}
+                    onChange={(e) => setContractFormData({...contractFormData, nationality: e.target.value})}
+                    placeholder="e.g. China"
+                    className="text-sm"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="text-xs">Full Address *</Label>
+                  <Input
+                    value={contractFormData.address}
+                    onChange={(e) => setContractFormData({...contractFormData, address: e.target.value})}
+                    placeholder="Street address, apartment, etc."
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">City</Label>
+                  <Input
+                    value={contractFormData.city}
+                    onChange={(e) => setContractFormData({...contractFormData, city: e.target.value})}
+                    placeholder="e.g. Gigi City"
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Country</Label>
+                  <Input
+                    value={contractFormData.country}
+                    onChange={(e) => setContractFormData({...contractFormData, country: e.target.value})}
+                    placeholder="e.g. China"
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Email *</Label>
+                  <Input
+                    type="email"
+                    value={contractFormData.email}
+                    onChange={(e) => setContractFormData({...contractFormData, email: e.target.value})}
+                    placeholder="Email address"
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Phone / Messaging</Label>
+                  <Input
+                    value={contractFormData.phone}
+                    onChange={(e) => setContractFormData({...contractFormData, phone: e.target.value})}
+                    placeholder="Phone or WhatsApp number"
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditingContractData(false)}>Cancel</Button>
+              <Button 
+                onClick={handleSaveContractData}
+                disabled={!contractFormData.legal_name || !contractFormData.date_of_birth || !contractFormData.email || (!contractFormData.address && !contractFormData.city)}
+              >
+                <CheckCircle className="w-4 h-4 mr-2" /> Save Contract Data
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Template selection dialog */}
