@@ -79,13 +79,13 @@ async function verifySignature(provider, rawBody, headers) {
     return await verifyNOWPaymentsSignature(rawBody, headers);
   }
   if (provider === 'ccbill') {
-    const secret = Deno.env.get(['CCBILL','WEBHOOK','SECRET'].join('_'));
+    const secret = Deno.env.get('CCBILL_WEBHOOK_SECRET');
     if (!secret) { console.warn('[paymentWebhook] CCBILL_WEBHOOK_SECRET not set'); return false; }
     console.warn('[paymentWebhook] CCBill signature verification not implemented yet');
     return false;
   }
   if (provider === 'segpay') {
-    const secret = Deno.env.get(['SEGPAY','WEBHOOK','SECRET'].join('_'));
+    const secret = Deno.env.get('SEGPAY_WEBHOOK_SECRET');
     if (!secret) { console.warn('[paymentWebhook] SEGPAY_WEBHOOK_SECRET not set'); return false; }
     console.warn('[paymentWebhook] Segpay signature verification not implemented yet');
     return false;

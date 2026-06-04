@@ -16,21 +16,15 @@ Deno.serve(async (req) => {
       Deno.env.get('NOWPAYMENTS_IPN_SECRET')
     );
 
-    // CCBill / Segpay are optional future providers — keys assembled at runtime to avoid scanner false-positives
-    const _cc = ['CCBILL', 'ACCOUNT', 'NUMBER'].join('_');
-    const _cs = ['CCBILL', 'SUB', 'ACCOUNT'].join('_');
-    const _ck = ['CCBILL', 'SALT'].join('_');
     const ccbillConfigured = !!(
-      Deno.env.get(_cc) &&
-      Deno.env.get(_cs) &&
-      Deno.env.get(_ck)
+      Deno.env.get('CCBILL_ACCOUNT_NUMBER') &&
+      Deno.env.get('CCBILL_SUB_ACCOUNT') &&
+      Deno.env.get('CCBILL_SALT')
     );
 
-    const _sm = ['SEGPAY', 'MERCHANT', 'ID'].join('_');
-    const _sk = ['SEGPAY', 'API', 'KEY'].join('_');
     const segpayConfigured = !!(
-      Deno.env.get(_sm) &&
-      Deno.env.get(_sk)
+      Deno.env.get('SEGPAY_MERCHANT_ID') &&
+      Deno.env.get('SEGPAY_API_KEY')
     );
 
     // Priority: nowpayments > ccbill > segpay
@@ -39,7 +33,7 @@ Deno.serve(async (req) => {
     else if (ccbillConfigured) primary = 'ccbill';
     else if (segpayConfigured) primary = 'segpay';
 
-    const mode = Deno.env.get('NOWPAYMENTS_MODE') || Deno.env.get(['PAYMENT','PROVIDER','MODE'].join('_')) || 'test';
+    const mode = Deno.env.get('NOWPAYMENTS_MODE') || Deno.env.get('PAYMENT_PROVIDER_MODE') || 'test';
 
     return Response.json({
       configured: !!primary,
