@@ -94,6 +94,17 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Fetch contract HTML from document URL if stored as file
+      let contractHtml = contract.generated_html;
+      if (!contractHtml && contract.document_url) {
+        try {
+          const response = await fetch(contract.document_url);
+          contractHtml = await response.text();
+        } catch (e) {
+          console.error('Failed to fetch contract HTML from document_url:', e.message);
+        }
+      }
+
       return Response.json({
         success: true,
         contract: {
@@ -101,7 +112,7 @@ Deno.serve(async (req) => {
           title: contract.title,
           contract_type: contract.contract_type,
           status: contract.status,
-          generated_html: contract.generated_html,
+          generated_html: contractHtml,
           performer_name: performerData.name,
         },
       });
@@ -417,8 +428,14 @@ Deno.serve(async (req) => {
         studio_signature_date: today,
       };
 
-      // Render template
+      // Render template HTML
       const generatedHtml = renderTemplateHTML(template.template_html, variables);
+      
+      // Upload rendered HTML as file (v3.1 contracts exceed entity field size limits)
+      const htmlBlob = new Blob([generatedHtml], { type: 'text/html' });
+      const htmlFile = new File([htmlBlob], `contract-${application_id}.html`, { type: 'text/html' });
+      const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: htmlFile });
+      const contractDocumentUrl = uploadResult.file_url;
 
       // Generate contract title
       const title = `${template.title} - ${application.applicant_name}`;
@@ -432,7 +449,7 @@ Deno.serve(async (req) => {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + (template.expires_after_days || 7));
 
-      // Create contract record
+      // Create contract record with document URL instead of inline HTML
       const contract = await base44.asServiceRole.entities.Contract.create({
         performer_id: performer_id || null,
         contract_type: template.template_type,
@@ -440,7 +457,7 @@ Deno.serve(async (req) => {
         status: 'draft',
         signing_token: signingToken,
         signing_url: signingUrl,
-        generated_html: generatedHtml,
+        document_url: contractDocumentUrl,
         template_id: template_id,
         variables_json: JSON.stringify(variables),
         notes: data.notes || `Created from application ${application_id}${performer_id ? ` (Performer: ${performer_id})` : ''}`,
@@ -837,8 +854,52 @@ Deno.serve(async (req) => {
       });
     }
 
-    return Response.json({ error: 'Unknown action' }, { status: 400 });
+    return Response.json({ 
+      success: false, 
+      error: 'Unknown action',
+      available_actions: ['validate_contract_readiness', 'create_draft_contract', 'create_final_contract', 'create_from_application', 'get_for_signing', 'submit_signature', 'send_for_signature', 'admin_countersign', 'get_signature_audit']
+    }, { status: 400 });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    // Log detailed error for debugging
+    console.error('[contractService] Error:', {
+      action: body.action,
+      application_id: body.application_id,
+      performer_id: body.performer_id,
+      error_message: error.message,
+      error_stack: error.stack,
+    });
+    
+    // Handle specific error types
+    if (error.message.includes('exceeds the maximum allowed size')) {
+      return Response.json({
+        success: false,
+        error: 'Contract document too large - this is a system configuration issue',
+        details: 'Please contact support: contract HTML exceeded field size limit',
+      }, { status: 500 });
+    }
+    
+    if (error.message.includes('Application not found')) {
+      return Response.json({
+        success: false,
+        error: 'Application not found',
+        application_id: body.application_id,
+      }, { status: 404 });
+    }
+    
+    if (error.message.includes('Contract template not found')) {
+      return Response.json({
+        success: false,
+        error: 'Contract template not found',
+        template_id: body.template_id || '6a21d0c9e52a37dd1042e42a',
+      }, { status: 404 });
+    }
+    
+    // Generic server error with safe message
+    return Response.json({
+      success: false,
+      error: 'Contract generation failed',
+      details: error.message,
+      action: body.action,
+    }, { status: 500 });
   }
 });

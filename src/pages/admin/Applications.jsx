@@ -290,14 +290,22 @@ export default function Applications() {
         setIsCreateContractOpen(true);
         toast.success("Contract created");
       } else if (res.data?.error) {
-        // Backend returned an error (400)
-        toast.error(res.data.error);
+        // Backend returned an error (400) - show detailed message
+        const errorMsg = res.data.missing_fields 
+          ? `Cannot create final contract. Missing: ${res.data.missing_fields.join(', ')}`
+          : res.data.error;
+        toast.error(errorMsg);
       }
     } catch (err) {
       console.error('[CONTRACT] Error:', err);
       // Show detailed error message from backend
       const errorMsg = err.response?.data?.error || err.message || 'Failed to create contract';
-      toast.error(errorMsg);
+      const missingFields = err.response?.data?.missing_fields;
+      if (missingFields && Array.isArray(missingFields)) {
+        toast.error(`Cannot create final contract. Missing: ${missingFields.join(', ')}`);
+      } else {
+        toast.error(errorMsg);
+      }
     }
   };
 
