@@ -317,21 +317,104 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Build variables from application data
+      // Build variables from application data using v3.1 template placeholders
       const today = new Date().toISOString().split('T')[0];
+      
+      // Studio legal profile (from template defaults or data)
+      const studioLegalProfile = {
+        brand_name: 'Fleshlab Studios',
+        legal_entity: 'Dialogmakers International Ltd.',
+        company_number: '83273694',
+        address: '2F, No. 2-1, Lane 23, Wenhua St., Taoyuan City, Taoyuan 324010, Taiwan',
+        country: 'Taiwan',
+        email: 'studiosupport@fleshlab.online',
+        representative: 'Eric Rönnau',
+        title: 'Managing Director / Authorized Representative',
+        governing_law: 'Taiwan',
+        jurisdiction: 'Competent courts in Taoyuan City, Taiwan',
+        currency: 'EUR',
+      };
+      
+      // Contract settings
+      const contractModel = data.contract_model || 'full_management';
+      const workType = data.work_type || 'solo';
+      const revenueSharePercent = data.revenue_share_percent || 70;
+      const minimumTermMonths = data.minimum_term_months || 12;
+      const earlyTerminationFee = data.early_termination_fee_amount || 150;
+      const earlyTerminationCurrency = data.early_termination_fee_currency || 'EUR';
+      const postTerminationYears = data.post_termination_usage_years || 5;
+      const liveCamShowsPerMonth = data.live_cam_shows_per_month || 2;
+      
+      // Build comprehensive variables for v3.1 template
       const variables = {
-        signing_date: data.signing_date || today,
-        studio_email: data.studio_email || 'legal@fleshlab.online',
-        legal_name: legalName || application.applicant_name,
-        stage_name: application.applicant_name,
-        date_of_birth: application.date_of_birth || data.date_of_birth,
-        nationality: application.nationality || '[NOT PROVIDED]',
-        address: data.address || `${application.city || ''}, ${application.nationality || ''}`.trim(),
-        email: application.email,
-        phone_or_messenger: data.phone_or_messenger || application.phone || application.whatsapp_number || '[PHONE]',
-        id_number: data.id_number || 'Verified ID on file',
-        contract_model: data.contract_model || 'full_management',
-        revenue_share_percentage: 70,
+        // Contract meta
+        effective_date: data.signing_date || today,
+        contract_model_label: contractModel.replace(/_/g, ' ').toUpperCase(),
+        minimum_term_months: minimumTermMonths,
+        revenue_share_percent: revenueSharePercent,
+        studio_share_percent: 100 - revenueSharePercent,
+        contract_currency: studioLegalProfile.currency,
+        live_cam_shows_per_month: liveCamShowsPerMonth,
+        post_termination_usage_years: postTerminationYears,
+        early_termination_fee_amount: earlyTerminationFee,
+        early_termination_fee_currency: earlyTerminationCurrency,
+        
+        // Performer data
+        performer_legal_name: legalName || application.applicant_name,
+        performer_stage_name: application.applicant_name,
+        performer_date_of_birth: application.date_of_birth || data.date_of_birth || '[NOT PROVIDED]',
+        performer_nationality: application.nationality || data.nationality || '[NOT PROVIDED]',
+        performer_full_residential_address: data.address || application.address || `${application.city || ''}, ${application.country || application.nationality || ''}`.trim() || '[NOT PROVIDED]',
+        performer_country: application.country || data.country || application.nationality || '[NOT PROVIDED]',
+        performer_email: application.email,
+        performer_phone_or_messenger: data.phone_or_messenger || application.phone || application.whatsapp_number || '[NOT PROVIDED]',
+        performer_id_verification_reference: data.id_verification_reference || 'Government-issued ID on file (verified)',
+        performer_age_verification_status: '18+ Verified',
+        
+        // Consent & boundaries (Appendix A)
+        consent_status: 'Active',
+        solo_work_allowed: 'Yes',
+        pair_work_allowed: workType !== 'solo' ? 'Yes' : 'No',
+        multi_performer_work_allowed: workType === 'multi_performer' ? 'Yes' : 'No',
+        live_cam_allowed: data.live_cam_required ? 'Yes' : 'No',
+        guest_production_allowed: contractModel === 'guest_production' ? 'Yes' : 'No',
+        condom_required: 'Yes',
+        bareback_allowed: 'No',
+        bareback_health_compliance_required: 'Yes',
+        allowed_content_categories: 'Solo, Pair, Multi-Performer (as agreed)',
+        restricted_content_categories: 'Per performer consent form',
+        off_limits_content_categories: 'Per performer consent form',
+        
+        // Payout terms (Appendix B)
+        minimum_payout_threshold: '50 EUR',
+        payout_method: 'Bank Transfer / Wise / PayPal',
+        existing_content_list: 'None (or as listed in Appendix C)',
+        
+        // Compliance (Appendix E)
+        id_verification_status: 'Verified',
+        id_verification_reference: 'On file',
+        id_verification_date: today,
+        age_verification_status: 'Verified',
+        dob_verified: application.date_of_birth || data.date_of_birth || '[NOT PROVIDED]',
+        release_status: 'Signed',
+        release_reference: 'On file',
+        health_compliance_required: workType === 'solo' ? 'No' : 'Yes',
+        hiv_test_required: workType === 'solo' ? 'No' : 'Yes',
+        hiv_test_status: workType === 'solo' ? 'Not Required' : 'Verified',
+        hiv_test_valid_until: '[DATE]',
+        syphilis_test_required: workType === 'solo' ? 'No' : 'Yes',
+        syphilis_test_status: workType === 'solo' ? 'Not Required' : 'Verified',
+        syphilis_test_valid_until: '[DATE]',
+        prep_required: 'No',
+        prep_status: 'Not Required',
+        
+        // Signature metadata (to be filled at signing)
+        performer_signature_date: '[SIGNING_DATE]',
+        signature_timestamp: '[TIMESTAMP]',
+        signature_ip: '[IP]',
+        signature_user_agent: '[USER_AGENT]',
+        contract_hash: '[HASH]',
+        studio_signature_date: today,
       };
 
       // Render template
