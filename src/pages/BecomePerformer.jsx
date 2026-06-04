@@ -121,7 +121,7 @@ export default function BecomePerformer() {
               </h1>
 
               <p className="text-lg text-white/65 leading-relaxed mb-8 max-w-xl">
-                You have seen how FLESHLAB works. Now it is your turn. Apply to become part of a professional 18+ adult studio platform built around verified performers, premium content, performer branding and long-term visibility.
+                You have seen how FLESHLAB works. Now it is your turn. Apply to become part of an adult content platform built around verified performers, homemade productions, performer branding and long-term visibility.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -175,7 +175,7 @@ export default function BecomePerformer() {
                 YOU KNOW HOW THE <span className="text-rose-500">BUSINESS WORKS NOW</span>
               </h2>
               <div className="space-y-5 text-white/60 text-lg leading-relaxed">
-                <p>FLESHLAB is not just a website with random videos. It is a platform built around adult performers, professional productions, fanclub access, PPV scenes, performer profiles and long-term content visibility.</p>
+                <p>FLESHLAB is not just a website with random videos. It is a platform built around real performers, homemade productions, fanclub access, PPV scenes, performer profiles and long-term content visibility.</p>
                 <p className="text-white font-semibold">Fans pay for access.<br />Performers build a public identity.<br />Content becomes part of a growing studio catalogue.</p>
               </div>
             </div>

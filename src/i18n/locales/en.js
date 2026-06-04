@@ -126,7 +126,7 @@ export default {
   // Become a Performer page
   becomePerformer: {
     title: "Become a Performer",
-    subtitle: "Join FLESHLAB - Premium Asian Gay Adult Studio",
+    subtitle: "Join FLESHLAB — Adult content platform built around verified performers and homemade productions.",
     whyJoin: "Why Join FLESHLAB?",
     professionalProduction: "Professional Production",
     professionalProductionDesc: "Work with experienced crews in a safe, professional environment",
@@ -265,7 +265,7 @@ export default {
   // Footer
   footer: {
     brand: "FLESHLAB",
-    description: "Premium gay adult studio featuring verified Asian performers, exclusive productions, and member-only content.",
+    description: "Amateur-style gay adult productions featuring verified Asian performers, homemade scenes, exclusive drops and member-only content.",
     explore: "Explore",
     community: "Community",
     legal: "Legal",
@@ -313,12 +313,12 @@ export default {
   // SEO
   seo: {
     home: {
-      title: "FLESHLAB — Premium Asian Gay Adult Studio",
-      description: "FLESHLAB is a premium gay adult studio featuring verified Asian performers, exclusive productions, and member-only content.",
+      title: "FLESHLAB — Real Asian Gay Performers. Homemade Scenes. Member-Only Drops.",
+      description: "FLESHLAB is an amateur-style gay adult content platform featuring verified Asian performers, homemade scenes, exclusive drops and member-only content.",
     },
     videos: {
       title: "Videos - FLESHLAB",
-      description: "Browse our extensive collection of premium adult videos featuring verified Asian performers.",
+      description: "Browse homemade and exclusive adult videos featuring verified Asian performers on FLESHLAB.",
     },
     performers: {
       title: "Performers - FLESHLAB",
@@ -326,7 +326,7 @@ export default {
     },
     news: {
       title: "Studio News - FLESHLAB",
-      description: "Latest news, updates, and announcements from FLESHLAB studio.",
+      description: "Latest news, updates, and announcements from FLESHLAB.",
     },
     fanclub: {
       title: "Fanclub - FLESHLAB",
@@ -334,7 +334,7 @@ export default {
     },
     becomePerformer: {
       title: "Become a Performer - FLESHLAB",
-      description: "Join FLESHLAB as a performer. Professional production, fair compensation, and a safe supportive environment.",
+      description: "Join FLESHLAB as a performer. Homemade productions, performer branding, fanclub visibility and long-term audience growth.",
     },
     guestProduction: {
       title: "Guest Production - FLESHLAB",
