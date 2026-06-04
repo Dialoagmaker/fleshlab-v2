@@ -964,12 +964,12 @@ export default function Applications() {
                   <Label>Missing Files</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { value: "photos", label: "Profile Photos (5)", disabled: (selectedApp.profile_photo_r2_keys?.length || 0) >= 5 },
-                      { value: "body_video", label: "Body Video", disabled: !!selectedApp.intro_video_r2_key },
-                      { value: "hardcore_video", label: "Hardcore Video", disabled: !!selectedApp.hardcore_video_r2_key },
-                      { value: "id_front", label: "ID Front", disabled: !!(selectedApp.id_document_front_r2_key || selectedApp.id_document_r2_key) },
-                      { value: "id_back", label: "ID Back", disabled: !!selectedApp.id_document_back_r2_key },
-                      { value: "selfie_with_id", label: "Selfie with ID", disabled: !!selectedApp.selfie_with_id_r2_key },
+                      { value: "photos", label: "Profile Photos (5)", disabled: (selectedApp?.profile_photo_r2_keys?.length || 0) >= 5 },
+                      { value: "body_video", label: "Body Video", disabled: !!selectedApp?.intro_video_r2_key },
+                      { value: "hardcore_video", label: "Hardcore Video", disabled: !!selectedApp?.hardcore_video_r2_key },
+                      { value: "id_front", label: "ID Front", disabled: !!(selectedApp?.id_document_front_r2_key || selectedApp?.id_document_r2_key) },
+                      { value: "id_back", label: "ID Back", disabled: !!selectedApp?.id_document_back_r2_key },
+                      { value: "selfie_with_id", label: "Selfie with ID", disabled: !!selectedApp?.selfie_with_id_r2_key },
                     ].map((opt) => (
                       <div
                         key={opt.value}
