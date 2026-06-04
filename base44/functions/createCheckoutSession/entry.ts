@@ -90,7 +90,6 @@ function resolveAmount(paymentType, planId, priceTier) {
 // ── NOWPayments invoice creation ──────────────────────────────────────────────
 async function createNOWPaymentsInvoice({ orderId, priceAmount, description, successUrl, cancelUrl }) {
   const apiKey = Deno.env.get('NOWPAYMENTS_API_KEY');
-  const payoutCurrency = Deno.env.get('NOWPAYMENTS_PAYOUT_CURRENCY') || 'usdttrc20';
   const mode = Deno.env.get('NOWPAYMENTS_MODE') || 'test';
   const baseUrl = mode === 'live'
     ? 'https://api.nowpayments.io/v1'
@@ -102,14 +101,16 @@ async function createNOWPaymentsInvoice({ orderId, priceAmount, description, suc
   const absCancelUrl  = cancelUrl.startsWith('http')  ? cancelUrl  : `${appBase}${cancelUrl}`;
 
   const body = {
-    price_amount: priceAmount,
-    price_currency: 'usd',
-    pay_currency: payoutCurrency,
-    order_id: orderId,
+    price_amount:     priceAmount,
+    price_currency:   'usd',
+    // pay_currency intentionally OMITTED — customer selects from all enabled currencies at checkout
+    // (setting pay_currency=btc causes "no matches" if BTC minimum isn't met for the amount)
+    order_id:         orderId,
     order_description: description,
-    success_url: absSuccessUrl,
-    cancel_url: absCancelUrl,
-    is_fixed_rate: false,
+    ipn_callback_url: 'https://api.base44.com/api/apps/68326eff4b3b5d60a8b4f285/functions/paymentWebhook',
+    success_url:      absSuccessUrl,
+    cancel_url:       absCancelUrl,
+    is_fixed_rate:    false,
     is_fee_paid_by_user: false,
   };
 
