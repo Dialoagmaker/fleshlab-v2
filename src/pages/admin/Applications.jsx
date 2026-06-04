@@ -652,28 +652,30 @@ export default function Applications() {
               {activeTab === "contact" && (
                 <div className="space-y-4">
                   {/* Request Missing Files button */}
-                  <div className="mb-4">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full border-rose-600/40 text-rose-400 hover:bg-rose-600/10"
-                      onClick={() => {
-                        // Pre-select missing files
-                        const missing = [];
-                        if ((selectedApp.profile_photo_r2_keys?.length || 0) < 5) missing.push("photos");
-                        if (!selectedApp.intro_video_r2_key) missing.push("body_video");
-                        if (!selectedApp.hardcore_video_r2_key) missing.push("hardcore_video");
-                        if (!selectedApp.id_document_front_r2_key && !selectedApp.id_document_r2_key) missing.push("id_front");
-                        if (!selectedApp.id_document_back_r2_key) missing.push("id_back");
-                        if (!selectedApp.selfie_with_id_r2_key) missing.push("selfie_with_id");
-                        setSelectedMissingFiles(missing);
-                        setIsRequestFilesOpen(true);
-                      }}
-                      disabled={generateUploadLinkMutation.isPending}
-                    >
-                      <LinkIcon className="w-3.5 h-3.5 mr-1.5" /> Request Missing Files
-                    </Button>
-                  </div>
+                  {selectedApp && (
+                    <div className="mb-4">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full border-rose-600/40 text-rose-400 hover:bg-rose-600/10"
+                        onClick={() => {
+                          // Pre-select missing files
+                          const missing = [];
+                          if ((selectedApp.profile_photo_r2_keys?.length || 0) < 5) missing.push("photos");
+                          if (!selectedApp.intro_video_r2_key) missing.push("body_video");
+                          if (!selectedApp.hardcore_video_r2_key) missing.push("hardcore_video");
+                          if (!selectedApp.id_document_front_r2_key && !selectedApp.id_document_r2_key) missing.push("id_front");
+                          if (!selectedApp.id_document_back_r2_key) missing.push("id_back");
+                          if (!selectedApp.selfie_with_id_r2_key) missing.push("selfie_with_id");
+                          setSelectedMissingFiles(missing);
+                          setIsRequestFilesOpen(true);
+                        }}
+                        disabled={generateUploadLinkMutation.isPending}
+                      >
+                        <LinkIcon className="w-3.5 h-3.5 mr-1.5" /> Request Missing Files
+                      </Button>
+                    </div>
+                  )}
 
                   {/* Contact info + copy */}
                   <div className="bg-secondary rounded-lg p-3 space-y-2 text-sm">
