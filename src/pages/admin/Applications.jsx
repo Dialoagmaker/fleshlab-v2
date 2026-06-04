@@ -9,11 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
   Users, CheckCircle, XCircle, Clock, Eye, MessageSquare, UserPlus,
   Search, Filter, Mail, Phone, FileText, Image as ImageIcon, Video,
-  Download, AlertTriangle, ExternalLink, Send, RefreshCw, Lock, Copy, PhoneCall
+  Download, AlertTriangle, ExternalLink, Send, RefreshCw, Lock, Copy, PhoneCall, Link as LinkIcon
 } from "lucide-react";
 import { format, formatDistanceToNow, differenceInYears } from "date-fns";
 
@@ -125,6 +126,9 @@ export default function Applications() {
   const [adminNotes, setAdminNotes] = useState("");
   const [contactMsg, setContactMsg] = useState("");
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isRequestFilesOpen, setIsRequestFilesOpen] = useState(false);
+  const [uploadLink, setUploadLink] = useState(null);
+  const [selectedMissingFiles, setSelectedMissingFiles] = useState([]);
   const [isCreatePerformerOpen, setIsCreatePerformerOpen] = useState(false);
   const [isCreateContractOpen, setIsCreateContractOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("info");
@@ -172,6 +176,37 @@ export default function Applications() {
     setSelectedApp(prev => ({ ...prev, contact_log: updated }));
     setContactMsg("");
     toast.success("Contact logged");
+  };
+
+  const generateUploadLinkMutation = useMutation({
+    mutationFn: async () => {
+      const res = await base44.functions.invoke("createApplicationUploadToken", {
+        application_id: selectedApp.id,
+        expires_in_days: 7,
+      });
+      return res.data;
+    },
+    onSuccess: (data) => {
+      setUploadLink(data.upload_url);
+      const ts = format(new Date(), "yyyy-MM-dd HH:mm");
+      const logEntry = `[${ts}] Admin generated upload token link for missing files: ${selectedMissingFiles.join(", ")}`;
+      const existing = selectedApp.contact_log || "";
+      updateMutation.mutate({ 
+        id: selectedApp.id, 
+        data: { contact_log: existing ? `${existing}\n\n${logEntry}` : logEntry } 
+      });
+      toast.success("Upload link generated");
+    },
+    onError: (e) => toast.error(`Failed to generate link: ${e.message}`),
+  });
+
+  const handleRequestMissingFiles = () => {
+    if (selectedMissingFiles.length === 0) {
+      toast.error("Please select at least one missing file type");
+      return;
+    }
+    generateUploadLinkMutation.mutate();
+    setIsRequestFilesOpen(true);
   };
 
   const handleCreatePerformer = async () => {
@@ -616,6 +651,30 @@ export default function Applications() {
               {/* ── CONTACT tab ──────────────────────────────────────── */}
               {activeTab === "contact" && (
                 <div className="space-y-4">
+                  {/* Request Missing Files button */}
+                  <div className="mb-4">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full border-rose-600/40 text-rose-400 hover:bg-rose-600/10"
+                      onClick={() => {
+                        // Pre-select missing files
+                        const missing = [];
+                        if ((selectedApp.profile_photo_r2_keys?.length || 0) < 5) missing.push("photos");
+                        if (!selectedApp.intro_video_r2_key) missing.push("body_video");
+                        if (!selectedApp.hardcore_video_r2_key) missing.push("hardcore_video");
+                        if (!selectedApp.id_document_front_r2_key && !selectedApp.id_document_r2_key) missing.push("id_front");
+                        if (!selectedApp.id_document_back_r2_key) missing.push("id_back");
+                        if (!selectedApp.selfie_with_id_r2_key) missing.push("selfie_with_id");
+                        setSelectedMissingFiles(missing);
+                        setIsRequestFilesOpen(true);
+                      }}
+                      disabled={generateUploadLinkMutation.isPending}
+                    >
+                      <LinkIcon className="w-3.5 h-3.5 mr-1.5" /> Request Missing Files
+                    </Button>
+                  </div>
+
                   {/* Contact info + copy */}
                   <div className="bg-secondary rounded-lg p-3 space-y-2 text-sm">
                     <div className="flex items-center justify-between">
@@ -844,6 +903,114 @@ export default function Applications() {
             </Button>
             <Button onClick={() => setIsCreateContractOpen(false)}>Close</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Request Missing Files dialog */}
+      <Dialog open={isRequestFilesOpen} onOpenChange={setIsRequestFilesOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LinkIcon className="w-5 h-5 text-rose-500" />
+              Request Missing Files
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {uploadLink ? (
+              <>
+                <div className="bg-emerald-600/10 border border-emerald-600/20 rounded-lg p-4 space-y-3">
+                  <p className="text-emerald-400 text-sm font-semibold flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" /> Upload Link Generated
+                  </p>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Secure Upload Link</Label>
+                    <div className="flex gap-2">
+                      <Input value={uploadLink} readOnly className="font-mono text-xs" />
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => {
+                          copyToClipboard(uploadLink);
+                          toast.success("Link copied");
+                        }}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="bg-blue-600/10 border border-blue-600/20 rounded-lg p-3 text-xs text-blue-400">
+                    <p className="font-semibold mb-1">Next Steps:</p>
+                    <ol className="list-decimal list-inside space-y-1">
+                      <li>Copy the link above</li>
+                      <li>Send it to the applicant via email or WhatsApp</li>
+                      <li>Applicant can upload/replace files without login</li>
+                      <li>Link expires in 7 days</li>
+                      <li>Application updates automatically after upload</li>
+                    </ol>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsRequestFilesOpen(false)}>Close</Button>
+                </DialogFooter>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Select which files the applicant needs to upload. A secure link will be generated that allows them to upload directly without logging in.
+                </p>
+                <div className="space-y-2">
+                  <Label>Missing Files</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { value: "photos", label: "Profile Photos (5)", disabled: (selectedApp.profile_photo_r2_keys?.length || 0) >= 5 },
+                      { value: "body_video", label: "Body Video", disabled: !!selectedApp.intro_video_r2_key },
+                      { value: "hardcore_video", label: "Hardcore Video", disabled: !!selectedApp.hardcore_video_r2_key },
+                      { value: "id_front", label: "ID Front", disabled: !!(selectedApp.id_document_front_r2_key || selectedApp.id_document_r2_key) },
+                      { value: "id_back", label: "ID Back", disabled: !!selectedApp.id_document_back_r2_key },
+                      { value: "selfie_with_id", label: "Selfie with ID", disabled: !!selectedApp.selfie_with_id_r2_key },
+                    ].map((opt) => (
+                      <div
+                        key={opt.value}
+                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                          opt.disabled
+                            ? "opacity-40 cursor-not-allowed border-border"
+                            : selectedMissingFiles.includes(opt.value)
+                            ? "border-rose-600/60 bg-rose-600/10"
+                            : "border-white/10 hover:border-white/25"
+                        }`}
+                        onClick={() => {
+                          if (!opt.disabled) {
+                            setSelectedMissingFiles(prev => 
+                              prev.includes(opt.value) 
+                                ? prev.filter(f => f !== opt.value)
+                                : [...prev, opt.value]
+                            );
+                          }
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Checkbox 
+                            checked={selectedMissingFiles.includes(opt.value)} 
+                            readOnly 
+                          />
+                          <span className="text-sm font-medium">{opt.label}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsRequestFilesOpen(false)}>Cancel</Button>
+                  <Button 
+                    onClick={handleRequestMissingFiles} 
+                    disabled={selectedMissingFiles.length === 0 || generateUploadLinkMutation.isPending}
+                  >
+                    {generateUploadLinkMutation.isPending ? "Generating..." : "Generate Link"}
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

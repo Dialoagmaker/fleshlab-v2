@@ -65,6 +65,7 @@ import LegacyArticleRedirect from './pages/LegacyArticleRedirect';
 import LegacyPerformerSlug from './pages/LegacyPerformerSlug';
 import GhostRoute from './pages/GhostRoute';
 import SignContract from './pages/SignContract';
+import ApplicationUpload from './pages/ApplicationUpload';
 import HowItWorks from './pages/HowItWorks';
 import FAQ from './pages/FAQ';
 import Fanclub from './pages/Fanclub';
@@ -311,6 +312,10 @@ const AuthenticatedApp = () => {
 
   if (path === "/sign-contract") {
     return <SignContract />;
+  }
+
+  if (path === "/application-upload") {
+    return <ApplicationUpload />;
   }
 
   // Dynamic public routes — now handled by React Router <Routes> below
