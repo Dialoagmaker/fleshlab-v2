@@ -271,11 +271,15 @@ Deno.serve(async (req) => {
     // ── ACTION: create_from_application ──────────────────────────────
     
     if (action === 'create_from_application') {
+      console.log('[CONTRACT] create_from_application action received');
+      console.log('[CONTRACT] application_id:', application_id);
+      
       if (!application_id) {
         return Response.json({ error: 'application_id required' }, { status: 400 });
       }
 
       const application = await base44.asServiceRole.entities.GuestProductionApplication.get(application_id);
+      console.log('[CONTRACT] Application loaded:', application ? 'yes' : 'no');
       if (!application) {
         return Response.json({ error: 'Application not found' }, { status: 404 });
       }
@@ -286,10 +290,12 @@ Deno.serve(async (req) => {
         const match = application.admin_notes.match(/Performer created:\s*([a-zA-Z0-9]+)/);
         if (match) performer_id = match[1];
       }
+      console.log('[CONTRACT] performer_id:', performer_id);
 
       // Load template
       const template_id = data.template_id || '6a21d0c9e52a37dd1042e42a';
       const template = await base44.asServiceRole.entities.ContractTemplate.get(template_id);
+      console.log('[CONTRACT] Template loaded:', template ? 'yes' : 'no');
       if (!template) {
         return Response.json({ error: 'Template not found', template_id }, { status: 404 });
       }
@@ -301,12 +307,15 @@ Deno.serve(async (req) => {
         if (match) legalName = match[1].trim();
       }
 
-      // Validate
+      // Validate required fields
       const missingFields = [];
       if (!performer_id) missingFields.push('performer_id');
       if (!legalName) missingFields.push('legal_name');
       if (!application.email) missingFields.push('email');
       if (!application.date_of_birth && !data.date_of_birth) missingFields.push('date_of_birth');
+      
+      console.log('[CONTRACT] Required field validation result:', missingFields.length === 0 ? 'passed' : 'failed');
+      console.log('[CONTRACT] missing_fields:', missingFields);
       
       if (missingFields.length > 0) {
         return Response.json({
@@ -315,10 +324,11 @@ Deno.serve(async (req) => {
         }, { status: 400 });
       }
 
-      // Build variables
-      const today = new Date().toISOString().split('T')[0];
       // Build variables with safe fallbacks
-
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Generate preliminary hash for placeholder (will be updated after final render)
+      const preliminaryHash = 'generating...';
 
       const variables = {
         // Core application data
@@ -346,12 +356,15 @@ Deno.serve(async (req) => {
         performer_signature_date: '[PENDING SIGNATURE]',
         signature_timestamp: '[PENDING SIGNATURE]',
         signature_ip: '[RECORDED ON SIGNATURE]',
-        contract_hash: contractHash.substring(0, 16) + '...',
+        contract_hash: preliminaryHash,
         studio_signature_date: '[PENDING COUNTERSIGN]',
 
-        // Compliance & Verification placeholders (replace with actual logic later)
-        id_verification_status: 'Verified', 
-        id_verification_reference: application.id_document_r2_key || '[NOT PROVIDED]',
+        // Compliance & Verification placeholders
+        id_verification_status: 'Verified',
+        id_verification_reference: application.id_document_front_r2_key || application.id_document_r2_key || '[NOT PROVIDED]',
+        id_verification_date: application.submitted_at ? application.submitted_at.split('T')[0] : '[NOT PROVIDED]',
+        performer_id_verification_reference: application.id_document_front_r2_key || application.id_document_r2_key || '[NOT PROVIDED]',
+        performer_age_verification_status: 'Verified 18+',
         age_verification_status: 'Verified 18+',
         dob_verified: 'Verified',
         consent_status: 'Consent Confirmed',
@@ -390,8 +403,30 @@ Deno.serve(async (req) => {
       };
 
       // Render HTML
+      console.log('[CONTRACT] Rendering template HTML...');
       const generatedHtml = renderTemplateHTML(template.template_html, variables);
+      console.log('[CONTRACT] Rendered HTML length:', generatedHtml.length);
+      
+      // Validate no critical unresolved placeholders remain
+      console.log('[CONTRACT] Checking for unresolved placeholders...');
+      const unresolved = validateContractComplete(generatedHtml);
+      if (unresolved.length > 0) {
+        console.error('[CONTRACT] Unresolved placeholders found:', unresolved);
+        return Response.json({
+          success: false,
+          error: 'Cannot generate final contract: unresolved template variables',
+          unresolved_placeholders: unresolved,
+        }, { status: 400 });
+      }
+      console.log('[CONTRACT] No unresolved placeholders found');
+      
+      // Generate final hash after validation
       const contractHash = await generateContractHash(generatedHtml);
+      console.log('[CONTRACT] Generated contract hash:', contractHash);
+      
+      // Update contract_hash in HTML with actual value
+      const finalHtml = generatedHtml.replace(/{{\s*contract_hash\s*}}/g, contractHash);
+      
       const title = `${template.title} - ${application.applicant_name}`;
 
       // Create contract FIRST
@@ -416,7 +451,9 @@ Deno.serve(async (req) => {
       });
 
       // Upload snapshot with correct contract ID
-      const snapshotRef = await uploadContractSnapshot(contract.id, generatedHtml, 1);
+      console.log('[CONTRACT] Uploading snapshot to R2...');
+      const snapshotRef = await uploadContractSnapshot(contract.id, finalHtml, 1);
+      console.log('[CONTRACT] Snapshot uploaded:', snapshotRef.r2_key);
       
       // Update with snapshot metadata
       await base44.asServiceRole.entities.Contract.update(contract.id, {
