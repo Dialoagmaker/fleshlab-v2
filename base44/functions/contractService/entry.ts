@@ -1,23 +1,39 @@
-// contractService — Service layer for contract management with audit logging and online signing
+// contractService — Service layer for contract management with immutable snapshots and secure access
 // 
+// Architecture:
+//   - Contract entity stores lightweight metadata only (hash, version, snapshot URL/key)
+//   - Full rendered HTML stored as private immutable file in R2
+//   - Snapshot access controlled via token validation, not public URLs
+//   - Versioning: each regeneration creates new version, old versions preserved
+//   - Signing binds to exact snapshot hash, ensuring legal integrity
+//
 // Actions:
-//   create_contract — Create new contract with document upload
-//   create_from_application — Create contract from GuestProductionApplication data
-//   update_contract_status — Change contract status
-//   update_contract_expiry — Set contract expiration
+//   create_from_application — Create contract with private snapshot storage
+//   get_for_signing — Secure: Validate token, fetch snapshot, return rendered HTML
+//   submit_signature — Public: Submit performer signature with hash verification
 //   send_for_signature — Send contract for performer signature
-//   get_for_signing — Public: Get contract data by signing token
-//   submit_signature — Public: Submit performer signature
 //   admin_countersign — Admin adds countersignature
 //   get_signature_audit — Get signature audit data
+//   get_contract_snapshot — Admin: Get contract snapshot URL (short-lived signed)
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { S3Client, PutObjectCommand, GetObjectCommand } from 'npm:@aws-sdk/client-s3@3.1057.0';
+import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner@3.1057.0';
 
 // Generate secure random token
 function generateSigningToken() {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
   return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Generate SHA-256 hash of content for legal integrity
+async function generateContractHash(content) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(content);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 // Render contract HTML from template and variables
@@ -46,6 +62,61 @@ function getClientIP(req) {
 // Get user agent from request
 function getUserAgent(req) {
   return req.headers.get('user-agent') || 'unknown';
+}
+
+// Initialize R2/S3 client for private snapshot storage
+function getR2Client() {
+  return new S3Client({
+    region: 'auto',
+    endpoint: `https://${Deno.env.get('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: Deno.env.get('R2_ACCESS_KEY_ID'),
+      secretAccessKey: Deno.env.get('R2_SECRET_ACCESS_KEY'),
+    },
+  });
+}
+
+// Upload contract snapshot to private R2 storage
+async function uploadContractSnapshot(contractId, htmlContent, version = 1) {
+  const r2Client = getR2Client();
+  const bucket = Deno.env.get('R2_BUCKET_NAME');
+  
+  // Private path: contracts/{contract_id}/v{version}/snapshot.html
+  const key = `contracts/${contractId}/v${version}/snapshot.html`;
+  
+  const command = new PutObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    Body: htmlContent,
+    ContentType: 'text/html',
+    // Private by default - no public access
+  });
+  
+  await r2Client.send(command);
+  
+  // Return storage reference (not public URL)
+  return {
+    r2_key: key,
+    stored_at: new Date().toISOString(),
+    size_bytes: htmlContent.length,
+  };
+}
+
+// Generate short-lived signed URL for snapshot access (admin only)
+async function generateSnapshotSignedUrl(r2Key, expiresInMinutes = 15) {
+  const r2Client = getR2Client();
+  const bucket = Deno.env.get('R2_BUCKET_NAME');
+  
+  const command = new GetObjectCommand({
+    Bucket: bucket,
+    Key: r2Key,
+  });
+  
+  const signedUrl = await getSignedUrl(r2Client, command, {
+    expiresIn: expiresInMinutes * 60,
+  });
+  
+  return signedUrl;
 }
 
 Deno.serve(async (req) => {
@@ -94,15 +165,43 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Fetch contract HTML from document URL if stored as file
+      // Fetch contract HTML from private R2 snapshot
       let contractHtml = contract.generated_html;
       if (!contractHtml && contract.document_url) {
         try {
-          const response = await fetch(contract.document_url);
-          contractHtml = await response.text();
+          const r2Client = getR2Client();
+          const bucket = Deno.env.get('R2_BUCKET_NAME');
+          
+          const command = new GetObjectCommand({
+            Bucket: bucket,
+            Key: contract.document_url,
+          });
+          
+          const response = await r2Client.send(command);
+          contractHtml = await response.body.transformToString();
+          
+          // Verify hash matches (integrity check)
+          if (contract.snapshot_hash) {
+            const currentHash = await generateContractHash(contractHtml);
+            if (currentHash !== contract.snapshot_hash) {
+              console.error('[CONTRACT] Hash mismatch! Snapshot may have been corrupted.');
+              // Still return, but log warning
+            }
+          }
         } catch (e) {
-          console.error('Failed to fetch contract HTML from document_url:', e.message);
+          console.error('[CONTRACT] Failed to fetch snapshot from R2:', e.message);
+          return Response.json({
+            error: 'Contract snapshot not accessible',
+            details: 'Please contact support',
+          }, { status: 500 });
         }
+      }
+
+      if (!contractHtml) {
+        return Response.json({
+          error: 'Contract content not available',
+          details: 'Snapshot missing or corrupted',
+        }, { status: 500 });
       }
 
       return Response.json({
@@ -112,6 +211,8 @@ Deno.serve(async (req) => {
           title: contract.title,
           contract_type: contract.contract_type,
           status: contract.status,
+          version: contract.version || 1,
+          snapshot_hash: contract.snapshot_hash,
           generated_html: contractHtml,
           performer_name: performerData.name,
         },
@@ -431,11 +532,11 @@ Deno.serve(async (req) => {
       // Render template HTML
       const generatedHtml = renderTemplateHTML(template.template_html, variables);
       
-      // Upload rendered HTML as file (v3.1 contracts exceed entity field size limits)
-      const htmlBlob = new Blob([generatedHtml], { type: 'text/html' });
-      const htmlFile = new File([htmlBlob], `contract-${application_id}.html`, { type: 'text/html' });
-      const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: htmlFile });
-      const contractDocumentUrl = uploadResult.file_url;
+      // Generate contract hash for legal integrity
+      const contractHash = await generateContractHash(generatedHtml);
+      
+      // Upload to private R2 storage with versioning
+      const snapshotRef = await uploadContractSnapshot('pending', generatedHtml, 1);
 
       // Generate contract title
       const title = `${template.title} - ${application.applicant_name}`;
@@ -449,7 +550,7 @@ Deno.serve(async (req) => {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + (template.expires_after_days || 7));
 
-      // Create contract record with document URL instead of inline HTML
+      // Create contract record with snapshot reference
       const contract = await base44.asServiceRole.entities.Contract.create({
         performer_id: performer_id || null,
         contract_type: template.template_type,
@@ -457,12 +558,25 @@ Deno.serve(async (req) => {
         status: 'draft',
         signing_token: signingToken,
         signing_url: signingUrl,
-        document_url: contractDocumentUrl,
+        // Store snapshot reference (not public URL)
+        document_url: snapshotRef.r2_key,
         template_id: template_id,
         variables_json: JSON.stringify(variables),
         notes: data.notes || `Created from application ${application_id}${performer_id ? ` (Performer: ${performer_id})` : ''}`,
         expires_at: expiresAt.toISOString(),
+        // Version tracking
+        version: 1,
+        snapshot_hash: contractHash,
+        snapshot_stored_at: snapshotRef.stored_at,
       });
+
+      // Update snapshot reference with actual contract ID
+      if (contract.id) {
+        const updatedKey = `contracts/${contract.id}/v1/snapshot.html`;
+        await base44.asServiceRole.entities.Contract.update(contract.id, {
+          document_url: updatedKey,
+        });
+      }
 
       // Create audit log
       await base44.asServiceRole.entities.AuditLog.create({
@@ -635,6 +749,38 @@ Deno.serve(async (req) => {
             admin_signed_at: contract.admin_signed_at,
             signed_at: contract.signed_at,
           },
+        },
+      });
+    }
+
+    // ── ACTION: get_contract_snapshot (admin only) ────────────────────────
+
+    if (action === 'get_contract_snapshot') {
+      if (!contract_id) {
+        return Response.json({ error: 'contract_id is required' }, { status: 400 });
+      }
+
+      const contract = await base44.asServiceRole.entities.Contract.get(contract_id);
+      if (!contract) {
+        return Response.json({ error: 'Contract not found' }, { status: 404 });
+      }
+
+      if (!contract.document_url) {
+        return Response.json({ error: 'Contract snapshot not stored', details: 'This contract uses legacy storage' }, { status: 404 });
+      }
+
+      // Generate short-lived signed URL (15 minutes)
+      const signedUrl = await generateSnapshotSignedUrl(contract.document_url, 15);
+
+      return Response.json({
+        success: true,
+        snapshot: {
+          contract_id: contract.id,
+          version: contract.version || 1,
+          snapshot_hash: contract.snapshot_hash,
+          stored_at: contract.snapshot_stored_at,
+          signed_url: signedUrl,
+          expires_in_minutes: 15,
         },
       });
     }

@@ -75,9 +75,9 @@
     },
     "generated_html": {
       "type": "string",
-      "title": "Generated HTML",
+      "title": "Generated HTML (Preview)",
       "format": "textarea",
-      "description": "Rendered contract HTML content"
+      "description": "Short preview only (first 2000 chars) - full contract stored as private snapshot"
     },
     "variables_json": {
       "type": "string",
@@ -125,7 +125,8 @@
     },
     "document_url": {
       "type": "string",
-      "title": "Document URL"
+      "title": "Snapshot R2 Key",
+      "description": "Private R2 storage key: contracts/{id}/v{version}/snapshot.html"
     },
     "notes": {
       "type": "string",
@@ -147,6 +148,56 @@
       "type": "string",
       "title": "Verified By",
       "description": "User ID or email of admin who verified"
+    },
+    "version": {
+      "type": "integer",
+      "title": "Contract Version",
+      "default": 1,
+      "description": "Version number - increments on regeneration"
+    },
+    "snapshot_hash": {
+      "type": "string",
+      "title": "Snapshot SHA-256 Hash",
+      "description": "Legal integrity hash of rendered contract snapshot"
+    },
+    "snapshot_stored_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Snapshot Stored At",
+      "description": "Timestamp when snapshot was uploaded to R2"
+    },
+    "template_id": {
+      "type": "string",
+      "title": "Template ID",
+      "description": "ContractTemplate record ID used to generate this contract"
+    },
+    "contract_model": {
+      "type": "string",
+      "title": "Contract Model",
+      "description": "full_management | distribution_only | single_scene | guest_production"
+    },
+    "revenue_share_percent": {
+      "type": "number",
+      "title": "Revenue Share (%)",
+      "description": "Percentage of revenue that goes to the performer"
+    },
+    "minimum_term_months": {
+      "type": "integer",
+      "title": "Minimum Term (Months)"
+    },
+    "post_termination_usage_years": {
+      "type": "integer",
+      "title": "Post-Termination Usage (Years)"
+    },
+    "effective_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Effective Date"
+    },
+    "readiness_snapshot": {
+      "type": "string",
+      "title": "Readiness Snapshot (JSON)",
+      "description": "JSON snapshot of compliance readiness at time of generation"
     },
     "v1_id": {
       "type": "string",
