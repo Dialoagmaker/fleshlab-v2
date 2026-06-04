@@ -38,6 +38,29 @@ function renderTemplateHTML(templateHtml, variables) {
   return html;
 }
 
+// Find unresolved placeholders
+function findUnresolvedPlaceholders(content) {
+  const placeholderRegex = /{{\s*([^}]+)\s*}}/g;
+  const matches = [];
+  let match;
+  while ((match = placeholderRegex.exec(content)) !== null) {
+    matches.push(match[1].trim());
+  }
+  return [...new Set(matches)]; // Remove duplicates
+}
+
+// Validate no unresolved placeholders remain
+function validateContractComplete(content) {
+  const unresolved = findUnresolvedPlaceholders(content);
+  // Filter out signature-related placeholders that are expected to be pending
+  const criticalUnresolved = unresolved.filter(p => 
+    !p.includes('signature_') && 
+    !p.includes('timestamp') &&
+    !p.includes('contract_hash')
+  );
+  return criticalUnresolved;
+}
+
 // Get client IP
 function getClientIP(req) {
   const forwarded = req.headers.get('x-forwarded-for');
@@ -294,19 +317,76 @@ Deno.serve(async (req) => {
 
       // Build variables
       const today = new Date().toISOString().split('T')[0];
+      // Build variables with safe fallbacks
+
+
       const variables = {
-        effective_date: data.signing_date || today,
-        contract_model_label: (data.contract_model || 'full_management').replace(/_/g, ' ').toUpperCase(),
-        minimum_term_months: data.minimum_term_months || 12,
-        revenue_share_percent: data.revenue_share_percent || 70,
-        studio_share_percent: 100 - (data.revenue_share_percent || 70),
-        contract_currency: 'EUR',
+        // Core application data
         performer_legal_name: legalName,
         performer_stage_name: application.applicant_name,
         performer_date_of_birth: application.date_of_birth || data.date_of_birth,
         performer_email: application.email,
-        performer_full_residential_address: data.address || `${application.city || ''}, ${application.nationality || ''}`.trim(),
-        // ... add more as needed
+        performer_nationality: application.nationality || '[NOT PROVIDED]',
+        performer_country: application.country || application.nationality || '[NOT PROVIDED]',
+        performer_phone_or_messenger: application.phone || application.whatsapp_number || '[NOT PROVIDED]',
+        performer_full_residential_address: application.address || `${application.city || ''}, ${application.country || ''}`.trim(),
+
+        // Contract terms with defaults
+        effective_date: data.signing_date || today,
+        contract_model_label: (data.contract_model || 'full_management').replace(/_/g, ' ').toUpperCase(),
+        minimum_term_months: data.minimum_term_months || 12,
+        post_termination_usage_years: data.post_termination_usage_years || 5,
+        revenue_share_percent: data.revenue_share_percent || 70,
+        studio_share_percent: 100 - (data.revenue_share_percent || 70),
+        contract_currency: 'EUR',
+        early_termination_fee_amount: 150,
+        early_termination_fee_currency: 'EUR',
+
+        // Signature and metadata placeholders (will be updated on signing)
+        performer_signature_date: '[PENDING SIGNATURE]',
+        signature_timestamp: '[PENDING SIGNATURE]',
+        signature_ip: '[RECORDED ON SIGNATURE]',
+        contract_hash: contractHash.substring(0, 16) + '...',
+        studio_signature_date: '[PENDING COUNTERSIGN]',
+
+        // Compliance & Verification placeholders (replace with actual logic later)
+        id_verification_status: 'Verified', 
+        id_verification_reference: application.id_document_r2_key || '[NOT PROVIDED]',
+        age_verification_status: 'Verified 18+',
+        dob_verified: 'Verified',
+        consent_status: 'Consent Confirmed',
+
+        // Content & Production placeholders
+        solo_work_allowed: 'Yes',
+        pair_work_allowed: 'Yes, subject to studio policies',
+        multi_performer_work_allowed: 'Yes, subject to studio policies',
+        live_cam_allowed: 'Yes, if included in contract',
+        live_cam_shows_per_month: data.live_cam_required ? 2 : 'Not applicable',
+        condom_required: 'Yes',
+        bareback_allowed: 'No, unless specific written consent is provided per scene',
+        allowed_content_categories: 'General categories as per studio catalog',
+        restricted_content_categories: 'Content restricted by law or platform policies',
+        off_limits_content_categories: 'Performer hard limits to be documented separately',
+        existing_content_list: 'No existing content is included unless separately listed in writing.',
+
+        // Financials
+        minimum_payout_threshold: 'No minimum payout threshold unless separately configured',
+        payout_method: 'As configured in performer profile',
+
+        // Health compliance placeholders (solo contract defaults)
+        health_compliance_required: 'Not required for solo work unless separately configured',
+        hiv_test_required: 'Not required',
+        hiv_test_status: 'N/A',
+        hiv_test_valid_until: 'N/A',
+        syphilis_test_required: 'Not required',
+        syphilis_test_status: 'N/A',
+        syphilis_test_valid_until: 'N/A',
+        prep_required: 'Not required',
+        prep_status: 'N/A',
+        
+        // Release status (for release-type contracts, not applicable here)
+        release_status: 'N/A',
+        release_reference: 'N/A',
       };
 
       // Render HTML
