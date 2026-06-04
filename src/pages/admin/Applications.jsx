@@ -230,7 +230,7 @@ export default function Applications() {
     navigate(`/admin/performers/${performer.id}`);
   };
 
-  const [selectedTemplateId, setSelectedTemplateId] = useState("695692350f67b9c48a34bc1e"); // Default: Performer Management
+  const [selectedTemplateId, setSelectedTemplateId] = useState("6a21d0c9e52a37dd1042e42a"); // Default: Performer Management v3.0
   const [contractVariables, setContractVariables] = useState({});
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
 
@@ -242,10 +242,20 @@ export default function Applications() {
   const handleCreateContract = async (templateId, variables) => {
     if (!selectedApp) return;
     try {
+      // Extract performer_id from admin notes if available
+      let performer_id = null;
+      if (selectedApp.admin_notes) {
+        const performerMatch = selectedApp.admin_notes.match(/Performer created:\s*([a-zA-Z0-9]+)/);
+        if (performerMatch && performerMatch[1]) {
+          performer_id = performerMatch[1];
+        }
+      }
+
       const res = await base44.functions.invoke("contractService", {
         action: "create_from_application",
         application_id: selectedApp.id,
         template_id: templateId,
+        performer_id: performer_id || variables.performer_id,
         ...variables,
       });
 
@@ -259,17 +269,29 @@ export default function Applications() {
         toast.success("Contract created");
       }
     } catch (err) {
-      toast.error(`Failed to create contract: ${err.message}`);
+      // Show detailed error message from backend
+      const errorMsg = err.response?.data?.error || err.message || 'Failed to create contract';
+      toast.error(errorMsg);
     }
   };
 
   const handleOpenContractDialog = () => {
     // Pre-fill variables from application
     const today = new Date().toISOString().split('T')[0];
+    
+    // Extract legal_name from message if not in dedicated field
+    let legalName = selectedApp.legal_name;
+    if (!legalName && selectedApp.message) {
+      const legalNameMatch = selectedApp.message.match(/Legal Name:\s*([^\n]+)/i);
+      if (legalNameMatch && legalNameMatch[1]) {
+        legalName = legalNameMatch[1].trim();
+      }
+    }
+    
     setContractVariables({
       signing_date: today,
       studio_email: 'legal@fleshlab.online',
-      legal_name: selectedApp.legal_name || selectedApp.applicant_name,
+      legal_name: legalName || selectedApp.applicant_name,
       stage_name: selectedApp.applicant_name,
       date_of_birth: selectedApp.date_of_birth || '',
       address: `${selectedApp.city || ''}, ${selectedApp.nationality || ''}`.trim(),
@@ -278,7 +300,7 @@ export default function Applications() {
       id_number: '',
       contract_model: 'full_management',
     });
-    setSelectedTemplateId("695692350f67b9c48a34bc1e");
+    setSelectedTemplateId("6a21d0c9e52a37dd1042e42a");
     setIsTemplateDialogOpen(true);
   };
 
@@ -781,7 +803,7 @@ export default function Applications() {
                     <XCircle className="w-3.5 h-3.5 mr-1 text-red-400" /> Reject
                   </Button>
                 </div>
-                {!selectedApp.id_document_front_r2_key && !selectedApp.id_document_r2_key && selectedApp.status !== "reviewing" && (
+                {!selectedApp.id_document_front_r2_key && !selectedApp.id_document_r2_key && !["reviewing","approved","rejected"].includes(selectedApp.status) && (
                   <p className="text-orange-400 text-xs flex items-center gap-1.5">
                     <AlertTriangle className="w-3.5 h-3.5" /> ID front required before moving to Review.
                   </p>
@@ -810,16 +832,37 @@ export default function Applications() {
                       </div>
                     </div>
                   ) : (
-                    <Button variant="outline" size="sm" onClick={handleOpenContractDialog} className="w-full">
-                      <FileText className="w-4 h-4 mr-2" /> Create Contract
-                    </Button>
+                    <>
+                      {/* Show warning if missing critical fields */}
+                      {(!selectedApp.legal_name && !selectedApp.admin_notes?.includes('Performer created:')) && (
+                        <div className="mb-2 text-xs text-orange-400 flex items-start gap-1.5">
+                          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          <span>Legal name required. Either add legal name to application or create a performer profile first.</span>
+                        </div>
+                      )}
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleOpenContractDialog} 
+                        className="w-full"
+                        disabled={!selectedApp.legal_name && !selectedApp.admin_notes?.includes('Performer created:')}
+                      >
+                        <FileText className="w-4 h-4 mr-2" /> Create Contract
+                      </Button>
+                    </>
                   )}
                 </div>
 
-                {selectedApp.status === "approved" && (
+                {selectedApp.status === "approved" && !selectedApp.admin_notes?.includes('Performer created:') && (
                   <Button className="w-full mt-3" onClick={() => setIsCreatePerformerOpen(true)}>
                     <UserPlus className="w-4 h-4 mr-2" /> Create Performer Profile
                   </Button>
+                )}
+                {selectedApp.admin_notes?.includes('Performer created:') && (
+                  <div className="mt-2 text-xs text-emerald-400 flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    <span>Performer profile linked — ready for contract</span>
+                  </div>
                 )}
               </div>
             </div>

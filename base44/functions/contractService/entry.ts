@@ -222,11 +222,49 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Application not found' }, { status: 404 });
       }
 
+      // Extract performer_id from application notes if not provided
+      let performer_id = data.performer_id;
+      if (!performer_id && application.admin_notes) {
+        // Look for "Performer created: <id>" pattern in admin notes
+        const performerMatch = application.admin_notes.match(/Performer created:\s*([a-zA-Z0-9]+)/);
+        if (performerMatch && performerMatch[1]) {
+          performer_id = performerMatch[1];
+          console.log(`Extracted performer_id ${performer_id} from application admin_notes`);
+        }
+      }
+
       // Load template - default to performer management agreement
-      const template_id = data.template_id || '695692350f67b9c48a34bc1e'; // Performer Management Agreement v3.0
+      const template_id = data.template_id || '6a21d0c9e52a37dd1042e42a'; // Performer Management Agreement v3.0
       const template = await base44.asServiceRole.entities.ContractTemplate.get(template_id);
       if (!template) {
-        return Response.json({ error: 'Contract template not found' }, { status: 404 });
+        console.error(`Template ${template_id} not found`);
+        return Response.json({ 
+          error: 'Contract template not found. Please select a valid template.',
+          template_id: template_id,
+        }, { status: 404 });
+      }
+
+      // Extract legal_name from message if not in dedicated field
+      let legalName = data.legal_name || application.legal_name;
+      if (!legalName && application.message) {
+        const legalNameMatch = application.message.match(/Legal Name:\s*([^\n]+)/i);
+        if (legalNameMatch && legalNameMatch[1]) {
+          legalName = legalNameMatch[1].trim();
+          console.log(`Extracted legal_name from message: ${legalName}`);
+        }
+      }
+      
+      // Validate required fields
+      const missingFields = [];
+      if (!legalName) missingFields.push('legal_name (from application.legal_name or message)');
+      if (!application.email) missingFields.push('email');
+      
+      if (missingFields.length > 0) {
+        return Response.json({ 
+          error: `Missing required application fields: ${missingFields.join(', ')}. Please update application data first.`,
+          missing_fields: missingFields,
+          application_id: application_id,
+        }, { status: 400 });
       }
 
       // Build variables from application data
@@ -234,12 +272,12 @@ Deno.serve(async (req) => {
       const variables = {
         signing_date: data.signing_date || today,
         studio_email: data.studio_email || 'legal@fleshlab.online',
-        legal_name: application.legal_name || application.applicant_name,
+        legal_name: legalName || application.applicant_name,
         stage_name: application.applicant_name,
-        date_of_birth: application.date_of_birth || '[DOB]',
+        date_of_birth: application.date_of_birth || data.date_of_birth || '[DOB]',
         address: data.address || `${application.city || ''}, ${application.nationality || ''}`.trim(),
         email: application.email,
-        phone_or_messenger: application.phone || application.whatsapp_number || '[PHONE]',
+        phone_or_messenger: data.phone_or_messenger || application.phone || application.whatsapp_number || '[PHONE]',
         id_number: data.id_number || '[NOT PROVIDED]',
         contract_model: data.contract_model || 'full_management',
         // Additional defaults
@@ -270,7 +308,7 @@ Deno.serve(async (req) => {
 
       // Create contract record
       const contract = await base44.asServiceRole.entities.Contract.create({
-        performer_id: data.performer_id || null,
+        performer_id: performer_id || null,
         contract_type: template.template_type,
         title,
         status: 'draft',
@@ -279,7 +317,7 @@ Deno.serve(async (req) => {
         generated_html: generatedHtml,
         template_id: template_id,
         variables_json: JSON.stringify(variables),
-        notes: data.notes || `Created from application ${application_id}`,
+        notes: data.notes || `Created from application ${application_id}${performer_id ? ` (Performer: ${performer_id})` : ''}`,
         expires_at: expiresAt.toISOString(),
       });
 
