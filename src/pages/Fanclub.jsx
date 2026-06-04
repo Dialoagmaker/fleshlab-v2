@@ -294,7 +294,7 @@ export default function Fanclub() {
               </p>
 
               <p className="text-lg text-white/55 leading-relaxed mb-10 max-w-xl">
-                Browse the trailers, meet the performers and get a taste of FLESHLAB. The real experience starts inside the Fanclub — exclusive scenes, early releases, bonus clips, behind-the-scenes moments and member-only updates from verified performers.
+                Browse the trailers, meet the performers and get a taste of FLESHLAB. The real experience starts inside the Fanclub: exclusive scenes, early releases, bonus clips, behind-the-scenes moments and member-only updates from verified performers.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
