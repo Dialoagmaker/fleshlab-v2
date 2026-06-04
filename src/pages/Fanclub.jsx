@@ -181,11 +181,14 @@ export default function Fanclub() {
     [videos]
   );
 
-  // Performers with a profile image
-  const performersWithImage = useMemo(
-    () => performers.filter(p => p.profile_image_url && p.status !== 'inactive').slice(0, 6),
-    [performers]
-  );
+  // Performers with a profile image — pin Fitmaster + Jameson first
+  const PINNED_SLUGS = ['the-fitmaster', 'jameson'];
+  const performersWithImage = useMemo(() => {
+    const withImg = performers.filter(p => p.profile_image_url && p.status !== 'inactive');
+    const pinned = PINNED_SLUGS.map(slug => withImg.find(p => p.slug === slug)).filter(Boolean);
+    const rest = withImg.filter(p => !PINNED_SLUGS.includes(p.slug));
+    return [...pinned, ...rest].slice(0, 6);
+  }, [performers]);
 
   // Hero collage: 1 large + 2 small video thumbs + 2 performer images
   const heroImages = useMemo(() => {
