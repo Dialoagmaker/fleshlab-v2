@@ -1,0 +1,80 @@
+{
+  "name": "ContractTemplate",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "Template Title"
+    },
+    "version": {
+      "type": "string",
+      "title": "Version"
+    },
+    "template_type": {
+      "type": "string",
+      "enum": [
+        "performer_management",
+        "termination",
+        "guest_production",
+        "licensing",
+        "release"
+      ],
+      "title": "Template Type"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "draft"
+      ],
+      "title": "Status",
+      "default": "active"
+    },
+    "template_html": {
+      "type": "string",
+      "title": "Template HTML",
+      "format": "textarea",
+      "description": "HTML template with placeholders like {{legal_name}}, {{stage_name}}, etc."
+    },
+    "cover_image_url": {
+      "type": "string",
+      "title": "Cover Image URL"
+    },
+    "placeholders": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Placeholders",
+      "description": "List of placeholder names (without braces) used in this template"
+    },
+    "default_variables": {
+      "type": "string",
+      "title": "Default Variables (JSON)",
+      "description": "JSON string of default values for variables"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "format": "textarea",
+      "description": "Description of when to use this template"
+    },
+    "requires_admin_countersign": {
+      "type": "boolean",
+      "title": "Requires Admin Countersign",
+      "default": true
+    },
+    "expires_after_days": {
+      "type": "integer",
+      "title": "Expires After (Days)",
+      "default": 7,
+      "description": "Number of days after which signing link expires"
+    }
+  },
+  "required": [
+    "title",
+    "template_type",
+    "template_html"
+  ]
+}

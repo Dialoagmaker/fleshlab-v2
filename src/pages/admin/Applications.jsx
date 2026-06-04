@@ -195,20 +195,30 @@ export default function Applications() {
     navigate(`/admin/performers/${performer.id}`);
   };
 
-  const handleCreateContract = async () => {
+  const [selectedTemplateId, setSelectedTemplateId] = useState("695692350f67b9c48a34bc1e"); // Default: Performer Management
+  const [contractVariables, setContractVariables] = useState({});
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ['contract-templates'],
+    queryFn: () => base44.entities.ContractTemplate.filter({ status: 'active' }),
+  });
+
+  const handleCreateContract = async (templateId, variables) => {
     if (!selectedApp) return;
     try {
       const res = await base44.functions.invoke("contractService", {
         action: "create_from_application",
         application_id: selectedApp.id,
-        contract_type: "guest",
-        revenue_share_percentage: 70,
+        template_id: templateId,
+        ...variables,
       });
 
       if (res.data?.success) {
         setContractData({
           id: res.data.contract_id,
           signing_url: res.data.signing_url,
+          title: res.data.title,
         });
         setIsCreateContractOpen(true);
         toast.success("Contract created");
@@ -216,6 +226,25 @@ export default function Applications() {
     } catch (err) {
       toast.error(`Failed to create contract: ${err.message}`);
     }
+  };
+
+  const handleOpenContractDialog = () => {
+    // Pre-fill variables from application
+    const today = new Date().toISOString().split('T')[0];
+    setContractVariables({
+      signing_date: today,
+      studio_email: 'legal@fleshlab.online',
+      legal_name: selectedApp.legal_name || selectedApp.applicant_name,
+      stage_name: selectedApp.applicant_name,
+      date_of_birth: selectedApp.date_of_birth || '',
+      address: `${selectedApp.city || ''}, ${selectedApp.nationality || ''}`.trim(),
+      email: selectedApp.email,
+      phone_or_messenger: selectedApp.phone || selectedApp.whatsapp_number || '',
+      id_number: '',
+      contract_model: 'full_management',
+    });
+    setSelectedTemplateId("695692350f67b9c48a34bc1e");
+    setIsTemplateDialogOpen(true);
   };
 
   const handleSendForSignature = async () => {
@@ -720,7 +749,7 @@ export default function Applications() {
                       </div>
                     </div>
                   ) : (
-                    <Button variant="outline" size="sm" onClick={handleCreateContract} className="w-full">
+                    <Button variant="outline" size="sm" onClick={handleOpenContractDialog} className="w-full">
                       <FileText className="w-4 h-4 mr-2" /> Create Contract
                     </Button>
                   )}
@@ -776,6 +805,12 @@ export default function Applications() {
                 <p className="text-muted-foreground text-xs">Applicant</p>
                 <p className="font-medium">{selectedApp?.applicant_name}</p>
               </div>
+              {contractData?.title && (
+                <div>
+                  <p className="text-muted-foreground text-xs">Contract Type</p>
+                  <p className="font-medium">{contractData.title}</p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -808,6 +843,151 @@ export default function Applications() {
               <Send className="w-4 h-4 mr-2" /> Send for Signature
             </Button>
             <Button onClick={() => setIsCreateContractOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Template selection dialog */}
+      <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Contract from Template</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Template selection */}
+            <div className="space-y-2">
+              <Label>Select Template</Label>
+              <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.title} {t.version ? `v${t.version}` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {templates.find(t => t.id === selectedTemplateId)?.description && (
+                <p className="text-xs text-muted-foreground">
+                  {templates.find(t => t.id === selectedTemplateId).description}
+                </p>
+              )}
+            </div>
+
+            {/* Variables editor */}
+            <div className="space-y-3">
+              <Label>Contract Variables</Label>
+              <div className="grid md:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Legal Name *</Label>
+                  <Input
+                    value={contractVariables.legal_name || ''}
+                    onChange={(e) => setContractVariables({...contractVariables, legal_name: e.target.value})}
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Stage Name *</Label>
+                  <Input
+                    value={contractVariables.stage_name || ''}
+                    onChange={(e) => setContractVariables({...contractVariables, stage_name: e.target.value})}
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Date of Birth</Label>
+                  <Input
+                    value={contractVariables.date_of_birth || ''}
+                    onChange={(e) => setContractVariables({...contractVariables, date_of_birth: e.target.value})}
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Email *</Label>
+                  <Input
+                    type="email"
+                    value={contractVariables.email || ''}
+                    onChange={(e) => setContractVariables({...contractVariables, email: e.target.value})}
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Address</Label>
+                  <Input
+                    value={contractVariables.address || ''}
+                    onChange={(e) => setContractVariables({...contractVariables, address: e.target.value})}
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Phone/Messenger</Label>
+                  <Input
+                    value={contractVariables.phone_or_messenger || ''}
+                    onChange={(e) => setContractVariables({...contractVariables, phone_or_messenger: e.target.value})}
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">ID Number</Label>
+                  <Input
+                    value={contractVariables.id_number || ''}
+                    onChange={(e) => setContractVariables({...contractVariables, id_number: e.target.value})}
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Contract Model</Label>
+                  <Select
+                    value={contractVariables.contract_model || 'full_management'}
+                    onValueChange={(v) => setContractVariables({...contractVariables, contract_model: v})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="full_management">Full Management</SelectItem>
+                      <SelectItem value="distribution_only">Distribution Only</SelectItem>
+                      <SelectItem value="single_scene">Single Scene</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Signing Date</Label>
+                  <Input
+                    type="date"
+                    value={contractVariables.signing_date || ''}
+                    onChange={(e) => setContractVariables({...contractVariables, signing_date: e.target.value})}
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Studio Email</Label>
+                  <Input
+                    type="email"
+                    value={contractVariables.studio_email || ''}
+                    onChange={(e) => setContractVariables({...contractVariables, studio_email: e.target.value})}
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Preview note */}
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-xs text-blue-400">
+              <p className="font-semibold mb-1">Preview:</p>
+              <p>After creating the contract, you will be able to preview the rendered HTML and send the signing link to the applicant.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsTemplateDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => {
+              handleCreateContract(selectedTemplateId, contractVariables);
+              setIsTemplateDialogOpen(false);
+            }}>
+              <FileText className="w-4 h-4 mr-2" /> Create Contract
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

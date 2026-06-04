@@ -20,77 +20,18 @@ function generateSigningToken() {
   return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Render default contract HTML from application data
-function renderContractHTML(appData, contractType = 'guest') {
-  const {
-    legal_name = '[LEGAL NAME]',
-    applicant_name = '[STAGE NAME]',
-    date_of_birth = '[DOB]',
-    nationality = '[NATIONALITY]',
-    city = '[CITY]',
-    email = '[EMAIL]',
-    phone = '[PHONE]',
-    whatsapp_number = '[WHATSAPP]',
-  } = appData;
-
-  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+// Render contract HTML from template and variables
+function renderTemplateHTML(templateHtml, variables) {
+  let html = templateHtml;
   
-  return `
-<div style="font-family: Georgia, serif; line-height: 1.6; color: #1a1a1a; max-width: 800px; margin: 0 auto; padding: 40px 20px;">
-  <h1 style="text-align: center; color: #c41e3a; margin-bottom: 10px;">FLESHLAB Performer Agreement & Content Release</h1>
-  <p style="text-align: center; color: #666; font-size: 14px; margin-bottom: 40px;">Effective Date: ${today}</p>
-
-  <div style="border-bottom: 2px solid #c41e3a; margin-bottom: 30px;"></div>
-
-  <h2 style="color: #c41e3a; margin-top: 30px;">1. Parties</h2>
-  <p>This Agreement is entered into between:</p>
-  <p><strong>Performer:</strong> ${legal_name} (legal name), also known as ${applicant_name} (stage name)<br>
-  Date of Birth: ${date_of_birth}<br>
-  Nationality: ${nationality}<br>
-  Residence: ${city || '[CITY]'}<br>
-  Email: ${email}<br>
-  Phone/WhatsApp: ${phone || whatsapp_number || '[PHONE]'}</p>
+  // Replace each placeholder with its value
+  Object.entries(variables).forEach(([key, value]) => {
+    const placeholder = `{{${key}}}`;
+    const displayValue = value !== null && value !== undefined ? String(value) : '[NOT PROVIDED]';
+    html = html.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), displayValue);
+  });
   
-  <p><strong>Producer:</strong> FLESHLAB, operated by Dialogmakers International Ltd.</p>
-
-  <h2 style="color: #c41e3a; margin-top: 30px;">2. Age Confirmation</h2>
-  <p>Performer confirms they are at least 18 years of age and hereby agrees to participate in the creation of adult-oriented content.</p>
-
-  <h2 style="color: #c41e3a; margin-top: 30px;">3. Content Release</h2>
-  <p>Performer grants FLESHLAB exclusive rights to use, distribute, and exploit all content created during production, including but not limited to:</p>
-  <ul>
-    <li>Video recordings and photographs</li>
-    <li>Digital and physical distribution</li>
-    <li>Promotional materials and marketing</li>
-    <li>Online platforms and third-party distribution</li>
-  </ul>
-
-  <h2 style="color: #c41e3a; margin-top: 30px;">4. Revenue Share</h2>
-  <p>Performer shall receive ${70}% of net revenue generated from content, payable according to FLESHLAB's payout schedule and terms.</p>
-
-  <h2 style="color: #c41e3a; margin-top: 30px;">5. External Platform Distribution</h2>
-  <p>Performer consents to distribution on external platforms including but not limited to xHamster, Pornhub, and other adult content platforms at FLESHLAB's discretion.</p>
-
-  <h2 style="color: #c41e3a; margin-top: 30px;">6. Health & Safety</h2>
-  <p>Performer agrees to comply with all health and safety protocols, including STI testing requirements as mandated by FLESHLAB.</p>
-
-  <h2 style="color: #c41e3a; margin-top: 30px;">7. Electronic Signature</h2>
-  <p>Performer acknowledges that their electronic signature on this document is legally binding and has the same force and effect as a handwritten signature.</p>
-
-  <h2 style="color: #c41e3a; margin-top: 30px;">8. Governing Law</h2>
-  <p>This Agreement shall be governed by and construed in accordance with applicable laws.</p>
-
-  <div style="border-top: 2px solid #c41e3a; margin-top: 40px; padding-top: 30px;">
-    <p><strong>By signing below, I confirm that:</strong></p>
-    <ul>
-      <li>I have read and understood this Agreement</li>
-      <li>I am at least 18 years of age</li>
-      <li>I voluntarily agree to all terms and conditions</li>
-      <li>My electronic signature is legally binding</li>
-    </ul>
-  </div>
-</div>
-  `.trim();
+  return html;
 }
 
 // Get client IP from request
@@ -281,50 +222,65 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Application not found' }, { status: 404 });
       }
 
-      // Generate contract number/title
-      const contractNumber = `CNT-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-      const title = `FLESHLAB Performer Agreement - ${application.applicant_name}`;
+      // Load template - default to performer management agreement
+      const template_id = data.template_id || '695692350f67b9c48a34bc1e'; // Performer Management Agreement v3.0
+      const template = await base44.asServiceRole.entities.ContractTemplate.get(template_id);
+      if (!template) {
+        return Response.json({ error: 'Contract template not found' }, { status: 404 });
+      }
 
-      // Render contract HTML
-      const generatedHtml = renderContractHTML({
+      // Build variables from application data
+      const today = new Date().toISOString().split('T')[0];
+      const variables = {
+        signing_date: data.signing_date || today,
+        studio_email: data.studio_email || 'legal@fleshlab.online',
         legal_name: application.legal_name || application.applicant_name,
-        applicant_name: application.applicant_name,
+        stage_name: application.applicant_name,
         date_of_birth: application.date_of_birth || '[DOB]',
-        nationality: application.nationality || '[NATIONALITY]',
-        city: application.city || '[CITY]',
+        address: data.address || `${application.city || ''}, ${application.nationality || ''}`.trim(),
         email: application.email,
-        phone: application.phone,
-        whatsapp_number: application.whatsapp_number,
-      }, data.contract_type || 'guest');
+        phone_or_messenger: application.phone || application.whatsapp_number || '[PHONE]',
+        id_number: data.id_number || '[NOT PROVIDED]',
+        contract_model: data.contract_model || 'full_management',
+        // Additional defaults
+        original_contract_date: data.original_contract_date || '[ORIGINAL CONTRACT DATE]',
+        contract_number: data.contract_number || '[CONTRACT NUMBER]',
+        termination_date: data.termination_date || '[TERMINATION DATE]',
+        settlement_amount: data.settlement_amount || '[AMOUNT]',
+        settlement_amount_words: data.settlement_amount_words || '[AMOUNT IN WORDS]',
+        payment_due_days: data.payment_due_days || '30',
+        takedown_deadline_days: data.takedown_deadline_days || '30',
+        signature_date: today,
+      };
+
+      // Render template
+      const generatedHtml = renderTemplateHTML(template.template_html, variables);
+
+      // Generate contract title
+      const title = `${template.title} - ${application.applicant_name}`;
 
       // Generate signing token and URL
       const signingToken = generateSigningToken();
       const baseUrl = Deno.env.get('APP_BASE_URL') || 'https://fleshlab.app';
       const signingUrl = `${baseUrl}/sign-contract?token=${signingToken}`;
 
+      // Calculate expiry
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + (template.expires_after_days || 7));
+
       // Create contract record
       const contract = await base44.asServiceRole.entities.Contract.create({
-        performer_id: data.performer_id || null, // May not have performer yet
-        contract_type: data.contract_type || 'guest',
+        performer_id: data.performer_id || null,
+        contract_type: template.template_type,
         title,
         status: 'draft',
         signing_token: signingToken,
         signing_url: signingUrl,
         generated_html: generatedHtml,
-        variables_json: JSON.stringify({
-          application_id,
-          legal_name: application.legal_name,
-          applicant_name: application.applicant_name,
-          date_of_birth: application.date_of_birth,
-          nationality: application.nationality,
-          city: application.city,
-          email: application.email,
-          phone: application.phone,
-          whatsapp_number: application.whatsapp_number,
-          revenue_share: data.revenue_share_percentage || 70,
-        }),
+        template_id: template_id,
+        variables_json: JSON.stringify(variables),
         notes: data.notes || `Created from application ${application_id}`,
-        expires_at: data.expires_at || null,
+        expires_at: expiresAt.toISOString(),
       });
 
       // Create audit log
@@ -336,7 +292,8 @@ Deno.serve(async (req) => {
         action: 'contract_created_from_application',
         changes_json: JSON.stringify({
           application_id,
-          contract_type: data.contract_type || 'guest',
+          template_id,
+          template_title: template.title,
           title,
         }),
         notes: `Contract created from application ${application_id} for ${application.applicant_name}`,
@@ -346,6 +303,7 @@ Deno.serve(async (req) => {
         success: true,
         contract_id: contract.id,
         signing_url: signingUrl,
+        title,
         message: 'Contract created from application',
       });
     }
