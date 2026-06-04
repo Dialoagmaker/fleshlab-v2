@@ -13,15 +13,16 @@ import { toast } from "sonner";
 import {
   Users, CheckCircle, XCircle, Clock, Eye, MessageSquare, UserPlus,
   Search, Filter, Mail, Phone, FileText, Image as ImageIcon, Video,
-  Download, AlertTriangle, ExternalLink, Send, RefreshCw, Lock
+  Download, AlertTriangle, ExternalLink, Send, RefreshCw, Lock, Copy, PhoneCall
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, formatDistanceToNow, differenceInYears } from "date-fns";
 
-// ── Status helpers ─────────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────
 const STATUS_COLOR = {
   pending:       "bg-yellow-600",
   media_pending: "bg-orange-600",
   reviewing:     "bg-blue-600",
+  contacted:     "bg-purple-600",
   approved:      "bg-green-600",
   rejected:      "bg-red-600",
 };
@@ -29,9 +30,30 @@ const STATUS_ICON = {
   pending:       <Clock className="w-3.5 h-3.5" />,
   media_pending: <AlertTriangle className="w-3.5 h-3.5" />,
   reviewing:     <MessageSquare className="w-3.5 h-3.5" />,
+  contacted:     <Phone className="w-3.5 h-3.5" />,
   approved:      <CheckCircle className="w-3.5 h-3.5" />,
   rejected:      <XCircle className="w-3.5 h-3.5" />,
 };
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).catch(() => {});
+}
+
+function TimeAgo({ dateStr }) {
+  if (!dateStr) return <span className="text-muted-foreground">N/A</span>;
+  const d = new Date(dateStr);
+  return (
+    <span>
+      <span className="text-foreground">{format(d, "MMM d, yyyy HH:mm")}</span>
+      <span className="text-muted-foreground ml-1.5">— {formatDistanceToNow(d, { addSuffix: true })}</span>
+    </span>
+  );
+}
+
+function calcAge(dob) {
+  if (!dob) return null;
+  return differenceInYears(new Date(), new Date(dob));
+}
 
 // ── Signed media viewer ────────────────────────────────────────────────────
 function SignedMediaItem({ r2Key, label, type = "image" }) {
@@ -184,8 +206,26 @@ export default function Applications() {
     media_pending: applications.filter(a => a.status === "media_pending").length,
     pending: applications.filter(a => a.status === "pending").length,
     reviewing: applications.filter(a => a.status === "reviewing").length,
+    contacted: applications.filter(a => a.status === "contacted").length,
     approved: applications.filter(a => a.status === "approved").length,
     rejected: applications.filter(a => a.status === "rejected").length,
+  };
+
+  const handleMarkContacted = (method) => {
+    if (!selectedApp) return;
+    const ts = format(new Date(), "yyyy-MM-dd HH:mm");
+    const logEntry = `[${ts}] Marked contacted via ${method}`;
+    const existing = selectedApp.contact_log || "";
+    const updatedLog = existing ? `${existing}\n\n${logEntry}` : logEntry;
+    const updates = {
+      status: ["approved","rejected"].includes(selectedApp.status) ? selectedApp.status : "contacted",
+      contacted_at: new Date().toISOString(),
+      last_contact_method: method,
+      contact_log: updatedLog,
+    };
+    updateMutation.mutate({ id: selectedApp.id, data: updates });
+    setSelectedApp(prev => ({ ...prev, ...updates }));
+    toast.success(`Marked as contacted via ${method}`);
   };
 
   const TABS = ["info", "media", "id", "notes", "contact"];
@@ -198,12 +238,13 @@ export default function Applications() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+      <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
         {[
           { label: "Total", value: stats.total, color: "text-foreground" },
           { label: "Media Pending", value: stats.media_pending, color: "text-orange-400" },
           { label: "New", value: stats.pending, color: "text-yellow-400" },
           { label: "Reviewing", value: stats.reviewing, color: "text-blue-400" },
+          { label: "Contacted", value: stats.contacted, color: "text-purple-400" },
           { label: "Approved", value: stats.approved, color: "text-green-400" },
           { label: "Rejected", value: stats.rejected, color: "text-red-400" },
         ].map(({ label, value, color }) => (
@@ -229,6 +270,7 @@ export default function Applications() {
             <SelectItem value="media_pending">Media Pending</SelectItem>
             <SelectItem value="pending">New</SelectItem>
             <SelectItem value="reviewing">Reviewing</SelectItem>
+            <SelectItem value="contacted">Contacted</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
           </SelectContent>
@@ -280,8 +322,8 @@ export default function Applications() {
                       </Badge>
                     </div>
                   </td>
-                  <td className="p-4 text-xs text-muted-foreground">
-                    {app.submitted_at ? format(new Date(app.submitted_at), "MMM d, yyyy HH:mm") : "N/A"}
+                  <td className="p-4 text-xs">
+                    <TimeAgo dateStr={app.submitted_at} />
                   </td>
                   <td className="p-4">
                     <Badge className={`${STATUS_COLOR[app.status] || "bg-gray-600"} text-white text-xs`}>
@@ -342,11 +384,30 @@ export default function Applications() {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div><Label className="text-xs text-muted-foreground">Stage Name</Label><div className="text-foreground text-sm font-medium">{selectedApp.applicant_name}</div></div>
                     <div><Label className="text-xs text-muted-foreground">Legal Name (Private)</Label><div className="text-foreground text-sm">{selectedApp.legal_name || <span className="text-muted-foreground italic">Not provided</span>}</div></div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Date of Birth</Label>
+                      <div className="text-foreground text-sm">
+                        {selectedApp.date_of_birth
+                          ? <>{selectedApp.date_of_birth} <span className="text-muted-foreground">(Age: {calcAge(selectedApp.date_of_birth)})</span></>
+                          : <span className="text-orange-400 italic">Not provided</span>}
+                      </div>
+                    </div>
                     <div><Label className="text-xs text-muted-foreground">Nationality</Label><div className="text-foreground text-sm">{selectedApp.nationality || "—"}</div></div>
                     <div><Label className="text-xs text-muted-foreground">City</Label><div className="text-foreground text-sm">{selectedApp.city || "—"}</div></div>
                     <div><Label className="text-xs text-muted-foreground">Email</Label><div className="text-foreground text-sm flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 text-muted-foreground" />{selectedApp.email}</div></div>
                     <div><Label className="text-xs text-muted-foreground">Phone</Label><div className="text-foreground text-sm flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-muted-foreground" />{selectedApp.phone || "—"}</div></div>
+                    <div><Label className="text-xs text-muted-foreground">WhatsApp</Label><div className="text-foreground text-sm">{selectedApp.whatsapp_number || "—"}</div></div>
+                    <div><Label className="text-xs text-muted-foreground">Preferred Contact</Label><div className="text-foreground text-sm capitalize">{selectedApp.preferred_contact_method || "—"}</div></div>
                   </div>
+                  {/* WhatsApp tracking */}
+                  {(selectedApp.whatsapp_prompt_shown_at || selectedApp.whatsapp_contact_clicked_at) && (
+                    <div className="bg-emerald-600/8 border border-emerald-600/20 rounded-lg px-3 py-2 text-xs space-y-1">
+                      {selectedApp.whatsapp_prompt_shown_at && <div className="text-muted-foreground">WA prompt shown: <span className="text-foreground">{format(new Date(selectedApp.whatsapp_prompt_shown_at), "MMM d HH:mm")}</span></div>}
+                      {selectedApp.whatsapp_contact_clicked_at
+                        ? <div className="text-emerald-400 font-semibold">✓ Applicant clicked WhatsApp: {format(new Date(selectedApp.whatsapp_contact_clicked_at), "MMM d HH:mm")}</div>
+                        : <div className="text-orange-400">✗ Applicant has not clicked WhatsApp yet</div>}
+                    </div>
+                  )}
                   {selectedApp.interests?.length > 0 && (
                     <div><Label className="text-xs text-muted-foreground">Interests</Label>
                       <div className="flex flex-wrap gap-1.5 mt-1">
@@ -413,24 +474,42 @@ export default function Applications() {
                     <Lock className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                     ID documents are strictly confidential. Admins only. Signed URLs expire in 15 minutes.
                   </div>
-                  <SignedMediaItem r2Key={selectedApp.id_document_r2_key} label="Government ID (Passport / ID Card / License)" type="image" />
-                  {selectedApp.id_document_url && !selectedApp.id_document_r2_key && (
+                  {selectedApp.id_document_type && (
+                    <div className="text-xs text-muted-foreground">Document type: <span className="text-foreground font-medium capitalize">{selectedApp.id_document_type?.replace("_", " ")}</span></div>
+                  )}
+
+                  {/* New 3-slot compliance */}
+                  <SignedMediaItem r2Key={selectedApp.id_document_front_r2_key || selectedApp.id_document_r2_key} label="ID Front" type="image" />
+                  <SignedMediaItem r2Key={selectedApp.id_document_back_r2_key} label={`ID Back${["national_id","driver_license"].includes(selectedApp.id_document_type) ? " (Required)" : " (Optional for passport)"}`} type="image" />
+                  <SignedMediaItem r2Key={selectedApp.selfie_with_id_r2_key} label="Selfie with ID" type="image" />
+
+                  {/* Legacy URL fallback */}
+                  {selectedApp.id_document_url && !selectedApp.id_document_front_r2_key && !selectedApp.id_document_r2_key && (
                     <div>
                       <Label className="text-xs text-muted-foreground">Legacy Uploaded Document</Label>
                       <img src={selectedApp.id_document_url} alt="Legacy ID" className="w-40 h-40 object-cover rounded border border-border mt-1" />
                     </div>
                   )}
-                  {!selectedApp.id_document_r2_key && !selectedApp.id_document_url && (
+
+                  {/* No ID at all */}
+                  {!selectedApp.id_document_front_r2_key && !selectedApp.id_document_r2_key && !selectedApp.id_document_url && (
                     <div className="text-red-400 text-xs flex items-center gap-1.5">
                       <AlertTriangle className="w-3.5 h-3.5" /> No ID document uploaded — applicant must be contacted.
                     </div>
                   )}
-                  {selectedApp.id_document_r2_key && (
+
+                  {/* Verify button — requires front + selfie at minimum */}
+                  {(selectedApp.id_document_front_r2_key || selectedApp.id_document_r2_key) && selectedApp.selfie_with_id_r2_key && (
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" onClick={() => handleStatusUpdate(selectedApp.id, selectedApp.status, { compliance_upload_status: "verified" })}>
                         <CheckCircle className="w-3.5 h-3.5 mr-1 text-emerald-400" /> Mark ID Verified
                       </Button>
                     </div>
+                  )}
+                  {(selectedApp.id_document_front_r2_key || selectedApp.id_document_r2_key) && !selectedApp.selfie_with_id_r2_key && (
+                    <p className="text-orange-400 text-xs flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Selfie with ID required before verifying.
+                    </p>
                   )}
                 </div>
               )}
@@ -459,20 +538,72 @@ export default function Applications() {
               {/* ── CONTACT tab ──────────────────────────────────────── */}
               {activeTab === "contact" && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
+                  {/* Contact info + copy */}
+                  <div className="bg-secondary rounded-lg p-3 space-y-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground text-xs">Email</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-foreground">{selectedApp.email}</span>
+                        <button onClick={() => { copyToClipboard(selectedApp.email); toast.success("Email copied"); }} className="text-muted-foreground hover:text-foreground"><Copy className="w-3 h-3" /></button>
+                      </div>
+                    </div>
+                    {selectedApp.whatsapp_number && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground text-xs">WhatsApp</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-foreground">{selectedApp.whatsapp_number}</span>
+                          <button onClick={() => { copyToClipboard(selectedApp.whatsapp_number); toast.success("WhatsApp copied"); }} className="text-muted-foreground hover:text-foreground"><Copy className="w-3 h-3" /></button>
+                        </div>
+                      </div>
+                    )}
+                    {selectedApp.phone && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground text-xs">Phone</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-foreground">{selectedApp.phone}</span>
+                          <button onClick={() => { copyToClipboard(selectedApp.phone); toast.success("Phone copied"); }} className="text-muted-foreground hover:text-foreground"><Copy className="w-3 h-3" /></button>
+                        </div>
+                      </div>
+                    )}
+                    {selectedApp.contacted_at && (
+                      <div className="flex items-center justify-between pt-1 border-t border-border">
+                        <span className="text-muted-foreground text-xs">Last contacted</span>
+                        <span className="text-purple-400 text-xs">{format(new Date(selectedApp.contacted_at), "MMM d, yyyy HH:mm")} via {selectedApp.last_contact_method || "—"}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="grid grid-cols-2 gap-2">
                     <a href={`mailto:${selectedApp.email}`} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" className="w-full text-sm">
-                        <Mail className="w-4 h-4 mr-2" /> Email Applicant
+                      <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => handleMarkContacted("email")}>
+                        <Mail className="w-3.5 h-3.5 mr-1.5" /> Email
                       </Button>
                     </a>
-                    {selectedApp.phone && (
-                      <a href={`tel:${selectedApp.phone}`}>
-                        <Button variant="outline" className="w-full text-sm">
-                          <Phone className="w-4 h-4 mr-2" /> Call / Message
+                    {(selectedApp.whatsapp_number || selectedApp.phone) && (() => {
+                      const num = (selectedApp.whatsapp_number || selectedApp.phone).replace(/[^0-9+]/g, "");
+                      const msg = encodeURIComponent(`Hi ${selectedApp.applicant_name}, thank you for your FLESHLAB application. We would like to continue your review.`);
+                      return (
+                        <a href={`https://wa.me/${num}?text=${msg}`} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" size="sm" className="w-full text-xs border-emerald-600/40 text-emerald-400 hover:bg-emerald-600/10" onClick={() => handleMarkContacted("whatsapp")}>
+                            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 mr-1.5 fill-current"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                            WhatsApp
+                          </Button>
+                        </a>
+                      );
+                    })()}
+                    {(selectedApp.phone || selectedApp.whatsapp_number) && (
+                      <a href={`tel:${selectedApp.phone || selectedApp.whatsapp_number}`}>
+                        <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => handleMarkContacted("phone")}>
+                          <PhoneCall className="w-3.5 h-3.5 mr-1.5" /> Call
                         </Button>
                       </a>
                     )}
+                    <Button variant="outline" size="sm" className="w-full text-xs border-purple-600/40 text-purple-400 hover:bg-purple-600/10" onClick={() => handleMarkContacted("manual")}>
+                      <CheckCircle className="w-3.5 h-3.5 mr-1.5" /> Mark Contacted
+                    </Button>
                   </div>
+
                   <div>
                     <Label className="text-xs text-muted-foreground mb-1.5 block">Log Contact Attempt</Label>
                     <Textarea value={contactMsg} onChange={e => setContactMsg(e.target.value)} placeholder="e.g. Emailed 2026-06-04 — asked to upload missing videos. Awaiting reply." className="min-h-[80px]" />
@@ -497,7 +628,7 @@ export default function Applications() {
                 <div className="flex gap-2 flex-wrap">
                   <Button variant="outline" size="sm"
                     onClick={() => handleStatusUpdate(selectedApp.id, "reviewing")}
-                    disabled={selectedApp.status === "reviewing" || !selectedApp.id_document_r2_key}>
+                    disabled={selectedApp.status === "reviewing" || (!selectedApp.id_document_front_r2_key && !selectedApp.id_document_r2_key)}>
                     <MessageSquare className="w-3.5 h-3.5 mr-1" /> Start Review
                   </Button>
                   <Button variant="outline" size="sm"
@@ -511,9 +642,9 @@ export default function Applications() {
                     <XCircle className="w-3.5 h-3.5 mr-1 text-red-400" /> Reject
                   </Button>
                 </div>
-                {!selectedApp.id_document_r2_key && selectedApp.status !== "reviewing" && (
+                {!selectedApp.id_document_front_r2_key && !selectedApp.id_document_r2_key && selectedApp.status !== "reviewing" && (
                   <p className="text-orange-400 text-xs flex items-center gap-1.5">
-                    <AlertTriangle className="w-3.5 h-3.5" /> ID document required before moving to Review.
+                    <AlertTriangle className="w-3.5 h-3.5" /> ID front required before moving to Review.
                   </p>
                 )}
                 {selectedApp.status === "approved" && (
