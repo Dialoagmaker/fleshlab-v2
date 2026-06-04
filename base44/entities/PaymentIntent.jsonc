@@ -1,0 +1,116 @@
+{
+  "name": "PaymentIntent",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "title": "User ID"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "ccbill",
+        "segpay",
+        "mock"
+      ],
+      "title": "Payment Provider"
+    },
+    "payment_type": {
+      "type": "string",
+      "enum": [
+        "fanclub",
+        "ppv",
+        "guest_production_deposit"
+      ],
+      "title": "Payment Type"
+    },
+    "plan_id": {
+      "type": "string",
+      "title": "Fanclub Plan ID",
+      "description": "For fanclub memberships only"
+    },
+    "video_id": {
+      "type": "string",
+      "title": "Video ID",
+      "description": "For PPV unlocks only"
+    },
+    "application_id": {
+      "type": "string",
+      "title": "Guest Production Application ID",
+      "description": "For guest production deposits only"
+    },
+    "price_tier": {
+      "type": "string",
+      "title": "Price Tier",
+      "description": "For PPV: short_solo | standard | premium"
+    },
+    "amount": {
+      "type": "number",
+      "title": "Amount (USD)"
+    },
+    "currency": {
+      "type": "string",
+      "title": "Currency",
+      "default": "usd"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "completed",
+        "failed",
+        "cancelled",
+        "refunded"
+      ],
+      "title": "Status",
+      "default": "pending"
+    },
+    "provider_session_id": {
+      "type": "string",
+      "title": "Provider Session ID"
+    },
+    "checkout_url": {
+      "type": "string",
+      "title": "Checkout URL"
+    },
+    "return_url": {
+      "type": "string",
+      "title": "Return URL (success)"
+    },
+    "cancel_url": {
+      "type": "string",
+      "title": "Cancel URL"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Completed At"
+    },
+    "failed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Failed At"
+    },
+    "cancelled_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Cancelled At"
+    },
+    "error_message": {
+      "type": "string",
+      "title": "Error Message"
+    },
+    "metadata": {
+      "type": "string",
+      "title": "Metadata (JSON)"
+    }
+  },
+  "required": [
+    "user_id",
+    "provider",
+    "payment_type",
+    "amount",
+    "currency",
+    "status"
+  ]
+}
