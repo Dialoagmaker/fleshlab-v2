@@ -168,25 +168,25 @@ export default function SignContract() {
         </div>
 
         {/* Contract Content */}
-        <Card className="max-w-3xl mx-auto">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              {contract?.title || "Contract"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-           <div 
-             className="max-h-[60vh] overflow-y-auto p-6 bg-card rounded-lg border border-border text-foreground text-sm leading-relaxed"
-             dangerouslySetInnerHTML={{ __html: contract?.generated_html || "" }}
-             style={{
-               wordWrap: "break-word",
-               overflowWrap: "break-word",
-               whiteSpace: "pre-wrap"
-             }}
-           />
-          </CardContent>
-        </Card>
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-4">
+            <h2 className="text-2xl font-bold text-foreground">{contract?.title || "Contract"}</h2>
+          </div>
+          <div 
+            className="max-h-[65vh] overflow-y-auto p-2 bg-background rounded-lg"
+            style={{
+              background: "#f0f0f0",
+            }}
+          >
+            <div 
+              className="bg-white rounded shadow-lg"
+              style={{
+                minHeight: "800px",
+              }}
+              dangerouslySetInnerHTML={{ __html: contract?.generated_html || "" }}
+            />
+          </div>
+        </div>
 
         {/* Signature Form */}
         <Card className="max-w-3xl mx-auto">

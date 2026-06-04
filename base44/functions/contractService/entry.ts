@@ -300,6 +300,20 @@ Deno.serve(async (req) => {
       
       console.log(`All required fields present for contract creation. Performer: ${performer_id}`);
 
+      // Validate required fields for contract generation
+      const requiredFields = [];
+      if (!legalName) requiredFields.push('legal_name');
+      if (!application.date_of_birth && !data.date_of_birth) requiredFields.push('date_of_birth');
+      if (!application.city && !data.address) requiredFields.push('address or city');
+      if (!application.email) requiredFields.push('email');
+      
+      if (requiredFields.length > 0) {
+        return Response.json({
+          error: `Cannot generate contract: ${requiredFields.join(', ')} is missing`,
+          missing_fields: requiredFields,
+        }, { status: 400 });
+      }
+
       // Build variables from application data
       const today = new Date().toISOString().split('T')[0];
       const variables = {
@@ -307,21 +321,14 @@ Deno.serve(async (req) => {
         studio_email: data.studio_email || 'legal@fleshlab.online',
         legal_name: legalName || application.applicant_name,
         stage_name: application.applicant_name,
-        date_of_birth: application.date_of_birth || data.date_of_birth || '[DOB]',
+        date_of_birth: application.date_of_birth || data.date_of_birth,
+        nationality: application.nationality || '[NOT PROVIDED]',
         address: data.address || `${application.city || ''}, ${application.nationality || ''}`.trim(),
         email: application.email,
         phone_or_messenger: data.phone_or_messenger || application.phone || application.whatsapp_number || '[PHONE]',
-        id_number: data.id_number || '[NOT PROVIDED]',
+        id_number: data.id_number || 'Verified ID on file',
         contract_model: data.contract_model || 'full_management',
-        // Additional defaults
-        original_contract_date: data.original_contract_date || '[ORIGINAL CONTRACT DATE]',
-        contract_number: data.contract_number || '[CONTRACT NUMBER]',
-        termination_date: data.termination_date || '[TERMINATION DATE]',
-        settlement_amount: data.settlement_amount || '[AMOUNT]',
-        settlement_amount_words: data.settlement_amount_words || '[AMOUNT IN WORDS]',
-        payment_due_days: data.payment_due_days || '30',
-        takedown_deadline_days: data.takedown_deadline_days || '30',
-        signature_date: today,
+        revenue_share_percentage: 70,
       };
 
       // Render template
