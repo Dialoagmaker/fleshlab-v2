@@ -853,9 +853,11 @@ export default function Applications() {
                         const hasPerformer = selectedApp.admin_notes?.includes('Performer created:');
                         const hasLegalName = selectedApp.legal_name || selectedApp.message?.match(/Legal Name:\s*([^\n]+)/i);
                         const hasDOB = selectedApp.date_of_birth;
-                        const hasIdFront = selectedApp.id_document_front_r2_key || selectedApp.id_document_r2_key;
+                        const hasAddress = selectedApp.city || selectedApp.address;
+                        const hasEmail = selectedApp.email;
                         const isApproved = selectedApp.status === 'approved';
                         
+                        // Backend requires: legal_name, date_of_birth, address, email
                         // If manually approved by admin, trust their judgment - only require performer profile
                         if (isApproved) {
                           if (!hasPerformer) missingFields.push('Performer profile (create first)');
@@ -864,7 +866,8 @@ export default function Applications() {
                           if (!hasPerformer) missingFields.push('Performer profile (create first)');
                           if (!hasLegalName) missingFields.push('Legal name');
                           if (!hasDOB) missingFields.push('Date of birth');
-                          if (!hasIdFront) missingFields.push('ID front document');
+                          if (!hasAddress) missingFields.push('Address/City');
+                          if (!hasEmail) missingFields.push('Email');
                         }
                         
                         const canCreate = missingFields.length === 0;
