@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Play, Check, Star, Film, Heart, Globe, TrendingUp, DollarSign } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { Check, Film, Shield, Users, TrendingUp, Star, ChevronRight, Crown } from "lucide-react";
 import SEOMeta from "@/components/SEOMeta";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,58 +13,46 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
-// Asian countries filter
-const ASIAN_COUNTRIES = ["PH", "Philippines", "PHL", "CN", "China", "CHN", "JP", "Japan", "JPN", "KR", "Korea", "KOR", "TH", "Thailand", "THA", "VN", "Vietnam", "VNM", "ID", "Indonesia", "IDN", "MY", "Malaysia", "MYS", "SG", "Singapore", "SGP", "TW", "Taiwan", "TWN", "HK", "Hong Kong", "HKG", "IN", "India", "IND", "PK", "Pakistan", "PAK", "BD", "Bangladesh", "BGD", "LK", "Sri Lanka", "LKA", "KH", "Cambodia", "KHM", "LA", "Laos", "LAO", "MM", "Myanmar", "MMR", "MN", "Mongolia", "MNG", "NP", "Nepal", "NPL", "BT", "Bhutan", "BTN", "MV", "Maldives", "MDV", "BN", "Brunei", "BRN", "TL", "Timor", "TLS", "MO", "Macau", "MAC"];
-
-// Real video data from FLESHLAB (only high quality with proper assets)
-const REAL_VIDEOS = [
-  { title: "Wild Asian Twink Jacking Off", thumbnail: "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/pinkboys-studios/thumbnails/mj1.jpg" },
-  { title: "Asian Twink Fucks His Own Ass", thumbnail: "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/pinkboys-studios/thumbnails/DialogMaxX_BI-Alex---Wanking-in-the-School-Locker-Room.jpg" },
-  { title: "Twink's Wild Orgasmic Solo Release", thumbnail: "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/pinkboys-studios/thumbnails/DialogMaxX_Cute-Raven---hunky-Asian-twink-lying-touching-and-cumming.jpg" },
-  { title: "Naked Asian Stud Jerks Off Post-Shower", thumbnail: "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/pinkboys-studios/thumbnails/DialogMaxX_Cute-Raven---hunky-asian-touches-and-shoots-in-shower.jpg" },
+// Real FLESHLAB performer thumbnails / video assets used as visual proof
+const PROOF_IMAGES = [
+  "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/pinkboys-studios/thumbnails/mj1.jpg",
+  "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/pinkboys-studios/thumbnails/DialogMaxX_BI-Alex---Wanking-in-the-School-Locker-Room.jpg",
+  "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/pinkboys-studios/thumbnails/DialogMaxX_Cute-Raven---hunky-Asian-twink-lying-touching-and-cumming.jpg",
+  "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/pinkboys-studios/thumbnails/DialogMaxX_Cute-Raven---hunky-asian-touches-and-shoots-in-shower.jpg",
+  "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a761ba968_generated_image.png",
+  "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/adcb70e7a_generated_image.png",
 ];
 
-// Behind the scenes lifestyle images
-const BTS_IMAGES = [
-  { label: "Content Creation", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a761ba968_generated_image.png" },
-  { label: "Smartphone Filming", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/c640eee81_generated_image.png" },
-  { label: "Amateur Productions", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/1e0d2168a_generated_image.png" },
-  { label: "Live Cam Setup", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/d790d5a3b_generated_image.png" },
-  { label: "Studio Sessions", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/adcb70e7a_generated_image.png" },
-  { label: "Creator Workflow", image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/923c82eb8_generated_image.png" },
+const TIMELINE_STEPS = [
+  { num: "01", label: "Apply",               desc: "Submit your application with contact details and experience." },
+  { num: "02", label: "Verification",         desc: "Identity verification and 18+ age confirmation required." },
+  { num: "03", label: "Compatibility Review", desc: "Studio reviews your profile and production fit." },
+  { num: "04", label: "Production Planning",  desc: "Scene planning, boundaries and consent documentation." },
+  { num: "05", label: "Filming",              desc: "Professional studio production with full safety protocols." },
+  { num: "06", label: "Publishing & Promotion", desc: "Content published on FLESHLAB and promoted across platforms." },
+  { num: "07", label: "Brand Growth",         desc: "Ongoing performer profile visibility, PPV and fanclub access." },
 ];
 
 export default function BecomePerformer() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    stage_name: "",
-    legal_name: "",
-    age_confirmed: false,
-    country: "",
-    city: "",
-    email: "",
-    phone: "",
-    interests: [],
-    experience: "",
-    social_links: "",
-    consent_confirmed: false,
-    privacy_accepted: false,
+    stage_name: "", legal_name: "", age_confirmed: false,
+    country: "", city: "", email: "", phone: "",
+    interests: [], experience: "", social_links: "",
+    consent_confirmed: false, privacy_accepted: false,
   });
 
-  // Load real performers from database (Asian only)
   const { data: allPerformers = [] } = useQuery({
-    queryKey: ['performers'],
+    queryKey: ['performers-bp'],
     queryFn: () => base44.entities.Performer.list(),
   });
-  
-  // Filter to Filipino performers only (excluding Josh and Emjey)
-  const FILIPINO_COUNTRIES = ["PH", "Philippines", "PHL", "Filipino"];
+
   const filipinoPerformers = allPerformers.filter(p => {
-    const nationality = (p.nationality || "").toUpperCase();
+    const nat = (p.nationality || "").toUpperCase();
     const name = (p.display_name || "").toLowerCase();
-    return FILIPINO_COUNTRIES.some(country => nationality.includes(country.toUpperCase())) &&
-           !name.includes("josh") && !name.includes("emjey");
-  });
+    return (nat.includes("PH") || nat.includes("PHILIPPINES") || nat.includes("FILIPINO")) &&
+           !name.includes("josh") && !name.includes("emjey") && p.profile_image_url;
+  }).slice(0, 8);
 
   const submitMutation = useMutation({
     mutationFn: async (data) => {
@@ -91,493 +78,363 @@ export default function BecomePerformer() {
     },
   });
 
-  const canSubmit = () => {
-    return formData.stage_name && formData.legal_name && formData.age_confirmed &&
-           formData.country && formData.email && formData.consent_confirmed && formData.privacy_accepted;
-  };
+  const canSubmit = () =>
+    formData.stage_name && formData.legal_name && formData.age_confirmed &&
+    formData.country && formData.email && formData.consent_confirmed && formData.privacy_accepted;
 
   return (
     <>
       <SEOMeta
-        title="Become a Gay Adult Performer | FLESHLAB Studios"
-        description="Join FLESHLAB Studios as a performer. Gay/bi/queer Asian creators wanted. Create adult content, build fans, earn revenue. Apply in 3 minutes."
+        title="Become a FLESHLAB Performer | Apply Now"
+        description="Apply to become a verified 18+ adult performer with FLESHLAB Studios. Professional studio production, performer branding, fanclub visibility and PPV monetization."
         canonical="/become-performer"
         ogImage="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png"
-        jsonLd={{
-          "@context": "https://schema.org",
-          "@type": "WebPage",
-          "name": "Become a FLESHLAB Studios Performer",
-          "description": "Performer application page"
-        }}
+        jsonLd={{ "@context": "https://schema.org", "@type": "WebPage", "name": "Become a FLESHLAB Studios Performer" }}
       />
-      <div className="min-h-screen bg-background">
-      {/* ACT 1: HERO - Cinematic Production Environment */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        <div 
-          className="absolute inset-0 z-0"
-          style={{
-            backgroundImage: 'url(https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background z-0" />
-        
-        <div className="max-w-6xl mx-auto px-6 text-center relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <h1 className="text-8xl md:text-[12rem] font-black text-foreground mb-8 leading-none tracking-tighter">
-              FLESHLAB<br />
-              <span className="text-primary">TALENT</span>
-            </h1>
-            <Button
-              size="lg"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-12 py-8 text-xl shadow-2xl shadow-primary/40 mt-12"
-              onClick={() => document.getElementById('roster')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              MEET THE PERFORMERS
-            </Button>
-          </motion.div>
-        </div>
-      </section>
 
-      {/* ACT 2: THE ROSTER - Real Performers from Database */}
-      <section id="roster" className="py-32 px-6 bg-background">
-        <div className="max-w-[1800px] mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-20"
-          >
-            <h2 className="text-6xl md:text-8xl font-black text-foreground mb-6">
-              MEET THE<br />
-              <span className="text-primary">MEN OF FLESHLAB</span>
-            </h2>
-          </motion.div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-            {filipinoPerformers.map((performer, idx) => (
-              <motion.div
-                key={performer.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: idx * 0.05 }}
-                className="group relative overflow-hidden aspect-[3/4]"
-              >
-                <img
-                  src={performer.profile_image_url || "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png"}
-                  alt={performer.display_name}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                  <h3 className="text-sm font-black text-foreground mb-1 line-clamp-2">{performer.display_name}</h3>
-                  <p className="text-xs text-muted-foreground">{performer.nationality}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <div className="min-h-screen bg-[#080808] text-white">
 
-      {/* ACT 3: LATEST PRODUCTIONS - Real Content */}
-      <section className="py-32 px-6 bg-card/30">
-        <div className="max-w-[1800px] mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-20"
-          >
-            <h2 className="text-6xl md:text-8xl font-black text-foreground mb-6">
-              LATEST<br />
-              <span className="text-primary">PRODUCTIONS</span>
-            </h2>
-          </motion.div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {REAL_VIDEOS.map((video, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: idx * 0.05 }}
-                className="group relative overflow-hidden aspect-video cursor-pointer"
-              >
-                <img
-                  src={video.thumbnail}
-                  alt={video.title}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center">
-                    <Play className="w-10 h-10 text-primary-foreground fill-current" />
-                  </div>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <h3 className="text-lg font-bold text-foreground line-clamp-2">{video.title}</h3>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+        {/* ── HERO ─────────────────────────────────────────────────────── */}
+        <section className="relative min-h-[85vh] flex items-center overflow-hidden">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: "url(https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png)",
+              backgroundSize: "cover",
+              backgroundPosition: "center top",
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#080808] via-[#080808]/85 to-[#080808]/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#080808] via-transparent to-transparent" />
 
-      {/* ACT 4: LIFE INSIDE FLESHLAB - Behind The Scenes */}
-      <section className="py-32 px-6 bg-background">
-        <div className="max-w-[1800px] mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-20"
-          >
-            <h2 className="text-6xl md:text-8xl font-black text-foreground mb-6">
-              LIFE INSIDE<br />
-              <span className="text-primary">FLESHLAB</span>
-            </h2>
-          </motion.div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {BTS_IMAGES.map((item, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: idx * 0.05 }}
-                className="group relative overflow-hidden aspect-square"
-              >
-                <img
-                  src={item.image}
-                  alt={item.label}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <p className="text-sm font-bold text-foreground">{item.label}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+          <div className="relative max-w-[1280px] mx-auto px-6 py-24 w-full">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 bg-rose-600/15 border border-rose-600/30 rounded-full px-4 py-1.5 mb-8">
+                <Film className="w-4 h-4 text-rose-400" />
+                <span className="text-rose-300 text-sm font-semibold tracking-widest uppercase">Performer Application</span>
+              </div>
 
-      {/* ACT 5: WHY PEOPLE JOIN - Outcomes */}
-      <section className="py-32 px-6 bg-card/30">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-20"
-          >
-            <h2 className="text-6xl md:text-8xl font-black text-foreground mb-6">
-              WHY PEOPLE<br />
-              <span className="text-primary">JOIN</span>
-            </h2>
-          </motion.div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              { icon: TrendingUp, title: "Audience Growth", desc: "Build a dedicated fanbase" },
-              { icon: Globe, title: "Distribution", desc: "Multi-platform reach" },
-              { icon: Heart, title: "Fanclubs", desc: "Recurring revenue" },
-              { icon: DollarSign, title: "Revenue Streams", desc: "Multiple income sources" },
-              { icon: Film, title: "Professional Productions", desc: "High-quality content" },
-              { icon: Star, title: "Brand Building", desc: "Long-term career growth" },
-            ].map((item, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: idx * 0.05 }}
-                className="p-8 rounded-none bg-background border-l-2 border-primary"
-              >
-                <item.icon className="w-12 h-12 text-primary mb-6" />
-                <h3 className="text-2xl font-bold text-foreground mb-3">{item.title}</h3>
-                <p className="text-muted-foreground">{item.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+              <h1 className="text-5xl md:text-7xl font-black leading-[1.0] tracking-tight mb-6">
+                READY TO BECOME<br />
+                A <span className="text-rose-500">FLESHLAB</span><br />
+                PERFORMER?
+              </h1>
 
-      {/* ACT 6: EXCLUSIVE REPRESENTATION */}
-      <section className="py-32 px-6 bg-background">
-        <div className="max-w-5xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <Star className="w-20 h-20 text-primary mx-auto mb-8" />
-            <h2 className="text-6xl md:text-8xl font-black text-foreground mb-8">
-              EXCLUSIVE<br />
-              <span className="text-primary">REPRESENTATION</span>
-            </h2>
-            <div className="space-y-6 max-w-3xl mx-auto text-left">
-              <p className="text-2xl text-muted-foreground leading-relaxed">
-                We do not accept everyone.
+              <p className="text-lg text-white/65 leading-relaxed mb-8 max-w-xl">
+                You have seen how FLESHLAB works. Now it is your turn. Apply to become part of a professional 18+ adult studio platform built around verified performers, premium content, performer branding and long-term visibility.
               </p>
-              <p className="text-2xl text-muted-foreground leading-relaxed">
-                We work with a <span className="text-foreground font-bold">limited number</span> of performers.
-              </p>
-              <p className="text-2xl text-muted-foreground leading-relaxed">
-                We invest heavily in <span className="text-foreground font-bold">selected talent</span>.
-              </p>
-            </div>
-          </motion.div>
-        </div>
-      </section>
 
-      {/* ACT 7: REALITY CHECK */}
-      <section className="py-32 px-6 bg-card/30">
-        <div className="max-w-5xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-6xl md:text-8xl font-black text-foreground mb-12">
-              THE REALITY
-            </h2>
-            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto text-left">
-              {[
-                "Explicit adult content",
-                "Solo productions",
-                "Amateur productions",
-                "Partner productions",
-                "Live cam opportunities",
-                "Fanclub content creation",
-              ].map((item, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, x: idx % 2 === 0 ? -20 : 20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: idx * 0.05 }}
-                  className="flex items-center gap-4 p-6 bg-background"
+              <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                <Button
+                  size="lg"
+                  onClick={() => document.getElementById('application-form')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-10 py-5 rounded-xl h-auto shadow-xl shadow-rose-600/35 text-base"
                 >
-                  <Check className="w-6 h-6 text-primary shrink-0" />
-                  <span className="text-lg text-foreground">{item}</span>
-                </motion.div>
+                  Apply as Performer
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="border-white/20 text-white hover:bg-white/8 font-semibold px-8 py-5 rounded-xl h-auto text-base"
+                >
+                  See How It Works
+                </Button>
+              </div>
+
+              <div className="flex flex-wrap gap-x-5 gap-y-2 text-white/35 text-sm">
+                <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-rose-500/60 shrink-0" />Verified 18+ only</span>
+                <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-rose-500/60 shrink-0" />Performer consent required</span>
+                <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-rose-500/60 shrink-0" />Studio approval</span>
+                <span className="flex items-center gap-1.5"><Film className="w-3.5 h-3.5 text-rose-500/60 shrink-0" />Professional production workflow</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── PROOF — real performer image wall ─────────────────────────── */}
+        {filipinoPerformers.length > 0 && (
+          <section className="py-4 overflow-hidden">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 px-4">
+              {[...filipinoPerformers, ...filipinoPerformers].map((p, i) => (
+                <div key={i} className="relative shrink-0 w-32 h-44 rounded-xl overflow-hidden border border-white/8">
+                  <img src={p.profile_image_url} alt={p.display_name} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                  <span className="absolute bottom-2 left-2 right-2 text-white text-xs font-bold truncate">{p.display_name}</span>
+                </div>
               ))}
             </div>
-          </motion.div>
-        </div>
-      </section>
+          </section>
+        )}
 
-      {/* APPLICATION - At The Very End */}
-      <section id="application-form" className="py-32 px-6 bg-background">
-        <div className="max-w-3xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-5xl md:text-6xl font-black text-foreground mb-4">
-              READY TO<br />
-              <span className="text-primary">JOIN?</span>
-            </h2>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="bg-card border border-border p-10"
-          >
-            <div className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="stage_name">Stage Name (Public)</Label>
-                  <Input
-                    id="stage_name"
-                    value={formData.stage_name}
-                    onChange={(e) => setFormData({ ...formData, stage_name: e.target.value })}
-                    placeholder="Your performer name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="legal_name">Legal Name (Private)</Label>
-                  <Input
-                    id="legal_name"
-                    value={formData.legal_name}
-                    onChange={(e) => setFormData({ ...formData, legal_name: e.target.value })}
-                    placeholder="For contract purposes"
-                  />
-                </div>
+        {/* ── YOU KNOW HOW THE BUSINESS WORKS ──────────────────────────── */}
+        <section className="py-20 px-6 border-t border-white/6">
+          <div className="max-w-[1280px] mx-auto grid lg:grid-cols-2 gap-14 items-center">
+            <div>
+              <h2 className="text-4xl md:text-5xl font-black mb-6">
+                YOU KNOW HOW THE <span className="text-rose-500">BUSINESS WORKS NOW</span>
+              </h2>
+              <div className="space-y-5 text-white/60 text-lg leading-relaxed">
+                <p>FLESHLAB is not just a website with random videos. It is a platform built around adult performers, professional productions, fanclub access, PPV scenes, performer profiles and long-term content visibility.</p>
+                <p className="text-white font-semibold">Fans pay for access.<br />Performers build a public identity.<br />Content becomes part of a growing studio catalogue.</p>
               </div>
-
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Checkbox
-                    checked={formData.age_confirmed}
-                    onCheckedChange={(checked) => setFormData({ ...formData, age_confirmed: checked })}
-                  />
-                  I confirm I am 18+ years old
-                </Label>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="country">Country</Label>
-                  <Input
-                    id="country"
-                    value={formData.country}
-                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                    placeholder="Where you're based"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
-                  <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    placeholder="Your city"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="your@email.com"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone or Messaging App</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="Phone, Telegram, or WhatsApp"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>What interests you? (Select all that apply)</Label>
-                <div className="grid md:grid-cols-2 gap-3">
-                  {[
-                    { value: "studio_scenes", label: "Studio productions" },
-                    { value: "live_cam", label: "Live cam shows" },
-                    { value: "fanclub", label: "Fanclub content" },
-                    { value: "all", label: "All of the above" },
-                    { value: "not_sure", label: "Not sure yet" },
-                  ].map((opt) => (
-                    <div
-                      key={opt.value}
-                      className={`p-4 border cursor-pointer transition-colors ${
-                        formData.interests.includes(opt.value)
-                          ? "border-primary bg-primary/10"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                      onClick={() => {
-                        if (formData.interests.includes(opt.value)) {
-                          setFormData({ ...formData, interests: formData.interests.filter(i => i !== opt.value) });
-                        } else {
-                          setFormData({ ...formData, interests: [...formData.interests, opt.value] });
-                        }
-                      }}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Checkbox checked={formData.interests.includes(opt.value)} readOnly />
-                        <span className="text-sm font-medium">{opt.label}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="experience">Any Experience?</Label>
-                <Textarea
-                  id="experience"
-                  value={formData.experience}
-                  onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
-                  placeholder="Beginners welcome. Pros preferred. Just be honest."
-                  className="min-h-[100px]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="social">Social Links (Optional)</Label>
-                <Textarea
-                  id="social"
-                  value={formData.social_links}
-                  onChange={(e) => setFormData({ ...formData, social_links: e.target.value })}
-                  placeholder="Twitter, Instagram, OnlyFans, etc. Or leave blank."
-                  className="min-h-[60px]"
-                />
-              </div>
-
-              <div className="space-y-4 pt-6 border-t border-border">
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="consent"
-                    checked={formData.consent_confirmed}
-                    onCheckedChange={(checked) => setFormData({ ...formData, consent_confirmed: checked })}
-                  />
-                  <Label htmlFor="consent" className="font-normal text-sm">
-                    I confirm this information is accurate and consent to FLESHLAB contacting me.
-                  </Label>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="privacy"
-                    checked={formData.privacy_accepted}
-                    onCheckedChange={(checked) => setFormData({ ...formData, privacy_accepted: checked })}
-                  />
-                  <Label htmlFor="privacy" className="font-normal text-sm">
-                    I accept the Privacy Policy.
-                  </Label>
-                </div>
-              </div>
-
-              {submitMutation.isError && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{submitMutation.error.message}</AlertDescription>
-                </Alert>
-              )}
-
-              <Button
-                className="w-full"
-                size="lg"
-                disabled={!canSubmit() || submitMutation.isPending}
-                onClick={() => submitMutation.mutate(formData)}
-              >
-                {submitMutation.isPending ? "Submitting..." : "Submit Application"}
-              </Button>
             </div>
-          </motion.div>
-        </div>
-      </section>
-    </div>
+
+            {/* proof grid */}
+            <div className="grid grid-cols-3 gap-2">
+              {PROOF_IMAGES.map((src, i) => (
+                <div key={i} className="aspect-square rounded-lg overflow-hidden border border-white/6">
+                  <img src={src} alt="FLESHLAB production" className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── WHAT FLESHLAB DOES FOR YOU ───────────────────────────────── */}
+        <section className="py-20 px-6 bg-gradient-to-b from-[#0d0d0d] to-[#080808]">
+          <div className="max-w-[1280px] mx-auto">
+            <h2 className="text-4xl md:text-5xl font-black text-center mb-4">
+              WHAT FLESHLAB CAN <span className="text-rose-500">DO FOR YOU</span>
+            </h2>
+            <p className="text-white/45 text-center mb-12 max-w-xl mx-auto text-lg">
+              We do not just film you. We build your performer identity.
+            </p>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-5xl mx-auto">
+              {[
+                { icon: Users,       label: "Performer profile creation",       desc: "A verified public profile that builds your audience over time." },
+                { icon: Film,        label: "Professional content planning",     desc: "Scene planning, location, style and boundary documentation." },
+                { icon: Shield,      label: "Studio production workflow",        desc: "Full safety protocols, contracts, releases and compliance." },
+                { icon: Star,        label: "Scene and boundary planning",       desc: "Your limits, your style, your energy — respected and documented." },
+                { icon: TrendingUp,  label: "Marketing assets",                 desc: "Thumbnails, promos and social content from every production." },
+                { icon: Crown,       label: "Fanclub visibility",               desc: "Your own fanclub space where fans can subscribe for more." },
+                { icon: Film,        label: "PPV monetization",                 desc: "Scenes available as pay-per-view in the FLESHLAB catalogue." },
+                { icon: Star,        label: "Long-term performer positioning",  desc: "An ongoing public identity that grows with each release." },
+              ].map(({ icon: Icon, label, desc }, i) => (
+                <div key={i} className="bg-[#111] border border-white/8 rounded-2xl p-6">
+                  <div className="w-9 h-9 rounded-lg bg-rose-600/15 flex items-center justify-center mb-4">
+                    <Icon className="w-4 h-4 text-rose-400" />
+                  </div>
+                  <div className="font-bold text-white text-sm mb-1.5">{label}</div>
+                  <div className="text-white/45 text-xs leading-relaxed">{desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── IDENTITY STATEMENT ───────────────────────────────────────── */}
+        <section className="py-20 px-6 border-y border-white/6">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-4xl md:text-5xl font-black mb-6">
+              WE DO NOT JUST FILM YOU.<br />
+              <span className="text-rose-500">WE BUILD YOUR PERFORMER IDENTITY.</span>
+            </h2>
+            <p className="text-xl text-white/55 leading-relaxed">
+              A performer is more than a body on camera. Your look, your energy, your style, your limits, your confidence and your audience all matter.
+            </p>
+          </div>
+        </section>
+
+        {/* ── HOW IT WORKS — timeline ──────────────────────────────────── */}
+        <section id="how-it-works" className="py-20 px-6 bg-[#0d0d0d]">
+          <div className="max-w-[1280px] mx-auto">
+            <h2 className="text-4xl md:text-5xl font-black text-center mb-14">
+              HOW IT <span className="text-rose-500">WORKS</span>
+            </h2>
+
+            <div className="max-w-3xl mx-auto space-y-4">
+              {TIMELINE_STEPS.map((step, i) => (
+                <div key={i} className="flex gap-5 items-start">
+                  <div className="shrink-0 w-12 h-12 rounded-xl bg-rose-600/15 border border-rose-600/25 flex items-center justify-center">
+                    <span className="text-rose-400 font-black text-sm">{step.num}</span>
+                  </div>
+                  <div className="pt-2.5">
+                    <div className="font-bold text-white text-base mb-1">{step.label}</div>
+                    <div className="text-white/50 text-sm">{step.desc}</div>
+                  </div>
+                  {i < TIMELINE_STEPS.length - 1 && (
+                    <div className="hidden" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── WHO CAN APPLY ────────────────────────────────────────────── */}
+        <section className="py-20 px-6">
+          <div className="max-w-[1280px] mx-auto grid lg:grid-cols-2 gap-14">
+            <div>
+              <h2 className="text-4xl font-black mb-8">
+                WHO CAN <span className="text-rose-500">APPLY?</span>
+              </h2>
+              <ul className="space-y-4">
+                {[
+                  "18 years or older",
+                  "Comfortable with adult content production",
+                  "Able to provide valid identity verification",
+                  "Able to give clear and informed consent",
+                  "Open to professional production rules and workflows",
+                  "Reliable, communicative and serious about adult work",
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-rose-600/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-3 h-3 text-rose-400" />
+                    </div>
+                    <span className="text-white/70 text-base">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="bg-[#111] border border-white/8 rounded-2xl p-8">
+              <h2 className="text-3xl font-black mb-4">
+                HOW PERFORMERS <span className="text-rose-500">MAY EARN</span>
+              </h2>
+              <p className="text-white/55 text-sm leading-relaxed mb-6">
+                Approved performers may earn through professional adult productions, content participation, PPV scenes, fanclub visibility, promotional campaigns and long-term studio collaboration.
+              </p>
+              <ul className="space-y-3">
+                {[
+                  "Professional adult productions",
+                  "PPV scene catalogue revenue",
+                  "Fanclub membership visibility",
+                  "Promotional campaigns",
+                  "Long-term studio collaboration",
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-white/65 text-sm">
+                    <ChevronRight className="w-4 h-4 text-rose-500/60 shrink-0" />{item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* ── APPLICATION FORM ─────────────────────────────────────────── */}
+        <section id="application-form" className="py-20 px-6 bg-gradient-to-b from-[#0d0d0d] to-[#080808] border-t border-white/6">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl md:text-5xl font-black mb-4">
+                APPLY AS <span className="text-rose-500">PERFORMER</span>
+              </h2>
+              <p className="text-white/50 text-lg">
+                Applications reviewed within 48 hours. All information is kept confidential.
+              </p>
+            </div>
+
+            <div className="bg-[#111] border border-white/8 rounded-2xl p-8 md:p-10">
+              <div className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-white/70">Stage Name (Public)</Label>
+                    <Input value={formData.stage_name} onChange={(e) => setFormData({ ...formData, stage_name: e.target.value })} placeholder="Your performer name" className="bg-white/5 border-white/15 text-white" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white/70">Legal Name (Private)</Label>
+                    <Input value={formData.legal_name} onChange={(e) => setFormData({ ...formData, legal_name: e.target.value })} placeholder="For contract purposes" className="bg-white/5 border-white/15 text-white" />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 bg-rose-600/8 border border-rose-600/20 rounded-xl px-4 py-3">
+                  <Checkbox checked={formData.age_confirmed} onCheckedChange={(v) => setFormData({ ...formData, age_confirmed: v })} />
+                  <span className="text-white/70 text-sm">I confirm I am 18 years or older</span>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-white/70">Country</Label>
+                    <Input value={formData.country} onChange={(e) => setFormData({ ...formData, country: e.target.value })} placeholder="Where you're based" className="bg-white/5 border-white/15 text-white" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-white/70">City</Label>
+                    <Input value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} placeholder="Your city" className="bg-white/5 border-white/15 text-white" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-white/70">Email</Label>
+                  <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="your@email.com" className="bg-white/5 border-white/15 text-white" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-white/70">Phone or Messaging App</Label>
+                  <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="Phone, Telegram, or WhatsApp" className="bg-white/5 border-white/15 text-white" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-white/70">What interests you?</Label>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    {[
+                      { value: "studio_scenes", label: "Studio productions" },
+                      { value: "live_cam",      label: "Live cam shows" },
+                      { value: "fanclub",       label: "Fanclub content" },
+                      { value: "all",           label: "All of the above" },
+                      { value: "not_sure",      label: "Not sure yet" },
+                    ].map((opt) => (
+                      <div
+                        key={opt.value}
+                        className={`p-4 rounded-xl border cursor-pointer transition-colors ${formData.interests.includes(opt.value) ? "border-rose-600/60 bg-rose-600/10" : "border-white/10 hover:border-white/25 bg-white/3"}`}
+                        onClick={() => {
+                          setFormData({ ...formData, interests: formData.interests.includes(opt.value) ? formData.interests.filter(i => i !== opt.value) : [...formData.interests, opt.value] });
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Checkbox checked={formData.interests.includes(opt.value)} readOnly />
+                          <span className="text-sm font-medium text-white/80">{opt.label}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-white/70">Any Experience?</Label>
+                  <Textarea value={formData.experience} onChange={(e) => setFormData({ ...formData, experience: e.target.value })} placeholder="Beginners welcome. Pros preferred. Just be honest." className="min-h-[100px] bg-white/5 border-white/15 text-white" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-white/70">Social Links (Optional)</Label>
+                  <Textarea value={formData.social_links} onChange={(e) => setFormData({ ...formData, social_links: e.target.value })} placeholder="Twitter, Instagram, OnlyFans, etc. Or leave blank." className="min-h-[60px] bg-white/5 border-white/15 text-white" />
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-white/8">
+                  <div className="flex items-start gap-3">
+                    <Checkbox id="consent" checked={formData.consent_confirmed} onCheckedChange={(v) => setFormData({ ...formData, consent_confirmed: v })} />
+                    <Label htmlFor="consent" className="font-normal text-sm text-white/65">
+                      I confirm this information is accurate and consent to FLESHLAB contacting me regarding this application.
+                    </Label>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Checkbox id="privacy" checked={formData.privacy_accepted} onCheckedChange={(v) => setFormData({ ...formData, privacy_accepted: v })} />
+                    <Label htmlFor="privacy" className="font-normal text-sm text-white/65">
+                      I accept the <Link to="/privacy" className="text-rose-400 hover:underline">Privacy Policy</Link>.
+                    </Label>
+                  </div>
+                </div>
+
+                {submitMutation.isError && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{submitMutation.error.message}</AlertDescription>
+                  </Alert>
+                )}
+
+                <Button
+                  className="w-full bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold py-5 rounded-xl text-base h-auto shadow-xl shadow-rose-600/30"
+                  disabled={!canSubmit() || submitMutation.isPending}
+                  onClick={() => submitMutation.mutate(formData)}
+                >
+                  {submitMutation.isPending ? "Submitting..." : "Apply as Performer"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
     </>
   );
 }

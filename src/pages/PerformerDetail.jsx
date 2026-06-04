@@ -8,6 +8,7 @@ import VideoCard from "@/components/public/VideoCard";
 import SEOMeta from "@/components/SEOMeta";
 import PremiumTeaserBlock from "@/components/public/PremiumTeaserBlock";
 import PerformerBadges from "@/components/public/PerformerBadges";
+import FanclubSupportBlock from "@/components/public/FanclubSupportBlock";
 import { generatePerformerTitle, generatePerformerMetaDescription, generatePerformerSEOBio } from "@/lib/performerSeoUtils";
 import { 
   ArrowLeft, 
@@ -499,79 +500,13 @@ export default function PerformerDetail() {
             </div>
           )}
 
-          {/* Fanclub Promo */}
-          {fanclubOrExclusive && (
-            <div>
-              <div className="relative bg-gradient-to-br from-purple-900/40 via-purple-800/20 to-transparent rounded-3xl border border-purple-500/40 p-8 lg:p-12 overflow-hidden">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/15 rounded-full blur-[120px] pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-96 h-96 bg-rose-600/15 rounded-full blur-[120px] pointer-events-none" />
-                
-                <div className="relative z-10 grid lg:grid-cols-2 gap-10 items-center">
-                  <div>
-                    <div className="flex items-center gap-3 mb-5">
-                      <div className="w-14 h-14 bg-purple-600/25 rounded-2xl flex items-center justify-center">
-                        <Crown className="w-7 h-7 text-purple-400" />
-                      </div>
-                      <div>
-                        <h3 className="text-3xl font-bold text-white">
-                          Join {performer.display_name}'s Fanclub
-                        </h3>
-                        <p className="text-purple-300/70 text-base">
-                          Unlock exclusive member-only content
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <ul className="space-y-4 mb-8">
-                      <li className="flex items-start gap-4 text-white/85">
-                        <div className="w-6 h-6 bg-purple-600/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Lock className="w-3.5 h-3.5 text-purple-300" />
-                        </div>
-                        <div>
-                          <span className="font-semibold text-white">Exclusive scenes</span>
-                          <p className="text-white/60 text-sm">Full-length videos not available anywhere else</p>
-                        </div>
-                      </li>
-                      <li className="flex items-start gap-4 text-white/85">
-                        <div className="w-6 h-6 bg-purple-600/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Zap className="w-3.5 h-3.5 text-purple-300" />
-                        </div>
-                        <div>
-                          <span className="font-semibold text-white">Early access</span>
-                          <p className="text-white/60 text-sm">Watch new releases before public launch</p>
-                        </div>
-                      </li>
-                      <li className="flex items-start gap-4 text-white/85">
-                        <div className="w-6 h-6 bg-purple-600/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Heart className="w-3.5 h-3.5 text-purple-300" />
-                        </div>
-                        <div>
-                          <span className="font-semibold text-white">Behind the scenes</span>
-                          <p className="text-white/60 text-sm">Exclusive BTS content and performer updates</p>
-                        </div>
-                      </li>
-                      <li className="flex items-start gap-4 text-white/85">
-                        <div className="w-6 h-6 bg-purple-600/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Star className="w-3.5 h-3.5 text-purple-300" />
-                        </div>
-                        <div>
-                          <span className="font-semibold text-white">Member-only perks</span>
-                          <p className="text-white/60 text-sm">Direct support for {performer.display_name} and special rewards</p>
-                        </div>
-                      </li>
-                    </ul>
-                  </div>
-                  
-                  <div className="flex lg:justify-center">
-                    <Button onClick={handleJoinFanclub} className="w-full lg:w-auto bg-purple-600 hover:bg-purple-700 text-white px-10 py-8 text-xl font-bold shadow-2xl shadow-purple-600/40 gap-3 rounded-2xl">
-                      <Crown className="w-7 h-7" />
-                      {isAuthenticated ? 'Join Fanclub — $12.99/month' : 'Create Account to Join Fanclub'}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Fanclub Support Block — always show, passes all performers for visual row */}
+          <FanclubSupportBlock
+            performerName={performer.display_name}
+            isAuthenticated={isAuthenticated}
+            onJoin={handleJoinFanclub}
+            performers={performers.filter(p => p.profile_image_url && p.id !== performer.id)}
+          />
         </div>
       </div>
     </>
