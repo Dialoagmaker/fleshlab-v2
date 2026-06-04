@@ -24,17 +24,22 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 // ── Server-side authoritative pricing (client CANNOT override) ──────────────
 const SERVER_PRICING = {
   fanclub: {
-    fanclub_monthly: 12.99,
-    fanclub_6mo:     59.99,
-    fanclub_annual:  99.99,
+    fanclub_monthly:  12.99,
+    fanclub_3mo:      29.99,
+    fanclub_6mo:      49.99,
+    fanclub_annual:   89.99,
   },
   ppv: {
-    short_solo: 6.99,
-    standard:   12.99,
-    premium:    19.99,
+    standard:  12.99,
+    premium:   14.99,
+    exclusive: 19.99,
+    bundle:    24.99,
   },
   guest_production_deposit: 999,
 };
+
+// ── Crypto minimum (NOWPayments) ─────────────────────────────────────────────
+const CRYPTO_MINIMUM_USD = 12.99;
 
 // ── URL safety guard (internal paths only) ────────────────────────────────────
 function safeUrl(url) {
@@ -172,15 +177,6 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'applicationId required for guest production deposit' }, { status: 400 });
     }
 
-    // Fanclub monthly plan: NOT supported as one-time NOWPayments pass
-    if (paymentType === 'fanclub' && planId === 'fanclub_monthly') {
-      return Response.json({
-        success: false,
-        providerConfigured: false,
-        message: 'Monthly fanclub subscription requires recurring billing support. Please choose the 6-month or annual access pass.',
-      }, { status: 422 });
-    }
-
     // Resolve amount server-side (client cannot supply this)
     const { amount, error: amountError } = resolveAmount(paymentType, planId, priceTier);
     if (amountError) return Response.json({ error: amountError }, { status: 400 });
@@ -188,6 +184,19 @@ Deno.serve(async (req) => {
     // Validate URLs — internal paths only
     const safeReturn = safeUrl(returnUrl || '/');
     const safeCancel = safeUrl(cancelUrl || '/');
+
+    // ── Crypto minimum guard ─────────────────────────────────────────────────
+    // Block NOWPayments checkout for amounts below CRYPTO_MINIMUM_USD
+    if (amount < CRYPTO_MINIMUM_USD) {
+      return Response.json({
+        success: false,
+        providerConfigured: true,
+        blocked_reason: 'below_crypto_minimum',
+        minimum_usd: CRYPTO_MINIMUM_USD,
+        requested_amount: amount,
+        message: `Crypto payments are available from ${CRYPTO_MINIMUM_USD} USD minimum. Please choose a higher plan or bundle.`,
+      }, { status: 422 });
+    }
 
     // Detect provider
     const provider = detectProvider();

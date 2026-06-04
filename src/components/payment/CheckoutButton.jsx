@@ -92,6 +92,8 @@ export default function CheckoutButton({
       if (data.checkoutUrl) {
         // Redirect to NOWPayments hosted checkout
         window.location.href = data.checkoutUrl;
+      } else if (data.blocked_reason === 'below_crypto_minimum') {
+        setError(data.message || `Crypto payments are available from ${data.minimum_usd || 12.99} USD minimum. Please choose a higher plan or bundle.`);
       } else {
         setError(data.message || 'Checkout could not be started. Please try again.');
       }
