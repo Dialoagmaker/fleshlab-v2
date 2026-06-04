@@ -178,6 +178,15 @@ export default function Applications() {
     return missingFields;
   };
 
+  const handleStatusUpdate = (applicationId, newStatus, extra = {}) => {
+    const updates = { status: newStatus, ...extra };
+    if (newStatus === "reviewing") {
+      updates.media_reviewed_at = new Date().toISOString();
+    }
+    updateMutation.mutate({ id: applicationId, data: updates });
+    setSelectedApp(prev => prev ? { ...prev, ...updates } : prev);
+  };
+
   const handleApprove = () => {
     if (!selectedApp) return;
     
@@ -206,6 +215,37 @@ export default function Applications() {
     
     // All fields complete - proceed with approval
     handleStatusUpdate(selectedApp.id, "approved");
+  };
+
+  const handleSaveContractDataAndApprove = async (approveAfter = false) => {
+    if (!selectedApp) return;
+    
+    const updates = {
+      legal_name: contractFormData.legal_name,
+      date_of_birth: contractFormData.date_of_birth,
+      nationality: contractFormData.nationality,
+      address: contractFormData.address,
+      city: contractFormData.city,
+      country: contractFormData.country,
+      phone: contractFormData.phone,
+    };
+    
+    try {
+      await base44.entities.GuestProductionApplication.update(selectedApp.id, updates);
+      await queryClient.invalidateQueries({ queryKey: ['applications'] });
+      // Update local selectedApp
+      setSelectedApp(prev => prev ? { ...prev, ...updates } : prev);
+      toast.success("Contract data updated");
+      setIsEditingContractData(false);
+      
+      // If approveAfter is true, also approve the application
+      if (approveAfter) {
+        handleStatusUpdate(selectedApp.id, "approved");
+        toast.success("Application approved");
+      }
+    } catch (err) {
+      toast.error(`Failed to save: ${err.message}`);
+    }
   };
 
   const handleAddNote = () => {
