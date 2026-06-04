@@ -254,18 +254,51 @@ Deno.serve(async (req) => {
         }
       }
       
-      // Validate required fields
+      // Validate required fields for contract creation
       const missingFields = [];
-      if (!legalName) missingFields.push('legal_name (from application.legal_name or message)');
-      if (!application.email) missingFields.push('email');
+      
+      // Critical: performer_id must exist
+      if (!performer_id) {
+        missingFields.push('performer_id (create performer profile first)');
+      }
+      
+      // Critical: legal_name
+      if (!legalName) {
+        missingFields.push('legal_name (from application.legal_name or message)');
+      }
+      
+      // Critical: email
+      if (!application.email) {
+        missingFields.push('email');
+      }
+      
+      // Critical: date_of_birth
+      if (!application.date_of_birth && !data.date_of_birth) {
+        missingFields.push('date_of_birth');
+      }
+      
+      // Critical: ID document (front)
+      const hasIdFront = application.id_document_front_r2_key || application.id_document_r2_key;
+      if (!hasIdFront) {
+        missingFields.push('id_document_front (ID verification required)');
+      }
+      
+      // Critical: selfie with ID
+      if (!application.selfie_with_id_r2_key) {
+        missingFields.push('selfie_with_id (compliance required)');
+      }
       
       if (missingFields.length > 0) {
+        console.error(`Contract creation blocked: ${missingFields.join(', ')}`);
         return Response.json({ 
-          error: `Missing required application fields: ${missingFields.join(', ')}. Please update application data first.`,
+          error: `Cannot create contract: ${missingFields.join(', ')}`,
           missing_fields: missingFields,
           application_id: application_id,
+          performer_id: performer_id || null,
         }, { status: 400 });
       }
+      
+      console.log(`All required fields present for contract creation. Performer: ${performer_id}`);
 
       // Build variables from application data
       const today = new Date().toISOString().split('T')[0];

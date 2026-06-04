@@ -275,7 +275,7 @@ export default function Applications() {
     }
   };
 
-  const handleOpenContractDialog = () => {
+  const handleOpenContractDialog = async () => {
     // Pre-fill variables from application
     const today = new Date().toISOString().split('T')[0];
     
@@ -833,22 +833,51 @@ export default function Applications() {
                     </div>
                   ) : (
                     <>
-                      {/* Show warning if missing critical fields */}
-                      {(!selectedApp.legal_name && !selectedApp.admin_notes?.includes('Performer created:')) && (
-                        <div className="mb-2 text-xs text-orange-400 flex items-start gap-1.5">
-                          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                          <span>Legal name required. Either add legal name to application or create a performer profile first.</span>
-                        </div>
-                      )}
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={handleOpenContractDialog} 
-                        className="w-full"
-                        disabled={!selectedApp.legal_name && !selectedApp.admin_notes?.includes('Performer created:')}
-                      >
-                        <FileText className="w-4 h-4 mr-2" /> Create Contract
-                      </Button>
+                      {/* Check missing fields */}
+                      {(() => {
+                        const missingFields = [];
+                        const hasPerformer = selectedApp.admin_notes?.includes('Performer created:');
+                        const hasLegalName = selectedApp.legal_name || selectedApp.message?.match(/Legal Name:\s*([^\n]+)/i);
+                        const hasDOB = selectedApp.date_of_birth;
+                        const hasIdFront = selectedApp.id_document_front_r2_key || selectedApp.id_document_r2_key;
+                        const hasSelfie = selectedApp.selfie_with_id_r2_key;
+                        
+                        if (!hasPerformer) missingFields.push('Performer profile (create first)');
+                        if (!hasLegalName) missingFields.push('Legal name');
+                        if (!hasDOB) missingFields.push('Date of birth');
+                        if (!hasIdFront) missingFields.push('ID front document');
+                        if (!hasSelfie) missingFields.push('Selfie with ID');
+                        
+                        const canCreate = missingFields.length === 0;
+                        
+                        return (
+                          <>
+                            {missingFields.length > 0 && (
+                              <div className="mb-3 bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-xs space-y-1">
+                                <div className="text-red-400 font-semibold flex items-center gap-1.5">
+                                  <AlertTriangle className="w-3.5 h-3.5" />
+                                  Missing before contract creation:
+                                </div>
+                                <ul className="list-disc list-inside text-red-300 ml-1">
+                                  {missingFields.map(field => (
+                                    <li key={field}>{field}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={handleOpenContractDialog} 
+                              className="w-full"
+                              disabled={!canCreate}
+                            >
+                              <FileText className="w-4 h-4 mr-2" /> Create Contract
+                              {!canCreate && <span className="ml-2 text-xs opacity-70">(Missing: {missingFields.slice(0, 2).join(', ')}{missingFields.length > 2 ? '...' : ''})</span>}
+                            </Button>
+                          </>
+                        );
+                      })()}
                     </>
                   )}
                 </div>
