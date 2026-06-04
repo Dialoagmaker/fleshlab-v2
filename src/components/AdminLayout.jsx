@@ -107,7 +107,7 @@ function SidebarContent({ onNavClick }) {
           <span>View Site</span>
         </Link>
         <button
-          onClick={() => base44.auth.logout()}
+          onClick={() => base44.auth.logout("/")}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-red-400 hover:bg-muted transition-colors"
         >
           <LogOut className="w-4 h-4" />
