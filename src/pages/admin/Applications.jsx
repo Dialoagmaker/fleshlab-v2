@@ -913,30 +913,20 @@ export default function Applications() {
                     <>
                       {/* Check missing fields */}
                       {(() => {
-                        const missingFields = [];
                         const hasPerformer = selectedApp.admin_notes?.includes('Performer created:');
-                        const hasLegalName = selectedApp.legal_name;
-                        const hasDOB = selectedApp.date_of_birth;
-                        const hasAddress = selectedApp.address || (selectedApp.city && selectedApp.nationality);
-                        const hasEmail = selectedApp.email;
                         const isApproved = selectedApp.status === 'approved';
                         
-                        // Backend requires: legal_name, date_of_birth, address, email
-                        // If manually approved by admin, trust their judgment - only require performer profile
-                        if (isApproved) {
-                          if (!hasPerformer) missingFields.push('Performer profile (create first)');
-                          if (!hasLegalName) missingFields.push('Legal name');
-                          if (!hasDOB) missingFields.push('Date of birth');
-                          if (!hasAddress) missingFields.push('Full address (or city + country)');
-                          if (!hasEmail) missingFields.push('Email');
-                        } else {
-                          // For non-approved applications, enforce all requirements
-                          if (!hasPerformer) missingFields.push('Performer profile (create first)');
-                          if (!hasLegalName) missingFields.push('Legal name');
-                          if (!hasDOB) missingFields.push('Date of birth');
-                          if (!hasAddress) missingFields.push('Full address (or city + country)');
-                          if (!hasEmail) missingFields.push('Email');
-                        }
+                        // If approved by admin, trust their judgment - only require performer profile
+                        // Admin has already validated the application data manually
+                        const missingFields = isApproved
+                          ? (!hasPerformer ? ['Performer profile (create first)'] : [])
+                          : [
+                              !hasPerformer && 'Performer profile (create first)',
+                              !selectedApp.legal_name && 'Legal name',
+                              !selectedApp.date_of_birth && 'Date of birth',
+                              (!selectedApp.address && !selectedApp.city) && 'Full address (or city + country)',
+                              !selectedApp.email && 'Email',
+                            ].filter(Boolean);
                         
                         const canCreate = missingFields.length === 0;
                         
@@ -953,9 +943,11 @@ export default function Applications() {
                                     <li key={field}>{field}</li>
                                   ))}
                                 </ul>
-                                <p className="text-red-300 text-xs mt-2 pl-4">
-                                  Click "Edit Contract Data" to add missing information.
-                                </p>
+                                {!isApproved && (
+                                  <p className="text-red-300 text-xs mt-2 pl-4">
+                                    Click "Edit Contract Data" to add missing information, or approve the application first.
+                                  </p>
+                                )}
                               </div>
                             )}
                             <Button 
