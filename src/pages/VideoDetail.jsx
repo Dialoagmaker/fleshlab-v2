@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { useAccessControl, PRICING } from "@/lib/useAccessControl";
+import { usePaymentProvider } from "@/hooks/usePaymentProvider";
+import CheckoutButton from "@/components/payment/CheckoutButton";
 import SEOMeta from "@/components/SEOMeta";
 import VideoRail from "@/components/public/VideoRail";
 import PerformerSection from "@/components/public/PerformerSection";
@@ -42,6 +44,7 @@ export default function VideoDetail() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { requireSignup, getCTA } = useAccessControl();
+  const paymentProvider = usePaymentProvider();
   const [playbackUrl, setPlaybackUrl] = useState(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [unlockError, setUnlockError] = useState(null);
@@ -485,10 +488,39 @@ export default function VideoDetail() {
                       : 'Create a free account or subscribe to watch the full video.'}
                   </p>
                   {unlockError && <p className="text-red-400 text-xs mb-2">{unlockError}</p>}
-                  <Button onClick={cta.action} disabled={isUnlocking} className="w-full bg-primary hover:bg-primary/90 text-sm gap-2">
-                    {isUnlocking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
-                    {cta.primaryText}
-                  </Button>
+                  {video.access_tier === 'ppv' ? (
+                    <CheckoutButton
+                      paymentType="ppv"
+                      videoId={video.id}
+                      priceTier="standard"
+                      label={isAuthenticated ? 'Unlock Full Scene' : 'Create Account to Unlock'}
+                      returnUrl={`/videos/${video.slug}`}
+                      cancelUrl={`/videos/${video.slug}`}
+                      isAuthenticated={isAuthenticated}
+                      onRequireAuth={() => requireSignup(window.location.pathname, 'ppv', { videoId: video.id, videoSlug: video.slug, priceTier: 'standard' })}
+                      paymentProvider={paymentProvider}
+                      className="w-full bg-primary hover:bg-primary/90 text-sm"
+                      unavailableLabel="PPV checkout coming soon"
+                    />
+                  ) : video.access_tier === 'fanclub' ? (
+                    <CheckoutButton
+                      paymentType="fanclub"
+                      planId="fanclub_6mo"
+                      label={isAuthenticated ? 'Join Fanclub' : 'Create Account to Join'}
+                      returnUrl="/fanclub"
+                      cancelUrl={`/videos/${video.slug}`}
+                      isAuthenticated={isAuthenticated}
+                      onRequireAuth={() => requireSignup('/fanclub', 'fanclub', { planId: 'fanclub_6mo' })}
+                      paymentProvider={paymentProvider}
+                      className="w-full bg-primary hover:bg-primary/90 text-sm"
+                      unavailableLabel="Fanclub checkout coming soon"
+                    />
+                  ) : (
+                    <Button onClick={cta.action} disabled={isUnlocking} className="w-full bg-primary hover:bg-primary/90 text-sm gap-2">
+                      {isUnlocking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
+                      {cta.primaryText}
+                    </Button>
+                  )}
                   {!isAuthenticated && (
                     <p className="text-xs text-muted-foreground mt-2 text-center">{cta.secondaryText}</p>
                   )}

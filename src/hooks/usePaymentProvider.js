@@ -3,6 +3,7 @@
  *
  * Checks payment provider status on mount.
  * Used by checkout buttons to decide what UI to show.
+ * Returns provider details including checkoutLabel for accurate UI copy.
  */
 
 import { useState, useEffect } from 'react';
@@ -14,6 +15,7 @@ export function usePaymentProvider() {
     configured: false,
     primary: null,
     mode: 'not_configured',
+    checkoutLabel: 'Secure checkout',
     message: '',
   });
 
@@ -26,6 +28,7 @@ export function usePaymentProvider() {
           configured: !!d.configured,
           primary: d.primary || null,
           mode: d.mode || 'not_configured',
+          checkoutLabel: d.checkoutLabel || 'Secure checkout',
           message: d.message || '',
         });
       })
@@ -35,7 +38,8 @@ export function usePaymentProvider() {
           configured: false,
           primary: null,
           mode: 'not_configured',
-          message: 'Payment provider is being configured.',
+          checkoutLabel: 'Secure checkout',
+          message: 'Secure crypto/card checkout is being configured.',
         });
       });
   }, []);

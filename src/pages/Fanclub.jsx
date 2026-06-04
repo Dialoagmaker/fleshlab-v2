@@ -7,7 +7,7 @@ import SEOMeta from "@/components/SEOMeta";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { usePaymentProvider } from "@/hooks/usePaymentProvider";
-import PaymentUnavailableBadge from "@/components/payment/PaymentUnavailableBadge";
+import CheckoutButton from "@/components/payment/CheckoutButton";
 
 export default function Fanclub() {
   const { isAuthenticated } = useAuth();
@@ -15,62 +15,37 @@ export default function Fanclub() {
   const navigate = useNavigate();
   const paymentProvider = usePaymentProvider();
 
-  // Returns the correct CTA element for a Fanclub plan button
-  const FanclubCTA = ({ className }) => {
-    if (!isAuthenticated) {
-      return (
-        <Button size="lg" onClick={() => requireSignup('/fanclub', 'fanclub', { planId: 'fanclub_monthly' })} className={className}>
-          Create Account to Join
-        </Button>
-      );
-    }
-    if (!paymentProvider.loading && !paymentProvider.configured) {
-      return (
-        <PaymentUnavailableBadge
-          label="Secure checkout coming soon"
-          className="w-full justify-center py-3 text-sm"
-        />
-      );
-    }
-    // Provider configured — placeholder for future createCheckoutSession
-    return (
-      <Button size="lg" onClick={() => {}} className={className}>
-        Join Fanclub
-      </Button>
-    );
-  };
+  // Fanclub CTA — planId determines which plan; monthly excluded from NOWPayments
+  const FanclubCTA = ({ planId, className }) => (
+    <CheckoutButton
+      paymentType="fanclub"
+      planId={planId}
+      label={isAuthenticated ? 'Join Fanclub' : 'Create Account to Join'}
+      returnUrl="/fanclub"
+      cancelUrl="/fanclub"
+      isAuthenticated={isAuthenticated}
+      onRequireAuth={() => requireSignup('/fanclub', 'fanclub', { planId })}
+      paymentProvider={paymentProvider}
+      className={className}
+      unavailableLabel="Secure crypto/card checkout coming soon"
+    />
+  );
 
-  // Returns the correct CTA element for a PPV tier button
-  const PPVUnlockCTA = () => {
-    if (!isAuthenticated) {
-      return (
-        <Button
-          size="lg"
-          onClick={() => requireSignup('/videos')}
-          className="w-full bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-600/40 font-bold py-4 rounded-xl"
-        >
-          Create Account to Unlock
-        </Button>
-      );
-    }
-    if (!paymentProvider.loading && !paymentProvider.configured) {
-      return (
-        <PaymentUnavailableBadge
-          label="PPV unlock coming soon"
-          className="w-full justify-center py-3 text-sm"
-        />
-      );
-    }
-    return (
-      <Button
-        size="lg"
-        onClick={() => {}}
-        className="w-full bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-600/40 font-bold py-4 rounded-xl"
-      >
-        Unlock Scene
-      </Button>
-    );
-  };
+  // PPV CTA — shown on fanclub page as tier preview
+  const PPVUnlockCTA = ({ priceTier }) => (
+    <CheckoutButton
+      paymentType="ppv"
+      priceTier={priceTier}
+      label={isAuthenticated ? 'Unlock Scene' : 'Create Account to Unlock'}
+      returnUrl="/videos"
+      cancelUrl="/fanclub"
+      isAuthenticated={isAuthenticated}
+      onRequireAuth={() => requireSignup('/videos', 'ppv', { priceTier })}
+      paymentProvider={paymentProvider}
+      className="w-full bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-600/40 font-bold py-4 rounded-xl"
+      unavailableLabel="PPV unlock coming soon"
+    />
+  );
 
   return (
     <>
@@ -172,7 +147,7 @@ export default function Fanclub() {
                     </li>
                   ))}
                 </ul>
-                <FanclubCTA className="w-full bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 py-6 rounded-xl text-base h-auto shadow-xl shadow-rose-600/50" />
+                <FanclubCTA planId="fanclub_6mo" className="w-full bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 py-6 rounded-xl text-base h-auto shadow-xl shadow-rose-600/50" />
               </div>
 
               {/* Annual Plan - Best Value */}
@@ -202,7 +177,7 @@ export default function Fanclub() {
                     </li>
                   ))}
                 </ul>
-                <FanclubCTA className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold px-8 py-6 rounded-xl text-base h-auto shadow-xl shadow-amber-600/50" />
+                <FanclubCTA planId="fanclub_annual" className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold px-8 py-6 rounded-xl text-base h-auto shadow-xl shadow-amber-600/50" />
               </div>
             </div>
 
@@ -221,7 +196,7 @@ export default function Fanclub() {
                   </div>
                   <p className="text-white/60 text-sm">{PRICING.fanclub.sixMonths.sublabel} — Save 23%</p>
                 </div>
-                <FanclubCTA className="w-full bg-white/10 hover:bg-white/20 text-white font-bold px-8 py-6 rounded-xl text-base h-auto border border-white/20" />
+                <FanclubCTA planId="fanclub_6mo" className="w-full bg-white/10 hover:bg-white/20 text-white font-bold px-8 py-6 rounded-xl text-base h-auto border border-white/20" />
               </div>
             </div>
           </div>
@@ -239,14 +214,14 @@ export default function Fanclub() {
             
             <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               {[
-                PRICING.ppv.short_solo,
-                PRICING.ppv.standard,
-                PRICING.ppv.premium
-              ].map((tier, idx) => (
+                { key: 'short_solo', tier: PRICING.ppv.short_solo },
+                { key: 'standard',   tier: PRICING.ppv.standard },
+                { key: 'premium',    tier: PRICING.ppv.premium },
+              ].map(({ key, tier }, idx) => (
                 <div key={idx} className="bg-[#0a0a0a] border border-white/8 rounded-2xl p-6 text-center">
                   <h3 className="text-lg font-bold text-white mb-3">{tier.label}</h3>
                   <div className="text-4xl font-black text-rose-500 mb-4">${tier.price}</div>
-                  <PPVUnlockCTA />
+                  <PPVUnlockCTA priceTier={key} />
                 </div>
               ))}
             </div>
