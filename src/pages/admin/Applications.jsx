@@ -1095,17 +1095,18 @@ export default function Applications() {
                                     ))}
                                   </ul>
                                   <p className="text-red-300 text-xs mt-2 pl-4">
-                                    Click "Edit Contract Data" to fill in missing information.
+                                    {selectedApp.status === 'approved' 
+                                      ? "Approved, but contract data is incomplete. Click 'Complete Contract Data' to add the missing fields and enable contract generation."
+                                      : "Click 'Complete Contract Data' to fill in missing information before approval."}
                                   </p>
                                 </div>
                                 <Button 
                                   variant="outline" 
                                   size="sm" 
-                                  onClick={handleOpenContractDialog} 
-                                  className="w-full opacity-50 cursor-not-allowed"
-                                  disabled={true}
+                                  onClick={handleOpenEditContractData} 
+                                  className="w-full"
                                 >
-                                  <FileText className="w-4 h-4 mr-2" /> Complete Missing Data First
+                                  <FileText className="w-4 h-4 mr-2" /> Complete Contract Data
                                 </Button>
                               </div>
                             ) : (
@@ -1160,7 +1161,7 @@ export default function Applications() {
                           <AlertTriangle className="w-3.5 h-3.5 mt-0.5" />
                           <span>
                             {selectedApp.status === 'approved' 
-                              ? 'Approved, but contract data incomplete — complete data before contract generation'
+                              ? 'Approved, but contract data is incomplete. Click "Complete Contract Data" to add missing fields and enable contract generation.'
                               : 'Contract data incomplete — complete data before approval'}
                             ({missingContractFields.length} field(s) missing)
                           </span>
@@ -1498,17 +1499,11 @@ export default function Applications() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsEditingContractData(false)}>Cancel</Button>
               <Button 
-                onClick={() => handleSaveContractDataAndApprove(false)}
-                disabled={!contractFormData.legal_name || !contractFormData.date_of_birth || !contractFormData.email || !contractFormData.address || !contractFormData.country}
-                variant="outline"
-              >
-                Save Contract Data
-              </Button>
-              <Button 
-                onClick={() => handleSaveContractDataAndApprove(true)}
+                onClick={() => handleSaveContractDataAndApprove(selectedApp.status !== 'approved')}
                 disabled={!contractFormData.legal_name || !contractFormData.date_of_birth || !contractFormData.email || !contractFormData.address || !contractFormData.country}
               >
-                <CheckCircle className="w-4 h-4 mr-2" /> Save & Approve
+                <CheckCircle className="w-4 h-4 mr-2" /> 
+                {selectedApp.status === 'approved' ? 'Save Contract Data' : 'Save & Approve'}
               </Button>
             </DialogFooter>
           </DialogContent>
