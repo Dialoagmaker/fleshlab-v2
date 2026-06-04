@@ -73,6 +73,7 @@ import Privacy from './pages/Privacy';
 import DMCA from './pages/DMCA';
 import Compliance2257 from './pages/Compliance2257';
 import Imprint from './pages/Imprint';
+import CookiePolicy from './pages/CookiePolicy';
 import PublicPageShell from './components/PublicPageShell';
 
 const AuthenticatedApp = () => {
@@ -295,6 +296,14 @@ const AuthenticatedApp = () => {
     return (
       <PublicPageShell>
         <Imprint />
+      </PublicPageShell>
+    );
+  }
+
+  if (path === "/cookie-policy") {
+    return (
+      <PublicPageShell>
+        <CookiePolicy />
       </PublicPageShell>
     );
   }

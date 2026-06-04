@@ -105,6 +105,11 @@ export default function TubeFooter() {
                   Imprint / Legal Notice
                 </a>
               </li>
+              <li>
+                <a href="/cookie-policy" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  Cookie Policy
+                </a>
+              </li>
             </ul>
           </div>
         </div>
