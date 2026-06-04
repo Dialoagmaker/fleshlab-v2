@@ -87,6 +87,20 @@ function resolveAmount(paymentType, planId, priceTier) {
   return { error: 'Unknown paymentType' };
 }
 
+// ── NOWPayments currency strategy ────────────────────────────────────────────
+// Diagnostic findings (2026-06-04):
+//   - Global NOWPayments minimum when price_currency=usd:  $19.18 for ALL currencies
+//   - When pay_currency=usdttrc20 is set, NOWPayments uses the USDT↔USDT minimum (~$11.23)
+//   - This means pay_currency=usdttrc20 allows $6.99 and $12.99 invoices to be payable
+//   - For amounts ≥ $19.99, omit pay_currency so customer can choose any enabled currency
+// Per-invoice payout_currency is accepted by the API (field tested, invoice created).
+function resolvePayCurrency(priceAmount) {
+  // Below $19.18 floor: force USDTTRC20 — unlocks lower crypto minimum (~$11.23)
+  if (priceAmount < 19.18) return 'usdttrc20';
+  // At or above floor: omit — customer picks from all enabled currencies (BTC/LTC/TRX/USDT/CUSD)
+  return null;
+}
+
 // ── NOWPayments invoice creation ──────────────────────────────────────────────
 async function createNOWPaymentsInvoice({ orderId, priceAmount, description, successUrl, cancelUrl }) {
   const apiKey = Deno.env.get('NOWPAYMENTS_API_KEY');
@@ -95,31 +109,31 @@ async function createNOWPaymentsInvoice({ orderId, priceAmount, description, suc
     ? 'https://api.nowpayments.io/v1'
     : 'https://api-sandbox.nowpayments.io/v1';
 
-  // Build absolute success/cancel URLs from APP_BASE_URL env
   const appBase = (Deno.env.get('APP_BASE_URL') || 'https://fleshlab.online').replace(/\/$/, '');
   const absSuccessUrl = successUrl.startsWith('http') ? successUrl : `${appBase}${successUrl}`;
   const absCancelUrl  = cancelUrl.startsWith('http')  ? cancelUrl  : `${appBase}${cancelUrl}`;
 
+  // Tiered currency strategy: USDTTRC20 for small amounts, open choice for large
+  const payCurrency = resolvePayCurrency(priceAmount);
+
   const body = {
-    price_amount:     priceAmount,
-    price_currency:   'usd',
-    // pay_currency intentionally OMITTED — customer selects from all enabled currencies at checkout
-    // (setting pay_currency=btc causes "no matches" if BTC minimum isn't met for the amount)
-    order_id:         orderId,
+    price_amount:      priceAmount,
+    price_currency:    'usd',
+    order_id:          orderId,
     order_description: description,
-    ipn_callback_url: 'https://api.base44.com/api/apps/68326eff4b3b5d60a8b4f285/functions/paymentWebhook',
-    success_url:      absSuccessUrl,
-    cancel_url:       absCancelUrl,
-    is_fixed_rate:    false,
+    ipn_callback_url:  'https://api.base44.com/api/apps/68326eff4b3b5d60a8b4f285/functions/paymentWebhook',
+    success_url:       absSuccessUrl,
+    cancel_url:        absCancelUrl,
+    is_fixed_rate:     false,
     is_fee_paid_by_user: false,
   };
 
+  // Only set pay_currency for small amounts — avoids "no matches" on amounts below BTC minimum
+  if (payCurrency) body.pay_currency = payCurrency;
+
   const res = await fetch(`${baseUrl}/invoice`, {
     method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'Content-Type': 'application/json',
-    },
+    headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
 
@@ -265,7 +279,7 @@ Deno.serve(async (req) => {
         checkout_url:        invoiceData.invoice_url,
         return_url:          safeReturn,
         cancel_url:          safeCancel,
-        metadata:            JSON.stringify({ order_id: orderId, nowpayments_invoice_id: invoiceData.id }),
+        metadata:            JSON.stringify({ order_id: orderId, nowpayments_invoice_id: invoiceData.id, pay_currency_strategy: resolvePayCurrency(amount) || 'customer_choice' }),
       });
 
       return Response.json({
