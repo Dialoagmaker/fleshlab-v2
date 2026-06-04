@@ -832,47 +832,50 @@ export default function Applications() {
       )}
 
       {/* Create performer confirm */}
-      <Dialog open={isCreatePerformerOpen} onOpenChange={setIsCreatePerformerOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Create Performer Profile</DialogTitle></DialogHeader>
-          <div className="space-y-3 text-sm">
-            <p className="text-muted-foreground">Creates a pending Performer record from this application.</p>
-            <div><strong>Stage Name:</strong> {selectedApp?.applicant_name}</div>
-            <div><strong>Nationality:</strong> {selectedApp?.nationality || "—"}</div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreatePerformerOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreatePerformer}><UserPlus className="w-4 h-4 mr-1" /> Create</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {selectedApp && (
+        <Dialog open={isCreatePerformerOpen} onOpenChange={setIsCreatePerformerOpen}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Create Performer Profile</DialogTitle></DialogHeader>
+            <div className="space-y-3 text-sm">
+              <p className="text-muted-foreground">Creates a pending Performer record from this application.</p>
+              <div><strong>Stage Name:</strong> {selectedApp.applicant_name}</div>
+              <div><strong>Nationality:</strong> {selectedApp.nationality || "—"}</div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCreatePerformerOpen(false)}>Cancel</Button>
+              <Button onClick={handleCreatePerformer}><UserPlus className="w-4 h-4 mr-1" /> Create</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Contract created dialog */}
-      <Dialog open={isCreateContractOpen} onOpenChange={setIsCreateContractOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-green-500" />
-              Contract Created
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="bg-muted p-4 rounded-lg space-y-2 text-sm">
-              <div>
-                <p className="text-muted-foreground text-xs">Contract ID</p>
-                <p className="font-mono text-xs">{contractData?.id}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground text-xs">Applicant</p>
-                <p className="font-medium">{selectedApp?.applicant_name}</p>
-              </div>
-              {contractData?.title && (
+      {selectedApp && (
+        <Dialog open={isCreateContractOpen} onOpenChange={setIsCreateContractOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-500" />
+                Contract Created
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="bg-muted p-4 rounded-lg space-y-2 text-sm">
                 <div>
-                  <p className="text-muted-foreground text-xs">Contract Type</p>
-                  <p className="font-medium">{contractData.title}</p>
+                  <p className="text-muted-foreground text-xs">Contract ID</p>
+                  <p className="font-mono text-xs">{contractData?.id}</p>
                 </div>
-              )}
-            </div>
+                <div>
+                  <p className="text-muted-foreground text-xs">Applicant</p>
+                  <p className="font-medium">{selectedApp.applicant_name}</p>
+                </div>
+                {contractData?.title && (
+                  <div>
+                    <p className="text-muted-foreground text-xs">Contract Type</p>
+                    <p className="font-medium">{contractData.title}</p>
+                  </div>
+                )}
+              </div>
 
             <div className="space-y-2">
               <Label className="text-xs">Signing Link</Label>
@@ -907,9 +910,11 @@ export default function Applications() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      )}
 
       {/* Request Missing Files dialog */}
-      <Dialog open={isRequestFilesOpen} onOpenChange={setIsRequestFilesOpen}>
+      {selectedApp && (
+        <Dialog open={isRequestFilesOpen} onOpenChange={setIsRequestFilesOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1015,6 +1020,7 @@ export default function Applications() {
           </div>
         </DialogContent>
       </Dialog>
+      )}
 
       {/* Template selection dialog */}
       <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
