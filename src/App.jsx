@@ -72,6 +72,7 @@ import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import DMCA from './pages/DMCA';
 import Compliance2257 from './pages/Compliance2257';
+import Imprint from './pages/Imprint';
 import PublicPageShell from './components/PublicPageShell';
 
 const AuthenticatedApp = () => {
@@ -286,6 +287,14 @@ const AuthenticatedApp = () => {
     return (
       <PublicPageShell>
         <Compliance2257 />
+      </PublicPageShell>
+    );
+  }
+
+  if (path === "/imprint") {
+    return (
+      <PublicPageShell>
+        <Imprint />
       </PublicPageShell>
     );
   }

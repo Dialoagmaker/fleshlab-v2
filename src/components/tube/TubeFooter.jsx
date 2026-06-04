@@ -100,6 +100,11 @@ export default function TubeFooter() {
                   {t('footer.compliance2257')}
                 </a>
               </li>
+              <li>
+                <a href="/imprint" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  Imprint / Legal Notice
+                </a>
+              </li>
             </ul>
           </div>
         </div>
