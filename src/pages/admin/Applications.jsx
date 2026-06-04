@@ -253,6 +253,21 @@ export default function Applications() {
 
   const handleCreateContract = async (templateId, variables) => {
     if (!selectedApp) return;
+    
+    // DEBUG: Show current application state
+    console.log('[CONTRACT DEBUG] Application state:', {
+      id: selectedApp.id,
+      applicant_name: selectedApp.applicant_name,
+      legal_name: selectedApp.legal_name,
+      date_of_birth: selectedApp.date_of_birth,
+      city: selectedApp.city,
+      address: selectedApp.address,
+      email: selectedApp.email,
+      status: selectedApp.status,
+      admin_notes: selectedApp.admin_notes?.substring(0, 100),
+      has_performer: selectedApp.admin_notes?.includes('Performer created:'),
+    });
+    
     try {
       // Extract performer_id from admin notes if available
       let performer_id = null;
@@ -260,6 +275,7 @@ export default function Applications() {
         const performerMatch = selectedApp.admin_notes.match(/Performer created:\s*([a-zA-Z0-9]+)/);
         if (performerMatch && performerMatch[1]) {
           performer_id = performerMatch[1];
+          console.log('[CONTRACT] Extracted performer_id from admin notes:', performer_id);
         }
       }
 
@@ -268,7 +284,11 @@ export default function Applications() {
         application_id: selectedApp.id,
         template_id: templateId,
         performer_id,
-        variables,
+        variables_keys: Object.keys(variables),
+        variables_legal_name: variables.legal_name,
+        variables_date_of_birth: variables.date_of_birth,
+        variables_address: variables.address,
+        variables_email: variables.email,
       });
 
       const res = await base44.functions.invoke("contractService", {
@@ -279,7 +299,7 @@ export default function Applications() {
         ...variables,
       });
 
-      console.log('[CONTRACT] Response:', res.data);
+      console.log('[CONTRACT] Response status:', res.data?.success ? 'SUCCESS' : 'ERROR', res.data);
 
       if (res.data?.success) {
         setContractData({
@@ -291,13 +311,15 @@ export default function Applications() {
         toast.success("Contract created");
       } else if (res.data?.error) {
         // Backend returned an error (400) - show detailed message
+        console.error('[CONTRACT] Backend validation failed:', res.data);
         const errorMsg = res.data.missing_fields 
           ? `Cannot create final contract. Missing: ${res.data.missing_fields.join(', ')}`
           : res.data.error;
         toast.error(errorMsg);
       }
     } catch (err) {
-      console.error('[CONTRACT] Error:', err);
+      console.error('[CONTRACT] Exception:', err);
+      console.error('[CONTRACT] Error response:', err.response?.data);
       // Show detailed error message from backend
       const errorMsg = err.response?.data?.error || err.message || 'Failed to create contract';
       const missingFields = err.response?.data?.missing_fields;
@@ -321,6 +343,20 @@ export default function Applications() {
         legalName = legalNameMatch[1].trim();
       }
     }
+    
+    // Debug: Log current application state
+    console.log('[CONTRACT DEBUG] Application state before create:', {
+      application_id: selectedApp.id,
+      applicant_name: selectedApp.applicant_name,
+      status: selectedApp.status,
+      legal_name: selectedApp.legal_name || 'MISSING',
+      date_of_birth: selectedApp.date_of_birth || 'MISSING',
+      address: selectedApp.address || 'MISSING',
+      city: selectedApp.city || 'MISSING',
+      nationality: selectedApp.nationality || 'MISSING',
+      email: selectedApp.email || 'MISSING',
+      admin_notes_has_performer: selectedApp.admin_notes?.includes('Performer created:') || false,
+    });
     
     setContractVariables({
       signing_date: today,
@@ -886,6 +922,33 @@ export default function Applications() {
                 {/* Contract creation */}
                 <div className="border-t border-border pt-4 mt-4">
                   <Label className="text-xs text-muted-foreground block mb-2">Contract</Label>
+                  
+                  {/* DEBUG: Contract Readiness Panel */}
+                  <div className="mb-3 bg-blue-500/5 border border-blue-500/20 rounded-lg p-3 text-xs space-y-2">
+                    <div className="font-semibold text-blue-400 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5" /> Contract Readiness Debug
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-[10px]">
+                      <div className={selectedApp.status === 'approved' ? 'text-green-400' : 'text-orange-400'}>
+                        Status: {selectedApp.status}
+                      </div>
+                      <div className={selectedApp.admin_notes?.includes('Performer created:') ? 'text-green-400' : 'text-orange-400'}>
+                        Performer: {selectedApp.admin_notes?.includes('Performer created:') ? '✓ Linked' : '✗ Missing'}
+                      </div>
+                      <div className={selectedApp.legal_name ? 'text-green-400' : 'text-orange-400'}>
+                        Legal Name: {selectedApp.legal_name || '✗ MISSING'}
+                      </div>
+                      <div className={selectedApp.date_of_birth ? 'text-green-400' : 'text-orange-400'}>
+                        DOB: {selectedApp.date_of_birth || '✗ MISSING'}
+                      </div>
+                      <div className={(selectedApp.address || selectedApp.city) ? 'text-green-400' : 'text-orange-400'}>
+                        Address: {selectedApp.address || selectedApp.city || '✗ MISSING'}
+                      </div>
+                      <div className={selectedApp.email ? 'text-green-400' : 'text-orange-400'}>
+                        Email: {selectedApp.email || '✗ MISSING'}
+                      </div>
+                    </div>
+                  </div>
                   
                   {/* Edit Contract Data Button */}
                   <Button 
