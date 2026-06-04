@@ -941,8 +941,11 @@ export default function Applications() {
                       <div className={selectedApp.date_of_birth ? 'text-green-400' : 'text-orange-400'}>
                         DOB: {selectedApp.date_of_birth || '✗ MISSING'}
                       </div>
-                      <div className={(selectedApp.address || selectedApp.city) ? 'text-green-400' : 'text-orange-400'}>
-                        Address: {selectedApp.address || selectedApp.city || '✗ MISSING'}
+                      <div className={selectedApp.address ? 'text-green-400' : 'text-orange-400'}>
+                        Full Address: {selectedApp.address || '✗ MISSING'}
+                      </div>
+                      <div className={selectedApp.country ? 'text-green-400' : 'text-orange-400'}>
+                        Country: {selectedApp.country || '✗ MISSING'}
                       </div>
                       <div className={selectedApp.email ? 'text-green-400' : 'text-orange-400'}>
                         Email: {selectedApp.email || '✗ MISSING'}
@@ -985,56 +988,58 @@ export default function Applications() {
                       {/* Check missing fields */}
                       {(() => {
                         const hasPerformer = selectedApp.admin_notes?.includes('Performer created:');
-                        const isApproved = selectedApp.status === 'approved';
                         
-                        // If approved by admin, trust their judgment - only require performer profile
-                        // Admin has already validated the application data manually
-                        const missingFields = isApproved
-                          ? (!hasPerformer ? ['Performer profile (create first)'] : [])
-                          : [
-                              !hasPerformer && 'Performer profile (create first)',
-                              !selectedApp.legal_name && 'Legal name',
-                              !selectedApp.date_of_birth && 'Date of birth',
-                              (!selectedApp.address && !selectedApp.city) && 'Full address (or city + country)',
-                              !selectedApp.email && 'Email',
-                            ].filter(Boolean);
+                        // ALL applications require these fields for final contract - no shortcuts
+                        const missingFields = [
+                          !hasPerformer && 'Performer profile (create first)',
+                          !selectedApp.legal_name && 'Legal name',
+                          !selectedApp.date_of_birth && 'Date of Birth',
+                          !selectedApp.address && 'Full Residential Address',
+                          !selectedApp.country && 'Country',
+                          !selectedApp.email && 'Email',
+                        ].filter(Boolean);
                         
                         const canCreate = missingFields.length === 0;
                         
                         return (
                           <>
-                            {missingFields.length > 0 && (
-                              <div className="mb-3 bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-xs space-y-1">
-                                <div className="text-red-400 font-semibold flex items-center gap-1.5">
-                                  <AlertTriangle className="w-3.5 h-3.5" />
-                                  Missing before contract generation:
-                                </div>
-                                <ul className="list-disc list-inside text-red-300 ml-1 space-y-0.5">
-                                  {missingFields.map(field => (
-                                    <li key={field}>{field}</li>
-                                  ))}
-                                </ul>
-                                {!isApproved && (
+                            {missingFields.length > 0 ? (
+                              <div className="space-y-3">
+                                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-xs space-y-1">
+                                  <div className="text-red-400 font-semibold flex items-center gap-1.5">
+                                    <AlertTriangle className="w-3.5 h-3.5" />
+                                    Missing before final contract ({missingFields.length}):
+                                  </div>
+                                  <ul className="list-disc list-inside text-red-300 ml-1 space-y-0.5">
+                                    {missingFields.map(field => (
+                                      <li key={field}>{field}</li>
+                                    ))}
+                                  </ul>
                                   <p className="text-red-300 text-xs mt-2 pl-4">
-                                    Click "Edit Contract Data" to add missing information, or approve the application first.
+                                    Click "Edit Contract Data" to fill in missing information.
                                   </p>
-                                )}
+                                </div>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={handleOpenContractDialog} 
+                                  className="w-full opacity-50 cursor-not-allowed"
+                                  disabled={true}
+                                >
+                                  <FileText className="w-4 h-4 mr-2" /> Complete Missing Data First
+                                </Button>
                               </div>
+                            ) : (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={handleOpenContractDialog} 
+                                className="w-full"
+                                disabled={false}
+                              >
+                                <FileText className="w-4 h-4 mr-2" /> Create Contract
+                              </Button>
                             )}
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={handleOpenContractDialog} 
-                              className="w-full"
-                              disabled={!canCreate}
-                            >
-                              <FileText className="w-4 h-4 mr-2" /> Create Contract
-                              {!canCreate && (
-                                <span className="ml-2 text-xs opacity-70">
-                                  ({missingFields.length} missing)
-                                </span>
-                              )}
-                            </Button>
                           </>
                         );
                       })()}
@@ -1047,12 +1052,39 @@ export default function Applications() {
                     <UserPlus className="w-4 h-4 mr-2" /> Create Performer Profile
                   </Button>
                 )}
-                {selectedApp.admin_notes?.includes('Performer created:') && (
-                  <div className="mt-2 text-xs text-emerald-400 flex items-center gap-1.5">
-                    <CheckCircle className="w-3.5 h-3.5" />
-                    <span>Performer profile linked — ready for contract</span>
-                  </div>
-                )}
+                {selectedApp.admin_notes?.includes('Performer created:') && (() => {
+                  // Check ALL required contract fields
+                  const hasLegalName = !!selectedApp.legal_name;
+                  const hasDOB = !!selectedApp.date_of_birth;
+                  const hasFullAddress = !!selectedApp.address; // Require full address, not just city
+                  const hasEmail = !!selectedApp.email;
+                  const hasCountry = !!selectedApp.country;
+                  
+                  const missingContractFields = [];
+                  if (!hasLegalName) missingContractFields.push('Legal name');
+                  if (!hasDOB) missingContractFields.push('Date of Birth');
+                  if (!hasFullAddress) missingContractFields.push('Full Residential Address');
+                  if (!hasEmail) missingContractFields.push('Email');
+                  if (!hasCountry) missingContractFields.push('Country');
+                  
+                  const isContractReady = missingContractFields.length === 0;
+                  
+                  return (
+                    <div className="mt-3 space-y-2">
+                      {isContractReady ? (
+                        <div className="text-xs text-emerald-400 flex items-center gap-1.5">
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span>Ready for final contract</span>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-amber-400 flex items-start gap-1.5">
+                          <AlertTriangle className="w-3.5 h-3.5 mt-0.5" />
+                          <span>Contract data incomplete — {missingContractFields.length} field(s) missing</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -1270,17 +1302,18 @@ export default function Applications() {
               {(() => {
                 const missingFields = [];
                 if (!contractFormData.legal_name) missingFields.push('Legal name');
-                if (!contractFormData.date_of_birth) missingFields.push('Date of birth');
-                if (!contractFormData.address && !contractFormData.city) missingFields.push('Address or City');
+                if (!contractFormData.date_of_birth) missingFields.push('Date of Birth');
+                if (!contractFormData.address) missingFields.push('Full Residential Address');
+                if (!contractFormData.country) missingFields.push('Country');
                 if (!contractFormData.email) missingFields.push('Email');
                 
                 return missingFields.length > 0 ? (
-                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-xs">
-                    <div className="text-amber-400 font-semibold mb-2 flex items-center gap-1.5">
+                  <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-xs">
+                    <div className="text-red-400 font-semibold mb-2 flex items-center gap-1.5">
                       <AlertTriangle className="w-3.5 h-3.5" />
                       Still missing ({missingFields.length}):
                     </div>
-                    <ul className="list-disc list-inside text-amber-300 space-y-0.5">
+                    <ul className="list-disc list-inside text-red-300 space-y-0.5">
                       {missingFields.map(f => <li key={f}>{f}</li>)}
                     </ul>
                   </div>
@@ -1382,7 +1415,7 @@ export default function Applications() {
               <Button variant="outline" onClick={() => setIsEditingContractData(false)}>Cancel</Button>
               <Button 
                 onClick={handleSaveContractData}
-                disabled={!contractFormData.legal_name || !contractFormData.date_of_birth || !contractFormData.email || (!contractFormData.address && !contractFormData.city)}
+                disabled={!contractFormData.legal_name || !contractFormData.date_of_birth || !contractFormData.email || !contractFormData.address || !contractFormData.country}
               >
                 <CheckCircle className="w-4 h-4 mr-2" /> Save Contract Data
               </Button>
