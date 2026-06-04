@@ -854,13 +854,14 @@ export default function Applications() {
                         const hasLegalName = selectedApp.legal_name || selectedApp.message?.match(/Legal Name:\s*([^\n]+)/i);
                         const hasDOB = selectedApp.date_of_birth;
                         const hasIdFront = selectedApp.id_document_front_r2_key || selectedApp.id_document_r2_key;
-                        const hasSelfie = selectedApp.selfie_with_id_r2_key;
+                        // Selfie with ID is optional - some applicants upload combined photo (holding ID)
+                        // const hasSelfie = selectedApp.selfie_with_id_r2_key;
                         
                         if (!hasPerformer) missingFields.push('Performer profile (create first)');
                         if (!hasLegalName) missingFields.push('Legal name');
                         if (!hasDOB) missingFields.push('Date of birth');
                         if (!hasIdFront) missingFields.push('ID front document');
-                        if (!hasSelfie) missingFields.push('Selfie with ID');
+                        // if (!hasSelfie) missingFields.push('Selfie with ID');
                         
                         const canCreate = missingFields.length === 0;
                         

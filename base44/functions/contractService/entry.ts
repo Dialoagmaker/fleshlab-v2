@@ -283,10 +283,13 @@ Deno.serve(async (req) => {
         missingFields.push('id_document_front (ID verification required)');
       }
       
-      // Critical: selfie with ID
-      if (!application.selfie_with_id_r2_key) {
-        missingFields.push('selfie_with_id (compliance required)');
-      }
+      // Selfie with ID: Optional if ID document already shows person with ID
+      // Some applicants upload a combined photo (holding ID card)
+      // Only require separate selfie if ID document is clearly just the card itself
+      // For now, make this optional to allow flexibility
+      // if (!application.selfie_with_id_r2_key) {
+      //   missingFields.push('selfie_with_id (compliance recommended)');
+      // }
       
       if (missingFields.length > 0) {
         console.error(`Contract creation blocked: ${missingFields.join(', ')}`);
