@@ -214,9 +214,9 @@ export default function Fanclub() {
             
             <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               {[
-                { key: 'short_solo', tier: PRICING.ppv.short_solo },
-                { key: 'standard',   tier: PRICING.ppv.standard },
-                { key: 'premium',    tier: PRICING.ppv.premium },
+                { key: 'standard',  tier: PRICING.ppv.standard },
+                { key: 'premium',   tier: PRICING.ppv.premium },
+                { key: 'exclusive', tier: PRICING.ppv.exclusive },
               ].map(({ key, tier }, idx) => (
                 <div key={idx} className="bg-[#0a0a0a] border border-white/8 rounded-2xl p-6 text-center">
                   <h3 className="text-lg font-bold text-white mb-3">{tier.label}</h3>

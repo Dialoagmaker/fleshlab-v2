@@ -56,24 +56,17 @@ export const PRICING = {
   // PPV unlocks
   ppv: {
     standard: {
-      name: 'Standard PPV Video',
+      name: 'Standard Scene',
       price: 12.99,
       currency: 'USD',
     },
     premium: {
-      name: 'Premium PPV Video',
-      price: 14.99,
-      currency: 'USD',
-    },
-    exclusive: {
-      name: 'Long / Exclusive PPV Video',
+      name: 'Premium Scene',
       price: 19.99,
       currency: 'USD',
     },
-    bundle: {
-      name: 'Bundle / Collection',
-      priceMin: 24.99,
-      priceMax: 39.99,
+    exclusive: {
+      name: 'Exclusive / Long Scene',
       price: 24.99,
       currency: 'USD',
     },

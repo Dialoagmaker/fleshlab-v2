@@ -31,9 +31,8 @@ const SERVER_PRICING = {
   },
   ppv: {
     standard:  12.99,
-    premium:   14.99,
-    exclusive: 19.99,
-    bundle:    24.99,
+    premium:   19.99,
+    exclusive: 24.99,
   },
   guest_production_deposit: 999,
 };

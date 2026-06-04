@@ -52,17 +52,17 @@ export const PRICING = {
     ]
   },
   ppv: {
-    short_solo: {
-      price: 6.99,
-      label: 'Short / Solo Clip'
-    },
     standard: {
       price: 12.99,
       label: 'Standard Scene'
     },
     premium: {
       price: 19.99,
-      label: 'Premium Exclusive Scene'
+      label: 'Premium Scene'
+    },
+    exclusive: {
+      price: 24.99,
+      label: 'Exclusive / Long Scene'
     }
   },
   guestProduction: {
