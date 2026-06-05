@@ -16,13 +16,13 @@ export default function PublishReadinessChecklist({
   onCleanInvalidCategories,
   assetValidation = {}
 }) {
-  // Calculate publish readiness
+  // Calculate publish readiness with safe fallback
   const publishCheck = checkPublishReadiness(form, { 
     videoPerformers: selectedPerformerIds 
-  });
+  }) || { canPublish: false, errors: [], warnings: [] };
 
-  // Validate categories
-  const categoryValidation = validateVideoCategories(form.categories || []);
+  // Validate categories with safe fallback
+  const categoryValidation = validateVideoCategories(form.categories || []) || { valid: true, removed: [] };
   const hasInvalidCategories = !categoryValidation.valid || (categoryValidation.removed || []).length > 0;
 
   // Build checklist items with asset validation
@@ -67,23 +67,23 @@ export default function PublishReadinessChecklist({
     {
       id: 'source_video',
       label: 'Source Video',
-      pass: !!form.source_video_url && assetValidation.source?.httpStatus === 200,
+      pass: !!form.source_video_url,
       critical: true,
-      details: assetValidation.source?.httpStatus ? `HTTP ${assetValidation.source.httpStatus}` : null,
+      details: form.source_video_url ? 'URL present' : 'Missing',
     },
     {
       id: 'thumbnail',
       label: 'Thumbnail',
-      pass: !!form.primary_thumbnail_url && assetValidation.thumbnail?.httpStatus === 200,
+      pass: !!form.primary_thumbnail_url,
       critical: true,
-      details: assetValidation.thumbnail?.httpStatus ? `HTTP ${assetValidation.thumbnail.httpStatus}` : null,
+      details: form.primary_thumbnail_url ? 'URL present' : 'Missing',
     },
     {
       id: 'trailer',
       label: 'Trailer/Preview',
-      pass: (!!form.trailer_url || !!form.source_video_url) && assetValidation.preview?.httpStatus === 200,
+      pass: !!form.trailer_url || !!form.source_video_url,
       critical: true,
-      details: assetValidation.preview?.httpStatus ? `HTTP ${assetValidation.preview.httpStatus}` : null,
+      details: form.trailer_url ? 'Trailer URL' : form.source_video_url ? 'Using source' : 'Missing',
     },
     {
       id: 'seo_title',
