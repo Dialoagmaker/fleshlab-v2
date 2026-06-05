@@ -15,8 +15,6 @@ import VideoStatsSection from "@/components/admin/video/VideoStatsSection";
 import VideoDealsSection from "@/components/admin/video/VideoDealsSection";
 import DurationInput from "@/components/admin/DurationInput";
 import { normalizeMetadata, BLOCKED_SPAM_TAGS, SENSITIVE_CATEGORIES } from "@/lib/videoMetadataGuardrails";
-import { checkPublishReadiness } from "@/lib/publishReadinessGuardrails";
-import { validateVideoAssetUrls } from "@/lib/validateVideoAssets";
 import { getGroupedCategories, validateVideoCategories, searchCategories } from "@/lib/videoTaxonomy";
 import CategorySelector from "@/components/admin/CategorySelector";
 import PublishReadinessChecklist from "@/components/admin/PublishReadinessChecklist";
@@ -546,13 +544,26 @@ export default function VideoEdit() {
     setInput("");
   };
 
-  // Calculate publish readiness for UI (outside handleSubmit so it's available for render)
-  const publishCheck = checkPublishReadiness(form, { videoPerformers: selectedPerformerIds });
+  // CRITICAL: Simple synchronous hard checks only - no async validation blocking
+  // This prevents false "Cannot Publish (0 issues)" states
+  const hardBlockingReasons = [];
+  
+  if (!form.title || !form.title.trim()) hardBlockingReasons.push("Title missing");
+  if (!form.description || !form.description.trim()) hardBlockingReasons.push("Description missing");
+  if (!form.brand_id && !form.brand_name) hardBlockingReasons.push("Brand missing");
+  if (!form.access_tier) hardBlockingReasons.push("Access tier missing");
+  if (!Array.isArray(form.categories) || form.categories.length === 0) hardBlockingReasons.push("Categories missing");
+  if (!form.source_video_url || !form.source_video_url.trim()) hardBlockingReasons.push("Source video URL missing");
+  if (!form.primary_thumbnail_url || !form.primary_thumbnail_url.trim()) hardBlockingReasons.push("Thumbnail URL missing");
+  if (!form.trailer_url || !form.trailer_url.trim()) hardBlockingReasons.push("Trailer/preview URL missing");
+  if (!selectedPerformerIds || selectedPerformerIds.length === 0) hardBlockingReasons.push("Performer missing");
+  
+  const canPublish = hardBlockingReasons.length === 0;
   
   // Validate categories separately for cleanup helper
   const categoryValidation = validateVideoCategories(form.categories || []);
 
-  // Build asset validation state from diagnostic results
+  // Build asset validation state from diagnostic results (DEBUG ONLY - does not block)
   const assetValidation = {
     source: diagnostic?.url_tests?.source || { status: 'missing', httpStatus: null },
     thumbnail: diagnostic?.url_tests?.thumbnail || { status: 'missing', httpStatus: null },
@@ -648,11 +659,11 @@ export default function VideoEdit() {
       errs.tags = validation.removed.tags;
     }
     
-    // CRITICAL: Check publish readiness
-    if (!publishCheck.canPublish) {
+    // CRITICAL: Check hard blocking reasons only (no async validation)
+    if (!canPublish) {
       errs.publish = 'Cannot publish - missing required items.';
-      errs.publishDetails = publishCheck;
-      console.error('❌ Publish blocked by publishCheck:', publishCheck.errors);
+      errs.publishDetails = { errors: hardBlockingReasons };
+      console.error('❌ Publish blocked:', hardBlockingReasons);
     }
     
     if (Object.keys(errs).length > 0) { 
@@ -1557,13 +1568,13 @@ export default function VideoEdit() {
           />
         )}
 
-        {/* Publishing Debug Panel - Shows exact blocking reasons */}
+        {/* Publishing Debug Panel - Shows exact blocking reasons (DEBUG ONLY) */}
         {!isNew && (
           <PublishingDebugPanel
             video={video}
             form={form}
             selectedPerformerIds={selectedPerformerIds}
-            publishCheck={publishCheck}
+            publishCheck={{ canPublish, errors: hardBlockingReasons }}
             categoryValidation={categoryValidation}
           />
         )}
@@ -1583,41 +1594,31 @@ export default function VideoEdit() {
             {thumbnailJobStatus && thumbnailJobStatus.status === 'processing' && ' (Wait for thumbnail...)'}
           </Button>
 
-          {/* Publish - requires all checks to pass */}
+          {/* Publish - requires hard blocking checks to pass only */}
           <Button 
             type="button" 
             onClick={handlePublish}
-            disabled={save.isPending || !publishCheck.canPublish || (thumbnailJobStatus && thumbnailJobStatus.status === 'processing')}
+            disabled={save.isPending || !canPublish || (thumbnailJobStatus && thumbnailJobStatus.status === 'processing')}
             className="gap-2 bg-primary hover:bg-primary/90"
           >
             <Save className="w-4 h-4" />
             {thumbnailJobStatus && thumbnailJobStatus.status === 'processing' ? 'Processing...' :
-             save.isPending ? "Saving…" : publishCheck.canPublish ? "Publish Video" : `Cannot Publish (${(publishCheck.errors || []).length} issues)`}
+             save.isPending ? "Saving…" : canPublish ? "Publish Video" : `Cannot Publish (${hardBlockingReasons.length} issues)`}
           </Button>
 
           <Link to="/admin/videos">
             <Button type="button" variant="outline">Cancel</Button>
           </Link>
 
-          {/* Publish blocked warning - always show if status is published */}
-          {form.status === 'published' && !publishCheck.canPublish && (
+          {/* Publish blocked warning - shows hard blocking reasons only */}
+          {form.status === 'published' && !canPublish && (
             <div className="ml-auto text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 max-w-lg">
-              <p className="font-semibold mb-1">❌ Publish Blocked - {(publishCheck.errors || []).length} Critical Issue(s):</p>
+              <p className="font-semibold mb-1">❌ Publish Blocked - {hardBlockingReasons.length} Critical Issue(s):</p>
               <ul className="list-disc list-inside space-y-0.5 max-h-48 overflow-y-auto">
-                {(publishCheck.errors || []).map((err, i) => (
+                {hardBlockingReasons.map((err, i) => (
                   <li key={i}>{err}</li>
                 ))}
               </ul>
-              {(publishCheck.warnings || []).length > 0 && (
-                <>
-                  <p className="font-semibold mt-2 mb-1">⚠️ Warnings ({(publishCheck.warnings || []).length}):</p>
-                  <ul className="list-disc list-inside space-y-0.5 text-yellow-600">
-                    {(publishCheck.warnings || []).map((warn, i) => (
-                      <li key={i}>{warn}</li>
-                    ))}
-                  </ul>
-                </>
-              )}
             </div>
           )}
         </div>
