@@ -313,8 +313,10 @@ Deno.serve(async (req) => {
             latest_release_date: null,
             active_promotions: 0,
             lifetime_revenue_usd: 0,
+            lifetime_performer_earnings: 0,
             lead_roles: 0,
-            lead_percentage: 0
+            lead_percentage: 0,
+            revenue_share_pct: myPerformer.revenue_split_pct || 40
           }
         });
       }
@@ -325,45 +327,67 @@ Deno.serve(async (req) => {
         .filter(vp => vp.lead_performer)
         .map(vp => vp.video_id);
 
-      // Parallel fetch all videos + earnings simultaneously — no batch query available
-      const [videoResults, earnings] = await Promise.all([
+      // Determine revenue share (default 40% for managed performers)
+      const revenueSharePct = myPerformer.revenue_split_pct || 40;
+
+      // Parallel fetch all videos + earnings + stats simultaneously
+      const [videoResults, earnings, snapshotSets] = await Promise.all([
         Promise.all(
           videoIds.map(vid => base44.asServiceRole.entities.Video.get(vid).catch(() => null))
         ),
-        base44.asServiceRole.entities.PerformerEarning.filter({ performer_id: myPerformer.id })
+        base44.asServiceRole.entities.PerformerEarning.filter({ performer_id: myPerformer.id }),
+        Promise.all(
+          videoIds.map(videoId =>
+            base44.asServiceRole.entities.VideoStatSnapshot.filter({ video_id: videoId }).catch(() => [])
+          )
+        )
       ]);
       const videos = videoResults.filter(v => v !== null);
+      const allSnapshots = snapshotSets.flat();
 
       // Calculate statistics
       const totalProductions = videoIds.length;
+      // Only count as published if status is exactly "published"
       const publishedVideos = videos.filter(v => v.status === 'published').length;
-      const draftVideos = videos.filter(v => v.status === 'draft').length;
+      // Count all non-published as draft/other
+      const draftVideos = totalProductions - publishedVideos;
+      
       const totalRuntimeMinutes = Math.round(
         videos.reduce((sum, v) => sum + (v.duration_seconds || 0), 0) / 60
       );
 
-      // Latest release date (prefer release_date, fallback to published_at)
+      // Latest release date (prefer release_date, fallback to published_at, only for published videos)
       let latestReleaseDate = null;
-      for (const v of videos) {
+      for (const v of videos.filter(v => v.status === 'published')) {
         const date = v.release_date || v.published_at;
         if (date && (!latestReleaseDate || date > latestReleaseDate)) {
           latestReleaseDate = date;
         }
       }
 
-      // Active promotions — fetch all snapshot sets in parallel
-      const snapshotSets = await Promise.all(
-        videoIds.map(videoId =>
-          base44.asServiceRole.entities.VideoStatSnapshot.filter({ video_id: videoId }).catch(() => [])
-        )
-      );
-      const allSnapshots = snapshotSets.flat();
+      // Active promotions
       const activePromotions = allSnapshots.filter(s => s.promotion_status === 'active').length;
 
-      // Lifetime revenue (all approved/paid earnings) — already fetched above in parallel
-      const lifetimeRevenue = earnings
-        .filter(e => e.status === 'approved' || e.status === 'paid')
-        .reduce((sum, e) => sum + (e.net_amount_usd || 0), 0);
+      // Calculate gross revenue from VideoStatSnapshot
+      const grossPlatformRevenue = allSnapshots.reduce((sum, s) => sum + (s.revenue_usd || 0), 0);
+
+      // Lifetime revenue: Use PerformerEarning if exists, otherwise calculate from VideoStatSnapshot
+      let lifetimeRevenue = 0;
+      let lifetimePerformerEarnings = 0;
+      
+      if (earnings && earnings.length > 0) {
+        // Use official PerformerEarning records
+        lifetimeRevenue = earnings
+          .filter(e => e.status === 'approved' || e.status === 'paid')
+          .reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0);
+        lifetimePerformerEarnings = earnings
+          .filter(e => e.status === 'approved' || e.status === 'paid')
+          .reduce((sum, e) => sum + (e.net_amount_usd || 0), 0);
+      } else {
+        // Fallback: calculate from VideoStatSnapshot
+        lifetimeRevenue = grossPlatformRevenue;
+        lifetimePerformerEarnings = grossPlatformRevenue * (revenueSharePct / 100);
+      }
 
       // Lead roles count
       const leadRolesCount = leadVideoIds.length;
@@ -381,8 +405,11 @@ Deno.serve(async (req) => {
           latest_release_date: latestReleaseDate,
           active_promotions: activePromotions,
           lifetime_revenue_usd: lifetimeRevenue,
+          lifetime_performer_earnings: lifetimePerformerEarnings,
           lead_roles: leadRolesCount,
-          lead_percentage: leadPercentage
+          lead_percentage: leadPercentage,
+          revenue_share_pct: revenueSharePct,
+          gross_platform_revenue: grossPlatformRevenue
         }
       });
     }
