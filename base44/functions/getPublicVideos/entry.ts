@@ -179,6 +179,7 @@ Deno.serve(async (req) => {
       view_count: v.view_count,
       featured: v.featured,
       is_exclusive: v.is_exclusive,
+      updated_date: v.updated_date, // For cache-busting
     }));
     
     const safeBrands = (brands || []).map(b => ({

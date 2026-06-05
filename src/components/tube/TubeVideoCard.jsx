@@ -46,7 +46,7 @@ export default function TubeVideoCard({ video, brands = [] }) {
           {/* Thumbnail Image */}
           {video.primary_thumbnail_url ? (
             <img
-              src={video.primary_thumbnail_url}
+              src={`${video.primary_thumbnail_url}${video.primary_thumbnail_url.includes('?') ? '&' : '?'}v=${video.updated_date ? new Date(video.updated_date).getTime() : Date.now()}`}
               alt={video.title}
               loading="lazy"
               className={`w-full h-full object-cover transition-transform duration-700 ${isHovered ? 'scale-105' : 'scale-100'}`}

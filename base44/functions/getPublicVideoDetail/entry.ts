@@ -120,6 +120,7 @@ Deno.serve(async (req) => {
       is_exclusive: v.is_exclusive,
       ppv_enabled: v.ppv_enabled,
       created_date: v.created_date,
+      updated_date: v.updated_date, // For cache-busting
       meta_title: v.meta_title,
       meta_description: v.meta_description,
       // source_video_url, r2_key, storage_key, xhamster_video_url,

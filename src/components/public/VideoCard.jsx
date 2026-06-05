@@ -17,7 +17,7 @@ export default function VideoCard({ video, brands = [], performers = [] }) {
         <div className="relative aspect-video overflow-hidden bg-[#0a0a0a]">
           {video.primary_thumbnail_url ? (
             <img
-              src={video.primary_thumbnail_url}
+              src={`${video.primary_thumbnail_url}${video.primary_thumbnail_url.includes('?') ? '&' : '?'}v=${video.updated_date ? new Date(video.updated_date).getTime() : Date.now()}`}
               alt={video.title}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               loading="lazy"
