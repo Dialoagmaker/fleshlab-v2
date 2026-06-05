@@ -1,24 +1,126 @@
 /**
- * Repair Corrupt Thumbnail Only
+ * Repair Thumbnail Only
+ * 
+ * Clears corrupt thumbnail URL and triggers regeneration via retriggerVideoProcessing.
+ * Does NOT download source video or run FFmpeg locally.
  * 
  * Flow:
- * 1. Load video and check source/preview URLs
- * 2. Call processor API to generate thumbnail from valid source or preview
- * 3. Validate uploaded thumbnail (HTTP, content-type, magic header, dimensions)
- * 4. Save URL to Video.primary_thumbnail_url ONLY if validation passes
- * 
- * Does NOT:
- * - Touch source_video_url
- * - Touch trailer_url
- * - Trigger full asset repair
- * - Regenerate preview
+ * 1. Load video
+ * 2. Clear current thumbnail URL
+ * 3. Call retriggerVideoProcessing via HTTP (not SDK invoke)
+ * 4. Poll for new thumbnail URL (max 30s)
+ * 5. Validate new thumbnail (HTTP, content-type, magic header, dimensions)
+ * 6. Return structured JSON with exact step and validation details
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 const PROCESSOR_API_KEY = Deno.env.get('PROCESSOR_API_KEY');
-const PROCESSOR_BASE_URL = Deno.env.get('PROCESSOR_WEBHOOK_URL')?.replace('/webhook', '');
-const R2_BUCKET_URL = Deno.env.get('R2_PUBLIC_BUCKET_URL');
+const PROCESSOR_WEBHOOK_URL = Deno.env.get('PROCESSOR_WEBHOOK_URL');
+
+/**
+ * Validate image URL - returns detailed validation result
+ */
+async function validateImageUrl(url) {
+  const result = {
+    ok: false,
+    status: null,
+    contentType: null,
+    contentLength: 0,
+    magicHeader: null,
+    width: 0,
+    height: 0,
+    reason: null,
+    actualFormat: null
+  };
+
+  if (!url) {
+    result.reason = 'URL is null/empty';
+    return result;
+  }
+
+  try {
+    // HEAD request first
+    const headResponse = await fetch(url, { method: 'HEAD', redirect: 'follow' });
+    result.status = headResponse.status;
+    result.contentType = headResponse.headers.get('content-type');
+    result.contentLength = parseInt(headResponse.headers.get('content-length') || '0', 10);
+
+    if (result.status !== 200 && result.status !== 304) {
+      result.reason = `HTTP ${result.status}`;
+      return result;
+    }
+
+    if (!result.contentType || !result.contentType.startsWith('image/')) {
+      result.reason = `Invalid content-type: ${result.contentType}`;
+      return result;
+    }
+
+    if (result.contentLength === 0) {
+      result.reason = 'Empty file (0 bytes)';
+      return result;
+    }
+
+    // GET request for magic header check
+    const getResponse = await fetch(url, { method: 'GET' });
+    const arrayBuffer = await getResponse.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+
+    if (uint8Array.length < 4) {
+      result.reason = 'File too small';
+      return result;
+    }
+
+    const magicHeader = Array.from(uint8Array.slice(0, 4))
+      .map(b => b.toString(16).toUpperCase().padStart(2, '0'))
+      .join(' ');
+
+    result.magicHeader = magicHeader;
+
+    // Check for HTML/XML error pages
+    const firstBytes = new TextDecoder().decode(uint8Array.slice(0, 100)).toLowerCase();
+    if (firstBytes.includes('<!doctype') || firstBytes.includes('<html') || 
+        firstBytes.includes('<?xml') || firstBytes.includes('error')) {
+      result.reason = 'File is HTML/XML error page, not an image';
+      result.actualFormat = firstBytes.includes('<!doctype') || firstBytes.includes('<html') ? 'HTML' : 'XML';
+      return result;
+    }
+
+    // Validate magic header (JPEG: FF D8, PNG: 89 50 4E 47)
+    const isJpeg = magicHeader.startsWith('FF D8');
+    const isPng = magicHeader.startsWith('89 50 4E 47');
+
+    if (!isJpeg && !isPng) {
+      result.reason = `Invalid image magic header: ${magicHeader}`;
+      result.actualFormat = 'unknown';
+      return result;
+    }
+
+    // Extract dimensions
+    try {
+      const blob = new Blob([arrayBuffer], { type: result.contentType });
+      const imageBitmap = await createImageBitmap(blob);
+      result.width = imageBitmap.width;
+      result.height = imageBitmap.height;
+      imageBitmap.close();
+
+      if (result.width < 1 || result.height < 1) {
+        result.reason = 'Image dimensions invalid';
+        return result;
+      }
+    } catch (decodeError) {
+      result.reason = `Failed to decode image: ${decodeError.message}`;
+      return result;
+    }
+
+    result.ok = true;
+    return result;
+
+  } catch (error) {
+    result.reason = error.message || 'Network error';
+    return result;
+  }
+}
 
 Deno.serve(async (req) => {
   const result = {
@@ -26,9 +128,12 @@ Deno.serve(async (req) => {
     step: 'init',
     error: null,
     details: null,
-    validation: null,
+    video_id: null,
     source_url: null,
-    preview_url: null
+    preview_url: null,
+    old_thumbnail_url: null,
+    new_thumbnail_url: null,
+    validation: null
   };
 
   try {
@@ -36,220 +141,178 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
 
     if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Admin access required' }, { status: 403 });
+      return Response.json({ ...result, step: 'auth', error: 'Admin access required' }, { status: 403 });
     }
 
     const payload = await req.json();
     const { video_id } = payload;
 
     if (!video_id) {
-      return Response.json({ error: 'video_id required' }, { status: 400 });
+      return Response.json({ ...result, step: 'validation', error: 'video_id required' }, { status: 400 });
     }
 
+    result.video_id = video_id;
     result.step = 'load_video';
 
     // Load video
     const video = await base44.asServiceRole.entities.Video.get(video_id);
     if (!video) {
-      return Response.json({ ...result, error: 'Video not found' }, { status: 404 });
+      return Response.json({ ...result, step: 'load_video', error: 'Video not found' }, { status: 404 });
     }
-
-    console.log(`[repairThumbnailOnly] Video ${video_id}:`, {
-      source: video.source_video_url ? 'exists' : 'missing',
-      preview: video.trailer_url ? 'exists' : 'missing'
-    });
 
     result.source_url = video.source_video_url;
     result.preview_url = video.trailer_url;
+    result.old_thumbnail_url = video.primary_thumbnail_url;
 
-    // Find a valid source to generate from - prefer preview, fallback to source
-    const generateFromUrl = video.trailer_url || video.source_video_url;
-    if (!generateFromUrl) {
-      return Response.json({
-        ...result,
-        error: 'No source or preview video URL available',
-        step: 'find_source'
-      }, { status: 400 });
+    console.log(`[repairThumbnailOnly] Video ${video_id}:`, {
+      source: video.source_video_url ? 'exists' : 'missing',
+      preview: video.trailer_url ? 'exists' : 'missing',
+      current_thumbnail: video.primary_thumbnail_url || 'null'
+    });
+
+    // Clear current thumbnail URL
+    result.step = 'clear_thumbnail';
+    if (video.primary_thumbnail_url) {
+      console.log(`[repairThumbnailOnly] Clearing old thumbnail URL`);
+      await base44.asServiceRole.entities.Video.update(video_id, { primary_thumbnail_url: '' });
     }
 
-    console.log(`[repairThumbnailOnly] Generating thumbnail from: ${generateFromUrl}`);
+    // Trigger regeneration via processor API /regenerate endpoint
+    result.step = 'trigger_regeneration';
+    console.log('[repairThumbnailOnly] Triggering thumbnail regeneration...');
 
-    result.step = 'call_processor';
+    // Find source asset for signed URL
+    const assets = await base44.asServiceRole.entities.VideoAsset.filter({ video_id, asset_type: 'source' });
+    const sourceAsset = assets[0];
 
-    // Call processor API to generate thumbnail
-    const processorResponse = await fetch(`${PROCESSOR_BASE_URL}/generate-thumbnail`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${PROCESSOR_API_KEY}`
+    if (!sourceAsset || !sourceAsset.r2_key) {
+      return Response.json({
+        ...result,
+        step: 'find_source',
+        error: 'No source asset found for this video'
+      }, { status: 404 });
+    }
+
+    // Generate signed R2 URL
+    const { S3Client, GetObjectCommand } = await import('npm:@aws-sdk/client-s3');
+    const { getSignedUrl } = await import('npm:@aws-sdk/s3-request-presigner');
+
+    const r2Client = new S3Client({
+      region: 'auto',
+      endpoint: `https://${Deno.env.get('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: Deno.env.get('R2_ACCESS_KEY_ID'),
+        secretAccessKey: Deno.env.get('R2_SECRET_ACCESS_KEY'),
       },
+    });
+
+    const signedUrl = await getSignedUrl(
+      r2Client,
+      new GetObjectCommand({ Bucket: Deno.env.get('R2_BUCKET_NAME'), Key: sourceAsset.r2_key }),
+      { expiresIn: 3600 }
+    );
+
+    const appBaseUrl = (Deno.env.get('APP_BASE_URL') || '').replace(/\/$/, '');
+    const callbackUrl = `${appBaseUrl}/api/functions/updateVideoProcessingResult?processor_key=${encodeURIComponent(PROCESSOR_API_KEY)}`;
+
+    const keyParts = sourceAsset.r2_key.split('/');
+    const studio = keyParts.length >= 2 ? keyParts[1] : 'default';
+    const originalFile = keyParts[keyParts.length - 1];
+    const ext = originalFile.includes('.') ? originalFile.split('.').pop() : 'mov';
+    const uuidDir = keyParts[keyParts.length - 2];
+    const file = (uuidDir && uuidDir !== 'videos') ? `${uuidDir}.${ext}` : originalFile;
+
+    const retriggerResponse = await fetch(`${PROCESSOR_WEBHOOK_URL}/regenerate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        secret: PROCESSOR_API_KEY,
+        studio,
+        file,
+        src_url: signedUrl,
         video_id,
-        source_url: generateFromUrl,
-        timestamp_seconds: 5,  // Extract frame at 5 seconds
-        width: 640,
-        height: 360,
-        quality: 85
+        source_asset_id: sourceAsset.id,
+        callback_url: callbackUrl,
+        regenerate_only: 'thumbnail'
       })
     });
 
-    if (!processorResponse.ok) {
-      const errorText = await processorResponse.text();
-      console.error('Processor API error:', processorResponse.status, errorText);
+    if (!retriggerResponse.ok) {
+      const errorText = await retriggerResponse.text();
+      console.error('[repairThumbnailOnly] Processor API error:', retriggerResponse.status, errorText);
       return Response.json({
         ...result,
-        error: `Processor API failed: ${processorResponse.status}`,
+        step: 'trigger_regeneration',
+        error: `Processor API failed: ${retriggerResponse.status}`,
         details: errorText.substring(0, 500)
       }, { status: 500 });
     }
 
-    const processorResult = await processorResponse.json();
-    console.log('[repairThumbnailOnly] Processor result:', processorResult);
+    const retriggerResult = await retriggerResponse.json();
+    console.log('[repairThumbnailOnly] Regeneration triggered:', retriggerResult);
 
-    if (!processorResult.ok || !processorResult.thumbnail_url) {
-      return Response.json({
-        ...result,
-        error: processorResult.error || 'Processor did not return thumbnail URL',
-        step: 'processor_response'
-      }, { status: 500 });
-    }
+    // Poll for new thumbnail URL (max 90 seconds, 3s intervals)
+    result.step = 'wait_regeneration';
+    console.log('[repairThumbnailOnly] Waiting for regeneration...');
 
-    const newThumbnailUrl = processorResult.thumbnail_url;
-    console.log(`[repairThumbnailOnly] New thumbnail URL: ${newThumbnailUrl}`);
+    let attempts = 0;
+    const maxAttempts = 30;  // 90 seconds
 
-    result.step = 'validate_thumbnail';
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      attempts++;
 
-    // Validate uploaded thumbnail via HTTP HEAD
-    const validateResponse = await fetch(newThumbnailUrl, { method: 'HEAD', redirect: 'follow' });
-    
-    if (!validateResponse.ok) {
-      return Response.json({
-        ...result,
-        error: `Uploaded thumbnail validation failed: HTTP ${validateResponse.status}`,
-        step: 'validate_http'
-      }, { status: 500 });
-    }
+      const refreshedVideo = await base44.asServiceRole.entities.Video.get(video_id);
+      
+      if (refreshedVideo.primary_thumbnail_url && refreshedVideo.primary_thumbnail_url !== result.old_thumbnail_url) {
+        console.log('[repairThumbnailOnly] New thumbnail URL detected:', refreshedVideo.primary_thumbnail_url);
+        result.new_thumbnail_url = refreshedVideo.primary_thumbnail_url;
+        
+        // Validate new thumbnail
+        result.step = 'validate_thumbnail';
+        const validation = await validateImageUrl(refreshedVideo.primary_thumbnail_url);
+        console.log('[repairThumbnailOnly] Validation result:', validation);
 
-    const contentType = validateResponse.headers.get('content-type');
-    const contentLength = validateResponse.headers.get('content-length');
+        result.validation = {
+          httpStatus: validation.status,
+          contentType: validation.contentType,
+          contentLength: validation.contentLength,
+          magicHeader: validation.magicHeader,
+          width: validation.width,
+          height: validation.height,
+          fileSize: validation.contentLength,
+          format: validation.magicHeader?.startsWith('FF D8') ? 'JPEG' : 
+                  validation.magicHeader?.startsWith('89 50 4E 47') ? 'PNG' : 'unknown'
+        };
 
-    if (!contentType || (!contentType.includes('image/jpeg') && !contentType.includes('image/png'))) {
-      return Response.json({
-        ...result,
-        error: `Invalid content-type: ${contentType}`,
-        step: 'validate_content_type'
-      }, { status: 500 });
-    }
-
-    console.log(`[repairThumbnailOnly] Content-Type: ${contentType}, Length: ${contentLength}`);
-
-    // Download and validate magic header + dimensions
-    const imgResponse = await fetch(newThumbnailUrl);
-    const imgBuffer = await imgResponse.arrayBuffer();
-    const imgBytes = new Uint8Array(imgBuffer);
-    
-    // Check magic header
-    const magicHeader = Array.from(imgBytes.slice(0, 4))
-      .map(b => b.toString(16).padStart(2, '0').toUpperCase())
-      .join(' ');
-
-    console.log(`[repairThumbnailOnly] Magic header: ${magicHeader}`);
-
-    // Check for HTML (corrupt file)
-    const sampleText = new TextDecoder().decode(imgBytes.slice(0, 100));
-    if (sampleText.includes('<!DOCTYPE') || sampleText.includes('<html')) {
-      return Response.json({
-        ...result,
-        error: 'Generated file contains HTML - processor failed',
-        magicHeader,
-        step: 'validate_magic'
-      }, { status: 500 });
-    }
-
-    // Validate magic header (FF D8 for JPEG, 89 50 4E 47 for PNG)
-    const isJpeg = magicHeader.substring(0, 5) === 'FF D8';
-    const isPng = magicHeader.substring(0, 11) === '89 50 4E 47';
-
-    if (!isJpeg && !isPng) {
-      return Response.json({
-        ...result,
-        error: `Invalid image magic header: ${magicHeader}`,
-        expected: 'FF D8 (JPEG) or 89 50 4E 47 (PNG)',
-        step: 'validate_magic'
-      }, { status: 500 });
-    }
-
-    // Extract dimensions
-    let width = 0, height = 0;
-    try {
-      if (isJpeg && imgBytes.length > 10) {
-        // JPEG: find SOF0 marker (FF C0)
-        for (let i = 0; i < Math.min(imgBytes.length - 10, 2000); i++) {
-          if (imgBytes[i] === 0xFF && imgBytes[i + 1] === 0xC0) {
-            height = (imgBytes[i + 5] << 8) | imgBytes[i + 6];
-            width = (imgBytes[i + 7] << 8) | imgBytes[i + 8];
-            break;
-          }
+        if (validation.ok) {
+          console.log('[repairThumbnailOnly] New thumbnail validated:', validation.width, 'x', validation.height);
+          result.ok = true;
+          result.step = 'complete';
+          result.error = null;
+        } else {
+          result.error = `Thumbnail validation failed: ${validation.reason}`;
+          result.step = 'validate_thumbnail';
         }
-      } else if (isPng && imgBytes.length > 24) {
-        // PNG: dimensions at bytes 16-23
-        width = (imgBytes[16] << 24) | (imgBytes[17] << 16) | (imgBytes[18] << 8) | imgBytes[19];
-        height = (imgBytes[20] << 24) | (imgBytes[21] << 16) | (imgBytes[22] << 8) | imgBytes[23];
+
+        break;
       }
-    } catch (e) {
-      console.log('Could not extract dimensions, skipping check');
+
+      console.log(`[repairThumbnailOnly] Waiting... (attempt ${attempts}/${maxAttempts})`);
     }
 
-    console.log(`[repairThumbnailOnly] Dimensions: ${width}x${height}, ${imgBytes.length} bytes`);
-
-    if (width <= 0 || height <= 0) {
-      return Response.json({
-        ...result,
-        error: 'Invalid image dimensions',
-        step: 'validate_dimensions'
-      }, { status: 500 });
+    if (attempts >= maxAttempts) {
+      result.error = 'Timeout: Regeneration took too long (>30s)';
+      result.step = 'wait_regeneration';
     }
 
-    result.validation = {
-      httpStatus: validateResponse.status,
-      contentType,
-      contentLength: parseInt(contentLength || '0', 10),
-      magicHeader,
-      width,
-      height,
-      fileSize: imgBytes.length,
-      isJpeg,
-      isPng
-    };
-
-    result.step = 'save_to_video';
-
-    // Save to Video entity
-    await base44.asServiceRole.entities.Video.update(video_id, {
-      primary_thumbnail_url: newThumbnailUrl
-    });
-
-    console.log(`[repairThumbnailOnly] Saved to Video.primary_thumbnail_url`);
-
-    result.ok = true;
-    result.step = 'complete';
-    result.error = null;
-
-    return Response.json({
-      ok: true,
-      step: 'complete',
-      message: 'Thumbnail repaired successfully',
-      video_id,
-      new_thumbnail_url: newThumbnailUrl,
-      validation: result.validation,
-      source_url: result.source_url,
-      preview_url: result.preview_url
-    });
+    return Response.json(result, { status: result.ok ? 200 : 500 });
 
   } catch (error) {
-    console.error('repairThumbnailOnly error:', error);
+    console.error('[repairThumbnailOnly] Error:', error);
     result.error = error.message || 'Unknown error';
     result.details = error.stack?.substring(0, 500);
+    result.step = 'exception';
     
     return Response.json(result, { status: 500 });
   }

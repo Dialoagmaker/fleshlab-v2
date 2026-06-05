@@ -127,6 +127,9 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
   const previewDisplayClassification = classifyAssetUrlDetailed(video.trailer_url || video.source_video_url);
   
   // Validate URLs on mount - must be called before any early returns
+  // CRITICAL: Browser fetch/HEAD is blocked by CORS for video.fleshlab.online
+  // So we ONLY use render events (img onLoad, video onLoadedMetadata) for health status
+  // Server-side validation (backend functions) can still use HEAD/GET
   React.useEffect(() => {
     const validateUrl = async (name, url, classification) => {
       if (!url) {
@@ -137,14 +140,29 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
             status: 'missing', 
             httpStatus: null, 
             error: 'URL is null/empty',
-            fetchStatus: 'not_applicable'
+            fetchStatus: 'not_applicable',
+            renderStatus: 'not_applicable'
           } 
         }));
         return;
       }
       
+      // For all video.fleshlab.online URLs, browser fetch will fail due to CORS
+      // Mark as "cors_blocked" and rely entirely on render test
+      if (url.includes('video.fleshlab.online')) {
+        setUrlValidation(prev => ({
+          ...prev,
+          [name]: {
+            ...prev[name],
+            fetchStatus: 'cors_blocked',
+            error: 'CORS headers not configured - relying on render test',
+            status: 'pending_render_test'
+          }
+        }));
+        return;
+      }
+      
       // For legacy R2 URLs, browser fetch may fail due to CORS even if asset loads
-      // So we mark fetch as "blocked" and rely on render test
       if (classification.type === 'legacy_r2_dev') {
         setUrlValidation(prev => ({
           ...prev,
@@ -155,34 +173,13 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
             status: 'pending_render_test'
           }
         }));
-
-        // Set timeout for render test (5 seconds)
-        const timeoutId = setTimeout(() => {
-          setUrlValidation(prev => {
-            // Only set timeout if still pending (not already accessible/failed)
-            if (prev[name].renderStatus === 'pending') {
-              return {
-                ...prev,
-                [name]: {
-                  ...prev[name],
-                  renderStatus: 'timeout',
-                  error: 'Render test timeout - asset not loading within 5s'
-                }
-              };
-            }
-            return prev;
-          });
-        }, 5000);
-
-        return () => clearTimeout(timeoutId);
+        return;
       }
       
-      // For canonical CDN URLs, perform normal fetch validation
+      // For external URLs with CORS, try fetch but don't block on failure
       try {
         const response = await fetch(url, { method: 'HEAD', redirect: 'follow' });
         const httpStatus = response.status;
-        
-        // Accept 200, 206 (Partial Content), 304 (Not Modified)
         const isSuccess = [200, 206, 304].includes(httpStatus);
         
         setUrlValidation(prev => ({
@@ -190,7 +187,7 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
           [name]: {
             ...prev[name],
             fetchStatus: isSuccess ? 'success' : 'failed',
-            status: isSuccess ? 'valid' : 'error',
+            status: 'pending_render_test',  // Always wait for render test
             httpStatus,
             error: isSuccess ? null : `HTTP ${httpStatus}`,
             contentType: response.headers.get('content-type'),
@@ -198,14 +195,15 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
           }
         }));
       } catch (err) {
+        // Fetch failed - but asset might still render (CORS issue)
         setUrlValidation(prev => ({
           ...prev,
           [name]: {
             ...prev[name],
             fetchStatus: 'failed',
-            status: 'error',
+            status: 'pending_render_test',
             httpStatus: null, 
-            error: err.message || 'Network error'
+            error: `Fetch blocked: ${err.message || 'Network error'}`
           }
         }));
       }
@@ -413,24 +411,24 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                   {urlValidation.thumbnail.contentType && (
                     <div>Content-Type: {urlValidation.thumbnail.contentType}</div>
                   )}
-                  {/* Final Health Status - NOT broken if fetch success */}
+                  {/* Final Health Status - Render test is authoritative for CORS-blocked URLs */}
                   <div className="pt-1 border-t border-border mt-1">
                     <div className="flex gap-2">
                       <span className="font-semibold">Final Health:</span>
                       <span className={
                         urlValidation.thumbnail.renderStatus === 'accessible' ? 'text-green-600 font-bold' :
-                        urlValidation.thumbnail.fetchStatus === 'success' ? 'text-green-600 font-bold' :
                         urlValidation.thumbnail.renderStatus === 'failed' ? 'text-red-600 font-bold' :
                         urlValidation.thumbnail.renderStatus === 'timeout' ? 'text-yellow-600' :
-                        urlValidation.thumbnail.fetchStatus === 'blocked' ? 'text-yellow-600' :
+                        urlValidation.thumbnail.fetchStatus === 'cors_blocked' ? 'text-yellow-600' :
+                        urlValidation.thumbnail.fetchStatus === 'success' ? 'text-green-600 font-bold' :
                         'text-muted-foreground'
                       }>
                         {urlValidation.thumbnail.renderStatus === 'accessible' ? '✅ Healthy (Render OK)' :
-                         urlValidation.thumbnail.fetchStatus === 'success' ? '✅ Healthy (Fetch OK)' :
-                         urlValidation.thumbnail.renderStatus === 'failed' ? '❌ Broken' :
+                         urlValidation.thumbnail.renderStatus === 'failed' ? '❌ Render Failed' :
                          urlValidation.thumbnail.renderStatus === 'timeout' ? '⏱️ Render Timeout' :
-                         urlValidation.thumbnail.fetchStatus === 'blocked' ? '⚠️ Legacy URL' :
-                         'Unknown'}
+                         urlValidation.thumbnail.fetchStatus === 'cors_blocked' ? '⚠️ CORS Blocked (Render Pending)' :
+                         urlValidation.thumbnail.fetchStatus === 'success' ? '✅ Fetch OK' :
+                         'Pending'}
                       </span>
                     </div>
                     {/* Show actual src vs diagnostic for debugging */}
@@ -606,24 +604,24 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                   {urlValidation.preview.contentType && (
                     <div>Content-Type: {urlValidation.preview.contentType}</div>
                   )}
-                  {/* Final Health Status - NOT broken if fetch success */}
+                  {/* Final Health Status - Render test is authoritative for CORS-blocked URLs */}
                   <div className="pt-1 border-t border-border mt-1">
                     <div className="flex gap-2">
                       <span className="font-semibold">Final Health:</span>
                       <span className={
                         urlValidation.preview.renderStatus === 'accessible' ? 'text-green-600 font-bold' :
-                        urlValidation.preview.fetchStatus === 'success' ? 'text-green-600 font-bold' :
                         urlValidation.preview.renderStatus === 'failed' ? 'text-red-600 font-bold' :
                         urlValidation.preview.renderStatus === 'timeout' ? 'text-yellow-600' :
-                        urlValidation.preview.fetchStatus === 'blocked' ? 'text-yellow-600' :
+                        urlValidation.preview.fetchStatus === 'cors_blocked' ? 'text-yellow-600' :
+                        urlValidation.preview.fetchStatus === 'success' ? 'text-green-600 font-bold' :
                         'text-muted-foreground'
                       }>
                         {urlValidation.preview.renderStatus === 'accessible' ? '✅ Healthy (Render OK)' :
-                         urlValidation.preview.fetchStatus === 'success' ? '✅ Healthy (Fetch OK)' :
-                         urlValidation.preview.renderStatus === 'failed' ? '❌ Broken' :
+                         urlValidation.preview.renderStatus === 'failed' ? '❌ Render Failed' :
                          urlValidation.preview.renderStatus === 'timeout' ? '⏱️ Render Timeout' :
-                         urlValidation.preview.fetchStatus === 'blocked' ? '⚠️ Legacy URL' :
-                         'Unknown'}
+                         urlValidation.preview.fetchStatus === 'cors_blocked' ? '⚠️ CORS Blocked (Render Pending)' :
+                         urlValidation.preview.fetchStatus === 'success' ? '✅ Fetch OK' :
+                         'Pending'}
                       </span>
                     </div>
                     {/* Show actual src vs diagnostic for debugging */}
