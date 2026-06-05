@@ -135,7 +135,7 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
 
   const createUploadMutation = useMutation({
     mutationFn: async (fileData) => {
-      const { id: fileId, file, title, description, brand_id, categories, tags, access_tier } = fileData;
+      const { id: fileId, file, title, description, brand_id, categories, tags, access_tier, duration_seconds } = fileData;
       
       updateFileStatus(fileId, { status: UPLOAD_STATUS.PREPARING });
       
@@ -149,6 +149,7 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
         categories,
         tags,
         access_tier,
+        duration_seconds: duration_seconds || undefined,
       });
 
       return { fileId, file, ...response.data };
@@ -225,24 +226,41 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
       .replace(/^-+|-+$/g, '');
   };
 
-  const handleFileSelect = (selectedFiles) => {
+  const getVideoDuration = (file) => {
+    return new Promise((resolve) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.onloadedmetadata = () => {
+        URL.revokeObjectURL(video.src);
+        resolve(Math.round(video.duration) || null);
+      };
+      video.onerror = () => resolve(null);
+      video.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleFileSelect = async (selectedFiles) => {
     if (!metadata.title || !metadata.description || !metadata.access_tier) {
       toast.error("Please fill in all required fields (Title, Description, Access Tier)");
       return;
     }
 
-    const newFiles = Array.from(selectedFiles).map(file => ({
-      id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      file,
-      status: UPLOAD_STATUS.IDLE,
-      uploadProgress: 0,
-      title: metadata.title,
-      description: metadata.description,
-      brand_id: metadata.brand_id || null,
-      categories: metadata.categories || [],
-      tags: metadata.tags || [],
-      access_tier: metadata.access_tier,
-      slug: generateSlug(metadata.title),
+    const newFiles = await Promise.all(Array.from(selectedFiles).map(async (file) => {
+      const duration_seconds = await getVideoDuration(file);
+      return {
+        id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        file,
+        status: UPLOAD_STATUS.IDLE,
+        uploadProgress: 0,
+        title: metadata.title,
+        description: metadata.description,
+        brand_id: metadata.brand_id || null,
+        categories: metadata.categories || [],
+        tags: metadata.tags || [],
+        access_tier: metadata.access_tier,
+        slug: generateSlug(metadata.title),
+        duration_seconds,
+      };
     }));
 
     setFiles(prev => [...prev, ...newFiles]);

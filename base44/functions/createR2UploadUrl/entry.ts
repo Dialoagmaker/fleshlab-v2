@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { title, slug, brand_id, categories, tags, access_tier, file_name, file_size_bytes, mime_type } = body;
+    const { title, slug, brand_id, categories, tags, access_tier, file_name, file_size_bytes, mime_type, duration_seconds } = body;
 
     // Validate required fields
     if (!title || !file_name || !file_size_bytes || !mime_type) {
@@ -73,6 +73,11 @@ Deno.serve(async (req) => {
     const publicBucketUrl = Deno.env.get('R2_PUBLIC_BUCKET_URL');
     const futureCdnUrl = `${publicBucketUrl}/${r2Key}`;
 
+    // If duration was detected client-side, also store on Video entity directly
+    if (duration_seconds) {
+      await base44.entities.Video.update(video.id, { duration_seconds: parseInt(duration_seconds) });
+    }
+
     const assetData = {
       video_id: video.id,
       asset_type: 'source',
@@ -83,7 +88,7 @@ Deno.serve(async (req) => {
       mime_type: mime_type,
       width: null,
       height: null,
-      duration_seconds: null,
+      duration_seconds: duration_seconds ? parseInt(duration_seconds) : null,
     };
 
     const asset = await base44.entities.VideoAsset.create(assetData);
