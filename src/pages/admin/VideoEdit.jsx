@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 import { ArrowLeft, Plus, X, Save, Trash2, RefreshCw, Sparkles } from "lucide-react";
 import AICopyHelper from "@/components/admin/AICopyHelper";
 import VideoIdentificationPanel from "@/components/admin/VideoIdentificationPanel";
@@ -740,6 +742,39 @@ export default function VideoEdit() {
           </button>
         )}
       </div>
+
+      {/* PHASE G: Upload Failed Alert */}
+      {!isNew && video && (video.processing_status === 'upload_failed' || (!video.source_video_url && video.status === 'draft' && !video.primary_thumbnail_url && !video.trailer_url)) && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="w-4 h-4" />
+          <AlertDescription>
+            <strong>Upload Failed:</strong> This video has no source video URL. Assets were not created.
+            {video.error_message && <p className="mt-1 text-xs">Error: {video.error_message}</p>}
+            <div className="flex gap-2 mt-3">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => window.location.href = `/admin/videos/${id}`}
+              >
+                Retry Upload
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => {
+                  if (window.confirm('Delete this broken video? This cannot be undone.')) {
+                    base44.entities.Video.delete(id).then(() => {
+                      window.location.href = '/admin/videos';
+                    });
+                  }
+                }}
+              >
+                Delete Video
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Video Identification Panel - Top of page */}
       {!isNew && video && (

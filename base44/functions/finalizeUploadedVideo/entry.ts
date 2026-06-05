@@ -67,6 +67,12 @@ Deno.serve(async (req) => {
       });
     } catch (r2Error) {
       if (r2Error.name === 'NotFound' || r2Error.$metadata?.httpStatusCode === 404) {
+        // PHASE D: Mark video as upload_failed
+        await base44.entities.Video.update(video_id, {
+          processing_status: 'upload_failed',
+          error_message: 'R2 file not found - upload failed or expired',
+        });
+        
         return Response.json({
           error: 'File not found in R2. Upload may have failed or expired.',
           retry_allowed: true
@@ -135,6 +141,13 @@ Deno.serve(async (req) => {
         error_message: `Processor responded with ${processorResponse.status}: ${errorText}`,
         completed_at: new Date().toISOString(),
       });
+      
+      // PHASE D: Mark video as upload_failed
+      await base44.entities.Video.update(video_id, {
+        processing_status: 'upload_failed',
+        error_message: `Processor trigger failed: HTTP ${processorResponse.status}`,
+      });
+      
       return Response.json({
         error: `Processor trigger failed: HTTP ${processorResponse.status}`,
         details: errorText,

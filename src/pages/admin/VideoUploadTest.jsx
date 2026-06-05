@@ -26,11 +26,9 @@ export default function AdminVideoUploadTest() {
   const [showDebugPanel, setShowDebugPanel] = useState(true);
   const [lastUploadData, setLastUploadData] = useState(null);
 
-  const { data: bucketData } = useQuery({
-    queryKey: ['r2-bucket-name'],
-    queryFn: () => base44.functions.invoke('getR2BucketName', {}),
-    enabled: debugMode,
-  });
+  // REMOVED: getR2BucketName function doesn't exist
+  // R2 config shown as static value
+  const bucketData = { bucket_name: 'fleshlab-videos' };
 
   const { data: recentVideos } = useQuery({
     queryKey: ['recent-test-videos'],
@@ -74,7 +72,7 @@ export default function AdminVideoUploadTest() {
         </Button>
       </div>
 
-      {debugMode && bucketData && (
+      {debugMode && (
         <Card className="bg-card border-border">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -85,7 +83,7 @@ export default function AdminVideoUploadTest() {
           <CardContent className="space-y-2 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Bucket Name:</span>
-              <Badge variant="outline">{bucketData.bucket_name}</Badge>
+              <Badge variant="outline">fleshlab-videos</Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Status:</span>

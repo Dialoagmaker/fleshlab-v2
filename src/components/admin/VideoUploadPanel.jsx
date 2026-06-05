@@ -176,19 +176,35 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
           finalizeUpload(data.video_id, data.asset_id);
         })
         .catch((error) => {
+          // PHASE D: Mark upload as failed
           updateFileStatus(data.fileId, {
             status: UPLOAD_STATUS.FAILED,
-            error: error.message,
+            error: `R2 upload failed: ${error.message}`,
           });
           toast.error(`Upload failed: ${error.message}`);
         });
     },
     onError: (error, variables) => {
+      // PHASE F: Structured error messages
+      let message = 'Upload failed';
+      
+      if (error.message?.includes('FILE_TOO_LARGE') || error.message?.includes('File size exceeds')) {
+        message = 'File too large. Maximum 10 GB allowed.';
+      } else if (error.message?.includes('MIME type')) {
+        message = 'Invalid video format. Use MP4, MOV, WebM, or MKV.';
+      } else if (error.message?.includes('Unauthorized')) {
+        message = 'Please log in as admin to upload videos.';
+      } else if (error.message?.includes('R2')) {
+        message = 'Storage service unavailable. Try again.';
+      } else if (error.message?.includes('Missing required')) {
+        message = 'Missing required upload data.';
+      }
+      
       updateFileStatus(variables.id, {
         status: UPLOAD_STATUS.FAILED,
-        error: error.message,
+        error: message,
       });
-      toast.error(`Failed to create upload: ${error.message}`);
+      toast.error(message);
     },
   });
 
@@ -243,6 +259,16 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
     if (!metadata.title || !metadata.description || !metadata.access_tier) {
       toast.error("Please fill in all required fields (Title, Description, Access Tier)");
       return;
+    }
+
+    // PHASE C: File size validation (max 10 GB)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024; // 10 GB
+    for (const file of selectedFiles) {
+      if (file.size > MAX_FILE_SIZE) {
+        const sizeGB = (file.size / 1024 / 1024 / 1024).toFixed(2);
+        toast.error(`File too large. Maximum allowed size is 10 GB. Your file is ${sizeGB} GB.`);
+        return; // Block upload - do not call backend
+      }
     }
 
     const newFiles = await Promise.all(Array.from(selectedFiles).map(async (file) => {

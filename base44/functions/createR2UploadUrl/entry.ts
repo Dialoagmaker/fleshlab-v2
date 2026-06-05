@@ -60,6 +60,7 @@ Deno.serve(async (req) => {
       tags: tags || [],
       access_tier: access_tier || 'free',
       status: 'draft',
+      processing_status: 'uploading', // PHASE D: Track upload state
       source_video_url: null, // Will be set after processing
       primary_thumbnail_url: null,
       cover_image_url: null,
