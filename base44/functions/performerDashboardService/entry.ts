@@ -235,8 +235,13 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'period_month required' }, { status: 400 });
       }
 
-      // Get both PerformerEarning (legacy/manual) and PerformerEarningLineItem records
-      const [legacyEarnings, lineItems] = await Promise.all([
+      // Get VideoPerformer links to find videos this performer is in
+      const videoPerformers = await base44.asServiceRole.entities.VideoPerformer.filter({
+        performer_id: myPerformer.id
+      });
+
+      // Get all performance data in parallel
+      const [legacyEarnings, lineItems, videoStatSnapshots] = await Promise.all([
         base44.asServiceRole.entities.PerformerEarning.filter({
           performer_id: myPerformer.id,
           period_month
@@ -244,8 +249,32 @@ Deno.serve(async (req) => {
         base44.asServiceRole.entities.PerformerEarningLineItem.filter({
           performer_id: myPerformer.id,
           period_month
-        })
+        }),
+        // Get video stats for all videos this performer is in
+        Promise.all(
+          (videoPerformers || []).map(vp =>
+            base44.asServiceRole.entities.VideoStatSnapshot.filter({
+              video_id: vp.video_id,
+              period_month
+            }).catch(() => [])
+          )
+        )
       ]);
+
+      // Flatten video stats and get video titles
+      const allStats = videoStatSnapshots.flat();
+      const videoMap = {};
+      
+      // Build video title lookup
+      if (videoPerformers && videoPerformers.length > 0) {
+        const videoIds = [...new Set(videoPerformers.map(vp => vp.video_id))];
+        const videos = await Promise.all(
+          videoIds.map(vid => base44.asServiceRole.entities.Video.get(vid).catch(() => null))
+        );
+        videos.forEach(v => {
+          if (v) videoMap[v.id] = v.title;
+        });
+      }
 
       // Process legacy earnings with video titles
       const legacyWithVideos = await Promise.all((legacyEarnings || []).map(async (e) => {
@@ -289,8 +318,38 @@ Deno.serve(async (req) => {
         is_legacy: false
       }));
 
-      // Combine both sources
-      const allEarnings = [...legacyWithVideos, ...lineItemsProcessed];
+      // Convert VideoStatSnapshot to earnings line items (estimated status)
+      // Only include if NOT already in manual earnings to avoid double counting
+      const existingVideoIds = new Set(
+        [...(lineItems || []), ...(legacyEarnings || [])]
+          .filter(e => e.source_type === 'video_platform' || e.earning_type === 'video_platform')
+          .map(e => e.video_id)
+          .filter(Boolean)
+      );
+
+      const videoStatsAsEarnings = allStats
+        .filter(stat => !existingVideoIds.has(stat.video_id)) // Dedup: skip if already in manual earnings
+        .map(stat => ({
+          id: `stat_${stat.id}`, // Pseudo-ID to distinguish from DB records
+          source_type: 'video_platform',
+          source_platform: stat.platform,
+          description: videoMap[stat.video_id] || 'Video platform revenue',
+          video_title: videoMap[stat.video_id],
+          gross_amount_usd: stat.revenue_usd || 0,
+          performer_share_percent: myPerformer.revenue_split_pct || 40,
+          performer_amount_usd: (stat.revenue_usd || 0) * ((myPerformer.revenue_split_pct || 40) / 100),
+          studio_amount_usd: (stat.revenue_usd || 0) * (100 - (myPerformer.revenue_split_pct || 40)) / 100,
+          status: 'estimated',
+          period_month: stat.period_month,
+          views: stat.views,
+          likes: stat.likes,
+          favourites: stat.favourites,
+          is_legacy: false,
+          is_from_stats: true
+        }));
+
+      // Combine all earnings sources: legacy + line items + video stats
+      const allEarnings = [...legacyWithVideos, ...lineItemsProcessed, ...videoStatsAsEarnings];
 
       // Calculate summary
       const summary = {
@@ -345,7 +404,8 @@ Deno.serve(async (req) => {
         earnings: allEarnings,
         summary,
         legacy_count: legacyWithVideos.length,
-        line_item_count: lineItemsProcessed.length
+        line_item_count: lineItemsProcessed.length,
+        video_stats_count: videoStatsAsEarnings.length
       });
     }
 
