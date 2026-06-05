@@ -13,6 +13,7 @@ import VideoIdentificationPanel from "@/components/admin/VideoIdentificationPane
 import PerformerMultiSelect from "@/components/admin/PerformerMultiSelect";
 import VideoStatsSection from "@/components/admin/video/VideoStatsSection";
 import VideoDealsSection from "@/components/admin/video/VideoDealsSection";
+import DurationInput from "@/components/admin/DurationInput";
 import { normalizeMetadata, BLOCKED_SPAM_TAGS, SENSITIVE_CATEGORIES } from "@/lib/videoMetadataGuardrails";
 import { checkPublishReadiness } from "@/lib/publishReadinessGuardrails";
 
@@ -539,29 +540,10 @@ export default function VideoEdit() {
             </div>
             <div className="space-y-2">
               <Label>Duration (MM:SS)</Label>
-              <Input
-                type="text"
-                placeholder="00:00"
-                value={form.duration_seconds
-                  ? `${String(Math.floor(form.duration_seconds / 60)).padStart(2, '0')}:${String(form.duration_seconds % 60).padStart(2, '0')}`
-                  : ""}
-                onChange={e => {
-                  const val = e.target.value.trim();
-                  if (val === "") {
-                    set("duration_seconds", "");
-                  } else {
-                    const match = val.match(/^(\d+):(\d{1,2})$/);
-                    if (match) {
-                      const secs = parseInt(match[1]) * 60 + parseInt(match[2]);
-                      set("duration_seconds", secs);
-                    }
-                  }
-                }}
-                className="font-mono"
+              <DurationInput
+                value={form.duration_seconds}
+                onChange={(secs) => set("duration_seconds", secs)}
               />
-              {form.duration_seconds > 0 && (
-                <p className="text-xs text-muted-foreground">{form.duration_seconds}s</p>
-              )}
             </div>
           </div>
           <div className="space-y-2">
