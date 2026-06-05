@@ -32,7 +32,7 @@ function resolveThumbnail(video) {
 }
 
 // Video Row Component (extracted to allow useState usage)
-function VideoRow({ video, STATUS_COLORS, toggleStatus }) {
+function VideoRow({ video, STATUS_COLORS, toggleStatus, deleteVideo }) {
   const [imgError, setImgError] = useState(false);
   const thumb = resolveThumbnail(video);
 

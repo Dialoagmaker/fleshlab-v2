@@ -46,15 +46,53 @@ function isLegacyR2Url(value) {
 }
 
 /**
+ * Classify asset URL for debug display
+ */
+function classifyAssetUrlDetailed(url) {
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    return { type: 'invalid', isLegacy: false };
+  }
+  const trimmed = url.trim();
+  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    return { type: 'relative_r2_key', isLegacy: false };
+  }
+  if (/pub-[a-f0-9]+\.r2\.dev/i.test(trimmed)) {
+    return { type: 'legacy_r2_dev', isLegacy: true };
+  }
+  if (trimmed.startsWith('https://video.fleshlab.online/')) {
+    return { type: 'canonical_cdn', isLegacy: false };
+  }
+  return { type: 'external', isLegacy: false };
+}
+
+/**
  * Video Identification Panel
  * Shows thumbnail, preview player, and key metadata to help admin identify performers
  */
 export default function VideoIdentificationPanel({ video, brands = [], onClearThumbnail, onClearPreview }) {
-  // URL validation state - must be called before any early returns
+  // Enhanced validation state - separates browser fetch, render test, and server validation
   const [urlValidation, setUrlValidation] = React.useState({
-    thumbnail: { status: 'pending', httpStatus: null, error: null },
-    preview: { status: 'pending', httpStatus: null, error: null },
-    source: { status: 'pending', httpStatus: null, error: null },
+    thumbnail: { 
+      status: 'pending', 
+      httpStatus: null, 
+      error: null,
+      renderStatus: 'pending', // 'pending' | 'accessible' | 'failed'
+      fetchStatus: 'pending', // 'pending' | 'success' | 'blocked' | 'failed'
+    },
+    preview: { 
+      status: 'pending', 
+      httpStatus: null, 
+      error: null,
+      renderStatus: 'pending',
+      fetchStatus: 'pending',
+    },
+    source: { 
+      status: 'pending', 
+      httpStatus: null, 
+      error: null,
+      renderStatus: 'pending',
+      fetchStatus: 'pending',
+    },
   });
   
   // Build canonical URLs - must be called before hooks (unconditional)
@@ -62,22 +100,63 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
   const previewUrl = video ? (buildAssetUrl(video.trailer_url) || buildAssetUrl(video.source_video_url)) : null;
   const sourceUrl = video ? buildAssetUrl(video.source_video_url) : null;
   
+  // Classify URLs for validation handling (used in useEffect)
+  const thumbClassification = classifyAssetUrl(video?.primary_thumbnail_url);
+  const previewClassification = classifyAssetUrl(video?.trailer_url || video?.source_video_url);
+  const sourceClassification = classifyAssetUrl(video?.source_video_url);
+  
+  // Classify URLs for display (used in UI)
+  const thumbnailDisplayClassification = classifyAssetUrlDetailed(video.primary_thumbnail_url);
+  const previewDisplayClassification = classifyAssetUrlDetailed(video.trailer_url || video.source_video_url);
+  
   // Validate URLs on mount - must be called before any early returns
   React.useEffect(() => {
-    const validateUrl = async (name, url) => {
+    const validateUrl = async (name, url, classification) => {
       if (!url) {
-        setUrlValidation(prev => ({ ...prev, [name]: { status: 'missing', httpStatus: null, error: 'URL is null/empty' } }));
+        setUrlValidation(prev => ({ 
+          ...prev, 
+          [name]: { 
+            ...prev[name],
+            status: 'missing', 
+            httpStatus: null, 
+            error: 'URL is null/empty',
+            fetchStatus: 'not_applicable'
+          } 
+        }));
         return;
       }
       
-      try {
-        const response = await fetch(url, { method: 'HEAD', redirect: 'follow' });
+      // For legacy R2 URLs, browser fetch may fail due to CORS even if asset loads
+      // So we mark fetch as "blocked" and rely on render test
+      if (classification.type === 'legacy_r2_dev') {
         setUrlValidation(prev => ({
           ...prev,
           [name]: {
-            status: response.ok ? 'valid' : 'error',
-            httpStatus: response.status,
-            error: response.ok ? null : `HTTP ${response.status}`,
+            ...prev[name],
+            fetchStatus: 'blocked',
+            error: 'Legacy R2 URL - browser fetch blocked by CORS (asset may still render)',
+            status: 'pending_render_test'
+          }
+        }));
+        return;
+      }
+      
+      // For canonical CDN URLs, perform normal fetch validation
+      try {
+        const response = await fetch(url, { method: 'HEAD', redirect: 'follow' });
+        const httpStatus = response.status;
+        
+        // Accept 200, 206 (Partial Content), 304 (Not Modified)
+        const isSuccess = [200, 206, 304].includes(httpStatus);
+        
+        setUrlValidation(prev => ({
+          ...prev,
+          [name]: {
+            ...prev[name],
+            fetchStatus: isSuccess ? 'success' : 'failed',
+            status: isSuccess ? 'valid' : 'error',
+            httpStatus,
+            error: isSuccess ? null : `HTTP ${httpStatus}`,
             contentType: response.headers.get('content-type'),
             contentLength: response.headers.get('content-length'),
           }
@@ -85,14 +164,20 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
       } catch (err) {
         setUrlValidation(prev => ({
           ...prev,
-          [name]: { status: 'error', httpStatus: null, error: err.message || 'Network error' }
+          [name]: {
+            ...prev[name],
+            fetchStatus: 'failed',
+            status: 'error',
+            httpStatus: null, 
+            error: err.message || 'Network error'
+          }
         }));
       }
     };
     
-    validateUrl('thumbnail', thumbnailUrl);
-    validateUrl('preview', previewUrl);
-    validateUrl('source', sourceUrl);
+    validateUrl('thumbnail', thumbnailUrl, thumbClassification);
+    validateUrl('preview', previewUrl, previewClassification);
+    validateUrl('source', sourceUrl, classifyAssetUrl(video?.source_video_url));
   }, [thumbnailUrl, previewUrl, sourceUrl, video]);
   
   if (!video) return null;
@@ -125,41 +210,51 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
               )}
             </Label>
             <div className="aspect-video bg-secondary rounded-lg overflow-hidden border border-border relative">
-              {urlValidation.thumbnail.status === 'pending' ? (
+              {urlValidation.thumbnail.status === 'pending' && urlValidation.thumbnail.fetchStatus === 'pending' ? (
                 <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                   <Loader2 className="w-8 h-8 animate-spin opacity-50" />
                 </div>
-              ) : urlValidation.thumbnail.status === 'valid' ? (
+              ) : urlValidation.thumbnail.renderStatus === 'accessible' || (urlValidation.thumbnail.status === 'valid' && thumbClassification.type !== 'legacy_r2_dev') ? (
                 <img
                   src={`${thumbnailUrl}${thumbnailUrl.includes('?') ? '&' : '?'}asset_v=${video.updated_date ? new Date(video.updated_date).getTime() : Date.now()}`}
                   alt={video.title}
                   className="w-full h-full object-cover"
+                  crossOrigin={thumbClassification.type === 'canonical_cdn' ? 'anonymous' : undefined}
                   onError={(e) => {
                     console.error('❌ Thumbnail img onError:', thumbnailUrl);
-                    e.target.style.display = 'none';
-                    e.target.parentElement.innerHTML = `
-                      <div class="w-full h-full flex items-center justify-center text-destructive text-xs p-4 text-center">
-                        <div>
-                          <AlertCircle class="w-6 h-6 mx-auto mb-2" />
-                          <p>Image failed to load</p>
-                          <p class="font-mono text-[10px] mt-1 break-all">${thumbnailUrl}</p>
-                          <p class="text-[10px] mt-1">HTTP ${urlValidation.thumbnail.httpStatus || 'unknown'}</p>
-                        </div>
-                      </div>
-                    `;
+                    setUrlValidation(prev => ({
+                      ...prev,
+                      thumbnail: { ...prev.thumbnail, renderStatus: 'failed', status: 'broken' }
+                    }));
                   }}
                   onLoad={(e) => {
                     console.log('✅ Thumbnail loaded:', thumbnailUrl, 'Size:', e.target.naturalWidth, 'x', e.target.naturalHeight);
+                    setUrlValidation(prev => ({
+                      ...prev,
+                      thumbnail: { 
+                        ...prev.thumbnail, 
+                        renderStatus: 'accessible',
+                        status: prev.thumbnail.fetchStatus !== 'failed' ? 'healthy' : 'healthy_legacy_render_only'
+                      }
+                    }));
                   }}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-destructive text-xs p-4 text-center">
                   <div>
                     <AlertCircle className="w-6 h-6 mx-auto mb-2" />
-                    <p>{urlValidation.thumbnail.status === 'missing' ? 'No thumbnail URL' : 'Thumbnail URL not reachable'}</p>
-                    {thumbnailUrl && <p class="font-mono text-[10px] mt-1 break-all">{thumbnailUrl}</p>}
-                    {urlValidation.thumbnail.httpStatus && <p class="text-[10px] mt-0.5">HTTP {urlValidation.thumbnail.httpStatus}</p>}
-                    {urlValidation.thumbnail.error && <p class="text-[10px] mt-0.5">{urlValidation.thumbnail.error}</p>}
+                    <p>
+                      {urlValidation.thumbnail.status === 'missing' ? 'No thumbnail URL' : 
+                       thumbClassification.type === 'legacy_r2_dev' && urlValidation.thumbnail.fetchStatus === 'blocked' ?
+                       'Legacy R2 URL — awaiting render test' :
+                       'Thumbnail URL not reachable'}
+                    </p>
+                    {thumbnailUrl && <p className="font-mono text-[10px] mt-1 break-all">{thumbnailUrl}</p>}
+                    {urlValidation.thumbnail.httpStatus && <p className="text-[10px] mt-0.5">HTTP {urlValidation.thumbnail.httpStatus}</p>}
+                    {urlValidation.thumbnail.error && <p className="text-[10px] mt-0.5">{urlValidation.thumbnail.error}</p>}
+                    {urlValidation.thumbnail.renderStatus === 'failed' && (
+                      <p className="text-[10px] mt-1 text-red-600 font-semibold">❌ Render test failed</p>
+                    )}
                   </div>
                 </div>
               )}
@@ -173,21 +268,71 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                     ⚠️ Legacy R2 URL — working but should be migrated later
                   </div>
                 )}
-                {/* Debug Panel */}
-                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded p-2 mt-1 text-[10px] space-y-0.5">
-                  <div className="flex gap-2">
-                    <span className="text-yellow-600 font-semibold">IMG DEBUG:</span>
-                    <span>src={thumbnailUrl.substring(0, 80)}...</span>
+                {/* Debug Panel - Separated validation types */}
+                <div className="bg-muted/50 border border-border rounded p-2 mt-1 text-[10px] space-y-1">
+                  <div className="flex gap-2 items-center">
+                    <span className="font-semibold">URL Type:</span>
+                    <span className={
+                      thumbnailDisplayClassification.type === 'canonical_cdn' ? 'text-green-600' :
+                      thumbnailDisplayClassification.type === 'legacy_r2_dev' ? 'text-yellow-600' :
+                      'text-muted-foreground'
+                    }>
+                      {thumbnailDisplayClassification.type === 'canonical_cdn' ? '✅ Canonical CDN' :
+                       thumbnailDisplayClassification.type === 'legacy_r2_dev' ? '⚠️ Legacy R2' :
+                       thumbnailDisplayClassification.type}
+                    </span>
                   </div>
-                  <div>Cache: asset_v={video.updated_date ? new Date(video.updated_date).getTime() : 'none'}</div>
-                  <div>Validation: {urlValidation.thumbnail.status} (HTTP {urlValidation.thumbnail.httpStatus})</div>
-                  <div>Content-Type: {urlValidation.thumbnail.contentType || 'unknown'}</div>
-                  <div>Size: {urlValidation.thumbnail.contentLength || 'unknown'} bytes</div>
-                  {urlValidation.thumbnail.status === 'valid' ? (
-                    <div className="text-green-600">✅ Accessible - Check console for onLoad logs</div>
-                  ) : (
-                    <div className="text-destructive">❌ Not accessible - URL needs fixing</div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold">Browser Fetch:</span>
+                    <span className={
+                      urlValidation.thumbnail.fetchStatus === 'success' ? 'text-green-600' :
+                      urlValidation.thumbnail.fetchStatus === 'blocked' ? 'text-yellow-600' :
+                      urlValidation.thumbnail.fetchStatus === 'failed' ? 'text-red-600' :
+                      'text-muted-foreground'
+                    }>
+                      {urlValidation.thumbnail.fetchStatus === 'success' ? '✅ Success' :
+                       urlValidation.thumbnail.fetchStatus === 'blocked' ? '⚠️ Blocked (CORS)' :
+                       urlValidation.thumbnail.fetchStatus === 'failed' ? '❌ Failed' :
+                       urlValidation.thumbnail.fetchStatus}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold">Render Test:</span>
+                    <span className={
+                      urlValidation.thumbnail.renderStatus === 'accessible' ? 'text-green-600' :
+                      urlValidation.thumbnail.renderStatus === 'failed' ? 'text-red-600' :
+                      'text-yellow-600'
+                    }>
+                      {urlValidation.thumbnail.renderStatus === 'accessible' ? '✅ Accessible' :
+                       urlValidation.thumbnail.renderStatus === 'failed' ? '❌ Failed' :
+                       '⏳ Pending'}
+                    </span>
+                  </div>
+                  {urlValidation.thumbnail.httpStatus && (
+                    <div>HTTP Status: {urlValidation.thumbnail.httpStatus}</div>
                   )}
+                  {urlValidation.thumbnail.contentType && (
+                    <div>Content-Type: {urlValidation.thumbnail.contentType}</div>
+                  )}
+                  {/* Final Health Status */}
+                  <div className="pt-1 border-t border-border mt-1">
+                    <div className="flex gap-2">
+                      <span className="font-semibold">Final Health:</span>
+                      <span className={
+                        urlValidation.thumbnail.renderStatus === 'accessible' && urlValidation.thumbnail.fetchStatus === 'success' ? 'text-green-600 font-bold' :
+                        urlValidation.thumbnail.renderStatus === 'accessible' && thumbClassification.type === 'legacy_r2_dev' ? 'text-green-600 font-bold' :
+                        urlValidation.thumbnail.renderStatus === 'failed' ? 'text-red-600 font-bold' :
+                        urlValidation.thumbnail.fetchStatus === 'blocked' ? 'text-yellow-600' :
+                        'text-muted-foreground'
+                      }>
+                        {urlValidation.thumbnail.renderStatus === 'accessible' && urlValidation.thumbnail.fetchStatus === 'success' ? '✅ Healthy (Canonical)' :
+                         urlValidation.thumbnail.renderStatus === 'accessible' && thumbnailDisplayClassification.type === 'legacy_r2_dev' ? '✅ Healthy (Legacy Render)' :
+                         urlValidation.thumbnail.renderStatus === 'failed' ? '❌ Broken' :
+                         urlValidation.thumbnail.fetchStatus === 'blocked' ? '⚠️ Awaiting Render Test' :
+                         'Unknown'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </>
             )}
@@ -204,22 +349,35 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
               )}
             </Label>
             <div className="aspect-video bg-black rounded-lg overflow-hidden border border-border relative">
-              {urlValidation.preview.status === 'pending' ? (
+              {urlValidation.preview.status === 'pending' && urlValidation.preview.fetchStatus === 'pending' ? (
                 <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                   <Loader2 className="w-8 h-8 animate-spin opacity-50" />
                 </div>
-              ) : urlValidation.preview.status === 'valid' ? (
+              ) : urlValidation.preview.renderStatus === 'accessible' || (urlValidation.preview.status === 'valid' && previewClassification.type !== 'legacy_r2_dev') ? (
                 <video
                   key={`${previewUrl}-${video.updated_date || '0'}`}
                   src={`${previewUrl}${previewUrl.includes('?') ? '&' : '?'}asset_v=${video.updated_date ? new Date(video.updated_date).getTime() : Date.now()}`}
                   controls
                   className="w-full h-full"
                   preload="metadata"
+                  crossOrigin={previewClassification.type === 'canonical_cdn' ? 'anonymous' : undefined}
                   onLoadedMetadata={(e) => {
                     console.log('✅ Preview loaded:', previewUrl, 'Duration:', e.target.duration, 's');
+                    setUrlValidation(prev => ({
+                      ...prev,
+                      preview: { 
+                        ...prev.preview, 
+                        renderStatus: 'accessible',
+                        status: prev.preview.fetchStatus !== 'failed' ? 'healthy' : 'healthy_legacy_render_only'
+                      }
+                    }));
                   }}
                   onError={(e) => {
                     console.error('❌ Preview video onError:', previewUrl, e);
+                    setUrlValidation(prev => ({
+                      ...prev,
+                      preview: { ...prev.preview, renderStatus: 'failed', status: 'broken' }
+                    }));
                   }}
                 >
                   Your browser does not support the video tag.
@@ -228,10 +386,18 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                 <div className="w-full h-full flex items-center justify-center text-destructive text-xs p-4 text-center">
                   <div>
                     <AlertCircle className="w-6 h-6 mx-auto mb-2" />
-                    <p>{urlValidation.preview.status === 'missing' ? 'No preview URL' : 'Preview URL not reachable'}</p>
+                    <p>
+                      {urlValidation.preview.status === 'missing' ? 'No preview URL' :
+                       previewClassification.type === 'legacy_r2_dev' && urlValidation.preview.fetchStatus === 'blocked' ?
+                       'Legacy R2 URL — awaiting render test' :
+                       'Preview URL not reachable'}
+                    </p>
                     {previewUrl && <p className="font-mono text-[10px] mt-1 break-all">{previewUrl}</p>}
                     {urlValidation.preview.httpStatus && <p className="text-[10px] mt-0.5">HTTP {urlValidation.preview.httpStatus}</p>}
                     {urlValidation.preview.error && <p className="text-[10px] mt-0.5">{urlValidation.preview.error}</p>}
+                    {urlValidation.preview.renderStatus === 'failed' && (
+                      <p className="text-[10px] mt-1 text-red-600 font-semibold">❌ Render test failed</p>
+                    )}
                   </div>
                 </div>
               )}
@@ -245,21 +411,71 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                     ⚠️ Legacy R2 URL — working but should be migrated later
                   </div>
                 )}
-                {/* Debug Panel */}
-                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded p-2 mt-1 text-[10px] space-y-0.5">
-                  <div className="flex gap-2">
-                    <span className="text-yellow-600 font-semibold">VIDEO DEBUG:</span>
-                    <span>src={previewUrl.substring(0, 80)}...</span>
+                {/* Debug Panel - Separated validation types */}
+                <div className="bg-muted/50 border border-border rounded p-2 mt-1 text-[10px] space-y-1">
+                  <div className="flex gap-2 items-center">
+                    <span className="font-semibold">URL Type:</span>
+                    <span className={
+                      previewDisplayClassification.type === 'canonical_cdn' ? 'text-green-600' :
+                      previewDisplayClassification.type === 'legacy_r2_dev' ? 'text-yellow-600' :
+                      'text-muted-foreground'
+                    }>
+                      {previewDisplayClassification.type === 'canonical_cdn' ? '✅ Canonical CDN' :
+                       previewDisplayClassification.type === 'legacy_r2_dev' ? '⚠️ Legacy R2' :
+                       previewDisplayClassification.type}
+                    </span>
                   </div>
-                  <div>Cache: asset_v={video.updated_date ? new Date(video.updated_date).getTime() : 'none'}</div>
-                  <div>Validation: {urlValidation.preview.status} (HTTP {urlValidation.preview.httpStatus})</div>
-                  <div>Content-Type: {urlValidation.preview.contentType || 'unknown'}</div>
-                  <div>Size: {urlValidation.preview.contentLength || 'unknown'} bytes</div>
-                  {urlValidation.preview.status === 'valid' ? (
-                    <div className="text-green-600">✅ Accessible - Check console for onLoadedMetadata logs</div>
-                  ) : (
-                    <div className="text-destructive">❌ Not accessible - URL needs fixing</div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold">Browser Fetch:</span>
+                    <span className={
+                      urlValidation.preview.fetchStatus === 'success' ? 'text-green-600' :
+                      urlValidation.preview.fetchStatus === 'blocked' ? 'text-yellow-600' :
+                      urlValidation.preview.fetchStatus === 'failed' ? 'text-red-600' :
+                      'text-muted-foreground'
+                    }>
+                      {urlValidation.preview.fetchStatus === 'success' ? '✅ Success' :
+                       urlValidation.preview.fetchStatus === 'blocked' ? '⚠️ Blocked (CORS)' :
+                       urlValidation.preview.fetchStatus === 'failed' ? '❌ Failed' :
+                       urlValidation.preview.fetchStatus}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold">Render Test:</span>
+                    <span className={
+                      urlValidation.preview.renderStatus === 'accessible' ? 'text-green-600' :
+                      urlValidation.preview.renderStatus === 'failed' ? 'text-red-600' :
+                      'text-yellow-600'
+                    }>
+                      {urlValidation.preview.renderStatus === 'accessible' ? '✅ Accessible' :
+                       urlValidation.preview.renderStatus === 'failed' ? '❌ Failed' :
+                       '⏳ Pending'}
+                    </span>
+                  </div>
+                  {urlValidation.preview.httpStatus && (
+                    <div>HTTP Status: {urlValidation.preview.httpStatus}</div>
                   )}
+                  {urlValidation.preview.contentType && (
+                    <div>Content-Type: {urlValidation.preview.contentType}</div>
+                  )}
+                  {/* Final Health Status */}
+                  <div className="pt-1 border-t border-border mt-1">
+                    <div className="flex gap-2">
+                      <span className="font-semibold">Final Health:</span>
+                      <span className={
+                        urlValidation.preview.renderStatus === 'accessible' && urlValidation.preview.fetchStatus === 'success' ? 'text-green-600 font-bold' :
+                        urlValidation.preview.renderStatus === 'accessible' && previewClassification.type === 'legacy_r2_dev' ? 'text-green-600 font-bold' :
+                        urlValidation.preview.renderStatus === 'failed' ? 'text-red-600 font-bold' :
+                        urlValidation.preview.fetchStatus === 'blocked' ? 'text-yellow-600' :
+                        'text-muted-foreground'
+                      }>
+                        {urlValidation.preview.renderStatus === 'accessible' && urlValidation.preview.fetchStatus === 'success' ? '✅ Healthy (Canonical)' :
+                         urlValidation.preview.renderStatus === 'accessible' && previewDisplayClassification.type === 'legacy_r2_dev' ? '✅ Healthy (Legacy Render)' :
+                         urlValidation.preview.renderStatus === 'failed' ? '❌ Broken' :
+                         urlValidation.preview.fetchStatus === 'blocked' ? '⚠️ Awaiting Render Test' :
+                         'Unknown'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </>
             )}
@@ -379,35 +595,56 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
         </div>
       </div>
 
-      {/* Asset Diagnostic Panel */}
+      {/* Asset Diagnostic Panel - Enhanced with separated validation */}
       <div className="border-t border-border pt-4 mt-4">
-        <h3 className="text-xs font-semibold text-foreground mb-3">🔍 Asset Diagnostic</h3>
+        <h3 className="text-xs font-semibold text-foreground mb-3">🔍 Asset Diagnostic (Enhanced)</h3>
         <div className="bg-muted/30 rounded-lg p-4 space-y-4 text-xs">
           {/* Thumbnail Diagnostic */}
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              {urlValidation.thumbnail.status === 'valid' ? (
+              {urlValidation.thumbnail.renderStatus === 'accessible' ? (
                 <CheckCircle2 className="w-3 h-3 text-green-600" />
-              ) : urlValidation.thumbnail.status === 'pending' ? (
+              ) : urlValidation.thumbnail.renderStatus === 'pending' ? (
                 <Loader2 className="w-3 h-3 text-slate-400 animate-spin" />
+              ) : urlValidation.thumbnail.renderStatus === 'failed' ? (
+                <AlertCircle className="w-3 h-3 text-destructive" />
+              ) : urlValidation.thumbnail.fetchStatus === 'blocked' ? (
+                <AlertCircle className="w-3 h-3 text-yellow-600" />
               ) : (
                 <AlertCircle className="w-3 h-3 text-destructive" />
               )}
               <span className="font-semibold">Thumbnail:</span>
-              <span className={urlValidation.thumbnail.status === 'valid' ? 'text-green-600' : 'text-destructive'}>
-                {urlValidation.thumbnail.status === 'valid' ? '✅ accessible' : urlValidation.thumbnail.status === 'missing' ? '⚠️ missing' : `❌ ${urlValidation.thumbnail.httpStatus || 'error'}`}
+              <span className={
+                urlValidation.thumbnail.renderStatus === 'accessible' ? 'text-green-600' :
+                urlValidation.thumbnail.fetchStatus === 'blocked' ? 'text-yellow-600' :
+                'text-destructive'
+              }>
+                {urlValidation.thumbnail.renderStatus === 'accessible' ? '✅ Render accessible' :
+                 urlValidation.thumbnail.fetchStatus === 'blocked' ? '⚠️ Legacy - awaiting render' :
+                 urlValidation.thumbnail.renderStatus === 'failed' ? '❌ Render failed' :
+                 urlValidation.thumbnail.status === 'missing' ? '⚠️ missing' :
+                 `❌ ${urlValidation.thumbnail.httpStatus || 'error'}`}
               </span>
             </div>
             <div className="ml-5 space-y-0.5 text-[10px] font-mono">
-              <div className="text-muted-foreground">Raw field (primary_thumbnail_url):</div>
+              <div className="text-muted-foreground">Raw field:</div>
               <div className="break-all">{video.primary_thumbnail_url || <span className="text-destructive">null</span>}</div>
-              <div className="text-muted-foreground mt-1">Resolved URL:</div>
-              <div className="break-all">{thumbnailUrl || <span className="text-destructive">null</span>}</div>
-              {urlValidation.thumbnail.contentType && (
-                <div className="text-muted-foreground">Content-Type: {urlValidation.thumbnail.contentType}</div>
+              <div className="text-muted-foreground mt-1">URL Type:</div>
+              <div className={
+                thumbnailDisplayClassification.type === 'canonical_cdn' ? 'text-green-600' :
+                thumbnailDisplayClassification.type === 'legacy_r2_dev' ? 'text-yellow-600' :
+                ''
+              }>
+                {thumbnailDisplayClassification.type}
+              </div>
+              {urlValidation.thumbnail.fetchStatus !== 'not_applicable' && (
+                <div>Fetch Status: {urlValidation.thumbnail.fetchStatus}</div>
               )}
-              {urlValidation.thumbnail.contentLength && (
-                <div className="text-muted-foreground">Content-Length: {urlValidation.thumbnail.contentLength} bytes</div>
+              {urlValidation.thumbnail.renderStatus !== 'pending' && (
+                <div>Render Status: {urlValidation.thumbnail.renderStatus}</div>
+              )}
+              {urlValidation.thumbnail.httpStatus && (
+                <div>HTTP Status: {urlValidation.thumbnail.httpStatus}</div>
               )}
             </div>
           </div>
@@ -415,58 +652,50 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
           {/* Preview Diagnostic */}
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              {urlValidation.preview.status === 'valid' ? (
+              {urlValidation.preview.renderStatus === 'accessible' ? (
                 <CheckCircle2 className="w-3 h-3 text-green-600" />
-              ) : urlValidation.preview.status === 'pending' ? (
+              ) : urlValidation.preview.renderStatus === 'pending' ? (
                 <Loader2 className="w-3 h-3 text-slate-400 animate-spin" />
+              ) : urlValidation.preview.renderStatus === 'failed' ? (
+                <AlertCircle className="w-3 h-3 text-destructive" />
+              ) : urlValidation.preview.fetchStatus === 'blocked' ? (
+                <AlertCircle className="w-3 h-3 text-yellow-600" />
               ) : (
                 <AlertCircle className="w-3 h-3 text-destructive" />
               )}
               <span className="font-semibold">Preview:</span>
-              <span className={urlValidation.preview.status === 'valid' ? 'text-green-600' : 'text-destructive'}>
-                {urlValidation.preview.status === 'valid' ? '✅ accessible' : urlValidation.preview.status === 'missing' ? '⚠️ missing' : `❌ ${urlValidation.preview.httpStatus || 'error'}`}
+              <span className={
+                urlValidation.preview.renderStatus === 'accessible' ? 'text-green-600' :
+                urlValidation.preview.fetchStatus === 'blocked' ? 'text-yellow-600' :
+                'text-destructive'
+              }>
+                {urlValidation.preview.renderStatus === 'accessible' ? '✅ Render accessible' :
+                 urlValidation.preview.fetchStatus === 'blocked' ? '⚠️ Legacy - awaiting render' :
+                 urlValidation.preview.renderStatus === 'failed' ? '❌ Render failed' :
+                 urlValidation.preview.status === 'missing' ? '⚠️ missing' :
+                 `❌ ${urlValidation.preview.httpStatus || 'error'}`}
               </span>
             </div>
             <div className="ml-5 space-y-0.5 text-[10px] font-mono">
-              <div className="text-muted-foreground">Raw fields (trailer_url → source_video_url):</div>
+              <div className="text-muted-foreground">Raw fields:</div>
               <div className="break-all">trailer_url: {video.trailer_url || <span className="text-destructive">null</span>}</div>
-              <div className="break-all">source_video_url: {video.source_video_url || <span className="text-destructive">null</span>}</div>
-              <div className="text-muted-foreground mt-1">Resolved URL:</div>
-              <div className="break-all">{previewUrl || <span className="text-destructive">null</span>}</div>
-              {urlValidation.preview.contentType && (
-                <div className="text-muted-foreground">Content-Type: {urlValidation.preview.contentType}</div>
+              <div className="break-all">source: {video.source_video_url || <span className="text-destructive">null</span>}</div>
+              <div className="text-muted-foreground mt-1">URL Type:</div>
+              <div className={
+                previewDisplayClassification.type === 'canonical_cdn' ? 'text-green-600' :
+                previewDisplayClassification.type === 'legacy_r2_dev' ? 'text-yellow-600' :
+                ''
+              }>
+                {previewDisplayClassification.type}
+              </div>
+              {urlValidation.preview.fetchStatus !== 'not_applicable' && (
+                <div>Fetch Status: {urlValidation.preview.fetchStatus}</div>
               )}
-              {urlValidation.preview.contentLength && (
-                <div className="text-muted-foreground">Content-Length: {urlValidation.preview.contentLength} bytes</div>
+              {urlValidation.preview.renderStatus !== 'pending' && (
+                <div>Render Status: {urlValidation.preview.renderStatus}</div>
               )}
-            </div>
-          </div>
-
-          {/* Source Diagnostic */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              {urlValidation.source.status === 'valid' ? (
-                <CheckCircle2 className="w-3 h-3 text-green-600" />
-              ) : urlValidation.source.status === 'pending' ? (
-                <Loader2 className="w-3 h-3 text-slate-400 animate-spin" />
-              ) : (
-                <AlertCircle className="w-3 h-3 text-destructive" />
-              )}
-              <span className="font-semibold">Source:</span>
-              <span className={urlValidation.source.status === 'valid' ? 'text-green-600' : 'text-destructive'}>
-                {urlValidation.source.status === 'valid' ? '✅ accessible' : urlValidation.source.status === 'missing' ? '⚠️ missing' : `❌ ${urlValidation.source.httpStatus || 'error'}`}
-              </span>
-            </div>
-            <div className="ml-5 space-y-0.5 text-[10px] font-mono">
-              <div className="text-muted-foreground">Raw field (source_video_url):</div>
-              <div className="break-all">{video.source_video_url || <span className="text-destructive">null</span>}</div>
-              <div className="text-muted-foreground mt-1">Resolved URL:</div>
-              <div className="break-all">{sourceUrl || <span className="text-destructive">null</span>}</div>
-              {urlValidation.source.contentType && (
-                <div className="text-muted-foreground">Content-Type: {urlValidation.source.contentType}</div>
-              )}
-              {urlValidation.source.contentLength && (
-                <div className="text-muted-foreground">Content-Length: {urlValidation.source.contentLength} bytes</div>
+              {urlValidation.preview.httpStatus && (
+                <div>HTTP Status: {urlValidation.preview.httpStatus}</div>
               )}
             </div>
           </div>
