@@ -69,20 +69,20 @@ Deno.serve(async (req) => {
         performer_id: myPerformer.id
       });
       const videoIds = videoPerformers.slice(0, 5).map(vp => vp.video_id);
-      const latestVideos = [];
-      for (const vid of videoIds) {
-        const video = await base44.asServiceRole.entities.Video.get(vid);
-        if (video) {
-          latestVideos.push({
-            id: video.id,
-            title: video.title,
-            status: video.status,
-            published_at: video.published_at,
-            view_count: video.view_count || 0,
-            access_tier: video.access_tier
-          });
-        }
-      }
+      // Parallel fetch — no batch query available, so Promise.all avoids serial awaits
+      const latestVideoResults = await Promise.all(
+        videoIds.map(vid => base44.asServiceRole.entities.Video.get(vid).catch(() => null))
+      );
+      const latestVideos = latestVideoResults
+        .filter(video => video !== null)
+        .map(video => ({
+          id: video.id,
+          title: video.title,
+          status: video.status,
+          published_at: video.published_at,
+          view_count: video.view_count || 0,
+          access_tier: video.access_tier
+        }));
 
       // Get compliance records
       const complianceRecords = await base44.asServiceRole.entities.ComplianceRecord.filter({
@@ -325,12 +325,14 @@ Deno.serve(async (req) => {
         .filter(vp => vp.lead_performer)
         .map(vp => vp.video_id);
 
-      // Fetch all videos
-      const videos = [];
-      for (const vid of videoIds) {
-        const video = await base44.asServiceRole.entities.Video.get(vid);
-        if (video) videos.push(video);
-      }
+      // Parallel fetch all videos + earnings simultaneously — no batch query available
+      const [videoResults, earnings] = await Promise.all([
+        Promise.all(
+          videoIds.map(vid => base44.asServiceRole.entities.Video.get(vid).catch(() => null))
+        ),
+        base44.asServiceRole.entities.PerformerEarning.filter({ performer_id: myPerformer.id })
+      ]);
+      const videos = videoResults.filter(v => v !== null);
 
       // Calculate statistics
       const totalProductions = videoIds.length;
@@ -349,18 +351,16 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Active promotions
-      const allSnapshots = [];
-      for (const videoId of videoIds) {
-        const snapshots = await base44.asServiceRole.entities.VideoStatSnapshot.filter({ video_id: videoId });
-        allSnapshots.push(...snapshots);
-      }
+      // Active promotions — fetch all snapshot sets in parallel
+      const snapshotSets = await Promise.all(
+        videoIds.map(videoId =>
+          base44.asServiceRole.entities.VideoStatSnapshot.filter({ video_id: videoId }).catch(() => [])
+        )
+      );
+      const allSnapshots = snapshotSets.flat();
       const activePromotions = allSnapshots.filter(s => s.promotion_status === 'active').length;
 
-      // Lifetime revenue (all approved/paid earnings)
-      const earnings = await base44.asServiceRole.entities.PerformerEarning.filter({
-        performer_id: myPerformer.id
-      });
+      // Lifetime revenue (all approved/paid earnings) — already fetched above in parallel
       const lifetimeRevenue = earnings
         .filter(e => e.status === 'approved' || e.status === 'paid')
         .reduce((sum, e) => sum + (e.net_amount_usd || 0), 0);
@@ -597,34 +597,45 @@ Deno.serve(async (req) => {
         return Response.json({ success: true, stats: [], total_count: 0 });
       }
 
-      const videoIds = videoPerformers.map(vp => vp.video_id);
+      const videoIds = [...new Set(videoPerformers.map(vp => vp.video_id))];
 
-      // Get all snapshots for these videos
-      const allSnapshots = [];
-      for (const videoId of videoIds) {
-        const query = { video_id: videoId };
-        if (period_month) query.period_month = period_month;
+      // Fetch all snapshot sets + all video records in parallel
+      // Deduplicating videoIds prevents redundant Video.get calls when a performer
+      // appears in many snapshots for the same video across different periods/platforms.
+      const [snapshotSets, videoResults] = await Promise.all([
+        Promise.all(
+          videoIds.map(videoId => {
+            const query = { video_id: videoId };
+            if (period_month) query.period_month = period_month;
+            return base44.asServiceRole.entities.VideoStatSnapshot.filter(query).catch(() => []);
+          })
+        ),
+        Promise.all(
+          videoIds.map(vid => base44.asServiceRole.entities.Video.get(vid).catch(() => null))
+        )
+      ]);
 
-        const snapshots = await base44.asServiceRole.entities.VideoStatSnapshot.filter(query);
-        allSnapshots.push(...snapshots);
-      }
+      const allSnapshots = snapshotSets.flat();
 
-      // Get video titles and sanitize data (remove admin-only fields)
-      const statsWithVideos = await Promise.all(allSnapshots.map(async (snap) => {
-        const video = await base44.asServiceRole.entities.Video.get(snap.video_id);
-        return {
-          id: snap.id,
-          video_id: snap.video_id,
-          video_title: video?.title || 'Unknown',
-          platform: snap.platform,
-          period_month: snap.period_month,
-          views: snap.views,
-          likes: snap.likes,
-          favourites: snap.favourites,
-          revenue_usd: snap.revenue_usd,
-          promotion_status: snap.promotion_status
-          // NOT returning: admin_note, promotion_note, raw_data_json (admin-only)
-        };
+      // Build a lookup map of videoId → title to avoid repeated Video.get per snapshot
+      const videoTitleMap = {};
+      videoResults.forEach((video, i) => {
+        if (video) videoTitleMap[videoIds[i]] = video.title;
+      });
+
+      // Map snapshots using the pre-built title lookup — no per-snapshot DB calls
+      const statsWithVideos = allSnapshots.map(snap => ({
+        id: snap.id,
+        video_id: snap.video_id,
+        video_title: videoTitleMap[snap.video_id] || 'Unknown',
+        platform: snap.platform,
+        period_month: snap.period_month,
+        views: snap.views,
+        likes: snap.likes,
+        favourites: snap.favourites,
+        revenue_usd: snap.revenue_usd,
+        promotion_status: snap.promotion_status
+        // NOT returning: admin_note, promotion_note, raw_data_json (admin-only)
       }));
 
       // Sort by period_month descending
