@@ -276,6 +276,12 @@ export default function VideoEdit() {
     setInput("");
   };
 
+  // Calculate publish readiness for UI (outside handleSubmit so it's available for render)
+  const publishCheck = checkPublishReadiness(form, { videoPerformers: selectedPerformerIds });
+  
+  // Validate categories separately for cleanup helper
+  const categoryValidation = validateVideoCategories(form.categories || []);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const errs = {};
@@ -296,9 +302,6 @@ export default function VideoEdit() {
       strict: true,
     });
     
-    // Validate categories separately for cleanup helper
-    const categoryValidation = validateVideoCategories(form.categories || []);
-    
     if (!validation.valid) {
       errs.metadata = validation.errors.join(' ');
       errs.categories = validation.removed.categories;
@@ -306,7 +309,6 @@ export default function VideoEdit() {
     }
     
     // Phase 2D P0: Validate publish readiness if status is changing to published
-    const publishCheck = checkPublishReadiness(form, { videoPerformers: selectedPerformerIds });
     if (form.status === 'published' && video?.status !== 'published') {
       if (!publishCheck.canPublish && publishCheck.errors.length > 0) {
         errs.publish = publishCheck.errors.join(' ');
@@ -325,7 +327,7 @@ export default function VideoEdit() {
     
     // Clean invalid categories helper
     const handleCleanInvalidCategories = () => {
-      const valid = categoryValidation.normalized || form.categories || [];
+      const valid = categoryValidation?.normalized || form.categories || [];
       set("categories", valid);
       setErrors(ex => ({ ...ex, categories: undefined, metadata: undefined }));
     };
