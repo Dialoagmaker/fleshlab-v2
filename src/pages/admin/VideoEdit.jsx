@@ -287,6 +287,39 @@ export default function VideoEdit() {
     },
   });
 
+  const clearCorruptThumbnail = useMutation({
+    mutationFn: async () => {
+      // Clear the corrupt thumbnail URL
+      await base44.entities.Video.update(id, { primary_thumbnail_url: '' });
+      return { success: true, message: 'Corrupt thumbnail cleared' };
+    },
+    onSuccess: () => {
+      setCheckStatus({ ok: true, msg: '✓ Corrupt thumbnail URL cleared - regenerate now' });
+      queryClient.invalidateQueries({ queryKey: ['video', id] });
+      // Auto-trigger regeneration
+      setTimeout(() => {
+        retrigger.mutate();
+      }, 500);
+    },
+    onError: (err) => {
+      setCheckStatus({ ok: false, msg: err.message });
+    },
+  });
+
+  const regenerateThumbnail = useMutation({
+    mutationFn: () => base44.functions.invoke('retriggerVideoProcessing', { 
+      video_id: id,
+      regenerate_only: 'thumbnail'
+    }),
+    onSuccess: (res) => {
+      setCheckStatus({ ok: true, msg: '✓ Thumbnail regeneration triggered - check back in 30s' });
+      queryClient.invalidateQueries({ queryKey: ['video', id] });
+    },
+    onError: (err) => {
+      setCheckStatus({ ok: false, msg: err.message });
+    },
+  });
+
   const retrigger = useMutation({
     mutationFn: () => base44.functions.invoke('retriggerVideoProcessing', { video_id: id }),
     onSuccess: (res) => setRetriggerStatus({ ok: true, msg: res.data?.message || 'Job accepted by processor.' }),
@@ -608,7 +641,33 @@ export default function VideoEdit() {
           <div className="border-t border-border pt-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold text-foreground">🔍 Asset Diagnostic</p>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                {thumbnailValidation?.validation_status === 'failed' && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      if (window.confirm('Corrupt thumbnail URL will be deleted. Regenerate now?')) {
+                        clearCorruptThumbnail.mutate();
+                      }
+                    }}
+                    disabled={clearCorruptThumbnail.isPending}
+                    className="text-xs h-7 bg-destructive hover:bg-destructive/90"
+                  >
+                    🗑️ Clear Corrupt Thumbnail
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => regenerateThumbnail.mutate()}
+                  disabled={regenerateThumbnail.isPending}
+                  className="text-xs h-7"
+                >
+                  {regenerateThumbnail.isPending ? 'Regenerating...' : '🔄 Regenerate Thumbnail'}
+                </Button>
                 <Button
                   type="button"
                   variant="outline"
@@ -647,7 +706,9 @@ export default function VideoEdit() {
                   <strong>Thumbnail Validation:</strong> {thumbnailValidation.validation_status}
                 </div>
                 {thumbnailValidation.magic_header && (
-                  <div>Magic Header: {thumbnailValidation.magic_header} {thumbnailValidation.magic_header === 'FF D8' ? '✅' : '❌'}</div>
+                  <div className={thumbnailValidation.magic_header === 'FF D8' ? 'text-green-600' : 'text-destructive'}>
+                    Magic Header: {thumbnailValidation.magic_header} {thumbnailValidation.magic_header === 'FF D8' ? '✅ Valid JPEG' : '❌ NOT JPEG - ' + (thumbnailValidation.actual_format || 'Unknown')}
+                  </div>
                 )}
                 {thumbnailValidation.content_type && (
                   <div>Content-Type: {thumbnailValidation.content_type}</div>
@@ -662,13 +723,25 @@ export default function VideoEdit() {
                   <div>Dimensions: {thumbnailValidation.width}x{thumbnailValidation.height}</div>
                 )}
                 {thumbnailValidation.recommendation && (
-                  <div className="text-yellow-600 mt-2">
+                  <div className={thumbnailValidation.validation_status === 'failed' ? 'text-destructive font-semibold' : 'text-yellow-600'}>
                     <strong>Recommendation:</strong> {thumbnailValidation.recommendation}
                   </div>
                 )}
                 {thumbnailValidation.sample_content && (
                   <div className="text-[9px] break-all bg-black/10 p-1 rounded">
-                    Sample: {thumbnailValidation.sample_content}
+                    Sample: {thumbnailValidation.sample_content.substring(0, 100)}...
+                  </div>
+                )}
+                {thumbnailValidation.validation_status === 'failed' && (
+                  <div className="bg-destructive/20 border border-destructive/30 rounded p-2 mt-2">
+                    <p className="font-semibold text-destructive mb-1">⚠️ CORRUPT FILE DETECTED</p>
+                    <p className="text-[10px]">This URL contains an HTML error page, not a real image.</p>
+                    <p className="text-[10px] mt-1">Action required:</p>
+                    <ol className="list-decimal list-inside text-[10px] space-y-0.5">
+                      <li>Click "Clear Corrupt Thumbnail" to delete this URL</li>
+                      <li>Click "Regenerate Thumbnail" to create a new one from source video</li>
+                      <li>Wait 30 seconds, then validate again</li>
+                    </ol>
                   </div>
                 )}
               </div>
