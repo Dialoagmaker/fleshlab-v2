@@ -46,7 +46,7 @@ export default function PerformerDashboardTabs({ performer }) {
         </TabsContent>
 
         <TabsContent value="stats">
-          <PlatformStatsTab performerId={performerId} revenueSharePct={performer.career_stats?.revenue_share_pct || 40} />
+          <PlatformStatsTab performerId={performerId} performerToken={performerToken} revenueSharePct={performer.career_stats?.revenue_share_pct || 40} />
         </TabsContent>
 
         <TabsContent value="compliance">

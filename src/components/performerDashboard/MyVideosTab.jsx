@@ -4,21 +4,22 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export default function MyVideosTab({ performerId }) {
+export default function MyVideosTab({ performerId, performerToken }) {
   const { data: videos, isLoading, error } = useQuery({
     queryKey: ["performer-videos-list", performerId],
     queryFn: async () => {
       console.log('[MyVideosTab] Fetching videos for performer:', performerId);
       const res = await base44.functions.invoke("performerDashboardService", {
         action: "get_videos",
-        performer_id: performerId
+        performer_id: performerId,
+        performer_token: performerToken
       });
       console.log('[MyVideosTab] Raw response:', res.data);
       const videosArray = Array.isArray(res.data?.videos) ? res.data.videos : [];
       console.log('[MyVideosTab] Normalized videos:', videosArray, 'Count:', videosArray.length);
       return videosArray;
     },
-    enabled: !!performerId
+    enabled: !!performerId && !!performerToken
   });
 
   if (isLoading) {

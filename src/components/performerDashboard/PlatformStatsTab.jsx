@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 
-export default function PlatformStatsTab({ performerId }) {
+export default function PlatformStatsTab({ performerId, performerToken, revenueSharePct: revenueSharePctProp }) {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
 
   const { data: statsData, isLoading, error } = useQuery({
@@ -17,19 +17,20 @@ export default function PlatformStatsTab({ performerId }) {
       const res = await base44.functions.invoke('performerDashboardService', {
         action: 'get_video_stats',
         performer_id: performerId,
-        period_month: selectedMonth
+        period_month: selectedMonth,
+        performer_token: performerToken
       });
       console.log('[PlatformStatsTab] Raw response:', res.data);
       return res.data;
     },
-    enabled: !!performerId
+    enabled: !!performerId && !!performerToken
   });
 
   // Safe array extraction
   const stats = Array.isArray(statsData?.stats) ? statsData.stats : [];
   const grossRevenue = statsData?.gross_revenue_total || 0;
   const performerEarnings = statsData?.performer_earnings_total || 0;
-  const revenueSharePct = statsData?.revenue_share_pct || 40;
+  const revenueSharePct = revenueSharePctProp || statsData?.revenue_share_pct || 40;
 
   // Build available periods from stats
   const availablePeriods = [...new Set(stats.map(s => s.period_month).filter(Boolean))].sort().reverse();
