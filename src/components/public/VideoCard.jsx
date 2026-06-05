@@ -1,49 +1,90 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import { Play, Clock, Crown, Star, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Build asset URL (same as admin panel)
+function buildAssetUrl(value) {
+  if (!value) return null;
+  const clean = String(value).trim();
+  if (!clean) return null;
+  if (clean.startsWith("http://") || clean.startsWith("https://")) return clean;
+  return `https://video.fleshlab.online/${clean.replace(/^\/+/, "")}`;
+}
+
 export default function VideoCard({ video, brands = [], performers = [] }) {
+  const [isHovered, setIsHovered] = useState(false);
+  const videoRef = useRef(null);
   const brand = brands.find(b => b.id === video.brand_id);
   const primaryPerformer = performers.find(p => p.id === video.performer_id);
   const hasValidDuration = video.duration_seconds && video.duration_seconds > 0;
   const mins = hasValidDuration ? Math.floor(video.duration_seconds / 60) : null;
   const secs = hasValidDuration ? String(video.duration_seconds % 60).padStart(2, '0') : null;
+  
+  // Preview URL - trailer_url is canonical
+  const rawPreviewUrl = video.trailer_url || video.preview_gif_url || null;
+  const previewUrl = buildAssetUrl(rawPreviewUrl);
+  const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
   return (
     <a href={`/videos/${video.slug}`} className="group block">
       <div className="rounded-2xl overflow-hidden bg-[#111] border border-white/[0.08] hover:border-rose-500/50 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_16px_48px_rgba(225,29,72,0.25)]">
 
-        {/* Thumbnail */}
-        <div className="relative aspect-video overflow-hidden bg-[#0a0a0a]">
-          {video.primary_thumbnail_url ? (
-            <img
-              src={`${video.primary_thumbnail_url}${video.primary_thumbnail_url.includes('?') ? '&' : '?'}v=${video.updated_date ? new Date(video.updated_date).getTime() : Date.now()}`}
-              alt={video.title}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              loading="lazy"
-              decoding="async"
-              width="640"
-              height="360"
+        {/* Thumbnail with Hover Preview */}
+        <div 
+          className="relative aspect-video overflow-hidden bg-[#0a0a0a]"
+          onMouseEnter={() => !isMobile && setIsHovered(true)}
+          onMouseLeave={() => {
+            setIsHovered(false);
+            if (videoRef.current) {
+              videoRef.current.pause();
+              videoRef.current.currentTime = 0;
+            }
+          }}
+        >
+          {/* Thumbnail Image */}
+          <img
+            src={`${video.primary_thumbnail_url}${video.primary_thumbnail_url.includes('?') ? '&' : '?'}v=${video.updated_date ? new Date(video.updated_date).getTime() : Date.now()}`}
+            alt={video.title}
+            className={`w-full h-full object-cover transition-transform duration-700 ${isHovered ? 'scale-105' : 'scale-110'}`}
+            loading="lazy"
+            decoding="async"
+            width="640"
+            height="360"
+          />
+          
+          {/* Preview Video on Hover (Desktop only) */}
+          {isHovered && previewUrl && !isMobile && (
+            <video
+              ref={videoRef}
+              src={previewUrl}
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              className="absolute inset-0 w-full h-full object-cover"
+              onMouseEnter={(e) => {
+                e.currentTarget.play().catch(err => console.warn('Preview playback blocked:', err));
+              }}
             />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a]">
-              <Play className="w-16 h-16 text-white/10" />
-            </div>
           )}
 
-          {/* Cinematic gradient overlay - enhanced */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+          {/* Cinematic gradient overlay - enhanced (hide during preview) */}
+          {!isHovered && (
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+          )}
 
-          {/* Enhanced hover play button with glow */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className={cn(
-              "w-16 h-16 bg-gradient-to-br from-rose-600 to-rose-700 rounded-full flex items-center justify-center shadow-2xl shadow-rose-600/50",
-              "opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300",
-              "hover:shadow-[0_0_40px_rgba(225,29,72,0.6)]"
-            )}>
-              <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+          {/* Enhanced hover play button with glow (hide if has preview) */}
+          {!previewUrl && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className={cn(
+                "w-16 h-16 bg-gradient-to-br from-rose-600 to-rose-700 rounded-full flex items-center justify-center shadow-2xl shadow-rose-600/50",
+                "opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300",
+                "hover:shadow-[0_0_40px_rgba(225,29,72,0.6)]"
+              )}>
+                <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Top-left badges - enhanced hierarchy */}
           <div className="absolute top-2 left-2 flex flex-col gap-1.5">

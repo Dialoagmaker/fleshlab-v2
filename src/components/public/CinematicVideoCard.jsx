@@ -1,18 +1,29 @@
 import { Link } from "react-router-dom";
 import { Play, Lock, Star } from "lucide-react";
+import { useState, useRef } from "react";
 import { isPublicImageUrl } from "@/lib/seoValidation";
+
+// Build asset URL (same as admin panel)
+function buildAssetUrl(value) {
+  if (!value) return null;
+  const clean = String(value).trim();
+  if (!clean) return null;
+  if (clean.startsWith("http://") || clean.startsWith("https://")) return clean;
+  return `https://video.fleshlab.online/${clean.replace(/^\/+/, "")}`;
+}
 
 /**
  * CinematicVideoCard - Premium video card for studio portal design
  * Variants: standard, featured, horizontal
  */
 export default function CinematicVideoCard({ video, variant = "standard", brands = [] }) {
-  // Find brand info
+  const [isHovered, setIsHovered] = useState(false);
+  const videoRef = useRef(null);
   const brand = brands?.find(b => b.id === video.brand_id);
-  
-  // Validate image URL
   const hasValidThumbnail = isPublicImageUrl(video.primary_thumbnail_url);
-  const hasTrailer = !!video.trailer_url;
+  const rawTrailerUrl = video.trailer_url || video.preview_gif_url || null;
+  const trailerUrl = buildAssetUrl(rawTrailerUrl);
+  const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   
   // Access tier badges
   const accessBadges = {
@@ -38,17 +49,43 @@ export default function CinematicVideoCard({ video, variant = "standard", brands
         variant === "featured" ? "md:col-span-2 md:row-span-2" : ""
       }`}
     >
-      {/* Thumbnail */}
-      <div className="relative aspect-video overflow-hidden">
+      {/* Thumbnail with Hover Preview */}
+      <div 
+        className="relative aspect-video overflow-hidden"
+        onMouseEnter={() => !isMobile && setIsHovered(true)}
+        onMouseLeave={() => {
+          setIsHovered(false);
+          if (videoRef.current) {
+            videoRef.current.pause();
+            videoRef.current.currentTime = 0;
+          }
+        }}
+      >
         {hasValidThumbnail ? (
           <img
             src={video.primary_thumbnail_url}
             alt={video.title}
             loading="lazy"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className={`w-full h-full object-cover transition-transform duration-500 ${isHovered ? 'scale-105' : 'scale-105'}`}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a]" />
+        )}
+        
+        {/* Preview Video on Hover (Desktop only) */}
+        {isHovered && trailerUrl && !isMobile && (
+          <video
+            ref={videoRef}
+            src={trailerUrl}
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            className="absolute inset-0 w-full h-full object-cover"
+            onMouseEnter={(e) => {
+              e.currentTarget.play().catch(err => console.warn('Preview playback blocked:', err));
+            }}
+          />
         )}
         
         {/* Gradient overlay */}
@@ -86,15 +123,17 @@ export default function CinematicVideoCard({ video, variant = "standard", brands
           </div>
         )}
         
-        {/* Play icon (hover) */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="w-16 h-16 rounded-full bg-rose-600/90 flex items-center justify-center backdrop-blur-sm">
-            <Play className="w-8 h-8 text-white ml-1" fill="currentColor" />
+        {/* Play icon (hover) - hide if has trailer preview */}
+        {!trailerUrl && (
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="w-16 h-16 rounded-full bg-rose-600/90 flex items-center justify-center backdrop-blur-sm">
+              <Play className="w-8 h-8 text-white ml-1" fill="currentColor" />
+            </div>
           </div>
-        </div>
+        )}
         
-        {/* Locked overlay */}
-        {!hasTrailer && video.access_tier !== "free" && (
+        {/* Locked overlay - only if no trailer AND premium content */}
+        {!rawTrailerUrl && video.access_tier !== "free" && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
             <div className="text-center">
               <Lock className="w-12 h-12 text-rose-500 mx-auto mb-2" />
