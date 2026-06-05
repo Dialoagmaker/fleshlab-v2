@@ -80,10 +80,39 @@ Deno.serve(async (req) => {
       retry_count: 0,
     });
 
-    // Prepare processor callback URL
+    // DUPLICATE JOB GUARD: Check if there's already an active thumbnail job for this video
+    const existingJobs = await base44.entities.JobQueue.filter(
+      { entity_type: 'Video', entity_id: video_id, job_type: 'regenerate_thumbnail' },
+      '-created_date',
+      10
+    );
+
+    const activeJob = existingJobs.find(j => 
+      j.status === 'processing' || j.status === 'queued' || j.status === 'validating' || j.status === 'callback_received'
+    );
+
+    if (activeJob) {
+      const elapsed = Math.floor((Date.now() - new Date(activeJob.created_date).getTime()) / 1000);
+      console.log('[triggerThumbnailRegeneration] Duplicate job prevented:', {
+        video_id,
+        existing_job_id: activeJob.id,
+        existing_status: activeJob.status,
+        elapsed_seconds: elapsed,
+      });
+
+      return Response.json({
+        success: false,
+        message: 'Thumbnail regeneration already in progress',
+        existing_job_id: activeJob.id,
+        existing_job_status: activeJob.status,
+        elapsed_seconds: elapsed,
+      });
+    }
+
+    // Prepare processor callback URL - CORRECT BASE44 PATH (no /api/ prefix)
     const processorApiKey = Deno.env.get('PROCESSOR_API_KEY');
     const appBaseUrl = (Deno.env.get('APP_BASE_URL') || '').replace(/\/$/, '');
-    const callbackUrl = `${appBaseUrl}/api/functions/updateVideoProcessingResult?processor_key=${encodeURIComponent(processorApiKey)}`;
+    const callbackUrl = `${appBaseUrl}/functions/updateVideoProcessingResult?processor_key=${encodeURIComponent(processorApiKey)}`;
 
     // Derive studio and file from r2_key
     const keyParts = sourceAsset.r2_key.split('/');
