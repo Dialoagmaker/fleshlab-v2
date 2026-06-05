@@ -31,7 +31,7 @@ export default function EarningsTab({ performer }) {
   });
 
   // Fetch earnings for period
-  const { data: earnings, isLoading: earningsLoading } = useQuery({
+  const { data: earningsResponse, isLoading: earningsLoading } = useQuery({
     queryKey: ['earnings-list', performer.id, periodMonth],
     queryFn: async () => {
       const res = await base44.functions.invoke('performerFinanceService', {
@@ -44,11 +44,14 @@ export default function EarningsTab({ performer }) {
     enabled: !!performer.id && !!periodMonth
   });
 
+  // Safe array normalization - never call .map() on raw response
+  const earningsArray = Array.isArray(earningsResponse?.earnings) ? earningsResponse.earnings : [];
+
   // Fetch video titles for earnings
   const { data: videos } = useQuery({
-    queryKey: ['videos-for-earnings', earnings?.map(e => e.video_id).filter(Boolean)],
+    queryKey: ['videos-for-earnings', earningsArray.map(e => e.video_id).filter(Boolean)],
     queryFn: async () => {
-      const videoIds = earnings?.map(e => e.video_id).filter(Boolean) || [];
+      const videoIds = earningsArray.map(e => e.video_id).filter(Boolean);
       if (videoIds.length === 0) return {};
       
       const videoMap = {};
@@ -62,7 +65,7 @@ export default function EarningsTab({ performer }) {
       }
       return videoMap;
     },
-    enabled: !!earnings?.length
+    enabled: earningsArray.length > 0
   });
 
   return (
@@ -89,7 +92,7 @@ export default function EarningsTab({ performer }) {
 
       {/* Earnings Table */}
       <EarningsTable
-        earnings={earnings || []}
+        earnings={earningsArray}
         videos={videos || {}}
         isLoading={earningsLoading}
         onRefresh={() => queryClient.invalidateQueries(['earnings-list', performer.id, periodMonth])}

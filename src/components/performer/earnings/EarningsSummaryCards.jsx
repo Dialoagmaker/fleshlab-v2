@@ -20,40 +20,43 @@ export default function EarningsSummaryCards({ summary, isLoading }) {
     );
   }
 
+  // Defensive: handle missing or malformed summary
+  const safeSummary = summary?.summary || summary || {};
+  
   const cards = [
     {
       title: 'Gross Total',
-      value: summary.gross_total,
+      value: safeSummary.gross_total || 0,
       icon: DollarSign,
       color: 'text-blue-500'
     },
     {
       title: 'Net Total',
-      value: summary.net_total,
+      value: safeSummary.net_total || 0,
       icon: TrendingUp,
       color: 'text-green-500'
     },
     {
       title: 'Pending',
-      value: summary.pending_total,
+      value: safeSummary.pending_total || 0,
       icon: Clock,
       color: 'text-yellow-500'
     },
     {
       title: 'Approved',
-      value: summary.approved_total,
+      value: safeSummary.approved_total || 0,
       icon: CheckCircle,
       color: 'text-blue-500'
     },
     {
       title: 'Paid',
-      value: summary.paid_total,
+      value: safeSummary.paid_total || 0,
       icon: Wallet,
       color: 'text-green-600'
     },
     {
       title: 'Held',
-      value: summary.held_total,
+      value: safeSummary.held_total || 0,
       icon: PauseCircle,
       color: 'text-red-500'
     }

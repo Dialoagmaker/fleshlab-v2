@@ -187,10 +187,15 @@ Deno.serve(async (req) => {
       }
 
       // Fetch earnings for this performer + period only
-      const earnings = await base44.asServiceRole.entities.PerformerEarning.filter({
+      let earnings = await base44.asServiceRole.entities.PerformerEarning.filter({
         performer_id,
         period_month
       });
+
+      // Defensive: ensure earnings is always an array
+      if (!Array.isArray(earnings)) {
+        earnings = [];
+      }
 
       // Sort by created_date descending and limit
       const sorted = earnings.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
@@ -214,10 +219,15 @@ Deno.serve(async (req) => {
       }
 
       // Fetch earnings for this performer + period only
-      const earnings = await base44.asServiceRole.entities.PerformerEarning.filter({
+      let earnings = await base44.asServiceRole.entities.PerformerEarning.filter({
         performer_id,
         period_month
       });
+
+      // Defensive: ensure earnings is always an array
+      if (!Array.isArray(earnings)) {
+        earnings = [];
+      }
 
       // Calculate totals
       const summary = {

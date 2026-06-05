@@ -23,6 +23,9 @@ import { Loader2 } from 'lucide-react';
 
 export default function EarningsTable({ earnings, videos, isLoading, onRefresh }) {
   const [updatingId, setUpdatingId] = useState(null);
+  
+  // Defensive: ensure earnings is always an array
+  const safeEarnings = Array.isArray(earnings) ? earnings : [];
 
   const handleStatusChange = async (earningId, newStatus) => {
     setUpdatingId(earningId);
@@ -67,7 +70,7 @@ export default function EarningsTable({ earnings, videos, isLoading, onRefresh }
     );
   }
 
-  if (!earnings?.length) {
+  if (!safeEarnings.length) {
     return (
       <Card>
         <CardHeader>
@@ -85,7 +88,7 @@ export default function EarningsTable({ earnings, videos, isLoading, onRefresh }
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Earnings for {earnings[0]?.period_month}</CardTitle>
+        <CardTitle>Earnings for {safeEarnings[0]?.period_month}</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
@@ -103,7 +106,7 @@ export default function EarningsTable({ earnings, videos, isLoading, onRefresh }
             </TableRow>
           </TableHeader>
           <TableBody>
-            {earnings.map((earning) => (
+            {safeEarnings.map((earning) => (
               <TableRow key={earning.id}>
                 <TableCell className="text-sm">
                   {new Date(earning.created_date).toLocaleDateString()}
