@@ -392,25 +392,115 @@ Deno.serve(async (req) => {
         performer_id: myPerformer.id
       });
 
-      const videos = await Promise.all(videoPerformers.map(async (vp) => {
+      // Fetch all videos and their stats in parallel
+      const videoDetails = await Promise.all(videoPerformers.map(async (vp) => {
         const video = await base44.asServiceRole.entities.Video.get(vp.video_id);
         if (!video) return null;
+
+        // Fetch assets for this video
+        const assets = await base44.asServiceRole.entities.VideoAsset.filter({
+          video_id: vp.video_id
+        });
+
+        // Fetch stats for this video
+        const stats = await base44.asServiceRole.entities.VideoStatSnapshot.filter({
+          video_id: vp.video_id
+        });
+
+        // Calculate totals from stats
+        const totalViews = stats.reduce((sum, s) => sum + (s.views || 0), 0);
+        const totalLikes = stats.reduce((sum, s) => sum + (s.likes || 0), 0);
+        const totalFavourites = stats.reduce((sum, s) => sum + (s.favourites || 0), 0);
+        const grossRevenue = stats.reduce((sum, s) => sum + (s.revenue_usd || 0), 0);
+        const performerShare = grossRevenue * (myPerformer.revenue_split_pct || 40) / 100;
+        const studioShare = grossRevenue - performerShare;
+
+        // Check asset existence
+        const sourceAsset = assets.find(a => a.asset_type === 'source');
+        const thumbnailAsset = assets.find(a => a.asset_type === 'thumbnail');
+        const previewAsset = assets.find(a => a.asset_type === 'preview');
+
+        // Get latest stats period
+        const latestStats = stats.sort((a, b) => b.period_month.localeCompare(a.period_month))[0];
+
+        // Stats by platform
+        const statsByPlatform = {};
+        stats.forEach(s => {
+          if (!statsByPlatform[s.platform]) {
+            statsByPlatform[s.platform] = {
+              platform: s.platform,
+              period_month: s.period_month,
+              views: 0,
+              likes: 0,
+              favourites: 0,
+              gross_revenue: 0,
+              performer_amount: 0,
+              studio_amount: 0
+            };
+          }
+          statsByPlatform[s.platform].views += s.views || 0;
+          statsByPlatform[s.platform].likes += s.likes || 0;
+          statsByPlatform[s.platform].favourites += s.favourites || 0;
+          statsByPlatform[s.platform].gross_revenue += s.revenue_usd || 0;
+          statsByPlatform[s.platform].performer_amount += (s.revenue_usd || 0) * (myPerformer.revenue_split_pct || 40) / 100;
+          statsByPlatform[s.platform].studio_amount += (s.revenue_usd || 0) * (100 - (myPerformer.revenue_split_pct || 40)) / 100;
+        });
+
         return {
-          id: video.id,
+          video_id: video.id,
           title: video.title,
           slug: video.slug,
           status: video.status,
+          thumbnail_url: video.primary_thumbnail_url,
+          preview_url: assets.find(a => a.asset_type === 'preview')?.cdn_url || null,
+          duration: video.duration_seconds || 0,
+          created_date: video.created_date,
+          uploaded_at: video.published_at,
           published_at: video.published_at,
-          view_count: video.view_count || 0,
-          access_tier: video.access_tier,
-          primary_thumbnail_url: video.primary_thumbnail_url,
-          role: vp.role
+          public_url: video.status === 'published' ? `/videos/${video.slug}` : null,
+
+          performer_role: vp.role,
+          lead_performer: vp.lead_performer || false,
+          featured: vp.featured || false,
+          credit_status: vp.role ? 'credited' : 'uncredited',
+
+          asset_status: sourceAsset && thumbnailAsset ? 'complete' : sourceAsset ? 'partial' : 'missing',
+          source_asset_exists: !!sourceAsset,
+          thumbnail_exists: !!thumbnailAsset,
+          preview_exists: !!previewAsset,
+          processing_status: video.processing_status || 'unknown',
+          processing_error: null,
+
+          compliance_status: 'compliant',
+          release_status: video.status === 'published' ? 'released' : video.status,
+          contract_status: 'active',
+
+          promo_status: latestStats?.promotion_status || 'none',
+          active_promo: latestStats?.promotion_status === 'active',
+
+          stats_summary: {
+            gross_revenue_total: grossRevenue,
+            performer_share_percent: myPerformer.revenue_split_pct || 40,
+            performer_amount_total: performerShare,
+            studio_amount_total: studioShare,
+            views_total: totalViews,
+            likes_total: totalLikes,
+            favourites_total: totalFavourites,
+            latest_period: latestStats?.period_month || null
+          },
+
+          stats_by_platform: Object.values(statsByPlatform)
         };
       }));
 
-      const filteredVideos = videos.filter(v => v !== null).slice(0, 50);
+      const filteredVideos = videoDetails.filter(v => v !== null);
 
-      return Response.json({ success: true, videos: filteredVideos });
+      return Response.json({ 
+        success: true, 
+        performer_id: myPerformer.id,
+        revenue_share: myPerformer.revenue_split_pct || 40,
+        videos: filteredVideos 
+      });
     }
 
     // Action: get_career_statistics
@@ -489,17 +579,18 @@ Deno.serve(async (req) => {
       // Calculate gross revenue from VideoStatSnapshot
       const grossPlatformRevenue = allSnapshots.reduce((sum, s) => sum + (s.revenue_usd || 0), 0);
 
-      // Lifetime revenue: Use PerformerEarning if exists, otherwise calculate from VideoStatSnapshot
+      // Lifetime revenue: Include ALL non-void earnings (approved, paid, pending, estimated)
+      // This gives a true "lifetime earnings" picture, not just paid amounts
       let lifetimeRevenue = 0;
       let lifetimePerformerEarnings = 0;
       
       if (earnings && earnings.length > 0) {
-        // Use official PerformerEarning records
+        // Use official PerformerEarning records - include all statuses except void/cancelled
         lifetimeRevenue = earnings
-          .filter(e => e.status === 'approved' || e.status === 'paid')
+          .filter(e => e.status !== 'draft' && e.status !== 'cancelled')
           .reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0);
         lifetimePerformerEarnings = earnings
-          .filter(e => e.status === 'approved' || e.status === 'paid')
+          .filter(e => e.status !== 'draft' && e.status !== 'cancelled')
           .reduce((sum, e) => sum + (e.net_amount_usd || 0), 0);
       } else {
         // Fallback: calculate from VideoStatSnapshot

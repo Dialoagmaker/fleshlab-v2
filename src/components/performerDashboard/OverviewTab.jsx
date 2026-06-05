@@ -7,8 +7,26 @@ import StudioAdvanceCard from "./StudioAdvanceCard";
 import LatestVideosCard from "./LatestVideosCard";
 import ComplianceSummaryCard from "./ComplianceSummaryCard";
 import CareerStatisticsCard from "./CareerStatisticsCard";
+import EarningsBreakdownTable from "./EarningsBreakdownTable";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 
 export default function OverviewTab({ performer, career_stats, performerToken }) {
+  // Fetch current period earnings for breakdown
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const { data: earningsData } = useQuery({
+    queryKey: ["performer-earnings-breakdown", performer.id, currentMonth],
+    queryFn: async () => {
+      const res = await base44.functions.invoke("performerDashboardService", {
+        action: "get_earnings",
+        performer_id: performer.id,
+        performer_token: performerToken,
+        period_month: currentMonth
+      });
+      return res.data;
+    },
+    enabled: !!performer.id && !!performerToken
+  });
   if (!performer) {
     return (
       <Card className="bg-card border-border">
@@ -53,6 +71,15 @@ export default function OverviewTab({ performer, career_stats, performerToken })
         <ProductionGoalCard performerId={performer.id} />
         <PayoutReadinessCard performer={performer} />
       </div>
+      
+      {/* Earnings Breakdown Table */}
+      {earningsData?.earnings && earningsData.earnings.length > 0 && (
+        <EarningsBreakdownTable 
+          earnings={earningsData.earnings} 
+          summary={earningsData.summary} 
+        />
+      )}
+      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <StudioAdvanceCard performer={performer} />
         <LatestVideosCard performerId={performer.id} />
