@@ -169,31 +169,27 @@ export default function VideoEdit() {
   });
 
   const validateAndFixAssets = useMutation({
-    mutationFn: () => base44.functions.invoke('validateAndRepairVideoAssets', { video_id: id, repair: true }),
+    mutationFn: () => base44.functions.invoke('validateAndRepairVideoAssets', { video_id: id }),
     onSuccess: (res) => {
       const d = res.data;
-      console.log('🔍 Asset Validation & Repair Results:', d);
+      console.log('🔍 Asset Validation Results:', d);
       
       if (d?.canPublishAssets) {
         setCheckStatus({ ok: true, msg: '✓ All assets valid - ready to publish' });
       } else {
-        const issues = [];
-        if (!d?.source?.valid) issues.push(`Source: ${d.source.reason || 'invalid'}`);
-        if (d?.thumbnail?.corrupt) issues.push('Thumbnail corrupt (HTML saved as JPG)');
-        else if (!d?.thumbnail?.valid) issues.push(`Thumbnail: ${d.thumbnail.reason || 'invalid'}`);
-        if (!d?.preview?.valid && !d?.preview?.repaired) issues.push(`Preview: ${d.preview.reason || 'invalid'}`);
-        setCheckStatus({ ok: false, msg: `Invalid assets: ${issues.join(', ')}` });
+        const issues = d?.blockingReasons || [];
+        setCheckStatus({ ok: false, msg: `Invalid assets: ${issues.join(', ')}`, details: d });
+        
+        // Auto-trigger corrupt thumbnail repair
+        if (d?.thumbnail?.corrupt) {
+          console.log('🔧 Auto-triggering corrupt thumbnail repair...');
+          setTimeout(() => {
+            clearCorruptThumbnail.mutate();
+          }, 1000);
+        }
       }
       
-      // Auto-invalidate to refresh UI with new URLs
       queryClient.invalidateQueries({ queryKey: ['video', id] });
-      
-      // If thumbnail was corrupt and marked for repair, auto-trigger regeneration
-      if (d?.thumbnail?.corrupt && !d?.thumbnail?.repaired) {
-        setTimeout(() => {
-          regenerateThumbnail.mutate();
-        }, 1000);
-      }
     },
     onError: (err) => {
       console.error('❌ Asset validation failed:', err);
@@ -295,20 +291,32 @@ export default function VideoEdit() {
   });
 
   const clearCorruptThumbnail = useMutation({
-    mutationFn: async () => {
-      // Clear the corrupt thumbnail URL
-      await base44.entities.Video.update(id, { primary_thumbnail_url: '' });
-      return { success: true, message: 'Corrupt thumbnail cleared' };
-    },
-    onSuccess: () => {
-      setCheckStatus({ ok: true, msg: '✓ Corrupt thumbnail URL cleared - regenerate now' });
-      queryClient.invalidateQueries({ queryKey: ['video', id] });
-      // Auto-trigger regeneration
-      setTimeout(() => {
-        retrigger.mutate();
-      }, 500);
+    mutationFn: () => base44.functions.invoke('repairCorruptThumbnail', { video_id: id, forceRegenerate: true }),
+    onSuccess: (res) => {
+      const d = res.data;
+      console.log('🔧 Corrupt Thumbnail Repair Results:', d);
+      
+      if (d?.success) {
+        setCheckStatus({ 
+          ok: true, 
+          msg: `✓ Thumbnail repaired: ${d.newThumbnail.width}x${d.newThumbnail.height} ${d.newThumbnail.magicHeader === 'FF D8' ? 'JPEG' : 'PNG'}`,
+          details: d 
+        });
+        queryClient.invalidateQueries({ queryKey: ['video', id] });
+        // Force full page refresh to show new thumbnail
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        setCheckStatus({ 
+          ok: false, 
+          msg: d?.newThumbnail?.reason || 'Repair failed',
+          details: d 
+        });
+      }
     },
     onError: (err) => {
+      console.error('❌ Corrupt thumbnail repair failed:', err);
       setCheckStatus({ ok: false, msg: err.message });
     },
   });
@@ -649,20 +657,20 @@ export default function VideoEdit() {
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold text-foreground">🔍 Asset Diagnostic</p>
               <div className="flex gap-2 flex-wrap">
-                {thumbnailValidation?.validation_status === 'failed' && (
+                {(thumbnailValidation?.validation_status === 'failed' || checkStatus?.details?.oldThumbnail?.corrupt) && (
                   <Button
                     type="button"
                     variant="destructive"
                     size="sm"
                     onClick={() => {
-                      if (window.confirm('Corrupt thumbnail URL will be deleted. Regenerate now?')) {
+                      if (window.confirm('This will delete the corrupt thumbnail URL and generate a new one from the source video. Continue?')) {
                         clearCorruptThumbnail.mutate();
                       }
                     }}
                     disabled={clearCorruptThumbnail.isPending}
                     className="text-xs h-7 bg-destructive hover:bg-destructive/90"
                   >
-                    🗑️ Clear Corrupt Thumbnail
+                    {clearCorruptThumbnail.isPending ? '🔧 Repairing...' : '🗑️ Clear & Regenerate'}
                   </Button>
                 )}
                 <Button
