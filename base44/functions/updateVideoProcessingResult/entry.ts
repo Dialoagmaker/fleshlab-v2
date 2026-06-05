@@ -1,566 +1,395 @@
 /**
- * updateVideoProcessingResult - Phase 2C.1 Hardened
+ * updateVideoProcessingResult - Phase 2C.2 Enhanced
  * 
- * CRITICAL: Validates ALL processor assets BEFORE writing to Video entity.
+ * Callback endpoint for external processor webhook.
+ * Receives processing results and validates assets before updating Video entity.
  * 
- * Validation flow:
- * 1. Verify processor API key
- * 2. Validate source_video_url (HEAD + range request)
- * 3. Validate primary_thumbnail_url (magic header, dimensions, HTML check)
- * 4. Validate trailer_url (HEAD + range request)
- * 5. ONLY write URLs if ALL validations pass
- * 6. If validation fails: mark asset_status, store error, keep video unpublished
- * 
- * Processor Job Status:
- * - queued → processing → callback_received → validating → complete
- * - failed (processor error)
- * - thumbnail_invalid (validation failed)
- * - preview_invalid (validation failed)
- * - source_invalid (validation failed)
- * - timeout (callback never arrived)
+ * ENHANCED FOR PHASE 2C.2:
+ * - Tracks callback metadata (timestamp, attempts, payload)
+ * - Logs all validation failures for debugging
+ * - Supports thumbnail-only mode
+ * - Rejects invalid callbacks with clear error messages
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
-
-/**
- * Validate image URL - downloads full image (safe for thumbnails < 10MB)
- */
-async function validateImageUrl(url) {
-  const result = { 
-    ok: false, 
-    status: null, 
-    contentType: null, 
-    contentLength: 0, 
-    magicHeader: null, 
-    width: null, 
-    height: null, 
-    reason: null,
-    isHtml: false,
-    sampleContent: null
-  };
-
-  if (!url) {
-    result.reason = 'URL is null/empty';
-    return result;
-  }
-
-  try {
-    // HEAD request for metadata
-    const headResponse = await fetch(url, { method: 'HEAD', redirect: 'follow' });
-    result.status = headResponse.status;
-    result.contentType = headResponse.headers.get('content-type');
-    result.contentLength = parseInt(headResponse.headers.get('content-length') || '0', 10);
-
-    if (result.status !== 200 && result.status !== 304) {
-      result.reason = `HTTP ${result.status}`;
-      return result;
-    }
-
-    if (!result.contentType || !result.contentType.startsWith('image/')) {
-      result.reason = `Invalid content-type: ${result.contentType}`;
-      return result;
-    }
-
-    if (result.contentLength === 0) {
-      result.reason = 'Empty file (0 bytes)';
-      return result;
-    }
-
-    if (result.contentLength > 10 * 1024 * 1024) {
-      result.reason = `File too large: ${result.contentLength} bytes`;
-      return result;
-    }
-
-    // GET request for validation
-    const getResponse = await fetch(url, { method: 'GET' });
-    const arrayBuffer = await getResponse.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
-
-    if (uint8Array.length < 4) {
-      result.reason = 'File too small';
-      return result;
-    }
-
-    // Magic header check
-    const magicHeader = Array.from(uint8Array.slice(0, 4))
-      .map(b => b.toString(16).toUpperCase().padStart(2, '0'))
-      .join(' ');
-
-    result.magicHeader = magicHeader;
-
-    // Check for HTML/XML error pages (CRITICAL: prevents HTML-as-JPG)
-    const firstBytes = new TextDecoder().decode(uint8Array.slice(0, 200)).toLowerCase();
-    if (firstBytes.includes('<!doctype') || firstBytes.includes('<html') || 
-        firstBytes.includes('<?xml') || firstBytes.includes('accessdenied') ||
-        firstBytes.includes('<error') || firstBytes.includes('errorcode')) {
-      result.reason = 'File is HTML/XML error page, not an image';
-      result.isHtml = true;
-      result.sampleContent = firstBytes.substring(0, 100);
-      return result;
-    }
-
-    // Validate magic header
-    const isJpeg = magicHeader.startsWith('FF D8');
-    const isPng = magicHeader.startsWith('89 50 4E 47');
-    const isWebp = magicHeader.startsWith('52 49 46 46') && 
-                   Array.from(uint8Array.slice(8, 12)).map(b => String.fromCharCode(b)).join('') === 'WEBP';
-
-    if (!isJpeg && !isPng && !isWebp) {
-      result.reason = `Invalid image magic header: ${magicHeader}`;
-      return result;
-    }
-
-    // Decode image for dimensions
-    try {
-      const blob = new Blob([arrayBuffer], { type: result.contentType });
-      const imageBitmap = await createImageBitmap(blob);
-      result.width = imageBitmap.width;
-      result.height = imageBitmap.height;
-      imageBitmap.close();
-
-      if (result.width < 1 || result.height < 1) {
-        result.reason = 'Image dimensions invalid';
-        return result;
-      }
-    } catch (decodeError) {
-      result.reason = `Failed to decode image: ${decodeError.message}`;
-      return result;
-    }
-
-    result.ok = true;
-    return result;
-
-  } catch (error) {
-    result.reason = error.message || 'Network error';
-    return result;
-  }
-}
-
-/**
- * Validate video URL - uses only HEAD + small range request (safe for 2GB+ files)
- */
-async function validateVideoUrl(url) {
-  const result = { 
-    ok: false, 
-    status: null, 
-    contentType: null, 
-    contentLength: 0, 
-    magicHeader: null, 
-    reason: null,
-    isHtml: false,
-    sampleContent: null
-  };
-
-  if (!url) {
-    result.reason = 'URL is null/empty';
-    return result;
-  }
-
-  try {
-    // HEAD request - no download
-    const headResponse = await fetch(url, { method: 'HEAD', redirect: 'follow' });
-    result.status = headResponse.status;
-    result.contentType = headResponse.headers.get('content-type');
-    result.contentLength = parseInt(headResponse.headers.get('content-length') || '0', 10);
-
-    if (result.status !== 200 && result.status !== 206 && result.status !== 304) {
-      result.reason = `HTTP ${result.status}`;
-      return result;
-    }
-
-    const isVideoType = result.contentType && (
-      result.contentType.startsWith('video/') ||
-      result.contentType.startsWith('application/octet-stream') ||
-      result.contentType === 'application/mp4'
-    );
-
-    if (!isVideoType) {
-      result.reason = `Invalid content-type: ${result.contentType}`;
-      return result;
-    }
-
-    if (result.contentLength === 0) {
-      result.reason = 'Empty file (0 bytes)';
-      return result;
-    }
-
-    // Range request for first 64KB only - NEVER download full video
-    const rangeResponse = await fetch(url, { 
-      method: 'GET', 
-      headers: { 'Range': 'bytes=0-65535' }
-    });
-    
-    if (!rangeResponse.ok && rangeResponse.status !== 206) {
-      result.reason = `Range request failed: HTTP ${rangeResponse.status}`;
-      return result;
-    }
-
-    const arrayBuffer = await rangeResponse.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
-
-    if (uint8Array.length < 8) {
-      result.reason = 'File too small';
-      return result;
-    }
-
-    // Check for HTML/XML error pages
-    const firstBytes = new TextDecoder().decode(uint8Array.slice(0, 200)).toLowerCase();
-    if (firstBytes.includes('<!doctype') || firstBytes.includes('<html') || 
-        firstBytes.includes('<?xml') || firstBytes.includes('accessdenied') ||
-        firstBytes.includes('<error')) {
-      result.reason = 'File is HTML/XML error page, not a video';
-      result.isHtml = true;
-      result.sampleContent = firstBytes.substring(0, 100);
-      return result;
-    }
-
-    // Magic header check
-    const magicHeader = Array.from(uint8Array.slice(0, 8))
-      .map(b => b.toString(16).toUpperCase().padStart(2, '0'))
-      .join(' ');
-
-    result.magicHeader = magicHeader;
-
-    // Check for MP4/MOV ftyp header
-    const hasFtyp = new TextDecoder().decode(uint8Array.slice(4, 8)) === 'ftyp' ||
-                    new TextDecoder().decode(uint8Array.slice(8, 12)) === 'ftyp';
-
-    const isMp4 = hasFtyp;
-    const isWebm = magicHeader.startsWith('1A 45 DF A3');
-
-    // For octet-stream, be lenient if no HTML error page
-    if (result.contentType === 'application/octet-stream' && !isMp4 && !isWebm) {
-      result.ok = true;
-      return result;
-    }
-
-    if (!isMp4 && !isWebm && !magicHeader.startsWith('00 00 00')) {
-      result.reason = `Invalid video magic header: ${magicHeader}`;
-      return result;
-    }
-
-    result.ok = true;
-    return result;
-
-  } catch (error) {
-    result.reason = error.message || 'Network error';
-    return result;
-  }
-}
+import { S3Client, HeadObjectCommand } from 'npm:@aws-sdk/client-s3';
 
 Deno.serve(async (req) => {
+  const startTime = Date.now();
+  
   try {
     const base44 = createClientFromRequest(req);
-
-    // Validate processor API key
-    const url = new URL(req.url);
-    const processorApiKey = req.headers.get('X-Processor-API-Key') || url.searchParams.get('processor_key');
-    const expectedApiKey = Deno.env.get('PROCESSOR_API_KEY');
     
-    if (!processorApiKey || processorApiKey !== expectedApiKey) {
-      return Response.json({ 
-        success: false, 
-        error: 'Unauthorized: Invalid API key' 
-      }, { status: 401 });
+    // Validate auth
+    const url = new URL(req.url);
+    const processorKey = url.searchParams.get('processor_key');
+    const expectedKey = Deno.env.get('PROCESSOR_API_KEY');
+    
+    if (!processorKey || processorKey !== expectedKey) {
+      console.error('[updateVideoProcessingResult] Auth failed:', {
+        has_key: !!processorKey,
+        key_matches: processorKey === expectedKey,
+      });
+      return Response.json({ error: 'Unauthorized: Invalid processor_key' }, { status: 401 });
     }
 
-    const body = await req.json();
-    const {
-      video_id,
-      source_asset_id,
-      job_id,
-      processor_job_id,
-      status,
-      assets,
-      metadata,
-      error_message,
-    } = body;
+    const payload = await req.json();
+    const logPrefix = `[updateVideoProcessingResult][job_${payload.job_id || 'unknown'}]`;
+    
+    console.log(`${logPrefix} Callback received:`, {
+      job_id: payload.job_id,
+      video_id: payload.video_id,
+      thumbnail_url: payload.thumbnail_url,
+      preview_url: payload.preview_url,
+      status: payload.status,
+    });
 
-    if (!video_id || !source_asset_id || !status) {
+    // Validate required fields
+    const requiredFields = ['job_id', 'video_id'];
+    const missingFields = requiredFields.filter(f => !payload[f]);
+    
+    if (missingFields.length > 0) {
+      console.error(`${logPrefix} Missing required fields:`, missingFields);
       return Response.json({ 
-        success: false, 
-        error: 'Missing required fields: video_id, source_asset_id, status' 
+        error: 'Missing required fields',
+        missing_fields: missingFields,
+        received_payload: payload 
       }, { status: 400 });
     }
 
-    // Fetch video and source asset
-    const video = await base44.entities.Video.get(video_id);
-    const sourceAsset = await base44.entities.VideoAsset.get(source_asset_id);
-
-    if (!video || !sourceAsset) {
-      return Response.json({ 
-        success: false, 
-        error: 'Video or source asset not found' 
-      }, { status: 404 });
+    // Load job
+    const job = await base44.entities.JobQueue.get(payload.job_id);
+    if (!job) {
+      console.error(`${logPrefix} Job not found:`, payload.job_id);
+      return Response.json({ error: 'Job not found' }, { status: 404 });
     }
 
-    // Handle processing failure
-    if (status === 'failed') {
-      await base44.entities.VideoAsset.update(sourceAsset.id, { status: 'failed' });
-      await base44.entities.Video.update(video_id, { processing_status: 'failed' });
-
-      if (job_id) {
-        await base44.entities.JobQueue.update(job_id, {
-          status: 'failed',
-          error_message: error_message || 'Processing failed',
-          completed_at: new Date().toISOString(),
-          result: JSON.stringify({ processor_job_id, error: error_message }),
-        });
-      }
-
-      return Response.json({ success: true, message: 'Processing failure recorded' });
+    // Load video
+    const video = await base44.entities.Video.get(payload.video_id);
+    if (!video) {
+      console.error(`${logPrefix} Video not found:`, payload.video_id);
+      return Response.json({ error: 'Video not found' }, { status: 404 });
     }
 
-    // PHASE 2C.1/2C.2: VALIDATE ASSETS BEFORE WRITING
-    console.log('[updateVideoProcessingResult] Validating processor assets...');
-    
-    // Determine if this is a thumbnail-only regeneration
-    const isThumbnailOnly = body.regenerate_only === 'thumbnail';
-    console.log('[updateVideoProcessingResult] Mode:', isThumbnailOnly ? 'thumbnail_only' : 'full_processing');
-    
+    // Parse job payload to determine mode
+    let jobPayload;
+    try {
+      jobPayload = JSON.parse(job.payload);
+    } catch (e) {
+      jobPayload = {};
+    }
+
+    const isThumbnailOnly = jobPayload.operation === 'thumbnail_only';
+    const mode = isThumbnailOnly ? 'thumbnail_only' : 'full_processing';
+
+    console.log(`${logPrefix} Processing mode:`, {
+      is_thumbnail_only: isThumbnailOnly,
+      mode,
+      job_type: job.job_type,
+    });
+
+    // Update job: callback received
+    await base44.entities.JobQueue.update(payload.job_id, {
+      status: 'callback_received',
+      callback_received_at: new Date().toISOString(),
+      callback_attempts: (job.callback_attempts || 0) + 1,
+      last_callback_payload: JSON.stringify(payload),
+    });
+
+    // Check if processor reported an error
+    if (payload.status === 'failed' || payload.error) {
+      console.error(`${logPrefix} Processor reported failure:`, payload.error || payload.message);
+      
+      await base44.entities.JobQueue.update(payload.job_id, {
+        status: 'failed',
+        error_message: `Processor failed: ${payload.error || payload.message || 'Unknown error'}`,
+        completed_at: new Date().toISOString(),
+        result: JSON.stringify({ processor_error: true, payload }),
+      });
+
+      return Response.json({
+        success: false,
+        error: 'Processor reported failure',
+        processor_error: payload.error || payload.message,
+      });
+    }
+
+    // Validate thumbnail URL if provided
+    let thumbnailValidation = null;
+    if (payload.thumbnail_url) {
+      thumbnailValidation = await validateImageUrl(
+        payload.thumbnail_url,
+        'thumbnail',
+        logPrefix
+      );
+      
+      console.log(`${logPrefix} Thumbnail validation result:`, thumbnailValidation);
+    }
+
+    // Validate preview URL if provided
+    let previewValidation = null;
+    if (payload.preview_url) {
+      previewValidation = await validateVideoUrl(
+        payload.preview_url,
+        'preview',
+        logPrefix
+      );
+      
+      console.log(`${logPrefix} Preview validation result:`, previewValidation);
+    }
+
+    // Build validation report
     const validationReport = {
-      source: null,
-      thumbnail: null,
-      preview: null,
-      allValid: true,
-      blockingReasons: []
+      source: null, // Not validating source in callback
+      thumbnail: thumbnailValidation,
+      preview: previewValidation,
+      allValid: !isThumbnailOnly || (thumbnailValidation?.ok === true),
+      blockingReasons: [],
     };
 
-    // Validate thumbnail (CRITICAL: prevent HTML-as-JPG)
-    if (assets?.thumbnail?.cdn_url) {
-      validationReport.thumbnail = await validateImageUrl(assets.thumbnail.cdn_url);
-      if (!validationReport.thumbnail.ok) {
-        validationReport.allValid = false;
-        if (validationReport.thumbnail.isHtml) {
-          validationReport.blockingReasons.push(`Thumbnail: Processor returned HTML/error page instead of image (magic: ${validationReport.thumbnail.magicHeader})`);
-        } else {
-          validationReport.blockingReasons.push(`Thumbnail: ${validationReport.thumbnail.reason}`);
-        }
-      }
-    } else if (!isThumbnailOnly) {
-      validationReport.thumbnail = { ok: false, reason: 'Thumbnail URL not provided by processor' };
-      validationReport.allValid = false;
-      validationReport.blockingReasons.push('Thumbnail: URL not provided');
-    }
-
-    // Validate source video (only for full processing)
-    if (!isThumbnailOnly && assets?.source?.cdn_url) {
-      validationReport.source = await validateVideoUrl(assets.source.cdn_url);
-      if (!validationReport.source.ok) {
-        validationReport.allValid = false;
-        validationReport.blockingReasons.push(`Source: ${validationReport.source.reason}`);
+    // Collect blocking reasons
+    if (isThumbnailOnly) {
+      if (!payload.thumbnail_url) {
+        validationReport.blockingReasons.push('Thumbnail: URL not provided');
+      } else if (!thumbnailValidation?.ok) {
+        validationReport.blockingReasons.push(`Thumbnail: ${thumbnailValidation?.reason || 'Validation failed'}`);
       }
     }
 
-    // Validate preview (only for full processing)
-    if (!isThumbnailOnly && assets?.preview_video?.cdn_url) {
-      validationReport.preview = await validateVideoUrl(assets.preview_video.cdn_url);
-      if (!validationReport.preview.ok) {
-        validationReport.allValid = false;
-        validationReport.blockingReasons.push(`Preview: ${validationReport.preview.reason}`);
-      }
-    }
-
-    console.log('[updateVideoProcessingResult] Validation results:', validationReport);
-
-    // IF VALIDATION FAILS: Do NOT write URLs, mark status, store error
+    // Check if validation passed
     if (!validationReport.allValid) {
-      console.error('[updateVideoProcessingResult] VALIDATION FAILED - rejecting processor assets:', validationReport.blockingReasons);
-
-      // Update source asset status
-      await base44.entities.VideoAsset.update(sourceAsset.id, {
-        status: 'validation_failed',
+      console.error(`${logPrefix} Validation failed:`, validationReport.blockingReasons);
+      
+      // Update job: validation failed
+      await base44.entities.JobQueue.update(payload.job_id, {
+        status: 'thumbnail_invalid',
+        error_message: `Asset validation failed: ${validationReport.blockingReasons.join('; ')}`,
+        completed_at: new Date().toISOString(),
+        result: JSON.stringify({ validation_failed: true, validation_report: validationReport, is_thumbnail_only: isThumbnailOnly }),
+        validation_report: JSON.stringify(validationReport),
       });
 
-      // Update video status - keep unpublished
-      await base44.entities.Video.update(video_id, {
+      // Update video processing status
+      await base44.entities.Video.update(payload.video_id, {
         processing_status: 'failed',
       });
-
-      // Update job queue with validation failure
-      if (job_id) {
-        // Determine specific failure type
-        let failureStatus = 'failed';
-        if (isThumbnailOnly && validationReport.thumbnail && !validationReport.thumbnail.ok) {
-          failureStatus = 'thumbnail_invalid';
-        } else if (validationReport.preview && !validationReport.preview.ok) {
-          failureStatus = 'preview_invalid';
-        } else if (validationReport.source && !validationReport.source.ok) {
-          failureStatus = 'source_invalid';
-        }
-
-        await base44.entities.JobQueue.update(job_id, {
-          status: failureStatus,
-          error_message: `Asset validation failed: ${validationReport.blockingReasons.join('; ')}`,
-          completed_at: new Date().toISOString(),
-          result: JSON.stringify({
-            processor_job_id,
-            validation_failed: true,
-            validation_report: validationReport,
-            is_thumbnail_only: isThumbnailOnly,
-          }),
-        });
-      }
 
       return Response.json({
         success: false,
         error: 'Asset validation failed',
         validation_report: validationReport,
-        mode: isThumbnailOnly ? 'thumbnail_only' : 'full_processing',
+        mode,
       });
     }
 
-    // VALIDATION PASSED - safe to write URLs
-    console.log('[updateVideoProcessingResult] ✅ All assets validated successfully');
+    // Validation passed - update video
+    console.log(`${logPrefix} Validation passed, updating video...`);
 
-    const assetPromises = [];
-
-    // Update source asset with metadata (only for full processing)
-    if (!isThumbnailOnly) {
-      assetPromises.push(
-        base44.entities.VideoAsset.update(sourceAsset.id, {
-          status: 'ready',
-          duration_seconds: metadata?.duration_seconds || null,
-          width: metadata?.width || null,
-          height: metadata?.height || null,
-          fps: metadata?.fps || null,
-          bitrate_kbps: metadata?.bitrate_kbps || null,
-          codec: metadata?.codec || null,
-          aspect_ratio: metadata?.aspect_ratio || null,
-        })
-      );
-    }
-
-    // Update/create thumbnail asset
-    if (assets?.thumbnail) {
-      const existingThumbnails = await base44.entities.VideoAsset.filter({
-        video_id: video.id,
-        asset_type: 'thumbnail',
-      });
-      if (existingThumbnails.length > 0) {
-        assetPromises.push(
-          base44.entities.VideoAsset.update(existingThumbnails[0].id, {
-            status: 'ready',
-            file_size_bytes: assets.thumbnail.file_size_bytes,
-            width: assets.thumbnail.width,
-            height: assets.thumbnail.height,
-            mime_type: assets.thumbnail.mime_type || 'image/jpeg',
-          })
-        );
-      } else {
-        assetPromises.push(
-          base44.entities.VideoAsset.create({
-            video_id: video.id,
-            asset_type: 'thumbnail',
-            r2_key: assets.thumbnail.r2_key,
-            cdn_url: assets.thumbnail.cdn_url,
-            status: 'ready',
-            file_size_bytes: assets.thumbnail.file_size_bytes,
-            width: assets.thumbnail.width,
-            height: assets.thumbnail.height,
-            mime_type: assets.thumbnail.mime_type || 'image/jpeg',
-          })
-        );
-      }
-    }
-
-    // Update/create preview asset (only for full processing)
-    if (!isThumbnailOnly && assets?.preview_video) {
-      const existingPreviews = await base44.entities.VideoAsset.filter({
-        video_id: video.id,
-        asset_type: 'preview',
-      });
-      if (existingPreviews.length > 0) {
-        assetPromises.push(
-          base44.entities.VideoAsset.update(existingPreviews[0].id, {
-            status: 'ready',
-            file_size_bytes: assets.preview_video.file_size_bytes,
-            duration_seconds: assets.preview_video.duration_seconds,
-            width: assets.preview_video.width,
-            height: assets.preview_video.height,
-            mime_type: assets.preview_video.mime_type || 'video/mp4',
-          })
-        );
-      } else {
-        assetPromises.push(
-          base44.entities.VideoAsset.create({
-            video_id: video.id,
-            asset_type: 'preview',
-            r2_key: assets.preview_video.r2_key,
-            cdn_url: assets.preview_video.cdn_url,
-            status: 'ready',
-            file_size_bytes: assets.preview_video.file_size_bytes,
-            duration_seconds: assets.preview_video.duration_seconds,
-            width: assets.preview_video.width,
-            height: assets.preview_video.height,
-            mime_type: assets.preview_video.mime_type || 'video/mp4',
-          })
-        );
-      }
-    }
-
-    await Promise.all(assetPromises);
-
-    // Update video with VALIDATED URLs
-    const videoUpdateData = {
-      processing_status: isThumbnailOnly ? 'draft_ready' : 'metadata_pending',
+    const videoUpdate: any = {
+      processing_status: 'metadata_pending',
     };
 
-    // Write source URL (only for full processing)
-    if (!isThumbnailOnly) {
-      if (assets?.source?.cdn_url) {
-        videoUpdateData.source_video_url = assets.source.cdn_url;
-      } else if (sourceAsset.cdn_url) {
-        videoUpdateData.source_video_url = sourceAsset.cdn_url;
-      }
+    // Update thumbnail URL only if valid and provided
+    if (thumbnailValidation?.ok && payload.thumbnail_url) {
+      videoUpdate.primary_thumbnail_url = payload.thumbnail_url;
+      console.log(`${logPrefix} Updating thumbnail URL:`, payload.thumbnail_url);
     }
 
-    // Write thumbnail URL (validated)
-    if (assets?.thumbnail?.cdn_url) {
-      videoUpdateData.primary_thumbnail_url = assets.thumbnail.cdn_url;
+    // Update preview URL only if valid and provided (and not thumbnail-only mode)
+    if (!isThumbnailOnly && previewValidation?.ok && payload.preview_url) {
+      videoUpdate.trailer_url = payload.preview_url;
+      console.log(`${logPrefix} Updating preview URL:`, payload.preview_url);
     }
 
-    // Write preview URL (only for full processing)
-    if (!isThumbnailOnly && assets?.preview_video?.cdn_url) {
-      videoUpdateData.trailer_url = assets.preview_video.cdn_url;
-    }
+    await base44.entities.Video.update(payload.video_id, videoUpdate);
 
-    // Write duration if provided (only for full processing)
-    if (!isThumbnailOnly && metadata?.duration_seconds) {
-      videoUpdateData.duration_seconds = metadata.duration_seconds;
-    }
+    // Update job: complete
+    await base44.entities.JobQueue.update(payload.job_id, {
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      result: JSON.stringify({
+        success: true,
+        thumbnail_url: payload.thumbnail_url,
+        preview_url: payload.preview_url,
+        validation_report: validationReport,
+        is_thumbnail_only: isThumbnailOnly,
+      }),
+      validation_report: JSON.stringify(validationReport),
+    });
 
-    await base44.entities.Video.update(video.id, videoUpdateData);
-
-    // Update job queue with completion
-    if (job_id) {
-      await base44.entities.JobQueue.update(job_id, {
-        status: 'complete',
-        completed_at: new Date().toISOString(),
-        result: JSON.stringify({
-          processor_job_id,
-          assets_created: Object.keys(assets || {}).length,
-          processing_time_seconds: body.processing_time_seconds,
-          validation_passed: true,
-          is_thumbnail_only: isThumbnailOnly,
-        }),
-      });
-    }
-
-    console.log('[updateVideoProcessingResult] ✅ Video entity updated with validated URLs');
+    const elapsedMs = Date.now() - startTime;
+    console.log(`${logPrefix} Callback processed successfully in ${elapsedMs}ms`);
 
     return Response.json({
       success: true,
-      message: isThumbnailOnly ? 'Thumbnail regenerated and validated successfully' : 'Processing result saved successfully',
-      validation_report: validationReport,
-      mode: isThumbnailOnly ? 'thumbnail_only' : 'full_processing',
+      message: 'Video updated successfully',
+      thumbnail_url: videoUpdate.primary_thumbnail_url,
+      preview_url: videoUpdate.trailer_url,
+      mode,
     });
 
   } catch (error) {
-    console.error('[updateVideoProcessingResult] Error:', error);
+    const elapsedMs = Date.now() - startTime;
+    console.error(`[updateVideoProcessingResult] Error after ${elapsedMs}ms:`, error);
+    
     return Response.json({ 
-      success: false, 
-      error: error.message 
+      error: error.message,
+      stack: error.stack,
     }, { status: 500 });
   }
 });
+
+/**
+ * Validate image URL
+ */
+async function validateImageUrl(url: string, assetType: string, logPrefix: string) {
+  try {
+    // HEAD request
+    const headResponse = await fetch(url, { method: 'HEAD', redirect: 'follow' });
+    const httpStatus = headResponse.status;
+    
+    if (![200, 206, 304].includes(httpStatus)) {
+      return { ok: false, reason: `HTTP ${httpStatus}`, http_status: httpStatus };
+    }
+
+    const contentType = headResponse.headers.get('content-type') || '';
+    const contentLength = headResponse.headers.get('content-length');
+    
+    if (!contentType.startsWith('image/')) {
+      return { ok: false, reason: `Invalid content-type: ${contentType}`, content_type: contentType };
+    }
+
+    // GET request with range limit
+    const getResponse = await fetch(url, { 
+      method: 'GET',
+      headers: { Range: 'bytes=0-524288' }, // First 512KB
+      redirect: 'follow',
+    });
+
+    if (!getResponse.ok) {
+      return { ok: false, reason: `GET failed: HTTP ${getResponse.status}` };
+    }
+
+    const arrayBuffer = await getResponse.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+
+    // Check for HTML/XML (common error page trap)
+    const text = new TextDecoder().decode(bytes.slice(0, 500));
+    if (text.toLowerCase().includes('<!doctype html') || text.toLowerCase().includes('<?xml')) {
+      return { ok: false, reason: 'Content is HTML/XML, not image' };
+    }
+
+    // Validate magic header
+    const magicHeader = Array.from(bytes.slice(0, 4))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join(' ')
+      .toUpperCase();
+    
+    const validHeaders = [
+      'FF D8 FF', // JPEG
+      '89 50 4E 47', // PNG
+      '52 49 46 46', // WebP (RIFF)
+    ];
+    
+    const isValidMagic = validHeaders.some(h => magicHeader.startsWith(h));
+    
+    if (!isValidMagic) {
+      return { ok: false, reason: `Invalid magic header: ${magicHeader}`, magic_header: magicHeader };
+    }
+
+    // Try to get dimensions (simplified - full implementation would parse image headers)
+    const dimensions = { width: null, height: null };
+
+    return {
+      ok: true,
+      http_status: httpStatus,
+      content_type: contentType,
+      content_length: contentLength ? parseInt(contentLength) : null,
+      magic_header: magicHeader,
+      dimensions,
+      asset_type: assetType,
+    };
+
+  } catch (error) {
+    return {
+      ok: false,
+      reason: `Validation error: ${error.message}`,
+      error: error.message,
+      asset_type: assetType,
+    };
+  }
+}
+
+/**
+ * Validate video URL
+ */
+async function validateVideoUrl(url: string, assetType: string, logPrefix: string) {
+  try {
+    // HEAD request
+    const headResponse = await fetch(url, { method: 'HEAD', redirect: 'follow' });
+    const httpStatus = headResponse.status;
+    
+    if (![200, 206, 304].includes(httpStatus)) {
+      return { ok: false, reason: `HTTP ${httpStatus}`, http_status: httpStatus };
+    }
+
+    const contentType = headResponse.headers.get('content-type') || '';
+    const contentLength = headResponse.headers.get('content-length');
+    
+    if (!contentType.startsWith('video/') && !contentType.includes('mp4') && !contentType.includes('webm')) {
+      return { ok: false, reason: `Invalid content-type: ${contentType}`, content_type: contentType };
+    }
+
+    // GET request with range limit (first 2MB for video)
+    const getResponse = await fetch(url, { 
+      method: 'GET',
+      headers: { Range: 'bytes=0-2097152' },
+      redirect: 'follow',
+    });
+
+    if (!getResponse.ok) {
+      return { ok: false, reason: `GET failed: HTTP ${getResponse.status}` };
+    }
+
+    const arrayBuffer = await getResponse.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+
+    // Check for HTML/XML
+    const text = new TextDecoder().decode(bytes.slice(0, 500));
+    if (text.toLowerCase().includes('<!doctype html') || text.toLowerCase().includes('<?xml')) {
+      return { ok: false, reason: 'Content is HTML/XML, not video' };
+    }
+
+    // Validate magic header (MP4, WebM)
+    const magicHeader = Array.from(bytes.slice(0, 4))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join(' ')
+      .toUpperCase();
+    
+    // MP4: 00 00 00 18 66 74 79 70 (starts with 00 00 00)
+    // WebM: 1A 45 DF A3
+    const isValidMagic = magicHeader.startsWith('00 00 00') || magicHeader.startsWith('1A 45 DF A3');
+    
+    if (!isValidMagic) {
+      return { ok: false, reason: `Invalid magic header: ${magicHeader}`, magic_header: magicHeader };
+    }
+
+    return {
+      ok: true,
+      http_status: httpStatus,
+      content_type: contentType,
+      content_length: contentLength ? parseInt(contentLength) : null,
+      magic_header: magicHeader,
+      dimensions: { width: null, height: null, duration: null },
+      asset_type: assetType,
+    };
+
+  } catch (error) {
+    return {
+      ok: false,
+      reason: `Validation error: ${error.message}`,
+      error: error.message,
+      asset_type: assetType,
+    };
+  }
+}

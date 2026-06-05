@@ -12,7 +12,10 @@
         "process_video",
         "send_email",
         "compute_stats",
-        "generate_sitemap"
+        "generate_sitemap",
+        "regenerate_thumbnail",
+        "regenerate_preview",
+        "regenerate_cover"
       ],
       "title": "Job Type"
     },
@@ -23,7 +26,11 @@
         "running",
         "completed",
         "failed",
-        "cancelled"
+        "cancelled",
+        "timeout",
+        "callback_received",
+        "validating",
+        "thumbnail_invalid"
       ],
       "title": "Status",
       "default": "pending"
@@ -67,6 +74,38 @@
       "type": "integer",
       "title": "Retry Count",
       "default": 0
+    },
+    "external_processor_job_id": {
+      "type": "string",
+      "title": "External Processor Job ID",
+      "description": "Job ID returned by external processor for status tracking"
+    },
+    "external_processor_status": {
+      "type": "string",
+      "title": "External Processor Status",
+      "description": "Last known status from external processor"
+    },
+    "callback_received_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Callback Received At",
+      "description": "Timestamp when processor callback was received"
+    },
+    "callback_attempts": {
+      "type": "integer",
+      "title": "Callback Attempts",
+      "default": 0,
+      "description": "Number of callback attempts received"
+    },
+    "last_callback_payload": {
+      "type": "string",
+      "title": "Last Callback Payload (JSON)",
+      "description": "Raw payload from last callback for debugging"
+    },
+    "validation_report": {
+      "type": "string",
+      "title": "Validation Report (JSON)",
+      "description": "Detailed validation report from callback"
     }
   },
   "required": [
