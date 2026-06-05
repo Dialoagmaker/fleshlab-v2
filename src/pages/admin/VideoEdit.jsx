@@ -169,24 +169,31 @@ export default function VideoEdit() {
   });
 
   const validateAndFixAssets = useMutation({
-    mutationFn: () => base44.functions.invoke('validateAndFixVideoAssets', { video_id: id }),
+    mutationFn: () => base44.functions.invoke('validateAndRepairVideoAssets', { video_id: id, repair: true }),
     onSuccess: (res) => {
       const d = res.data;
-      console.log('🔍 Asset Validation Results:', d);
+      console.log('🔍 Asset Validation & Repair Results:', d);
       
-      if (d?.can_publish) {
+      if (d?.canPublishAssets) {
         setCheckStatus({ ok: true, msg: '✓ All assets valid - ready to publish' });
-      } else if (d?.regen_status === 'pending') {
-        setCheckStatus({ ok: false, msg: 'Asset regeneration triggered - check back in 2-3 minutes' });
       } else {
         const issues = [];
-        if (d?.source_video?.status !== 'accessible') issues.push('Source video');
-        if (d?.thumbnail?.status !== 'accessible') issues.push('Thumbnail');
-        if (d?.preview?.status !== 'accessible') issues.push('Preview');
+        if (!d?.source?.valid) issues.push(`Source: ${d.source.reason || 'invalid'}`);
+        if (d?.thumbnail?.corrupt) issues.push('Thumbnail corrupt (HTML saved as JPG)');
+        else if (!d?.thumbnail?.valid) issues.push(`Thumbnail: ${d.thumbnail.reason || 'invalid'}`);
+        if (!d?.preview?.valid && !d?.preview?.repaired) issues.push(`Preview: ${d.preview.reason || 'invalid'}`);
         setCheckStatus({ ok: false, msg: `Invalid assets: ${issues.join(', ')}` });
       }
       
+      // Auto-invalidate to refresh UI with new URLs
       queryClient.invalidateQueries({ queryKey: ['video', id] });
+      
+      // If thumbnail was corrupt and marked for repair, auto-trigger regeneration
+      if (d?.thumbnail?.corrupt && !d?.thumbnail?.repaired) {
+        setTimeout(() => {
+          regenerateThumbnail.mutate();
+        }, 1000);
+      }
     },
     onError: (err) => {
       console.error('❌ Asset validation failed:', err);
@@ -623,7 +630,7 @@ export default function VideoEdit() {
                 className="gap-2 text-xs"
               >
                 <RefreshCw className={`w-3 h-3 ${validateAndFixAssets.isPending ? 'animate-spin' : ''}`} />
-                {validateAndFixAssets.isPending ? 'Checking...' : 'Validate & Fix Assets'}
+                {validateAndFixAssets.isPending ? 'Validating...' : '🔧 Validate & Repair'}
               </Button>
               <Button
                 type="button"
