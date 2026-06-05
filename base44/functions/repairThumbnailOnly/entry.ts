@@ -3,10 +3,9 @@
  * 
  * Flow:
  * 1. Load video and check source/preview URLs
- * 2. Generate thumbnail from valid source or preview
- * 3. Upload to R2 with new filename
- * 4. Validate (HTTP, content-type, magic header, dimensions)
- * 5. Save URL to Video.primary_thumbnail_url ONLY if validation passes
+ * 2. Call processor API to generate thumbnail from valid source or preview
+ * 3. Validate uploaded thumbnail (HTTP, content-type, magic header, dimensions)
+ * 4. Save URL to Video.primary_thumbnail_url ONLY if validation passes
  * 
  * Does NOT:
  * - Touch source_video_url
@@ -17,13 +16,21 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
+const PROCESSOR_API_KEY = Deno.env.get('PROCESSOR_API_KEY');
+const PROCESSOR_BASE_URL = Deno.env.get('PROCESSOR_WEBHOOK_URL')?.replace('/webhook', '');
 const R2_BUCKET_URL = Deno.env.get('R2_PUBLIC_BUCKET_URL');
-const R2_KEY_ID = Deno.env.get('R2_ACCESS_KEY_ID');
-const R2_KEY_SECRET = Deno.env.get('R2_SECRET_ACCESS_KEY');
-const R2_ACCOUNT_ID = Deno.env.get('R2_ACCOUNT_ID');
-const R2_BUCKET = Deno.env.get('R2_BUCKET_NAME');
 
 Deno.serve(async (req) => {
+  const result = {
+    ok: false,
+    step: 'init',
+    error: null,
+    details: null,
+    validation: null,
+    source_url: null,
+    preview_url: null
+  };
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -39,10 +46,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'video_id required' }, { status: 400 });
     }
 
+    result.step = 'load_video';
+
     // Load video
     const video = await base44.asServiceRole.entities.Video.get(video_id);
     if (!video) {
-      return Response.json({ error: 'Video not found' }, { status: 404 });
+      return Response.json({ ...result, error: 'Video not found' }, { status: 404 });
     }
 
     console.log(`[repairThumbnailOnly] Video ${video_id}:`, {
@@ -50,189 +59,198 @@ Deno.serve(async (req) => {
       preview: video.trailer_url ? 'exists' : 'missing'
     });
 
-    // Find a valid source to generate from
-    const sourceUrl = video.source_video_url || video.trailer_url;
-    if (!sourceUrl) {
+    result.source_url = video.source_video_url;
+    result.preview_url = video.trailer_url;
+
+    // Find a valid source to generate from - prefer preview, fallback to source
+    const generateFromUrl = video.trailer_url || video.source_video_url;
+    if (!generateFromUrl) {
       return Response.json({
-        ok: false,
+        ...result,
         error: 'No source or preview video URL available',
         step: 'find_source'
       }, { status: 400 });
     }
 
-    // Generate thumbnail using FFmpeg
-    // Use midpoint of video (30 seconds or video length / 2)
-    const generateThumbnailCmd = [
-      'ffmpeg',
-      '-i', sourceUrl,
-      '-ss', '00:00:05',  // 5 seconds into video
-      '-vframes', '1',
-      '-vf', 'scale=640:360,format=yuvj420p',
-      '-q:v', '2',
-      '-y',
-      '/tmp/thumbnail.jpg'
-    ];
+    console.log(`[repairThumbnailOnly] Generating thumbnail from: ${generateFromUrl}`);
 
-    console.log(`[repairThumbnailOnly] Generating thumbnail from ${sourceUrl}`);
-    const proc = Deno.run({
-      cmd: generateThumbnailCmd,
-      stdout: 'piped',
-      stderr: 'piped'
+    result.step = 'call_processor';
+
+    // Call processor API to generate thumbnail
+    const processorResponse = await fetch(`${PROCESSOR_BASE_URL}/generate-thumbnail`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${PROCESSOR_API_KEY}`
+      },
+      body: JSON.stringify({
+        video_id,
+        source_url: generateFromUrl,
+        timestamp_seconds: 5,  // Extract frame at 5 seconds
+        width: 640,
+        height: 360,
+        quality: 85
+      })
     });
 
-    const status = await proc.status();
-    if (!status.success) {
-      const stderr = new TextDecoder().decode(await proc.stderrOutput());
-      console.error('FFmpeg error:', stderr);
+    if (!processorResponse.ok) {
+      const errorText = await processorResponse.text();
+      console.error('Processor API error:', processorResponse.status, errorText);
       return Response.json({
-        ok: false,
-        error: 'FFmpeg thumbnail generation failed',
-        step: 'generate_thumbnail',
-        details: stderr.substring(0, 200)
+        ...result,
+        error: `Processor API failed: ${processorResponse.status}`,
+        details: errorText.substring(0, 500)
       }, { status: 500 });
     }
 
-    // Read generated thumbnail
-    const thumbnailBytes = await Deno.readFile('/tmp/thumbnail.jpg');
-    console.log(`[repairThumbnailOnly] Generated thumbnail: ${thumbnailBytes.length} bytes`);
+    const processorResult = await processorResponse.json();
+    console.log('[repairThumbnailOnly] Processor result:', processorResult);
 
-    // Validate generated thumbnail before uploading
-    const magicHeader = Array.from(thumbnailBytes.slice(0, 4))
+    if (!processorResult.ok || !processorResult.thumbnail_url) {
+      return Response.json({
+        ...result,
+        error: processorResult.error || 'Processor did not return thumbnail URL',
+        step: 'processor_response'
+      }, { status: 500 });
+    }
+
+    const newThumbnailUrl = processorResult.thumbnail_url;
+    console.log(`[repairThumbnailOnly] New thumbnail URL: ${newThumbnailUrl}`);
+
+    result.step = 'validate_thumbnail';
+
+    // Validate uploaded thumbnail via HTTP HEAD
+    const validateResponse = await fetch(newThumbnailUrl, { method: 'HEAD', redirect: 'follow' });
+    
+    if (!validateResponse.ok) {
+      return Response.json({
+        ...result,
+        error: `Uploaded thumbnail validation failed: HTTP ${validateResponse.status}`,
+        step: 'validate_http'
+      }, { status: 500 });
+    }
+
+    const contentType = validateResponse.headers.get('content-type');
+    const contentLength = validateResponse.headers.get('content-length');
+
+    if (!contentType || (!contentType.includes('image/jpeg') && !contentType.includes('image/png'))) {
+      return Response.json({
+        ...result,
+        error: `Invalid content-type: ${contentType}`,
+        step: 'validate_content_type'
+      }, { status: 500 });
+    }
+
+    console.log(`[repairThumbnailOnly] Content-Type: ${contentType}, Length: ${contentLength}`);
+
+    // Download and validate magic header + dimensions
+    const imgResponse = await fetch(newThumbnailUrl);
+    const imgBuffer = await imgResponse.arrayBuffer();
+    const imgBytes = new Uint8Array(imgBuffer);
+    
+    // Check magic header
+    const magicHeader = Array.from(imgBytes.slice(0, 4))
       .map(b => b.toString(16).padStart(2, '0').toUpperCase())
       .join(' ');
 
     console.log(`[repairThumbnailOnly] Magic header: ${magicHeader}`);
 
-    // Check for HTML
-    const sampleText = new TextDecoder().decode(thumbnailBytes.slice(0, 100));
+    // Check for HTML (corrupt file)
+    const sampleText = new TextDecoder().decode(imgBytes.slice(0, 100));
     if (sampleText.includes('<!DOCTYPE') || sampleText.includes('<html')) {
       return Response.json({
-        ok: false,
-        error: 'Generated file contains HTML - FFmpeg failed to extract video frame',
-        step: 'validate_generated',
-        magicHeader
-      }, { status: 500 });
-    }
-
-    // Check JPEG magic header (FF D8)
-    if (magicHeader.substring(0, 5) !== 'FF D8') {
-      return Response.json({
-        ok: false,
-        error: 'Invalid JPEG magic header',
-        step: 'validate_generated',
+        ...result,
+        error: 'Generated file contains HTML - processor failed',
         magicHeader,
-        expected: 'FF D8'
+        step: 'validate_magic'
       }, { status: 500 });
     }
 
-    // Upload to R2 using presigned URL via createR2UploadUrl function
-    const timestamp = Date.now();
-    const filename = `videos/${video_id}/thumbnail_${timestamp}.jpg`;
-    
-    console.log(`[repairThumbnailOnly] Getting R2 upload URL: ${filename}`);
-    
-    // Get presigned upload URL
-    const uploadUrlRes = await base44.functions.invoke('createR2UploadUrl', {
-      key: filename,
-      contentType: 'image/jpeg'
-    });
-    
-    if (!uploadUrlRes.data || !uploadUrlRes.data.uploadUrl) {
-      throw new Error('Failed to get R2 upload URL');
-    }
-    
-    const uploadUrl = uploadUrlRes.data.uploadUrl;
-    console.log(`[repairThumbnailOnly] Uploading to R2 via presigned URL`);
-    
-    // Upload to presigned URL
-    const s3Response = await fetch(uploadUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'image/jpeg'
-      },
-      body: thumbnailBytes
-    });
+    // Validate magic header (FF D8 for JPEG, 89 50 4E 47 for PNG)
+    const isJpeg = magicHeader.substring(0, 5) === 'FF D8';
+    const isPng = magicHeader.substring(0, 11) === '89 50 4E 47';
 
-    if (!s3Response.ok) {
-      console.error('R2 upload failed:', s3Response.status, await s3Response.text());
+    if (!isJpeg && !isPng) {
       return Response.json({
-        ok: false,
-        error: `R2 upload failed: ${s3Response.status}`,
-        step: 'upload_to_r2'
+        ...result,
+        error: `Invalid image magic header: ${magicHeader}`,
+        expected: 'FF D8 (JPEG) or 89 50 4E 47 (PNG)',
+        step: 'validate_magic'
       }, { status: 500 });
     }
 
-    // Build CDN URL from public bucket URL
-    const cdnUrl = `${R2_BUCKET_URL}/${filename}`;
-    console.log(`[repairThumbnailOnly] CDN URL: ${cdnUrl}`);
-
-    // Validate uploaded thumbnail via HTTP
-    const validateResponse = await fetch(cdnUrl, { method: 'HEAD', redirect: 'follow' });
-    
-    if (!validateResponse.ok) {
-      return Response.json({
-        ok: false,
-        error: `Uploaded thumbnail validation failed: HTTP ${validateResponse.status}`,
-        step: 'validate_uploaded',
-        httpStatus: validateResponse.status
-      }, { status: 500 });
-    }
-
-    const contentType = validateResponse.headers.get('content-type');
-    if (!contentType || !contentType.includes('image/jpeg')) {
-      return Response.json({
-        ok: false,
-        error: `Invalid content-type: ${contentType}`,
-        step: 'validate_uploaded'
-      }, { status: 500 });
-    }
-
-    // Download and validate image dimensions
-    const imgResponse = await fetch(cdnUrl);
-    const imgBuffer = await imgResponse.arrayBuffer();
-    const imgBytes = new Uint8Array(imgBuffer);
-    
-    // Extract JPEG dimensions (basic check)
+    // Extract dimensions
     let width = 0, height = 0;
     try {
-      // JPEG SOF0 marker at bytes 9-10 contains dimensions
-      if (imgBytes[9] === 0xFF && imgBytes[10] === 0xC0) {
-        height = (imgBytes[5] << 8) | imgBytes[6];
-        width = (imgBytes[7] << 8) | imgBytes[8];
+      if (isJpeg && imgBytes.length > 10) {
+        // JPEG: find SOF0 marker (FF C0)
+        for (let i = 0; i < Math.min(imgBytes.length - 10, 2000); i++) {
+          if (imgBytes[i] === 0xFF && imgBytes[i + 1] === 0xC0) {
+            height = (imgBytes[i + 5] << 8) | imgBytes[i + 6];
+            width = (imgBytes[i + 7] << 8) | imgBytes[i + 8];
+            break;
+          }
+        }
+      } else if (isPng && imgBytes.length > 24) {
+        // PNG: dimensions at bytes 16-23
+        width = (imgBytes[16] << 24) | (imgBytes[17] << 16) | (imgBytes[18] << 8) | imgBytes[19];
+        height = (imgBytes[20] << 24) | (imgBytes[21] << 16) | (imgBytes[22] << 8) | imgBytes[23];
       }
     } catch (e) {
-      console.log('Could not extract JPEG dimensions, skipping check');
+      console.log('Could not extract dimensions, skipping check');
     }
 
-    console.log(`[repairThumbnailOnly] Validated thumbnail: ${width}x${height}, ${imgBytes.length} bytes`);
+    console.log(`[repairThumbnailOnly] Dimensions: ${width}x${height}, ${imgBytes.length} bytes`);
+
+    if (width <= 0 || height <= 0) {
+      return Response.json({
+        ...result,
+        error: 'Invalid image dimensions',
+        step: 'validate_dimensions'
+      }, { status: 500 });
+    }
+
+    result.validation = {
+      httpStatus: validateResponse.status,
+      contentType,
+      contentLength: parseInt(contentLength || '0', 10),
+      magicHeader,
+      width,
+      height,
+      fileSize: imgBytes.length,
+      isJpeg,
+      isPng
+    };
+
+    result.step = 'save_to_video';
 
     // Save to Video entity
     await base44.asServiceRole.entities.Video.update(video_id, {
-      primary_thumbnail_url: cdnUrl
+      primary_thumbnail_url: newThumbnailUrl
     });
 
     console.log(`[repairThumbnailOnly] Saved to Video.primary_thumbnail_url`);
 
+    result.ok = true;
+    result.step = 'complete';
+    result.error = null;
+
     return Response.json({
       ok: true,
-      message: 'Thumbnail repaired successfully',
       step: 'complete',
-      thumbnailUrl: cdnUrl,
-      validation: {
-        httpStatus: validateResponse.status,
-        contentType,
-        magicHeader,
-        width,
-        height,
-        fileSize: imgBytes.length
-      }
+      message: 'Thumbnail repaired successfully',
+      video_id,
+      new_thumbnail_url: newThumbnailUrl,
+      validation: result.validation,
+      source_url: result.source_url,
+      preview_url: result.preview_url
     });
 
   } catch (error) {
     console.error('repairThumbnailOnly error:', error);
-    return Response.json({ 
-      error: error.message || 'Unknown error',
-      step: 'exception'
-    }, { status: 500 });
+    result.error = error.message || 'Unknown error';
+    result.details = error.stack?.substring(0, 500);
+    
+    return Response.json(result, { status: 500 });
   }
 });
