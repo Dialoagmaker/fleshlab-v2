@@ -167,6 +167,32 @@ export default function VideoEdit() {
     onError: (err) => setCheckStatus({ ok: false, msg: err.message }),
   });
 
+  const validateAndFixAssets = useMutation({
+    mutationFn: () => base44.functions.invoke('validateAndFixVideoAssets', { video_id: id }),
+    onSuccess: (res) => {
+      const d = res.data;
+      console.log('🔍 Asset Validation Results:', d);
+      
+      if (d?.can_publish) {
+        setCheckStatus({ ok: true, msg: '✓ All assets valid - ready to publish' });
+      } else if (d?.regen_status === 'pending') {
+        setCheckStatus({ ok: false, msg: 'Asset regeneration triggered - check back in 2-3 minutes' });
+      } else {
+        const issues = [];
+        if (d?.source_video?.status !== 'accessible') issues.push('Source video');
+        if (d?.thumbnail?.status !== 'accessible') issues.push('Thumbnail');
+        if (d?.preview?.status !== 'accessible') issues.push('Preview');
+        setCheckStatus({ ok: false, msg: `Invalid assets: ${issues.join(', ')}` });
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['video', id] });
+    },
+    onError: (err) => {
+      console.error('❌ Asset validation failed:', err);
+      setCheckStatus({ ok: false, msg: err.message });
+    },
+  });
+
   const runDiagnostic = useMutation({
     mutationFn: async () => {
       const video = await base44.entities.Video.get(id);
@@ -500,6 +526,16 @@ export default function VideoEdit() {
               >
                 <RefreshCw className={`w-4 h-4 ${retrigger.isPending ? 'animate-spin' : ''}`} />
                 {retrigger.isPending ? 'Wird gesendet…' : 'Assets neu erstellen'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => { setCheckStatus(null); validateAndFixAssets.mutate(); }}
+                disabled={validateAndFixAssets.isPending}
+                className="gap-2 text-xs"
+              >
+                <RefreshCw className={`w-3 h-3 ${validateAndFixAssets.isPending ? 'animate-spin' : ''}`} />
+                {validateAndFixAssets.isPending ? 'Checking...' : 'Validate & Fix Assets'}
               </Button>
               <Button
                 type="button"
