@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
+const MINIMUM_PAYOUT_USD = 100;
+
 export default function PayoutRequestsSection({ onPayoutCreated }) {
   const [payoutRequests, setPayoutRequests] = useState([]);
   const [payoutRequestForm, setPayoutRequestForm] = useState({
@@ -18,8 +20,16 @@ export default function PayoutRequestsSection({ onPayoutCreated }) {
     confirm_details: false
   });
   const [loading, setLoading] = useState(false);
+  const [touched, setTouched] = useState(false);
+
+  const parsedAmount = parseFloat(payoutRequestForm.amount);
+  const amountValid = !isNaN(parsedAmount) && parsedAmount >= MINIMUM_PAYOUT_USD;
+  const amountTooLow = touched && payoutRequestForm.amount !== "" && (!amountValid);
+  const canSubmit = amountValid && payoutRequestForm.confirm_details && !loading;
 
   const handleCreatePayoutRequest = async () => {
+    setTouched(true);
+    if (!canSubmit) return;
     setLoading(true);
 
     try {
@@ -78,35 +88,45 @@ export default function PayoutRequestsSection({ onPayoutCreated }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Payout requests can be submitted once your available balance reaches at least $100 USD.
+          </p>
+
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="amount">Amount</Label>
               <Input
                 id="amount"
                 type="number"
-                min="0"
+                min="100"
                 step="0.01"
                 value={payoutRequestForm.amount}
-                onChange={(e) => setPayoutRequestForm({ ...payoutRequestForm, amount: e.target.value })}
+                onChange={(e) => {
+                  setTouched(true);
+                  setPayoutRequestForm({ ...payoutRequestForm, amount: e.target.value });
+                }}
+                onBlur={() => setTouched(true)}
                 placeholder="100.00"
+                className={amountTooLow ? "border-destructive" : ""}
               />
+              {amountTooLow ? (
+                <p className="text-destructive text-xs">Minimum payout amount is $100 USD.</p>
+              ) : (
+                <p className="text-muted-foreground text-xs">Minimum payout: $100 USD</p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="currency">Currency</Label>
-              <Select
-                value={payoutRequestForm.currency}
-                onValueChange={(value) => setPayoutRequestForm({ ...payoutRequestForm, currency: value })}
-              >
+              <Select value="usd" disabled>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="usd">USD</SelectItem>
-                  <SelectItem value="eur">EUR</SelectItem>
-                  <SelectItem value="php">PHP</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-muted-foreground text-xs">USD only at this time</p>
             </div>
           </div>
 
@@ -137,7 +157,7 @@ export default function PayoutRequestsSection({ onPayoutCreated }) {
           <Button 
             onClick={handleCreatePayoutRequest} 
             className="w-full sm:w-auto"
-            disabled={!payoutRequestForm.amount || !payoutRequestForm.confirm_details || loading}
+            disabled={!canSubmit}
           >
             {loading ? "Submitting..." : "Request Payout"}
           </Button>
@@ -180,9 +200,12 @@ export default function PayoutRequestsSection({ onPayoutCreated }) {
                     )}
                   </div>
 
+                  {request.performer_note && (
+                    <p className="text-sm text-muted-foreground">Note: {request.performer_note}</p>
+                  )}
                   {request.performer_visible_message && (
                     <div className="bg-muted/50 rounded p-2 text-sm">
-                      <p className="font-medium">Admin Message:</p>
+                      <p className="font-medium">{request.status === 'rejected' ? 'Rejection Reason:' : 'Admin Message:'}</p>
                       <p>{request.performer_visible_message}</p>
                     </div>
                   )}

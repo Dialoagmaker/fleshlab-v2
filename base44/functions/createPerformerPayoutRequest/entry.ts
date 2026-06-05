@@ -23,16 +23,25 @@ Deno.serve(async (req) => {
 
     const performer = performers[0];
 
-    const { amount, currency = 'usd', payout_method, performer_note, confirm_details } = body;
+    const MINIMUM_PAYOUT_USD = 100;
 
-    if (!amount || !payout_method) {
-      return Response.json({ 
-        error: 'Missing required fields: amount, payout_method' 
-      }, { status: 400 });
+    const { currency = 'usd', payout_method, performer_note, confirm_details } = body;
+    const amount = parseFloat(body.amount);
+
+    if (!body.amount || isNaN(amount) || amount <= 0) {
+      return Response.json({ error: 'Invalid amount' }, { status: 400 });
     }
 
-    if (amount <= 0) {
-      return Response.json({ error: 'Amount must be greater than 0' }, { status: 400 });
+    if (amount < MINIMUM_PAYOUT_USD) {
+      return Response.json({ error: 'Minimum payout amount is $100 USD.' }, { status: 400 });
+    }
+
+    if (!currency || currency.toLowerCase() !== 'usd') {
+      return Response.json({ error: 'Only USD payouts are supported at this time.' }, { status: 400 });
+    }
+
+    if (!payout_method) {
+      return Response.json({ error: 'Missing required field: payout_method' }, { status: 400 });
     }
 
     if (!confirm_details) {
