@@ -92,10 +92,12 @@ export default function VideoEdit() {
     queryFn: () => base44.entities.Brand.filter({ status: "active" }, "name", 100),
   });
 
-  const { data: video } = useQuery({
+  const { data: video, refetch: refetchVideo } = useQuery({
     queryKey: ["video", id],
     queryFn: () => base44.entities.Video.get(id),
     enabled: !isNew,
+    staleTime: 0,  // Always consider stale, force refetch
+    cacheTime: 0,  // Don't cache
   });
 
   const { data: sourceAssets = [] } = useQuery({
@@ -368,12 +370,11 @@ export default function VideoEdit() {
             <Button
               type="button"
               variant="outline"
-              disabled={checkAssets.isPending}
-              onClick={() => { setCheckStatus(null); checkAssets.mutate(); }}
+              onClick={() => { setCheckStatus(null); refetchVideo(); }}
               className="gap-2 text-xs"
             >
-              <RefreshCw className={`w-3 h-3 ${checkAssets.isPending ? 'animate-spin' : ''}`} />
-              {checkAssets.isPending ? 'Suche…' : 'Assets prüfen & anwenden'}
+              <RefreshCw className="w-3 h-3" />
+              Seite aktualisieren
             </Button>
           </div>
         </section>
