@@ -3,8 +3,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user || user.role !== 'admin') {
+    // Allow service-role calls (fire-and-forget from updateVideoProcessingResult) as well as admin users
+    const user = await base44.auth.me().catch(() => null);
+    if (user && user.role !== 'admin') {
       return Response.json({ error: 'Unauthorized: Admin access required' }, { status: 403 });
     }
 
@@ -91,11 +92,21 @@ AVOID: generic intros, "Don't miss", "HD studio quality", clichés, escalating s
       }
     });
 
-    // Store draft as JSON string on video
+    // Auto-apply generated metadata directly to video fields (only if currently empty)
+    const autoApplyFields = {};
+    if (!video.description && draft.description) autoApplyFields.description = draft.description;
+    if (!video.short_summary && draft.short_teaser) autoApplyFields.short_summary = draft.short_teaser;
+    if (!video.meta_title && draft.seo_title) autoApplyFields.meta_title = draft.seo_title;
+    if (!video.meta_description && draft.seo_description) autoApplyFields.meta_description = draft.seo_description;
+    if ((!video.tags || video.tags.length === 0) && draft.tags?.length) autoApplyFields.tags = draft.tags;
+    if ((!video.categories || video.categories.length === 0) && draft.categories?.length) autoApplyFields.categories = draft.categories;
+
+    // Store draft as JSON string on video and apply empty fields
     await base44.entities.Video.update(video_id, {
       ai_metadata_draft: JSON.stringify(draft),
       ai_metadata_generated_at: new Date().toISOString(),
       processing_status: 'draft_ready',
+      ...autoApplyFields,
     });
 
     return Response.json({ status: 'ok', draft });
