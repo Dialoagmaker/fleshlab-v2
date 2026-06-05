@@ -140,27 +140,41 @@ Deno.serve(async (req) => {
       }),
     });
 
+    // Read processor response body
+    let processorResponseBody;
+    try {
+      processorResponseBody = await processorResponse.json();
+    } catch {
+      processorResponseBody = { raw: await processorResponse.text() };
+    }
+
     if (!processorResponse.ok) {
-      const errorText = await processorResponse.text();
-      console.error('[triggerThumbnailRegeneration] Processor rejected:', processorResponse.status, errorText);
+      console.error('[triggerThumbnailRegeneration] Processor rejected:', processorResponse.status, processorResponseBody);
       
       // Update job to failed
       await base44.entities.JobQueue.update(job.id, {
         status: 'failed',
         error_message: `Processor rejected: HTTP ${processorResponse.status}`,
         completed_at: new Date().toISOString(),
+        result: JSON.stringify({ processor_response: processorResponseBody }),
       });
 
       return Response.json({
         error: `Processor trigger failed: HTTP ${processorResponse.status}`,
-        details: errorText.substring(0, 500),
+        details: JSON.stringify(processorResponseBody).substring(0, 500),
       }, { status: 502 });
     }
 
-    // Update job to 'processing' (processor accepted)
+    // Update job to 'processing' (processor accepted) - store response
     await base44.entities.JobQueue.update(job.id, {
       status: 'processing',
       started_at: new Date().toISOString(),
+      external_processor_status: 'accepted',
+      result: JSON.stringify({ 
+        processor_response: processorResponseBody,
+        processor_endpoint: processorWebhookUrl,
+        callback_url: callbackUrl,
+      }),
     });
 
     console.log('[triggerThumbnailRegeneration] Job queued:', {
