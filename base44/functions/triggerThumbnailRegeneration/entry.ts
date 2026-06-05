@@ -64,23 +64,7 @@ Deno.serve(async (req) => {
       { expiresIn: 3600 }
     );
 
-    // Create JobQueue entry BEFORE triggering processor
-    const job = await base44.entities.JobQueue.create({
-      job_type: 'regenerate_thumbnail',
-      status: 'queued',
-      priority: 5,
-      payload: JSON.stringify({
-        video_id,
-        source_asset_id: sourceAsset.id,
-        source_r2_key: sourceAsset.r2_key,
-        operation: 'thumbnail_only',
-      }),
-      entity_type: 'Video',
-      entity_id: video_id,
-      retry_count: 0,
-    });
-
-    // DUPLICATE JOB GUARD: Check if there's already an active thumbnail job for this video
+    // DUPLICATE JOB GUARD: Check BEFORE creating job
     const existingJobs = await base44.entities.JobQueue.filter(
       { entity_type: 'Video', entity_id: video_id, job_type: 'regenerate_thumbnail' },
       '-created_date',
@@ -108,6 +92,22 @@ Deno.serve(async (req) => {
         elapsed_seconds: elapsed,
       });
     }
+
+    // Create JobQueue entry BEFORE triggering processor
+    const job = await base44.entities.JobQueue.create({
+      job_type: 'regenerate_thumbnail',
+      status: 'queued',
+      priority: 5,
+      payload: JSON.stringify({
+        video_id,
+        source_asset_id: sourceAsset.id,
+        source_r2_key: sourceAsset.r2_key,
+        operation: 'thumbnail_only',
+      }),
+      entity_type: 'Video',
+      entity_id: video_id,
+      retry_count: 0,
+    });
 
     // Prepare processor callback URL - CORRECT BASE44 PATH (no /api/ prefix)
     const processorApiKey = Deno.env.get('PROCESSOR_API_KEY');
