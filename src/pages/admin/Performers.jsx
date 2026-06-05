@@ -41,44 +41,16 @@ export default function Performers() {
     queryKey: ["admin-performers-search", search, statusFilter, page],
     queryFn: async () => {
       const params = { search, status: statusFilter, page, pageSize: PAGE_SIZE };
-      console.log('[Performers] Fetching with params:', params);
-      
-      // Direct entity query for comparison
-      const directPerformers = await base44.entities.Performer.list("-created_date", 5);
-      console.log('[Performers] Direct entity query:', { count: directPerformers?.length, first: directPerformers?.[0]?.display_name });
-      
-      // Invoke backend function
       const raw = await base44.functions.invoke("searchPerformers", params);
-      console.log('[Performers] Raw invoke response:', raw);
-      console.log('[Performers] Raw type:', typeof raw);
-      console.log('[Performers] Raw keys:', Object.keys(raw || {}));
-      
-      // CRITICAL: Base44 SDK wraps response in .data
-      // raw is the full response, raw.data is the actual function return value
       const payload = raw?.data || raw;
-      console.log('[Performers] Extracted payload:', payload);
-      console.log('[Performers] Payload keys:', Object.keys(payload || {}));
-      
       const results = payload?.results || payload?.performers || payload?.items || [];
       const totalCount = payload?.totalCount ?? payload?.total ?? payload?.count ?? results.length ?? 0;
-      
-      console.log('[Performers] Normalized:', { resultsLength: results.length, totalCount, firstResult: results[0]?.display_name });
-      
       return {
         results,
         totalCount,
         hasMore: payload?.hasMore ?? false,
         page: payload?.page ?? page,
         pageSize: payload?.pageSize ?? PAGE_SIZE,
-        debug: {
-          raw,
-          payload,
-          directPerformers,
-          directCount: directPerformers?.length || 0,
-          resultsLength: results.length,
-          totalCount,
-          requestParams: params
-        }
       };
     },
     staleTime: 0,
@@ -90,8 +62,6 @@ export default function Performers() {
   const totalCount = data?.totalCount || 0;
   const hasMore = data?.hasMore || false;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-
-  console.log('[Performers] Render:', { resultsLength: results.length, totalCount, dataExists: !!data });
 
   // Reset to page 0 when search/filter changes
   const handleSearch = (v) => { setSearch(v); setPage(0); };
@@ -198,41 +168,6 @@ export default function Performers() {
           {isRefetching ? 'Refreshing...' : 'Refresh'}
         </Button>
       </div>
-
-      {/* Debug Panel */}
-      {data?.debug && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 space-y-2 text-xs font-mono">
-          <p className="font-bold text-red-400">DEBUG DIAGNOSTICS</p>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <p className="text-muted-foreground">Request Params:</p>
-              <pre className="text-blue-300">{JSON.stringify(data.debug.requestParams, null, 2)}</pre>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Direct Performer.list():</p>
-              <pre className="text-green-300">Count: {data.debug.directCount}</pre>
-              {data.debug.directPerformers?.length > 0 && (
-                <pre className="text-green-300">First: {data.debug.directPerformers[0]?.display_name} ({data.debug.directPerformers[0]?.id})</pre>
-              )}
-            </div>
-            <div>
-              <p className="text-muted-foreground">Raw Response Type:</p>
-              <pre className="text-yellow-300">{typeof data.debug.raw}</pre>
-              <p className="text-muted-foreground">Raw Keys:</p>
-              <pre className="text-yellow-300">{Object.keys(data.debug.raw || {}).join(', ')}</pre>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Normalized Results:</p>
-              <pre className="text-purple-300">Length: {data.debug.resultsLength}</pre>
-              <pre className="text-purple-300">Total: {data.debug.totalCount}</pre>
-            </div>
-          </div>
-          <div>
-            <p className="text-muted-foreground">Payload Keys:</p>
-            <pre className="text-orange-300">{Object.keys(data.debug.payload || {}).join(', ')}</pre>
-          </div>
-        </div>
-      )}
 
       {/* Info banner about server-side search */}
       <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-3 flex items-center gap-3">
