@@ -19,7 +19,7 @@ export default function SummerPromoBanner() {
           Do NOT uncomment or add <source> tags until the R2 files are confirmed live.
         */}
         <img
-          src="https://pub-9e764acc099149ae8edaf1c9d03caa7d.r2.dev/studios/6a1ca4cdc29d96ab4c624c98/banner/ChatGPT%20Image%205.%20Juni%202026%2C%2012_45_48.png"
+          src="https://video.fleshlab.online/studios/6a1ca4cdc29d96ab4c624c98/banner/ChatGPT%20Image%205.%20Juni%202026%2C%2012_46_38.png"
           alt=""
           className="w-full h-full object-cover"
           style={{ objectPosition: "50% 40%" }}
