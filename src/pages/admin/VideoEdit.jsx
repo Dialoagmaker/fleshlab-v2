@@ -322,9 +322,13 @@ export default function VideoEdit() {
 
   // Poll job status for async thumbnail regeneration
   useEffect(() => {
-    // Safe guard: don't poll without valid IDs
-    if (!thumbnailJobId && !id) {
-      console.log('[Job Polling] Skipped: no job_id or video_id available');
+    // CRITICAL guard: don't poll without valid job_id
+    if (!thumbnailJobId || typeof thumbnailJobId !== 'string' || thumbnailJobId.trim() === '') {
+      console.warn('[Job Polling] Skipping: missing or invalid thumbnailJobId', { 
+        thumbnailJobId, 
+        type: typeof thumbnailJobId,
+        trimmed: thumbnailJobId?.trim()
+      });
       return;
     }
     
@@ -335,14 +339,39 @@ export default function VideoEdit() {
 
     const pollInterval = setInterval(async () => {
       try {
-        // Prefer job_id, fallback to video_id
-        const params = thumbnailJobId ? { job_id: thumbnailJobId } : { video_id: id };
+        // Log exact request before sending
+        const params = { job_id: thumbnailJobId };
+        console.log('[Job Polling] Sending request:', {
+          method: 'POST',
+          function: 'getProcessingJobStatus',
+          params,
+          thumbnailJobId,
+          thumbnailJobId_type: typeof thumbnailJobId,
+          thumbnailJobId_length: thumbnailJobId?.length,
+          timestamp: new Date().toISOString()
+        });
+        
         const res = await base44.functions.invoke('getProcessingJobStatus', params);
         const job = res.data;
         
+        console.log('[Job Polling] Response received:', {
+          status: res.status,
+          job_id: job?.job_id,
+          status_value: job?.status,
+          error: job?.error
+        });
+        
         // Handle 400 errors gracefully
         if (!job || job.error) {
-          console.error('[Job Polling] Server error:', job?.error || 'Unknown error');
+          console.error('[Job Polling] Server error:', {
+            error: job?.error,
+            received: job?.received,
+            method: job?.method,
+            queryParams: job?.queryParams,
+            body: job?.body,
+            parsedJobId: job?.parsedJobId,
+            parsedVideoId: job?.parsedVideoId
+          });
           setCheckStatus({ 
             ok: false, 
             msg: 'Job status polling misconfigured',
