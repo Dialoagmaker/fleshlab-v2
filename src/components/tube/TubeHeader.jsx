@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Search, Menu, LogIn, Star, Globe, ChevronDown, Check } from "lucide-react";
+import { Search, Menu, LogIn, Star, Globe, ChevronDown, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/i18n/i18n.jsx";
@@ -16,6 +16,10 @@ const languages = [
 export default function TubeHeader({ onMenuToggle }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [langOpen, setLangOpen] = useState(false);
+  const [bannerVisible, setBannerVisible] = useState(true);
+
+  const R2_BASE = import.meta.env.VITE_R2_PUBLIC_URL || 'https://pub-f5c2ded46b174bbbb21e72a40c6b8022.r2.dev';
+  const BANNER_URL = `${R2_BASE}/studios/6a1ca4cdc29d96ab4c624c98/banner/ChatGPT%20Image%205.%20Juni%202026%2C%2012_46_38.png`;
   const location = useLocation();
   const navigate = useNavigate();
   const { locale, setLocale, t } = useI18n();
@@ -42,6 +46,25 @@ export default function TubeHeader({ onMenuToggle }) {
 
   return (
     <header className="sticky top-0 z-50 bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] border-b border-rose-600/20">
+      {/* Studio Banner */}
+      {bannerVisible && (
+        <div className="relative w-full overflow-hidden bg-black" style={{ maxHeight: '120px' }}>
+          <img
+            src={BANNER_URL}
+            alt="Studio Banner"
+            className="w-full h-full object-cover object-center"
+            style={{ maxHeight: '120px' }}
+            onError={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+          />
+          <button
+            onClick={() => setBannerVisible(false)}
+            className="absolute top-2 right-2 p-1 bg-black/60 hover:bg-black/80 rounded-full transition-colors"
+          >
+            <X className="w-4 h-4 text-white" />
+          </button>
+        </div>
+      )}
+
       {/* Top Glow Line */}
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-rose-600/40 to-transparent" />
       
