@@ -51,7 +51,7 @@ export function checkPublishReadiness(video, options = {}) {
   }
   
   if (!video.duration_seconds || video.duration_seconds <= 0) {
-    errors.push('Video duration is required');
+    warnings.push('Video duration not yet set (will be filled automatically after processing)');
   }
   
   // Check performer relations
