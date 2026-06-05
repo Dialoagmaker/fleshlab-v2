@@ -295,6 +295,24 @@ export default function VideoEdit() {
     },
   });
 
+  const repairThumbnailOnly = useMutation({
+    mutationFn: () => base44.functions.invoke('repairThumbnailOnly', { video_id: id }),
+    onSuccess: (res) => {
+      const d = res.data;
+      console.log('✅ Thumbnail repaired:', d);
+      setCheckStatus({ 
+        ok: true, 
+        msg: `✓ Thumbnail repaired: ${d.validation.width}x${d.validation.height}`,
+        details: { ...d, thumbnail: d.validation }
+      });
+      setTimeout(() => queryClient.invalidateQueries({ queryKey: ['video', id] }), 1000);
+    },
+    onError: (err) => {
+      console.error('❌ Repair failed:', err);
+      setCheckStatus({ ok: false, msg: `Repair failed: ${err.message}`, details: { error: err.message } });
+    },
+  });
+
   const clearCorruptThumbnail = useMutation({
     mutationFn: () => base44.functions.invoke('repairCorruptThumbnail', { video_id: id, forceRegenerate: true }),
     onSuccess: (res) => {
@@ -682,11 +700,14 @@ export default function VideoEdit() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => regenerateThumbnail.mutate()}
-                  disabled={regenerateThumbnail.isPending}
-                  className="text-xs h-7"
+                  onClick={() => {
+                    setCheckStatus(null);
+                    repairThumbnailOnly.mutate();
+                  }}
+                  disabled={repairThumbnailOnly.isPending}
+                  className="text-xs h-7 bg-green-500/10 hover:bg-green-500/20 border-green-500/30"
                 >
-                  {regenerateThumbnail.isPending ? 'Regenerating...' : '🔄 Regenerate Thumbnail'}
+                  {repairThumbnailOnly.isPending ? '⏳ Repairing...' : '🔧 Repair Thumbnail Only'}
                 </Button>
                 <Button
                   type="button"
