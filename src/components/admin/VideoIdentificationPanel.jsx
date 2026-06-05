@@ -27,19 +27,12 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
     source: { status: 'pending', httpStatus: null, error: null },
   });
   
-  if (!video) return null;
-
-  const brand = brands.find(b => b.id === video.brand_id);
+  // Build canonical URLs - must be called before hooks (unconditional)
+  const thumbnailUrl = video ? buildAssetUrl(video.primary_thumbnail_url) : null;
+  const previewUrl = video ? (buildAssetUrl(video.trailer_url) || buildAssetUrl(video.source_video_url)) : null;
+  const sourceUrl = video ? buildAssetUrl(video.source_video_url) : null;
   
-  // Build canonical URLs
-  const thumbnailUrl = buildAssetUrl(video.primary_thumbnail_url);
-  const previewUrl = buildAssetUrl(video.trailer_url) || buildAssetUrl(video.source_video_url);
-  const sourceUrl = buildAssetUrl(video.source_video_url);
-  
-  const hasThumbnail = !!thumbnailUrl;
-  const hasVideo = !!previewUrl;
-  
-  // Validate URLs on mount
+  // Validate URLs on mount - must be called before any early returns
   React.useEffect(() => {
     const validateUrl = async (name, url) => {
       if (!url) {
@@ -70,7 +63,14 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
     validateUrl('thumbnail', thumbnailUrl);
     validateUrl('preview', previewUrl);
     validateUrl('source', sourceUrl);
-  }, [thumbnailUrl, previewUrl, sourceUrl]);
+  }, [thumbnailUrl, previewUrl, sourceUrl, video]);
+  
+  if (!video) return null;
+
+  const brand = brands.find(b => b.id === video.brand_id);
+  
+  const hasThumbnail = !!thumbnailUrl;
+  const hasVideo = !!previewUrl;
 
   // Calculate duration display
   const durationDisplay = video.duration_seconds 
@@ -101,20 +101,26 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                 </div>
               ) : urlValidation.thumbnail.status === 'valid' ? (
                 <img
-                  src={thumbnailUrl}
+                  src={`${thumbnailUrl}${thumbnailUrl.includes('?') ? '&' : '?'}v=${Date.now()}`}
                   alt={video.title}
                   className="w-full h-full object-cover"
+                  crossOrigin="anonymous"
                   onError={(e) => {
+                    console.error('❌ Thumbnail img onError:', thumbnailUrl);
                     e.target.style.display = 'none';
                     e.target.parentElement.innerHTML = `
                       <div class="w-full h-full flex items-center justify-center text-destructive text-xs p-4 text-center">
                         <div>
                           <AlertCircle class="w-6 h-6 mx-auto mb-2" />
                           <p>Image failed to load</p>
-                          <p class="font-mono text-[10px] mt-1">${thumbnailUrl.substring(0, 60)}...</p>
+                          <p class="font-mono text-[10px] mt-1 break-all">${thumbnailUrl}</p>
+                          <p class="text-[10px] mt-1">HTTP ${urlValidation.thumbnail.httpStatus || 'unknown'}</p>
                         </div>
                       </div>
                     `;
+                  }}
+                  onLoad={() => {
+                    console.log('✅ Thumbnail loaded successfully:', thumbnailUrl);
                   }}
                 />
               ) : (
@@ -151,11 +157,18 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                 </div>
               ) : urlValidation.preview.status === 'valid' ? (
                 <video
-                  key={previewUrl}
-                  src={previewUrl}
+                  key={`${previewUrl}-${Date.now()}`}
+                  src={`${previewUrl}${previewUrl.includes('?') ? '&' : '?'}v=${Date.now()}`}
                   controls
                   className="w-full h-full"
                   preload="metadata"
+                  crossOrigin="anonymous"
+                  onLoadedMetadata={() => {
+                    console.log('✅ Preview metadata loaded:', previewUrl);
+                  }}
+                  onError={(e) => {
+                    console.error('❌ Preview video onError:', previewUrl, e);
+                  }}
                 >
                   Your browser does not support the video tag.
                 </video>
