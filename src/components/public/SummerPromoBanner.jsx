@@ -19,10 +19,10 @@ export default function SummerPromoBanner() {
           Do NOT uncomment or add <source> tags until the R2 files are confirmed live.
         */}
         <img
-          src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/e9aeecccb_ChatGPTImageJun3202602_34_57AM.png"
+          src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/7a71958f0_ChatGPTImage5Juni202612_46_38.png"
           alt=""
           className="w-full h-full object-cover"
-          style={{ objectPosition: "50% 35%" }}
+          style={{ objectPosition: "50% 40%" }}
           loading="eager"
           fetchpriority="high"
           decoding="async"
