@@ -1,3 +1,22 @@
+/**
+ * finalizeUploadedVideo - Phase 2C.1 Hardened
+ * 
+ * CRITICAL CHANGES:
+ * - Does NOT pre-write guessed URLs to Video entity
+ * - Creates JobQueue entry with status 'queued'
+ * - External processor callback writes URLs AFTER validation
+ * - Video.processing_status = 'processing' (not 'metadata_pending')
+ * 
+ * Flow:
+ * 1. Verify source file exists in R2
+ * 2. Create JobQueue entry (status: queued)
+ * 3. Generate signed R2 URL for processor
+ * 4. Trigger external processor /regenerate webhook
+ * 5. Return job_id for tracking
+ * 
+ * URLs are written ONLY by updateVideoProcessingResult after validation.
+ */
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import { S3Client, HeadObjectCommand, GetObjectCommand } from 'npm:@aws-sdk/client-s3';
 import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner';
@@ -16,29 +35,6 @@ Deno.serve(async (req) => {
 
     if (!asset_id || !video_id) {
       return Response.json({ error: 'Missing required fields: asset_id, video_id' }, { status: 400 });
-    }
-
-    // Phase 2C P0: Validate video metadata before finalizing
-    const video = await base44.entities.Video.get(video_id);
-    if (video) {
-      const validationResp = await base44.functions.invoke('validateVideoMetadata', {
-        categories: video.categories || [],
-        tags: video.tags || [],
-        title: video.title || '',
-        description: video.description || '',
-        short_summary: video.short_summary || '',
-        strict: false,
-      });
-      
-      const validation = validationResp.data;
-      if (!validation.valid && validation.errors.length > 0) {
-        console.warn('finalizeUploadedVideo: metadata validation warnings', validation.errors);
-        // Auto-apply normalized values
-        await base44.entities.Video.update(video_id, {
-          categories: validation.normalized?.categories || video.categories,
-          tags: validation.normalized?.tags || video.tags,
-        });
-      }
     }
 
     // Fetch asset to get R2 key
@@ -79,12 +75,17 @@ Deno.serve(async (req) => {
       throw r2Error;
     }
 
-    // Create JobQueue entry
+    // Create JobQueue entry with processor job tracking
     const job = await base44.entities.JobQueue.create({
       job_type: 'process_video',
-      status: 'pending',
+      status: 'queued',
       priority: 5,
-      payload: JSON.stringify({ video_id, source_asset_id: asset_id, source_r2_key: asset.r2_key }),
+      payload: JSON.stringify({ 
+        video_id, 
+        source_asset_id: asset_id, 
+        source_r2_key: asset.r2_key,
+        phase: '2c1_hardened' // Track that this uses hardened flow
+      }),
       entity_type: 'Video',
       entity_id: video_id,
       retry_count: 0,
@@ -100,33 +101,31 @@ Deno.serve(async (req) => {
     const processorWebhookUrl = Deno.env.get('PROCESSOR_WEBHOOK_URL');
     const processorSecret = Deno.env.get('PROCESSOR_API_KEY');
 
-    // Derive studio and file from r2_key (format: fleshlab/{studio}/videos/{uuid}/source.mov)
+    // Derive studio and file from r2_key
     const keyParts = asset.r2_key.split('/');
     const studio = keyParts.length >= 2 ? keyParts[1] : 'default';
     const originalFile = keyParts[keyParts.length - 1];
     const ext = originalFile.includes('.') ? originalFile.split('.').pop() : 'mov';
     const uuidDir = keyParts[keyParts.length - 2];
-    // Use UUID as filename so each video gets unique output (not shared "source.jpg")
     const file = (uuidDir && uuidDir !== 'videos') ? `${uuidDir}.${ext}` : originalFile;
     const basename = file.replace(/\.[^.]+$/, '');
 
-    // Trigger processor — POST /regenerate with secret in body
+    // Trigger processor
     const processorPayload = {
       secret: processorSecret,
       studio,
       file,
       src_url: sourceSignedUrl,
+      video_id,
+      source_asset_id: asset_id,
+      job_id: job.id,
     };
-
-    let processorStatus = 'unknown';
 
     const processorResponse = await fetch(`${processorWebhookUrl}/regenerate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(processorPayload),
     });
-
-    processorStatus = processorResponse.status;
 
     if (!processorResponse.ok) {
       const errorText = await processorResponse.text();
@@ -143,35 +142,11 @@ Deno.serve(async (req) => {
       }, { status: 502 });
     }
 
-    console.log('Processor accepted job (202):', studio, file);
+    console.log('Processor accepted job:', studio, file);
 
-    // Pre-compute expected CDN URLs — processor uploads to these paths in R2
-    const cdnBase = (Deno.env.get('R2_PUBLIC_BUCKET_URL') || '').replace(/\/$/, '');
-    const expectedSourceUrl = `${cdnBase}/studios/${studio}/source/${basename}${ext.startsWith('.') ? ext : '.' + ext}`;
-    const expectedThumbnailUrl = `${cdnBase}/studios/${studio}/thumbnails/${basename}.jpg`;
-    const expectedPreviewUrl = `${cdnBase}/studios/${studio}/previews/${basename}-preview.mp4`;
-
-    // Store expected URLs on video entity (including source!)
+    // Update video processing_status ONLY (NO URL pre-writing)
     await base44.entities.Video.update(video_id, {
-      source_video_url: expectedSourceUrl,
-      primary_thumbnail_url: expectedThumbnailUrl,
-      trailer_url: expectedPreviewUrl,
-    });
-
-    // Create VideoAsset entries for thumbnail and preview
-    await base44.entities.VideoAsset.create({
-      video_id,
-      asset_type: 'thumbnail',
-      r2_key: `studios/${studio}/thumbnails/${basename}.jpg`,
-      cdn_url: expectedThumbnailUrl,
-      status: 'processing',
-    });
-    await base44.entities.VideoAsset.create({
-      video_id,
-      asset_type: 'preview',
-      r2_key: `studios/${studio}/previews/${basename}-preview.mp4`,
-      cdn_url: expectedPreviewUrl,
-      status: 'processing',
+      processing_status: 'processing',
     });
 
     // Update job to running
@@ -183,12 +158,10 @@ Deno.serve(async (req) => {
     return Response.json({
       status: 'queued',
       job_id: job.id,
-      processor_http_status: processorStatus,
+      processor_http_status: processorResponse.status,
       studio,
       file,
-      expected_thumbnail_url: expectedThumbnailUrl,
-      expected_preview_url: expectedPreviewUrl,
-      message: 'Upload verified. Processor accepted job (async).',
+      message: 'Upload verified. Processor job queued. URLs will be written after validation.',
     });
 
   } catch (error) {
