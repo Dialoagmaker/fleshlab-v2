@@ -54,8 +54,21 @@ TAGS (6-10 tags):
 - Mix of broad and long-tail
 
 SUGGESTED CATEGORIES (2-4 categories):
-- Broad category names for taxonomy
-- Match common adult site categories
+- Use ONLY approved selectable child categories from the FLESHLAB taxonomy
+- NEVER output parent taxonomy group labels as categories
+
+❌ BLOCKED PARENT GROUP LABELS (NEVER USE THESE):
+Age, Ethnicity, Body, Orientation, Number Of People, Actions, Production, Apparel, Scenario, Fetish, Language, Location, Sex Toys, "Age / Appearance", "Ethnicity / Origin", "Body Type", "Orientation / Audience", "Scene Type", "Sex Acts", "Fetish / Kink", "Role / Dynamic", "Production Style", "Clothing / Outfit", "Language / Region"
+
+✅ USE SPECIFIC CHILD CATEGORIES INSTEAD:
+- For fetish content: Use "BDSM", "Bondage", "Spanking", "Nipple Play", "Foot Fetish" (only if scene context supports it)
+- For age: Use "Teen 18+", "Mature", "Daddy", "Twink", "Boyish" (based on actual appearance)
+- For body: Use "Muscular", "Slim", "Fit", "Athletic", "Hairy" (based on actual body type)
+- For scenario: Use "Outdoor", "Shower", "Hotel", "Bedroom" (based on actual location)
+- For actions: Use "Solo", "Blowjob", "Oral", "Anal", "Handjob", "Masturbation", "Nipple Play" (based on actual acts)
+- For ethnicity: Use "Asian", "Filipino", "Pinoy", "Caucasian", "Latino" (based on actual performer)
+
+❌ NEVER OUTPUT "Fetish" AS A CATEGORY — use the specific child category (BDSM, Bondage, etc.) if context supports it.
 
 SUGGESTED KEYWORDS (8-12 keywords):
 - Long-tail search terms
@@ -192,6 +205,46 @@ Return JSON only.
       }
     });
 
+    // Check for parent taxonomy group labels in categories (CRITICAL)
+    const PARENT_GROUP_LABELS = [
+      'age', 'ethnicity', 'body', 'orientation', 'number of people',
+      'actions', 'production', 'apparel', 'scenario', 'fetish',
+      'language', 'location', 'sex toys', 'age / appearance',
+      'ethnicity / origin', 'body type', 'orientation / audience',
+      'scene type', 'sex acts', 'fetish / kink', 'role / dynamic',
+      'production style', 'clothing / outfit', 'language / region',
+    ];
+    
+    const taxonomyWarnings = [];
+    const taxonomyRemoved = [];
+    
+    if (response.suggested_categories && Array.isArray(response.suggested_categories)) {
+      const cleanedCategories = [];
+      
+      for (const cat of response.suggested_categories) {
+        const lowerCat = cat.toLowerCase().trim();
+        
+        // Check if it's a parent group label
+        if (PARENT_GROUP_LABELS.includes(lowerCat)) {
+          taxonomyWarnings.push(`"${cat}" → removed (parent taxonomy group label, not selectable)`);
+          taxonomyRemoved.push({ value: cat, reason: 'parent_group_label' });
+          continue;
+        }
+        
+        // Check if "Fetish" specifically
+        if (lowerCat === 'fetish') {
+          taxonomyWarnings.push(`"Fetish" → removed (never use "Fetish" - use specific child category like BDSM if context supports it)`);
+          taxonomyRemoved.push({ value: cat, reason: 'parent_group_label' });
+          continue;
+        }
+        
+        cleanedCategories.push(cat);
+      }
+      
+      // Replace with cleaned categories
+      response.suggested_categories = cleanedCategories;
+    }
+
     return Response.json({
       success: true,
       title: response.title || '',
@@ -202,7 +255,9 @@ Return JSON only.
       suggested_categories: response.suggested_categories || [],
       suggested_keywords: response.suggested_keywords || [],
       raw_response: response,
-      warnings
+      warnings,
+      taxonomy_warnings: taxonomyWarnings,
+      taxonomy_removed: taxonomyRemoved,
     });
 
   } catch (error) {
