@@ -125,19 +125,30 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
 
-    // Upload to R2
+    // Upload to R2 using presigned URL via createR2UploadUrl function
     const timestamp = Date.now();
     const filename = `videos/${video_id}/thumbnail_${timestamp}.jpg`;
     
-    console.log(`[repairThumbnailOnly] Uploading to R2: ${filename}`);
+    console.log(`[repairThumbnailOnly] Getting R2 upload URL: ${filename}`);
     
-    const s3Url = `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${R2_BUCKET}/${filename}`;
+    // Get presigned upload URL
+    const uploadUrlRes = await base44.functions.invoke('createR2UploadUrl', {
+      key: filename,
+      contentType: 'image/jpeg'
+    });
     
-    const s3Response = await fetch(s3Url, {
+    if (!uploadUrlRes.data || !uploadUrlRes.data.uploadUrl) {
+      throw new Error('Failed to get R2 upload URL');
+    }
+    
+    const uploadUrl = uploadUrlRes.data.uploadUrl;
+    console.log(`[repairThumbnailOnly] Uploading to R2 via presigned URL`);
+    
+    // Upload to presigned URL
+    const s3Response = await fetch(uploadUrl, {
       method: 'PUT',
       headers: {
-        'Content-Type': 'image/jpeg',
-        'Authorization': `AWS4-HMAC-SHA256 ...`  // Will be signed by SDK
+        'Content-Type': 'image/jpeg'
       },
       body: thumbnailBytes
     });
@@ -151,7 +162,7 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
 
-    // Build CDN URL
+    // Build CDN URL from public bucket URL
     const cdnUrl = `${R2_BUCKET_URL}/${filename}`;
     console.log(`[repairThumbnailOnly] CDN URL: ${cdnUrl}`);
 
