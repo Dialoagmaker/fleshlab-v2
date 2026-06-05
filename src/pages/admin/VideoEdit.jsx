@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, X, Save, Trash2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Plus, X, Save, Trash2, RefreshCw, Sparkles } from "lucide-react";
 import AICopyHelper from "@/components/admin/AICopyHelper";
 import VideoIdentificationPanel from "@/components/admin/VideoIdentificationPanel";
 import PerformerMultiSelect from "@/components/admin/PerformerMultiSelect";
@@ -119,6 +119,7 @@ export default function VideoEdit() {
 
   const [retriggerStatus, setRetriggerStatus] = useState(null);
   const [checkStatus, setCheckStatus] = useState(null);
+  const [metaGenStatus, setMetaGenStatus] = useState(null);
 
   const checkAssets = useMutation({
     mutationFn: () => base44.functions.invoke('checkAndApplyVideoAssets', { video_id: id }),
@@ -356,6 +357,38 @@ export default function VideoEdit() {
               {checkAssets.isPending ? 'Suche…' : 'Assets prüfen & anwenden'}
             </Button>
           </div>
+        </section>
+      )}
+
+      {/* Auto-Generate Metadata */}
+      {!isNew && (
+        <section className="bg-card border border-border rounded-xl p-5 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-foreground">AI Metadaten generieren</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Generiert Title, Description, SEO, Tags & Kategorien automatisch und speichert sie direkt auf dem Video.</p>
+            {metaGenStatus && (
+              <p className={`text-xs mt-1 ${metaGenStatus.ok ? 'text-green-400' : 'text-destructive'}`}>{metaGenStatus.msg}</p>
+            )}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!id || id === 'new'}
+            onClick={async () => {
+              setMetaGenStatus({ ok: true, msg: 'Generiere Metadaten…' });
+              try {
+                await base44.functions.invoke('generateVideoMetadata', { video_id: id });
+                queryClient.invalidateQueries({ queryKey: ['video', id] });
+                setMetaGenStatus({ ok: true, msg: '✓ Metadaten generiert und gespeichert. Seite neu laden zum Anzeigen.' });
+              } catch (e) {
+                setMetaGenStatus({ ok: false, msg: e.message || 'Fehler beim Generieren.' });
+              }
+            }}
+            className="gap-2 shrink-0"
+          >
+            <Sparkles className="w-4 h-4" />
+            Jetzt generieren
+          </Button>
         </section>
       )}
 
