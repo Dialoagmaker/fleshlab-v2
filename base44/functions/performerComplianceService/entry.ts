@@ -5,7 +5,7 @@
 //   compliance_check — Evaluates compliance status, returns issues
 //   lock_evaluation — Locks/unlocks performer based on compliance gates
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 Deno.serve(async (req) => {
   try {

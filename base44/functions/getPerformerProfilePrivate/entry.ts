@@ -60,7 +60,6 @@ Deno.serve(async (req) => {
       } : null
     });
   } catch (error) {
-    console.error('getPerformerProfilePrivate error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

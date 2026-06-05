@@ -13,7 +13,7 @@
  * Any product below this threshold must be blocked at checkout.
  */
 
-export const CRYPTO_MINIMUM_USD = 9.99; // lowered to allow promo prices through
+export const CRYPTO_MINIMUM_USD = 9.99; // Set to promo price floor to allow fanclub_monthly promo ($9.99) through NOWPayments
 
 // ── Active promotion config ──────────────────────────────────────────────────
 export const SUMMER_PROMO = {
@@ -152,7 +152,7 @@ export const getCTAText = (isAuthenticated, accessTier, isExclusive) => {
     return 'Sign Up to Watch';
   }
 
-  if (accessTier === 'fanclub') return 'Join Fanclub — $9.99/month';
+  if (accessTier === 'fanclub') return `Join Fanclub — $${FANCLUB_PLANS.fanclub_monthly.promoPrice}/month`;
   if (accessTier === 'ppv') return 'Unlock Full Scene — $12.99';
   return 'Watch Free Video';
 };

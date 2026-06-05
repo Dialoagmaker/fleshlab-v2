@@ -33,7 +33,7 @@ export default function PerformerDashboardTabs({ performer }) {
           <TabsTrigger value="compliance">Compliance</TabsTrigger>
           <TabsTrigger value="upload">Upload</TabsTrigger>
           <TabsTrigger value="submissions">My Submissions</TabsTrigger>
-          <TabsTrigger value="profile">Profile & Payout</TabsTrigger>
+          <TabsTrigger value="profile">Profile & Compliance</TabsTrigger>
           <TabsTrigger value="support">Support</TabsTrigger>
         </TabsList>
 
