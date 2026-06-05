@@ -5,14 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Play, Film, Calendar, Clock, Eye, X, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 
 /**
- * Build canonical asset URL from value (URL or R2 key)
+ * Build asset URL from value (URL or R2 key)
+ * Preserves legacy R2.dev URLs, builds CDN URL for bare paths
  */
 function buildAssetUrl(value) {
   if (!value) return null;
-  const trimmed = value.trim();
+  const trimmed = String(value).trim();
   if (!trimmed) return null;
   if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
   return `https://video.fleshlab.online/${trimmed.replace(/^\/+/, "")}`;
+}
+
+/**
+ * Check if URL is legacy R2.dev URL
+ */
+function isLegacyR2Url(value) {
+  if (!value) return false;
+  return /r2\.dev/i.test(String(value));
 }
 
 /**
@@ -137,6 +146,12 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
             {hasThumbnail && thumbnailUrl && (
               <>
                 <p className="text-[10px] font-mono text-muted-foreground break-all">{thumbnailUrl}</p>
+                {/* Legacy URL Warning */}
+                {isLegacyR2Url(video.primary_thumbnail_url) && (
+                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded p-2 mt-1 text-[10px] text-yellow-600">
+                    ⚠️ Legacy R2.dev URL - working but should be monitored
+                  </div>
+                )}
                 {/* Debug Panel */}
                 <div className="bg-yellow-500/10 border border-yellow-500/20 rounded p-2 mt-1 text-[10px] space-y-0.5">
                   <div className="flex gap-2">
@@ -147,7 +162,11 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                   <div>Validation: {urlValidation.thumbnail.status} (HTTP {urlValidation.thumbnail.httpStatus})</div>
                   <div>Content-Type: {urlValidation.thumbnail.contentType || 'unknown'}</div>
                   <div>Size: {urlValidation.thumbnail.contentLength || 'unknown'} bytes</div>
-                  <div className="text-green-600">✅ Check console for onLoad logs</div>
+                  {urlValidation.thumbnail.status === 'valid' ? (
+                    <div className="text-green-600">✅ Accessible - Check console for onLoad logs</div>
+                  ) : (
+                    <div className="text-destructive">❌ Not accessible - URL needs fixing</div>
+                  )}
                 </div>
               </>
             )}
@@ -199,6 +218,12 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
             {previewUrl && (
               <>
                 <p className="text-[10px] font-mono text-muted-foreground break-all">{previewUrl}</p>
+                {/* Legacy URL Warning */}
+                {isLegacyR2Url(video.trailer_url || video.source_video_url) && (
+                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded p-2 mt-1 text-[10px] text-yellow-600">
+                    ⚠️ Legacy R2.dev URL - working but should be monitored
+                  </div>
+                )}
                 {/* Debug Panel */}
                 <div className="bg-yellow-500/10 border border-yellow-500/20 rounded p-2 mt-1 text-[10px] space-y-0.5">
                   <div className="flex gap-2">
@@ -209,7 +234,11 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                   <div>Validation: {urlValidation.preview.status} (HTTP {urlValidation.preview.httpStatus})</div>
                   <div>Content-Type: {urlValidation.preview.contentType || 'unknown'}</div>
                   <div>Size: {urlValidation.preview.contentLength || 'unknown'} bytes</div>
-                  <div className="text-green-600">✅ Check console for onLoadedMetadata logs</div>
+                  {urlValidation.preview.status === 'valid' ? (
+                    <div className="text-green-600">✅ Accessible - Check console for onLoadedMetadata logs</div>
+                  ) : (
+                    <div className="text-destructive">❌ Not accessible - URL needs fixing</div>
+                  )}
                 </div>
               </>
             )}
