@@ -1,32 +1,76 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Play, Film, Calendar, Clock, Eye, X } from "lucide-react";
+import { Play, Film, Calendar, Clock, Eye, X, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+
+/**
+ * Build canonical asset URL from value (URL or R2 key)
+ */
+function buildAssetUrl(value) {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+  return `https://video.fleshlab.online/${trimmed.replace(/^\/+/, "")}`;
+}
 
 /**
  * Video Identification Panel
  * Shows thumbnail, preview player, and key metadata to help admin identify performers
  */
 export default function VideoIdentificationPanel({ video, brands = [], onClearThumbnail, onClearPreview }) {
+  // URL validation state - must be called before any early returns
+  const [urlValidation, setUrlValidation] = React.useState({
+    thumbnail: { status: 'pending', httpStatus: null, error: null },
+    preview: { status: 'pending', httpStatus: null, error: null },
+    source: { status: 'pending', httpStatus: null, error: null },
+  });
+  
   if (!video) return null;
 
   const brand = brands.find(b => b.id === video.brand_id);
   
-  // Get priority media URL for preview
-  const getPreviewUrl = () => {
-    // Priority 1: trailer_url
-    if (video.trailer_url?.trim()) return video.trailer_url;
-    // Priority 2: source_video_url
-    if (video.source_video_url?.trim()) return video.source_video_url;
-    // Priority 3: preview_video_url (if exists)
-    if (video.preview_video_url?.trim()) return video.preview_video_url;
-    return null;
-  };
-
-  const previewUrl = getPreviewUrl();
+  // Build canonical URLs
+  const thumbnailUrl = buildAssetUrl(video.primary_thumbnail_url);
+  const previewUrl = buildAssetUrl(video.trailer_url) || buildAssetUrl(video.source_video_url);
+  const sourceUrl = buildAssetUrl(video.source_video_url);
+  
+  const hasThumbnail = !!thumbnailUrl;
   const hasVideo = !!previewUrl;
-  const hasThumbnail = !!video.primary_thumbnail_url;
+  
+  // Validate URLs on mount
+  React.useEffect(() => {
+    const validateUrl = async (name, url) => {
+      if (!url) {
+        setUrlValidation(prev => ({ ...prev, [name]: { status: 'missing', httpStatus: null, error: 'URL is null/empty' } }));
+        return;
+      }
+      
+      try {
+        const response = await fetch(url, { method: 'HEAD', redirect: 'follow' });
+        setUrlValidation(prev => ({
+          ...prev,
+          [name]: {
+            status: response.ok ? 'valid' : 'error',
+            httpStatus: response.status,
+            error: response.ok ? null : `HTTP ${response.status}`,
+            contentType: response.headers.get('content-type'),
+            contentLength: response.headers.get('content-length'),
+          }
+        }));
+      } catch (err) {
+        setUrlValidation(prev => ({
+          ...prev,
+          [name]: { status: 'error', httpStatus: null, error: err.message || 'Network error' }
+        }));
+      }
+    };
+    
+    validateUrl('thumbnail', thumbnailUrl);
+    validateUrl('preview', previewUrl);
+    validateUrl('source', sourceUrl);
+  }, [thumbnailUrl, previewUrl, sourceUrl]);
 
   // Calculate duration display
   const durationDisplay = video.duration_seconds 
@@ -51,18 +95,43 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
               )}
             </Label>
             <div className="aspect-video bg-secondary rounded-lg overflow-hidden border border-border relative">
-              {hasThumbnail ? (
+              {urlValidation.thumbnail.status === 'pending' ? (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                  <Loader2 className="w-8 h-8 animate-spin opacity-50" />
+                </div>
+              ) : urlValidation.thumbnail.status === 'valid' ? (
                 <img
-                  src={video.primary_thumbnail_url}
+                  src={thumbnailUrl}
                   alt={video.title}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.parentElement.innerHTML = `
+                      <div class="w-full h-full flex items-center justify-center text-destructive text-xs p-4 text-center">
+                        <div>
+                          <AlertCircle class="w-6 h-6 mx-auto mb-2" />
+                          <p>Image failed to load</p>
+                          <p class="font-mono text-[10px] mt-1">${thumbnailUrl.substring(0, 60)}...</p>
+                        </div>
+                      </div>
+                    `;
+                  }}
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                  <Film className="w-12 h-12 opacity-50" />
+                <div className="w-full h-full flex items-center justify-center text-destructive text-xs p-4 text-center">
+                  <div>
+                    <AlertCircle className="w-6 h-6 mx-auto mb-2" />
+                    <p>{urlValidation.thumbnail.status === 'missing' ? 'No thumbnail URL' : 'Thumbnail URL not reachable'}</p>
+                    {thumbnailUrl && <p class="font-mono text-[10px] mt-1 break-all">{thumbnailUrl}</p>}
+                    {urlValidation.thumbnail.httpStatus && <p class="text-[10px] mt-0.5">HTTP {urlValidation.thumbnail.httpStatus}</p>}
+                    {urlValidation.thumbnail.error && <p class="text-[10px] mt-0.5">{urlValidation.thumbnail.error}</p>}
+                  </div>
                 </div>
               )}
             </div>
+            {hasThumbnail && thumbnailUrl && (
+              <p className="text-[10px] font-mono text-muted-foreground break-all">{thumbnailUrl}</p>
+            )}
           </div>
 
           {/* Video Preview */}
@@ -76,7 +145,11 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
               )}
             </Label>
             <div className="aspect-video bg-black rounded-lg overflow-hidden border border-border relative">
-              {hasVideo ? (
+              {urlValidation.preview.status === 'pending' ? (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                  <Loader2 className="w-8 h-8 animate-spin opacity-50" />
+                </div>
+              ) : urlValidation.preview.status === 'valid' ? (
                 <video
                   key={previewUrl}
                   src={previewUrl}
@@ -87,14 +160,20 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                   Your browser does not support the video tag.
                 </video>
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                  <div className="text-center">
-                    <Play className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p className="text-xs">No video preview available</p>
+                <div className="w-full h-full flex items-center justify-center text-destructive text-xs p-4 text-center">
+                  <div>
+                    <AlertCircle className="w-6 h-6 mx-auto mb-2" />
+                    <p>{urlValidation.preview.status === 'missing' ? 'No preview URL' : 'Preview URL not reachable'}</p>
+                    {previewUrl && <p className="font-mono text-[10px] mt-1 break-all">{previewUrl}</p>}
+                    {urlValidation.preview.httpStatus && <p className="text-[10px] mt-0.5">HTTP {urlValidation.preview.httpStatus}</p>}
+                    {urlValidation.preview.error && <p className="text-[10px] mt-0.5">{urlValidation.preview.error}</p>}
                   </div>
                 </div>
               )}
             </div>
+            {previewUrl && (
+              <p className="text-[10px] font-mono text-muted-foreground break-all">{previewUrl}</p>
+            )}
           </div>
         </div>
 
@@ -208,6 +287,100 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Asset Diagnostic Panel */}
+      <div className="border-t border-border pt-4 mt-4">
+        <h3 className="text-xs font-semibold text-foreground mb-3">🔍 Asset Diagnostic</h3>
+        <div className="bg-muted/30 rounded-lg p-4 space-y-4 text-xs">
+          {/* Thumbnail Diagnostic */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              {urlValidation.thumbnail.status === 'valid' ? (
+                <CheckCircle2 className="w-3 h-3 text-green-600" />
+              ) : urlValidation.thumbnail.status === 'pending' ? (
+                <Loader2 className="w-3 h-3 text-slate-400 animate-spin" />
+              ) : (
+                <AlertCircle className="w-3 h-3 text-destructive" />
+              )}
+              <span className="font-semibold">Thumbnail:</span>
+              <span className={urlValidation.thumbnail.status === 'valid' ? 'text-green-600' : 'text-destructive'}>
+                {urlValidation.thumbnail.status === 'valid' ? '✅ accessible' : urlValidation.thumbnail.status === 'missing' ? '⚠️ missing' : `❌ ${urlValidation.thumbnail.httpStatus || 'error'}`}
+              </span>
+            </div>
+            <div className="ml-5 space-y-0.5 text-[10px] font-mono">
+              <div className="text-muted-foreground">Raw field (primary_thumbnail_url):</div>
+              <div className="break-all">{video.primary_thumbnail_url || <span className="text-destructive">null</span>}</div>
+              <div className="text-muted-foreground mt-1">Resolved URL:</div>
+              <div className="break-all">{thumbnailUrl || <span className="text-destructive">null</span>}</div>
+              {urlValidation.thumbnail.contentType && (
+                <div className="text-muted-foreground">Content-Type: {urlValidation.thumbnail.contentType}</div>
+              )}
+              {urlValidation.thumbnail.contentLength && (
+                <div className="text-muted-foreground">Content-Length: {urlValidation.thumbnail.contentLength} bytes</div>
+              )}
+            </div>
+          </div>
+
+          {/* Preview Diagnostic */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              {urlValidation.preview.status === 'valid' ? (
+                <CheckCircle2 className="w-3 h-3 text-green-600" />
+              ) : urlValidation.preview.status === 'pending' ? (
+                <Loader2 className="w-3 h-3 text-slate-400 animate-spin" />
+              ) : (
+                <AlertCircle className="w-3 h-3 text-destructive" />
+              )}
+              <span className="font-semibold">Preview:</span>
+              <span className={urlValidation.preview.status === 'valid' ? 'text-green-600' : 'text-destructive'}>
+                {urlValidation.preview.status === 'valid' ? '✅ accessible' : urlValidation.preview.status === 'missing' ? '⚠️ missing' : `❌ ${urlValidation.preview.httpStatus || 'error'}`}
+              </span>
+            </div>
+            <div className="ml-5 space-y-0.5 text-[10px] font-mono">
+              <div className="text-muted-foreground">Raw fields (trailer_url → source_video_url):</div>
+              <div className="break-all">trailer_url: {video.trailer_url || <span className="text-destructive">null</span>}</div>
+              <div className="break-all">source_video_url: {video.source_video_url || <span className="text-destructive">null</span>}</div>
+              <div className="text-muted-foreground mt-1">Resolved URL:</div>
+              <div className="break-all">{previewUrl || <span className="text-destructive">null</span>}</div>
+              {urlValidation.preview.contentType && (
+                <div className="text-muted-foreground">Content-Type: {urlValidation.preview.contentType}</div>
+              )}
+              {urlValidation.preview.contentLength && (
+                <div className="text-muted-foreground">Content-Length: {urlValidation.preview.contentLength} bytes</div>
+              )}
+            </div>
+          </div>
+
+          {/* Source Diagnostic */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              {urlValidation.source.status === 'valid' ? (
+                <CheckCircle2 className="w-3 h-3 text-green-600" />
+              ) : urlValidation.source.status === 'pending' ? (
+                <Loader2 className="w-3 h-3 text-slate-400 animate-spin" />
+              ) : (
+                <AlertCircle className="w-3 h-3 text-destructive" />
+              )}
+              <span className="font-semibold">Source:</span>
+              <span className={urlValidation.source.status === 'valid' ? 'text-green-600' : 'text-destructive'}>
+                {urlValidation.source.status === 'valid' ? '✅ accessible' : urlValidation.source.status === 'missing' ? '⚠️ missing' : `❌ ${urlValidation.source.httpStatus || 'error'}`}
+              </span>
+            </div>
+            <div className="ml-5 space-y-0.5 text-[10px] font-mono">
+              <div className="text-muted-foreground">Raw field (source_video_url):</div>
+              <div className="break-all">{video.source_video_url || <span className="text-destructive">null</span>}</div>
+              <div className="text-muted-foreground mt-1">Resolved URL:</div>
+              <div className="break-all">{sourceUrl || <span className="text-destructive">null</span>}</div>
+              {urlValidation.source.contentType && (
+                <div className="text-muted-foreground">Content-Type: {urlValidation.source.contentType}</div>
+              )}
+              {urlValidation.source.contentLength && (
+                <div className="text-muted-foreground">Content-Length: {urlValidation.source.contentLength} bytes</div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
