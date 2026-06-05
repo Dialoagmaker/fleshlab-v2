@@ -168,17 +168,18 @@ export default function VideoEdit() {
     onError: (err) => setCheckStatus({ ok: false, msg: err.message }),
   });
 
-  const validateAndFixAssets = useMutation({
+  const validateAssets = useMutation({
     mutationFn: () => base44.functions.invoke('validateAndRepairVideoAssets', { video_id: id }),
     onSuccess: (res) => {
       const d = res.data;
       console.log('🔍 Asset Validation Results:', d);
       
-      if (d?.canPublishAssets) {
-        setCheckStatus({ ok: true, msg: '✓ All assets valid - ready to publish' });
+      if (d?.ok) {
+        setCheckStatus({ ok: true, msg: '✓ All assets valid - ready to publish', details: d });
       } else {
         const issues = d?.blockingReasons || [];
-        setCheckStatus({ ok: false, msg: `Invalid assets: ${issues.join(', ')}`, details: d });
+        const errorMsg = d?.error ? `❌ ${d.error} (step: ${d.step || 'unknown'})` : `Invalid assets: ${issues.join(', ')}`;
+        setCheckStatus({ ok: false, msg: errorMsg, details: d });
         
         // Auto-trigger corrupt thumbnail repair
         if (d?.thumbnail?.corrupt) {
@@ -193,7 +194,11 @@ export default function VideoEdit() {
     },
     onError: (err) => {
       console.error('❌ Asset validation failed:', err);
-      setCheckStatus({ ok: false, msg: err.message });
+      setCheckStatus({ 
+        ok: false, 
+        msg: `Validation failed: ${err.message}`,
+        details: { error: err.message, step: 'frontend_error' }
+      });
     },
   });
 
@@ -633,12 +638,12 @@ export default function VideoEdit() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => { setCheckStatus(null); validateAndFixAssets.mutate(); }}
-                disabled={validateAndFixAssets.isPending}
+                onClick={() => { setCheckStatus(null); validateAssets.mutate(); }}
+                disabled={validateAssets.isPending}
                 className="gap-2 text-xs"
               >
-                <RefreshCw className={`w-3 h-3 ${validateAndFixAssets.isPending ? 'animate-spin' : ''}`} />
-                {validateAndFixAssets.isPending ? 'Validating...' : '🔧 Validate & Repair'}
+                <RefreshCw className={`w-3 h-3 ${validateAssets.isPending ? 'animate-spin' : ''}`} />
+                {validateAssets.isPending ? 'Validating...' : '🔍 Validate Assets'}
               </Button>
               <Button
                 type="button"
@@ -761,7 +766,48 @@ export default function VideoEdit() {
                 )}
               </div>
             )}
-            {diagnostic && (
+            {checkStatus?.details && (
+              <div className="bg-muted/30 rounded-lg p-3 text-xs space-y-2 font-mono">
+                <div className="text-foreground font-semibold">📊 Validation Report:</div>
+                {checkStatus.details.step && (
+                  <div className="text-foreground">Step: {checkStatus.details.step}</div>
+                )}
+                {checkStatus.details.error && (
+                  <div className="text-destructive font-semibold">❌ Error: {checkStatus.details.error}</div>
+                )}
+                {checkStatus.details.source?.status && (
+                  <div className={checkStatus.details.source.valid ? 'text-green-600' : 'text-destructive'}>
+                    Source: {checkStatus.details.source.status} {checkStatus.details.source.valid ? '✅' : '❌'}
+                    {checkStatus.details.source.reason && ` - ${checkStatus.details.source.reason}`}
+                  </div>
+                )}
+                {checkStatus.details.thumbnail?.status && (
+                  <div className={checkStatus.details.thumbnail.valid ? 'text-green-600' : 'text-destructive'}>
+                    Thumbnail: {checkStatus.details.thumbnail.status} {checkStatus.details.thumbnail.valid ? '✅' : checkStatus.details.thumbnail.corrupt ? '❌ CORRUPT' : '❌'}
+                    {checkStatus.details.thumbnail.magicHeader && ` (magic: ${checkStatus.details.thumbnail.magicHeader})`}
+                    {checkStatus.details.thumbnail.width && checkStatus.details.thumbnail.height && ` (${checkStatus.details.thumbnail.width}x${checkStatus.details.thumbnail.height})`}
+                    {checkStatus.details.thumbnail.reason && ` - ${checkStatus.details.thumbnail.reason}`}
+                  </div>
+                )}
+                {checkStatus.details.preview?.status && (
+                  <div className={checkStatus.details.preview.valid ? 'text-green-600' : 'text-destructive'}>
+                    Preview: {checkStatus.details.preview.status} {checkStatus.details.preview.valid ? '✅' : '❌'}
+                    {checkStatus.details.preview.reason && ` - ${checkStatus.details.preview.reason}`}
+                  </div>
+                )}
+                {checkStatus.details.blockingReasons?.length > 0 && (
+                  <div className="text-destructive mt-2">
+                    <div className="font-semibold">Blocking issues:</div>
+                    <ul className="list-disc list-inside">
+                      {checkStatus.details.blockingReasons.map((r, i) => (
+                        <li key={i}>{r}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+            {diagnostic && !checkStatus?.details && (
               <div className="bg-muted/30 rounded-lg p-3 text-xs space-y-2 font-mono">
                 {diagnostic.error && (
                   <div className="text-destructive">❌ Error: {diagnostic.error}</div>

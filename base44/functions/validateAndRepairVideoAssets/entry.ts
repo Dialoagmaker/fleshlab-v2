@@ -1,8 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 /**
- * Validate image URL with magic header verification
- * Returns: { ok, status, contentType, contentLength, magicHeader, width, height, reason }
+ * Validate image URL - only for small files like thumbnails
+ * Downloads full image but thumbnails are < 1MB so this is safe
  */
 async function validateImageUrl(url) {
   const result = { ok: false, status: null, contentType: null, contentLength: 0, magicHeader: null, width: null, height: null, reason: null };
@@ -13,6 +13,7 @@ async function validateImageUrl(url) {
   }
 
   try {
+    // Step 1: HEAD request for metadata (no download)
     const headResponse = await fetch(url, { method: 'HEAD', redirect: 'follow' });
     result.status = headResponse.status;
     result.contentType = headResponse.headers.get('content-type');
@@ -23,16 +24,25 @@ async function validateImageUrl(url) {
       return result;
     }
 
+    // Reject non-image content types
     if (!result.contentType || !result.contentType.startsWith('image/')) {
       result.reason = `Invalid content-type: ${result.contentType}`;
       return result;
     }
 
+    // Reject empty files
     if (result.contentLength === 0) {
       result.reason = 'Empty file (0 bytes)';
       return result;
     }
 
+    // Reject files that are too large for an image (> 10MB)
+    if (result.contentLength > 10 * 1024 * 1024) {
+      result.reason = `File too large for image: ${result.contentLength} bytes`;
+      return result;
+    }
+
+    // Step 2: GET request - safe for thumbnails (< 10MB)
     const getResponse = await fetch(url, { method: 'GET' });
     const arrayBuffer = await getResponse.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
@@ -42,20 +52,22 @@ async function validateImageUrl(url) {
       return result;
     }
 
+    // Check magic header
     const magicHeader = Array.from(uint8Array.slice(0, 4))
       .map(b => b.toString(16).toUpperCase().padStart(2, '0'))
       .join(' ');
 
     result.magicHeader = magicHeader;
 
+    // Check for HTML/XML error pages
     const firstBytes = new TextDecoder().decode(uint8Array.slice(0, 100)).toLowerCase();
     if (firstBytes.includes('<!doctype') || firstBytes.includes('<html') || 
-        firstBytes.includes('<?xml') || firstBytes.includes('error') ||
-        firstBytes.includes('access denied') || firstBytes.includes('not found')) {
+        firstBytes.includes('<?xml')) {
       result.reason = 'File is HTML/XML error page, not an image';
       return result;
     }
 
+    // Validate magic header for known image formats
     const isJpeg = magicHeader.startsWith('FF D8');
     const isPng = magicHeader.startsWith('89 50 4E 47');
     const isWebp = magicHeader.startsWith('52 49 46 46') && 
@@ -66,6 +78,7 @@ async function validateImageUrl(url) {
       return result;
     }
 
+    // Decode image to get dimensions
     try {
       const blob = new Blob([arrayBuffer], { type: result.contentType });
       const imageBitmap = await createImageBitmap(blob);
@@ -92,8 +105,8 @@ async function validateImageUrl(url) {
 }
 
 /**
- * Validate video URL
- * Returns: { ok, status, contentType, contentLength, magicHeader, reason }
+ * Validate video URL using ONLY HEAD request + small range request
+ * NEVER downloads full video - safe for 2GB+ files
  */
 async function validateVideoUrl(url) {
   const result = { ok: false, status: null, contentType: null, contentLength: 0, magicHeader: null, reason: null };
@@ -104,6 +117,7 @@ async function validateVideoUrl(url) {
   }
 
   try {
+    // Step 1: HEAD request - no download, just metadata
     const headResponse = await fetch(url, { method: 'HEAD', redirect: 'follow' });
     result.status = headResponse.status;
     result.contentType = headResponse.headers.get('content-type');
@@ -114,9 +128,14 @@ async function validateVideoUrl(url) {
       return result;
     }
 
-    if (!result.contentType || 
-        (!result.contentType.startsWith('video/') && 
-         result.contentType !== 'application/octet-stream')) {
+    // Accept video content types or octet-stream
+    const isVideoType = result.contentType && (
+      result.contentType.startsWith('video/') ||
+      result.contentType.startsWith('application/octet-stream') ||
+      result.contentType === 'application/mp4'
+    );
+
+    if (!isVideoType) {
       result.reason = `Invalid content-type: ${result.contentType}`;
       return result;
     }
@@ -126,8 +145,18 @@ async function validateVideoUrl(url) {
       return result;
     }
 
-    const getResponse = await fetch(url, { method: 'GET' });
-    const arrayBuffer = await getResponse.arrayBuffer();
+    // Step 2: Range request for first 64KB only - NEVER download full video
+    const rangeResponse = await fetch(url, { 
+      method: 'GET', 
+      headers: { 'Range': 'bytes=0-65535' }
+    });
+    
+    if (!rangeResponse.ok && rangeResponse.status !== 206) {
+      result.reason = `Range request failed: HTTP ${rangeResponse.status}`;
+      return result;
+    }
+
+    const arrayBuffer = await rangeResponse.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
 
     if (uint8Array.length < 8) {
@@ -135,28 +164,30 @@ async function validateVideoUrl(url) {
       return result;
     }
 
+    // Check for HTML/XML error pages
     const firstBytes = new TextDecoder().decode(uint8Array.slice(0, 100)).toLowerCase();
     if (firstBytes.includes('<!doctype') || firstBytes.includes('<html') || 
-        firstBytes.includes('<?xml') || firstBytes.includes('error') ||
-        firstBytes.includes('access denied') || firstBytes.includes('not found')) {
+        firstBytes.includes('<?xml')) {
       result.reason = 'File is HTML/XML error page, not a video';
       return result;
     }
 
+    // Check magic header
     const magicHeader = Array.from(uint8Array.slice(0, 8))
       .map(b => b.toString(16).toUpperCase().padStart(2, '0'))
       .join(' ');
 
     result.magicHeader = magicHeader;
 
-    const hasFtyp = uint8Array.length > 8 && 
-      (new TextDecoder().decode(uint8Array.slice(4, 8)) === 'ftyp' ||
-       new TextDecoder().decode(uint8Array.slice(8, 12)) === 'ftyp');
+    // Check for MP4/MOV ftyp header (typically at offset 4-8)
+    const hasFtyp = new TextDecoder().decode(uint8Array.slice(4, 8)) === 'ftyp' ||
+                    new TextDecoder().decode(uint8Array.slice(8, 12)) === 'ftyp';
 
     const isMp4 = hasFtyp;
     const isWebm = magicHeader.startsWith('1A 45 DF A3');
 
-    if (!isMp4 && !isWebm && result.contentType === 'application/octet-stream') {
+    // For octet-stream, be more lenient - just check no HTML error page
+    if (result.contentType === 'application/octet-stream' && !isMp4 && !isWebm) {
       result.ok = true;
       return result;
     }
@@ -176,7 +207,7 @@ async function validateVideoUrl(url) {
 }
 
 /**
- * Build public asset URL from R2 key or URL
+ * Build public asset URL from R2 key
  */
 function buildPublicAssetUrl(value) {
   if (!value) return null;
@@ -187,46 +218,71 @@ function buildPublicAssetUrl(value) {
 }
 
 /**
- * Main function: Validate and repair video assets
+ * Main function: Validate video assets WITHOUT downloading full videos
  */
 Deno.serve(async (req) => {
+  const video_id = req.query?.video_id || (await req.json())?.video_id;
+  
+  const report = {
+    ok: false,
+    video_id: video_id,
+    step: 'initializing',
+    source: { raw: null, resolved: null, status: null, valid: false, reason: null },
+    thumbnail: { raw: null, resolved: null, status: null, corrupt: false, valid: false, magicHeader: null, contentType: null, size: null, width: null, height: null, reason: null },
+    preview: { raw: null, resolved: null, status: null, valid: false, contentType: null, size: null, reason: null },
+    canPublishAssets: false,
+    blockingReasons: [],
+    error: null,
+    details: null,
+  };
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     
     if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Unauthorized - admin access required' }, { status: 403 });
+      report.error = 'Unauthorized - admin access required';
+      return Response.json(report, { status: 403 });
     }
 
-    const { video_id } = await req.json();
-    
     if (!video_id) {
-      return Response.json({ error: 'video_id required' }, { status: 400 });
+      report.error = 'video_id required';
+      return Response.json(report, { status: 400 });
     }
 
-    console.log('🔍 Validating assets for video:', video_id);
-
+    console.log('🔍 Step: load_video -', video_id);
+    report.step = 'load_video';
     const video = await base44.entities.Video.get(video_id);
+    
+    if (!video) {
+      report.error = 'Video not found';
+      return Response.json(report, { status: 404 });
+    }
+
+    console.log('📊 Step: load_video_assets -', video.title);
+    report.step = 'load_video_assets';
     const videoAssets = await base44.entities.VideoAsset.filter({ video_id });
+    
+    console.log('🔍 Step: resolve_source');
+    report.step = 'resolve_source';
+    report.source.raw = video.source_video_url;
+    report.source.resolved = buildPublicAssetUrl(video.source_video_url);
 
-    const report = {
-      video_id,
-      title: video.title,
-      source: { raw: video.source_video_url, resolved: null, status: null, valid: false, reason: null },
-      thumbnail: { raw: video.primary_thumbnail_url, resolved: null, status: null, corrupt: false, valid: false, magicHeader: null, contentType: null, size: null, width: null, height: null, reason: null },
-      preview: { raw: video.trailer_url, resolved: null, status: null, valid: false, contentType: null, size: null, reason: null },
-      canPublishAssets: false,
-      blockingReasons: [],
-    };
-
-    // Validate source video
-    const sourceUrl = buildPublicAssetUrl(video.source_video_url);
-    report.source.resolved = sourceUrl;
-    if (sourceUrl) {
-      const sourceValidation = await validateVideoUrl(sourceUrl);
+    console.log('🎬 Step: validate_source (HEAD + range request only)');
+    report.step = 'validate_source';
+    if (report.source.resolved) {
+      const sourceValidation = await validateVideoUrl(report.source.resolved);
       report.source.status = sourceValidation.status;
+      report.source.contentType = sourceValidation.contentType;
+      report.source.contentLength = sourceValidation.contentLength;
       report.source.valid = sourceValidation.ok;
       report.source.reason = sourceValidation.reason;
+      
+      if (sourceValidation.ok) {
+        console.log('✅ Source video valid:', sourceValidation.status);
+      } else {
+        console.log('❌ Source video invalid:', sourceValidation.reason);
+      }
     } else {
       report.source.reason = 'Missing';
     }
@@ -235,11 +291,13 @@ Deno.serve(async (req) => {
       report.blockingReasons.push(`Source video: ${report.source.reason || 'invalid'}`);
     }
 
-    // Validate thumbnail
-    const thumbUrl = buildPublicAssetUrl(video.primary_thumbnail_url);
-    report.thumbnail.resolved = thumbUrl;
-    if (thumbUrl) {
-      const thumbValidation = await validateImageUrl(thumbUrl);
+    console.log('🖼️ Step: validate_thumbnail');
+    report.step = 'validate_thumbnail';
+    report.thumbnail.raw = video.primary_thumbnail_url;
+    report.thumbnail.resolved = buildPublicAssetUrl(video.primary_thumbnail_url);
+    
+    if (report.thumbnail.resolved) {
+      const thumbValidation = await validateImageUrl(report.thumbnail.resolved);
       report.thumbnail.status = thumbValidation.status;
       report.thumbnail.contentType = thumbValidation.contentType;
       report.thumbnail.size = thumbValidation.contentLength;
@@ -247,13 +305,17 @@ Deno.serve(async (req) => {
       report.thumbnail.width = thumbValidation.width;
       report.thumbnail.height = thumbValidation.height;
 
+      // Check if corrupt (HTML saved as JPG)
       if (thumbValidation.magicHeader && thumbValidation.magicHeader !== 'FF D8' && thumbValidation.magicHeader !== '89 50 4E 47') {
         report.thumbnail.corrupt = true;
         report.thumbnail.reason = `Corrupt - magic header ${thumbValidation.magicHeader} (expected FF D8 for JPEG)`;
+        console.log('❌ Thumbnail corrupt:', thumbValidation.magicHeader);
       } else if (thumbValidation.ok) {
         report.thumbnail.valid = true;
+        console.log('✅ Thumbnail valid:', thumbValidation.width, 'x', thumbValidation.height);
       } else {
         report.thumbnail.reason = thumbValidation.reason;
+        console.log('❌ Thumbnail invalid:', thumbValidation.reason);
       }
     } else {
       report.thumbnail.reason = 'Missing';
@@ -265,9 +327,12 @@ Deno.serve(async (req) => {
       report.blockingReasons.push(`Thumbnail: ${report.thumbnail.reason || 'invalid'}`);
     }
 
-    // Validate preview
+    console.log('🎬 Step: validate_preview (HEAD + range request only)');
+    report.step = 'validate_preview';
     const previewUrl = video.trailer_url || video.source_video_url;
+    report.preview.raw = video.trailer_url;
     report.preview.resolved = buildPublicAssetUrl(previewUrl);
+    
     if (previewUrl && previewUrl !== video.source_video_url) {
       const previewValidation = await validateVideoUrl(report.preview.resolved);
       report.preview.status = previewValidation.status;
@@ -284,14 +349,22 @@ Deno.serve(async (req) => {
       report.blockingReasons.push('Preview missing');
     }
 
+    // Determine publish readiness
     report.canPublishAssets = report.source.valid && report.thumbnail.valid;
+    report.ok = report.canPublishAssets;
 
-    console.log('📊 Validation complete:', { canPublish: report.canPublishAssets, blocking: report.blockingReasons });
+    console.log('📊 Validation complete:', { 
+      canPublish: report.canPublishAssets, 
+      blocking: report.blockingReasons 
+    });
 
     return Response.json(report);
 
   } catch (error) {
     console.error('❌ Validation failed:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    report.error = error.message || 'Unknown error';
+    report.details = error.stack;
+    report.ok = false;
+    return Response.json(report, { status: 500 });
   }
 });
