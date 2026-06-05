@@ -2,21 +2,16 @@
  * getProcessingJobStatus - Phase 2C.2
  * 
  * Returns current status of a video processing job for UI polling.
- * Supports both GET query params and POST JSON body.
+ * Supports both GET query params and POST JSON body with flexible payload formats.
  * 
  * Request:
  * - GET: ?job_id=XXX or ?video_id=XXX
- * - POST: { "job_id": "XXX", "video_id": "XXX" }
+ * - POST: Various formats supported (job_id, jobId, payload.job_id, data.job_id, etc.)
  * 
  * Response includes:
- * - job_id
- * - job_type
- * - status (queued, processing, callback_received, validating, complete, failed, timeout, thumbnail_invalid)
- * - video_id
+ * - job_id, job_type, status, video_id
  * - created_at, started_at, completed_at
- * - result (JSON with validation report if complete)
- * - error_message (if failed)
- * - elapsed_seconds (for timeout detection)
+ * - result, error_message, elapsed_seconds
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
@@ -31,93 +26,137 @@ Deno.serve(async (req) => {
     }
 
     // Log exact request details
-    console.log('[getProcessingJobStatus] Request received:', {
+    console.log('JOB_STATUS_INPUT_START', {
       method: req.method,
       url: req.url,
-      headers: Object.fromEntries(req.headers.entries())
+      contentType: req.headers.get('content-type')
     });
 
     // Support both GET query params and POST JSON body
     let job_id = null;
     let video_id = null;
+    let body = null;
+    let rawBody = null;
     
-    // Try query params first (GET requests)
+    // Try query params first (works for both GET and POST)
     const url = new URL(req.url);
     const queryParams = {
       job_id: url.searchParams.get('job_id'),
-      video_id: url.searchParams.get('video_id')
+      video_id: url.searchParams.get('video_id'),
+      jobId: url.searchParams.get('jobId'),
+      videoId: url.searchParams.get('videoId')
     };
     
-    console.log('[getProcessingJobStatus] Query params:', queryParams);
+    console.log('JOB_STATUS_QUERY_PARAMS', queryParams);
     
-    job_id = queryParams.job_id;
-    video_id = queryParams.video_id;
+    job_id = queryParams.job_id || queryParams.jobId;
+    video_id = queryParams.video_id || queryParams.videoId;
     
-    // If not found, try POST body
-    let body = null;
-    let parsedBody = null;
+    // If not found in query params, try POST body
     if (!job_id && !video_id && req.method === 'POST') {
       try {
-        body = await req.json();
-        parsedBody = body;
-        console.log('[getProcessingJobStatus] POST body (raw):', body);
+        const text = await req.text();
+        rawBody = text;
+        console.log('JOB_STATUS_RAW_BODY', text);
         
-        // Support multiple nesting levels (Base44 SDK may wrap payload)
-        // Try direct properties first
-        job_id = body.job_id;
-        video_id = body.video_id;
-        
-        // Try payload wrapper
-        if (!job_id && !video_id && body.payload) {
-          job_id = body.payload.job_id;
-          video_id = body.payload.video_id;
-          console.log('[getProcessingJobStatus] Found in body.payload:', { job_id, video_id });
+        // Try parsing as JSON
+        try {
+          body = JSON.parse(text);
+          console.log('JOB_STATUS_PARSED_BODY', body);
+          
+          // Support all possible payload formats Base44 might use
+          // Direct properties
+          job_id = body.job_id || body.jobId;
+          video_id = body.video_id || body.videoId;
+          
+          // payload wrapper
+          if (!job_id && !video_id && body.payload) {
+            job_id = body.payload.job_id || body.payload.jobId;
+            video_id = body.payload.video_id || body.payload.videoId;
+            console.log('JOB_STATUS_FOUND_IN_PAYLOAD', { job_id, video_id });
+          }
+          
+          // data wrapper
+          if (!job_id && !video_id && body.data) {
+            job_id = body.data.job_id || body.data.jobId;
+            video_id = body.data.video_id || body.data.videoId;
+            console.log('JOB_STATUS_FOUND_IN_DATA', { job_id, video_id });
+          }
+          
+          // request wrapper
+          if (!job_id && !video_id && body.request) {
+            job_id = body.request.job_id || body.request.jobId;
+            video_id = body.request.video_id || body.request.videoId;
+            console.log('JOB_STATUS_FOUND_IN_REQUEST', { job_id, video_id });
+          }
+          
+          // params wrapper
+          if (!job_id && !video_id && body.params) {
+            job_id = body.params.job_id || body.params.jobId;
+            video_id = body.params.video_id || body.params.videoId;
+            console.log('JOB_STATUS_FOUND_IN_PARAMS', { job_id, video_id });
+          }
+          
+          console.log('JOB_STATUS_AFTER_BODY_PARSING', { job_id, video_id });
+        } catch (parseError) {
+          console.error('JOB_STATUS_BODY_PARSE_ERROR', parseError.message);
         }
-        
-        // Try data wrapper
-        if (!job_id && !video_id && body.data) {
-          job_id = body.data.job_id;
-          video_id = body.data.video_id;
-          console.log('[getProcessingJobStatus] Found in body.data:', { job_id, video_id });
-        }
-        
-        console.log('[getProcessingJobStatus] After body parsing:', { job_id, video_id });
-      } catch (e) {
-        console.error('[getProcessingJobStatus] Body parsing failed:', e.message);
-        // Body parsing failed, continue with null values
+      } catch (readError) {
+        console.error('JOB_STATUS_BODY_READ_ERROR', readError.message);
       }
     }
 
-    console.log('[getProcessingJobStatus] Final parsed values:', {
+    // Final fallback: if still no IDs, try to extract from URL path
+    if (!job_id && !video_id) {
+      const pathParts = url.pathname.split('/');
+      const lastPart = pathParts[pathParts.length - 1];
+      if (lastPart && (lastPart.length === 24 || lastPart.match(/^[0-9a-f]+$/))) {
+        job_id = lastPart;
+        console.log('JOB_STATUS_EXTRACTED_FROM_PATH', job_id);
+      }
+    }
+
+    console.log('JOB_STATUS_INPUT_FINAL', {
       method: req.method,
       queryParams,
-      body: parsedBody,
+      body,
+      rawBody,
       parsedJobId: job_id,
       parsedVideoId: video_id,
       job_id_type: typeof job_id,
-      video_id_type: typeof video_id
+      video_id_type: typeof video_id,
+      job_id_length: job_id?.length,
+      video_id_length: video_id?.length
     });
 
     if (!job_id && !video_id) {
-      console.error('[getProcessingJobStatus] Missing job_id and video_id - returning 400');
+      console.error('JOB_STATUS_MISSING_IDS - returning 400');
       return Response.json({ 
         ok: false, 
         error: 'Missing job_id or video_id',
         method: req.method,
         queryParams,
-        body: parsedBody,
+        body,
+        rawBody,
         parsedJobId: job_id,
         parsedVideoId: video_id,
-        expected: 'Provide job_id or video_id in query params or POST body'
+        expected: 'Provide job_id or video_id in query params or POST body',
+        supportedFormats: [
+          'job_id', 'jobId',
+          'payload.job_id', 'payload.jobId',
+          'data.job_id', 'data.jobId',
+          'request.job_id', 'request.jobId',
+          'params.job_id', 'params.jobId'
+        ]
       }, { status: 400 });
     }
 
     let job;
     if (job_id) {
-      console.log('[getProcessingJobStatus] Fetching job by ID:', job_id);
+      console.log('JOB_STATUS_FETCHING_BY_ID', job_id);
       job = await base44.entities.JobQueue.get(job_id);
     } else if (video_id) {
-      console.log('[getProcessingJobStatus] Fetching most recent job for video:', video_id);
+      console.log('JOB_STATUS_FETCHING_BY_VIDEO', video_id);
       // Get most recent job for this video
       const jobs = await base44.entities.JobQueue.filter(
         { entity_type: 'Video', entity_id: video_id },
@@ -128,14 +167,15 @@ Deno.serve(async (req) => {
     }
 
     if (!job) {
-      console.error('[getProcessingJobStatus] Job not found:', { job_id, video_id });
+      console.error('JOB_STATUS_NOT_FOUND', { job_id, video_id });
       return Response.json({ error: 'Job not found' }, { status: 404 });
     }
 
-    console.log('[getProcessingJobStatus] Job found:', {
+    console.log('JOB_STATUS_FOUND', {
       job_id: job.id,
       status: job.status,
-      job_type: job.job_type
+      job_type: job.job_type,
+      entity_id: job.entity_id
     });
 
     // Calculate elapsed time
@@ -148,7 +188,7 @@ Deno.serve(async (req) => {
     if (status === 'processing' || status === 'queued') {
       if (elapsedSeconds > 600) {
         status = 'timeout';
-        console.log('[getProcessingJobStatus] Job timed out:', { elapsedSeconds });
+        console.log('JOB_STATUS_TIMEOUT', { elapsedSeconds });
       }
     }
 
@@ -176,11 +216,11 @@ Deno.serve(async (req) => {
       is_timeout: status === 'timeout',
     };
 
-    console.log('[getProcessingJobStatus] Returning response:', response);
+    console.log('JOB_STATUS_RESPONSE', response);
     return Response.json(response);
 
   } catch (error) {
-    console.error('[getProcessingJobStatus] Error:', error);
+    console.error('JOB_STATUS_ERROR', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

@@ -339,19 +339,28 @@ export default function VideoEdit() {
 
     const pollInterval = setInterval(async () => {
       try {
+        // CRITICAL: Skip if no valid job ID
+        if (!thumbnailJobId || typeof thumbnailJobId !== 'string' || thumbnailJobId.trim() === '') {
+          console.warn('[Job Polling] Skipping: no valid job_id', {
+            thumbnailJobId,
+            type: typeof thumbnailJobId,
+            trimmed: thumbnailJobId?.trim(),
+            length: thumbnailJobId?.length
+          });
+          return;
+        }
+
         // Log exact request before sending
-        const params = { job_id: thumbnailJobId };
-        console.log('[Job Polling] Sending request:', {
-          method: 'POST',
-          function: 'getProcessingJobStatus',
-          params,
+        const payload = { job_id: thumbnailJobId };
+        console.log('POLL_REQUEST', {
           thumbnailJobId,
-          thumbnailJobId_type: typeof thumbnailJobId,
-          thumbnailJobId_length: thumbnailJobId?.length,
+          videoId: id,
+          payload,
+          method: 'POST',
           timestamp: new Date().toISOString()
         });
         
-        const res = await base44.functions.invoke('getProcessingJobStatus', params);
+        const res = await base44.functions.invoke('getProcessingJobStatus', payload);
         const job = res.data;
         
         console.log('[Job Polling] Response received:', {
@@ -361,7 +370,7 @@ export default function VideoEdit() {
           error: job?.error
         });
         
-        // Handle 400 errors gracefully
+        // Handle 400 errors gracefully - show in UI
         if (!job || job.error) {
           console.error('[Job Polling] Server error:', {
             error: job?.error,
@@ -375,7 +384,15 @@ export default function VideoEdit() {
           setCheckStatus({ 
             ok: false, 
             msg: 'Job status polling misconfigured',
-            details: { error: job?.error, received: job?.received }
+            details: { 
+              error: job?.error, 
+              received: job?.received,
+              method: job?.method,
+              queryParams: job?.queryParams,
+              body: job?.body,
+              parsedJobId: job?.parsedJobId,
+              parsedVideoId: job?.parsedVideoId
+            }
           });
           clearInterval(pollInterval);
           return;
