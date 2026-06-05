@@ -20,6 +20,7 @@ import { validateVideoAssetUrls } from "@/lib/validateVideoAssets";
 import { getGroupedCategories, validateVideoCategories, searchCategories } from "@/lib/videoTaxonomy";
 import CategorySelector from "@/components/admin/CategorySelector";
 import PublishReadinessChecklist from "@/components/admin/PublishReadinessChecklist";
+import PublishingDebugPanel from "@/components/admin/PublishingDebugPanel";
 
 const EMPTY_FORM = {
   title: "", slug: "", description: "", short_summary: "", brand_id: "",
@@ -282,17 +283,80 @@ export default function VideoEdit() {
   // Validate categories separately for cleanup helper
   const categoryValidation = validateVideoCategories(form.categories || []);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  // Separate save handlers for Draft vs Publish
+  const handleSaveDraft = () => {
+    // Draft save - minimal validation
+    const errs = {};
+    if (!form.title.trim()) errs.title = "Title is required for draft.";
+    if (!form.slug.trim()) errs.slug = "Slug is required.";
+    
+    // Validate metadata (categories/tags)
+    const validation = normalizeMetadata({
+      categories: form.categories,
+      tags: form.tags,
+      title: form.title,
+      description: form.description,
+      short_summary: form.short_summary,
+      strict: false, // Don't block on warnings for draft
+    });
+    
+    if (!validation.valid && validation.errors.length > 0) {
+      errs.metadata = validation.errors.join(' ');
+      errs.categories = validation.removed.categories;
+      errs.tags = validation.removed.tags;
+    }
+    
+    if (Object.keys(errs).length > 0) { 
+      setErrors(errs); 
+      console.error('❌ Save Draft blocked:', errs);
+      return; 
+    }
+    
+    setErrors({});
+    const data = { 
+      ...form, 
+      status: 'draft', // Force draft status
+      categories: validation.normalized.categories,
+      tags: validation.normalized.tags,
+    };
+    if (data.duration_seconds) data.duration_seconds = parseInt(data.duration_seconds, 10);
+    else delete data.duration_seconds;
+    
+    console.log('💾 Saving Draft...', data);
+    save.mutate(data, {
+      onSuccess: () => {
+        console.log('✅ Draft saved successfully');
+        queryClient.invalidateQueries({ queryKey: ["admin-videos"] });
+        queryClient.invalidateQueries({ queryKey: ["video", id] });
+        // Sync performers
+        if (!isNew) {
+          syncPerformers.mutate({ 
+            videoId: id, 
+            newPerformerIds: selectedPerformerIds, 
+            oldPerformerIds: videoCredits.map(c => c.performer_id),
+            newLeadIds: leadPerformerIds,
+            oldLeadIds: videoCredits.filter(c => c.lead_performer).map(c => c.performer_id)
+          });
+        }
+      },
+      onError: (err) => {
+        console.error('❌ Draft save failed:', err);
+        setErrors({ submit: err.message });
+      }
+    });
+  };
+
+  const handlePublish = () => {
+    // Publish - strict validation
     const errs = {};
     if (!form.title.trim()) errs.title = "Title is required.";
     if (!form.slug.trim()) errs.slug = "Slug is required.";
     if (!form.status) errs.status = "Status is required.";
     URL_FIELDS.forEach(f => {
-      if (!isValidUrl(form[f])) errs[f] = "Must be a valid http/https URL.";
+      if (!isValidUrl(form[f])) errs[f] = `Must be a valid http/https URL (${f}).`;
     });
     
-    // P0: Validate metadata before save
+    // Validate metadata
     const validation = normalizeMetadata({
       categories: form.categories,
       tags: form.tags,
@@ -308,64 +372,65 @@ export default function VideoEdit() {
       errs.tags = validation.removed.tags;
     }
     
-    // Phase 2D P0: Validate publish readiness if status is changing to published
-    if (form.status === 'published' && video?.status !== 'published') {
-      if (!publishCheck.canPublish && publishCheck.errors.length > 0) {
-        errs.publish = publishCheck.errors.join(' ');
-        errs.publishDetails = publishCheck;
-      }
+    // CRITICAL: Check publish readiness
+    if (!publishCheck.canPublish) {
+      errs.publish = 'Cannot publish - missing required items.';
+      errs.publishDetails = publishCheck;
+      console.error('❌ Publish blocked by publishCheck:', publishCheck.errors);
     }
     
-    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    if (Object.keys(errs).length > 0) { 
+      setErrors(errs); 
+      console.error('❌ Publish blocked:', errs);
+      return; 
+    }
+    
     setErrors({});
-    const data = { ...form };
-    // Apply normalized values
-    data.categories = validation.normalized.categories;
-    data.tags = validation.normalized.tags;
+    const data = { 
+      ...form, 
+      status: 'published', // Force published status
+      categories: validation.normalized.categories,
+      tags: validation.normalized.tags,
+    };
     if (data.duration_seconds) data.duration_seconds = parseInt(data.duration_seconds, 10);
     else delete data.duration_seconds;
     
-    // Clean invalid categories helper
-    const handleCleanInvalidCategories = () => {
-      const valid = categoryValidation?.normalized || form.categories || [];
-      set("categories", valid);
-      setErrors(ex => ({ ...ex, categories: undefined, metadata: undefined }));
-    };
+    console.log('🚀 Publishing...', data);
+    save.mutate(data, {
+      onSuccess: () => {
+        console.log('✅ Published successfully');
+        queryClient.invalidateQueries({ queryKey: ["admin-videos"] });
+        queryClient.invalidateQueries({ queryKey: ["video", id] });
+        // Sync performers
+        if (!isNew) {
+          syncPerformers.mutate({ 
+            videoId: id, 
+            newPerformerIds: selectedPerformerIds, 
+            oldPerformerIds: videoCredits.map(c => c.performer_id),
+            newLeadIds: leadPerformerIds,
+            oldLeadIds: videoCredits.filter(c => c.lead_performer).map(c => c.performer_id)
+          });
+        }
+        // Force reload to show published status
+        setTimeout(() => {
+          refetchVideo();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 500);
+      },
+      onError: (err) => {
+        console.error('❌ Publish failed:', err);
+        setErrors({ submit: err.message });
+      }
+    });
+  };
 
-    // Save video first, then sync performers
-    if (isNew) {
-      save.mutate(data, {
-        onSuccess: (result) => {
-          queryClient.invalidateQueries({ queryKey: ["admin-videos"] });
-          // Sync performers after video is created
-          if (selectedPerformerIds.length > 0) {
-            syncPerformers.mutate({ 
-              videoId: result.id, 
-              newPerformerIds: selectedPerformerIds, 
-              oldPerformerIds: [],
-              newLeadIds: leadPerformerIds,
-              oldLeadIds: []
-            });
-          }
-          navigate(`/admin/videos/${result.id}`);
-        },
-      });
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Route to appropriate handler based on status
+    if (form.status === 'published') {
+      handlePublish();
     } else {
-      save.mutate(data, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["admin-videos"] });
-          // Sync performers after video is updated
-          if (!isNew) {
-            syncPerformers.mutate({ 
-              videoId: id, 
-              newPerformerIds: selectedPerformerIds, 
-              oldPerformerIds: videoCredits.map(c => c.performer_id),
-              newLeadIds: leadPerformerIds,
-              oldLeadIds: videoCredits.filter(c => c.lead_performer).map(c => c.performer_id)
-            });
-          }
-        },
-      });
+      handleSaveDraft();
     }
   };
 
@@ -893,16 +958,24 @@ export default function VideoEdit() {
           />
         )}
 
+        {/* Publishing Debug Panel - Shows exact blocking reasons */}
+        {!isNew && (
+          <PublishingDebugPanel
+            video={video}
+            form={form}
+            selectedPerformerIds={selectedPerformerIds}
+            publishCheck={publishCheck}
+            categoryValidation={categoryValidation}
+          />
+        )}
+
         {/* Save/Publish Actions */}
         <div className="flex items-center gap-3 pb-8">
-          {/* Save Draft - always available */}
+          {/* Save Draft - always available, bypasses publish checks */}
           <Button 
             type="button" 
             variant="outline"
-            onClick={() => {
-              setForm(f => ({ ...f, status: 'draft' }));
-              setTimeout(() => handleSubmit({ preventDefault: () => {} }), 0);
-            }}
+            onClick={handleSaveDraft}
             disabled={save.isPending}
             className="gap-2"
           >
@@ -910,29 +983,40 @@ export default function VideoEdit() {
             Save Draft
           </Button>
 
-          {/* Save Changes / Publish */}
+          {/* Publish - requires all checks to pass */}
           <Button 
-            type="submit" 
-            disabled={save.isPending || (form.status === 'published' && !publishCheck.canPublish)}
-            className="gap-2"
+            type="button" 
+            onClick={handlePublish}
+            disabled={save.isPending || !publishCheck.canPublish}
+            className="gap-2 bg-primary hover:bg-primary/90"
           >
             <Save className="w-4 h-4" />
-            {save.isPending ? "Saving…" : form.status === 'published' ? "Publish Video" : isNew ? "Create Video" : "Save Changes"}
+            {save.isPending ? "Saving…" : publishCheck.canPublish ? "Publish Video" : `Cannot Publish (${publishCheck.errors.length} issues)`}
           </Button>
 
           <Link to="/admin/videos">
             <Button type="button" variant="outline">Cancel</Button>
           </Link>
 
-          {/* Publish blocked warning */}
-          {form.status === 'published' && !publishCheck.canPublish && publishCheck.errors.length > 0 && (
+          {/* Publish blocked warning - always show if status is published */}
+          {form.status === 'published' && !publishCheck.canPublish && (
             <div className="ml-auto text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 max-w-lg">
-              <p className="font-semibold mb-1">❌ Cannot Publish - {publishCheck.errors.length} Critical Issue(s):</p>
-              <ul className="list-disc list-inside space-y-0.5 max-h-32 overflow-y-auto">
+              <p className="font-semibold mb-1">❌ Publish Blocked - {publishCheck.errors.length} Critical Issue(s):</p>
+              <ul className="list-disc list-inside space-y-0.5 max-h-48 overflow-y-auto">
                 {publishCheck.errors.map((err, i) => (
                   <li key={i}>{err}</li>
                 ))}
               </ul>
+              {publishCheck.warnings && publishCheck.warnings.length > 0 && (
+                <>
+                  <p className="font-semibold mt-2 mb-1">⚠️ Warnings ({publishCheck.warnings.length}):</p>
+                  <ul className="list-disc list-inside space-y-0.5 text-yellow-600">
+                    {publishCheck.warnings.map((warn, i) => (
+                      <li key={i}>{warn}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
           )}
         </div>
