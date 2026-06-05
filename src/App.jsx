@@ -35,6 +35,7 @@ import VideoUploadTest from './pages/admin/VideoUploadTest';
 import DraftReview from './pages/admin/DraftReview';
 import UnlinkedPerformers from './pages/admin/UnlinkedPerformers';
 import MonthlyCloseout from './pages/admin/MonthlyCloseout';
+import Earnings from './pages/admin/Earnings';
 import ContentReview from './pages/admin/ContentReview';
 import PerformerSubmissionsReview from './pages/admin/PerformerSubmissionsReview';
 import PromoKitDetail from './pages/admin/PromoKitDetail';
@@ -160,6 +161,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/seo" element={<ComingSoon title="SEO Management" />} />
                 <Route path="/admin/migration" element={<ComingSoon title="Migration Tools" />} />
                 <Route path="/admin/monthly-closeout" element={<MonthlyCloseout />} />
+                <Route path="/admin/earnings" element={<Earnings />} />
                 <Route path="/admin/content-review" element={<ContentReview />} />
                 <Route path="/admin/performer-submissions" element={<PerformerSubmissionsReview />} />
                 <Route path="/admin/promo-kit/:video_id" element={<PromoKitDetail />} />

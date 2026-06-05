@@ -1,0 +1,113 @@
+{
+  "name": "PerformerEarningLineItem",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "performer_earning_id": {
+      "type": "string",
+      "title": "Performer Earning ID",
+      "description": "Optional - link to parent PerformerEarning header record"
+    },
+    "period_month": {
+      "type": "string",
+      "title": "Period Month",
+      "description": "Format: YYYY-MM"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "video_platform",
+        "livecam",
+        "fanclub",
+        "custom_content",
+        "bonus",
+        "manual_adjustment",
+        "deduction"
+      ],
+      "title": "Source Type"
+    },
+    "source_platform": {
+      "type": "string",
+      "enum": [
+        "xhamster",
+        "faphouse",
+        "chaturbate",
+        "stripchat",
+        "bongacams",
+        "livejasmin",
+        "internal",
+        "other"
+      ],
+      "title": "Source Platform"
+    },
+    "source_reference_id": {
+      "type": "string",
+      "title": "Source Reference ID",
+      "description": "Optional - reference to source record (e.g., VideoStatSnapshot ID)"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "format": "textarea"
+    },
+    "gross_amount_usd": {
+      "type": "number",
+      "title": "Gross Amount (USD)"
+    },
+    "performer_share_percent": {
+      "type": "number",
+      "title": "Performer Share (%)",
+      "description": "Percentage of gross that goes to performer"
+    },
+    "performer_amount_usd": {
+      "type": "number",
+      "title": "Performer Amount (USD)",
+      "description": "gross_amount_usd * performer_share_percent / 100"
+    },
+    "studio_amount_usd": {
+      "type": "number",
+      "title": "Studio Amount (USD)",
+      "description": "gross_amount_usd - performer_amount_usd"
+    },
+    "currency": {
+      "type": "string",
+      "title": "Currency",
+      "default": "usd"
+    },
+    "exchange_rate": {
+      "type": "number",
+      "title": "Exchange Rate",
+      "default": 1,
+      "description": "Exchange rate to USD"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "estimated",
+        "pending",
+        "approved",
+        "paid"
+      ],
+      "title": "Status",
+      "default": "estimated"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes",
+      "format": "textarea"
+    }
+  },
+  "required": [
+    "performer_id",
+    "period_month",
+    "source_type",
+    "gross_amount_usd",
+    "performer_share_percent",
+    "performer_amount_usd",
+    "studio_amount_usd",
+    "status"
+  ]
+}

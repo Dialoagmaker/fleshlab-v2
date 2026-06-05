@@ -6,61 +6,52 @@
       "type": "string",
       "title": "Performer ID"
     },
-    "video_id": {
-      "type": "string",
-      "title": "Video ID",
-      "description": "Optional - for video-specific earnings"
-    },
-    "earning_type": {
-      "type": "string",
-      "enum": [
-        "xhamster_share",
-        "faphouse_share",
-        "video_sale",
-        "fanclub_share",
-        "livestream",
-        "sponsorship_share",
-        "product_placement_share",
-        "bonus",
-        "adjustment"
-      ],
-      "title": "Earning Type"
-    },
-    "gross_amount_usd": {
-      "type": "number",
-      "title": "Gross Amount (USD)"
-    },
-    "split_pct": {
-      "type": "number",
-      "title": "Split Percentage",
-      "description": "Snapshotted revenue split at time of earning creation"
-    },
-    "net_amount_usd": {
-      "type": "number",
-      "title": "Net Amount (USD)",
-      "description": "gross_amount_usd * split_pct / 100"
-    },
     "period_month": {
       "type": "string",
       "title": "Period Month",
       "description": "Format: YYYY-MM"
     },
+    "total_gross_usd": {
+      "type": "number",
+      "title": "Total Gross (USD)",
+      "description": "Sum of all line item gross amounts"
+    },
+    "total_performer_usd": {
+      "type": "number",
+      "title": "Total Performer Share (USD)",
+      "description": "Sum of all line item performer amounts"
+    },
+    "total_studio_usd": {
+      "type": "number",
+      "title": "Total Studio Share (USD)",
+      "description": "Sum of all line item studio amounts"
+    },
+    "line_item_count": {
+      "type": "integer",
+      "title": "Line Item Count",
+      "default": 0
+    },
     "status": {
       "type": "string",
       "enum": [
+        "draft",
+        "estimated",
         "pending",
         "approved",
-        "paid",
-        "held",
-        "disputed"
+        "paid"
       ],
       "title": "Status",
-      "default": "pending"
+      "default": "draft"
     },
-    "hold_reason": {
+    "approved_at": {
       "type": "string",
-      "title": "Hold Reason",
-      "description": "Required when status is held or disputed"
+      "format": "date-time",
+      "title": "Approved At"
+    },
+    "approved_by": {
+      "type": "string",
+      "title": "Approved By",
+      "description": "User ID of admin who approved"
     },
     "paid_at": {
       "type": "string",
@@ -71,23 +62,10 @@
       "type": "string",
       "title": "Notes",
       "format": "textarea"
-    },
-    "source_ref_type": {
-      "type": "string",
-      "title": "Source Reference Type",
-      "description": "e.g., 'VideoStatSnapshot', 'VideoDeal'"
-    },
-    "source_ref_id": {
-      "type": "string",
-      "title": "Source Reference ID"
     }
   },
   "required": [
     "performer_id",
-    "earning_type",
-    "gross_amount_usd",
-    "split_pct",
-    "net_amount_usd",
     "period_month",
     "status"
   ]
