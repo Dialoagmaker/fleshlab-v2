@@ -204,15 +204,6 @@ export default function VideoEdit() {
     },
   });
 
-  const runDiagnostic = useMutation({
-    mutationFn: async () => {
-      const result = await validateVideoAssetUrls(id);
-      setDiagnostic(result);
-      console.log('🔍 Video Asset Diagnostic:', result);
-      return result;
-    },
-  });
-
   const retrigger = useMutation({
     mutationFn: () => base44.functions.invoke('retriggerVideoProcessing', { video_id: id }),
     onSuccess: (res) => setRetriggerStatus({ ok: true, msg: res.data?.message || 'Job accepted by processor.' }),
