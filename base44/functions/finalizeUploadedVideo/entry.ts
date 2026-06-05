@@ -147,11 +147,13 @@ Deno.serve(async (req) => {
 
     // Pre-compute expected CDN URLs — processor uploads to these paths in R2
     const cdnBase = (Deno.env.get('R2_PUBLIC_BUCKET_URL') || '').replace(/\/$/, '');
+    const expectedSourceUrl = `${cdnBase}/studios/${studio}/source/${basename}${ext.startsWith('.') ? ext : '.' + ext}`;
     const expectedThumbnailUrl = `${cdnBase}/studios/${studio}/thumbnails/${basename}.jpg`;
     const expectedPreviewUrl = `${cdnBase}/studios/${studio}/previews/${basename}-preview.mp4`;
 
-    // Store expected URLs on video entity
+    // Store expected URLs on video entity (including source!)
     await base44.entities.Video.update(video_id, {
+      source_video_url: expectedSourceUrl,
       primary_thumbnail_url: expectedThumbnailUrl,
       trailer_url: expectedPreviewUrl,
     });
