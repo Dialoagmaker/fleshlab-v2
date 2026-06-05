@@ -32,12 +32,26 @@ export const APPROVED_VIDEO_CATEGORIES = [
   'Daddy/Twink',
   'Age Gap',
   'Studio Production',
+  'Amateur',
+  'Amateur Production',
+  'Home Amateur',
+  'Raw',
+  'Homemade',
 ];
 
-// Create case-insensitive lookup map
+// Create case-insensitive lookup map with alias support
 const APPROVED_CATEGORIES_MAP = new Map(
   APPROVED_VIDEO_CATEGORIES.map(cat => [cat.toLowerCase(), cat])
 );
+
+// Alias mapping for Amateur variants - all map to canonical "Amateur"
+const CATEGORY_ALIASES = {
+  'amateur': 'Amateur',
+  'amateur production': 'Amateur',
+  'home amateur': 'Amateur',
+  'raw': 'Amateur',
+  'homemade': 'Amateur',
+};
 
 // ============================================================================
 // B. BLOCKED_SPAM_TAGS
@@ -183,8 +197,14 @@ export function normalizeMetadata(metadata, options = {}) {
       if (strict) continue;
     }
 
-    // Check if it's in approved taxonomy
-    const canonical = APPROVED_CATEGORIES_MAP.get(lower);
+    // Check if it's in approved taxonomy (including aliases)
+    let canonical = APPROVED_CATEGORIES_MAP.get(lower);
+    
+    // Check alias mapping if not found directly
+    if (!canonical && CATEGORY_ALIASES[lower]) {
+      canonical = CATEGORY_ALIASES[lower];
+    }
+    
     if (!canonical) {
       result.errors.push(`"${trimmed}" is not in the approved category taxonomy.`);
       result.valid = false;
