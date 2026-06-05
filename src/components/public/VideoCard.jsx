@@ -1,28 +1,17 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { Play, Clock, Crown, Star, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-// Build asset URL (same as admin panel)
-function buildAssetUrl(value) {
-  if (!value) return null;
-  const clean = String(value).trim();
-  if (!clean) return null;
-  if (clean.startsWith("http://") || clean.startsWith("https://")) return clean;
-  return `https://video.fleshlab.online/${clean.replace(/^\/+/, "")}`;
-}
+import VideoAssetImage from "@/components/video/VideoAssetImage";
+import VideoPreviewPlayer from "@/components/video/VideoPreviewPlayer";
 
 export default function VideoCard({ video, brands = [], performers = [] }) {
   const [isHovered, setIsHovered] = useState(false);
-  const videoRef = useRef(null);
   const brand = brands.find(b => b.id === video.brand_id);
   const primaryPerformer = performers.find(p => p.id === video.performer_id);
   const hasValidDuration = video.duration_seconds && video.duration_seconds > 0;
   const mins = hasValidDuration ? Math.floor(video.duration_seconds / 60) : null;
   const secs = hasValidDuration ? String(video.duration_seconds % 60).padStart(2, '0') : null;
   
-  // Preview URL - trailer_url is canonical
-  const rawPreviewUrl = video.trailer_url || video.preview_gif_url || null;
-  const previewUrl = buildAssetUrl(rawPreviewUrl);
   const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
   return (
@@ -33,57 +22,29 @@ export default function VideoCard({ video, brands = [], performers = [] }) {
         <div 
           className="relative aspect-video overflow-hidden bg-[#0a0a0a]"
           onMouseEnter={() => !isMobile && setIsHovered(true)}
-          onMouseLeave={() => {
-            setIsHovered(false);
-            if (videoRef.current) {
-              videoRef.current.pause();
-              videoRef.current.currentTime = 0;
-            }
-          }}
+          onMouseLeave={() => setIsHovered(false)}
         >
-          {/* Thumbnail Image */}
-          <img
-            src={`${video.primary_thumbnail_url}${video.primary_thumbnail_url.includes('?') ? '&' : '?'}v=${video.updated_date ? new Date(video.updated_date).getTime() : Date.now()}`}
+          {/* Thumbnail Image - Unified Component */}
+          <VideoAssetImage
+            video={video}
             alt={video.title}
-            className={`w-full h-full object-cover transition-transform duration-700 ${isHovered ? 'scale-105' : 'scale-110'}`}
-            loading="lazy"
-            decoding="async"
-            width="640"
-            height="360"
+            className={`transition-transform duration-700 ${isHovered ? 'scale-105' : 'scale-110'}`}
           />
           
-          {/* Preview Video on Hover (Desktop only) */}
-          {isHovered && previewUrl && !isMobile && (
-            <video
-              ref={videoRef}
-              src={previewUrl}
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              className="absolute inset-0 w-full h-full object-cover"
-              onMouseEnter={(e) => {
-                e.currentTarget.play().catch(err => console.warn('Preview playback blocked:', err));
-              }}
+          {/* Preview Video on Hover (Desktop only) - Unified Component */}
+          {isHovered && !isMobile && (
+            <VideoPreviewPlayer
+              video={video}
+              autoPlay={true}
+              loop={true}
+              showControls={false}
+              className="absolute inset-0"
             />
           )}
 
           {/* Cinematic gradient overlay - enhanced (hide during preview) */}
           {!isHovered && (
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-          )}
-
-          {/* Enhanced hover play button with glow (hide if has preview) */}
-          {!previewUrl && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className={cn(
-                "w-16 h-16 bg-gradient-to-br from-rose-600 to-rose-700 rounded-full flex items-center justify-center shadow-2xl shadow-rose-600/50",
-                "opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300",
-                "hover:shadow-[0_0_40px_rgba(225,29,72,0.6)]"
-              )}>
-                <Play className="w-6 h-6 text-white fill-white ml-0.5" />
-              </div>
-            </div>
           )}
 
           {/* Top-left badges - enhanced hierarchy */}

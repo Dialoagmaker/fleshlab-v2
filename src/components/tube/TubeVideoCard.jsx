@@ -1,19 +1,11 @@
 import { Link } from "react-router-dom";
 import { Play } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
-
-// Build asset URL (same as admin panel)
-function buildAssetUrl(value) {
-  if (!value) return null;
-  const clean = String(value).trim();
-  if (!clean) return null;
-  if (clean.startsWith("http://") || clean.startsWith("https://")) return clean;
-  return `https://video.fleshlab.online/${clean.replace(/^\/+/, "")}`;
-}
+import { useState } from "react";
+import VideoAssetImage from "@/components/video/VideoAssetImage";
+import VideoPreviewPlayer from "@/components/video/VideoPreviewPlayer";
 
 export default function TubeVideoCard({ video, brands = [] }) {
   const [isHovered, setIsHovered] = useState(false);
-  const videoRef = useRef(null);
   const brand = brands.find(b => b.id === video.brand_id);
   
   // Format duration
@@ -24,9 +16,6 @@ export default function TubeVideoCard({ video, brands = [] }) {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Get preview URL - trailer_url is canonical, preview_gif_url is legacy fallback
-  const rawPreviewUrl = video.trailer_url || video.preview_gif_url || null;
-  const previewUrl = buildAssetUrl(rawPreviewUrl);
   const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
   // Access tier badge - Banner-matching colors
@@ -55,36 +44,25 @@ export default function TubeVideoCard({ video, brands = [] }) {
       {/* Thumbnail Container - Darker base, stronger border */}
       <div className="relative mb-2.5 overflow-hidden rounded-xl bg-[#0f0f0f] border border-white/10 group-hover:border-rose-600/60 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-rose-600/20">
         <div className="aspect-video relative">
-          {/* Thumbnail Image */}
-          {video.primary_thumbnail_url ? (
-            <img
-              src={`${video.primary_thumbnail_url}${video.primary_thumbnail_url.includes('?') ? '&' : '?'}v=${video.updated_date ? new Date(video.updated_date).getTime() : Date.now()}`}
-              alt={video.title}
-              loading="lazy"
-              className={`w-full h-full object-cover transition-transform duration-700 ${isHovered ? 'scale-105' : 'scale-100'}`}
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-rose-900/60 to-[#0f0f0f]" />
-          )}
+          {/* Thumbnail Image - Unified Component */}
+          <VideoAssetImage
+            video={video}
+            alt={video.title}
+            className={`transition-transform duration-700 ${isHovered ? 'scale-105' : 'scale-100'}`}
+            showLegacyBadge={false}
+          />
           
-          {/* Preview Video on Hover (Desktop only) */}
-          {isHovered && previewUrl && !isMobile && (
-            <video
-              ref={videoRef}
-              src={previewUrl}
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              className="absolute inset-0 w-full h-full object-cover"
-              onMouseEnter={(e) => {
-                e.currentTarget.play().catch(err => console.warn('Preview playback blocked:', err));
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.pause();
-                e.currentTarget.currentTime = 0;
-              }}
-            />
+          {/* Preview Video on Hover (Desktop only) - Unified Component */}
+          {isHovered && !isMobile && (
+            <div className="absolute inset-0 w-full h-full">
+              <VideoPreviewPlayer
+                video={video}
+                autoPlay={true}
+                loop={true}
+                showControls={false}
+                className="w-full h-full object-cover"
+              />
+            </div>
           )}
           
           {/* Gradient Overlay - Stronger contrast */}
@@ -102,14 +80,7 @@ export default function TubeVideoCard({ video, brands = [] }) {
             {accessBadge.label}
           </div>
 
-          {/* Play Button Overlay - Show only if no preview available */}
-          {!rawPreviewUrl && (
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 flex items-center justify-center transform group-hover:scale-110 transition-all duration-300 shadow-2xl shadow-rose-600/50 border-2 border-white/30">
-                <Play className="w-8 h-8 text-white fill-current ml-0.5" />
-              </div>
-            </div>
-          )}
+          {/* Play Button Overlay - Unified Component handles preview availability */}
         </div>
       </div>
 
