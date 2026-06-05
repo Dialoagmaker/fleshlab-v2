@@ -17,6 +17,8 @@ import DurationInput from "@/components/admin/DurationInput";
 import { normalizeMetadata, BLOCKED_SPAM_TAGS, SENSITIVE_CATEGORIES } from "@/lib/videoMetadataGuardrails";
 import { checkPublishReadiness } from "@/lib/publishReadinessGuardrails";
 import { validateVideoAssetUrls } from "@/lib/validateVideoAssets";
+import { getGroupedCategories, validateVideoCategories, searchCategories } from "@/lib/videoTaxonomy";
+import CategorySelector from "@/components/admin/CategorySelector";
 
 const EMPTY_FORM = {
   title: "", slug: "", description: "", short_summary: "", brand_id: "",
@@ -54,6 +56,10 @@ export default function VideoEdit() {
   const [errors, setErrors] = useState({});
   const [selectedPerformerIds, setSelectedPerformerIds] = useState([]);
   const [leadPerformerIds, setLeadPerformerIds] = useState([]);
+  const [categorySearch, setCategorySearch] = useState("");
+
+  // Load taxonomy groups
+  const taxonomyGroups = getGroupedCategories();
 
   // Resolve performer names + brand name for AI helper context
   const { data: allPerformers = [] } = useQuery({
@@ -719,37 +725,60 @@ export default function VideoEdit() {
         {/* Categories and Tags */}
         <section className="bg-card border border-border rounded-xl p-6 space-y-5">
           <h2 className="text-sm font-semibold text-foreground">Categories and Tags</h2>
-          <div className="space-y-2">
+          
+          {/* Categories - Approved Taxonomy Only */}
+          <div className="space-y-3">
             <Label>Categories (Approved Taxonomy Only)</Label>
-            <p className="text-xs text-muted-foreground">Select from approved categories. Free text entry disabled to prevent spam/invalid entries.</p>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {form.categories.map(c => (
-                <span key={c} className="flex items-center gap-1 bg-muted border border-border text-xs rounded-full px-3 py-1">
-                  {c}
-                  <button type="button" onClick={() => set("categories", form.categories.filter(x => x !== c))} className="text-muted-foreground hover:text-destructive ml-1">
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
+            <p className="text-xs text-muted-foreground">
+              Select from {taxonomyGroups.reduce((sum, g) => sum + g.categories.length, 0)} approved categories. Free text entry disabled.
+            </p>
+            
+            {/* Selected category pills */}
+            <div className="flex flex-wrap gap-2 min-h-[40px]">
+              {form.categories.length === 0 ? (
+                <span className="text-xs text-muted-foreground italic">No categories selected</span>
+              ) : (
+                form.categories.map(catId => {
+                  const allCats = taxonomyGroups.flatMap(g => g.categories);
+                  const cat = allCats.find(c => c.id === catId);
+                  return (
+                    <span key={catId} className="flex items-center gap-1 bg-primary/10 border border-primary/20 text-primary text-xs rounded-full px-3 py-1">
+                      {cat?.label || catId}
+                      <button
+                        type="button"
+                        onClick={() => set("categories", form.categories.filter(x => x !== catId))}
+                        className="text-primary/70 hover:text-destructive ml-1"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  );
+                })
+              )}
             </div>
-            {/* P0: Category selector dropdown instead of free text */}
-            <Select onValueChange={(val) => {
-              if (val && !form.categories.some(c => c.toLowerCase() === val.toLowerCase())) {
-                const canonical = val.split('|')[1] || val;
-                set("categories", [...form.categories, canonical]);
-              }
-            }} value="">
-              <SelectTrigger className="w-full max-w-sm">
-                <SelectValue placeholder="+ Add category from approved list" />
-              </SelectTrigger>
-              <SelectContent>
-                {['Asian', 'Filipino', 'Pinoy', 'Twink', 'Solo', 'Outdoor', 'Shower', 'Mirror', 'Dildo Play', 'Nipple Play', 'Blowjob', 'Oral', 'Anal', 'Bareback', 'Creampie', 'Cumshot', 'Rimming', 'Handjob', 'BDSM', 'Daddy/Twink', 'Age Gap', 'Studio Production'].map(cat => (
-                  <SelectItem key={cat} value={cat} className={SENSITIVE_CATEGORIES.includes(cat) ? 'text-yellow-600' : ''}>
-                    {cat}{SENSITIVE_CATEGORIES.includes(cat) ? ' ⚠️' : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            
+            {/* Category selector with search */}
+            <CategorySelector
+              taxonomyGroups={taxonomyGroups}
+              selectedCategories={form.categories}
+              onCategoryChange={(catId) => {
+                if (!form.categories.includes(catId)) {
+                  set("categories", [...form.categories, catId]);
+                } else {
+                  set("categories", form.categories.filter(x => x !== catId));
+                }
+              }}
+              searchQuery={categorySearch}
+              onSearchChange={setCategorySearch}
+            />
+            
+            {/* Warning if too many categories */}
+            {form.categories.length > 8 && (
+              <div className="bg-yellow-500/10 border border-yellow-500/20 rounded p-2 text-xs text-yellow-600">
+                ⚠️ Use tags for details. Categories should stay broad (max 8 recommended).
+              </div>
+            )}
+            
             {errors.categories && errors.categories.length > 0 && (
               <div className="text-xs text-destructive mt-1">
                 <p>Removed categories:</p>
