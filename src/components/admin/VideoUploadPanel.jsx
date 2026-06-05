@@ -135,9 +135,9 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
 
   const createUploadMutation = useMutation({
     mutationFn: async (fileData) => {
-      const { file, title, description, brand_id, categories, tags, access_tier } = fileData;
+      const { id: fileId, file, title, description, brand_id, categories, tags, access_tier } = fileData;
       
-      updateFileStatus(file.id, { status: UPLOAD_STATUS.PREPARING });
+      updateFileStatus(fileId, { status: UPLOAD_STATUS.PREPARING });
       
       const response = await base44.functions.invoke('createR2UploadUrl', {
         title,
@@ -151,10 +151,10 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
         access_tier,
       });
 
-      return { file, ...response.data };
+      return { fileId, file, ...response.data };
     },
     onSuccess: (data) => {
-      updateFileStatus(data.file.id, {
+      updateFileStatus(data.fileId, {
         video_id: data.video_id,
         asset_id: data.asset_id,
         r2_key: data.r2_key,
@@ -167,7 +167,7 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
 
       uploadToR2(data.file, data.upload_url, data.file.size, data.file.type)
         .then(() => {
-          updateFileStatus(data.file.id, {
+          updateFileStatus(data.fileId, {
             status: UPLOAD_STATUS.UPLOADED,
             uploadProgress: 100,
           });
@@ -175,14 +175,18 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
           finalizeUpload(data.video_id, data.asset_id);
         })
         .catch((error) => {
-          updateFileStatus(data.file.id, {
+          updateFileStatus(data.fileId, {
             status: UPLOAD_STATUS.FAILED,
             error: error.message,
           });
           toast.error(`Upload failed: ${error.message}`);
         });
     },
-    onError: (error) => {
+    onError: (error, variables) => {
+      updateFileStatus(variables.id, {
+        status: UPLOAD_STATUS.FAILED,
+        error: error.message,
+      });
       toast.error(`Failed to create upload: ${error.message}`);
     },
   });
