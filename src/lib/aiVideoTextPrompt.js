@@ -1,14 +1,13 @@
 /**
- * generateExplicitVideoText - AI Video Metadata Generator
+ * V1 Core AI Video Text Prompt - VERBATIM
  * 
- * Generates SEO-optimized titles, descriptions, and metadata for adult video content.
- * Uses the V1 core prompt VERBATIM - no softening, no rewriting.
+ * This is the EXACT V1 prompt used for adult SEO copywriting.
+ * DO NOT MODIFY, SOFTEN, OR REWRITE.
+ * 
+ * V2 may append additional context fields, but this core prompt remains unchanged.
  */
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
-
-// V1 Core Prompt - VERBATIM (DO NOT MODIFY)
-const V1_CORE_PROMPT = `You are an expert adult SEO copywriter for FLESHLAB Studios — a premium gay adult studio with verified 18+ Asian twink and Filipino male performers.
+export const V1_CORE_PROMPT = `You are an expert adult SEO copywriter for FLESHLAB Studios — a premium gay adult studio with verified 18+ Asian twink and Filipino male performers.
 
 The production concept is:
 {{CONTEXT_BLOCK}}
@@ -80,73 +79,60 @@ Reply ONLY in this exact JSON format:
   "suggested_keywords": ["keyword1", "keyword2", ...]
 }`;
 
-function buildPrompt({ title, notes, performerNames, brandName, categories, tags, thumbnailUrl }) {
-  const contextLines = [
-    `Working title: ${title}`,
-    notes && `Admin notes: ${notes}`,
-    performerNames?.length && `Performers: ${performerNames.join(", ")}`,
-    brandName && `Studio/Brand: ${brandName}`,
-    categories?.length && `Categories: ${categories.join(", ")}`,
-    tags?.length && `Existing tags: ${tags.join(", ")}`,
-  ].filter(Boolean).join("\n");
+/**
+ * Build AI video text prompt using V1 core prompt verbatim
+ * 
+ * @param {Object} params - Prompt parameters
+ * @param {string} params.raw_idea - Raw scene notes or idea
+ * @param {string} params.title - Current/working title
+ * @param {string} params.description - Existing description
+ * @param {string} params.brand - Brand/studio name
+ * @param {string|string[]} params.categories - Categories
+ * @param {string|string[]} params.tags - Tags
+ * @param {string} params.performerInfo - Performer information
+ * @param {string} params.accessTier - Access tier
+ * @returns {string} Complete prompt with V1 core + V2 context
+ */
+export function buildAiVideoTextPrompt({
+  raw_idea,
+  title,
+  description,
+  brand,
+  categories,
+  tags,
+  performerInfo,
+  accessTier
+}) {
+  const contextLines = [];
+  
+  if (raw_idea?.trim()) contextLines.push(`Raw idea / notes: ${raw_idea.trim()}`);
+  if (title?.trim()) contextLines.push(`Current title: ${title.trim()}`);
+  if (description?.trim()) contextLines.push(`Existing description: ${description.trim()}`);
+  if (brand?.trim()) contextLines.push(`Brand / Studio: ${brand.trim()}`);
+  if (categories) {
+    const catStr = Array.isArray(categories) ? categories.join(', ') : categories;
+    if (catStr) contextLines.push(`Categories: ${catStr}`);
+  }
+  if (tags) {
+    const tagStr = Array.isArray(tags) ? tags.join(', ') : tags;
+    if (tagStr) contextLines.push(`Tags: ${tagStr}`);
+  }
+  if (performerInfo?.trim()) contextLines.push(`Performer info: ${performerInfo.trim()}`);
+  if (accessTier) contextLines.push(`Access tier: ${accessTier}`);
+
+  const v2Context = contextLines.filter(Boolean).join('\n');
 
   return `
 ${V1_CORE_PROMPT}
 
-ADDITIONAL CONTEXT:
-${contextLines}
-${thumbnailUrl ? `\nThumbnail analysis: Analyze the provided thumbnail for visual context.` : ''}
+ADDITIONAL V2 CONTEXT:
+${v2Context}
+
+IMPORTANT:
+Use the V1 prompt rules above as the source of truth.
+Do not soften the language.
+Do not use generic marketing filler.
+Do not change the scene type.
+Return JSON only.
 `;
 }
-
-Deno.serve(async (req) => {
-  try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    
-    if (!user || (user.role !== 'admin' && user.user_type !== 'performer')) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { title, notes, performerNames, brandName, categories, tags, thumbnail_url } = await req.json();
-    
-    if (!title || !title.trim()) {
-      return Response.json({ error: 'Title or scene notes are required' }, { status: 400 });
-    }
-
-    // Build prompt using V1 core prompt verbatim
-    const prompt = buildPrompt({
-      title,
-      notes,
-      performerNames,
-      brandName,
-      categories,
-      tags,
-      thumbnailUrl: thumbnail_url
-    });
-
-    const response = await base44.integrations.Core.InvokeLLM({
-      ...(thumbnail_url ? { file_urls: [thumbnail_url] } : {}),
-      model: thumbnail_url ? 'gemini_3_flash' : undefined,
-      prompt,
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          title: { type: 'string', description: '6-10 word punchy title' },
-          description: { type: 'string', description: '4-5 sentence explicit description' },
-          seo_title: { type: 'string', description: 'SEO title under 60 chars' },
-          seo_description: { type: 'string', description: 'Meta description 120-158 chars' },
-          tags: { type: 'array', items: { type: 'string' }, description: '6-10 searchable tags' },
-          suggested_categories: { type: 'array', items: { type: 'string' }, description: '2-4 broad categories' },
-          suggested_keywords: { type: 'array', items: { type: 'string' }, description: '8-12 long-tail keywords' }
-        },
-        required: ['title', 'description', 'seo_title', 'seo_description', 'tags', 'suggested_categories', 'suggested_keywords']
-      }
-    });
-
-    return Response.json(response);
-  } catch (error) {
-    console.error('Error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
-  }
-});

@@ -4,58 +4,16 @@
  * Admin tool for generating FLESHLAB video titles and descriptions
  * from rough ideas, scene notes, or content concepts.
  * 
- * Uses the same shared prompt logic as generateExplicitVideoText.
+ * Uses the V1 core prompt VERBATIM - no softening, no rewriting.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
-Deno.serve(async (req) => {
-  try {
-    const base44 = createClientFromRequest(req);
-    
-    // Admin only
-    const user = await base44.auth.me();
-    if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Unauthorized: Admin access required' }, { status: 403 });
-    }
-
-    const { 
-      raw_idea,
-      current_title,
-      current_description,
-      brand,
-      categories,
-      tags,
-      performer_info,
-      access_tier
-    } = await req.json();
-    
-    // Validate input
-    if (!raw_idea || !raw_idea.trim()) {
-      return Response.json({ 
-        error: 'Raw idea or scene notes are required',
-        warnings: ['Please enter some scene notes or a rough idea']
-      }, { status: 400 });
-    }
-
-    // Build context block for prompt
-    const contextLines = [`Working concept: ${raw_idea.trim()}`];
-    if (current_title?.trim()) contextLines.push(`Current title: ${current_title.trim()}`);
-    if (current_description?.trim()) contextLines.push(`Current description: ${current_description.trim()}`);
-    if (brand?.trim()) contextLines.push(`Studio/Brand: ${brand.trim()}`);
-    if (categories && categories.length > 0) contextLines.push(`Categories: ${categories.join(', ')}`);
-    if (tags && tags.length > 0) contextLines.push(`Tags: ${tags.join(', ')}`);
-    if (performer_info?.trim()) contextLines.push(`Performer notes: ${performer_info.trim()}`);
-    if (access_tier) contextLines.push(`Access tier: ${access_tier}`);
-
-    const contextBlock = contextLines.filter(Boolean).join('\n');
-
-    // Call LLM with FLESHLAB prompt
-    const response = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are an expert adult SEO copywriter for FLESHLAB Studios — a premium gay adult studio with verified 18+ Asian twink and Filipino male performers.
+// V1 CORE PROMPT - VERBATIM (DO NOT MODIFY, SOFTEN, OR REWRITE)
+const V1_CORE_PROMPT = `You are an expert adult SEO copywriter for FLESHLAB Studios — a premium gay adult studio with verified 18+ Asian twink and Filipino male performers.
 
 The production concept is:
-${contextBlock}
+{{CONTEXT_BLOCK}}
 
 ━━━ STEP 1 — IDENTIFY THE CORE ELEMENTS ━━━
 Before writing, extract from the input:
@@ -122,7 +80,68 @@ Reply ONLY in this exact JSON format:
   "tags": ["tag1", "tag2", "tag3", ...],
   "suggested_categories": ["category1", "category2", ...],
   "suggested_keywords": ["keyword1", "keyword2", ...]
-}`,
+}`;
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    // Admin only
+    const user = await base44.auth.me();
+    if (!user || user.role !== 'admin') {
+      return Response.json({ error: 'Unauthorized: Admin access required' }, { status: 403 });
+    }
+
+    const { 
+      raw_idea,
+      current_title,
+      current_description,
+      brand,
+      categories,
+      tags,
+      performer_info,
+      access_tier
+    } = await req.json();
+    
+    // Validate input
+    if (!raw_idea || !raw_idea.trim()) {
+      return Response.json({ 
+        error: 'Raw idea or scene notes are required',
+        warnings: ['Please enter some scene notes or a rough idea']
+      }, { status: 400 });
+    }
+
+    // Build context for V2
+    const contextLines = [];
+    if (raw_idea?.trim()) contextLines.push(`Raw idea / notes: ${raw_idea.trim()}`);
+    if (current_title?.trim()) contextLines.push(`Current title: ${current_title.trim()}`);
+    if (current_description?.trim()) contextLines.push(`Existing description: ${current_description.trim()}`);
+    if (brand?.trim()) contextLines.push(`Brand / Studio: ${brand.trim()}`);
+    if (categories && categories.length > 0) contextLines.push(`Categories: ${categories.join(', ')}`);
+    if (tags && tags.length > 0) contextLines.push(`Tags: ${tags.join(', ')}`);
+    if (performer_info?.trim()) contextLines.push(`Performer info: ${performer_info.trim()}`);
+    if (access_tier) contextLines.push(`Access tier: ${access_tier}`);
+
+    const v2Context = contextLines.filter(Boolean).join('\n');
+
+    // Build full prompt with V1 core + V2 context
+    const prompt = `
+${V1_CORE_PROMPT}
+
+ADDITIONAL V2 CONTEXT:
+${v2Context}
+
+IMPORTANT:
+Use the V1 prompt rules above as the source of truth.
+Do not soften the language.
+Do not use generic marketing filler.
+Do not change the scene type.
+Return JSON only.
+`;
+
+    // Call LLM with V1 prompt
+    const response = await base44.integrations.Core.InvokeLLM({
+      prompt,
       response_json_schema: {
         type: 'object',
         properties: {
