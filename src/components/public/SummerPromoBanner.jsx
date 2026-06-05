@@ -5,16 +5,46 @@ export default function SummerPromoBanner() {
   const { t } = useI18n();
   return (
     <section className="relative w-full h-[360px] sm:h-[380px] md:h-[420px] lg:h-[460px] overflow-hidden">
-      {/* Background Image - Fixed, Do Not Change */}
+      {/* Background Image - Responsive, High-Resolution */}
       <div className="absolute inset-0">
-        <img
-          src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/e9aeecccb_ChatGPTImageJun3202602_34_57AM.png"
-          alt=""
-          className="w-full h-full object-cover brightness-110 saturate-110"
-          style={{ objectPosition: "50% 35%" }}
-        />
-        {/* Enhance saturation and warmth */}
-        <div className="absolute inset-0 bg-gradient-to-r from-rose-600/8 via-transparent to-purple-600/8 mix-blend-overlay" />
+        <picture>
+          {/* Ultra-wide 5120px+ */}
+          <source
+            media="(min-width: 2560px)"
+            srcSet="https://images.unsplash.com/photo-1518655048521-f130df041f66?w=5120&q=90&fm=webp&fit=crop&crop=center"
+            type="image/webp"
+          />
+          {/* Large desktop 1920–2559px */}
+          <source
+            media="(min-width: 1920px)"
+            srcSet="https://images.unsplash.com/photo-1518655048521-f130df041f66?w=3840&q=88&fm=webp&fit=crop&crop=center"
+            type="image/webp"
+          />
+          {/* Desktop 1440–1919px */}
+          <source
+            media="(min-width: 1440px)"
+            srcSet="https://images.unsplash.com/photo-1518655048521-f130df041f66?w=2560&q=85&fm=webp&fit=crop&crop=center"
+            type="image/webp"
+          />
+          {/* Tablet 768–1439px */}
+          <source
+            media="(min-width: 768px)"
+            srcSet="https://images.unsplash.com/photo-1518655048521-f130df041f66?w=1600&q=82&fm=webp&fit=crop&crop=center"
+            type="image/webp"
+          />
+          {/* Mobile fallback */}
+          <img
+            src="https://images.unsplash.com/photo-1518655048521-f130df041f66?w=900&q=80&fm=webp&fit=crop&crop=center"
+            alt=""
+            className="w-full h-full object-cover"
+            style={{ objectPosition: "50% 35%" }}
+            loading="eager"
+            fetchpriority="high"
+            decoding="async"
+          />
+        </picture>
+        {/* Cinematic warm overlay to preserve red/orange sunset tone */}
+        <div className="absolute inset-0 bg-gradient-to-br from-rose-900/30 via-orange-900/20 to-purple-900/20 mix-blend-multiply" />
       </div>
       
       {/* Gradient Overlay - Optimized for all mobile devices */}
