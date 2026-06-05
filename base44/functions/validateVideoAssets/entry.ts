@@ -329,11 +329,11 @@ async function validateThumbnail(url) {
       return result;
     }
 
-    // Validate magic header for image formats
-    const isJpeg = magicHeader.startsWith('FF D8');
+    // Magic header validation - Deno doesn't have createImageBitmap
+    const isJpeg = magicHeader.startsWith('FF D8 FF');
     const isPng = magicHeader.startsWith('89 50 4E 47');
     const isWebp = magicHeader.startsWith('52 49 46 46') && 
-                   Array.from(uint8Array.slice(8, 12)).map(b => String.fromCharCode(b)).join('') === 'WEBP';
+                   new TextDecoder().decode(uint8Array.slice(8, 12)) === 'WEBP';
 
     if (!isJpeg && !isPng && !isWebp) {
       result.corrupt = true;
@@ -341,20 +341,9 @@ async function validateThumbnail(url) {
       return result;
     }
 
-    // Try to decode image to verify dimensions
-    try {
-      const blob = new Blob([arrayBuffer], { type: result.contentType });
-      const imageBitmap = await createImageBitmap(blob);
-      
-      if (imageBitmap.width < 1 || imageBitmap.height < 1) {
-        result.reason = 'Image dimensions invalid';
-        imageBitmap.close();
-        return result;
-      }
-      
-      imageBitmap.close();
-    } catch (decodeError) {
-      result.reason = `Failed to decode image: ${decodeError.message}`;
+    // Check minimum file size (1KB)
+    if (uint8Array.length < 1024) {
+      result.reason = 'File too small (< 1KB)';
       return result;
     }
 
