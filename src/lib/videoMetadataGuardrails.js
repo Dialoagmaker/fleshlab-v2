@@ -3,58 +3,20 @@
  * 
  * Central validation and normalization utility for all video metadata entry points.
  * Prevents invalid categories, spam tags, unsupported sensitive tags, and duplicates.
+ * 
+ * CRITICAL: Parent taxonomy group labels (e.g. "Fetish", "Age", "Body") are BLOCKED.
+ * Only approved child categories from the taxonomy may be used.
  */
 
-// ============================================================================
-// A. APPROVED_VIDEO_CATEGORIES (Phase 2A Taxonomy)
-// ============================================================================
-
-export const APPROVED_VIDEO_CATEGORIES = [
-  'Asian',
-  'Filipino',
-  'Pinoy',
-  'Twink',
-  'Solo',
-  'Outdoor',
-  'Shower',
-  'Mirror',
-  'Dildo Play',
-  'Nipple Play',
-  'Blowjob',
-  'Oral',
-  'Anal',
-  'Bareback',
-  'Creampie',
-  'Cumshot',
-  'Rimming',
-  'Handjob',
-  'BDSM',
-  'Daddy/Twink',
-  'Age Gap',
-  'Studio Production',
-  'Amateur',
-  'Amateur Production',
-  'Home Amateur',
-  'Raw',
-  'Homemade',
-];
-
-// Create case-insensitive lookup map with alias support
-const APPROVED_CATEGORIES_MAP = new Map(
-  APPROVED_VIDEO_CATEGORIES.map(cat => [cat.toLowerCase(), cat])
-);
-
-// Alias mapping for Amateur variants - all map to canonical "Amateur"
-const CATEGORY_ALIASES = {
-  'amateur': 'Amateur',
-  'amateur production': 'Amateur',
-  'home amateur': 'Amateur',
-  'raw': 'Amateur',
-  'homemade': 'Amateur',
-};
+import { 
+  getAllCategories, 
+  validateVideoCategories,
+  isParentGroupLabel,
+  mapParentGroupToCategories
+} from './videoTaxonomy.js';
 
 // ============================================================================
-// B. BLOCKED_SPAM_TAGS
+// A. BLOCKED_SPAM_TAGS
 // ============================================================================
 
 export const BLOCKED_SPAM_TAGS = [
@@ -88,7 +50,7 @@ export const BLOCKED_SPAM_TAGS = [
 ];
 
 // ============================================================================
-// C. SENSITIVE_METADATA_RULES
+// B. SENSITIVE_METADATA_RULES
 // ============================================================================
 
 export const SENSITIVE_TERMS = {
@@ -119,7 +81,7 @@ export const SENSITIVE_CATEGORIES = [
 ];
 
 // ============================================================================
-// D. normalizeMetadata()
+// C. normalizeMetadata()
 // ============================================================================
 
 /**
@@ -173,7 +135,18 @@ export function normalizeMetadata(metadata, options = {}) {
 
     const lower = trimmed.toLowerCase();
 
-    // Check if it's an access tier (should not be a category)
+    // CHECK 1: Is it a parent taxonomy group label? (BLOCKED)
+    if (isParentGroupLabel(trimmed)) {
+      result.warnings.push(`"${trimmed}" → removed (parent group label, not a selectable category)`);
+      result.removed.categories.push({ 
+        value: trimmed, 
+        reason: 'parent_group_label',
+        message: 'Parent taxonomy group labels cannot be used as categories'
+      });
+      continue;
+    }
+
+    // CHECK 2: Is it an access tier? (BLOCKED)
     if (['fanclub', 'ppv', 'exclusive', 'free'].includes(lower)) {
       result.errors.push(`"${trimmed}" is an access tier, not a category. Use the Access Type selector instead.`);
       result.valid = false;
@@ -181,7 +154,7 @@ export function normalizeMetadata(metadata, options = {}) {
       if (strict) continue;
     }
 
-    // Check if it's a sort label
+    // CHECK 3: Is it a sort label? (BLOCKED)
     if (['newest', 'views', 'longest', 'trending'].includes(lower)) {
       result.errors.push(`"${trimmed}" is a sort option, not a category.`);
       result.valid = false;
@@ -189,7 +162,7 @@ export function normalizeMetadata(metadata, options = {}) {
       if (strict) continue;
     }
 
-    // Check if it's blocked spam
+    // CHECK 4: Is it blocked spam? (BLOCKED)
     if (BLOCKED_SPAM_TAGS.includes(lower)) {
       result.errors.push(`"${trimmed}" is blocked spam/SEO keyword.`);
       result.valid = false;
@@ -197,44 +170,70 @@ export function normalizeMetadata(metadata, options = {}) {
       if (strict) continue;
     }
 
-    // Check if it's in approved taxonomy (including aliases)
-    let canonical = APPROVED_CATEGORIES_MAP.get(lower);
+    // CHECK 5: Validate against approved taxonomy
+    const validation = validateVideoCategories([trimmed]);
     
-    // Check alias mapping if not found directly
-    if (!canonical && CATEGORY_ALIASES[lower]) {
-      canonical = CATEGORY_ALIASES[lower];
-    }
-    
-    if (!canonical) {
-      result.errors.push(`"${trimmed}" is not in the approved category taxonomy.`);
-      result.valid = false;
-      result.removed.categories.push({ value: trimmed, reason: 'unknown_category' });
+    if (!validation.valid || validation.removed.length > 0) {
+      // Try to map parent group to specific categories based on context
+      if (isParentGroupLabel(trimmed)) {
+        const mapped = mapParentGroupToCategories(trimmed, evidenceText);
+        if (mapped && mapped.length > 0) {
+          result.warnings.push(`"${trimmed}" → mapped to: ${mapped.join(', ')}`);
+          result.removed.categories.push({ 
+            value: trimmed, 
+            reason: 'parent_group_mapped',
+            mapped_to: mapped
+          });
+          // Add mapped categories
+          for (const mappedCat of mapped) {
+            if (!seenCategories.has(mappedCat.toLowerCase())) {
+              seenCategories.add(mappedCat.toLowerCase());
+              result.normalized.categories.push(mappedCat);
+            }
+          }
+          continue;
+        }
+      }
+      
+      // Not mappable - remove
+      result.warnings.push(`"${trimmed}" → removed (${validation.removed[0]?.reason || 'not in taxonomy'})`);
+      result.removed.categories.push({ 
+        value: trimmed, 
+        reason: validation.removed[0]?.reason || 'unknown_category'
+      });
       if (strict) continue;
     }
 
-    // Check for duplicates (case-insensitive)
+    // CHECK 6: Check for duplicates (case-insensitive)
     if (seenCategories.has(lower)) {
-      result.warnings.push(`Duplicate category "${trimmed}" (case-insensitive). Normalized to "${canonical}".`);
+      result.warnings.push(`Duplicate category "${trimmed}" (case-insensitive).`);
       continue;
     }
 
-    // Check sensitive category evidence
-    if (SENSITIVE_CATEGORIES.includes(canonical)) {
-      const sensitiveKey = canonical.toLowerCase();
+    // CHECK 7: Check sensitive category evidence
+    const matchingCat = getAllCategories().find(c => 
+      c.label.toLowerCase() === lower || c.id.toLowerCase() === lower
+    );
+    
+    if (matchingCat && SENSITIVE_CATEGORIES.some(sc => sc.toLowerCase() === matchingCat.label.toLowerCase())) {
+      const sensitiveKey = matchingCat.label.toLowerCase();
       const evidenceKeywords = SENSITIVE_TERMS[sensitiveKey];
       const hasEvidence = evidenceKeywords && evidenceKeywords.some(kw => evidenceText.includes(kw));
       
       if (!hasEvidence) {
-        result.errors.push(`"${canonical}" requires evidence in title, description, or tags. No supporting keywords found.`);
-        result.valid = false;
-        result.removed.categories.push({ value: trimmed, reason: 'sensitive_no_evidence', category: canonical });
+        result.warnings.push(`"${matchingCat.label}" - no supporting evidence in title/description`);
+        result.removed.categories.push({ 
+          value: trimmed, 
+          reason: 'sensitive_no_evidence', 
+          category: matchingCat.label 
+        });
         if (strict) continue;
       }
     }
 
-    // Category is valid
+    // Category is valid - add it
     seenCategories.add(lower);
-    result.normalized.categories.push(canonical);
+    result.normalized.categories.push(matchingCat?.id || trimmed);
   }
 
   // ============================================================================
@@ -249,7 +248,7 @@ export function normalizeMetadata(metadata, options = {}) {
 
     const lower = trimmed.toLowerCase();
 
-    // Check if it's blocked spam
+    // CHECK 1: Is it blocked spam?
     if (BLOCKED_SPAM_TAGS.includes(lower)) {
       result.errors.push(`Tag "${trimmed}" is blocked spam/SEO keyword.`);
       result.valid = false;
@@ -257,20 +256,19 @@ export function normalizeMetadata(metadata, options = {}) {
       if (strict) continue;
     }
 
-    // Check for duplicates (case-insensitive)
+    // CHECK 2: Check for duplicates (case-insensitive)
     if (seenTags.has(lower)) {
       result.warnings.push(`Duplicate tag "${trimmed}" (case-insensitive).`);
       continue;
     }
 
-    // Check sensitive tag evidence
+    // CHECK 3: Check sensitive tag evidence
     if (SENSITIVE_TERMS[lower]) {
       const evidenceKeywords = SENSITIVE_TERMS[lower];
       const hasEvidence = evidenceKeywords.some(kw => evidenceText.includes(kw));
       
       if (!hasEvidence) {
-        result.errors.push(`Sensitive tag "${trimmed}" requires evidence in title or description. No supporting keywords found.`);
-        result.valid = false;
+        result.warnings.push(`Sensitive tag "${trimmed}" - no supporting evidence in title/description`);
         result.removed.tags.push({ value: trimmed, reason: 'sensitive_no_evidence' });
         if (strict) continue;
       }

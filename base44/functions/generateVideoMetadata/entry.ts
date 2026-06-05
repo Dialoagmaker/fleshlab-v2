@@ -1,5 +1,29 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+// PARENT TAXONOMY GROUP LABELS - BLOCKED FROM USE AS CATEGORIES
+const PARENT_GROUP_LABELS = [
+  'age', 'ethnicity', 'body', 'orientation', 'number of people',
+  'actions', 'production', 'apparel', 'scenario', 'fetish',
+  'language', 'location', 'sex toys', 'age / appearance',
+  'ethnicity / origin', 'body type', 'orientation / audience',
+  'scene type', 'sex acts', 'fetish / kink', 'role / dynamic',
+  'production style', 'clothing / outfit', 'language / region',
+  'access / platform', 'seo / search helpers',
+];
+
+// APPROVED CATEGORIES - Canonical list (Phase 2A)
+const APPROVED_CATEGORIES = [
+  'Asian', 'Filipino', 'Pinoy', 'Twink', 'Solo', 'Outdoor', 'Shower',
+  'Mirror', 'Dildo Play', 'Nipple Play', 'Blowjob', 'Oral', 'Anal',
+  'Bareback', 'Creampie', 'Cumshot', 'Rimming', 'Handjob', 'BDSM',
+  'Daddy/Twink', 'Age Gap', 'Studio Production', 'Amateur',
+  'Amateur Production', 'Home Amateur', 'Raw', 'Homemade',
+];
+
+const APPROVED_CATEGORIES_MAP = new Map(
+  APPROVED_CATEGORIES.map(cat => [cat.toLowerCase(), cat])
+);
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -111,6 +135,62 @@ AVOID: generic intros, typos, "Don't miss", "HD studio quality", clichés, keywo
       }
     });
 
+    // ============================================================================
+    // TAXONOMY VALIDATION - Block parent group labels, normalize categories
+    // ============================================================================
+    
+    const isParentGroupLabel = (value) => {
+      if (!value || typeof value !== 'string') return false;
+      return PARENT_GROUP_LABELS.includes(value.toLowerCase().trim());
+    };
+    
+    const normalizeCategories = (categories, contextText = '') => {
+      if (!Array.isArray(categories)) return { normalized: [], warnings: [], removed: [] };
+      
+      const normalized = [];
+      const warnings = [];
+      const removed = [];
+      const seen = new Set();
+      
+      for (const cat of categories) {
+        const trimmed = cat.trim();
+        const lower = trimmed.toLowerCase();
+        
+        // Block parent group labels
+        if (isParentGroupLabel(trimmed)) {
+          warnings.push(`"${trimmed}" → removed (parent taxonomy group label, not selectable)`);
+          removed.push({ value: trimmed, reason: 'parent_group_label' });
+          continue;
+        }
+        
+        // Check approved list
+        const canonical = APPROVED_CATEGORIES_MAP.get(lower);
+        if (canonical) {
+          if (!seen.has(lower)) {
+            seen.add(lower);
+            normalized.push(canonical);
+          }
+        } else {
+          warnings.push(`"${trimmed}" → removed (not in approved taxonomy)`);
+          removed.push({ value: trimmed, reason: 'not_in_taxonomy' });
+        }
+      }
+      
+      return { normalized, warnings, removed };
+    };
+    
+    // Validate and normalize AI-generated categories
+    const contextText = `${draft.title || ''} ${draft.description || ''}`.toLowerCase();
+    const categoryValidation = normalizeCategories(draft.categories || [], contextText);
+    
+    // Apply warnings to response for admin review
+    if (categoryValidation.warnings.length > 0) {
+      console.log('Category normalization warnings:', categoryValidation.warnings);
+    }
+    
+    // Replace with normalized categories
+    draft.categories = categoryValidation.normalized;
+    
     // SEO validator — fix known typos and enforce structural rules
     const TYPO_MAP = {
       'masturabtion': 'masturbation',
@@ -160,17 +240,29 @@ AVOID: generic intros, typos, "Don't miss", "HD studio quality", clichés, keywo
     if (!video.meta_title && draft.seo_title) autoApplyFields.meta_title = draft.seo_title;
     if (!video.meta_description && draft.seo_description) autoApplyFields.meta_description = draft.seo_description;
     if ((!video.tags || video.tags.length === 0) && draft.tags?.length) autoApplyFields.tags = draft.tags;
-    if ((!video.categories || video.categories.length === 0) && draft.categories?.length) autoApplyFields.categories = draft.categories;
+    // Only apply normalized categories (parent group labels already removed)
+    if ((!video.categories || video.categories.length === 0) && draft.categories?.length) {
+      autoApplyFields.categories = draft.categories;
+    }
 
     // Store draft as JSON string on video and apply empty fields
     await base44.entities.Video.update(video_id, {
-      ai_metadata_draft: JSON.stringify(draft),
+      ai_metadata_draft: JSON.stringify({
+        ...draft,
+        taxonomy_warnings: categoryValidation.warnings,
+        taxonomy_removed: categoryValidation.removed,
+      }),
       ai_metadata_generated_at: new Date().toISOString(),
       processing_status: 'draft_ready',
       ...autoApplyFields,
     });
 
-    return Response.json({ status: 'ok', draft });
+    return Response.json({ 
+      status: 'ok', 
+      draft,
+      taxonomy_warnings: categoryValidation.warnings,
+      taxonomy_removed: categoryValidation.removed,
+    });
 
   } catch (error) {
     console.error('generateVideoMetadata error:', error);

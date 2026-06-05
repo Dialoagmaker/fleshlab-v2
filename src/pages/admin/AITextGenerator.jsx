@@ -76,10 +76,11 @@ export default function AITextGenerator() {
 
       setGenerated(response.data);
 
-      if (response.data.warnings && response.data.warnings.length > 0) {
+      // Show taxonomy warnings inline (no browser popup)
+      if (response.data.taxonomy_warnings && response.data.taxonomy_warnings.length > 0) {
         toast({
-          title: "Generated with Warnings",
-          description: `${response.data.warnings.length} warning(s) detected`,
+          title: "Metadata Cleaned",
+          description: `${response.data.taxonomy_warnings.length} invalid taxonomy item(s) removed`,
           variant: "default",
         });
       } else {
@@ -296,7 +297,32 @@ export default function AITextGenerator() {
       {/* Generated Output */}
       {generated && (
         <div className="space-y-4">
-          {/* Warnings */}
+          {/* Taxonomy Warnings - Inline (No Browser Popup) */}
+          {(generated.taxonomy_warnings && generated.taxonomy_warnings.length > 0) || (generated.taxonomy_removed && generated.taxonomy_removed.length > 0) ? (
+            <Alert className="bg-yellow-500/10 border-yellow-500/30">
+              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription>
+                <div className="text-sm font-semibold text-yellow-800 mb-2">
+                  Invalid Taxonomy Items Removed:
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-sm text-yellow-700">
+                  {generated.taxonomy_warnings?.map((warning, i) => (
+                    <li key={i}>{warning}</li>
+                  ))}
+                  {generated.taxonomy_removed?.map((item, i) => (
+                    <li key={i}>
+                      "{item.value}" → {item.reason === 'parent_group_label' ? 'parent group label (not selectable)' : item.reason}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-yellow-600 mt-3">
+                  ✓ Cleaned metadata applied. You can safely save without additional confirmation.
+                </p>
+              </AlertDescription>
+            </Alert>
+          ) : null}
+          
+          {/* Other Warnings */}
           {generated.warnings && generated.warnings.length > 0 && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />

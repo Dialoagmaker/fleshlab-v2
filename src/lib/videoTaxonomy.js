@@ -486,3 +486,115 @@ export const searchCategories = (query) => {
     cat.slug.toLowerCase().includes(lowerQuery)
   );
 };
+
+// ============================================================================
+// PARENT TAXONOMY GROUP LABELS - BLOCKED FROM USE AS CATEGORIES
+// These are group headers only, not selectable categories
+// ============================================================================
+
+export const PARENT_GROUP_LABELS = [
+  'age',
+  'ethnicity',
+  'body',
+  'orientation',
+  'number of people',
+  'actions',
+  'production',
+  'apparel',
+  'scenario',
+  'fetish',
+  'language',
+  'location',
+  'sex toys',
+];
+
+/**
+ * Check if a value is a parent taxonomy group label (not a valid category)
+ */
+export const isParentGroupLabel = (value) => {
+  if (!value || typeof value !== 'string') return false;
+  const lower = value.toLowerCase().trim();
+  return PARENT_GROUP_LABELS.includes(lower);
+};
+
+/**
+ * Map generic parent group labels to specific child categories based on context
+ * 
+ * @param {string} parentLabel - The parent group label (e.g. "Fetish")
+ * @param {string} contextText - Scene context from title/description/notes
+ * @returns {string[]|null} Array of specific category IDs to use, or null if no mapping possible
+ */
+export const mapParentGroupToCategories = (parentLabel, contextText = '') => {
+  if (!parentLabel || typeof parentLabel !== 'string') return null;
+  
+  const lower = parentLabel.toLowerCase().trim();
+  const context = contextText.toLowerCase();
+  
+  // "Fetish" -> map to specific fetish categories based on evidence
+  if (lower === 'fetish') {
+    const mappings = [];
+    
+    // Check for BDSM evidence
+    if (/(nipple\s*(clamp|play|torture)|clamp|pain\s*play|edging|orgasm\s*control)/i.test(context)) {
+      mappings.push('bdsm');
+    }
+    
+    // Check for bondage evidence
+    if (/(bondage|restrain|tied\s*up|rope|cuff)/i.test(context)) {
+      mappings.push('bondage');
+    }
+    
+    // Check for foot fetish evidence
+    if (/(foot\s*(fetish|worship)|feet)/i.test(context)) {
+      mappings.push('foot_fetish');
+    }
+    
+    // Check for spanking evidence
+    if (/(spank|spanking)/i.test(context)) {
+      mappings.push('spanking');
+    }
+    
+    // Check for domination/submission evidence
+    if (/(dominat|submiss|daddy\s*fetish|master|slave)/i.test(context)) {
+      mappings.push('domination');
+      mappings.push('submission');
+    }
+    
+    // If no specific evidence, return null (should be removed entirely)
+    return mappings.length > 0 ? mappings : null;
+  }
+  
+  // "Age" -> map based on performer appearance
+  if (lower === 'age') {
+    if (/teen|young|18\+/i.test(context)) return ['teen_18'];
+    if (/mature|daddy|older/i.test(context)) return ['mature', 'daddy'];
+    if (/twink|boyish|slim/i.test(context)) return ['twink', 'boyish'];
+    return null;
+  }
+  
+  // "Body" -> map based on body type references
+  if (lower === 'body') {
+    if (/muscular|buff|muscle/i.test(context)) return ['muscular', 'muscular_body'];
+    if (/slim|skinny|lean/i.test(context)) return ['slim', 'slim_body'];
+    if (/fit|athletic/i.test(context)) return ['fit', 'athletic'];
+    if (/hairy|furry/i.test(context)) return ['hairy', 'hairy_body'];
+    return null;
+  }
+  
+  // "Actions" -> too generic, should not be used
+  if (lower === 'actions') {
+    return null;
+  }
+  
+  // "Scenario" -> map to location/setting if present
+  if (lower === 'scenario') {
+    if (/outdoor|jungle|forest|outside/i.test(context)) return ['outdoor', 'outdoor_location'];
+    if (/shower|bathroom/i.test(context)) return ['shower', 'shower_loc'];
+    if (/hotel/i.test(context)) return ['hotel', 'hotel_room'];
+    if (/bedroom/i.test(context)) return ['bedroom', 'bedroom_loc'];
+    return null;
+  }
+  
+  // Default: no mapping for other parent groups
+  return null;
+};
