@@ -23,7 +23,7 @@ export default function PublishReadinessChecklist({
 
   // Validate categories
   const categoryValidation = validateVideoCategories(form.categories || []);
-  const hasInvalidCategories = !categoryValidation.valid || (categoryValidation.removed && categoryValidation.removed.length > 0);
+  const hasInvalidCategories = !categoryValidation.valid || (categoryValidation.removed || []).length > 0;
 
   // Build checklist items with asset validation
   const checklistItems = [
@@ -100,7 +100,7 @@ export default function PublishReadinessChecklist({
     {
       id: 'performers',
       label: 'Performer(s)',
-      pass: selectedPerformerIds.length > 0,
+      pass: (selectedPerformerIds || []).length > 0,
       critical: true,
     },
     {
@@ -205,9 +205,9 @@ export default function PublishReadinessChecklist({
       {hasInvalidCategories && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-xs text-destructive">
           <p className="font-semibold mb-1">❌ Invalid Categories Detected:</p>
-          {categoryValidation.removed && categoryValidation.removed.length > 0 && (
+          {(categoryValidation.removed || []).length > 0 && (
             <ul className="list-disc list-inside">
-              {categoryValidation.removed.map((cat, i) => (
+              {(categoryValidation.removed || []).map((cat, i) => (
                 <li key={i}>"{cat.value}" - {cat.reason.replace(/_/g, ' ')}</li>
               ))}
             </ul>

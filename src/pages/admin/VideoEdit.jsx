@@ -504,8 +504,8 @@ export default function VideoEdit() {
       strict: false, // Don't block on warnings for draft
     });
     
-    if (!validation.valid && validation.errors.length > 0) {
-      errs.metadata = validation.errors.join(' ');
+    if (!validation.valid && (validation.errors || []).length > 0) {
+      errs.metadata = (validation.errors || []).join(' ');
       errs.categories = validation.removed.categories;
       errs.tags = validation.removed.tags;
     }
@@ -944,15 +944,15 @@ export default function VideoEdit() {
                   )}
 
                   {/* Blocking Reasons */}
-                  {checkStatus.details.blockingReasons?.length > 0 && (
-                    <div className="text-destructive mt-2 border-t border-destructive/30 pt-2">
-                      <div className="font-semibold">🚫 Blocking Reasons ({checkStatus.details.blockingReasons.length}):</div>
-                      <ul className="list-disc list-inside space-y-0.5">
-                        {checkStatus.details.blockingReasons.map((r, i) => (
-                          <li key={i}>{r}</li>
-                        ))}
-                      </ul>
-                    </div>
+                  {(checkStatus.details.blockingReasons || []).length > 0 && (
+                  <div className="text-destructive mt-2 border-t border-destructive/30 pt-2">
+                    <div className="font-semibold">🚫 Blocking Reasons ({(checkStatus.details.blockingReasons || []).length}):</div>
+                    <ul className="list-disc list-inside space-y-0.5">
+                      {(checkStatus.details.blockingReasons || []).map((r, i) => (
+                        <li key={i}>{r}</li>
+                      ))}
+                    </ul>
+                  </div>
                   )}
 
                   {/* canPublishAssets Status */}
@@ -1042,11 +1042,11 @@ export default function VideoEdit() {
                     {checkStatus.details.preview.reason && ` - ${checkStatus.details.preview.reason}`}
                   </div>
                 )}
-                {checkStatus.details.blockingReasons?.length > 0 && (
+                {(checkStatus.details.blockingReasons || []).length > 0 && (
                   <div className="text-destructive mt-2">
                     <div className="font-semibold">Blocking issues:</div>
                     <ul className="list-disc list-inside">
-                      {checkStatus.details.blockingReasons.map((r, i) => (
+                      {(checkStatus.details.blockingReasons || []).map((r, i) => (
                         <li key={i}>{r}</li>
                       ))}
                     </ul>
@@ -1335,7 +1335,7 @@ export default function VideoEdit() {
           <div className="space-y-3">
             <Label>Categories (Approved Taxonomy Only)</Label>
             <p className="text-xs text-muted-foreground">
-              Select from {taxonomyGroups.reduce((sum, g) => sum + g.categories.length, 0)} approved categories. Free text entry disabled.
+              Select from {(taxonomyGroups || []).reduce((sum, g) => sum + (g.categories || []).length, 0)} approved categories. Free text entry disabled.
             </p>
             
             {/* Selected category pills */}
@@ -1384,11 +1384,11 @@ export default function VideoEdit() {
               </div>
             )}
             
-            {errors.categories && errors.categories.length > 0 && (
+            {errors.categories && (errors.categories || []).length > 0 && (
               <div className="text-xs text-destructive mt-1">
                 <p>Removed categories:</p>
                 <ul className="list-disc list-inside">
-                  {errors.categories.map((c, i) => (
+                  {(errors.categories || []).map((c, i) => (
                     <li key={i}>"{c.value}" - {c.reason.replace(/_/g, ' ')}</li>
                   ))}
                 </ul>
@@ -1413,11 +1413,11 @@ export default function VideoEdit() {
                 onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addChip("tags", tagInput, setTagInput); } }} />
               <Button type="button" variant="outline" onClick={() => addChip("tags", tagInput, setTagInput)}>Add</Button>
             </div>
-            {errors.tags && errors.tags.length > 0 && (
+            {errors.tags && (errors.tags || []).length > 0 && (
               <div className="text-xs text-destructive mt-1">
                 <p>Removed tags:</p>
                 <ul className="list-disc list-inside">
-                  {errors.tags.map((t, i) => (
+                  {(errors.tags || []).map((t, i) => (
                     <li key={i}>"{t.value}" - {t.reason.replace(/_/g, ' ')}</li>
                   ))}
                 </ul>
@@ -1518,7 +1518,7 @@ export default function VideoEdit() {
             className="gap-2 bg-primary hover:bg-primary/90"
           >
             <Save className="w-4 h-4" />
-            {save.isPending ? "Saving…" : publishCheck.canPublish ? "Publish Video" : `Cannot Publish (${publishCheck.errors.length} issues)`}
+            {save.isPending ? "Saving…" : publishCheck.canPublish ? "Publish Video" : `Cannot Publish (${(publishCheck.errors || []).length} issues)`}
           </Button>
 
           <Link to="/admin/videos">
@@ -1528,17 +1528,17 @@ export default function VideoEdit() {
           {/* Publish blocked warning - always show if status is published */}
           {form.status === 'published' && !publishCheck.canPublish && (
             <div className="ml-auto text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 max-w-lg">
-              <p className="font-semibold mb-1">❌ Publish Blocked - {publishCheck.errors.length} Critical Issue(s):</p>
+              <p className="font-semibold mb-1">❌ Publish Blocked - {(publishCheck.errors || []).length} Critical Issue(s):</p>
               <ul className="list-disc list-inside space-y-0.5 max-h-48 overflow-y-auto">
-                {publishCheck.errors.map((err, i) => (
+                {(publishCheck.errors || []).map((err, i) => (
                   <li key={i}>{err}</li>
                 ))}
               </ul>
-              {publishCheck.warnings && publishCheck.warnings.length > 0 && (
+              {(publishCheck.warnings || []).length > 0 && (
                 <>
-                  <p className="font-semibold mt-2 mb-1">⚠️ Warnings ({publishCheck.warnings.length}):</p>
+                  <p className="font-semibold mt-2 mb-1">⚠️ Warnings ({(publishCheck.warnings || []).length}):</p>
                   <ul className="list-disc list-inside space-y-0.5 text-yellow-600">
-                    {publishCheck.warnings.map((warn, i) => (
+                    {(publishCheck.warnings || []).map((warn, i) => (
                       <li key={i}>{warn}</li>
                     ))}
                   </ul>

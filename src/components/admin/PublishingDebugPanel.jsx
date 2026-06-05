@@ -47,13 +47,13 @@ export default function PublishingDebugPanel({
       id: 'title',
       label: 'Title Present',
       pass: form.title && form.title.trim().length >= 3,
-      value: form.title ? `✓ (${form.title.length} chars)` : '✗ Missing',
+      value: form.title ? `✓ (${(form.title || '').length} chars)` : '✗ Missing',
     },
     {
       id: 'description',
       label: 'Description Present',
       pass: !!form.description,
-      value: form.description ? `✓ (${form.description.length} chars)` : '✗ Missing',
+      value: form.description ? `✓ (${(form.description || '').length} chars)` : '✗ Missing',
     },
     {
       id: 'brand',
@@ -100,8 +100,8 @@ export default function PublishingDebugPanel({
     {
       id: 'asset_id',
       label: 'VideoAsset (source)',
-      pass: sourceAssets && sourceAssets.length > 0,
-      value: sourceAssets?.length > 0 ? `✓ ${sourceAssets.length} asset(s)` : '✗ No VideoAsset record',
+      pass: (sourceAssets || []).length > 0,
+      value: (sourceAssets || []).length > 0 ? `✓ ${(sourceAssets || []).length} asset(s)` : '✗ No VideoAsset record',
     },
     {
       id: 'thumbnail',
@@ -150,9 +150,9 @@ export default function PublishingDebugPanel({
     {
       id: 'performers',
       label: 'Performer(s) Assigned',
-      pass: selectedPerformerIds.length > 0,
-      value: selectedPerformerIds.length > 0 
-        ? `✓ ${selectedPerformerIds.length} performer(s)` 
+      pass: (selectedPerformerIds || []).length > 0,
+      value: (selectedPerformerIds || []).length > 0 
+        ? `✓ ${(selectedPerformerIds || []).length} performer(s)` 
         : '✗ None assigned',
     },
   ];
@@ -264,11 +264,11 @@ export default function PublishingDebugPanel({
       </div>
 
       {/* Publish Errors from Guardrails */}
-      {publishCheck.errors.length > 0 && (
+      {(publishCheck.errors || []).length > 0 && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-xs">
           <p className="font-semibold text-destructive mb-1">❌ Publish Guardrail Errors:</p>
           <ul className="list-disc list-inside space-y-0.5">
-            {publishCheck.errors.map((err, i) => (
+            {(publishCheck.errors || []).map((err, i) => (
               <li key={i}>{err}</li>
             ))}
           </ul>
@@ -287,7 +287,7 @@ export default function PublishingDebugPanel({
           <div className="mt-2 text-[10px] text-muted-foreground">
             <p>Exact blocking reasons:</p>
             <ul className="list-disc list-inside mt-1">
-              {publishCheck.errors.map((err, i) => (
+              {(publishCheck.errors || []).map((err, i) => (
                 <li key={i} className="text-destructive">{err}</li>
               ))}
             </ul>
