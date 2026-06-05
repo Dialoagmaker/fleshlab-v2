@@ -5,14 +5,18 @@ import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function MyVideosTab({ performerId }) {
-  const { data: videos, isLoading } = useQuery({
+  const { data: videos, isLoading, error } = useQuery({
     queryKey: ["performer-videos-list", performerId],
     queryFn: async () => {
+      console.log('[MyVideosTab] Fetching videos for performer:', performerId);
       const res = await base44.functions.invoke("performerDashboardService", {
         action: "get_videos",
         performer_id: performerId
       });
-      return res.data.videos || [];
+      console.log('[MyVideosTab] Raw response:', res.data);
+      const videosArray = Array.isArray(res.data?.videos) ? res.data.videos : [];
+      console.log('[MyVideosTab] Normalized videos:', videosArray, 'Count:', videosArray.length);
+      return videosArray;
     },
     enabled: !!performerId
   });
@@ -25,6 +29,11 @@ export default function MyVideosTab({ performerId }) {
     );
   }
 
+  // Safe array handling
+  const safeVideos = Array.isArray(videos) ? videos : [];
+
+  console.log('[MyVideosTab] Render - performerId:', performerId, 'videos:', safeVideos, 'count:', safeVideos.length, 'error:', error);
+
   return (
     <Card>
       <CardHeader>
@@ -34,11 +43,19 @@ export default function MyVideosTab({ performerId }) {
         </p>
       </CardHeader>
       <CardContent>
-        {!videos || videos.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No videos found.</p>
+        {!safeVideos || safeVideos.length === 0 ? (
+          <div className="bg-muted rounded-lg p-6 space-y-2">
+            <p className="text-sm text-muted-foreground">No videos found.</p>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p>Performer ID: {performerId}</p>
+              <p>Response keys: {videos ? Object.keys(videos).join(', ') : 'N/A'}</p>
+              <p>Is Array: {Array.isArray(videos)}</p>
+              <p>Error: {error?.message || 'none'}</p>
+            </div>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {videos.map(video => (
+            {safeVideos.map(video => (
               <div key={video.id} className="border rounded-lg overflow-hidden">
                 {video.primary_thumbnail_url ? (
                   <img 

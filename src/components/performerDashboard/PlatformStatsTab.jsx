@@ -10,23 +10,32 @@ import { useQuery } from "@tanstack/react-query";
 export default function PlatformStatsTab({ performerId }) {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
 
-  const { data: statsData, isLoading } = useQuery({
+  const { data: statsData, isLoading, error } = useQuery({
     queryKey: ['performer-platform-stats', selectedMonth, performerId],
     queryFn: async () => {
+      console.log('[PlatformStatsTab] Fetching stats for performer:', performerId, 'period:', selectedMonth);
       const res = await base44.functions.invoke('performerDashboardService', {
         action: 'get_video_stats',
         performer_id: performerId,
         period_month: selectedMonth
       });
+      console.log('[PlatformStatsTab] Raw response:', res.data);
       return res.data;
     },
     enabled: !!performerId
   });
 
-  const stats = statsData?.stats || [];
+  // Safe array extraction
+  const stats = Array.isArray(statsData?.stats) ? statsData.stats : [];
   const grossRevenue = statsData?.gross_revenue_total || 0;
   const performerEarnings = statsData?.performer_earnings_total || 0;
   const revenueSharePct = statsData?.revenue_share_pct || 40;
+
+  // Build available periods from stats
+  const availablePeriods = [...new Set(stats.map(s => s.period_month).filter(Boolean))].sort().reverse();
+  const actualSelectedPeriod = selectedMonth || availablePeriods[0] || new Date().toISOString().slice(0, 7);
+
+  console.log('[PlatformStatsTab] Render - performerId:', performerId, 'stats:', stats, 'count:', stats.length, 'availablePeriods:', availablePeriods, 'selectedMonth:', selectedMonth, 'error:', error);
 
   return (
     <div className="space-y-6">
@@ -41,17 +50,23 @@ export default function PlatformStatsTab({ performerId }) {
           <div className="flex items-center gap-4 mb-6 flex-wrap">
             <div className="space-y-1">
               <Label className="text-xs">Period</Label>
-              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <Select value={actualSelectedPeriod} onValueChange={setSelectedMonth}>
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from({ length: 12 }, (_, i) => {
-                    const date = new Date();
-                    date.setMonth(date.getMonth() - i);
-                    const monthStr = date.toISOString().slice(0, 7);
-                    return <option key={monthStr} value={monthStr}>{monthStr}</option>;
-                  })}
+                  {availablePeriods.length > 0 ? (
+                    availablePeriods.map(month => (
+                      <option key={month} value={month}>{month}</option>
+                    ))
+                  ) : (
+                    Array.from({ length: 12 }, (_, i) => {
+                      const date = new Date();
+                      date.setMonth(date.getMonth() - i);
+                      const monthStr = date.toISOString().slice(0, 7);
+                      return <option key={monthStr} value={monthStr}>{monthStr}</option>;
+                    })
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -72,7 +87,17 @@ export default function PlatformStatsTab({ performerId }) {
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Loading stats...</p>
           ) : !stats || stats.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No platform stats found for {selectedMonth}.</p>
+            <div className="bg-muted rounded-lg p-6 space-y-2">
+              <p className="text-sm text-muted-foreground">No platform stats found for {actualSelectedPeriod}.</p>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>Performer ID: {performerId}</p>
+                <p>Selected Period: {actualSelectedPeriod}</p>
+                <p>Available Periods: {availablePeriods.join(', ') || 'none'}</p>
+                <p>Response keys: {statsData ? Object.keys(statsData).join(', ') : 'N/A'}</p>
+                <p>Stats Is Array: {Array.isArray(statsData?.stats)}</p>
+                <p>Error: {error?.message || 'none'}</p>
+              </div>
+            </div>
           ) : (
             <Table>
               <TableHeader>
