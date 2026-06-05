@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import ActionRequiredCard from "./ActionRequiredCard";
 import MonthlyCloseoutCard from "./MonthlyCloseoutCard";
 import ProductionGoalCard from "./ProductionGoalCard";
@@ -21,14 +20,36 @@ export default function OverviewTab({ performer, career_stats }) {
     );
   }
 
-  const revenueSharePct = career_stats?.revenue_share_pct || performer.revenue_split_pct || 40;
-
   return (
     <div className="space-y-6">
       <ActionRequiredCard performer={performer} />
       <CareerStatisticsCard stats={career_stats} />
+      
+      {/* Revenue Share Display */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Revenue Model</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground">Model</p>
+              <p className="text-sm font-semibold mt-1">{performer.revenue_model || 'Managed Performer'}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground">Your Share</p>
+              <p className="text-lg font-bold text-green-500 mt-1">{performer.revenue_share_pct || 40}%</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground">Studio Share</p>
+              <p className="text-lg font-bold text-blue-500 mt-1">{performer.studio_share_pct || 60}%</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <MonthlyCloseoutCard performerId={performer.id} revenueSharePct={revenueSharePct} />
+        <MonthlyCloseoutCard performerId={performer.id} />
         <ProductionGoalCard performerId={performer.id} />
         <PayoutReadinessCard performer={performer} />
       </div>

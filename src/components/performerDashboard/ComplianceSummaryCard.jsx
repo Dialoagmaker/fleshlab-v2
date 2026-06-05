@@ -1,7 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-export default function ComplianceSummaryCard({ performer }) {
+export default function ComplianceSummaryCard({ performer, contracts, records }) {
+  // Use Performer.kyc_status as source of truth - NOT ComplianceRecord verification_status
+  const kycStatus = performer.kyc_status || "pending";
+  const accountStatus = performer.account_status || "unknown";
+  
   return (
     <Card>
       <CardHeader>
@@ -11,14 +15,17 @@ export default function ComplianceSummaryCard({ performer }) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <p className="text-xs text-muted-foreground">KYC Status</p>
-            <Badge variant={performer.kyc_status === "approved" ? "default" : "secondary"} className="mt-1">
-              {performer.kyc_status}
+            <Badge 
+              variant={kycStatus === "approved" ? "default" : kycStatus === "rejected" ? "destructive" : "secondary"} 
+              className="mt-1"
+            >
+              {kycStatus}
             </Badge>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Account Status</p>
-            <Badge variant={performer.account_status === "active" ? "default" : "secondary"} className="mt-1">
-              {performer.account_status}
+            <Badge variant={accountStatus === "active" ? "default" : "secondary"} className="mt-1">
+              {accountStatus}
             </Badge>
           </div>
           <div>
@@ -34,6 +41,20 @@ export default function ComplianceSummaryCard({ performer }) {
             </p>
           </div>
         </div>
+        
+        {/* Additional info if contracts/records provided */}
+        {(contracts || records) && (
+          <div className="pt-3 border-t grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs text-muted-foreground">Contracts</p>
+              <p className="text-sm font-medium mt-1">{contracts?.length || 0} on file</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Documents</p>
+              <p className="text-sm font-medium mt-1">{records?.length || 0} on file</p>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
