@@ -30,7 +30,7 @@ export default function MyVideosTab({ performerId }) {
       <CardHeader>
         <CardTitle>My Videos</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Videos where you are credited. Showing up to 50 most recent.
+          Videos where you are credited. Showing all videos regardless of status.
         </p>
       </CardHeader>
       <CardContent>
@@ -52,7 +52,16 @@ export default function MyVideosTab({ performerId }) {
                 <div className="p-3 space-y-2">
                   <h4 className="text-sm font-medium line-clamp-2">{video.title}</h4>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant="outline" className="text-xs">{video.status}</Badge>
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs ${
+                        video.status === 'published' ? 'border-green-500 text-green-500' :
+                        video.status === 'draft' ? 'border-yellow-500 text-yellow-500' :
+                        'border-gray-500 text-gray-500'
+                      }`}
+                    >
+                      {video.status}
+                    </Badge>
                     {video.view_count > 0 && (
                       <span className="text-xs text-muted-foreground">{video.view_count} views</span>
                     )}
@@ -60,6 +69,11 @@ export default function MyVideosTab({ performerId }) {
                   {video.published_at && (
                     <p className="text-xs text-muted-foreground">
                       Published: {new Date(video.published_at).toLocaleDateString()}
+                    </p>
+                  )}
+                  {video.release_date && (
+                    <p className="text-xs text-muted-foreground">
+                      Release: {new Date(video.release_date).toLocaleDateString()}
                     </p>
                   )}
                   {video.role && (

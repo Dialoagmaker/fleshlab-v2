@@ -21,12 +21,14 @@ export default function OverviewTab({ performer, career_stats }) {
     );
   }
 
+  const revenueSharePct = career_stats?.revenue_share_pct || performer.revenue_split_pct || 40;
+
   return (
     <div className="space-y-6">
       <ActionRequiredCard performer={performer} />
       <CareerStatisticsCard stats={career_stats} />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <MonthlyCloseoutCard performerId={performer.id} />
+        <MonthlyCloseoutCard performerId={performer.id} revenueSharePct={revenueSharePct} />
         <ProductionGoalCard performerId={performer.id} />
         <PayoutReadinessCard performer={performer} />
       </div>

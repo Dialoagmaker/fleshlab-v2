@@ -149,6 +149,11 @@ Deno.serve(async (req) => {
         actionRequired.push({ type: 'earnings', message: 'No earnings recorded this month', priority: 'low' });
       }
 
+      // Determine revenue share (default 40% for managed performers)
+      const revenueSharePct = myPerformer.revenue_split_pct || 40;
+      const studioSharePct = 100 - revenueSharePct;
+      const revenueModel = revenueSharePct === 70 ? 'Established/Network' : 'Managed Performer';
+
       // Sanitize performer data (remove admin-only fields)
       const safePerformer = {
         id: myPerformer.id,
@@ -162,7 +167,10 @@ Deno.serve(async (req) => {
         compliance_locked: myPerformer.compliance_locked,
         outstanding_balance_usd: myPerformer.outstanding_balance_usd,
         verified: myPerformer.verified,
-        fanclub_enabled: myPerformer.fanclub_enabled
+        fanclub_enabled: myPerformer.fanclub_enabled,
+        revenue_share_pct: revenueSharePct,
+        studio_share_pct: studioSharePct,
+        revenue_model: revenueModel
       };
 
       return Response.json({
@@ -192,6 +200,11 @@ Deno.serve(async (req) => {
             status: latestContract.status,
             signed_at: latestContract.signed_at
           } : null
+        },
+        revenue_share: {
+          performer_pct: revenueSharePct,
+          studio_pct: studioSharePct,
+          model: revenueModel
         }
       });
     }
@@ -621,14 +634,20 @@ Deno.serve(async (req) => {
       });
 
       if (!videoPerformers || videoPerformers.length === 0) {
-        return Response.json({ success: true, stats: [], total_count: 0 });
+        return Response.json({ 
+          success: true, 
+          stats: [], 
+          total_count: 0,
+          gross_revenue_total: 0,
+          performer_earnings_total: 0,
+          revenue_share_pct: myPerformer.revenue_split_pct || 40
+        });
       }
 
       const videoIds = [...new Set(videoPerformers.map(vp => vp.video_id))];
+      const revenueSharePct = myPerformer.revenue_split_pct || 40;
 
       // Fetch all snapshot sets + all video records in parallel
-      // Deduplicating videoIds prevents redundant Video.get calls when a performer
-      // appears in many snapshots for the same video across different periods/platforms.
       const [snapshotSets, videoResults] = await Promise.all([
         Promise.all(
           videoIds.map(videoId => {
@@ -644,13 +663,13 @@ Deno.serve(async (req) => {
 
       const allSnapshots = snapshotSets.flat();
 
-      // Build a lookup map of videoId → title to avoid repeated Video.get per snapshot
+      // Build a lookup map of videoId → title
       const videoTitleMap = {};
       videoResults.forEach((video, i) => {
         if (video) videoTitleMap[videoIds[i]] = video.title;
       });
 
-      // Map snapshots using the pre-built title lookup — no per-snapshot DB calls
+      // Map snapshots with video titles
       const statsWithVideos = allSnapshots.map(snap => ({
         id: snap.id,
         video_id: snap.video_id,
@@ -662,7 +681,6 @@ Deno.serve(async (req) => {
         favourites: snap.favourites,
         revenue_usd: snap.revenue_usd,
         promotion_status: snap.promotion_status
-        // NOT returning: admin_note, promotion_note, raw_data_json (admin-only)
       }));
 
       // Sort by period_month descending
@@ -670,10 +688,17 @@ Deno.serve(async (req) => {
         b.period_month.localeCompare(a.period_month)
       );
 
+      // Calculate totals
+      const grossRevenueTotal = sorted.reduce((sum, s) => sum + (s.revenue_usd || 0), 0);
+      const performerEarningsTotal = grossRevenueTotal * (revenueSharePct / 100);
+
       return Response.json({ 
         success: true, 
         stats: sorted, 
-        total_count: sorted.length 
+        total_count: sorted.length,
+        gross_revenue_total: grossRevenueTotal,
+        performer_earnings_total: performerEarningsTotal,
+        revenue_share_pct: revenueSharePct
       });
     }
 

@@ -3,6 +3,7 @@ import { Film, Clock, TrendingUp, DollarSign, Calendar, Star, Video } from "luci
 
 const StatItem = ({ icon: Icon, label, value, subtext, color = "text-primary" }) => {
   if (!Icon) return null;
+  if (!Icon) return null;
   return (
     <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border">
       <div className={`p-2 rounded-md bg-muted ${color}`}>
@@ -31,6 +32,10 @@ export default function CareerStatisticsCard({ stats }) {
     );
   }
 
+  // Use performer earnings if available, otherwise show gross revenue with share info
+  const lifetimeEarnings = stats.lifetime_performer_earnings || (stats.lifetime_revenue_usd * (stats.revenue_share_pct / 100));
+  const revenueSharePct = stats.revenue_share_pct || 40;
+
   return (
     <Card>
       <CardHeader>
@@ -52,7 +57,7 @@ export default function CareerStatisticsCard({ stats }) {
           />
           <StatItem
             icon={Film}
-            label="Draft"
+            label="Draft / Other"
             value={stats.draft_videos}
             color="text-yellow-500"
           />
@@ -79,8 +84,9 @@ export default function CareerStatisticsCard({ stats }) {
           />
           <StatItem
             icon={DollarSign}
-            label="Lifetime Revenue"
-            value={`$${stats.lifetime_revenue_usd.toFixed(2)}`}
+            label={`Lifetime Earnings (${revenueSharePct}%)`}
+            value={`$${lifetimeEarnings.toFixed(2)}`}
+            subtext={`Gross: $${stats.lifetime_revenue_usd.toFixed(2)}`}
             color="text-green-500"
           />
           <StatItem

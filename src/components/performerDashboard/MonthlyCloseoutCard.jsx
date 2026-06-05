@@ -23,6 +23,20 @@ export default function MonthlyCloseoutCard({ performerId }) {
     enabled: !!performerId
   });
 
+  // Fallback: get platform stats if no earnings exist
+  const { data: statsData } = useQuery({
+    queryKey: ["performer-platform-stats-fallback", performerId, currentMonth],
+    queryFn: async () => {
+      const res = await base44.functions.invoke("performerDashboardService", {
+        action: "get_video_stats",
+        performer_id: performerId,
+        period_month: currentMonth
+      });
+      return res.data;
+    },
+    enabled: !!performerId && (!summary || !summary.earnings || summary.earnings.length === 0)
+  });
+
   if (isLoading) {
     return (
       <Card>
@@ -35,8 +49,14 @@ export default function MonthlyCloseoutCard({ performerId }) {
   }
 
   const s = summary?.summary || { gross_total: 0, net_total: 0, pending_total: 0, paid_total: 0, held_total: 0 };
+  const hasEarnings = summary?.earnings && summary.earnings.length > 0;
+  
+  // Use stats fallback if no earnings
+  const grossRevenue = hasEarnings ? s.gross_total : (statsData?.gross_revenue_total || 0);
+  const performerShare = hasEarnings ? s.net_total : (statsData?.performer_earnings_total || 0);
+  const revenueSharePct = statsData?.revenue_share_pct || 40;
 
-  if (!summary?.earnings || summary.earnings.length === 0) {
+  if (!hasEarnings && grossRevenue === 0) {
     return (
       <Card>
         <CardHeader><CardTitle className="text-lg">Monthly Closeout</CardTitle></CardHeader>
@@ -55,24 +75,25 @@ export default function MonthlyCloseoutCard({ performerId }) {
       <CardContent className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <p className="text-xs text-muted-foreground">Gross</p>
-            <p className="text-lg font-semibold">${s.gross_total?.toFixed(2) || "0.00"}</p>
+            <p className="text-xs text-muted-foreground">Gross Platform</p>
+            <p className="text-lg font-semibold">${grossRevenue.toFixed(2)}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Your Est. Share</p>
-            <p className="text-lg font-semibold text-green-400">${s.net_total?.toFixed(2) || "0.00"}</p>
+            <p className="text-xs text-muted-foreground">Your Share ({revenueSharePct}%)</p>
+            <p className="text-lg font-semibold text-green-400">${performerShare.toFixed(2)}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Paid</p>
-            <p className="text-sm">${s.paid_total?.toFixed(2) || "0.00"}</p>
+            <p className="text-sm">${hasEarnings ? s.paid_total?.toFixed(2) : "0.00"}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">On Hold</p>
-            <p className="text-sm text-yellow-400">${s.held_total?.toFixed(2) || "0.00"}</p>
+            <p className="text-sm text-yellow-400">${hasEarnings ? s.held_total?.toFixed(2) : "0.00"}</p>
           </div>
         </div>
         <p className="text-xs text-muted-foreground pt-2 border-t">
-          Estimated amounts. Final payout subject to management approval.
+          {!hasEarnings ? 'Estimated from platform stats — pending closeout. ' : 'Estimated amounts. '}
+          Final payout subject to management approval.
         </p>
       </CardContent>
     </Card>
