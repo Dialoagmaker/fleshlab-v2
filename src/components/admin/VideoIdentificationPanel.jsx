@@ -101,10 +101,9 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                 </div>
               ) : urlValidation.thumbnail.status === 'valid' ? (
                 <img
-                  src={`${thumbnailUrl}${thumbnailUrl.includes('?') ? '&' : '?'}v=${Date.now()}`}
+                  src={`${thumbnailUrl}${thumbnailUrl.includes('?') ? '&' : '?'}asset_v=${video.updated_date ? new Date(video.updated_date).getTime() : Date.now()}`}
                   alt={video.title}
                   className="w-full h-full object-cover"
-                  crossOrigin="anonymous"
                   onError={(e) => {
                     console.error('❌ Thumbnail img onError:', thumbnailUrl);
                     e.target.style.display = 'none';
@@ -119,8 +118,8 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                       </div>
                     `;
                   }}
-                  onLoad={() => {
-                    console.log('✅ Thumbnail loaded successfully:', thumbnailUrl);
+                  onLoad={(e) => {
+                    console.log('✅ Thumbnail loaded:', thumbnailUrl, 'Size:', e.target.naturalWidth, 'x', e.target.naturalHeight);
                   }}
                 />
               ) : (
@@ -136,7 +135,21 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
               )}
             </div>
             {hasThumbnail && thumbnailUrl && (
-              <p className="text-[10px] font-mono text-muted-foreground break-all">{thumbnailUrl}</p>
+              <>
+                <p className="text-[10px] font-mono text-muted-foreground break-all">{thumbnailUrl}</p>
+                {/* Debug Panel */}
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded p-2 mt-1 text-[10px] space-y-0.5">
+                  <div className="flex gap-2">
+                    <span className="text-yellow-600 font-semibold">IMG DEBUG:</span>
+                    <span>src={thumbnailUrl.substring(0, 80)}...</span>
+                  </div>
+                  <div>Cache: asset_v={video.updated_date ? new Date(video.updated_date).getTime() : 'none'}</div>
+                  <div>Validation: {urlValidation.thumbnail.status} (HTTP {urlValidation.thumbnail.httpStatus})</div>
+                  <div>Content-Type: {urlValidation.thumbnail.contentType || 'unknown'}</div>
+                  <div>Size: {urlValidation.thumbnail.contentLength || 'unknown'} bytes</div>
+                  <div className="text-green-600">✅ Check console for onLoad logs</div>
+                </div>
+              </>
             )}
           </div>
 
@@ -157,14 +170,13 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                 </div>
               ) : urlValidation.preview.status === 'valid' ? (
                 <video
-                  key={`${previewUrl}-${Date.now()}`}
-                  src={`${previewUrl}${previewUrl.includes('?') ? '&' : '?'}v=${Date.now()}`}
+                  key={`${previewUrl}-${video.updated_date || '0'}`}
+                  src={`${previewUrl}${previewUrl.includes('?') ? '&' : '?'}asset_v=${video.updated_date ? new Date(video.updated_date).getTime() : Date.now()}`}
                   controls
                   className="w-full h-full"
                   preload="metadata"
-                  crossOrigin="anonymous"
-                  onLoadedMetadata={() => {
-                    console.log('✅ Preview metadata loaded:', previewUrl);
+                  onLoadedMetadata={(e) => {
+                    console.log('✅ Preview loaded:', previewUrl, 'Duration:', e.target.duration, 's');
                   }}
                   onError={(e) => {
                     console.error('❌ Preview video onError:', previewUrl, e);
@@ -185,7 +197,21 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
               )}
             </div>
             {previewUrl && (
-              <p className="text-[10px] font-mono text-muted-foreground break-all">{previewUrl}</p>
+              <>
+                <p className="text-[10px] font-mono text-muted-foreground break-all">{previewUrl}</p>
+                {/* Debug Panel */}
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded p-2 mt-1 text-[10px] space-y-0.5">
+                  <div className="flex gap-2">
+                    <span className="text-yellow-600 font-semibold">VIDEO DEBUG:</span>
+                    <span>src={previewUrl.substring(0, 80)}...</span>
+                  </div>
+                  <div>Cache: asset_v={video.updated_date ? new Date(video.updated_date).getTime() : 'none'}</div>
+                  <div>Validation: {urlValidation.preview.status} (HTTP {urlValidation.preview.httpStatus})</div>
+                  <div>Content-Type: {urlValidation.preview.contentType || 'unknown'}</div>
+                  <div>Size: {urlValidation.preview.contentLength || 'unknown'} bytes</div>
+                  <div className="text-green-600">✅ Check console for onLoadedMetadata logs</div>
+                </div>
+              </>
             )}
           </div>
         </div>
