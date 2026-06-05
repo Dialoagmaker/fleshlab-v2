@@ -157,6 +157,8 @@ export default function VideoEdit() {
     thumbnail: { renderStatus: 'pending' },
     preview: { renderStatus: 'pending' }
   });
+  const [thumbnailJobStatus, setThumbnailJobStatus] = useState(null);
+  const [thumbnailJobId, setThumbnailJobId] = useState(null);
 
   const checkAssets = useMutation({
     mutationFn: () => base44.functions.invoke('checkAndApplyVideoAssets', { video_id: id }),
@@ -303,19 +305,65 @@ export default function VideoEdit() {
     mutationFn: () => base44.functions.invoke('repairThumbnailOnly', { video_id: id }),
     onSuccess: (res) => {
       const d = res.data;
-      console.log('✅ Thumbnail repaired:', d);
+      console.log('✅ Thumbnail regeneration started:', d);
       setCheckStatus({ 
         ok: true, 
-        msg: `✓ Thumbnail repaired: ${d.validation.width}x${d.validation.height}`,
-        details: { ...d, thumbnail: d.validation }
+        msg: '✓ Thumbnail regeneration started. Processing...',
+        details: { job_id: d.job_id, status: d.status }
       });
-      setTimeout(() => queryClient.invalidateQueries({ queryKey: ['video', id] }), 1000);
+      setThumbnailJobId(d.job_id);
+      setThumbnailJobStatus({ status: 'processing', job_id: d.job_id });
     },
     onError: (err) => {
       console.error('❌ Repair failed:', err);
       setCheckStatus({ ok: false, msg: `Repair failed: ${err.message}`, details: { error: err.message } });
     },
   });
+
+  // Poll job status for async thumbnail regeneration
+  useEffect(() => {
+    if (!thumbnailJobId || !thumbnailJobStatus || thumbnailJobStatus.status === 'complete' || thumbnailJobStatus.status === 'failed') {
+      return;
+    }
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await base44.functions.invoke('getProcessingJobStatus', {}, { job_id: thumbnailJobId });
+        const job = res.data;
+        setThumbnailJobStatus(job);
+
+        if (job.status === 'complete') {
+          console.log('✅ Thumbnail job completed:', job);
+          setCheckStatus({ 
+            ok: true, 
+            msg: '✓ Thumbnail regenerated successfully',
+            details: job.result
+          });
+          queryClient.invalidateQueries({ queryKey: ['video', id] });
+          clearInterval(pollInterval);
+        } else if (job.status === 'failed' || job.status === 'thumbnail_invalid' || job.status === 'timeout') {
+          console.error('❌ Thumbnail job failed:', job);
+          setCheckStatus({ 
+            ok: false, 
+            msg: `Job failed: ${job.status}`,
+            details: { error: job.error_message, result: job.result }
+          });
+          clearInterval(pollInterval);
+        } else {
+          console.log('⏳ Thumbnail job status:', job.status, `(elapsed: ${job.elapsed_seconds}s)`);
+          setCheckStatus({ 
+            ok: true, 
+            msg: `Processing... ${job.status} (elapsed: ${job.elapsed_seconds}s)`,
+            details: job
+          });
+        }
+      } catch (err) {
+        console.error('❌ Job status poll failed:', err);
+      }
+    }, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [thumbnailJobId]);
 
   const clearCorruptThumbnail = useMutation({
     mutationFn: () => base44.functions.invoke('repairCorruptThumbnail', { video_id: id, forceRegenerate: true }),
@@ -681,6 +729,41 @@ export default function VideoEdit() {
 
           {/* Diagnostic Panel - Phase 2B: Two Sections */}
           <div className="border-t border-border pt-4">
+            {/* Processing Job Status Panel */}
+            {thumbnailJobStatus && (
+              <div className="mb-4 bg-muted/30 rounded-lg p-3 text-xs space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">🔄 Processing Job Status:</span>
+                  <span className={
+                    thumbnailJobStatus.status === 'complete' ? 'text-green-600' :
+                    thumbnailJobStatus.status === 'processing' || thumbnailJobStatus.status === 'queued' ? 'text-yellow-600' :
+                    thumbnailJobStatus.status === 'failed' || thumbnailJobStatus.status === 'thumbnail_invalid' ? 'text-destructive' :
+                    'text-muted-foreground'
+                  }>
+                    {thumbnailJobStatus.status === 'complete' ? '✅ Complete' :
+                     thumbnailJobStatus.status === 'processing' ? `⏳ Processing (${thumbnailJobStatus.elapsed_seconds || 0}s elapsed)` :
+                     thumbnailJobStatus.status === 'queued' ? '📋 Queued' :
+                     thumbnailJobStatus.status === 'callback_received' ? '📥 Callback Received' :
+                     thumbnailJobStatus.status === 'validating' ? '🔍 Validating' :
+                     thumbnailJobStatus.status === 'thumbnail_invalid' ? '❌ Thumbnail Invalid' :
+                     thumbnailJobStatus.status === 'timeout' ? '⏱️ Timeout' :
+                     thumbnailJobStatus.status}
+                  </span>
+                </div>
+                {thumbnailJobStatus.error_message && (
+                  <div className="text-destructive">Error: {thumbnailJobStatus.error_message}</div>
+                )}
+                {thumbnailJobStatus.result && (
+                  <div className="text-[10px] font-mono bg-black/10 p-2 rounded">
+                    {JSON.stringify(thumbnailJobStatus.result, null, 2)}
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground">
+                  Job ID: {thumbnailJobStatus.job_id} | Elapsed: {thumbnailJobStatus.elapsed_seconds || 0}s
+                </p>
+              </div>
+            )}
+
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold text-foreground">🔍 Asset Diagnostic (Phase 2B)</p>
               <div className="flex gap-2 flex-wrap">
@@ -706,12 +789,19 @@ export default function VideoEdit() {
                   size="sm"
                   onClick={() => {
                     setCheckStatus(null);
+                    setThumbnailJobStatus(null);
+                    setThumbnailJobId(null);
                     repairThumbnailOnly.mutate();
                   }}
-                  disabled={repairThumbnailOnly.isPending}
+                  disabled={repairThumbnailOnly.isPending || (thumbnailJobStatus && thumbnailJobStatus.status === 'processing')}
                   className="text-xs h-7 bg-green-500/10 hover:bg-green-500/20 border-green-500/30"
                 >
-                  {repairThumbnailOnly.isPending ? '⏳ Repairing...' : '🔧 Repair Thumbnail Only'}
+                  {thumbnailJobStatus?.status === 'processing' ? `⏳ Processing... ${thumbnailJobStatus.elapsed_seconds || 0}s` :
+                   thumbnailJobStatus?.status === 'complete' ? '✅ Complete' :
+                   thumbnailJobStatus?.status === 'failed' ? '❌ Failed' :
+                   thumbnailJobStatus?.status === 'thumbnail_invalid' ? '❌ Invalid' :
+                   thumbnailJobStatus?.status === 'timeout' ? '⏱️ Timeout' :
+                   repairThumbnailOnly.isPending ? '⏳ Starting...' : '🔧 Repair Thumbnail Only'}
                 </Button>
                 <Button
                   type="button"

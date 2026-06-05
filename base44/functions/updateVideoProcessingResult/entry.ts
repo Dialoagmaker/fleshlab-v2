@@ -311,8 +311,12 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, message: 'Processing failure recorded' });
     }
 
-    // PHASE 2C.1: VALIDATE ALL ASSETS BEFORE WRITING
-    console.log('[updateVideoProcessingResult] Phase 2C.1: Validating processor assets...');
+    // PHASE 2C.1/2C.2: VALIDATE ASSETS BEFORE WRITING
+    console.log('[updateVideoProcessingResult] Validating processor assets...');
+    
+    // Determine if this is a thumbnail-only regeneration
+    const isThumbnailOnly = body.regenerate_only === 'thumbnail';
+    console.log('[updateVideoProcessingResult] Mode:', isThumbnailOnly ? 'thumbnail_only' : 'full_processing');
     
     const validationReport = {
       source: null,
@@ -321,19 +325,6 @@ Deno.serve(async (req) => {
       allValid: true,
       blockingReasons: []
     };
-
-    // Validate source video
-    if (assets?.source?.cdn_url) {
-      validationReport.source = await validateVideoUrl(assets.source.cdn_url);
-      if (!validationReport.source.ok) {
-        validationReport.allValid = false;
-        validationReport.blockingReasons.push(`Source: ${validationReport.source.reason}`);
-      }
-    } else {
-      validationReport.source = { ok: false, reason: 'Source URL not provided by processor' };
-      validationReport.allValid = false;
-      validationReport.blockingReasons.push('Source: URL not provided');
-    }
 
     // Validate thumbnail (CRITICAL: prevent HTML-as-JPG)
     if (assets?.thumbnail?.cdn_url) {
@@ -346,23 +337,28 @@ Deno.serve(async (req) => {
           validationReport.blockingReasons.push(`Thumbnail: ${validationReport.thumbnail.reason}`);
         }
       }
-    } else {
+    } else if (!isThumbnailOnly) {
       validationReport.thumbnail = { ok: false, reason: 'Thumbnail URL not provided by processor' };
       validationReport.allValid = false;
       validationReport.blockingReasons.push('Thumbnail: URL not provided');
     }
 
-    // Validate preview
-    if (assets?.preview_video?.cdn_url) {
+    // Validate source video (only for full processing)
+    if (!isThumbnailOnly && assets?.source?.cdn_url) {
+      validationReport.source = await validateVideoUrl(assets.source.cdn_url);
+      if (!validationReport.source.ok) {
+        validationReport.allValid = false;
+        validationReport.blockingReasons.push(`Source: ${validationReport.source.reason}`);
+      }
+    }
+
+    // Validate preview (only for full processing)
+    if (!isThumbnailOnly && assets?.preview_video?.cdn_url) {
       validationReport.preview = await validateVideoUrl(assets.preview_video.cdn_url);
       if (!validationReport.preview.ok) {
         validationReport.allValid = false;
         validationReport.blockingReasons.push(`Preview: ${validationReport.preview.reason}`);
       }
-    } else {
-      validationReport.preview = { ok: false, reason: 'Preview URL not provided by processor' };
-      validationReport.allValid = false;
-      validationReport.blockingReasons.push('Preview: URL not provided');
     }
 
     console.log('[updateVideoProcessingResult] Validation results:', validationReport);
@@ -383,14 +379,25 @@ Deno.serve(async (req) => {
 
       // Update job queue with validation failure
       if (job_id) {
+        // Determine specific failure type
+        let failureStatus = 'failed';
+        if (isThumbnailOnly && validationReport.thumbnail && !validationReport.thumbnail.ok) {
+          failureStatus = 'thumbnail_invalid';
+        } else if (validationReport.preview && !validationReport.preview.ok) {
+          failureStatus = 'preview_invalid';
+        } else if (validationReport.source && !validationReport.source.ok) {
+          failureStatus = 'source_invalid';
+        }
+
         await base44.entities.JobQueue.update(job_id, {
-          status: 'failed',
+          status: failureStatus,
           error_message: `Asset validation failed: ${validationReport.blockingReasons.join('; ')}`,
           completed_at: new Date().toISOString(),
           result: JSON.stringify({
             processor_job_id,
             validation_failed: true,
             validation_report: validationReport,
+            is_thumbnail_only: isThumbnailOnly,
           }),
         });
       }
@@ -399,7 +406,7 @@ Deno.serve(async (req) => {
         success: false,
         error: 'Asset validation failed',
         validation_report: validationReport,
-        message: 'Processor assets rejected. URLs not written to Video entity.',
+        mode: isThumbnailOnly ? 'thumbnail_only' : 'full_processing',
       });
     }
 
@@ -408,19 +415,21 @@ Deno.serve(async (req) => {
 
     const assetPromises = [];
 
-    // Update source asset with metadata
-    assetPromises.push(
-      base44.entities.VideoAsset.update(sourceAsset.id, {
-        status: 'ready',
-        duration_seconds: metadata?.duration_seconds || null,
-        width: metadata?.width || null,
-        height: metadata?.height || null,
-        fps: metadata?.fps || null,
-        bitrate_kbps: metadata?.bitrate_kbps || null,
-        codec: metadata?.codec || null,
-        aspect_ratio: metadata?.aspect_ratio || null,
-      })
-    );
+    // Update source asset with metadata (only for full processing)
+    if (!isThumbnailOnly) {
+      assetPromises.push(
+        base44.entities.VideoAsset.update(sourceAsset.id, {
+          status: 'ready',
+          duration_seconds: metadata?.duration_seconds || null,
+          width: metadata?.width || null,
+          height: metadata?.height || null,
+          fps: metadata?.fps || null,
+          bitrate_kbps: metadata?.bitrate_kbps || null,
+          codec: metadata?.codec || null,
+          aspect_ratio: metadata?.aspect_ratio || null,
+        })
+      );
+    }
 
     // Update/create thumbnail asset
     if (assets?.thumbnail) {
@@ -455,8 +464,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Update/create preview asset
-    if (assets?.preview_video) {
+    // Update/create preview asset (only for full processing)
+    if (!isThumbnailOnly && assets?.preview_video) {
       const existingPreviews = await base44.entities.VideoAsset.filter({
         video_id: video.id,
         asset_type: 'preview',
@@ -494,14 +503,16 @@ Deno.serve(async (req) => {
 
     // Update video with VALIDATED URLs
     const videoUpdateData = {
-      processing_status: 'metadata_pending',
+      processing_status: isThumbnailOnly ? 'draft_ready' : 'metadata_pending',
     };
 
-    // Write source URL (validated)
-    if (assets?.source?.cdn_url) {
-      videoUpdateData.source_video_url = assets.source.cdn_url;
-    } else if (sourceAsset.cdn_url) {
-      videoUpdateData.source_video_url = sourceAsset.cdn_url;
+    // Write source URL (only for full processing)
+    if (!isThumbnailOnly) {
+      if (assets?.source?.cdn_url) {
+        videoUpdateData.source_video_url = assets.source.cdn_url;
+      } else if (sourceAsset.cdn_url) {
+        videoUpdateData.source_video_url = sourceAsset.cdn_url;
+      }
     }
 
     // Write thumbnail URL (validated)
@@ -509,28 +520,29 @@ Deno.serve(async (req) => {
       videoUpdateData.primary_thumbnail_url = assets.thumbnail.cdn_url;
     }
 
-    // Write preview URL (validated)
-    if (assets?.preview_video?.cdn_url) {
+    // Write preview URL (only for full processing)
+    if (!isThumbnailOnly && assets?.preview_video?.cdn_url) {
       videoUpdateData.trailer_url = assets.preview_video.cdn_url;
     }
 
-    // Write duration if provided
-    if (metadata?.duration_seconds) {
+    // Write duration if provided (only for full processing)
+    if (!isThumbnailOnly && metadata?.duration_seconds) {
       videoUpdateData.duration_seconds = metadata.duration_seconds;
     }
 
     await base44.entities.Video.update(video.id, videoUpdateData);
 
-    // Update job queue to completed
+    // Update job queue with completion
     if (job_id) {
       await base44.entities.JobQueue.update(job_id, {
-        status: 'completed',
+        status: 'complete',
         completed_at: new Date().toISOString(),
         result: JSON.stringify({
           processor_job_id,
           assets_created: Object.keys(assets || {}).length,
           processing_time_seconds: body.processing_time_seconds,
           validation_passed: true,
+          is_thumbnail_only: isThumbnailOnly,
         }),
       });
     }
@@ -539,8 +551,9 @@ Deno.serve(async (req) => {
 
     return Response.json({
       success: true,
-      message: 'Processing result saved successfully (all assets validated)',
+      message: isThumbnailOnly ? 'Thumbnail regenerated and validated successfully' : 'Processing result saved successfully',
       validation_report: validationReport,
+      mode: isThumbnailOnly ? 'thumbnail_only' : 'full_processing',
     });
 
   } catch (error) {
