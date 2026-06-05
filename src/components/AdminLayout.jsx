@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   LayoutDashboard, Video, Upload, Users, Tag, Newspaper,
   Link2, Database, Menu, Play, ChevronRight, Globe, FileText, ClipboardList,
-  AlertCircle, Settings, UserX, DollarSign, MessageSquare, LogOut
+  AlertCircle, Settings, UserX, DollarSign, MessageSquare, LogOut, Sparkles
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
@@ -37,6 +37,7 @@ const NAV_GROUPS = [
       { href: "/admin/monthly-closeout",              label: "Monthly Closeout", icon: DollarSign },
       { href: "/admin/performer-support",             label: "Performer Support", icon: MessageSquare },
       { href: "/admin/payout-requests",               label: "Payout Requests", icon: DollarSign },
+      { href: "/admin/ai-text-generator",             label: "AI Text Generator", icon: Sparkles },
     ],
   },
   {

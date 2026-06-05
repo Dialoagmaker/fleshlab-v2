@@ -43,6 +43,7 @@ import PayoutRequests from './pages/admin/PayoutRequests';
 import DuplicateVideos from './pages/admin/DuplicateVideos';
 import LegacyAssetInventory from './pages/admin/LegacyAssetInventory';
 import AssetRepairQueue from './pages/admin/AssetRepairQueue';
+import AITextGenerator from './pages/admin/AITextGenerator';
 import ComingSoon from './pages/ComingSoon';
 import PerformerRouteHandler from './components/PerformerRouteHandler';
 import PerformerGuard from './components/PerformerGuard';
@@ -168,6 +169,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/legacy-assets" element={<LegacyAssetInventory />} />
                 <Route path="/admin/asset-repair-queue" element={<AssetRepairQueue />} />
                 <Route path="/admin/asset-repair-queue" element={<AssetRepairQueue />} />
+                <Route path="/admin/ai-text-generator" element={<AITextGenerator />} />
               </Route>
             </Route>
           </Route>
