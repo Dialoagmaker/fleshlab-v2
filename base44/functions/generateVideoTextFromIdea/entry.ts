@@ -186,24 +186,38 @@ Return JSON only.
       warnings.push(`Description too long (${response.description.length} chars, max 2000)`);
     }
 
-    // Check for banned filler phrases
+    // Check for banned filler phrases - AUTO-CORRECT
     const bannedPhrases = [
-      "don't miss",
-      "watch as",
-      "this is",
-      "invites you",
-      "lustful fantasies",
-      "exclusive experience",
-      "premium production",
-      "hd quality"
+      { pattern: "don't want to miss", replacement: "experience raw desire" },
+      { pattern: "won't want to miss", replacement: "experience raw desire" },
+      { pattern: "don't miss", replacement: "experience" },
+      { pattern: "watch as", replacement: "see" },
+      { pattern: "this is", replacement: "featuring" },
+      { pattern: "invites you", replacement: "delivers" },
+      { pattern: "lustful fantasies", replacement: "intense desires" },
+      { pattern: "exclusive experience", replacement: "exclusive scene" },
+      { pattern: "premium production", replacement: "professional production" },
+      { pattern: "hd quality", replacement: "high definition" }
     ];
     
-    const lowerText = `${response.title} ${response.description}`.toLowerCase();
-    bannedPhrases.forEach(phrase => {
-      if (lowerText.includes(phrase)) {
-        warnings.push(`Contains banned filler phrase: "${phrase}"`);
+    let correctedTitle = response.title || '';
+    let correctedDescription = response.description || '';
+    
+    bannedPhrases.forEach(({ pattern, replacement }) => {
+      const regex = new RegExp(pattern, 'gi');
+      if (regex.test(correctedDescription)) {
+        warnings.push(`Auto-corrected banned phrase: "${pattern}" → "${replacement}"`);
+        correctedDescription = correctedDescription.replace(regex, replacement);
+      }
+      if (regex.test(correctedTitle)) {
+        warnings.push(`Auto-corrected banned phrase in title: "${pattern}"`);
+        correctedTitle = correctedTitle.replace(regex, replacement);
       }
     });
+    
+    // Update response with corrected values
+    response.title = correctedTitle;
+    response.description = correctedDescription;
 
     // Check for parent taxonomy group labels in CATEGORIES only (CRITICAL)
     // NOTE: "fetish" is allowed as a TAG, but never as a CATEGORY
@@ -257,6 +271,39 @@ Return JSON only.
       
       if (hasGenericFetish && hasSpecificTags) {
         tagNotes.push('Generic "fetish" tag kept for search, but specific tags preferred');
+      }
+      
+      // Auto-add missing categories for sensitive tags
+      const tagToCategoryMap = {
+        'bareback': 'Bareback',
+        'anal': 'Anal',
+        'blowjob': 'Blowjob',
+        'oral': 'Oral',
+        'creampie': 'Creampie',
+        'cumshot': 'Cumshot',
+        'rimming': 'Rimming',
+        'bdsm': 'BDSM',
+        'bondage': 'Bondage',
+        'nipple': 'Nipple Play',
+        'dildo': 'Dildo Play'
+      };
+      
+      const currentCategories = response.suggested_categories || [];
+      const addedCategories = [];
+      
+      for (const [tagKeyword, categoryName] of Object.entries(tagToCategoryMap)) {
+        const hasTag = response.tags.some(t => t.toLowerCase().includes(tagKeyword));
+        const hasCategory = currentCategories.some(c => c.toLowerCase() === categoryName.toLowerCase());
+        
+        if (hasTag && !hasCategory) {
+          currentCategories.push(categoryName);
+          addedCategories.push(categoryName);
+          taxonomyWarnings.push(`Auto-added "${categoryName}" to categories (matching tag "${tagKeyword}")`);
+        }
+      }
+      
+      if (addedCategories.length > 0) {
+        response.suggested_categories = currentCategories;
       }
     }
 
