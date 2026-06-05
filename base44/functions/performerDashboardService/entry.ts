@@ -339,7 +339,7 @@ Deno.serve(async (req) => {
           performer_share_percent: myPerformer.revenue_split_pct || 40,
           performer_amount_usd: (stat.revenue_usd || 0) * ((myPerformer.revenue_split_pct || 40) / 100),
           studio_amount_usd: (stat.revenue_usd || 0) * (100 - (myPerformer.revenue_split_pct || 40)) / 100,
-          status: 'estimated',
+          status: 'pending',
           period_month: stat.period_month,
           views: stat.views,
           likes: stat.likes,
