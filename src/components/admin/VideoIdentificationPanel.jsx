@@ -5,6 +5,27 @@ import { Button } from "@/components/ui/button";
 import { Play, Film, Calendar, Clock, Eye, X, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 
 /**
+ * Asset URL Classification
+ * Returns: "canonical_cdn" | "legacy_r2_dev" | "relative_r2_key" | "invalid"
+ */
+function classifyAssetUrl(url) {
+  if (!url || typeof url !== 'string' || !url.trim()) {
+    return { type: 'invalid', isLegacy: false, recommendation: 'Add asset URL' };
+  }
+  const trimmed = url.trim();
+  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    return { type: 'relative_r2_key', isLegacy: false, recommendation: 'Will be resolved via CDN' };
+  }
+  if (/pub-[a-f0-9]+\.r2\.dev/i.test(trimmed)) {
+    return { type: 'legacy_r2_dev', isLegacy: true, recommendation: 'Working but should be migrated later' };
+  }
+  if (trimmed.startsWith('https://video.fleshlab.online/')) {
+    return { type: 'canonical_cdn', isLegacy: false, recommendation: 'Optimal' };
+  }
+  return { type: 'external', isLegacy: false, recommendation: 'External URL' };
+}
+
+/**
  * Build asset URL from value (URL or R2 key)
  * Preserves legacy R2.dev URLs, builds CDN URL for bare paths
  */
@@ -149,7 +170,7 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                 {/* Legacy URL Warning */}
                 {isLegacyR2Url(video.primary_thumbnail_url) && (
                   <div className="bg-yellow-500/10 border border-yellow-500/20 rounded p-2 mt-1 text-[10px] text-yellow-600">
-                    ⚠️ Legacy R2.dev URL - working but should be monitored
+                    ⚠️ Legacy R2 URL — working but should be migrated later
                   </div>
                 )}
                 {/* Debug Panel */}
@@ -221,7 +242,7 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                 {/* Legacy URL Warning */}
                 {isLegacyR2Url(video.trailer_url || video.source_video_url) && (
                   <div className="bg-yellow-500/10 border border-yellow-500/20 rounded p-2 mt-1 text-[10px] text-yellow-600">
-                    ⚠️ Legacy R2.dev URL - working but should be monitored
+                    ⚠️ Legacy R2 URL — working but should be migrated later
                   </div>
                 )}
                 {/* Debug Panel */}
