@@ -153,6 +153,10 @@ export default function VideoEdit() {
   const [metaGenStatus, setMetaGenStatus] = useState(null);
   const [diagnostic, setDiagnostic] = useState(null);
   const [thumbnailValidation, setThumbnailValidation] = useState(null);
+  const [urlValidation, setUrlValidation] = useState({
+    thumbnail: { renderStatus: 'pending' },
+    preview: { renderStatus: 'pending' }
+  });
 
   const checkAssets = useMutation({
     mutationFn: () => base44.functions.invoke('checkAndApplyVideoAssets', { video_id: id }),
@@ -169,10 +173,10 @@ export default function VideoEdit() {
   });
 
   const validateAssets = useMutation({
-    mutationFn: () => base44.functions.invoke('validateAndRepairVideoAssets', { video_id: id }),
+    mutationFn: () => base44.functions.invoke('validateVideoAssets', { video_id: id }),
     onSuccess: (res) => {
       const d = res.data;
-      console.log('🔍 Asset Validation Results:', d);
+      console.log('🔍 Phase 2B Server Validation Results:', d);
       
       if (d?.ok) {
         setCheckStatus({ ok: true, msg: '✓ All assets valid - ready to publish', details: d });
@@ -675,12 +679,12 @@ export default function VideoEdit() {
             </div>
           </div>
 
-          {/* Diagnostic Panel */}
+          {/* Diagnostic Panel - Phase 2B: Two Sections */}
           <div className="border-t border-border pt-4">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-semibold text-foreground">🔍 Asset Diagnostic</p>
+              <p className="text-xs font-semibold text-foreground">🔍 Asset Diagnostic (Phase 2B)</p>
               <div className="flex gap-2 flex-wrap">
-                {(thumbnailValidation?.validation_status === 'failed' || checkStatus?.details?.oldThumbnail?.corrupt) && (
+                {(thumbnailValidation?.validation_status === 'failed' || checkStatus?.details?.thumbnail?.corrupt) && (
                   <Button
                     type="button"
                     variant="destructive"
@@ -713,34 +717,166 @@ export default function VideoEdit() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => validateThumbnail.mutate()}
-                  disabled={validateThumbnail.isPending}
+                  onClick={() => validateAssets.mutate()}
+                  disabled={validateAssets.isPending}
                   className="text-xs h-7"
                 >
-                  {validateThumbnail.isPending ? 'Validating...' : '🖼️ Validate Thumbnail'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => repairSourceUrl.mutate()}
-                  disabled={repairSourceUrl.isPending}
-                  className="text-xs h-7"
-                >
-                  {repairSourceUrl.isPending ? 'Repairing...' : 'Repair Source URL'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => runDiagnostic.mutate()}
-                  disabled={runDiagnostic.isPending}
-                  className="text-xs h-7"
-                >
-                  {runDiagnostic.isPending ? 'Checking...' : 'Run Test'}
+                  {validateAssets.isPending ? 'Validating...' : '🔍 Server Validate'}
                 </Button>
               </div>
             </div>
+
+            {/* A) Browser Render Health */}
+            <div className="mb-4">
+              <h4 className="text-xs font-semibold text-foreground mb-2 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                Browser Render Health (Frontend)
+              </h4>
+              <div className="bg-muted/30 rounded-lg p-3 text-xs space-y-2">
+                <div className="flex gap-2">
+                  <span className="font-semibold">Thumbnail:</span>
+                  <span className={
+                    urlValidation.thumbnail.renderStatus === 'accessible' ? 'text-green-600' :
+                    urlValidation.thumbnail.renderStatus === 'failed' ? 'text-red-600' :
+                    'text-yellow-600'
+                  }>
+                    {urlValidation.thumbnail.renderStatus === 'accessible' ? '✅ Rendered successfully' :
+                     urlValidation.thumbnail.renderStatus === 'failed' ? '❌ Render failed' :
+                     '⏳ Pending'}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="font-semibold">Preview:</span>
+                  <span className={
+                    urlValidation.preview.renderStatus === 'accessible' ? 'text-green-600' :
+                    urlValidation.preview.renderStatus === 'failed' ? 'text-red-600' :
+                    'text-yellow-600'
+                  }>
+                    {urlValidation.preview.renderStatus === 'accessible' ? '✅ Rendered successfully' :
+                     urlValidation.preview.renderStatus === 'failed' ? '❌ Render failed' :
+                     '⏳ Pending'}
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-2">
+                  Note: Browser render uses onLoad/onLoadedMetadata events. CORS may block fetch/HEAD but assets can still render.
+                </p>
+              </div>
+            </div>
+
+            {/* B) Server Validation Health */}
+            {checkStatus?.details && (
+              <div>
+                <h4 className="text-xs font-semibold text-foreground mb-2 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                  Server Validation Health (Backend)
+                </h4>
+                <div className="bg-muted/30 rounded-lg p-3 text-xs space-y-2 font-mono">
+                  <div className="text-foreground font-semibold">📊 Validation Report:</div>
+                  {checkStatus.details.step && (
+                    <div className="text-foreground">Step: {checkStatus.details.step}</div>
+                  )}
+                  {checkStatus.details.error && (
+                    <div className="text-destructive font-semibold">❌ Error: {checkStatus.details.error}</div>
+                  )}
+                  
+                  {/* Source Video */}
+                  {checkStatus.details.source && (
+                    <div className="space-y-1">
+                      <div className={checkStatus.details.source.valid ? 'text-green-600' : 'text-destructive'}>
+                        <strong>Source Video:</strong> {checkStatus.details.source.valid ? '✅ Valid' : '❌ Invalid'}
+                        {checkStatus.details.source.reason && ` - ${checkStatus.details.source.reason}`}
+                      </div>
+                      {checkStatus.details.source.urlType && (
+                        <div className="text-muted-foreground ml-4">Type: {checkStatus.details.source.urlType}</div>
+                      )}
+                      {checkStatus.details.source.status && (
+                        <div className="text-muted-foreground ml-4">HTTP: {checkStatus.details.source.status}</div>
+                      )}
+                      {checkStatus.details.source.contentType && (
+                        <div className="text-muted-foreground ml-4">Content-Type: {checkStatus.details.source.contentType}</div>
+                      )}
+                      {checkStatus.details.source.contentLength && (
+                        <div className="text-muted-foreground ml-4">Size: {checkStatus.details.source.contentLength} bytes</div>
+                      )}
+                      {checkStatus.details.source.magicHeader && (
+                        <div className="text-muted-foreground ml-4">Magic Header: {checkStatus.details.source.magicHeader}</div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Thumbnail */}
+                  {checkStatus.details.thumbnail && (
+                    <div className="space-y-1">
+                      <div className={checkStatus.details.thumbnail.valid ? 'text-green-600' : checkStatus.details.thumbnail.corrupt ? 'text-destructive font-bold' : 'text-destructive'}>
+                        <strong>Thumbnail:</strong> {checkStatus.details.thumbnail.valid ? '✅ Valid' : checkStatus.details.thumbnail.corrupt ? '❌ CORRUPT' : '❌ Invalid'}
+                        {checkStatus.details.thumbnail.reason && ` - ${checkStatus.details.thumbnail.reason}`}
+                      </div>
+                      {checkStatus.details.thumbnail.urlType && (
+                        <div className="text-muted-foreground ml-4">Type: {checkStatus.details.thumbnail.urlType}</div>
+                      )}
+                      {checkStatus.details.thumbnail.status && (
+                        <div className="text-muted-foreground ml-4">HTTP: {checkStatus.details.thumbnail.status}</div>
+                      )}
+                      {checkStatus.details.thumbnail.contentType && (
+                        <div className="text-muted-foreground ml-4">Content-Type: {checkStatus.details.thumbnail.contentType}</div>
+                      )}
+                      {checkStatus.details.thumbnail.contentLength && (
+                        <div className="text-muted-foreground ml-4">Size: {checkStatus.details.thumbnail.contentLength} bytes</div>
+                      )}
+                      {checkStatus.details.thumbnail.magicHeader && (
+                        <div className={checkStatus.details.thumbnail.corrupt ? 'text-destructive font-bold ml-4' : 'text-muted-foreground ml-4'}>
+                          Magic Header: {checkStatus.details.thumbnail.magicHeader} {checkStatus.details.thumbnail.corrupt ? '⚠️ CORRUPT (HTML-as-JPG)' : ''}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Preview */}
+                  {checkStatus.details.preview && (
+                    <div className="space-y-1">
+                      <div className={checkStatus.details.preview.valid ? 'text-green-600' : 'text-destructive'}>
+                        <strong>Preview:</strong> {checkStatus.details.preview.valid ? '✅ Valid' : '❌ Invalid'}
+                        {checkStatus.details.preview.reason && ` - ${checkStatus.details.preview.reason}`}
+                      </div>
+                      {checkStatus.details.preview.urlType && (
+                        <div className="text-muted-foreground ml-4">Type: {checkStatus.details.preview.urlType}</div>
+                      )}
+                      {checkStatus.details.preview.status && (
+                        <div className="text-muted-foreground ml-4">HTTP: {checkStatus.details.preview.status}</div>
+                      )}
+                      {checkStatus.details.preview.contentType && (
+                        <div className="text-muted-foreground ml-4">Content-Type: {checkStatus.details.preview.contentType}</div>
+                      )}
+                      {checkStatus.details.preview.magicHeader && (
+                        <div className="text-muted-foreground ml-4">Magic Header: {checkStatus.details.preview.magicHeader}</div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Blocking Reasons */}
+                  {checkStatus.details.blockingReasons?.length > 0 && (
+                    <div className="text-destructive mt-2 border-t border-destructive/30 pt-2">
+                      <div className="font-semibold">🚫 Blocking Reasons ({checkStatus.details.blockingReasons.length}):</div>
+                      <ul className="list-disc list-inside space-y-0.5">
+                        {checkStatus.details.blockingReasons.map((r, i) => (
+                          <li key={i}>{r}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* canPublishAssets Status */}
+                  <div className="border-t border-border mt-2 pt-2">
+                    <div className="flex gap-2">
+                      <span className="font-semibold">Can Publish Assets:</span>
+                      <span className={checkStatus.details.canPublishAssets ? 'text-green-600 font-bold' : 'text-destructive font-bold'}>
+                        {checkStatus.details.canPublishAssets ? '✅ YES' : '❌ NO'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             {thumbnailValidation && (
               <div className="bg-muted/30 rounded-lg p-3 text-xs space-y-2 font-mono">
                 <div className={thumbnailValidation.validation_status === 'success' ? 'text-green-600' : 'text-destructive'}>

@@ -1,17 +1,36 @@
 /**
- * Server-Side Asset Validation Helper
+ * Asset Validation Helper - Client for Backend Function
  * 
- * Validates asset URLs and bytes WITHOUT full downloads.
- * Used by: Publish gating, Asset repair, Admin diagnostics
+ * Calls backend function for server-side validation.
+ * Used by: Publish gating, Admin diagnostics, Phase 2B integration
  * 
- * Rules:
- * - validateImageUrl: Downloads full image (safe for thumbnails < 10MB)
- * - validateVideoUrl: Uses HEAD + small range request (NEVER downloads full video)
- * - validateAssetSet: Validates all assets for a video
+ * DO NOT use browser fetch/HEAD - causes CORS false failures.
+ * Always use backend function for authoritative validation.
  */
 
 /**
- * Validate image URL - downloads full image (safe for thumbnails < 10MB)
+ * Validate video assets via backend function
+ * @param {string} videoId - Video entity ID
+ * @returns {Promise<Object>} - Validation report with blocking reasons
+ */
+export async function validateVideoAssets(videoId) {
+  const { base44 } = await import('@/api/base44Client');
+  
+  try {
+    const response = await base44.functions.invoke('validateVideoAssets', { video_id: videoId });
+    return response.data;
+  } catch (error) {
+    return {
+      ok: false,
+      error: error.message || 'Validation failed',
+      blockingReasons: [error.message || 'Validation failed']
+    };
+  }
+}
+
+/**
+ * Legacy compatibility - calls backend function
+ * @deprecated Use validateVideoAssets(videoId) instead
  */
 export async function validateImageUrl(url) {
   const result = { 
@@ -115,7 +134,8 @@ export async function validateImageUrl(url) {
 }
 
 /**
- * Validate video URL using ONLY HEAD + small range request
+ * Legacy compatibility - calls backend function
+ * @deprecated Use validateVideoAssets(videoId) instead
  */
 export async function validateVideoUrl(url) {
   const result = { 
@@ -217,7 +237,8 @@ export async function validateVideoUrl(url) {
 }
 
 /**
- * Validate complete asset set for a video
+ * Legacy compatibility - calls backend function
+ * @deprecated Use validateVideoAssets(videoId) instead
  */
 export async function validateAssetSet(video, videoAssets = []) {
   const report = {

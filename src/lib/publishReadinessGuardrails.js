@@ -19,8 +19,13 @@
 /**
  * Check if a video has all required fields for public visibility.
  * Returns { canPublish: boolean, errors: string[], warnings: string[] }
+ * 
+ * @param {Object} video - Video entity
+ * @param {Object} options - Options
+ * @param {boolean} options.checkAssets - If true, calls backend function for server-side asset validation (Phase 2B)
+ * @param {Array} options.videoPerformers - Array of VideoPerformer junction records
  */
-export function checkPublishReadiness(video, options = {}) {
+export async function checkPublishReadiness(video, options = {}) {
   const { checkAssets = false, videoPerformers = [] } = options;
   
   const errors = [];
@@ -64,10 +69,32 @@ export function checkPublishReadiness(video, options = {}) {
     warnings.push(`Processing status is "${video.processing_status}" (expected "draft_ready" for new publishes)`);
   }
   
-  // ASSET HEALTH CHECKS (optional - only when checkAssets is true)
-  if (checkAssets && videoPerformers.length > 0) {
-    // Would check VideoAsset records here if provided
-    // For now, we rely on URL presence
+  // ASSET HEALTH CHECKS (Phase 2B - server-side validation)
+  if (checkAssets && video.id) {
+    try {
+      const { validateVideoAssets } = await import('@/lib/assetValidation');
+      const validation = await validateVideoAssets(video.id);
+      
+      if (!validation.ok) {
+        // Add blocking reasons from server validation
+        if (validation.blockingReasons && validation.blockingReasons.length > 0) {
+          validation.blockingReasons.forEach(reason => {
+            if (!errors.includes(reason)) {
+              errors.push(reason);
+            }
+          });
+        }
+        
+        // Specific corrupt thumbnail detection
+        if (validation.thumbnail?.corrupt) {
+          errors.push('Thumbnail is corrupt (contains HTML error page instead of image)');
+        }
+      }
+    } catch (err) {
+      // Don't block on validation failure - log and continue with URL presence checks
+      console.warn('Asset validation failed:', err.message);
+      warnings.push('Asset validation unavailable - using URL presence checks only');
+    }
   }
   
   // WARNING CHECKS - non-blocking but recommended
