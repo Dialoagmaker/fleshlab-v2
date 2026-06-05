@@ -40,6 +40,7 @@ import PerformerSubmissionsReview from './pages/admin/PerformerSubmissionsReview
 import PromoKitDetail from './pages/admin/PromoKitDetail';
 import PerformerSupport from './pages/admin/PerformerSupport';
 import PayoutRequests from './pages/admin/PayoutRequests';
+import DuplicateVideos from './pages/admin/DuplicateVideos';
 import ComingSoon from './pages/ComingSoon';
 import PerformerRouteHandler from './components/PerformerRouteHandler';
 import PerformerGuard from './components/PerformerGuard';
@@ -161,6 +162,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/promo-kit/:video_id" element={<PromoKitDetail />} />
                 <Route path="/admin/performer-support" element={<PerformerSupport />} />
                 <Route path="/admin/payout-requests" element={<PayoutRequests />} />
+                <Route path="/admin/duplicate-videos" element={<DuplicateVideos />} />
               </Route>
             </Route>
           </Route>
