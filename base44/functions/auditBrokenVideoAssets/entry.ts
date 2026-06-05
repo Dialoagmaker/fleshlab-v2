@@ -43,8 +43,19 @@ Deno.serve(async (req) => {
     console.log(`[auditBrokenVideoAssets] Found ${videos.length} videos to audit`);
 
     const results = [];
+    const brokenVideos = [];
     const summary = {
       healthy: 0,
+      legacy_healthy: 0,
+      canonical_healthy: 0,
+      true_broken: 0,
+      repairable: 0,
+      non_repairable: 0,
+      test_dummy_videos: 0,
+      thumbnail_only: 0,
+      preview_only: 0,
+      full_assets: 0,
+      source_required_error: 0,
       thumbnail_missing: 0,
       thumbnail_corrupt: 0,
       thumbnail_404: 0,
@@ -54,8 +65,6 @@ Deno.serve(async (req) => {
       source_missing: 0,
       source_404: 0,
       source_invalid: 0,
-      legacy_healthy: 0,
-      canonical_healthy: 0,
     };
 
     // Audit each video
@@ -63,30 +72,63 @@ Deno.serve(async (req) => {
       const audit = await auditVideo(video);
       results.push(audit);
       
-      // Update summary
-      if (audit.overallHealth === 'healthy') summary.healthy++;
-      if (audit.thumbnailHealth === 'thumbnail_corrupt') summary.thumbnail_corrupt++;
-      if (audit.thumbnailHealth === 'thumbnail_missing') summary.thumbnail_missing++;
-      if (audit.thumbnailHealth === 'thumbnail_404') summary.thumbnail_404++;
-      if (audit.previewHealth === 'preview_missing') summary.preview_missing++;
-      if (audit.previewHealth === 'preview_404' || audit.previewHealth === 'preview_invalid') summary.preview_invalid++;
-      if (audit.sourceHealth === 'source_missing' || audit.sourceHealth === 'source_404' || audit.sourceHealth === 'source_invalid') summary.source_invalid++;
-      if (audit.recommendedMode === 'no_action' && audit.legacyUrlDetected) summary.legacy_healthy++;
-      if (audit.recommendedMode === 'no_action' && !audit.legacyUrlDetected) summary.canonical_healthy++;
+      // Classify as healthy or broken
+      if (audit.overallHealth === 'healthy') {
+        summary.healthy++;
+        if (audit.legacyUrlDetected) {
+          summary.legacy_healthy++;
+        } else {
+          summary.canonical_healthy++;
+        }
+      } else {
+        summary.true_broken++;
+        brokenVideos.push(audit);
+        
+        // Count by repair mode
+        if (audit.recommendedMode === 'thumbnail_only') summary.thumbnail_only++;
+        if (audit.recommendedMode === 'preview_only') summary.preview_only++;
+        if (audit.recommendedMode === 'full_assets') summary.full_assets++;
+        if (audit.recommendedMode === 'source_required_error') {
+          summary.source_required_error++;
+          summary.non_repairable++;
+        }
+        
+        // Count specific issues
+        if (audit.thumbnailHealth === 'thumbnail_corrupt') summary.thumbnail_corrupt++;
+        if (audit.thumbnailHealth === 'thumbnail_missing') summary.thumbnail_missing++;
+        if (audit.thumbnailHealth === 'thumbnail_404') summary.thumbnail_404++;
+        if (audit.previewHealth === 'preview_missing') summary.preview_missing++;
+        if (audit.previewHealth === 'preview_404' || audit.previewHealth === 'preview_invalid') summary.preview_invalid++;
+        if (audit.sourceHealth === 'source_missing' || audit.sourceHealth === 'source_404' || audit.sourceHealth === 'source_invalid') summary.source_invalid++;
+        
+        // Detect test/dummy videos
+        if (video.title.toLowerCase().includes('test') || video.title.toLowerCase().includes('dummy')) {
+          summary.test_dummy_videos++;
+        }
+      }
+      
+      // Count repairable (broken but can repair)
+      if (audit.overallHealth === 'broken' && audit.canRepair) {
+        summary.repairable++;
+      }
     }
 
     console.log('[auditBrokenVideoAssets] Audit complete', {
       scanned: results.length,
       healthy: summary.healthy,
-      broken: results.length - summary.healthy,
+      true_broken: summary.true_broken,
+      repairable: summary.repairable,
+      non_repairable: summary.non_repairable,
     });
 
     return Response.json({
       scanned: results.length,
       healthy: summary.healthy,
-      broken: results.length - summary.healthy,
-      results,
+      true_broken: summary.true_broken,
+      repairable: summary.repairable,
+      non_repairable: summary.non_repairable,
       summary,
+      brokenVideos,
     });
 
   } catch (error) {
