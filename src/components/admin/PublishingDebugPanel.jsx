@@ -16,7 +16,7 @@ export default function PublishingDebugPanel({
   sourceAssets = [],
   onRefresh 
 }) {
-  // Calculate publish readiness with safe fallback
+  // Calculate publish readiness (sync call - guardrails now returns synchronously)
   const publishCheck = checkPublishReadiness(form, { videoPerformers: selectedPerformerIds }) || { canPublish: false, errors: [], warnings: [] };
   
   // Validate categories with safe fallback
@@ -71,9 +71,16 @@ export default function PublishingDebugPanel({
       id: 'categories_valid',
       label: 'Categories Valid',
       pass: (categoryValidation?.valid !== false) && form.categories && form.categories.length > 0,
-      value: (categoryValidation?.valid !== false) 
-        ? `✓ ${form.categories?.length || 0} categories` 
-        : `✗ Invalid: ${(categoryValidation?.removed || []).map(r => r.value).join(', ') || 'none'}`,
+      value: (() => {
+        const catCount = form.categories?.length || 0;
+        const isValid = categoryValidation?.valid !== false;
+        const removed = categoryValidation?.removed || [];
+        if (isValid && catCount > 0) return `✓ ${catCount} categories`;
+        if (!isValid && removed.length > 0) return `✗ Invalid: ${removed.map(r => r.value).join(', ')}`;
+        if (!isValid) return '✗ Invalid categories';
+        if (catCount === 0) return '⚠ None';
+        return `✓ ${catCount} categories`;
+      })(),
     },
     {
       id: 'tags',
@@ -100,9 +107,13 @@ export default function PublishingDebugPanel({
     {
       id: 'asset_id',
       label: 'VideoAsset (source)',
-      pass: true, // VideoAsset is optional if canonical URL exists
-      value: (sourceAssets || []).length > 0 ? `✓ ${(sourceAssets || []).length} asset(s)` : '⚠ No VideoAsset (using canonical URL)',
-      note: 'VideoAsset is optional - canonical URL takes precedence',
+      pass: !!form.source_video_url || (sourceAssets || []).length > 0,
+      value: (sourceAssets || []).length > 0 
+        ? `✓ ${(sourceAssets || []).length} asset(s)` 
+        : form.source_video_url 
+          ? '⚠ No VideoAsset record (canonical URL valid)' 
+          : '✗ No source',
+      note: form.source_video_url ? 'VideoAsset optional - canonical URL takes precedence' : 'VideoAsset record missing',
     },
     {
       id: 'thumbnail',
@@ -186,7 +197,13 @@ export default function PublishingDebugPanel({
           )}
         </Badge>
         <Badge variant="outline">
-          {blockingIssues.length} blocking issue(s)
+          {publishCheck.canPublish 
+            ? '✓' 
+            : publishCheck.errors?.length > 0 
+              ? `${publishCheck.errors.length} blocking issue(s)`
+              : blockingIssues.length > 0
+                ? `${blockingIssues.length} blocking issue(s)`
+                : 'validation pending'}
         </Badge>
         <Badge variant="outline">
           {warnings.length} warning(s)

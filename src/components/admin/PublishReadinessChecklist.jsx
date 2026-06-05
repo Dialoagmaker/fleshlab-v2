@@ -22,8 +22,9 @@ export default function PublishReadinessChecklist({
   }) || { canPublish: false, errors: [], warnings: [] };
 
   // Validate categories with safe fallback
-  const categoryValidation = validateVideoCategories(form.categories || []) || { valid: true, removed: [] };
+  const categoryValidation = validateVideoCategories(form.categories || []) || { valid: true, removed: [], warnings: [] };
   const hasInvalidCategories = !categoryValidation.valid || (categoryValidation.removed || []).length > 0;
+  const invalidCategoryCount = (categoryValidation.removed || []).length;
 
   // Build checklist items with asset validation
   const checklistItems = [
@@ -126,7 +127,11 @@ export default function PublishReadinessChecklist({
         ) : (
           <Badge className="bg-red-500/10 text-red-500 border border-red-500/20">
             <XCircle className="w-3 h-3 mr-1" />
-            {criticalFailures.length} Critical Issue(s)
+            {publishCheck.errors?.length > 0 
+              ? `${publishCheck.errors.length} Critical Issue(s)`
+              : criticalFailures.length > 0
+                ? `${criticalFailures.length} Critical Issue(s)`
+                : 'Validation Pending'}
           </Badge>
         )}
       </div>
@@ -205,12 +210,14 @@ export default function PublishReadinessChecklist({
       {hasInvalidCategories && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-xs text-destructive">
           <p className="font-semibold mb-1">❌ Invalid Categories Detected:</p>
-          {(categoryValidation.removed || []).length > 0 && (
+          {invalidCategoryCount > 0 ? (
             <ul className="list-disc list-inside">
               {(categoryValidation.removed || []).map((cat, i) => (
                 <li key={i}>"{cat.value}" - {cat.reason.replace(/_/g, ' ')}</li>
               ))}
             </ul>
+          ) : (
+            <p>Categories failed validation check</p>
           )}
           {onCleanInvalidCategories && (
             <Button
