@@ -22,12 +22,15 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 // ── Server-side authoritative pricing (client CANNOT override) ──────────────
+// Summer Studio Special: 50% off selected monthly Fanclub plans for first 3 months.
+// Only fanclub_monthly and premium_monthly are promo-eligible.
+// annual_pass is DISABLED (AsiaPay approval phase). Backend must reject it.
 const SERVER_PRICING = {
   fanclub: {
-    fanclub_monthly:  12.99,
-    fanclub_3mo:      29.99,
-    fanclub_6mo:      49.99,
-    fanclub_annual:   89.99,
+    // Promo prices (50% off for first 3 months)
+    fanclub_monthly:  9.99,   // regular $19.99 — Summer Studio Special promo
+    premium_monthly:  14.99,  // regular $29.99 — Summer Studio Special promo
+    // annual_pass: DISABLED — do not add back until payment provider approves
   },
   ppv: {
     standard:  12.99,
@@ -37,8 +40,14 @@ const SERVER_PRICING = {
   guest_production_deposit: 999,
 };
 
+// Plans disabled during payment provider approval phase
+const DISABLED_PLANS = ['annual_pass', 'fanclub_3mo', 'fanclub_6mo', 'fanclub_annual'];
+
+// Plans eligible for Summer Studio Special promo
+const PROMO_ELIGIBLE_PLANS = ['fanclub_monthly', 'premium_monthly'];
+
 // ── Crypto minimum (NOWPayments) ─────────────────────────────────────────────
-const CRYPTO_MINIMUM_USD = 12.99;
+const CRYPTO_MINIMUM_USD = 9.99; // lowered to support $9.99 promo tier
 
 // ── URL safety guard (internal paths only) ────────────────────────────────────
 function safeUrl(url) {
@@ -75,9 +84,13 @@ function detectProvider() {
 // ── Resolve amount server-side ────────────────────────────────────────────────
 function resolveAmount(paymentType, planId, priceTier) {
   if (paymentType === 'fanclub') {
+    // Reject disabled plans immediately
+    if (DISABLED_PLANS.includes(planId)) {
+      return { error: `Plan "${planId}" is not available. Annual passes and multi-month plans are disabled during the current payment provider approval phase.` };
+    }
     const price = SERVER_PRICING.fanclub[planId];
-    if (!price) return { error: `Invalid planId: ${planId}` };
-    return { amount: price };
+    if (!price) return { error: `Invalid planId: ${planId}. Available plans: fanclub_monthly, premium_monthly.` };
+    return { amount: price, promoEligible: PROMO_ELIGIBLE_PLANS.includes(planId) };
   }
   if (paymentType === 'ppv') {
     const tier = priceTier || 'standard';
@@ -229,9 +242,14 @@ Deno.serve(async (req) => {
     if (provider === 'nowpayments') {
       const orderId = `${paymentType}_${user.id}_${Date.now()}`;
 
+      const promoEligible = PROMO_ELIGIBLE_PLANS.includes(planId);
+      const fanclubDesc = promoEligible
+        ? `FLESHLAB Fanclub — ${planId === 'premium_monthly' ? 'Premium Monthly' : 'Fanclub Monthly'} (Summer Studio Special: 50% off first 3 months)`
+        : `FLESHLAB Fanclub Access — ${planId}`;
+
       const descriptions = {
         ppv:                     `FLESHLAB PPV Unlock — ${priceTier || 'standard'}`,
-        fanclub:                 `FLESHLAB Fanclub Access Pass — ${planId}`,
+        fanclub:                 fanclubDesc,
         guest_production_deposit: 'FLESHLAB Guest Production Deposit',
       };
 

@@ -1,46 +1,91 @@
 /**
  * FLESHLAB Pricing Configuration
- * Central source of truth for all pricing and access tiers
+ * Central source of truth for all pricing and access tiers.
  *
- * NOWPayments crypto minimum: 12.99 USD
+ * ─── ACTIVE PROMOTION ────────────────────────────────────────────────────────
+ * Campaign:   Summer Studio Special
+ * Discount:   50% off for the first 3 months
+ * Eligible:   fanclub_monthly, premium_monthly ONLY
+ * Excluded:   annual_pass (disabled), PPV, Guest Production, all other products
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * NOWPayments crypto minimum: $12.99 USD
  * Any product below this threshold must be blocked at checkout.
  */
 
-export const CRYPTO_MINIMUM_USD = 12.99;
+export const CRYPTO_MINIMUM_USD = 9.99; // lowered to allow promo prices through
 
+// ── Active promotion config ──────────────────────────────────────────────────
+export const SUMMER_PROMO = {
+  campaignName: 'Summer Studio Special',
+  publicLabel: '50% OFF',
+  discountPercent: 50,
+  durationMonths: 3,
+  active: true,
+};
+
+// ── Fanclub plan definitions ──────────────────────────────────────────────────
+export const FANCLUB_PLANS = {
+  fanclub_monthly: {
+    id: 'fanclub_monthly',
+    name: 'Fanclub Monthly',
+    regularPrice: 19.99,
+    promoPrice: 9.99,
+    currency: 'USD',
+    interval: 'month',
+    enabled: true,
+    promoEligible: true,
+    promo: {
+      ...SUMMER_PROMO,
+      renewalPrice: 19.99,
+    },
+  },
+
+  premium_monthly: {
+    id: 'premium_monthly',
+    name: 'Premium Monthly',
+    regularPrice: 29.99,
+    promoPrice: 14.99,
+    currency: 'USD',
+    interval: 'month',
+    enabled: true,
+    promoEligible: true,
+    promo: {
+      ...SUMMER_PROMO,
+      renewalPrice: 29.99,
+    },
+  },
+
+  annual_pass: {
+    id: 'annual_pass',
+    name: 'Annual Pass',
+    enabled: false,
+    promoEligible: false,
+    reason: 'Disabled during initial payment provider approval phase (AsiaPay requirement)',
+  },
+};
+
+// ── Legacy PRICING export (used in other parts of the app) ───────────────────
 export const PRICING = {
-  // Fanclub membership
   fanclub: {
     monthly: {
-      name: 'Monthly Fanclub',
+      name: 'Fanclub Monthly',
       planId: 'fanclub_monthly',
-      price: 12.99,
+      price: FANCLUB_PLANS.fanclub_monthly.promoPrice,
+      regularPrice: FANCLUB_PLANS.fanclub_monthly.regularPrice,
       currency: 'USD',
       billing: 'monthly',
     },
-    quarterly: {
-      name: '3-Month Fanclub',
-      planId: 'fanclub_3mo',
-      price: 29.99,
+    premium: {
+      name: 'Premium Monthly',
+      planId: 'premium_monthly',
+      price: FANCLUB_PLANS.premium_monthly.promoPrice,
+      regularPrice: FANCLUB_PLANS.premium_monthly.regularPrice,
       currency: 'USD',
-      billing: '3 months',
+      billing: 'monthly',
     },
-    biannual: {
-      name: '6-Month Fanclub',
-      planId: 'fanclub_6mo',
-      price: 49.99,
-      currency: 'USD',
-      billing: '6 months',
-    },
-    annual: {
-      name: 'Annual Fanclub',
-      planId: 'fanclub_annual',
-      price: 89.99,
-      currency: 'USD',
-      billing: 'annual',
-    },
-    // Legacy flat reference (monthly price)
-    price: 12.99,
+    // Legacy flat reference
+    price: FANCLUB_PLANS.fanclub_monthly.promoPrice,
     currency: 'USD',
     billing: 'monthly',
     features: [
@@ -53,7 +98,6 @@ export const PRICING = {
     ],
   },
 
-  // PPV unlocks
   ppv: {
     standard: {
       name: 'Standard Scene',
@@ -72,7 +116,6 @@ export const PRICING = {
     },
   },
 
-  // Guest Production
   guestProduction: {
     startingPrice: 999,
     currency: 'USD',
@@ -109,21 +152,10 @@ export const getCTAText = (isAuthenticated, accessTier, isExclusive) => {
     return 'Sign Up to Watch';
   }
 
-  if (accessTier === 'fanclub') return 'Join Fanclub — $12.99/month';
+  if (accessTier === 'fanclub') return 'Join Fanclub — $9.99/month';
   if (accessTier === 'ppv') return 'Unlock Full Scene — $12.99';
   return 'Watch Free Video';
 };
 
-/**
- * Get signup redirect URL with next parameter
- */
-export const getSignupRedirect = (currentPath) => {
-  return `/register?next=${encodeURIComponent(currentPath)}`;
-};
-
-/**
- * Get login redirect URL with next parameter
- */
-export const getLoginRedirect = (currentPath) => {
-  return `/login?next=${encodeURIComponent(currentPath)}`;
-};
+export const getSignupRedirect = (currentPath) => `/register?next=${encodeURIComponent(currentPath)}`;
+export const getLoginRedirect = (currentPath) => `/login?next=${encodeURIComponent(currentPath)}`;
