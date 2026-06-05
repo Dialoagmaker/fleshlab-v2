@@ -91,21 +91,37 @@ Deno.serve(async (req) => {
       })
     );
 
-    // Create thumbnail asset
+    // Update existing thumbnail asset (created by finalizeUploadedVideo)
     if (assets?.thumbnail) {
-      assetPromises.push(
-        base44.entities.VideoAsset.create({
-          video_id: video.id,
-          asset_type: 'thumbnail',
-          r2_key: assets.thumbnail.r2_key,
-          cdn_url: assets.thumbnail.cdn_url,
-          status: 'ready',
-          file_size_bytes: assets.thumbnail.file_size_bytes,
-          width: assets.thumbnail.width,
-          height: assets.thumbnail.height,
-          mime_type: assets.thumbnail.mime_type || 'image/jpeg',
-        })
-      );
+      const existingThumbnails = await base44.entities.VideoAsset.filter({
+        video_id: video.id,
+        asset_type: 'thumbnail',
+      });
+      if (existingThumbnails.length > 0) {
+        assetPromises.push(
+          base44.entities.VideoAsset.update(existingThumbnails[0].id, {
+            status: 'ready',
+            file_size_bytes: assets.thumbnail.file_size_bytes,
+            width: assets.thumbnail.width,
+            height: assets.thumbnail.height,
+            mime_type: assets.thumbnail.mime_type || 'image/jpeg',
+          })
+        );
+      } else {
+        assetPromises.push(
+          base44.entities.VideoAsset.create({
+            video_id: video.id,
+            asset_type: 'thumbnail',
+            r2_key: assets.thumbnail.r2_key,
+            cdn_url: assets.thumbnail.cdn_url,
+            status: 'ready',
+            file_size_bytes: assets.thumbnail.file_size_bytes,
+            width: assets.thumbnail.width,
+            height: assets.thumbnail.height,
+            mime_type: assets.thumbnail.mime_type || 'image/jpeg',
+          })
+        );
+      }
     }
 
     // Create cover asset
@@ -125,22 +141,39 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create preview video asset
+    // Update existing preview asset (created by finalizeUploadedVideo)
     if (assets?.preview_video) {
-      assetPromises.push(
-        base44.entities.VideoAsset.create({
-          video_id: video.id,
-          asset_type: 'preview',
-          r2_key: assets.preview_video.r2_key,
-          cdn_url: assets.preview_video.cdn_url,
-          status: 'ready',
-          file_size_bytes: assets.preview_video.file_size_bytes,
-          duration_seconds: assets.preview_video.duration_seconds,
-          width: assets.preview_video.width,
-          height: assets.preview_video.height,
-          mime_type: assets.preview_video.mime_type || 'video/mp4',
-        })
-      );
+      const existingPreviews = await base44.entities.VideoAsset.filter({
+        video_id: video.id,
+        asset_type: 'preview',
+      });
+      if (existingPreviews.length > 0) {
+        assetPromises.push(
+          base44.entities.VideoAsset.update(existingPreviews[0].id, {
+            status: 'ready',
+            file_size_bytes: assets.preview_video.file_size_bytes,
+            duration_seconds: assets.preview_video.duration_seconds,
+            width: assets.preview_video.width,
+            height: assets.preview_video.height,
+            mime_type: assets.preview_video.mime_type || 'video/mp4',
+          })
+        );
+      } else {
+        assetPromises.push(
+          base44.entities.VideoAsset.create({
+            video_id: video.id,
+            asset_type: 'preview',
+            r2_key: assets.preview_video.r2_key,
+            cdn_url: assets.preview_video.cdn_url,
+            status: 'ready',
+            file_size_bytes: assets.preview_video.file_size_bytes,
+            duration_seconds: assets.preview_video.duration_seconds,
+            width: assets.preview_video.width,
+            height: assets.preview_video.height,
+            mime_type: assets.preview_video.mime_type || 'video/mp4',
+          })
+        );
+      }
     }
 
     // Create preview GIF asset (optional)
