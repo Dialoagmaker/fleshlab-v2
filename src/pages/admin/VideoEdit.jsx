@@ -339,6 +339,8 @@ export default function VideoEdit() {
             msg: '✓ Thumbnail regenerated successfully',
             details: job.result
           });
+          // CRITICAL: Force immediate refetch to get new thumbnail URL before user can save
+          await refetchVideo();
           queryClient.invalidateQueries({ queryKey: ['video', id] });
           clearInterval(pollInterval);
         } else if (job.status === 'failed' || job.status === 'thumbnail_invalid' || job.status === 'timeout') {
@@ -1503,22 +1505,24 @@ export default function VideoEdit() {
             type="button" 
             variant="outline"
             onClick={handleSaveDraft}
-            disabled={save.isPending}
+            disabled={save.isPending || (thumbnailJobStatus && thumbnailJobStatus.status === 'processing')}
             className="gap-2"
           >
             <Save className="w-4 h-4" />
             Save Draft
+            {thumbnailJobStatus && thumbnailJobStatus.status === 'processing' && ' (Wait for thumbnail...)'}
           </Button>
 
           {/* Publish - requires all checks to pass */}
           <Button 
             type="button" 
             onClick={handlePublish}
-            disabled={save.isPending || !publishCheck.canPublish}
+            disabled={save.isPending || !publishCheck.canPublish || (thumbnailJobStatus && thumbnailJobStatus.status === 'processing')}
             className="gap-2 bg-primary hover:bg-primary/90"
           >
             <Save className="w-4 h-4" />
-            {save.isPending ? "Saving…" : publishCheck.canPublish ? "Publish Video" : `Cannot Publish (${(publishCheck.errors || []).length} issues)`}
+            {thumbnailJobStatus && thumbnailJobStatus.status === 'processing' ? 'Processing...' :
+             save.isPending ? "Saving…" : publishCheck.canPublish ? "Publish Video" : `Cannot Publish (${(publishCheck.errors || []).length} issues)`}
           </Button>
 
           <Link to="/admin/videos">
