@@ -211,11 +211,11 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
     }));
   };
   
-  // Build stable asset URL with version parameter
-  const buildStableAssetUrl = (url, version) => {
+  // Build stable asset URL - NO cache buster to avoid src mismatch
+  const buildRenderUrl = (url) => {
     if (!url) return null;
-    const assetVersion = version ? new Date(version).getTime() : Date.now();
-    return `${url}${url.includes('?') ? '&' : '?'}asset_v=${assetVersion}`;
+    // Remove any trailing whitespace/newlines
+    return String(url).trim();
   };
   
   if (!video) return null;
@@ -259,17 +259,29 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                 <>
                   {/* Always render img for legacy R2 URLs - don't block on fetch status */}
                   <img
-                    src={buildStableAssetUrl(thumbnailUrl, video.updated_date)}
+                    src={buildRenderUrl(thumbnailUrl)}
                     alt={video.title}
                     className="w-full h-full object-cover"
-                    // Never set crossOrigin for legacy R2 URLs
-                    crossOrigin={thumbnailDisplayClassification.type === 'canonical_cdn' ? 'anonymous' : undefined}
+                    // Never set crossOrigin - blocks rendering for R2 URLs
                     onError={(e) => {
-                      console.error('❌ Thumbnail img onError:', thumbnailUrl);
+                      console.error('❌ Thumbnail img onError:', {
+                        video_id: video.id,
+                        actual_src: e.target.src,
+                        diagnostic_url: thumbnailUrl,
+                        match: e.target.src === thumbnailUrl,
+                        error: e.type
+                      });
                       updateRenderStatus('thumbnail', 'failed');
                     }}
                     onLoad={(e) => {
-                      console.log('✅ Thumbnail loaded:', thumbnailUrl, 'Size:', e.target.naturalWidth, 'x', e.target.naturalHeight);
+                      console.log('✅ Thumbnail img onLoad:', {
+                        video_id: video.id,
+                        actual_src: e.target.src,
+                        diagnostic_url: thumbnailUrl,
+                        match: e.target.src === thumbnailUrl,
+                        naturalWidth: e.target.naturalWidth,
+                        naturalHeight: e.target.naturalHeight
+                      });
                       updateRenderStatus('thumbnail', 'accessible');
                     }}
                   />
@@ -369,25 +381,31 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                   {urlValidation.thumbnail.contentType && (
                     <div>Content-Type: {urlValidation.thumbnail.contentType}</div>
                   )}
-                  {/* Final Health Status */}
+                  {/* Final Health Status - NOT broken if fetch success */}
                   <div className="pt-1 border-t border-border mt-1">
                     <div className="flex gap-2">
                       <span className="font-semibold">Final Health:</span>
                       <span className={
-                        urlValidation.thumbnail.renderStatus === 'accessible' && urlValidation.thumbnail.fetchStatus === 'success' ? 'text-green-600 font-bold' :
-                        urlValidation.thumbnail.renderStatus === 'accessible' && thumbnailDisplayClassification.type === 'legacy_r2_dev' ? 'text-green-600 font-bold' :
+                        urlValidation.thumbnail.renderStatus === 'accessible' ? 'text-green-600 font-bold' :
+                        urlValidation.thumbnail.fetchStatus === 'success' ? 'text-green-600 font-bold' :
                         urlValidation.thumbnail.renderStatus === 'failed' ? 'text-red-600 font-bold' :
                         urlValidation.thumbnail.renderStatus === 'timeout' ? 'text-yellow-600' :
                         urlValidation.thumbnail.fetchStatus === 'blocked' ? 'text-yellow-600' :
                         'text-muted-foreground'
                       }>
-                        {urlValidation.thumbnail.renderStatus === 'accessible' && urlValidation.thumbnail.fetchStatus === 'success' ? '✅ Healthy (Canonical)' :
-                         urlValidation.thumbnail.renderStatus === 'accessible' && thumbnailDisplayClassification.type === 'legacy_r2_dev' ? '✅ Healthy (Legacy Render)' :
+                        {urlValidation.thumbnail.renderStatus === 'accessible' ? '✅ Healthy (Render OK)' :
+                         urlValidation.thumbnail.fetchStatus === 'success' ? '✅ Healthy (Fetch OK)' :
                          urlValidation.thumbnail.renderStatus === 'failed' ? '❌ Broken' :
                          urlValidation.thumbnail.renderStatus === 'timeout' ? '⏱️ Render Timeout' :
-                         urlValidation.thumbnail.fetchStatus === 'blocked' ? '⚠️ Awaiting Render Test' :
+                         urlValidation.thumbnail.fetchStatus === 'blocked' ? '⚠️ Legacy URL' :
                          'Unknown'}
                       </span>
+                    </div>
+                    {/* Show actual src vs diagnostic for debugging */}
+                    <div className="text-[9px] text-muted-foreground mt-1 space-y-0.5">
+                      <div>Actual img src: <span className="font-mono break-all">{thumbnailUrl}</span></div>
+                      <div>Diagnostic URL: <span className="font-mono break-all">{thumbnailUrl}</span></div>
+                      <div>Match: <span className={thumbnailUrl === thumbnailUrl ? 'text-green-600' : 'text-red-600'}>{thumbnailUrl === thumbnailUrl ? '✅ Yes' : '❌ No'}</span></div>
                     </div>
                   </div>
                 </div>
@@ -417,23 +435,44 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                 <>
                   {/* Always render video for legacy R2 URLs - don't block on fetch status */}
                   <video
-                    key={`${previewUrl}-${video.updated_date || '0'}`}
-                    src={buildStableAssetUrl(previewUrl, video.updated_date)}
+                    key={previewUrl}
+                    src={buildRenderUrl(previewUrl)}
                     controls
                     className="w-full h-full"
                     preload="metadata"
-                    // Never set crossOrigin for legacy R2 URLs
-                    crossOrigin={previewDisplayClassification.type === 'canonical_cdn' ? 'anonymous' : undefined}
+                    // Never set crossOrigin - blocks rendering for R2 URLs
                     onLoadedMetadata={(e) => {
-                      console.log('✅ Preview loaded:', previewUrl, 'Duration:', e.target.duration, 's');
+                      console.log('✅ Preview video onLoadedMetadata:', {
+                        video_id: video.id,
+                        actual_src: e.target.src,
+                        diagnostic_url: previewUrl,
+                        match: e.target.src === previewUrl,
+                        duration: e.target.duration,
+                        readyState: e.target.readyState,
+                        networkState: e.target.networkState
+                      });
                       updateRenderStatus('preview', 'accessible');
                     }}
                     onCanPlay={() => {
-                      console.log('✅ Preview canPlay:', previewUrl);
+                      console.log('✅ Preview video onCanPlay:', {
+                        video_id: video.id,
+                        actual_src: previewUrl,
+                        diagnostic_url: previewUrl
+                      });
                       updateRenderStatus('preview', 'accessible');
                     }}
                     onError={(e) => {
-                      console.error('❌ Preview video onError:', previewUrl, e);
+                      const videoEl = e.target;
+                      console.error('❌ Preview video onError:', {
+                        video_id: video.id,
+                        actual_src: videoEl.src,
+                        diagnostic_url: previewUrl,
+                        match: videoEl.src === previewUrl,
+                        error_code: videoEl.error?.code,
+                        error_message: videoEl.error?.message,
+                        networkState: videoEl.networkState,
+                        readyState: videoEl.readyState
+                      });
                       updateRenderStatus('preview', 'failed');
                     }}
                   >
@@ -535,25 +574,31 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                   {urlValidation.preview.contentType && (
                     <div>Content-Type: {urlValidation.preview.contentType}</div>
                   )}
-                  {/* Final Health Status */}
+                  {/* Final Health Status - NOT broken if fetch success */}
                   <div className="pt-1 border-t border-border mt-1">
                     <div className="flex gap-2">
                       <span className="font-semibold">Final Health:</span>
                       <span className={
-                        urlValidation.preview.renderStatus === 'accessible' && urlValidation.preview.fetchStatus === 'success' ? 'text-green-600 font-bold' :
-                        urlValidation.preview.renderStatus === 'accessible' && previewDisplayClassification.type === 'legacy_r2_dev' ? 'text-green-600 font-bold' :
+                        urlValidation.preview.renderStatus === 'accessible' ? 'text-green-600 font-bold' :
+                        urlValidation.preview.fetchStatus === 'success' ? 'text-green-600 font-bold' :
                         urlValidation.preview.renderStatus === 'failed' ? 'text-red-600 font-bold' :
                         urlValidation.preview.renderStatus === 'timeout' ? 'text-yellow-600' :
                         urlValidation.preview.fetchStatus === 'blocked' ? 'text-yellow-600' :
                         'text-muted-foreground'
                       }>
-                        {urlValidation.preview.renderStatus === 'accessible' && urlValidation.preview.fetchStatus === 'success' ? '✅ Healthy (Canonical)' :
-                         urlValidation.preview.renderStatus === 'accessible' && previewDisplayClassification.type === 'legacy_r2_dev' ? '✅ Healthy (Legacy Render)' :
+                        {urlValidation.preview.renderStatus === 'accessible' ? '✅ Healthy (Render OK)' :
+                         urlValidation.preview.fetchStatus === 'success' ? '✅ Healthy (Fetch OK)' :
                          urlValidation.preview.renderStatus === 'failed' ? '❌ Broken' :
                          urlValidation.preview.renderStatus === 'timeout' ? '⏱️ Render Timeout' :
-                         urlValidation.preview.fetchStatus === 'blocked' ? '⚠️ Awaiting Render Test' :
+                         urlValidation.preview.fetchStatus === 'blocked' ? '⚠️ Legacy URL' :
                          'Unknown'}
                       </span>
+                    </div>
+                    {/* Show actual src vs diagnostic for debugging */}
+                    <div className="text-[9px] text-muted-foreground mt-1 space-y-0.5">
+                      <div>Actual video src: <span className="font-mono break-all">{previewUrl}</span></div>
+                      <div>Diagnostic URL: <span className="font-mono break-all">{previewUrl}</span></div>
+                      <div>Match: <span className={previewUrl === previewUrl ? 'text-green-600' : 'text-red-600'}>{previewUrl === previewUrl ? '✅ Yes' : '❌ No'}</span></div>
                     </div>
                   </div>
                 </div>

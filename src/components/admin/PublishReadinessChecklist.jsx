@@ -1,7 +1,7 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, AlertCircle, Loader2, Trash2 } from "lucide-react";
+import { CheckCircle2, XCircle, AlertCircle, Trash2 } from "lucide-react";
 import { checkPublishReadiness } from "@/lib/publishReadinessGuardrails";
 import { validateVideoCategories } from "@/lib/videoTaxonomy";
 
@@ -13,7 +13,8 @@ export default function PublishReadinessChecklist({
   video, 
   form, 
   selectedPerformerIds = [],
-  onCleanInvalidCategories 
+  onCleanInvalidCategories,
+  assetValidation = {}
 }) {
   // Calculate publish readiness
   const publishCheck = checkPublishReadiness(form, { 
@@ -24,7 +25,7 @@ export default function PublishReadinessChecklist({
   const categoryValidation = validateVideoCategories(form.categories || []);
   const hasInvalidCategories = !categoryValidation.valid || (categoryValidation.removed && categoryValidation.removed.length > 0);
 
-  // Build checklist items
+  // Build checklist items with asset validation
   const checklistItems = [
     {
       id: 'title',
@@ -66,20 +67,23 @@ export default function PublishReadinessChecklist({
     {
       id: 'source_video',
       label: 'Source Video',
-      pass: !!form.source_video_url,
+      pass: !!form.source_video_url && assetValidation.source?.httpStatus === 200,
       critical: true,
+      details: assetValidation.source?.httpStatus ? `HTTP ${assetValidation.source.httpStatus}` : null,
     },
     {
       id: 'thumbnail',
       label: 'Thumbnail',
-      pass: !!form.primary_thumbnail_url,
+      pass: !!form.primary_thumbnail_url && assetValidation.thumbnail?.httpStatus === 200,
       critical: true,
+      details: assetValidation.thumbnail?.httpStatus ? `HTTP ${assetValidation.thumbnail.httpStatus}` : null,
     },
     {
       id: 'trailer',
       label: 'Trailer/Preview',
-      pass: !!form.trailer_url || !!form.source_video_url,
+      pass: (!!form.trailer_url || !!form.source_video_url) && assetValidation.preview?.httpStatus === 200,
       critical: true,
+      details: assetValidation.preview?.httpStatus ? `HTTP ${assetValidation.preview.httpStatus}` : null,
     },
     {
       id: 'seo_title',
@@ -111,7 +115,7 @@ export default function PublishReadinessChecklist({
   const warnings = checklistItems.filter(item => !item.critical && !item.pass);
 
   return (
-    <section className="bg-card border border-border rounded-xl p-6 space-y-4">
+    <div className="bg-card border border-border rounded-xl p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-foreground">📋 Publishing Checklist</h2>
         {publishCheck.canPublish ? (
@@ -152,9 +156,10 @@ export default function PublishReadinessChecklist({
                 item.pass ? 'text-green-600' : item.critical ? 'text-red-500' : 'text-yellow-600'
               }`}>
                 {item.label}
+                {item.details && <span className="ml-1 text-xs opacity-70">({item.details})</span>}
               </span>
             </div>
-            {item.hasError && (
+            {item.hasError && onCleanInvalidCategories && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -169,24 +174,28 @@ export default function PublishReadinessChecklist({
         ))}
       </div>
 
-      {/* Summary */}
+      {/* Critical Failures */}
       {criticalFailures.length > 0 && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-xs text-red-500 space-y-1">
           <p className="font-semibold">⚠️ Cannot Publish - Critical Issues:</p>
           <ul className="list-disc list-inside">
             {criticalFailures.map(item => (
-              <li key={item.id}>{item.label} {item.id === 'source_video' || item.id === 'thumbnail' ? '(missing)' : ''}</li>
+              <li key={item.id}>
+                {item.label} 
+                {item.details ? ` - ${item.details}` : ''}
+              </li>
             ))}
           </ul>
         </div>
       )}
 
-      {warnings.length > 0 && (
+      {/* Warnings */}
+      {warnings.length > 0 && criticalFailures.length === 0 && (
         <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 text-xs text-yellow-600">
-          <p className="font-semibold">⚠️ Warnings (can publish but recommended to fix):</p>
+          <p className="font-semibold mb-1">⚠️ Warnings ({warnings.length}):</p>
           <ul className="list-disc list-inside">
             {warnings.map(item => (
-              <li key={item.id}>{item.label} {item.id === 'description' ? '(too short)' : item.id === 'tags' ? '(missing)' : ''}</li>
+              <li key={item.id}>{item.label}</li>
             ))}
           </ul>
         </div>
@@ -203,17 +212,19 @@ export default function PublishReadinessChecklist({
               ))}
             </ul>
           )}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onCleanInvalidCategories}
-            className="mt-2 gap-1"
-          >
-            <Trash2 className="w-3 h-3" />
-            Clean Invalid Categories
-          </Button>
+          {onCleanInvalidCategories && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onCleanInvalidCategories}
+              className="mt-2 gap-1"
+            >
+              <Trash2 className="w-3 h-3" />
+              Clean Invalid Categories
+            </Button>
+          )}
         </div>
       )}
-    </section>
+    </div>
   );
 }

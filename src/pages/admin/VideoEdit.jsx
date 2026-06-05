@@ -328,6 +328,13 @@ export default function VideoEdit() {
   // Validate categories separately for cleanup helper
   const categoryValidation = validateVideoCategories(form.categories || []);
 
+  // Build asset validation state from diagnostic results
+  const assetValidation = {
+    source: diagnostic?.url_tests?.source || { status: 'missing', httpStatus: null },
+    thumbnail: diagnostic?.url_tests?.thumbnail || { status: 'missing', httpStatus: null },
+    preview: diagnostic?.url_tests?.preview || { status: 'missing', httpStatus: null },
+  };
+
   // Separate save handlers for Draft vs Publish
   const handleSaveDraft = () => {
     // Draft save - minimal validation
@@ -1015,6 +1022,7 @@ export default function VideoEdit() {
             video={video}
             form={form}
             selectedPerformerIds={selectedPerformerIds}
+            assetValidation={assetValidation}
             onCleanInvalidCategories={() => {
               const validation = validateVideoCategories(form.categories || []);
               if (!validation.valid) {
