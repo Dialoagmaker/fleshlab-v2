@@ -18,7 +18,7 @@ export default function TubeHeader({ onMenuToggle }) {
   const [langOpen, setLangOpen] = useState(false);
   const [bannerVisible, setBannerVisible] = useState(true);
 
-  const BANNER_URL = 'https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/e444844c5_image.png';
+  const BANNER_URL = 'https://video.fleshlab.online/studios/6a1ca4cdc29d96ab4c624c98/banner/ChatGPT%20Image%205.%20Juni%202026%2C%2012_46_38.png';
   const location = useLocation();
   const navigate = useNavigate();
   const { locale, setLocale, t } = useI18n();
