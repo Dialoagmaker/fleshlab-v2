@@ -13,6 +13,16 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
 
   const brand = brands.find(b => b.id === video.brand_id);
   
+  // Debug logging
+  console.log('🎬 VideoIdentificationPanel rendering:', {
+    video_id: video.id,
+    has_thumbnail: !!video.primary_thumbnail_url,
+    has_preview: !!video.trailer_url,
+    has_source: !!video.source_video_url,
+    thumbnail_url: video.primary_thumbnail_url,
+    preview_url: video.trailer_url,
+  });
+  
   // Get priority media URL for preview
   const getPreviewUrl = () => {
     // Priority 1: trailer_url
@@ -56,6 +66,11 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                   src={video.primary_thumbnail_url}
                   alt={video.title}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.error('❌ Thumbnail failed to load:', video.primary_thumbnail_url);
+                    e.target.style.display = 'none';
+                    e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center text-destructive text-xs p-4 text-center">Thumbnail failed to load<br/><span class="font-mono text-[10px]">' + video.primary_thumbnail_url.substring(0, 50) + '...</span></div>';
+                  }}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-muted-foreground">
@@ -78,10 +93,20 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
             <div className="aspect-video bg-black rounded-lg overflow-hidden border border-border relative">
               {hasVideo ? (
                 <video
+                  key={previewUrl}
                   src={previewUrl}
                   controls
                   className="w-full h-full"
                   preload="metadata"
+                  onError={(e) => {
+                    console.error('❌ Video failed to load:', previewUrl);
+                  }}
+                  onLoadedMetadata={() => {
+                    console.log('✅ Video metadata loaded:', previewUrl);
+                  }}
+                  onLoadedData={() => {
+                    console.log('✅ Video data loaded successfully');
+                  }}
                 >
                   Your browser does not support the video tag.
                 </video>

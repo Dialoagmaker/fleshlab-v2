@@ -16,6 +16,7 @@ import VideoDealsSection from "@/components/admin/video/VideoDealsSection";
 import DurationInput from "@/components/admin/DurationInput";
 import { normalizeMetadata, BLOCKED_SPAM_TAGS, SENSITIVE_CATEGORIES } from "@/lib/videoMetadataGuardrails";
 import { checkPublishReadiness } from "@/lib/publishReadinessGuardrails";
+import { validateVideoAssetUrls } from "@/lib/validateVideoAssets";
 
 const EMPTY_FORM = {
   title: "", slug: "", description: "", short_summary: "", brand_id: "",
@@ -141,6 +142,7 @@ export default function VideoEdit() {
   const [retriggerStatus, setRetriggerStatus] = useState(null);
   const [checkStatus, setCheckStatus] = useState(null);
   const [metaGenStatus, setMetaGenStatus] = useState(null);
+  const [diagnostic, setDiagnostic] = useState(null);
 
   const checkAssets = useMutation({
     mutationFn: () => base44.functions.invoke('checkAndApplyVideoAssets', { video_id: id }),
@@ -154,6 +156,61 @@ export default function VideoEdit() {
       }
     },
     onError: (err) => setCheckStatus({ ok: false, msg: err.message }),
+  });
+
+  const runDiagnostic = useMutation({
+    mutationFn: async () => {
+      const video = await base44.entities.Video.get(id);
+      const results = {
+        video_id: id,
+        raw_urls: {
+          thumbnail: video.primary_thumbnail_url,
+          preview: video.trailer_url,
+          source: video.source_video_url,
+        },
+        url_tests: {},
+      };
+
+      // Test each URL
+      for (const [name, url] of Object.entries(results.raw_urls)) {
+        if (!url) {
+          results.url_tests[name] = { status: 'missing', error: 'URL is null/empty' };
+          continue;
+        }
+        try {
+          const response = await fetch(url, { method: 'HEAD' });
+          results.url_tests[name] = {
+            status: response.ok ? 'accessible' : 'error',
+            http_status: response.status,
+            error: response.ok ? null : `HTTP ${response.status}`,
+          };
+        } catch (err) {
+          results.url_tests[name] = {
+            status: 'error',
+            error: err.message || 'Network error',
+          };
+        }
+      }
+
+      return results;
+    },
+    onSuccess: (data) => {
+      setDiagnostic(data);
+      console.log('🔍 Diagnostic Results:', data);
+    },
+    onError: (err) => {
+      setDiagnostic({ error: err.message });
+      console.error('Diagnostic failed:', err);
+    },
+  });
+
+  const runDiagnostic = useMutation({
+    mutationFn: async () => {
+      const result = await validateVideoAssetUrls(id);
+      setDiagnostic(result);
+      console.log('🔍 Video Asset Diagnostic:', result);
+      return result;
+    },
   });
 
   const retrigger = useMutation({
@@ -345,37 +402,82 @@ export default function VideoEdit() {
 
       {/* Retrigger Assets */}
       {!isNew && (
-        <section className="bg-card border border-border rounded-xl p-5 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-foreground">Thumbnail &amp; Preview</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Lässt den Processor Thumbnail und Preview-Video neu erstellen.</p>
-            {retriggerStatus && (
-              <p className={`text-xs mt-1 ${retriggerStatus.ok ? 'text-green-400' : 'text-destructive'}`}>{retriggerStatus.msg}</p>
-            )}
-            {checkStatus && (
-              <p className={`text-xs mt-1 ${checkStatus.ok ? 'text-green-400' : 'text-yellow-400'}`}>{checkStatus.msg}</p>
-            )}
+        <section className="bg-card border border-border rounded-xl p-5 space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Thumbnail &amp; Preview</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Lässt den Processor Thumbnail und Preview-Video neu erstellen.</p>
+              {retriggerStatus && (
+                <p className={`text-xs mt-1 ${retriggerStatus.ok ? 'text-green-400' : 'text-destructive'}`}>{retriggerStatus.msg}</p>
+              )}
+              {checkStatus && (
+                <p className={`text-xs mt-1 ${checkStatus.ok ? 'text-green-400' : 'text-yellow-400'}`}>{checkStatus.msg}</p>
+              )}
+            </div>
+            <div className="flex flex-col gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={retrigger.isPending}
+                onClick={() => { setRetriggerStatus(null); setCheckStatus(null); retrigger.mutate(); }}
+                className="gap-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${retrigger.isPending ? 'animate-spin' : ''}`} />
+                {retrigger.isPending ? 'Wird gesendet…' : 'Assets neu erstellen'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => { setCheckStatus(null); refetchVideo(); }}
+                className="gap-2 text-xs"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Seite aktualisieren
+              </Button>
+            </div>
           </div>
-          <div className="flex flex-col gap-2 shrink-0">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={retrigger.isPending}
-              onClick={() => { setRetriggerStatus(null); setCheckStatus(null); retrigger.mutate(); }}
-              className="gap-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${retrigger.isPending ? 'animate-spin' : ''}`} />
-              {retrigger.isPending ? 'Wird gesendet…' : 'Assets neu erstellen'}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => { setCheckStatus(null); refetchVideo(); }}
-              className="gap-2 text-xs"
-            >
-              <RefreshCw className="w-3 h-3" />
-              Seite aktualisieren
-            </Button>
+
+          {/* Diagnostic Panel */}
+          <div className="border-t border-border pt-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold text-foreground">🔍 Asset Diagnostic</p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => runDiagnostic.mutate()}
+                disabled={runDiagnostic.isPending}
+                className="text-xs h-7"
+              >
+                {runDiagnostic.isPending ? 'Checking...' : 'Run Test'}
+              </Button>
+            </div>
+            {diagnostic && (
+              <div className="bg-muted/30 rounded-lg p-3 text-xs space-y-2 font-mono">
+                {diagnostic.error && (
+                  <div className="text-destructive">❌ Error: {diagnostic.error}</div>
+                )}
+                {diagnostic.url_tests && (
+                  <>
+                    <div className={diagnostic.url_tests.thumbnail?.status === 'accessible' ? 'text-green-600' : 'text-destructive'}>
+                      Thumbnail: {diagnostic.url_tests.thumbnail?.status || 'missing'} 
+                      {diagnostic.url_tests.thumbnail?.http_status && ` (${diagnostic.url_tests.thumbnail.http_status})`}
+                      {diagnostic.url_tests.thumbnail?.error && ` - ${diagnostic.url_tests.thumbnail.error}`}
+                    </div>
+                    <div className={diagnostic.url_tests.preview?.status === 'accessible' ? 'text-green-600' : 'text-destructive'}>
+                      Preview: {diagnostic.url_tests.preview?.status || 'missing'}
+                      {diagnostic.url_tests.preview?.http_status && ` (${diagnostic.url_tests.preview.http_status})`}
+                      {diagnostic.url_tests.preview?.error && ` - ${diagnostic.url_tests.preview.error}`}
+                    </div>
+                    <div className={diagnostic.url_tests.source?.status === 'accessible' ? 'text-green-600' : 'text-destructive'}>
+                      Source: {diagnostic.url_tests.source?.status || 'missing'}
+                      {diagnostic.url_tests.source?.http_status && ` (${diagnostic.url_tests.source.http_status})`}
+                      {diagnostic.url_tests.source?.error && ` - ${diagnostic.url_tests.source.error}`}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </section>
       )}
