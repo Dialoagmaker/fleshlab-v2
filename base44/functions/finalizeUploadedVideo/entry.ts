@@ -116,6 +116,9 @@ Deno.serve(async (req) => {
     const file = (uuidDir && uuidDir !== 'videos') ? `${uuidDir}.${ext}` : originalFile;
     const basename = file.replace(/\.[^.]+$/, '');
 
+    // Build callback URL with processor key for authentication
+    const callbackUrl = `${Deno.env.get('APP_BASE_URL')}/functions/updateVideoProcessingResult?processor_key=${encodeURIComponent(processorSecret)}`;
+
     // Trigger processor
     const processorPayload = {
       secret: processorSecret,
@@ -125,6 +128,8 @@ Deno.serve(async (req) => {
       video_id,
       source_asset_id: asset_id,
       job_id: job.id,
+      callback_url: callbackUrl,
+      regenerate_only: "full",
     };
 
     const processorResponse = await fetch(`${processorWebhookUrl}/regenerate`, {
@@ -157,9 +162,11 @@ Deno.serve(async (req) => {
 
     console.log('Processor accepted job:', studio, file);
 
-    // Update video processing_status ONLY (NO URL pre-writing)
+    // Update video processing_status and set source_video_url from the uploaded asset
+    // This ensures the Video entity has the source URL even before processor callback
     await base44.entities.Video.update(video_id, {
       processing_status: 'processing',
+      source_video_url: asset.cdn_url || `https://${Deno.env.get('R2_PUBLIC_BUCKET_URL')}/${asset.r2_key}`,
     });
 
     // Update job to running
