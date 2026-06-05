@@ -7,40 +7,57 @@ export default function SummerPromoBanner() {
     <section className="relative w-full h-[360px] sm:h-[380px] md:h-[420px] lg:h-[460px] overflow-hidden">
       {/* Background Image - Responsive, High-Resolution */}
       <div className="absolute inset-0">
+        {/*
+          ── HERO BACKGROUND IMAGE PIPELINE ──────────────────────────────────
+          Upload these WebP files to R2 bucket:
+            studios/fleshlabasia/hero/hero-banner-mobile-900w.webp    (900×600,  q85)
+            studios/fleshlabasia/hero/hero-banner-tablet-1600w.webp   (1600×800, q85)
+            studios/fleshlabasia/hero/hero-banner-desktop-2560w.webp  (2560×900, q88)
+            studios/fleshlabasia/hero/hero-banner-large-3840w.webp    (3840×900, q88)
+            studios/fleshlabasia/hero/hero-banner-ultra-5120w.webp    (5120×900, q90)
+          Source: the ChatGPT-generated hero image (Jun 3 2026 cinematic asset)
+          Export tool: Squoosh / Sharp / Photoshop > Save for Web > WebP
+          ────────────────────────────────────────────────────────────────────
+        */}
         <picture>
-          {/* Ultra-wide 5120px+ */}
+          {/* Ultra-wide 2560px+ → 5120w asset */}
           <source
             media="(min-width: 2560px)"
-            srcSet="https://images.unsplash.com/photo-1518655048521-f130df041f66?w=5120&q=90&fm=webp&fit=crop&crop=center"
+            srcSet="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/hero/hero-banner-ultra-5120w.webp"
             type="image/webp"
           />
-          {/* Large desktop 1920–2559px */}
+          {/* Large desktop 1920–2559px → 3840w asset */}
           <source
             media="(min-width: 1920px)"
-            srcSet="https://images.unsplash.com/photo-1518655048521-f130df041f66?w=3840&q=88&fm=webp&fit=crop&crop=center"
+            srcSet="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/hero/hero-banner-large-3840w.webp"
             type="image/webp"
           />
-          {/* Desktop 1440–1919px */}
+          {/* Desktop 1440–1919px → 2560w asset */}
           <source
             media="(min-width: 1440px)"
-            srcSet="https://images.unsplash.com/photo-1518655048521-f130df041f66?w=2560&q=85&fm=webp&fit=crop&crop=center"
+            srcSet="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/hero/hero-banner-desktop-2560w.webp"
             type="image/webp"
           />
-          {/* Tablet 768–1439px */}
+          {/* Tablet 768–1439px → 1600w asset */}
           <source
             media="(min-width: 768px)"
-            srcSet="https://images.unsplash.com/photo-1518655048521-f130df041f66?w=1600&q=82&fm=webp&fit=crop&crop=center"
+            srcSet="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/hero/hero-banner-tablet-1600w.webp"
             type="image/webp"
           />
-          {/* Mobile fallback */}
+          {/* Mobile & fallback → 900w asset (also used if R2 files not yet uploaded) */}
           <img
-            src="https://images.unsplash.com/photo-1518655048521-f130df041f66?w=900&q=80&fm=webp&fit=crop&crop=center"
+            src="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/hero/hero-banner-mobile-900w.webp"
             alt=""
             className="w-full h-full object-cover"
             style={{ objectPosition: "50% 35%" }}
             loading="eager"
             fetchpriority="high"
             decoding="async"
+            onError={(e) => {
+              // Fallback to original asset if R2 files not yet uploaded
+              e.target.onerror = null;
+              e.target.src = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/e9aeecccb_ChatGPTImageJun3202602_34_57AM.png";
+            }}
           />
         </picture>
         {/* Cinematic warm overlay to preserve red/orange sunset tone */}
