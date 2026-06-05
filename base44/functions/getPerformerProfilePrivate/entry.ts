@@ -41,12 +41,14 @@ Deno.serve(async (req) => {
     }
 
     return Response.json({
+      success: true,
       performer: {
         id: performer.id,
         display_name: performer.display_name,
         slug: performer.slug,
         bio: performer.bio,
         nationality: performer.nationality,
+        date_of_birth: performer.date_of_birth,
         profile_image_url: performer.profile_image_url,
         status: performer.status,
         verified: performer.verified

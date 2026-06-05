@@ -11,6 +11,7 @@ import AccountControlsSection from "../compliance/AccountControlsSection";
 import GeoBlockingPlaceholder from "../compliance/GeoBlockingPlaceholder";
 import ComplianceActionsCard from "../compliance/ComplianceActionsCard";
 import IdentityVerificationSection from "../compliance/IdentityVerificationSection";
+import AdminIdDocumentsSection from "../compliance/AdminIdDocumentsSection";
 
 // Simple ErrorBoundary component
 class ErrorBoundary extends React.Component {
@@ -107,6 +108,9 @@ export default function ComplianceTab({ performer }) {
       <ComplianceSummaryCard performer={performer} contracts={safeContracts} records={safeRecords} />
       <ErrorBoundary>
         <KycSection performer={performer} />
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <AdminIdDocumentsSection performer={performer} />
       </ErrorBoundary>
       <ErrorBoundary>
         <ContractsSection performer={performer} contracts={safeContracts} onRefresh={handleRefresh} />

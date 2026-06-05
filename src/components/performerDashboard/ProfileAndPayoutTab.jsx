@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import PersonalProfileSection from "./PersonalProfileSection";
 import PayoutMethodSection from "./PayoutMethodSection";
 import PayoutRequestsSection from "./PayoutRequestsSection";
+import IdentityVerificationTab from "./IdentityVerificationTab";
 
 export default function ProfileAndPayoutTab({ performer, performerToken }) {
   const [loading, setLoading] = useState(true);
@@ -39,8 +40,9 @@ export default function ProfileAndPayoutTab({ performer, performerToken }) {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile">Personal Profile</TabsTrigger>
+          <TabsTrigger value="identity">Identity Verification</TabsTrigger>
           <TabsTrigger value="payout-method">Payout Method</TabsTrigger>
           <TabsTrigger value="payout-requests">Payout Requests</TabsTrigger>
         </TabsList>
@@ -51,6 +53,10 @@ export default function ProfileAndPayoutTab({ performer, performerToken }) {
             performer={profileData?.performer}
             onProfileUpdated={loadProfile}
           />
+        </TabsContent>
+
+        <TabsContent value="identity" className="mt-6">
+          <IdentityVerificationTab />
         </TabsContent>
 
         <TabsContent value="payout-method" className="mt-6">
