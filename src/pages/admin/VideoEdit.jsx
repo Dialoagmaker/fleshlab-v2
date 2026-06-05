@@ -193,6 +193,25 @@ export default function VideoEdit() {
     },
   });
 
+  const repairSourceUrl = useMutation({
+    mutationFn: () => base44.functions.invoke('repairSourceVideoUrl', { video_id: id }),
+    onSuccess: (res) => {
+      const d = res.data;
+      if (d?.success) {
+        setCheckStatus({ ok: true, msg: `✓ Source URL repaired: ${d.http_status} ${d.content_type}` });
+        queryClient.invalidateQueries({ queryKey: ['video', id] });
+        // Auto-refresh video data
+        setTimeout(() => refetchVideo(), 500);
+      } else {
+        setCheckStatus({ ok: false, msg: d?.message || 'Failed to repair source URL' });
+      }
+    },
+    onError: (err) => {
+      console.error('❌ Source URL repair failed:', err);
+      setCheckStatus({ ok: false, msg: err.message });
+    },
+  });
+
   const runDiagnostic = useMutation({
     mutationFn: async () => {
       const video = await base44.entities.Video.get(id);
@@ -553,16 +572,28 @@ export default function VideoEdit() {
           <div className="border-t border-border pt-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold text-foreground">🔍 Asset Diagnostic</p>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => runDiagnostic.mutate()}
-                disabled={runDiagnostic.isPending}
-                className="text-xs h-7"
-              >
-                {runDiagnostic.isPending ? 'Checking...' : 'Run Test'}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => repairSourceUrl.mutate()}
+                  disabled={repairSourceUrl.isPending}
+                  className="text-xs h-7"
+                >
+                  {repairSourceUrl.isPending ? 'Repairing...' : 'Repair Source URL'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => runDiagnostic.mutate()}
+                  disabled={runDiagnostic.isPending}
+                  className="text-xs h-7"
+                >
+                  {runDiagnostic.isPending ? 'Checking...' : 'Run Test'}
+                </Button>
+              </div>
             </div>
             {diagnostic && (
               <div className="bg-muted/30 rounded-lg p-3 text-xs space-y-2 font-mono">

@@ -40,7 +40,59 @@ Deno.serve(async (req) => {
     // Build correct CDN URL from R2 key
     const correctCdnUrl = `https://video.fleshlab.online/${sourceAsset.r2_key}`;
     
-    // Update video entity with correct source URL
+    // Validate the new URL before saving
+    console.log(`🔍 Validating source URL: ${correctCdnUrl}`);
+    let validationStatus = 'unknown';
+    let httpStatus = null;
+    let contentType = null;
+    let contentLength = null;
+    
+    try {
+      const res = await fetch(correctCdnUrl, { method: 'HEAD' });
+      httpStatus = res.status;
+      contentType = res.headers.get('content-type');
+      contentLength = res.headers.get('content-length');
+      
+      console.log(`HTTP ${httpStatus}, Content-Type: ${contentType}, Length: ${contentLength}`);
+      
+      // Check if it's a valid video URL
+      const isValidVideo = (
+        (res.ok || res.status === 206) &&
+        contentLength && parseInt(contentLength) > 0 &&
+        (contentType?.includes('video/') || contentType?.includes('application/octet-stream'))
+      );
+      
+      if (isValidVideo) {
+        validationStatus = 'valid';
+        console.log(`✅ Source URL is valid`);
+      } else {
+        validationStatus = 'invalid';
+        console.error(`❌ Source URL validation failed`);
+        return Response.json({
+          error: 'Source URL validation failed',
+          video_id,
+          r2_key: sourceAsset.r2_key,
+          built_url: correctCdnUrl,
+          http_status: httpStatus,
+          content_type: contentType,
+          content_length: contentLength,
+          message: 'Built URL does not return valid video content',
+        }, { status: 500 });
+      }
+    } catch (err) {
+      validationStatus = 'error';
+      console.error(`❌ Source URL fetch error:`, err);
+      return Response.json({
+        error: 'Source URL validation error',
+        video_id,
+        r2_key: sourceAsset.r2_key,
+        built_url: correctCdnUrl,
+        validation_error: err.message,
+        message: 'Cannot validate source URL',
+      }, { status: 500 });
+    }
+    
+    // Only update if validation passed
     await base44.entities.Video.update(video_id, {
       source_video_url: correctCdnUrl
     });
@@ -51,7 +103,11 @@ Deno.serve(async (req) => {
       old_source_url: video.source_video_url,
       new_source_url: correctCdnUrl,
       r2_key: sourceAsset.r2_key,
-      message: 'Source URL repaired',
+      validation_status: validationStatus,
+      http_status: httpStatus,
+      content_type: contentType,
+      content_length: contentLength,
+      message: 'Source URL repaired and validated',
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
