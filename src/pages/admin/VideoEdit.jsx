@@ -113,6 +113,13 @@ export default function VideoEdit() {
     }
   }, [video, sourceAssets]);
 
+  // Force refetch video data on component mount to ensure fresh URLs
+  useEffect(() => {
+    if (!isNew && id) {
+      queryClient.invalidateQueries({ queryKey: ["video", id] });
+    }
+  }, [id, isNew, queryClient]);
+
   const save = useMutation({
     mutationFn: (data) => isNew ? base44.entities.Video.create(data) : base44.entities.Video.update(id, data),
     onSuccess: (result) => {
