@@ -152,6 +152,7 @@ export default function VideoEdit() {
   const [checkStatus, setCheckStatus] = useState(null);
   const [metaGenStatus, setMetaGenStatus] = useState(null);
   const [diagnostic, setDiagnostic] = useState(null);
+  const [thumbnailValidation, setThumbnailValidation] = useState(null);
 
   const checkAssets = useMutation({
     mutationFn: () => base44.functions.invoke('checkAndApplyVideoAssets', { video_id: id }),
@@ -255,6 +256,34 @@ export default function VideoEdit() {
     onError: (err) => {
       setDiagnostic({ error: err.message });
       console.error('Diagnostic failed:', err);
+    },
+  });
+
+  const validateThumbnail = useMutation({
+    mutationFn: () => base44.functions.invoke('validateThumbnailImage', { video_id: id }),
+    onSuccess: (res) => {
+      const d = res.data;
+      setThumbnailValidation(d);
+      console.log('🔍 Thumbnail Validation Results:', d);
+      
+      if (d.validation_status === 'failed') {
+        setCheckStatus({ 
+          ok: false, 
+          msg: `Thumbnail corrupt: ${d.error}`,
+          details: d 
+        });
+      } else if (d.validation_status === 'success') {
+        setCheckStatus({ 
+          ok: true, 
+          msg: `Thumbnail valid: ${d.width}x${d.height} ${d.content_type}`,
+          details: d 
+        });
+      }
+    },
+    onError: (err) => {
+      console.error('❌ Thumbnail validation failed:', err);
+      setThumbnailValidation({ error: err.message });
+      setCheckStatus({ ok: false, msg: err.message });
     },
   });
 
@@ -584,6 +613,16 @@ export default function VideoEdit() {
                   type="button"
                   variant="outline"
                   size="sm"
+                  onClick={() => validateThumbnail.mutate()}
+                  disabled={validateThumbnail.isPending}
+                  className="text-xs h-7"
+                >
+                  {validateThumbnail.isPending ? 'Validating...' : '🖼️ Validate Thumbnail'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => repairSourceUrl.mutate()}
                   disabled={repairSourceUrl.isPending}
                   className="text-xs h-7"
@@ -602,6 +641,38 @@ export default function VideoEdit() {
                 </Button>
               </div>
             </div>
+            {thumbnailValidation && (
+              <div className="bg-muted/30 rounded-lg p-3 text-xs space-y-2 font-mono">
+                <div className={thumbnailValidation.validation_status === 'success' ? 'text-green-600' : 'text-destructive'}>
+                  <strong>Thumbnail Validation:</strong> {thumbnailValidation.validation_status}
+                </div>
+                {thumbnailValidation.magic_header && (
+                  <div>Magic Header: {thumbnailValidation.magic_header} {thumbnailValidation.magic_header === 'FF D8' ? '✅' : '❌'}</div>
+                )}
+                {thumbnailValidation.content_type && (
+                  <div>Content-Type: {thumbnailValidation.content_type}</div>
+                )}
+                {thumbnailValidation.http_status && (
+                  <div>HTTP Status: {thumbnailValidation.http_status}</div>
+                )}
+                {thumbnailValidation.content_length && (
+                  <div>File Size: {thumbnailValidation.content_length} bytes</div>
+                )}
+                {thumbnailValidation.width && thumbnailValidation.height && (
+                  <div>Dimensions: {thumbnailValidation.width}x{thumbnailValidation.height}</div>
+                )}
+                {thumbnailValidation.recommendation && (
+                  <div className="text-yellow-600 mt-2">
+                    <strong>Recommendation:</strong> {thumbnailValidation.recommendation}
+                  </div>
+                )}
+                {thumbnailValidation.sample_content && (
+                  <div className="text-[9px] break-all bg-black/10 p-1 rounded">
+                    Sample: {thumbnailValidation.sample_content}
+                  </div>
+                )}
+              </div>
+            )}
             {diagnostic && (
               <div className="bg-muted/30 rounded-lg p-3 text-xs space-y-2 font-mono">
                 {diagnostic.error && (

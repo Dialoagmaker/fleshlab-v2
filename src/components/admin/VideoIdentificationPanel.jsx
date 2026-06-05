@@ -70,6 +70,10 @@ function classifyAssetUrlDetailed(url) {
  * Shows thumbnail, preview player, and key metadata to help admin identify performers
  */
 export default function VideoIdentificationPanel({ video, brands = [], onClearThumbnail, onClearPreview }) {
+  // Guarded render state for thumbnail - tracks current URL being tested
+  const [thumbnailRenderState, setThumbnailRenderState] = React.useState('pending');
+  const [thumbnailRenderUrl, setThumbnailRenderUrl] = React.useState(null);
+  
   // Enhanced validation state - separates browser fetch, render test, and server validation
   const [urlValidation, setUrlValidation] = React.useState({
     thumbnail: { 
@@ -99,6 +103,19 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
   const thumbnailUrl = video ? buildAssetUrl(video.primary_thumbnail_url) : null;
   const previewUrl = video ? (buildAssetUrl(video.trailer_url) || buildAssetUrl(video.source_video_url)) : null;
   const sourceUrl = video ? buildAssetUrl(video.source_video_url) : null;
+  
+  // Reset thumbnail render state when URL changes
+  React.useEffect(() => {
+    if (thumbnailUrl && thumbnailUrl !== thumbnailRenderUrl) {
+      console.log('🔄 Thumbnail URL changed, resetting render state');
+      setThumbnailRenderState('pending');
+      setThumbnailRenderUrl(thumbnailUrl);
+      setUrlValidation(prev => ({
+        ...prev,
+        thumbnail: { ...prev.thumbnail, renderStatus: 'pending', status: 'pending' }
+      }));
+    }
+  }, [thumbnailUrl, thumbnailRenderUrl]);
   
   // Classify URLs for validation handling (used in useEffect)
   const thumbClassification = classifyAssetUrl(video?.primary_thumbnail_url);
@@ -259,30 +276,45 @@ export default function VideoIdentificationPanel({ video, brands = [], onClearTh
                 <>
                   {/* Always render img for legacy R2 URLs - don't block on fetch status */}
                   <img
-                    src={buildRenderUrl(thumbnailUrl)}
+                    src={thumbnailUrl}
                     alt={video.title}
                     className="w-full h-full object-cover"
                     // Never set crossOrigin - blocks rendering for R2 URLs
+                    // Guarded render: only update state if src matches current renderUrl
                     onError={(e) => {
+                      const currentSrc = e.target.src;
+                      const matchesCurrentUrl = currentSrc === thumbnailUrl;
                       console.error('❌ Thumbnail img onError:', {
                         video_id: video.id,
-                        actual_src: e.target.src,
+                        actual_src: currentSrc,
                         diagnostic_url: thumbnailUrl,
-                        match: e.target.src === thumbnailUrl,
+                        matches_current_url: matchesCurrentUrl,
+                        render_state_at_error: thumbnailRenderState,
                         error: e.type
                       });
-                      updateRenderStatus('thumbnail', 'failed');
+                      // Only mark failed if this is the current URL we're testing
+                      if (matchesCurrentUrl) {
+                        setThumbnailRenderState('failed');
+                        updateRenderStatus('thumbnail', 'failed');
+                      }
                     }}
                     onLoad={(e) => {
+                      const currentSrc = e.target.src;
+                      const matchesCurrentUrl = currentSrc === thumbnailUrl;
                       console.log('✅ Thumbnail img onLoad:', {
                         video_id: video.id,
-                        actual_src: e.target.src,
+                        actual_src: currentSrc,
                         diagnostic_url: thumbnailUrl,
-                        match: e.target.src === thumbnailUrl,
+                        matches_current_url: matchesCurrentUrl,
                         naturalWidth: e.target.naturalWidth,
-                        naturalHeight: e.target.naturalHeight
+                        naturalHeight: e.target.naturalHeight,
+                        render_state_at_load: thumbnailRenderState
                       });
-                      updateRenderStatus('thumbnail', 'accessible');
+                      // Only mark accessible if this is the current URL we're testing
+                      if (matchesCurrentUrl) {
+                        setThumbnailRenderState('accessible');
+                        updateRenderStatus('thumbnail', 'accessible');
+                      }
                     }}
                   />
                   {/* Loading overlay while pending */}
