@@ -538,8 +538,39 @@ export default function VideoEdit() {
               <Input type="date" value={form.release_date || ""} onChange={e => set("release_date", e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Duration (seconds)</Label>
-              <Input type="number" value={form.duration_seconds || ""} onChange={e => set("duration_seconds", e.target.value)} />
+              <Label>Duration (MM:SS)</Label>
+              <Input
+                type="text"
+                placeholder="00:00"
+                value={form.duration_seconds
+                  ? `${String(Math.floor(form.duration_seconds / 60)).padStart(2, '0')}:${String(form.duration_seconds % 60).padStart(2, '0')}`
+                  : ""}
+                onChange={e => {
+                  const val = e.target.value;
+                  const match = val.match(/^(\d{1,3}):(\d{0,2})$/);
+                  if (match) {
+                    const secs = parseInt(match[1]) * 60 + (parseInt(match[2]) || 0);
+                    set("duration_seconds", secs);
+                  } else if (val === "" || val === "0") {
+                    set("duration_seconds", "");
+                  } else {
+                    // allow free typing
+                    set("_durationRaw", val);
+                  }
+                }}
+                onBlur={e => {
+                  const val = e.target.value;
+                  const match = val.match(/^(\d+):(\d{1,2})$/);
+                  if (match) {
+                    const secs = parseInt(match[1]) * 60 + parseInt(match[2]);
+                    set("duration_seconds", secs);
+                  }
+                }}
+                className="font-mono"
+              />
+              {form.duration_seconds > 0 && (
+                <p className="text-xs text-muted-foreground">{form.duration_seconds}s</p>
+              )}
             </div>
           </div>
           <div className="space-y-2">
