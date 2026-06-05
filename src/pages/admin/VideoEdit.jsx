@@ -97,9 +97,20 @@ export default function VideoEdit() {
     enabled: !isNew,
   });
 
+  const { data: sourceAssets = [] } = useQuery({
+    queryKey: ["video-source-asset", id],
+    queryFn: () => base44.entities.VideoAsset.filter({ video_id: id, asset_type: 'source' }),
+    enabled: !isNew,
+  });
+
   useEffect(() => {
-    if (video) setForm({ ...EMPTY_FORM, ...video });
-  }, [video]);
+    if (video) {
+      // If video has no duration but the source VideoAsset does, use that
+      const sourceDuration = sourceAssets?.[0]?.duration_seconds;
+      const duration = video.duration_seconds || sourceDuration || "";
+      setForm({ ...EMPTY_FORM, ...video, duration_seconds: duration });
+    }
+  }, [video, sourceAssets]);
 
   const save = useMutation({
     mutationFn: (data) => isNew ? base44.entities.Video.create(data) : base44.entities.Video.update(id, data),
