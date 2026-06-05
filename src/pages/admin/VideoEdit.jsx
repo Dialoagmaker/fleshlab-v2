@@ -19,6 +19,7 @@ import { checkPublishReadiness } from "@/lib/publishReadinessGuardrails";
 import { validateVideoAssetUrls } from "@/lib/validateVideoAssets";
 import { getGroupedCategories, validateVideoCategories, searchCategories } from "@/lib/videoTaxonomy";
 import CategorySelector from "@/components/admin/CategorySelector";
+import PublishReadinessChecklist from "@/components/admin/PublishReadinessChecklist";
 
 const EMPTY_FORM = {
   title: "", slug: "", description: "", short_summary: "", brand_id: "",
@@ -57,6 +58,7 @@ export default function VideoEdit() {
   const [selectedPerformerIds, setSelectedPerformerIds] = useState([]);
   const [leadPerformerIds, setLeadPerformerIds] = useState([]);
   const [categorySearch, setCategorySearch] = useState("");
+  const [showChecklist, setShowChecklist] = useState(false);
 
   // Load taxonomy groups
   const taxonomyGroups = getGroupedCategories();
@@ -294,6 +296,9 @@ export default function VideoEdit() {
       strict: true,
     });
     
+    // Validate categories separately for cleanup helper
+    const categoryValidation = validateVideoCategories(form.categories || []);
+    
     if (!validation.valid) {
       errs.metadata = validation.errors.join(' ');
       errs.categories = validation.removed.categories;
@@ -301,8 +306,8 @@ export default function VideoEdit() {
     }
     
     // Phase 2D P0: Validate publish readiness if status is changing to published
+    const publishCheck = checkPublishReadiness(form, { videoPerformers: selectedPerformerIds });
     if (form.status === 'published' && video?.status !== 'published') {
-      const publishCheck = checkPublishReadiness(form, { videoPerformers: selectedPerformerIds });
       if (!publishCheck.canPublish && publishCheck.errors.length > 0) {
         errs.publish = publishCheck.errors.join(' ');
         errs.publishDetails = publishCheck;
@@ -318,6 +323,13 @@ export default function VideoEdit() {
     if (data.duration_seconds) data.duration_seconds = parseInt(data.duration_seconds, 10);
     else delete data.duration_seconds;
     
+    // Clean invalid categories helper
+    const handleCleanInvalidCategories = () => {
+      const valid = categoryValidation.normalized || form.categories || [];
+      set("categories", valid);
+      setErrors(ex => ({ ...ex, categories: undefined, metadata: undefined }));
+    };
+
     // Save video first, then sync performers
     if (isNew) {
       save.mutate(data, {
@@ -863,20 +875,60 @@ export default function VideoEdit() {
           </div>
         </section>
 
+        {/* Publishing Checklist - Before Save/Publish Buttons */}
+        {!isNew && (
+          <PublishReadinessChecklist
+            video={video}
+            form={form}
+            selectedPerformerIds={selectedPerformerIds}
+            onCleanInvalidCategories={() => {
+              const validation = validateVideoCategories(form.categories || []);
+              if (!validation.valid) {
+                set("categories", validation.normalized || []);
+                setErrors(ex => ({ ...ex, categories: undefined, metadata: undefined }));
+              }
+            }}
+          />
+        )}
+
+        {/* Save/Publish Actions */}
         <div className="flex items-center gap-3 pb-8">
-          <Button type="submit" disabled={save.isPending} className="gap-2">
+          {/* Save Draft - always available */}
+          <Button 
+            type="button" 
+            variant="outline"
+            onClick={() => {
+              setForm(f => ({ ...f, status: 'draft' }));
+              setTimeout(() => handleSubmit({ preventDefault: () => {} }), 0);
+            }}
+            disabled={save.isPending}
+            className="gap-2"
+          >
             <Save className="w-4 h-4" />
-            {save.isPending ? "Saving…" : isNew ? "Create Video" : "Save Changes"}
+            Save Draft
           </Button>
+
+          {/* Save Changes / Publish */}
+          <Button 
+            type="submit" 
+            disabled={save.isPending || (form.status === 'published' && !publishCheck.canPublish)}
+            className="gap-2"
+          >
+            <Save className="w-4 h-4" />
+            {save.isPending ? "Saving…" : form.status === 'published' ? "Publish Video" : isNew ? "Create Video" : "Save Changes"}
+          </Button>
+
           <Link to="/admin/videos">
             <Button type="button" variant="outline">Cancel</Button>
           </Link>
-          {form.status === 'published' && errors.publish && (
-            <div className="ml-auto text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 max-w-md">
-              <p className="font-semibold mb-1">Cannot Publish - Missing Required Items:</p>
-              <ul className="list-disc list-inside space-y-0.5">
-                {errors.publishDetails?.missingItems?.map((item, i) => (
-                  <li key={i}>{item}</li>
+
+          {/* Publish blocked warning */}
+          {form.status === 'published' && !publishCheck.canPublish && publishCheck.errors.length > 0 && (
+            <div className="ml-auto text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 max-w-lg">
+              <p className="font-semibold mb-1">❌ Cannot Publish - {publishCheck.errors.length} Critical Issue(s):</p>
+              <ul className="list-disc list-inside space-y-0.5 max-h-32 overflow-y-auto">
+                {publishCheck.errors.map((err, i) => (
+                  <li key={i}>{err}</li>
                 ))}
               </ul>
             </div>
