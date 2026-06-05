@@ -322,14 +322,36 @@ export default function VideoEdit() {
 
   // Poll job status for async thumbnail regeneration
   useEffect(() => {
-    if (!thumbnailJobId || !thumbnailJobStatus || thumbnailJobStatus.status === 'complete' || thumbnailJobStatus.status === 'failed') {
+    // Safe guard: don't poll without valid IDs
+    if (!thumbnailJobId && !id) {
+      console.log('[Job Polling] Skipped: no job_id or video_id available');
+      return;
+    }
+    
+    if (thumbnailJobStatus?.status === 'complete' || thumbnailJobStatus?.status === 'failed' || thumbnailJobStatus?.status === 'timeout') {
+      console.log('[Job Polling] Skipped: job already completed/failed');
       return;
     }
 
     const pollInterval = setInterval(async () => {
       try {
-        const res = await base44.functions.invoke('getProcessingJobStatus', {}, { job_id: thumbnailJobId });
+        // Prefer job_id, fallback to video_id
+        const params = thumbnailJobId ? { job_id: thumbnailJobId } : { video_id: id };
+        const res = await base44.functions.invoke('getProcessingJobStatus', params);
         const job = res.data;
+        
+        // Handle 400 errors gracefully
+        if (!job || job.error) {
+          console.error('[Job Polling] Server error:', job?.error || 'Unknown error');
+          setCheckStatus({ 
+            ok: false, 
+            msg: 'Job status polling misconfigured',
+            details: { error: job?.error, received: job?.received }
+          });
+          clearInterval(pollInterval);
+          return;
+        }
+        
         setThumbnailJobStatus(job);
 
         if (job.status === 'complete') {
@@ -361,11 +383,13 @@ export default function VideoEdit() {
         }
       } catch (err) {
         console.error('❌ Job status poll failed:', err);
+        // Stop polling on error to prevent spam
+        clearInterval(pollInterval);
       }
     }, 5000); // Poll every 5 seconds
 
     return () => clearInterval(pollInterval);
-  }, [thumbnailJobId]);
+  }, [thumbnailJobId, id]);
 
   const clearCorruptThumbnail = useMutation({
     mutationFn: () => base44.functions.invoke('repairCorruptThumbnail', { video_id: id, forceRegenerate: true }),

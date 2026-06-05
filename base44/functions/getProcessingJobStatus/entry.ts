@@ -2,6 +2,11 @@
  * getProcessingJobStatus - Phase 2C.2
  * 
  * Returns current status of a video processing job for UI polling.
+ * Supports both GET query params and POST JSON body.
+ * 
+ * Request:
+ * - GET: ?job_id=XXX or ?video_id=XXX
+ * - POST: { "job_id": "XXX", "video_id": "XXX" }
  * 
  * Response includes:
  * - job_id
@@ -25,12 +30,33 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized: Admin access required' }, { status: 403 });
     }
 
+    // Support both GET query params and POST JSON body
+    let job_id = null;
+    let video_id = null;
+    
+    // Try query params first (GET requests)
     const url = new URL(req.url);
-    const job_id = url.searchParams.get('job_id');
-    const video_id = url.searchParams.get('video_id');
+    job_id = url.searchParams.get('job_id');
+    video_id = url.searchParams.get('video_id');
+    
+    // If not found, try POST body
+    if (!job_id && !video_id && req.method === 'POST') {
+      try {
+        const body = await req.json();
+        job_id = body.job_id;
+        video_id = body.video_id;
+      } catch (e) {
+        // Body parsing failed, continue with null values
+      }
+    }
 
     if (!job_id && !video_id) {
-      return Response.json({ error: 'job_id or video_id required' }, { status: 400 });
+      return Response.json({ 
+        ok: false, 
+        error: 'Missing job_id or video_id',
+        expected: 'Provide job_id or video_id',
+        received: { job_id, video_id, method: req.method }
+      }, { status: 400 });
     }
 
     let job;
