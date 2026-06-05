@@ -8,27 +8,20 @@ const PARENT_GROUP_LABELS = [
 
 const isParentGroupLabel = (v) => v && PARENT_GROUP_LABELS.includes(v.toLowerCase().trim());
 
-const APPROVED_CATEGORIES = [
-  'Asian', 'Filipino', 'Pinoy', 'Twink', 'Solo', 'Outdoor', 'Shower',
-  'Dildo Play', 'Nipple Play', 'Blowjob', 'Oral', 'Anal', 'Bareback',
-  'Creampie', 'Cumshot', 'Rimming', 'Handjob', 'BDSM', 'Amateur',
-];
-
-const APPROVED_MAP = new Map(APPROVED_CATEGORIES.map(c => [c.toLowerCase(), c]));
-
 function normalizeCategories(cats, ctx = '') {
   if (!Array.isArray(cats)) return { normalized: [], warnings: [], removed: [] };
   const normalized = [], warnings = [], removed = [], seen = new Set();
   for (const cat of cats) {
     const t = cat.trim(), l = t.toLowerCase();
     if (isParentGroupLabel(t)) {
-      warnings.push(`"${t}" removed (parent label)`);
+      warnings.push(`"${t}" removed (parent group label)`);
       removed.push({ value: t, reason: 'parent_group_label' });
       continue;
     }
-    const c = APPROVED_MAP.get(l);
-    if (c && !seen.has(l)) { seen.add(l); normalized.push(c); }
-    else if (!c) { warnings.push(`"${t}" removed (not in taxonomy)`); removed.push({ value: t, reason: 'not_in_taxonomy' }); }
+    if (!seen.has(l)) {
+      seen.add(l);
+      normalized.push(t);
+    }
   }
   return { normalized, warnings, removed };
 }
