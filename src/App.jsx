@@ -42,6 +42,7 @@ import PerformerSupport from './pages/admin/PerformerSupport';
 import PayoutRequests from './pages/admin/PayoutRequests';
 import DuplicateVideos from './pages/admin/DuplicateVideos';
 import LegacyAssetInventory from './pages/admin/LegacyAssetInventory';
+import AssetRepairQueue from './pages/admin/AssetRepairQueue';
 import ComingSoon from './pages/ComingSoon';
 import PerformerRouteHandler from './components/PerformerRouteHandler';
 import PerformerGuard from './components/PerformerGuard';
@@ -165,6 +166,8 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/payout-requests" element={<PayoutRequests />} />
                 <Route path="/admin/duplicate-videos" element={<DuplicateVideos />} />
                 <Route path="/admin/legacy-assets" element={<LegacyAssetInventory />} />
+                <Route path="/admin/asset-repair-queue" element={<AssetRepairQueue />} />
+                <Route path="/admin/asset-repair-queue" element={<AssetRepairQueue />} />
               </Route>
             </Route>
           </Route>
