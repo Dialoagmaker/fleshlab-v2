@@ -322,6 +322,40 @@ export default function AITextGenerator() {
             </Alert>
           ) : null}
           
+          {/* Tag Notes - Generic tags info */}
+          {generated.tag_notes && generated.tag_notes.length > 0 && (
+            <Alert className="bg-blue-500/10 border-blue-500/30">
+              <AlertDescription className="text-sm text-blue-700">
+                {generated.tag_notes.map((note, i) => (
+                  <p key={i}>{note}</p>
+                ))}
+                <p className="text-xs text-blue-600 mt-2">
+                  ℹ️ Some generic AI tags were kept as tags for search purposes, but not applied as categories.
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {/* Tag Notes - Generic AI Tags Info */}
+          {generated.tag_notes && generated.tag_notes.length > 0 && (
+            <Alert className="bg-blue-500/10 border-blue-500/30">
+              <AlertTriangle className="h-4 w-4 text-blue-600" />
+              <AlertDescription>
+                <div className="text-sm font-semibold text-blue-800">
+                  Tag Notes:
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-sm text-blue-700 mt-1">
+                  {generated.tag_notes?.map((note, i) => (
+                    <li key={i}>{note}</li>
+                  ))}
+                </ul>
+                <p className="text-xs text-blue-600 mt-2">
+                  ℹ️ Some generic AI tags were kept as tags for search purposes, but not applied as categories.
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           {/* Other Warnings */}
           {generated.warnings && generated.warnings.length > 0 && (
             <Alert variant="destructive">

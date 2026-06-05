@@ -205,7 +205,8 @@ Return JSON only.
       }
     });
 
-    // Check for parent taxonomy group labels in categories (CRITICAL)
+    // Check for parent taxonomy group labels in CATEGORIES only (CRITICAL)
+    // NOTE: "fetish" is allowed as a TAG, but never as a CATEGORY
     const PARENT_GROUP_LABELS = [
       'age', 'ethnicity', 'body', 'orientation', 'number of people',
       'actions', 'production', 'apparel', 'scenario', 'fetish',
@@ -217,7 +218,9 @@ Return JSON only.
     
     const taxonomyWarnings = [];
     const taxonomyRemoved = [];
+    const tagNotes = [];
     
+    // Validate CATEGORIES - block all parent labels
     if (response.suggested_categories && Array.isArray(response.suggested_categories)) {
       const cleanedCategories = [];
       
@@ -226,15 +229,8 @@ Return JSON only.
         
         // Check if it's a parent group label
         if (PARENT_GROUP_LABELS.includes(lowerCat)) {
-          taxonomyWarnings.push(`"${cat}" → removed (parent taxonomy group label, not selectable)`);
-          taxonomyRemoved.push({ value: cat, reason: 'parent_group_label' });
-          continue;
-        }
-        
-        // Check if "Fetish" specifically
-        if (lowerCat === 'fetish') {
-          taxonomyWarnings.push(`"Fetish" → removed (never use "Fetish" - use specific child category like BDSM if context supports it)`);
-          taxonomyRemoved.push({ value: cat, reason: 'parent_group_label' });
+          taxonomyWarnings.push(`"${cat}" → removed from categories (parent taxonomy group label)`);
+          taxonomyRemoved.push({ value: cat, reason: 'parent_group_label', applied_as: 'none' });
           continue;
         }
         
@@ -243,6 +239,25 @@ Return JSON only.
       
       // Replace with cleaned categories
       response.suggested_categories = cleanedCategories;
+    }
+    
+    // Validate TAGS - allow "fetish" but prefer specific terms
+    if (response.tags && Array.isArray(response.tags)) {
+      const genericTags = ['fetish', 'bdsm', 'kink'];
+      const specificContextTags = [
+        'nipple torture', 'nipple clamps', 'nipple play', 'clamps',
+        'edging', 'pain play', 'bondage', 'domination', 'rope',
+        'spanking', 'humiliation', 'role play'
+      ];
+      
+      const hasGenericFetish = response.tags.some(t => t.toLowerCase().trim() === 'fetish');
+      const hasSpecificTags = response.tags.some(t => 
+        specificContextTags.some(specific => t.toLowerCase().includes(specific))
+      );
+      
+      if (hasGenericFetish && hasSpecificTags) {
+        tagNotes.push('Generic "fetish" tag kept for search, but specific tags preferred');
+      }
     }
 
     return Response.json({
@@ -258,6 +273,7 @@ Return JSON only.
       warnings,
       taxonomy_warnings: taxonomyWarnings,
       taxonomy_removed: taxonomyRemoved,
+      tag_notes: tagNotes,
     });
 
   } catch (error) {
