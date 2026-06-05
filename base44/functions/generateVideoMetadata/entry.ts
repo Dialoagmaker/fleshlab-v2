@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me().catch(() => null);
     if (user && user.role !== 'admin') return Response.json({ ok: false, error: 'Unauthorized', step: 'auth' }, { status: 403 });
 
-    const { video_id } = await req.json();
+    const { video_id, use_image_analysis = false } = await req.json();
     if (!video_id) return Response.json({ ok: false, error: 'Missing video_id', step: 'load_video' }, { status: 400 });
 
     step = 'load_video';
@@ -56,9 +56,8 @@ Deno.serve(async (req) => {
     const perfNames = await Promise.all(credits.map(c => base44.entities.Performer.get(c.performer_id).catch(() => null)));
     const performerNames = perfNames.filter(Boolean).map(p => p.display_name);
     const brand = video.brand_id ? await base44.entities.Brand.get(video.brand_id).catch(() => null) : null;
-    const thumbAssets = await base44.entities.VideoAsset.filter({ video_id, asset_type: 'thumbnail' });
-    const thumbUrl = thumbAssets[0]?.cdn_url || video.primary_thumbnail_url;
-
+    
+    // Build text context (always available)
     const ctx = [
       `Title: ${video.title || ''}`,
       video.description && `Desc: ${video.description}`,
@@ -66,18 +65,43 @@ Deno.serve(async (req) => {
       brand?.name && `Brand: ${brand.name}`,
       cats.length && `Categories: ${cats.join(', ')}`,
       tags.length && `Tags: ${tags.join(', ')}`,
+      video.access_tier && `Access tier: ${video.access_tier}`,
     ].filter(Boolean).join('\n');
 
     step = 'invoke_llm';
     let draft;
-    try {
+    let mode = 'text_only';
+    let warnings = [];
+    
+    // Try image analysis only if explicitly requested
+    if (use_image_analysis) {
+      const thumbAssets = await base44.entities.VideoAsset.filter({ video_id, asset_type: 'thumbnail' });
+      const thumbUrl = thumbAssets[0]?.cdn_url || video.primary_thumbnail_url;
+      
+      if (thumbUrl) {
+        try {
+          draft = await base44.integrations.Core.InvokeLLM({
+            file_urls: [thumbUrl],
+            model: 'gemini_3_flash',
+            prompt: `FLESHLAB adult SEO copywriter. Context:\n${ctx}\n\nJSON only: {"title":"6-10 words","description":"4-5 sentences explicit","short_teaser":"1 sentence","seo_title":"45-60 chars end | FLESHLAB","seo_description":"120-155 chars","categories":["2-4"],"tags":["8-15"],"ppv_price":6.99}`,
+            response_json_schema: { type: 'object', properties: { title: {type:'string'}, description: {type:'string'}, short_teaser: {type:'string'}, seo_title: {type:'string'}, seo_description: {type:'string'}, categories: {type:'array',items:{type:'string'}}, tags: {type:'array',items:{type:'string'}}, ppv_price: {type:'number'} }, required: ['title','description','short_teaser','seo_title','seo_description','categories','tags','ppv_price'] }
+          });
+          mode = 'image_analysis';
+        } catch (imgError) {
+          // Image decode failed - fallback to text-only
+          warnings.push('Thumbnail image could not be decoded; generated from text only.');
+          mode = 'text_only_fallback';
+        }
+      }
+    }
+    
+    // Text-only generation (default or fallback)
+    if (!draft) {
       draft = await base44.integrations.Core.InvokeLLM({
-        ...(thumbUrl ? { file_urls: [thumbUrl] } : {}),
-        model: thumbUrl ? 'gemini_3_flash' : undefined,
         prompt: `FLESHLAB adult SEO copywriter. Context:\n${ctx}\n\nJSON only: {"title":"6-10 words","description":"4-5 sentences explicit","short_teaser":"1 sentence","seo_title":"45-60 chars end | FLESHLAB","seo_description":"120-155 chars","categories":["2-4"],"tags":["8-15"],"ppv_price":6.99}`,
         response_json_schema: { type: 'object', properties: { title: {type:'string'}, description: {type:'string'}, short_teaser: {type:'string'}, seo_title: {type:'string'}, seo_description: {type:'string'}, categories: {type:'array',items:{type:'string'}}, tags: {type:'array',items:{type:'string'}}, ppv_price: {type:'number'} }, required: ['title','description','short_teaser','seo_title','seo_description','categories','tags','ppv_price'] }
       });
-    } catch (e) { return Response.json({ ok: false, error: 'LLM failed', step: 'invoke_llm', details: e.message, input_summary: { video_id, has_title: !!video.title, has_description: !!video.description, categories_count: cats.length, tags_count: tags.length } }, { status: 500 }); }
+    }
 
     step = 'normalize_taxonomy';
     const catVal = normalizeCategories(draft.categories || [], `${draft.title||''} ${draft.description||''}`.toLowerCase());
@@ -99,13 +123,34 @@ Deno.serve(async (req) => {
     if ((!video.categories || !video.categories.length) && draft.categories?.length) apply.categories = draft.categories;
 
     await base44.entities.Video.update(video_id, {
-      ai_metadata_draft: JSON.stringify({ ...draft, taxonomy_warnings: catVal.warnings, taxonomy_removed: catVal.removed }),
+      ai_metadata_draft: JSON.stringify({ ...draft, taxonomy_warnings: catVal.warnings, taxonomy_removed: catVal.removed, mode, image_warnings: warnings }),
       ai_metadata_generated_at: new Date().toISOString(),
       processing_status: 'draft_ready',
       ...apply,
     });
 
-    return Response.json({ ok: true, draft, taxonomy_warnings: catVal.warnings, taxonomy_removed: catVal.removed });
+    return Response.json({ 
+      ok: true, 
+      mode,
+      title: draft.title,
+      description: draft.description,
+      short_teaser: draft.short_teaser,
+      seo_title: draft.seo_title,
+      seo_description: draft.seo_description,
+      categories: draft.categories,
+      tags: draft.tags,
+      ppv_price: draft.ppv_price,
+      taxonomy_warnings: catVal.warnings, 
+      taxonomy_removed: catVal.removed,
+      warnings: [...warnings, ...catVal.warnings],
+      input_summary: {
+        video_id,
+        has_title: !!video.title,
+        has_description: !!video.description,
+        categories_count: cats.length,
+        tags_count: tags.length
+      }
+    });
   } catch (e) {
     console.error('generateVideoMetadata error:', e);
     return Response.json({ ok: false, error: e.message, step, details: e.stack }, { status: 500 });
