@@ -38,7 +38,11 @@ export default function PerformerDashboardTabs({ performer }) {
         </TabsList>
 
         <TabsContent value="overview">
-          <OverviewTab performer={performer.performer} career_stats={performer.career_stats} />
+          <OverviewTab 
+            performer={performer.performer} 
+            career_stats={performer.career_stats}
+            performerToken={performerToken}
+          />
         </TabsContent>
 
         <TabsContent value="videos">

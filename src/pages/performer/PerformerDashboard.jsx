@@ -90,7 +90,10 @@ export default function PerformerDashboard() {
         performer={performer?.performer} 
         onLogout={() => { localStorage.removeItem("performer_session_token"); localStorage.removeItem("performer_data"); navigate("/performerlogin"); }} 
       />
-      <PerformerDashboardTabs performer={performer} />
+      <PerformerDashboardTabs 
+        performer={performer} 
+        performerToken={localStorage.getItem("performer_session_token")}
+      />
     </div>
   );
 }

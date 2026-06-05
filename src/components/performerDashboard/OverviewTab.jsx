@@ -8,7 +8,7 @@ import LatestVideosCard from "./LatestVideosCard";
 import ComplianceSummaryCard from "./ComplianceSummaryCard";
 import CareerStatisticsCard from "./CareerStatisticsCard";
 
-export default function OverviewTab({ performer, career_stats }) {
+export default function OverviewTab({ performer, career_stats, performerToken }) {
   if (!performer) {
     return (
       <Card className="bg-card border-border">
@@ -49,7 +49,7 @@ export default function OverviewTab({ performer, career_stats }) {
       </Card>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <MonthlyCloseoutCard performerId={performer.id} />
+        <MonthlyCloseoutCard performerId={performer.id} performerToken={performerToken} />
         <ProductionGoalCard performerId={performer.id} />
         <PayoutReadinessCard performer={performer} />
       </div>

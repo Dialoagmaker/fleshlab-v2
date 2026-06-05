@@ -41,27 +41,46 @@ Deno.serve(async (req) => {
       // Get current period (YYYY-MM)
       const currentMonth = new Date().toISOString().slice(0, 7);
       
-      // Fetch earnings for current period
-      const earnings = await base44.asServiceRole.entities.PerformerEarning.filter({
-        performer_id: myPerformer.id,
-        period_month: currentMonth
-      });
+      // Fetch earnings for current period from both sources
+      const [legacyEarnings, lineItems] = await Promise.all([
+        base44.asServiceRole.entities.PerformerEarning.filter({
+          performer_id: myPerformer.id,
+          period_month: currentMonth
+        }),
+        base44.asServiceRole.entities.PerformerEarningLineItem.filter({
+          performer_id: myPerformer.id,
+          period_month: currentMonth
+        })
+      ]);
 
-      // Calculate summary
+      // Calculate summary from both sources
       const summary = {
         gross_total: 0,
         net_total: 0,
         pending_total: 0,
         paid_total: 0,
-        held_total: 0
+        held_total: 0,
+        approved_total: 0
       };
 
-      earnings.forEach(e => {
+      // Legacy earnings
+      (legacyEarnings || []).forEach(e => {
         summary.gross_total += e.gross_amount_usd || 0;
         summary.net_total += e.net_amount_usd || 0;
         if (e.status === 'pending') summary.pending_total += e.net_amount_usd || 0;
         else if (e.status === 'paid') summary.paid_total += e.net_amount_usd || 0;
         else if (e.status === 'held') summary.held_total += e.net_amount_usd || 0;
+        else if (e.status === 'approved') summary.approved_total += e.net_amount_usd || 0;
+      });
+
+      // Line items
+      (lineItems || []).forEach(item => {
+        summary.gross_total += item.gross_amount_usd || 0;
+        summary.net_total += item.performer_amount_usd || 0;
+        if (item.status === 'pending') summary.pending_total += item.performer_amount_usd || 0;
+        else if (item.status === 'paid') summary.paid_total += item.performer_amount_usd || 0;
+        else if (item.status === 'held') summary.held_total += item.performer_amount_usd || 0;
+        else if (item.status === 'approved') summary.approved_total += item.performer_amount_usd || 0;
       });
 
       // Get latest videos (up to 5)
@@ -145,7 +164,7 @@ Deno.serve(async (req) => {
       if (myPerformer.compliance_locked) {
         actionRequired.push({ type: 'compliance', message: 'Account compliance locked', priority: 'critical' });
       }
-      if (summary.net_total === 0) {
+      if (summary.net_total === 0 && summary.gross_total === 0) {
         actionRequired.push({ type: 'earnings', message: 'No earnings recorded this month', priority: 'low' });
       }
 
@@ -216,13 +235,20 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'period_month required' }, { status: 400 });
       }
 
-      const earnings = await base44.asServiceRole.entities.PerformerEarning.filter({
-        performer_id: myPerformer.id,
-        period_month
-      });
+      // Get both PerformerEarning (legacy/manual) and PerformerEarningLineItem records
+      const [legacyEarnings, lineItems] = await Promise.all([
+        base44.asServiceRole.entities.PerformerEarning.filter({
+          performer_id: myPerformer.id,
+          period_month
+        }),
+        base44.asServiceRole.entities.PerformerEarningLineItem.filter({
+          performer_id: myPerformer.id,
+          period_month
+        })
+      ]);
 
-      // Get video titles for earnings that have video_id
-      const earningsWithVideos = await Promise.all(earnings.map(async (e) => {
+      // Process legacy earnings with video titles
+      const legacyWithVideos = await Promise.all((legacyEarnings || []).map(async (e) => {
         let video_title = null;
         if (e.video_id) {
           const video = await base44.asServiceRole.entities.Video.get(e.video_id);
@@ -230,18 +256,97 @@ Deno.serve(async (req) => {
         }
         return {
           id: e.id,
-          earning_type: e.earning_type,
-          gross_amount_usd: e.gross_amount_usd,
-          net_amount_usd: e.net_amount_usd,
+          source_type: e.earning_type === 'livestream' ? 'livecam' : e.earning_type === 'video_platform' ? 'video_platform' : 'manual_adjustment',
+          source_platform: e.earning_type === 'livestream' ? 'internal' : 'internal',
+          description: video_title || `${e.earning_type} - ${period_month}`,
+          gross_amount_usd: e.gross_amount_usd || 0,
+          performer_share_percent: e.split_pct || myPerformer.revenue_split_pct || 40,
+          performer_amount_usd: e.net_amount_usd || 0,
+          studio_amount_usd: (e.gross_amount_usd || 0) - (e.net_amount_usd || 0),
           status: e.status,
           period_month: e.period_month,
           video_title,
           paid_at: e.paid_at,
-          hold_reason: e.hold_reason
+          hold_reason: e.hold_reason,
+          notes: e.notes,
+          is_legacy: true
         };
       }));
 
-      return Response.json({ success: true, earnings: earningsWithVideos });
+      // Process line items
+      const lineItemsProcessed = (lineItems || []).map(item => ({
+        id: item.id,
+        source_type: item.source_type,
+        source_platform: item.source_platform,
+        description: item.description || `${item.source_type} - ${period_month}`,
+        gross_amount_usd: item.gross_amount_usd || 0,
+        performer_share_percent: item.performer_share_percent || 0,
+        performer_amount_usd: item.performer_amount_usd || 0,
+        studio_amount_usd: item.studio_amount_usd || 0,
+        status: item.status,
+        period_month: item.period_month,
+        notes: item.notes,
+        is_legacy: false
+      }));
+
+      // Combine both sources
+      const allEarnings = [...legacyWithVideos, ...lineItemsProcessed];
+
+      // Calculate summary
+      const summary = {
+        gross_total: 0,
+        performer_total: 0,
+        studio_total: 0,
+        pending_total: 0,
+        approved_total: 0,
+        paid_total: 0,
+        held_total: 0,
+        by_source_type: {},
+        by_source_platform: {},
+        by_status: {}
+      };
+
+      allEarnings.forEach(e => {
+        summary.gross_total += e.gross_amount_usd;
+        summary.performer_total += e.performer_amount_usd;
+        summary.studio_total += e.studio_amount_usd;
+
+        if (e.status === 'pending') summary.pending_total += e.performer_amount_usd;
+        else if (e.status === 'approved') summary.approved_total += e.performer_amount_usd;
+        else if (e.status === 'paid') summary.paid_total += e.performer_amount_usd;
+        else if (e.status === 'held') summary.held_total += e.performer_amount_usd;
+
+        // By source type
+        if (!summary.by_source_type[e.source_type]) {
+          summary.by_source_type[e.source_type] = { count: 0, gross: 0, performer: 0, studio: 0 };
+        }
+        summary.by_source_type[e.source_type].count += 1;
+        summary.by_source_type[e.source_type].gross += e.gross_amount_usd;
+        summary.by_source_type[e.source_type].performer += e.performer_amount_usd;
+        summary.by_source_type[e.source_type].studio += e.studio_amount_usd;
+
+        // By source platform
+        if (!summary.by_source_platform[e.source_platform]) {
+          summary.by_source_platform[e.source_platform] = { count: 0, performer: 0 };
+        }
+        summary.by_source_platform[e.source_platform].count += 1;
+        summary.by_source_platform[e.source_platform].performer += e.performer_amount_usd;
+
+        // By status
+        if (!summary.by_status[e.status]) {
+          summary.by_status[e.status] = { count: 0, performer: 0 };
+        }
+        summary.by_status[e.status].count += 1;
+        summary.by_status[e.status].performer += e.performer_amount_usd;
+      });
+
+      return Response.json({ 
+        success: true, 
+        earnings: allEarnings,
+        summary,
+        legacy_count: legacyWithVideos.length,
+        line_item_count: lineItemsProcessed.length
+      });
     }
 
     // Action: get_compliance
