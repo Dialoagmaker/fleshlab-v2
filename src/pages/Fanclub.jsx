@@ -93,32 +93,61 @@ function LockedImageCard({ src, label, className = "", large = false }) {
 }
 
 // ── PPV card with image background ───────────────────────────────────────────
+const PPV_TIER_LABELS = {
+  standard:  { name: "Starter Scene",   badge: "PPV",       color: "bg-rose-600" },
+  premium:   { name: "Premium Scene",   badge: "PREMIUM",   color: "bg-amber-500" },
+  exclusive: { name: "Exclusive Scene", badge: "EXCLUSIVE", color: "bg-purple-600" },
+};
+
 function PPVCard({ thumb, tier, priceTierKey, isAuthenticated, requireSignup, paymentProvider }) {
+  const meta = PPV_TIER_LABELS[priceTierKey] || { name: tier.label, badge: "PPV", color: "bg-rose-600" };
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/10 flex flex-col">
-      {/* image */}
-      <div className="relative aspect-video">
-        <img src={thumb} alt={tier.label} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-        <div className="absolute top-3 left-3 bg-rose-600 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
-          {PPV_LABELS[priceTierKey]?.badge || "PPV"}
+    <div className="relative overflow-hidden rounded-2xl border border-white/10 flex flex-col bg-[#0e0e0e] group">
+      {/* Thumbnail — fixed 16:10 aspect for all cards */}
+      <div className="relative overflow-hidden" style={{ aspectRatio: "16/10" }}>
+        <img
+          src={thumb}
+          alt={meta.name}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        {/* Cinematic overlays */}
+        <div className="absolute inset-0 bg-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+        {/* Badge top-left */}
+        <div className={`absolute top-3 left-3 ${meta.color} text-white text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider shadow-lg`}>
+          {meta.badge}
+        </div>
+        {/* Price overlay bottom-right of image */}
+        <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm border border-white/10 rounded-xl px-3 py-1.5 text-right">
+          <div className="text-rose-400 font-black text-xl leading-none">${tier.price}</div>
+          <div className="text-white/35 text-[9px] font-medium mt-0.5">one-time</div>
         </div>
       </div>
-      {/* info */}
-      <div className="bg-[#111] p-5 flex flex-col gap-3 flex-1">
-        <div className="flex items-baseline justify-between">
-          <h3 className="font-bold text-white text-sm">{tier.label}</h3>
-          <span className="text-2xl font-black text-rose-400">${tier.price}</span>
+
+      {/* Info block — fixed structure, no flex-1 growth */}
+      <div className="p-5 flex flex-col gap-4">
+        {/* Tier name */}
+        <div>
+          <h3 className="font-black text-white text-base leading-tight">{meta.name}</h3>
+          <p className="text-white/40 text-xs mt-1 leading-relaxed">Pay once. Unlock this scene permanently.</p>
         </div>
-        <p className="text-white/40 text-xs">Permanent access after payment confirmation.</p>
+
+        {/* Benefit pills */}
+        <div className="flex flex-wrap gap-1.5">
+          <span className="text-[10px] text-white/35 bg-white/5 border border-white/8 rounded-full px-2.5 py-1 font-medium">No subscription</span>
+          <span className="text-[10px] text-white/35 bg-white/5 border border-white/8 rounded-full px-2.5 py-1 font-medium">Permanent access</span>
+        </div>
+
+        {/* CTA */}
         <PPVUnlockCTA
           priceTier={priceTierKey}
-          label="Unlock One Scene"
+          label="Unlock This Scene"
           isAuthenticated={isAuthenticated}
           requireSignup={requireSignup}
           paymentProvider={paymentProvider}
-          className="w-full bg-rose-600/15 hover:bg-rose-600/25 text-rose-300 border border-rose-600/30 font-bold py-3 rounded-xl text-sm"
+          className="w-full bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black py-3 rounded-xl text-sm shadow-lg shadow-rose-700/30 border-0 transition-all duration-200"
         />
+        <p className="text-white/20 text-[10px] text-center -mt-1">Access confirmed after payment</p>
       </div>
     </div>
   );
@@ -876,14 +905,24 @@ export default function Fanclub() {
         {/* ══════════════════════════════════════════════════════════════════
             7. PPV — image-backed cards
         ══════════════════════════════════════════════════════════════════ */}
-        <section id="ppv-section" className="py-20 px-6 bg-[#0d0d0d] border-t border-white/5">
-          <div className="max-w-[1280px] mx-auto">
+        <section id="ppv-section" className="relative py-20 px-6 border-t border-white/5 overflow-hidden bg-[#080808]">
+          {/* Subtle radial glow */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-rose-950/40 rounded-full blur-[120px]" />
+          </div>
+
+          <div className="relative max-w-[1280px] mx-auto">
             <div className="text-center mb-12">
+              {/* Label */}
+              <div className="inline-flex items-center gap-2 bg-rose-600/12 border border-rose-700/25 rounded-full px-4 py-1.5 mb-5">
+                <Film className="w-3.5 h-3.5 text-rose-400" />
+                <span className="text-rose-300/80 text-[11px] font-black uppercase tracking-widest">Pay-Per-View · No Subscription</span>
+              </div>
               <h2 className="text-4xl md:text-5xl font-black mb-3">
                 ONLY WANT <span className="text-rose-500">ONE SCENE?</span>
               </h2>
               <p className="text-white/50 text-lg max-w-xl mx-auto">
-                Unlock a single scene with permanent access. No subscription needed.
+                Pick a scene. Pay once. Keep access permanently — no subscription required.
               </p>
             </div>
 
