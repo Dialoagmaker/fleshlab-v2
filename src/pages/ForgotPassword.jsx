@@ -6,8 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, ArrowLeft, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
+import SEOMeta from "@/components/SEOMeta";
 
 export default function ForgotPassword() {
+  // SEO: Prevent indexing of auth pages
+  const noIndexMeta = (
+    <SEOMeta
+      title="Reset Password"
+      description="Reset your FLESHLAB password"
+      canonical="/forgot-password"
+      noIndex={true}
+    />
+  );
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -26,7 +36,9 @@ export default function ForgotPassword() {
   };
 
   return (
-    <AuthLayout
+    <>
+      {noIndexMeta}
+      <AuthLayout
       icon={Mail}
       title="Reset password"
       subtitle="We'll send you a link to reset it"
@@ -72,5 +84,6 @@ export default function ForgotPassword() {
         </form>
       )}
     </AuthLayout>
+    </>
   );
 }

@@ -6,8 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Lock, Loader2, AlertTriangle } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
+import SEOMeta from "@/components/SEOMeta";
 
 export default function ResetPassword() {
+  // SEO: Prevent indexing of auth pages
+  const noIndexMeta = (
+    <SEOMeta
+      title="Set New Password"
+      description="Set your new FLESHLAB password"
+      canonical="/reset-password"
+      noIndex={true}
+    />
+  );
   const [searchParams] = useSearchParams();
   const resetToken = searchParams.get("token");
 
@@ -36,7 +46,9 @@ export default function ResetPassword() {
 
   if (!resetToken) {
     return (
-      <AuthLayout
+      <>
+        {noIndexMeta}
+        <AuthLayout
         icon={AlertTriangle}
         title="Invalid reset link"
         subtitle="This password reset link is missing or invalid"
@@ -50,11 +62,14 @@ export default function ResetPassword() {
           The link you used appears to be incomplete. Please request a new password reset email.
         </p>
       </AuthLayout>
+      </>
     );
   }
 
   return (
-    <AuthLayout
+    <>
+      {noIndexMeta}
+      <AuthLayout
       icon={Lock}
       title="New password"
       subtitle="Enter your new password below"
@@ -110,5 +125,6 @@ export default function ResetPassword() {
         </Button>
       </form>
     </AuthLayout>
+    </>
   );
 }

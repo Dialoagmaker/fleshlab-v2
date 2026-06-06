@@ -10,8 +10,18 @@ import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
 import { getStoredAuthIntent, buildRedirectUrl, validateRedirectUrl } from "@/lib/authRedirect";
+import SEOMeta from "@/components/SEOMeta";
 
 export default function Register() {
+  // SEO: Prevent indexing of auth pages
+  const noIndexMeta = (
+    <SEOMeta
+      title="Create Account"
+      description="Create your FLESHLAB account"
+      canonical="/register"
+      noIndex={true}
+    />
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -129,7 +139,9 @@ export default function Register() {
 
   if (showOtp) {
     return (
-      <AuthLayout
+      <>
+        {noIndexMeta}
+        <AuthLayout
         icon={Mail}
         title="Verify your email"
         subtitle={`We sent a code to ${email}`}
@@ -178,11 +190,14 @@ export default function Register() {
           </button>
         </p>
       </AuthLayout>
+      </>
     );
   }
 
   return (
-    <AuthLayout
+    <>
+      {noIndexMeta}
+      <AuthLayout
       icon={UserPlus}
       title="Create your account"
       subtitle={isFanProductionFlow ? "Create your FLESHLAB account to continue your Fan Production Request." : "Sign up to get started"}
@@ -286,5 +301,6 @@ export default function Register() {
         </Button>
       </form>
     </AuthLayout>
+    </>
   );
 }

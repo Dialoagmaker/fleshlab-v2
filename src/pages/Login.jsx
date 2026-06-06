@@ -9,8 +9,20 @@ import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { getStoredAuthIntent, buildRedirectUrl, validateRedirectUrl } from "@/lib/authRedirect";
 
+import SEOMeta from "@/components/SEOMeta";
+
 export default function Login() {
   const [email, setEmail] = useState("");
+  
+  // SEO: Prevent indexing of auth pages
+  const noIndexMeta = (
+    <SEOMeta
+      title="Log In"
+      description="Log in to your FLESHLAB account"
+      canonical="/login"
+      noIndex={true}
+    />
+  );
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -100,7 +112,9 @@ export default function Login() {
   };
 
   return (
-    <AuthLayout
+    <>
+      {noIndexMeta}
+      <AuthLayout
       icon={LogIn}
       title="Welcome back"
       subtitle={isFanProductionFlow ? "Log in to continue your Fan Production Request." : "Log in to your account"}
@@ -188,5 +202,6 @@ export default function Login() {
         </Button>
       </form>
     </AuthLayout>
+    </>
   );
 }

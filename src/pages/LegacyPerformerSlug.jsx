@@ -2,14 +2,21 @@ import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 
-function injectNoIndex() {
+function injectNoIndexAndCanonical(targetCanonicalUrl) {
+  // noindex for legacy URLs
   ['robots', 'googlebot'].forEach(name => {
     let meta = document.querySelector(`meta[name="${name}"]`);
     if (!meta) { meta = document.createElement('meta'); meta.setAttribute('name', name); document.head.appendChild(meta); }
     meta.setAttribute('content', 'noindex,nofollow');
   });
-  const canonical = document.querySelector('link[rel="canonical"]');
-  if (canonical) canonical.remove();
+  // Set canonical to target URL (not self)
+  let canonical = document.querySelector('link[rel="canonical"]');
+  if (!canonical) {
+    canonical = document.createElement('link');
+    canonical.setAttribute('rel', 'canonical');
+    document.head.appendChild(canonical);
+  }
+  canonical.setAttribute('href', targetCanonicalUrl || '/');
 }
 
 /**
@@ -27,7 +34,6 @@ export default function LegacyPerformerSlug() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    injectNoIndex();
     if (!slug) {
       navigate('/', { replace: true });
       return;
@@ -36,13 +42,17 @@ export default function LegacyPerformerSlug() {
     async function resolve() {
       try {
         const results = await base44.entities.Performer.filter({ slug });
-        if (results?.length > 0) {
-          navigate(`/performers/${slug}`, { replace: true });
+        if (results?.length > 0 && results[0].status === 'active') {
+          const targetUrl = `/performers/${slug}`;
+          injectNoIndexAndCanonical(`https://fleshlab.online${targetUrl}`);
+          navigate(targetUrl, { replace: true });
         } else {
           // Not a performer slug — send to home rather than 404
+          injectNoIndexAndCanonical('https://fleshlab.online/');
           navigate('/', { replace: true });
         }
       } catch {
+        injectNoIndexAndCanonical('https://fleshlab.online/');
         navigate('/', { replace: true });
       }
     }

@@ -122,9 +122,18 @@ export default function TubeFooter() {
         {/* Compliance */}
         <div className="border-t border-white/8 pt-8">
           <div className="text-center">
-            <p className="text-xs text-white/50 leading-relaxed mb-2">
-              <strong className="text-white/70">18 U.S.C. 2257 Compliance Notice:</strong> {t('footer.ageStatement')}
+            <p className="text-xs text-white/50 leading-relaxed mb-4">
+              <strong className="text-white/70">18 U.S.C. 2257 Record-Keeping Requirements Compliance Statement:</strong> All models, performers, and actors appearing on this website were 18 years of age or older at the time of the creation of the depictions. The owner and operator of this website is not the primary producer. Records required to be maintained by 18 U.S.C. § 2257 and its associated regulations are kept by the original producer of the content.
             </p>
+            <div className="flex justify-center gap-4 text-xs text-white/60 mb-2">
+              <a href="/dmca" className="hover:text-rose-500">DMCA</a>
+              <span>|</span>
+              <a href="/2257" className="hover:text-rose-500">2257 Compliance</a>
+              <span>|</span>
+              <a href="mailto:support@fleshlab.online" className="hover:text-rose-500">Content Removal</a>
+              <span>|</span>
+              <a href="mailto:support@fleshlab.online" className="hover:text-rose-500">Support</a>
+            </div>
             <p className="text-xs text-white/40">
               {t('footer.copyright').replace('{year}', currentYear)}
             </p>

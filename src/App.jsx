@@ -9,6 +9,7 @@ import { useAuthRedirect } from './hooks/useAuthRedirect';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
+import SEOMeta from './components/SEOMeta';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -187,7 +188,11 @@ const AuthenticatedApp = () => {
 
   // Static public pages - MUST be before auth checks
   if (path === "/performerlogin") {
-    return <PerformerLoginPage />;
+    return (
+      <PublicPageShell noIndex={true}>
+        <PerformerLoginPage />
+      </PublicPageShell>
+    );
   }
 
   if (path === "/performer/login") {
@@ -317,11 +322,19 @@ const AuthenticatedApp = () => {
   }
 
   if (path === "/sign-contract") {
-    return <SignContract />;
+    return (
+      <PublicPageShell noIndex={true}>
+        <SignContract />
+      </PublicPageShell>
+    );
   }
 
   if (path === "/application-upload") {
-    return <ApplicationUpload />;
+    return (
+      <PublicPageShell noIndex={true}>
+        <ApplicationUpload />
+      </PublicPageShell>
+    );
   }
 
   // Dynamic public routes — now handled by React Router <Routes> below
@@ -341,11 +354,11 @@ const AuthenticatedApp = () => {
   return (
     <>
       <Routes>
-      {/* Auth routes */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
+      {/* Auth routes — noindex to prevent indexing */}
+      <Route path="/login" element={<><SEOMeta title="Log In" description="Log in to your FLESHLAB account" canonical="/login" noIndex={true} /><Login /></>} />
+      <Route path="/register" element={<><SEOMeta title="Create Account" description="Create your FLESHLAB account" canonical="/register" noIndex={true} /><Register /></>} />
+      <Route path="/forgot-password" element={<><SEOMeta title="Reset Password" description="Reset your FLESHLAB password" canonical="/forgot-password" noIndex={true} /><ForgotPassword /></>} />
+      <Route path="/reset-password" element={<><SEOMeta title="Set New Password" description="Set your new FLESHLAB password" canonical="/reset-password" noIndex={true} /><ResetPassword /></>} />
       <Route path="/performer/login" element={<PerformerLoginPage />} />
       <Route path="/performerlogin" element={<Navigate to="/performer/login" replace />} />
       {/* V1 → V2 static path compatibility redirects */}
@@ -379,8 +392,8 @@ const AuthenticatedApp = () => {
       <Route path="/news/:slug" element={<PublicPageShell><NewsDetail /></PublicPageShell>} />
       <Route path="/brands/:slug" element={<PublicPageShell><BrandDetail /></PublicPageShell>} />
       <Route path="/fan-productions" element={<PublicPageShell><FanProductions /></PublicPageShell>} />
-      <Route path="/fan-productions/request" element={<PublicPageShell><FanProductionRequest /></PublicPageShell>} />
-      <Route path="/client/dashboard" element={<PublicPageShell><ClientDashboard /></PublicPageShell>} />
+      <Route path="/fan-productions/request" element={<PublicPageShell noIndex={true}><FanProductionRequest /></PublicPageShell>} />
+      <Route path="/client/dashboard" element={<PublicPageShell noIndex={true}><ClientDashboard /></PublicPageShell>} />
       <Route path="/fanclub/:slug" element={<PublicPageShell><ComingSoon title="Performer Fanclub" /></PublicPageShell>} />
       <Route path="/fanclub" element={<PublicPageShell><Fanclub /></PublicPageShell>} />
       {/* Public routes */}
@@ -390,16 +403,18 @@ const AuthenticatedApp = () => {
         {/* V1 root performer slugs — MUST be last so static paths above win */}
         <Route path="/:slug" element={<LegacyPerformerSlug />} />
       </Route>
-      {/* Protected routes for non-admin roles */}
+      {/* Protected routes for non-admin roles — noindex */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
-        <Route path="/account" element={<Account />} />
+        <Route path="/account" element={<><SEOMeta title="Account Settings" description="Manage your account settings" canonical="/account" noIndex={true} /><Account /></>} />
       </Route>
       
-      {/* Performer dashboard - uses PerformerRouteHandler (independent from Base44 auth) */}
+      {/* Performer dashboard - uses PerformerRouteHandler (independent from Base44 auth) — noindex */}
       <Route path="/performer/dashboard" element={
+        <><SEOMeta title="Performer Dashboard" description="Manage your performer profile" canonical="/performer/dashboard" noIndex={true} />
         <PerformerRouteHandler>
           <PerformerDashboard />
         </PerformerRouteHandler>
+        </>
       } />
       {/* Admin routes are now handled by manual dispatch above to prevent public route interception */}
       {/* Wildcard route */}
