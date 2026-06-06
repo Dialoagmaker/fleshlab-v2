@@ -334,7 +334,50 @@ export default function Fanclub() {
               {/* What you unlock — benefits section */}
               <PerformerFanclubBenefits performer={featuredPerformer} ctaSlot={performerCTA} />
 
-              {/* Comparison: Performer Fanclub (primary) vs FLESHLAB Membership (secondary) */}
+              {/* Pricing decision box */}
+              <section className="py-16 px-6 bg-[#060404] border-t border-white/5">
+                <div className="max-w-[600px] mx-auto">
+                  <div className="relative bg-gradient-to-br from-[#1c0808] to-[#0d0505] border-2 border-rose-600/50 rounded-3xl overflow-hidden shadow-[0_0_60px_rgba(220,38,38,0.18)]">
+                    {/* Top bar */}
+                    <div className="bg-rose-600/15 border-b border-rose-600/20 px-8 py-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-rose-400/60 text-[10px] font-black uppercase tracking-widest">Performer Fanclub</p>
+                        <p className="text-white font-black text-base">{featuredPerformer.display_name} Fanclub</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-4xl font-black text-white">$9.99</span>
+                          <span className="text-white/35 text-base">/mo</span>
+                        </div>
+                        <p className="text-amber-300/70 text-xs font-bold">50% off · first 3 months</p>
+                      </div>
+                    </div>
+                    {/* Includes */}
+                    <div className="px-8 py-6">
+                      <p className="text-white/30 text-xs font-black uppercase tracking-widest mb-4">Includes</p>
+                      <div className="space-y-2.5 mb-7">
+                        {[
+                          "Member-only scenes",
+                          "Performer updates and private drops",
+                          "Selected early releases",
+                          `Supports ${featuredPerformer.display_name} directly`,
+                        ].map((item, i) => (
+                          <div key={i} className="flex items-center gap-3">
+                            <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                            <span className="text-white/60 text-sm">{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {performerCTA}
+                      <p className="text-white/15 text-xs text-center mt-4">
+                        $9.99/month for the first 3 months, then $19.99/month unless cancelled. Cancel anytime.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* FLESHLAB Membership — secondary upsell */}
               <FleshlabMembershipUpsell
                 performerName={featuredPerformer.display_name}
                 isFanclubComingSoon={false}
