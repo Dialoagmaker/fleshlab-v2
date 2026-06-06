@@ -335,6 +335,11 @@ Deno.serve(async (req) => {
       }
 
       let invoiceData;
+      const mode = Deno.env.get('NOWPAYMENTS_MODE') || 'test';
+      const baseUrl = mode === 'live'
+        ? 'https://api.nowpayments.io/v1'
+        : 'https://api-sandbox.nowpayments.io/v1';
+      
       try {
         console.log('[createCheckoutSession] Calling NOWPayments invoice API:', {
           endpoint: `${baseUrl}/invoice`,
