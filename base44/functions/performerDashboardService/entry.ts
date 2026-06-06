@@ -883,64 +883,79 @@ Deno.serve(async (req) => {
     // Action: get_video_stats (performer read-only)
     if (action === 'get_video_stats') {
       const { period_month } = body;
+      const revenueSharePct = myPerformer.revenue_split_pct || 40;
 
-      // Get all VideoPerformer records for this performer
+      const allSnapshots = [];
+
+      // Part A: Snapshots linked to internal videos for this performer
       const videoPerformers = await base44.asServiceRole.entities.VideoPerformer.filter({
         performer_id: myPerformer.id
       });
 
-      if (!videoPerformers || videoPerformers.length === 0) {
-        return Response.json({ 
-          success: true, 
-          stats: [], 
-          total_count: 0,
-          gross_revenue_total: 0,
-          performer_earnings_total: 0,
-          revenue_share_pct: myPerformer.revenue_split_pct || 40
+      const videoTitleMap = {};
+      if (videoPerformers && videoPerformers.length > 0) {
+        const videoIds = [...new Set(videoPerformers.map(vp => vp.video_id))];
+
+        const [snapshotSets, videoResults] = await Promise.all([
+          Promise.all(
+            videoIds.map(videoId => {
+              const query = { video_id: videoId };
+              if (period_month) query.period_month = period_month;
+              return base44.asServiceRole.entities.VideoStatSnapshot.filter(query).catch(() => []);
+            })
+          ),
+          Promise.all(
+            videoIds.map(vid => base44.asServiceRole.entities.Video.get(vid).catch(() => null))
+          )
+        ]);
+
+        videoResults.forEach((video, i) => {
+          if (video) videoTitleMap[videoIds[i]] = video.title;
+        });
+
+        for (const snap of snapshotSets.flat()) {
+          allSnapshots.push({
+            id: snap.id,
+            video_id: snap.video_id,
+            video_title: videoTitleMap[snap.video_id] || 'Unknown',
+            external_title: null,
+            external_url: null,
+            is_external_only: false,
+            platform: snap.platform,
+            period_month: snap.period_month,
+            views: snap.views,
+            likes: snap.likes,
+            favourites: snap.favourites,
+            revenue_usd: snap.revenue_usd,
+            promotion_status: snap.promotion_status
+          });
+        }
+      }
+
+      // Part B: External-only snapshots linked directly to this performer
+      const extQuery = { performer_id: myPerformer.id, source_type: 'external_manual' };
+      if (period_month) extQuery.period_month = period_month;
+      const externalSnaps = await base44.asServiceRole.entities.VideoStatSnapshot.filter(extQuery).catch(() => []);
+      for (const snap of externalSnaps) {
+        allSnapshots.push({
+          id: snap.id,
+          video_id: null,
+          video_title: snap.external_title || 'External',
+          external_title: snap.external_title,
+          external_url: snap.external_url,
+          is_external_only: true,
+          platform: snap.platform,
+          period_month: snap.period_month,
+          views: snap.views,
+          likes: snap.likes,
+          favourites: snap.favourites,
+          revenue_usd: snap.revenue_usd,
+          promotion_status: snap.promotion_status
         });
       }
 
-      const videoIds = [...new Set(videoPerformers.map(vp => vp.video_id))];
-      const revenueSharePct = myPerformer.revenue_split_pct || 40;
-
-      // Fetch all snapshot sets + all video records in parallel
-      const [snapshotSets, videoResults] = await Promise.all([
-        Promise.all(
-          videoIds.map(videoId => {
-            const query = { video_id: videoId };
-            if (period_month) query.period_month = period_month;
-            return base44.asServiceRole.entities.VideoStatSnapshot.filter(query).catch(() => []);
-          })
-        ),
-        Promise.all(
-          videoIds.map(vid => base44.asServiceRole.entities.Video.get(vid).catch(() => null))
-        )
-      ]);
-
-      const allSnapshots = snapshotSets.flat();
-
-      // Build a lookup map of videoId → title
-      const videoTitleMap = {};
-      videoResults.forEach((video, i) => {
-        if (video) videoTitleMap[videoIds[i]] = video.title;
-      });
-
-      // Map snapshots with video titles
-      const statsWithVideos = allSnapshots.map(snap => ({
-        id: snap.id,
-        video_id: snap.video_id,
-        video_title: videoTitleMap[snap.video_id] || 'Unknown',
-        platform: snap.platform,
-        period_month: snap.period_month,
-        views: snap.views,
-        likes: snap.likes,
-        favourites: snap.favourites,
-        revenue_usd: snap.revenue_usd,
-        promotion_status: snap.promotion_status
-      }));
-
       // Sort by period_month descending
-      const sorted = statsWithVideos.sort((a, b) => 
+      const sorted = allSnapshots.sort((a, b) =>
         b.period_month.localeCompare(a.period_month)
       );
 
@@ -948,9 +963,9 @@ Deno.serve(async (req) => {
       const grossRevenueTotal = sorted.reduce((sum, s) => sum + (s.revenue_usd || 0), 0);
       const performerEarningsTotal = grossRevenueTotal * (revenueSharePct / 100);
 
-      return Response.json({ 
-        success: true, 
-        stats: sorted, 
+      return Response.json({
+        success: true,
+        stats: sorted,
         total_count: sorted.length,
         gross_revenue_total: grossRevenueTotal,
         performer_earnings_total: performerEarningsTotal,

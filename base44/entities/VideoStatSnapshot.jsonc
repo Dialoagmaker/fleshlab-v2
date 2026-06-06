@@ -5,22 +5,38 @@
     "video_id": {
       "type": "string",
       "title": "Video ID",
-      "description": "Internal Video ID \u2014 required if source_type = internal"
+      "description": "Internal Video ID \u2014 required if source_type = internal. Null for external-only entries."
+    },
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID",
+      "description": "Direct performer link \u2014 used for external-only stats not tied to a Video record"
     },
     "external_video_id": {
       "type": "string",
       "title": "External Video ID",
       "description": "ExternalVideo record ID \u2014 required if source_type = external"
     },
+    "external_title": {
+      "type": "string",
+      "title": "External Video Title",
+      "description": "Title of the external platform video, used when no internal Video record exists"
+    },
+    "external_url": {
+      "type": "string",
+      "title": "External Video URL",
+      "description": "URL of the video on the external platform"
+    },
     "source_type": {
       "type": "string",
       "enum": [
         "internal",
-        "external"
+        "external",
+        "external_manual"
       ],
       "title": "Source Type",
       "default": "internal",
-      "description": "Whether this stat is for an internal FLESHLAB video or an external platform video"
+      "description": "internal = FLESHLAB video, external = ExternalVideo record, external_manual = manually entered external stat"
     },
     "platform": {
       "type": "string",
@@ -31,6 +47,11 @@
         "boyfriendtv",
         "zapping",
         "pornhub",
+        "chaturbate",
+        "stripchat",
+        "bongacams",
+        "xvideos",
+        "twitter_x",
         "other"
       ],
       "title": "Platform"

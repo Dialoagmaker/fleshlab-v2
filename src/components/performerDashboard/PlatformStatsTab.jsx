@@ -118,8 +118,18 @@ export default function PlatformStatsTab({ performerId, performerToken, revenueS
                   const statPerformerShare = (stat.revenue_usd || 0) * (revenueSharePct / 100);
                   return (
                     <TableRow key={stat.id}>
-                      <TableCell className="max-w-[250px] truncate font-medium">
-                        {stat.video_title}
+                      <TableCell className="max-w-[250px] font-medium">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <span className="truncate">{stat.video_title}</span>
+                          {stat.is_external_only && (
+                            <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded border border-amber-500/40 text-amber-500 leading-none">External</span>
+                          )}
+                          {stat.external_url && (
+                            <a href={stat.external_url} target="_blank" rel="noopener noreferrer" className="shrink-0 text-muted-foreground hover:text-primary">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                            </a>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary">{stat.platform}</Badge>
