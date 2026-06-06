@@ -622,33 +622,37 @@ Deno.serve(async (req) => {
       // Determine revenue share (default 40% for managed performers)
       const revenueSharePct = myPerformer.revenue_split_pct || 40;
 
-      // Parallel fetch all videos + earnings + stats simultaneously
-      const [videoResults, earnings, snapshotSets] = await Promise.all([
+      // Parallel fetch all videos + all earnings sources + internal video stats + external stats
+      const [videoResults, legacyEarnings, lineItems, snapshotSets, externalOnlySnapshots] = await Promise.all([
         Promise.all(
           videoIds.map(vid => base44.asServiceRole.entities.Video.get(vid).catch(() => null))
         ),
         base44.asServiceRole.entities.PerformerEarning.filter({ performer_id: myPerformer.id }),
+        base44.asServiceRole.entities.PerformerEarningLineItem.filter({ performer_id: myPerformer.id }),
         Promise.all(
           videoIds.map(videoId =>
             base44.asServiceRole.entities.VideoStatSnapshot.filter({ video_id: videoId }).catch(() => [])
           )
-        )
+        ),
+        base44.asServiceRole.entities.VideoStatSnapshot.filter({
+          performer_id: myPerformer.id,
+          source_type: 'external_manual'
+        }).catch(() => [])
       ]);
       const videos = videoResults.filter(v => v !== null);
-      const allSnapshots = snapshotSets.flat();
+      const internalSnapshots = snapshotSets.flat();
+      const allSnapshots = [...internalSnapshots, ...externalOnlySnapshots];
 
-      // Calculate statistics
+      // Calculate production statistics (internal FLESHLAB videos only)
       const totalProductions = videoIds.length;
-      // Only count as published if status is exactly "published"
       const publishedVideos = videos.filter(v => v.status === 'published').length;
-      // Count all non-published as draft/other
       const draftVideos = totalProductions - publishedVideos;
       
       const totalRuntimeMinutes = Math.round(
         videos.reduce((sum, v) => sum + (v.duration_seconds || 0), 0) / 60
       );
 
-      // Latest release date (prefer release_date, fallback to published_at, only for published videos)
+      // Latest release date (published videos only)
       let latestReleaseDate = null;
       for (const v of videos.filter(v => v.status === 'published')) {
         const date = v.release_date || v.published_at;
@@ -657,30 +661,51 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Active promotions
-      const activePromotions = allSnapshots.filter(s => s.promotion_status === 'active').length;
+      // Active promotions from internal snapshots only
+      const activePromotions = internalSnapshots.filter(s => s.promotion_status === 'active').length;
 
-      // Calculate gross revenue from VideoStatSnapshot
+      // Platform stat counts
+      const platformStatRowsTotal = allSnapshots.length;
+      const externalOnlyCount = externalOnlySnapshots.length;
+      const internalStatRowsCount = internalSnapshots.length;
+
+      // Gross from ALL platform stat rows
       const grossPlatformRevenue = allSnapshots.reduce((sum, s) => sum + (s.revenue_usd || 0), 0);
+      const videoPlatformGross = grossPlatformRevenue;
+      const videoPlatformShare = videoPlatformGross * (revenueSharePct / 100);
 
-      // Lifetime revenue: Include ALL non-void earnings (approved, paid, pending, estimated)
-      // This gives a true "lifetime earnings" picture, not just paid amounts
-      let lifetimeRevenue = 0;
-      let lifetimePerformerEarnings = 0;
-      
-      if (earnings && earnings.length > 0) {
-        // Use official PerformerEarning records - include all statuses except void/cancelled
-        lifetimeRevenue = earnings
-          .filter(e => e.status !== 'draft' && e.status !== 'cancelled')
-          .reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0);
-        lifetimePerformerEarnings = earnings
-          .filter(e => e.status !== 'draft' && e.status !== 'cancelled')
-          .reduce((sum, e) => sum + (e.net_amount_usd || 0), 0);
-      } else {
-        // Fallback: calculate from VideoStatSnapshot
-        lifetimeRevenue = grossPlatformRevenue;
-        lifetimePerformerEarnings = grossPlatformRevenue * (revenueSharePct / 100);
-      }
+      // ── Unified lifetime earnings (same logic as get_earnings) ──────────
+      // Source 1: legacy PerformerEarning records
+      const legacyGross = (legacyEarnings || [])
+        .filter(e => e.status !== 'draft' && e.status !== 'cancelled')
+        .reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0);
+      const legacyPerformer = (legacyEarnings || [])
+        .filter(e => e.status !== 'draft' && e.status !== 'cancelled')
+        .reduce((sum, e) => sum + (e.net_amount_usd || 0), 0);
+
+      // Source 2: PerformerEarningLineItem records
+      const lineItemGross = (lineItems || [])
+        .filter(e => e.status !== 'draft' && e.status !== 'cancelled')
+        .reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0);
+      const lineItemPerformer = (lineItems || [])
+        .filter(e => e.status !== 'draft' && e.status !== 'cancelled')
+        .reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
+
+      // Source 3: VideoStatSnapshot rows NOT already covered by a manual line item
+      const existingVideoIds = new Set(
+        [...(lineItems || []), ...(legacyEarnings || [])]
+          .filter(e => e.source_type === 'video_platform' || e.earning_type === 'video_platform')
+          .map(e => e.video_id)
+          .filter(Boolean)
+      );
+      const snapGross = allSnapshots
+        .filter(s => !s.video_id || !existingVideoIds.has(s.video_id))
+        .reduce((sum, s) => sum + (s.revenue_usd || 0), 0);
+      const snapPerformer = snapGross * (revenueSharePct / 100);
+
+      // Combined unified totals
+      const lifetimeRevenue = legacyGross + lineItemGross + snapGross;
+      const lifetimePerformerEarnings = legacyPerformer + lineItemPerformer + snapPerformer;
 
       // Lead roles count
       const leadRolesCount = leadVideoIds.length;
@@ -702,7 +727,13 @@ Deno.serve(async (req) => {
           lead_roles: leadRolesCount,
           lead_percentage: leadPercentage,
           revenue_share_pct: revenueSharePct,
-          gross_platform_revenue: grossPlatformRevenue
+          gross_platform_revenue: grossPlatformRevenue,
+          // Platform stats breakdown
+          platform_stat_rows_total: platformStatRowsTotal,
+          external_only_stat_rows: externalOnlyCount,
+          internal_stat_rows: internalStatRowsCount,
+          video_platform_gross: videoPlatformGross,
+          video_platform_share: videoPlatformShare
         }
       });
     }
