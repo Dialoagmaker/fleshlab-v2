@@ -125,9 +125,28 @@ Deno.serve(async (req) => {
       adminUser: user.email 
     });
 
-    const intent = await base44.asServiceRole.entities.PaymentIntent.get(paymentIntentId);
+    // Validate PaymentIntent exists — return controlled 404, not raw 500
+    let intent;
+    try {
+      intent = await base44.asServiceRole.entities.PaymentIntent.get(paymentIntentId);
+    } catch (err) {
+      console.error('[simulatePaymentWebhook] Failed to fetch PaymentIntent:', {
+        paymentIntentId,
+        error: err.message,
+      });
+      return Response.json({ 
+        success: false,
+        error: 'PaymentIntent not found',
+        details: { paymentIntentId, error: err.message },
+      }, { status: 404 });
+    }
+
     if (!intent) {
-      return Response.json({ error: 'PaymentIntent not found' }, { status: 404 });
+      return Response.json({ 
+        success: false,
+        error: 'PaymentIntent not found',
+        details: { paymentIntentId },
+      }, { status: 404 });
     }
 
     // Idempotency check
@@ -181,6 +200,68 @@ Deno.serve(async (req) => {
 
     // Process by event type
     if (eventType === 'payment.completed') {
+      // ── CRITICAL: Amount and Currency Verification (same as production webhook) ────────────────
+      const expectedAmount = intent.amount;
+      const expectedCurrency = (intent.currency || 'usd').toLowerCase();
+      const actuallyPaid = simulatedPayload.actually_paid !== undefined ? simulatedPayload.actually_paid : intent.amount;
+      const paidCurrency = (simulatedPayload.pay_currency || 'usd').toLowerCase();
+
+      // Validate actually_paid
+      if (actuallyPaid === undefined || actuallyPaid === null || isNaN(actuallyPaid)) {
+        return Response.json({
+          success: false,
+          action: 'payment.completed',
+          entitlementGranted: false,
+          reason: 'actually_paid_missing',
+          details: { paymentIntentId, actuallyPaid },
+          message: 'Payment verification failed: actually_paid missing or invalid',
+        });
+      }
+
+      // Validate amount (1% tolerance)
+      const tolerance = 0.01;
+      const minRequired = expectedAmount * (1 - tolerance);
+      
+      if (actuallyPaid < minRequired) {
+        return Response.json({
+          success: false,
+          action: 'payment.completed',
+          entitlementGranted: false,
+          reason: 'underpayment',
+          details: { 
+            paymentIntentId,
+            expectedAmount,
+            actuallyPaid,
+            minRequired: minRequired.toFixed(2),
+          },
+          message: `Underpayment: expected $${expectedAmount}, received $${actuallyPaid}`,
+        });
+      }
+
+      // Validate currency
+      if (paidCurrency !== expectedCurrency) {
+        return Response.json({
+          success: false,
+          action: 'payment.completed',
+          entitlementGranted: false,
+          reason: 'currency_mismatch',
+          details: {
+            paymentIntentId,
+            expectedCurrency,
+            paidCurrency,
+          },
+          message: `Currency mismatch: expected ${expectedCurrency}, received ${paidCurrency}`,
+        });
+      }
+
+      console.log('[simulatePaymentWebhook] Amount/currency verification passed:', {
+        paymentIntentId,
+        expectedAmount,
+        actuallyPaid,
+        expectedCurrency,
+        paidCurrency,
+      });
+
       await base44.asServiceRole.entities.PaymentIntent.update(paymentIntentId, {
         status:       'completed',
         completed_at: new Date().toISOString(),
@@ -192,6 +273,8 @@ Deno.serve(async (req) => {
           simulated: true,
           simulated_at: new Date().toISOString(),
           simulated_by: user.email,
+          verified_amount: true,
+          verified_currency: true,
         }),
       });
 
@@ -204,7 +287,13 @@ Deno.serve(async (req) => {
         newStatus: 'completed',
         entitlementGranted: true,
         simulatedPayload,
-        message: 'Payment marked as completed and entitlements granted',
+        verified: {
+          amount: actuallyPaid,
+          currency: paidCurrency,
+          expected_amount: expectedAmount,
+          expected_currency: expectedCurrency,
+        },
+        message: 'Payment marked as completed and entitlements granted (verified)',
       });
 
     } else if (eventType === 'payment.failed') {
@@ -288,10 +377,15 @@ Deno.serve(async (req) => {
     }
 
   } catch (err) {
-    console.error('[simulatePaymentWebhook] Error:', err);
-    return Response.json({ 
+    console.error('[simulatePaymentWebhook] Unexpected error:', {
+      paymentIntentId: body?.paymentIntentId,
       error: err.message,
-      success: false 
+      stack: err.stack,
+    });
+    return Response.json({ 
+      error: 'Internal server error',
+      success: false,
+      details: { error: err.message },
     }, { status: 500 });
   }
 });

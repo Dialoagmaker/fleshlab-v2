@@ -290,6 +290,117 @@ Deno.serve(async (req) => {
     // ── Handle by event type ─────────────────────────────────────────────────
 
     if (event.eventType === 'payment.completed') {
+      // ── CRITICAL: Amount and Currency Verification BEFORE granting entitlement ────────────────
+      const expectedAmount = intent.amount;
+      const expectedCurrency = (intent.currency || 'usd').toLowerCase();
+      const actuallyPaid = event.actuallyPaid !== undefined ? event.actuallyPaid : event.amount;
+      const paidCurrency = (event.currency || 'usd').toLowerCase();
+
+      // Validate actually_paid is present and numeric
+      if (actuallyPaid === undefined || actuallyPaid === null || isNaN(actuallyPaid)) {
+        console.warn('[paymentWebhook] Missing actually_paid — rejecting entitlement:', {
+          intentId: intent.id,
+          paymentId: event.paymentId,
+          actuallyPaid,
+          event,
+        });
+        await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
+          status:       'payment_review',
+          error_message: 'Payment verification failed: actually_paid missing or invalid',
+          metadata: JSON.stringify({
+            ...JSON.parse(intent.metadata || '{}'),
+            nowpayments_payment_id: event.paymentId,
+            actually_paid: event.actuallyPaid,
+            raw_status: event.rawStatus,
+            verification_failed: true,
+            fail_reason: 'actually_paid_missing',
+          }),
+        });
+        return Response.json({ 
+          success: true, 
+          matched: true,
+          entitlementGranted: false,
+          reason: 'actually_paid_missing',
+        });
+      }
+
+      // Validate amount: actually_paid must be >= expected amount (allow 1% tolerance for rounding/fees)
+      const tolerance = 0.01; // 1% tolerance for crypto rounding
+      const minRequired = expectedAmount * (1 - tolerance);
+      
+      if (actuallyPaid < minRequired) {
+        console.warn('[paymentWebhook] Underpayment detected — rejecting entitlement:', {
+          intentId: intent.id,
+          paymentId: event.paymentId,
+          expectedAmount,
+          actuallyPaid,
+          minRequired,
+          tolerance,
+        });
+        await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
+          status:       'underpaid',
+          error_message: `Underpayment: expected $${expectedAmount}, received $${actuallyPaid} (min: $${minRequired.toFixed(2)})`,
+          metadata: JSON.stringify({
+            ...JSON.parse(intent.metadata || '{}'),
+            nowpayments_payment_id: event.paymentId,
+            actually_paid: event.actuallyPaid,
+            raw_status: event.rawStatus,
+            verification_failed: true,
+            fail_reason: 'underpayment',
+            expected_amount: expectedAmount,
+            actually_paid: actuallyPaid,
+          }),
+        });
+        return Response.json({ 
+          success: true, 
+          matched: true,
+          entitlementGranted: false,
+          reason: 'underpayment',
+          expected: expectedAmount,
+          received: actuallyPaid,
+        });
+      }
+
+      // Validate currency: must match exactly (case-insensitive)
+      if (paidCurrency !== expectedCurrency) {
+        console.warn('[paymentWebhook] Currency mismatch — rejecting entitlement:', {
+          intentId: intent.id,
+          paymentId: event.paymentId,
+          expectedCurrency,
+          paidCurrency,
+        });
+        await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
+          status:       'currency_mismatch',
+          error_message: `Currency mismatch: expected ${expectedCurrency}, received ${paidCurrency}`,
+          metadata: JSON.stringify({
+            ...JSON.parse(intent.metadata || '{}'),
+            nowpayments_payment_id: event.paymentId,
+            actually_paid: event.actuallyPaid,
+            raw_status: event.rawStatus,
+            verification_failed: true,
+            fail_reason: 'currency_mismatch',
+            expected_currency: expectedCurrency,
+            paid_currency: paidCurrency,
+          }),
+        });
+        return Response.json({ 
+          success: true, 
+          matched: true,
+          entitlementGranted: false,
+          reason: 'currency_mismatch',
+          expected: expectedCurrency,
+          received: paidCurrency,
+        });
+      }
+
+      console.log('[paymentWebhook] Amount/currency verification passed:', {
+        intentId: intent.id,
+        expectedAmount,
+        actuallyPaid,
+        expectedCurrency,
+        paidCurrency,
+      });
+
       // Update PaymentIntent to completed
       await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
         status:       'completed',
@@ -299,6 +410,8 @@ Deno.serve(async (req) => {
           nowpayments_payment_id: event.paymentId,
           actually_paid: event.actuallyPaid,
           raw_status: event.rawStatus,
+          verified_amount: true,
+          verified_currency: true,
         }),
       });
 
