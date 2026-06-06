@@ -1,33 +1,47 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Film, Clock, CheckCircle, AlertCircle, ChevronRight, MessageCircle, User } from "lucide-react";
+import {
+  Film, Plus, User, MessageCircle, ChevronRight,
+  Shield, Clock, FileCheck, Wallet,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import SEOMeta from "@/components/SEOMeta";
+import RequestCard, { STATUS_CONFIG } from "@/components/dashboard/RequestCard";
 
-const PACKAGE_LABELS = {
-  short_799: "Short Fan Production — $799",
-  full_1499: "Full Fan Production — $1,499",
-  premium_2499: "Premium Fan Production — $2,499",
-  custom_quote: "Custom / Multi-scene — Quote on request",
-};
+const WA_LINK = `https://wa.me/886958679186?text=${encodeURIComponent("Hi FLESHLAB Management, I need help with my Fan Production request.")}`;
 
-const STATUS_CONFIG = {
-  pending: { label: "Submitted", color: "text-blue-400", bg: "bg-blue-600/15 border-blue-600/25", icon: Clock },
-  media_pending: { label: "Under Review", color: "text-amber-400", bg: "bg-amber-600/15 border-amber-600/25", icon: Clock },
-  reviewing: { label: "Under Review", color: "text-amber-400", bg: "bg-amber-600/15 border-amber-600/25", icon: Clock },
-  approved: { label: "Approved", color: "text-emerald-400", bg: "bg-emerald-600/15 border-emerald-600/25", icon: CheckCircle },
-  rejected: { label: "Not Approved", color: "text-red-400", bg: "bg-red-600/15 border-red-600/25", icon: AlertCircle },
-};
+const ACTIVE_STATUSES = new Set(["pending", "media_pending", "media_required", "reviewing", "pending_review",
+  "performer_approval_pending", "quote_pending", "quote_issued", "approved",
+  "reservation_pending", "reservation_paid", "scheduled", "confirmed"]);
 
-const NEXT_STEPS = {
-  pending: "Your request has been received. Our team will review it within 48–72 hours and contact you via the details you provided.",
-  media_pending: "We are reviewing your request. You may be contacted for additional information.",
-  reviewing: "Your request is under active review. Our team will contact you soon.",
-  approved: "Congratulations — your request has been approved. Our team will contact you to discuss the next steps.",
-  rejected: "Your request was not approved at this time. Please contact us if you have questions.",
-};
+function getVerificationLabel(requests) {
+  const statuses = requests.map((r) => r.compliance_upload_status);
+  if (statuses.includes("verified")) return "Verified";
+  if (statuses.includes("uploaded")) return "Under review";
+  if (requests.some((r) => r.status === "media_required" || r.status === "media_pending")) return "Required";
+  return "Not required yet";
+}
+
+function getVerificationColor(label) {
+  if (label === "Verified") return "text-emerald-400";
+  if (label === "Required") return "text-amber-400";
+  if (label === "Under review") return "text-blue-400";
+  return "text-white/35";
+}
+
+function SummaryCard({ icon: Icon, label, value, valueColor = "text-white" }) {
+  return (
+    <div className="bg-[#0f0f0f] border border-white/8 rounded-xl p-4">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon className="w-3.5 h-3.5 text-rose-400/70" />
+        <span className="text-white/30 text-xs font-bold uppercase tracking-wider">{label}</span>
+      </div>
+      <div className={`font-black text-lg leading-tight ${valueColor}`}>{value}</div>
+    </div>
+  );
+}
 
 export default function ClientDashboard() {
   const { isAuthenticated, user, isLoadingAuth, authChecked } = useAuth();
@@ -49,11 +63,9 @@ export default function ClientDashboard() {
       const all = await base44.entities.GuestProductionApplication.filter({
         request_type: "fan_production",
       });
-      // Filter to current user's requests
       const mine = all.filter(
         (r) => r.applicant_user_id === user?.id || r.email === user?.email
       );
-      // Sort newest first
       mine.sort((a, b) => new Date(b.submitted_at || b.created_date) - new Date(a.submitted_at || a.created_date));
       setRequests(mine);
     } catch (err) {
@@ -73,146 +85,196 @@ export default function ClientDashboard() {
 
   if (!isAuthenticated) return null;
 
+  const activeCount = requests.filter((r) => ACTIVE_STATUSES.has(r.status)).length;
+  const verificationLabel = getVerificationLabel(requests);
+  const hasQuote = requests.some((r) =>
+    ["quote_issued", "approved", "reservation_pending", "reservation_paid", "scheduled", "confirmed"].includes(r.status)
+  );
+  const hasReservation = requests.some((r) =>
+    ["reservation_paid", "scheduled", "confirmed"].includes(r.status)
+  );
+
+  const displayName = user?.full_name && user.full_name !== user.email ? user.full_name : null;
+
   return (
     <>
-      <SEOMeta title="My Dashboard | FLESHLAB" noIndex={true} />
+      <SEOMeta title="Client Dashboard | FLESHLAB" noIndex={true} />
       <div className="min-h-screen bg-[#080808] text-white">
-        {/* Header */}
-        <div className="border-b border-white/6 bg-[#0a0a0a]">
-          <div className="max-w-3xl mx-auto px-4 py-6">
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-8 h-8 rounded-lg bg-rose-600/20 border border-rose-600/30 flex items-center justify-center">
-                <User className="w-4 h-4 text-rose-400" />
+
+        {/* ── HEADER ─────────────────────────────────────────────── */}
+        <div className="border-b border-white/6 bg-[#0a0505]">
+          <div className="max-w-5xl mx-auto px-4 py-7">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-7 h-7 rounded-lg bg-rose-600/20 border border-rose-600/30 flex items-center justify-center">
+                    <User className="w-3.5 h-3.5 text-rose-400" />
+                  </div>
+                  <span className="text-rose-400 text-xs font-black uppercase tracking-widest">FLESHLAB Account</span>
+                </div>
+                <h1 className="text-2xl md:text-3xl font-black text-white leading-tight">Client Dashboard</h1>
+                <p className="text-white/35 text-sm mt-1.5">
+                  {displayName ? `Welcome back, ${displayName}. ` : "Welcome back. "}
+                  Track your Fan Production requests, verification status and next steps.
+                </p>
               </div>
-              <span className="text-rose-400 text-xs font-bold uppercase tracking-widest">FLESHLAB Account</span>
+              <div className="shrink-0">
+                <Button
+                  onClick={() => navigate("/fan-productions/request")}
+                  className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold gap-2 rounded-xl h-auto py-2.5 px-5 text-sm shadow-lg shadow-rose-700/25"
+                >
+                  <Plus className="w-4 h-4" />
+                  New Fan Production Request
+                </Button>
+              </div>
             </div>
-            <h1 className="text-2xl md:text-3xl font-black text-white">My Dashboard</h1>
-            <p className="text-white/40 text-sm mt-1">
-              Welcome back{user?.full_name ? `, ${user.full_name}` : ""}. Track your Fan Production requests and account status here.
-            </p>
           </div>
         </div>
 
-        <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+        <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
 
-          {/* Fan Production Requests */}
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-black text-white flex items-center gap-2">
-                <Film className="w-5 h-5 text-rose-400" />
-                Fan Production Requests
-              </h2>
-              {requests.length > 0 && (
-                <Button
-                  size="sm"
-                  onClick={() => navigate("/fan-productions/request")}
-                  className="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg h-8 px-4"
-                >
-                  New Request
-                </Button>
+          {/* ── SUMMARY CARDS ──────────────────────────────────────── */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <SummaryCard
+              icon={Film}
+              label="Active Requests"
+              value={loading ? "—" : activeCount.toString()}
+              valueColor={activeCount > 0 ? "text-rose-400" : "text-white/35"}
+            />
+            <SummaryCard
+              icon={Shield}
+              label="Verification"
+              value={loading ? "—" : verificationLabel}
+              valueColor={getVerificationColor(verificationLabel)}
+            />
+            <SummaryCard
+              icon={FileCheck}
+              label="Quote Status"
+              value={loading ? "—" : hasQuote ? "Issued" : "Not issued yet"}
+              valueColor={hasQuote ? "text-cyan-400" : "text-white/35"}
+            />
+            <SummaryCard
+              icon={Wallet}
+              label="Reservation"
+              value={loading ? "—" : hasReservation ? "Paid" : "Not required yet"}
+              valueColor={hasReservation ? "text-emerald-400" : "text-white/35"}
+            />
+          </div>
+
+          {/* ── MAIN CONTENT ───────────────────────────────────────── */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            {/* Left: requests list */}
+            <div className="lg:col-span-2 space-y-5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-black text-white flex items-center gap-2">
+                  <Film className="w-4 h-4 text-rose-400" />
+                  Fan Production Requests
+                </h2>
+                <span className="text-white/25 text-xs">{requests.length} total</span>
+              </div>
+
+              {loading ? (
+                <div className="bg-[#0f0f0f] border border-white/8 rounded-2xl p-10 text-center">
+                  <div className="w-6 h-6 border-2 border-rose-600/30 border-t-rose-600 rounded-full animate-spin mx-auto" />
+                </div>
+              ) : requests.length === 0 ? (
+                <div className="bg-[#0f0f0f] border border-white/8 rounded-2xl p-10 text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-rose-600/10 border border-rose-600/20 flex items-center justify-center mx-auto mb-4">
+                    <Film className="w-7 h-7 text-rose-400/50" />
+                  </div>
+                  <h3 className="text-white font-black text-lg mb-2">No Fan Production requests yet</h3>
+                  <p className="text-white/40 text-sm mb-6 max-w-xs mx-auto leading-relaxed">
+                    Ready to become part of an official FLESHLAB homemade-style production?
+                  </p>
+                  <Button
+                    onClick={() => navigate("/fan-productions/request")}
+                    className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-6 py-3 rounded-xl h-auto gap-2"
+                  >
+                    Build Your Fan Production Request
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-5">
+                  {requests.map((req) => (
+                    <RequestCard key={req.id} req={req} />
+                  ))}
+                </div>
               )}
             </div>
 
-            {loading ? (
-              <div className="bg-[#111] border border-white/8 rounded-xl p-8 text-center">
-                <div className="w-6 h-6 border-2 border-rose-600/30 border-t-rose-600 rounded-full animate-spin mx-auto" />
-              </div>
-            ) : requests.length === 0 ? (
-              <div className="bg-[#111] border border-white/8 rounded-xl p-8 text-center">
-                <Film className="w-10 h-10 text-white/15 mx-auto mb-3" />
-                <h3 className="text-white/60 font-semibold mb-1">No requests yet</h3>
-                <p className="text-white/30 text-sm mb-5">
-                  Submit your first Fan Production request and our team will review it within 48–72 hours.
-                </p>
-                <Button
-                  onClick={() => navigate("/fan-productions/request")}
-                  className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-6 py-2.5 rounded-xl h-auto"
-                >
-                  Build Your Fan Production Request
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {requests.map((req) => {
-                  const status = STATUS_CONFIG[req.status] || STATUS_CONFIG.pending;
-                  const StatusIcon = status.icon;
-                  const nextStep = NEXT_STEPS[req.status] || NEXT_STEPS.pending;
-                  const submittedDate = req.submitted_at
-                    ? new Date(req.submitted_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
-                    : "—";
+            {/* Right: sidebar */}
+            <div className="space-y-4">
 
-                  return (
-                    <div key={req.id} className="bg-[#111] border border-white/8 rounded-xl overflow-hidden">
-                      <div className="p-5">
-                        <div className="flex items-start justify-between gap-3 mb-4">
-                          <div>
-                            <div className="text-xs text-white/30 mb-0.5">Submitted {submittedDate}</div>
-                            <h3 className="font-bold text-white">
-                              {PACKAGE_LABELS[req.production_package] || req.package_interest || "Fan Production Request"}
-                            </h3>
-                          </div>
-                          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold ${status.bg} ${status.color} shrink-0`}>
-                            <StatusIcon className="w-3 h-3" />
-                            {status.label}
-                          </div>
-                        </div>
-
-                        {/* Summary rows */}
-                        <div className="space-y-1.5 text-sm mb-4">
-                          {req.preferred_performer && (
-                            <div className="flex gap-2">
-                              <span className="text-white/30 w-36 shrink-0">Preferred Performer</span>
-                              <span className="text-white/70">{req.preferred_performer}</span>
-                            </div>
-                          )}
-                          {req.production_country && (
-                            <div className="flex gap-2">
-                              <span className="text-white/30 w-36 shrink-0">Location</span>
-                              <span className="text-white/70">{req.production_country}{req.requested_city ? `, ${req.requested_city}` : ""}</span>
-                            </div>
-                          )}
-                          {req.privacy_option && (
-                            <div className="flex gap-2">
-                              <span className="text-white/30 w-36 shrink-0">Privacy</span>
-                              <span className="text-white/70">{req.privacy_option}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Next step */}
-                        <div className="bg-white/4 border border-white/8 rounded-lg px-4 py-3 text-white/50 text-sm leading-relaxed">
-                          <span className="text-white/30 text-xs font-bold uppercase tracking-widest block mb-1">Next Step</span>
-                          {nextStep}
-                        </div>
-                      </div>
+              {/* Account Details */}
+              <div className="bg-[#0f0f0f] border border-white/8 rounded-2xl p-5">
+                <h3 className="text-white font-black text-sm mb-4 flex items-center gap-2">
+                  <User className="w-4 h-4 text-rose-400" />
+                  Account Details
+                </h3>
+                <div className="space-y-2.5 text-sm">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-white/25 text-xs uppercase tracking-wider">Name</span>
+                    <span className="text-white/70">{user?.full_name || "—"}</span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-white/25 text-xs uppercase tracking-wider">Email</span>
+                    <span className="text-white/70 break-all">{user?.email || "—"}</span>
+                  </div>
+                  {requests[0]?.phone && (
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-white/25 text-xs uppercase tracking-wider">WhatsApp / Contact</span>
+                      <span className="text-white/70">{requests[0].phone}</span>
                     </div>
-                  );
-                })}
+                  )}
+                  {requests[0]?.nationality && (
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-white/25 text-xs uppercase tracking-wider">Country</span>
+                      <span className="text-white/70">{requests[0].nationality}</span>
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-white/25 text-xs uppercase tracking-wider">Account type</span>
+                    <span className="text-white/50">Fan / Customer</span>
+                  </div>
+                </div>
               </div>
-            )}
-          </section>
 
-          {/* Contact / Support */}
-          <section className="bg-[#111] border border-white/8 rounded-xl p-5">
-            <h2 className="font-bold text-white mb-2 flex items-center gap-2">
-              <MessageCircle className="w-4 h-4 text-rose-400" />
-              Need Help?
-            </h2>
-            <p className="text-white/45 text-sm mb-4">
-              If you have questions about your request or want to update your details, contact our management team directly.
-            </p>
-            <a
-              href="https://wa.me/message/FLESHLAB"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button variant="outline" className="border-white/15 text-white/70 hover:bg-white/8 hover:text-white gap-2 text-sm">
-                <MessageCircle className="w-4 h-4" />
-                Contact Management on WhatsApp
-              </Button>
-            </a>
-          </section>
+              {/* Support */}
+              <div className="bg-[#0f0f0f] border border-white/8 rounded-2xl p-5">
+                <h3 className="text-white font-black text-sm mb-2 flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4 text-rose-400" />
+                  Need help with your request?
+                </h3>
+                <p className="text-white/40 text-xs mb-4 leading-relaxed">
+                  Contact FLESHLAB Management if you need to update your city, performer preference, privacy option or travel availability.
+                </p>
+                <a href={WA_LINK} target="_blank" rel="noopener noreferrer" className="block">
+                  <Button
+                    variant="outline"
+                    className="w-full border-white/12 text-white/65 hover:bg-white/8 hover:text-white gap-2 text-xs h-9"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    Contact Management on WhatsApp
+                  </Button>
+                </a>
+              </div>
+
+              {/* Studio notice */}
+              <div className="bg-rose-950/20 border border-rose-900/25 rounded-2xl p-4">
+                <div className="text-rose-400/70 text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Clock className="w-3 h-3" />
+                  Review timeline
+                </div>
+                <p className="text-white/35 text-xs leading-relaxed">
+                  Studio reviews take 48–72 hours. Performer approval may take longer depending on availability.
+                  No payment is required until a quote is issued and approved.
+                </p>
+              </div>
+
+            </div>
+          </div>
 
         </div>
       </div>
