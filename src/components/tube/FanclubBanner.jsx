@@ -1,73 +1,64 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Lock, Star, Flame } from "lucide-react";
+import { Lock, Star, Flame, PlayCircle } from "lucide-react";
 
 export default function FanclubBanner() {
   return (
-    <section className="py-8 bg-gradient-to-r from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] border-y border-rose-600/10">
-      <div className="max-w-[1920px] mx-auto px-4">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-900/50 via-[#0a0a0a] to-rose-900/50 border border-rose-600/30 p-8 md:p-10">
-          {/* Decorative Background - Summer Banner Match */}
-          <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-rose-600/20 to-transparent rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-rose-600/20 to-transparent rounded-full blur-3xl" />
-          
-          {/* Palm Silhouette Decorations */}
-          <div className="absolute top-4 right-8 opacity-20">
-            <svg viewBox="0 0 100 150" className="w-32 h-48">
-              <path d="M50 150 Q50 100 50 50 M50 80 Q30 60 20 40 M50 80 Q70 60 80 40 M50 110 Q30 90 20 70 M50 110 Q70 90 80 70" stroke="#000" strokeWidth="2" fill="none" />
-            </svg>
-          </div>
-          
-          <div className="relative z-10 text-center">
-            {/* Icon + Title - Banner Style */}
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-rose-600 to-rose-700 flex items-center justify-center shadow-xl shadow-rose-600/50 border-2 border-white/20">
-                <Lock className="w-6 h-6 text-white" />
-              </div>
-              <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight drop-shadow-2xl">
-                Unlock the <span className="text-rose-500">Full Archive</span>
-              </h2>
+    <section className="py-8 px-4 bg-[#070707]">
+      <div className="max-w-[1280px] mx-auto">
+        <div className="relative overflow-hidden rounded-2xl border border-rose-900/40 bg-gradient-to-br from-[#130608] via-[#0d0404] to-[#0a0a0a]">
+
+          {/* Glow accents */}
+          <div className="absolute top-0 right-0 w-72 h-72 bg-rose-800/15 blur-[80px] rounded-full pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-72 h-72 bg-rose-900/10 blur-[80px] rounded-full pointer-events-none" />
+
+          {/* Top accent line */}
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-rose-700/50 to-transparent" />
+
+          <div className="relative z-10 px-8 py-10 md:px-12 md:py-12 text-center">
+
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 bg-rose-600/15 border border-rose-700/30 rounded-full px-4 py-1.5 mb-5">
+              <Lock className="w-3 h-3 text-rose-400" />
+              <span className="text-rose-300 text-[11px] font-black uppercase tracking-widest">Members-Only Access</span>
             </div>
-            
-            {/* Description */}
-            <p className="text-white/80 mb-8 max-w-2xl mx-auto text-lg font-medium">
+
+            {/* Headline */}
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white leading-tight tracking-tight mb-3">
+              Unlock the <span className="text-rose-500">Full Archive</span>
+            </h2>
+
+            {/* Value prop */}
+            <p className="text-white/50 text-sm md:text-base leading-relaxed max-w-xl mx-auto mb-8">
               Watch public previews free. Full scenes require Fanclub, PPV, or membership access.
             </p>
-            
-            {/* CTA Buttons - Enhanced */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-6 px-2 sm:px-0">
+
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-7">
               <Link to="/fanclub" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-6 sm:px-8 py-2 sm:py-3 rounded-full text-sm sm:text-base h-auto shadow-xl shadow-rose-600/50 border-2 border-white/20 transition-all hover:scale-105">
-                  <Star className="w-4 sm:w-5 h-4 sm:h-5 mr-2 fill-current" />
+                <Button size="lg" className="w-full bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black px-8 py-4 rounded-xl h-auto shadow-xl shadow-rose-700/30 text-sm uppercase tracking-wide">
+                  <Star className="w-4 h-4 mr-1.5 fill-current" />
                   Join Fanclub
                 </Button>
               </Link>
               <Link to="/register" className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="w-full border-2 border-white/40 text-white hover:bg-white/15 font-bold px-6 sm:px-8 py-2 sm:py-3 rounded-full text-sm sm:text-base h-auto backdrop-blur-sm transition-all hover:scale-105">
+                <Button size="lg" variant="outline" className="w-full border-white/15 text-white hover:bg-white/6 font-semibold px-8 py-4 rounded-xl h-auto text-sm">
                   Create Free Account
                 </Button>
               </Link>
               <Link to="/videos" className="w-full sm:w-auto">
-                <Button size="lg" variant="ghost" className="w-full text-rose-500 hover:text-rose-400 font-bold px-6 sm:px-8 py-2 sm:py-3 rounded-full text-sm sm:text-base h-auto transition-all hover:scale-105 hover:bg-rose-600/10">
+                <Button size="lg" variant="ghost" className="w-full text-rose-400 hover:text-rose-300 hover:bg-rose-600/8 font-semibold px-7 py-4 rounded-xl h-auto text-sm">
+                  <PlayCircle className="w-4 h-4 mr-1.5" />
                   Browse Previews
                 </Button>
               </Link>
             </div>
 
-            {/* Trust Badges */}
-            <div className="flex flex-wrap gap-6 justify-center text-white/70 text-sm font-medium">
-              <div className="flex items-center gap-2">
-                <Flame className="w-4 h-4 text-rose-500 fill-current" />
-                <span>Exclusive Content</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Star className="w-4 h-4 text-rose-500 fill-current" />
-                <span>Premium Quality</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Lock className="w-4 h-4 text-rose-500" />
-                <span>Secure & Private</span>
-              </div>
+            {/* Trust badges */}
+            <div className="flex flex-wrap gap-5 justify-center text-white/30 text-xs font-medium">
+              <span className="flex items-center gap-1.5"><Flame className="w-3.5 h-3.5 text-rose-600/70 fill-current" />Exclusive Content</span>
+              <span className="flex items-center gap-1.5"><Star className="w-3.5 h-3.5 text-rose-600/70 fill-current" />Premium Quality</span>
+              <span className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5 text-rose-600/70" />Secure & Private</span>
             </div>
           </div>
         </div>

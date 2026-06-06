@@ -6,7 +6,7 @@ const BG_IMAGE = "https://video.fleshlab.online/applications/private/ChatGPT%20I
 
 export default function PerformerRecruitmentBanner() {
   return (
-    <section className="relative overflow-hidden min-h-[520px] md:min-h-[560px] flex items-center">
+    <section className="relative overflow-hidden min-h-[420px] md:min-h-[460px] flex items-center">
 
       {/* Background image */}
       <div
@@ -27,7 +27,7 @@ export default function PerformerRecruitmentBanner() {
       <div className="absolute bottom-0 left-0 w-[400px] h-[250px] bg-rose-900/25 blur-[90px] rounded-full pointer-events-none" />
 
       {/* Content */}
-      <div className="relative w-full max-w-[1280px] mx-auto px-6 py-16 md:py-20">
+      <div className="relative w-full max-w-[1280px] mx-auto px-6 py-12 md:py-14">
         <div className="max-w-[620px]">
 
           {/* Badge */}
@@ -37,7 +37,7 @@ export default function PerformerRecruitmentBanner() {
           </div>
 
           {/* Headline */}
-          <h2 className="text-5xl md:text-6xl font-black text-white leading-[0.92] tracking-tight mb-5">
+          <h2 className="text-4xl md:text-5xl font-black text-white leading-[0.92] tracking-tight mb-5">
             GET PRODUCED.<br />
             GET PROMOTED.<br />
             <span className="text-rose-500">GET PAID.</span>

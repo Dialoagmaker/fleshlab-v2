@@ -27,29 +27,15 @@ export default function SummerPromoBanner() {
           fetchpriority="high"
           decoding="async"
         />
-        {/* Cinematic warm overlay to preserve red/orange sunset tone */}
-        <div className="absolute inset-0 bg-gradient-to-br from-rose-900/30 via-orange-900/20 to-purple-900/20 mix-blend-multiply" />
+        {/* Cinematic dark overlay — tones down image brightness for premium feel */}
+        <div className="absolute inset-0 bg-black/45" />
+        <div className="absolute inset-0 bg-gradient-to-br from-rose-950/40 via-transparent to-black/40" />
       </div>
       
-      {/* Gradient Overlay - Optimized for all mobile devices */}
-      <div 
-        className="absolute inset-0"
-        style={{
-          background: `
-            linear-gradient(
-              90deg,
-              rgba(0,0,0,0.08) 0%,
-              rgba(0,0,0,0.18) 30%,
-              rgba(0,0,0,0.28) 50%,
-              rgba(0,0,0,0.18) 70%,
-              rgba(0,0,0,0.08) 100%
-            )
-          `
-        }}
-      />
-      
-      {/* Subtle bottom fade for text readability */}
-      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/25 to-transparent" />
+      {/* Bottom fade for text readability */}
+      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent" />
+      {/* Top fade */}
+      <div className="absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-black/30 to-transparent" />
       
       {/* Content Layer - All Sharp HTML/CSS */}
       <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 sm:px-6">
@@ -70,10 +56,10 @@ export default function SummerPromoBanner() {
           
 
           
-          {/* Main Offer - Dominant Typography */}
+          {/* Main Offer - Premium editorial typography */}
           <div className="mb-2 sm:mb-3">
-            <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-black text-white drop-shadow-2xl leading-tight">
-              <span className="bg-gradient-to-r from-rose-500 via-pink-500 to-rose-600 bg-clip-text text-transparent">
+            <h1 className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl font-black text-white drop-shadow-2xl leading-none tracking-tight">
+              <span className="text-rose-500">
                 {t('homepage.discount')}
               </span>
             </h1>
@@ -81,14 +67,14 @@ export default function SummerPromoBanner() {
           
           {/* Subheadline */}
           <div className="mb-3 sm:mb-4">
-            <p className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-black text-white drop-shadow-xl">
+            <p className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white/90 drop-shadow-xl tracking-tight">
               {t('homepage.discountSub')}
             </p>
           </div>
           
-          {/* Summer Special Badge */}
+          {/* Special Badge */}
           <div className="mb-4 sm:mb-6">
-            <span className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black text-xs sm:text-sm md:text-base font-black px-4 sm:px-5 py-1.5 sm:py-2 rounded-full shadow-lg uppercase tracking-widest">
+            <span className="bg-white/10 backdrop-blur-sm border border-white/20 text-white/80 text-xs sm:text-sm font-bold px-4 sm:px-5 py-1.5 sm:py-2 rounded-full uppercase tracking-widest">
               {t('homepage.specialBadge')}
             </span>
           </div>
