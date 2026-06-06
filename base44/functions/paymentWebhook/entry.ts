@@ -161,11 +161,14 @@ async function grantEntitlement(base44, intent) {
     console.log('[paymentWebhook] PPV entitlement granted:', { userId: intent.user_id, videoId: intent.video_id });
 
   } else if (intent.payment_type === 'fanclub') {
-    // One-time access pass (6mo / annual only)
-    // Access period calculated from plan_id
+    // One-time access pass (monthly / 3mo / 6mo / annual)
+    // AUDIT FIX (2026-06-06): Added fanclub_monthly, fanclub_3mo, premium_monthly
     const ACCESS_PERIODS = {
-      fanclub_6mo:    6,   // months
-      fanclub_annual: 12,  // months
+      fanclub_monthly:  1,   // months
+      premium_monthly:  1,   // months
+      fanclub_3mo:      3,   // months
+      fanclub_6mo:      6,   // months
+      fanclub_annual:   12,  // months
     };
     const months = ACCESS_PERIODS[intent.plan_id] || 1;
     const periodEnd = new Date();

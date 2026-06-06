@@ -93,13 +93,21 @@ export default function CheckoutButton({
         // Redirect to NOWPayments hosted checkout
         window.location.href = data.checkoutUrl;
       } else if (data.blocked_reason === 'below_crypto_minimum') {
-        setError(`Crypto checkout is currently not available for this amount with the selected coin/network. ${data.message || `Minimum: $${data.minimum_usd} USD. Your order: $${data.requested_amount}. Please choose the 3-Month Access plan or contact support.`}`);
+        setError(`This crypto payment method currently requires a higher minimum payment than this plan. Please choose a higher-value plan or another payment method.`);
+      } else if (data.blocked_reason === 'minimum_amount') {
+        setError(`This crypto payment method currently requires a higher minimum amount. Please choose the 3-Month plan or contact support.`);
+      } else if (data.blocked_reason === 'provider_credentials') {
+        setError(`Crypto checkout is temporarily unavailable due to payment provider configuration. Please contact support.`);
+      } else if (data.blocked_reason === 'provider_config') {
+        setError(`Crypto checkout is temporarily unavailable. Please contact support.`);
+      } else if (data.blocked_reason === 'provider_rejected') {
+        setError(`The payment provider rejected this checkout request. Please try the 3-Month plan or contact support.`);
       } else {
-        setError(data.message || 'Crypto checkout could not be created for this plan. Please choose the 3-Month Access plan or contact support.');
+        setError(`Crypto checkout is temporarily unavailable. Please contact support.`);
       }
     } catch (err) {
       console.error('[CheckoutButton] Checkout error:', err);
-      setError('Crypto checkout could not be created. Please try again or contact support.');
+      setError('Crypto checkout is temporarily unavailable. Please contact support.');
     }
     setLoading(false);
   };

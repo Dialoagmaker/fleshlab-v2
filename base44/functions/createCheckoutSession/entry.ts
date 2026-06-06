@@ -105,16 +105,26 @@ function resolveAmount(paymentType, planId, priceTier) {
 }
 
 // ── NOWPayments currency strategy ────────────────────────────────────────────
-// Diagnostic findings (2026-06-04):
-//   - Global NOWPayments minimum when price_currency=usd:  $19.18 for ALL currencies
-//   - When pay_currency=usdttrc20 is set, NOWPayments uses the USDT↔USDT minimum (~$11.23)
-//   - This means pay_currency=usdttrc20 allows $6.99 and $12.99 invoices to be payable
-//   - For amounts ≥ $19.99, omit pay_currency so customer can choose any enabled currency
+// AUDIT FIX (2026-06-06): Force USDT TRC20 for low-ticket products to avoid BTC minimum failures.
+// $19.99 passes USDT TRC20 minimum (~$11.23) but may fail BTC minimum with buffer.
 // Per-invoice payout_currency is accepted by the API (field tested, invoice created).
-function resolvePayCurrency(priceAmount) {
-  // Below $19.18 floor: force USDTTRC20 — unlocks lower crypto minimum (~$11.23)
-  if (priceAmount < 19.18) return 'usdttrc20';
-  // At or above floor: omit — customer picks from all enabled currencies (BTC/LTC/TRX/USDT/CUSD)
+function resolvePayCurrency({ paymentType, planId, priceAmount }) {
+  // Force USDT TRC20 for fanclub monthly — avoids currency selection issues
+  if (paymentType === 'fanclub' && planId === 'fanclub_monthly') {
+    return 'usdttrc20';
+  }
+  
+  // Force USDT TRC20 for PPV standard tier ($19.99)
+  if (paymentType === 'ppv' && priceAmount <= 19.99) {
+    return 'usdttrc20';
+  }
+  
+  // Force USDT TRC20 for amounts below $25 to ensure reliable checkout
+  if (priceAmount < 25) {
+    return 'usdttrc20';
+  }
+  
+  // For higher amounts ($25+), omit — customer picks from all enabled currencies
   return null;
 }
 
@@ -164,12 +174,13 @@ async function createNOWPaymentsInvoice({ orderId, priceAmount, description, suc
   const absSuccessUrl = successUrl.startsWith('http') ? successUrl : `${appBase}${successUrl}`;
   const absCancelUrl  = cancelUrl.startsWith('http')  ? cancelUrl  : `${appBase}${cancelUrl}`;
 
-  // Tiered currency strategy: USDTTRC20 for small amounts, open choice for large
-  const payCurrency = resolvePayCurrency(priceAmount);
+  // AUDIT FIX: Force USDT TRC20 for low-ticket products
+  const payCurrency = resolvePayCurrency({ paymentType: 'unknown', planId: null, priceAmount: priceAmount });
 
   const body = {
     price_amount:      priceAmount,
     price_currency:    'usd',
+    pay_currency:      payCurrency || undefined,
     order_id:          orderId,
     order_description: description,
     ipn_callback_url:  'https://api.base44.com/api/apps/68326eff4b3b5d60a8b4f285/functions/paymentWebhook',
@@ -178,9 +189,6 @@ async function createNOWPaymentsInvoice({ orderId, priceAmount, description, suc
     is_fixed_rate:     false,
     is_fee_paid_by_user: false,
   };
-
-  // Only set pay_currency for small amounts — avoids "no matches" on amounts below BTC minimum
-  if (payCurrency) body.pay_currency = payCurrency;
 
   const res = await fetch(`${baseUrl}/invoice`, {
     method: 'POST',
@@ -233,13 +241,16 @@ Deno.serve(async (req) => {
 
     // ── Crypto minimum guard with enhanced logging ─────────────────────────────
     // Check actual NOWPayments minimum for selected currency before creating invoice
-    const payCurrency = resolvePayCurrency(amount);
+    const payCurrency = resolvePayCurrency({ paymentType, planId, priceAmount: amount });
+    const payoutCurrency = Deno.env.get('NOWPAYMENTS_PAYOUT_CURRENCY') || 'usdttrc20';
     console.log('[createCheckoutSession] Checkout request:', {
       paymentType,
       planId,
       priceTier,
       amount,
-      payCurrency,
+      price_currency: 'usd',
+      pay_currency: payCurrency,
+      payout_currency: payoutCurrency,
       user_id: user.id,
     });
 
@@ -317,6 +328,21 @@ Deno.serve(async (req) => {
 
       let invoiceData;
       try {
+        console.log('[createCheckoutSession] Calling NOWPayments invoice API:', {
+          endpoint: `${baseUrl}/invoice`,
+          mode,
+          payload: {
+            price_amount: amount,
+            price_currency: 'usd',
+            pay_currency: payCurrency,
+            order_id: orderId,
+            order_description: description,
+            ipn_callback_url: 'https://api.base44.com/api/apps/68326eff4b3b5d60a8b4f285/functions/paymentWebhook',
+            success_url: absSuccessUrl,
+            cancel_url: absCancelUrl,
+          },
+        });
+
         invoiceData = await createNOWPaymentsInvoice({
           orderId,
           priceAmount: amount,
@@ -324,8 +350,24 @@ Deno.serve(async (req) => {
           successUrl: safeReturn,
           cancelUrl: safeCancel,
         });
+
+        console.log('[createCheckoutSession] NOWPayments invoice created successfully:', {
+          invoiceId: invoiceData.id,
+          invoiceUrl: invoiceData.invoice_url,
+          expectedAmount: invoiceData.expected_amount,
+          payCurrency: invoiceData.pay_currency,
+        });
       } catch (invoiceErr) {
-        console.error('[createCheckoutSession] NOWPayments invoice error:', invoiceErr.message);
+        console.error('[createCheckoutSession] NOWPayments invoice error:', {
+          message: invoiceErr.message,
+          status: invoiceErr.status,
+          paymentType,
+          planId,
+          amount,
+          payCurrency,
+          orderId,
+        });
+        
         // Still create a pending intent for audit
         await base44.entities.PaymentIntent.create({
           user_id:        user.id,
@@ -342,19 +384,22 @@ Deno.serve(async (req) => {
           cancel_url:     safeCancel,
           error_message:  invoiceErr.message,
         });
-        // Log real error for debugging
-        console.error('[createCheckoutSession] NOWPayments invoice creation failed:', {
-          paymentType,
-          planId,
-          amount,
-          payCurrency: resolvePayCurrency(amount),
-          error: invoiceErr.message,
-        });
+
+        // Determine blocked_reason for frontend
+        let blockedReason = 'unknown';
+        const errMsg = invoiceErr.message.toLowerCase();
+        if (errMsg.includes('minimum')) blockedReason = 'minimum_amount';
+        else if (errMsg.includes('api key') || errMsg.includes('authentication')) blockedReason = 'provider_credentials';
+        else if (errMsg.includes('currency') || errMsg.includes('not enabled')) blockedReason = 'provider_config';
+        else blockedReason = 'provider_rejected';
+
+        console.error('[createCheckoutSession] Checkout failed with blocked_reason:', blockedReason);
 
         return Response.json({
           success: false,
           providerConfigured: true,
           provider: 'nowpayments',
+          blocked_reason: blockedReason,
           message: 'Checkout could not be created. Please try again or contact support.',
           error: invoiceErr.message,
         }, { status: 502 });
