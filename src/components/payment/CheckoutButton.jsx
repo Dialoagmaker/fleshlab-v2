@@ -73,10 +73,22 @@ export default function CheckoutButton({
     );
   }
 
-  // Provider ready — start checkout
+  // Provider ready — start checkout with debug logging (Task 4)
   const handleCheckout = async () => {
     setLoading(true);
     setError(null);
+    
+    // Debug: Log auth state and checkout params before calling function
+    console.log('[CheckoutButton] Checkout initiated:', {
+      isAuthenticated,
+      planId,
+      paymentType,
+      priceTier,
+      label,
+      returnUrl,
+      cancelUrl,
+    });
+    
     try {
       const res = await base44.functions.invoke('createCheckoutSession', {
         paymentType,
@@ -89,6 +101,17 @@ export default function CheckoutButton({
       });
 
       const data = res.data || {};
+      
+      // Debug: Log full response for diagnostics
+      console.log('[CheckoutButton] Checkout response:', {
+        status: res.status,
+        success: data.success,
+        checkoutUrl: data.checkoutUrl,
+        blocked_reason: data.blocked_reason,
+        error: data.error,
+        message: data.message,
+      });
+      
       if (data.checkoutUrl) {
         // Redirect to NOWPayments hosted checkout
         window.location.href = data.checkoutUrl;

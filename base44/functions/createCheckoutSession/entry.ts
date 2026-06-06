@@ -172,8 +172,8 @@ async function createNOWPaymentsInvoice({ orderId, priceAmount, description, suc
     : 'https://api-sandbox.nowpayments.io/v1';
 
   const appBase = (Deno.env.get('APP_BASE_URL') || 'https://fleshlab.online').replace(/\/$/, '');
-  const absSuccessUrl = successUrl.startsWith('http') ? successUrl : `${appBase}${successUrl}`;
-  const absCancelUrl  = cancelUrl.startsWith('http')  ? cancelUrl  : `${appBase}${cancelUrl}`;
+  const absSuccessUrl = (successUrl && successUrl.startsWith('http')) ? successUrl : `${appBase}${successUrl || '/'}`;
+  const absCancelUrl  = (cancelUrl && cancelUrl.startsWith('http'))  ? cancelUrl  : `${appBase}${cancelUrl || '/'}`;
 
   // AUDIT FIX: Force USDT TRC20 for low-ticket products
   const payCurrency = resolvePayCurrency({ paymentType: 'unknown', planId: null, priceAmount: priceAmount });
@@ -209,14 +209,20 @@ async function createNOWPaymentsInvoice({ orderId, priceAmount, description, suc
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    
+    // TASK 5: Verify server auth with detailed logging
+    console.log('[createCheckoutSession] Stage: auth_check');
     const user = await base44.auth.me();
     if (!user) {
+      console.log('[createCheckoutSession] Auth failed - no user');
       return Response.json({ 
         success: false,
         code: 'AUTH_REQUIRED',
-        message: 'Please log in or create an account before starting checkout.'
+        message: 'Please log in or create an account before starting checkout.',
+        stage: 'auth_check'
       }, { status: 401 });
     }
+    console.log('[createCheckoutSession] Auth success:', { userId: user.id, email: user.email });
 
     const body = await req.json();
     const { paymentType, planId, videoId, applicationId, priceTier, returnUrl, cancelUrl } = body;
@@ -272,14 +278,17 @@ Deno.serve(async (req) => {
     }
 
     if (amount < minCheck.minimumUsd) {
-      console.warn('[createCheckoutSession] Amount below minimum:', { amount, minimum: minCheck.minimumUsd });
+      console.warn('[createCheckoutSession] Stage: minimum_check - FAILED:', { amount, minimum: minCheck.minimumUsd });
       return Response.json({
         success: false,
         providerConfigured: true,
         blocked_reason: 'below_crypto_minimum',
+        stage: 'minimum_check',
         minimum_usd: minCheck.minimumUsd,
         requested_amount: amount,
         currency: minCheck.currency,
+        paymentType,
+        planId,
         message: `Crypto checkout is currently not available for this amount. ${minCheck.currency.toUpperCase()} requires a minimum of $${minCheck.minimumUsd} USD. Your order is $${amount}. Please choose the 3-Month Access plan ($49.99) or contact support.`,
       }, { status: 422 });
     }
@@ -288,6 +297,7 @@ Deno.serve(async (req) => {
     const provider = detectProvider();
 
     if (!provider) {
+      console.log('[createCheckoutSession] Stage: provider_detection - FAILED: No provider configured');
       // No provider configured — record intent for audit but do not create a checkout URL
       await base44.entities.PaymentIntent.create({
         user_id:        user.id,
@@ -308,6 +318,7 @@ Deno.serve(async (req) => {
       return Response.json({
         success: false,
         providerConfigured: false,
+        stage: 'provider_detection',
         message: 'Secure crypto/card checkout is being configured. Please check back soon.',
       }, { status: 503 });
     }
@@ -404,15 +415,23 @@ Deno.serve(async (req) => {
         if (errMsg.includes('minimum')) blockedReason = 'minimum_amount';
         else if (errMsg.includes('api key') || errMsg.includes('authentication')) blockedReason = 'provider_credentials';
         else if (errMsg.includes('currency') || errMsg.includes('not enabled')) blockedReason = 'provider_config';
+        else if (errMsg.includes('baseurl') || errMsg.includes('abssuccessurl') || errMsg.includes('abscancelurl')) blockedReason = 'server_error';
         else blockedReason = 'provider_rejected';
 
         console.error('[createCheckoutSession] Checkout failed with blocked_reason:', blockedReason);
 
+        // TASK 3: Return diagnostic info (safe fields only)
         return Response.json({
           success: false,
           providerConfigured: true,
           provider: 'nowpayments',
           blocked_reason: blockedReason,
+          stage: 'nowpayments_invoice',
+          paymentType,
+          planId,
+          resolvedAmount: amount,
+          payCurrency,
+          orderDescription: description,
           message: 'Checkout could not be created. Please try again or contact support.',
           error: invoiceErr.message,
         }, { status: 502 });
@@ -456,17 +475,23 @@ Deno.serve(async (req) => {
     }, { status: 501 });
 
   } catch (err) {
-    console.error('[createCheckoutSession]', err);
+    console.error('[createCheckoutSession] Unhandled error:', err);
     
     // Check if this is an auth error (shouldn't happen after our check above, but be safe)
     if (err.message?.includes('Unauthorized') || err.message?.includes('Authentication')) {
       return Response.json({ 
         success: false,
         code: 'AUTH_REQUIRED',
-        message: 'Please log in or create an account before starting checkout.'
+        message: 'Please log in or create an account before starting checkout.',
+        stage: 'auth_check'
       }, { status: 401 });
     }
     
-    return Response.json({ error: err.message }, { status: 500 });
+    // Generic error with stage info
+    return Response.json({ 
+      error: err.message, 
+      stage: 'unknown',
+      success: false 
+    }, { status: 500 });
   }
 });
