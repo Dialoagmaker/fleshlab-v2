@@ -218,6 +218,7 @@ const AuthenticatedApp = () => {
   }
 
   if (path === "/videos") {
+    console.log('RENDER_VIDEOS_PAGE', { path, authChecked: true });
     return (
       <PublicPageShell>
         <PublicVideos />

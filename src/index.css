@@ -75,9 +75,22 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    /* Ensure no visibility blocking on any element */
+    visibility: visible !important;
   }
 
   body {
     @apply bg-background text-foreground;
+    /* Ensure immediate paint - force visibility */
+    visibility: visible !important;
+    opacity: 1 !important;
+    background-color: #0a0a0a !important;
+  }
+  
+  #root {
+    /* Ensure root is always visible with explicit background */
+    min-height: 100vh;
+    background: #0a0a0a !important;
+    visibility: visible !important;
   }
 }
