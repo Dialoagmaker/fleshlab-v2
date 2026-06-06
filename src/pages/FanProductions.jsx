@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/AuthContext";
 import SEOMeta from "@/components/SEOMeta";
+import { storeAuthIntent } from "@/lib/authRedirect";
 
 /* ── Static Data ─────────────────────────────────────────────────────────── */
 
@@ -150,8 +151,12 @@ export default function FanProductions() {
   const [openFaq, setOpenFaq] = useState(null);
 
   const handleApply = () => {
-    if (isAuthenticated) navigate("/guest-production");
-    else navigate("/register?next=/guest-production");
+    if (isAuthenticated) {
+      navigate("/fan-productions/request");
+    } else {
+      storeAuthIntent({ actionType: "guest-production", nextUrl: "/fan-productions/request" });
+      navigate("/register?next=/fan-productions/request");
+    }
   };
 
   return (

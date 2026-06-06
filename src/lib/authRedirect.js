@@ -19,6 +19,7 @@ const ALLOWED_REDIRECT_PATTERNS = [
   '/performers/*',
   '/fanclub',
   '/guest-production',
+  '/fan-productions/*',
   '/account',
   '/become-performer',
   '/how-it-works',
@@ -153,7 +154,7 @@ export function buildRedirectUrl(intent) {
     case 'ppv':
       return `/videos/${intent.videoSlug || ''}?unlock=true${intent.priceTier ? `&tier=${intent.priceTier}` : ''}`;
     case 'guest-production':
-      return '/guest-production?apply=true';
+      return validateRedirectUrl(intent.nextUrl) || '/guest-production';
     case 'free-watch':
       return validateRedirectUrl(intent.nextUrl) || '/videos';
     default:

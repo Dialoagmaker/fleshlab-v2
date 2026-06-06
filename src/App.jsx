@@ -377,6 +377,7 @@ const AuthenticatedApp = () => {
       <Route path="/news/:slug" element={<PublicPageShell><NewsDetail /></PublicPageShell>} />
       <Route path="/brands/:slug" element={<PublicPageShell><BrandDetail /></PublicPageShell>} />
       <Route path="/fan-productions" element={<PublicPageShell><FanProductions /></PublicPageShell>} />
+      <Route path="/fan-productions/request" element={<PublicPageShell><GuestProduction /></PublicPageShell>} />
       <Route path="/fanclub/:slug" element={<PublicPageShell><ComingSoon title="Performer Fanclub" /></PublicPageShell>} />
       <Route path="/fanclub" element={<PublicPageShell><Fanclub /></PublicPageShell>} />
       {/* Public routes */}
