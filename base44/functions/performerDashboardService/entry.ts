@@ -951,12 +951,15 @@ Deno.serve(async (req) => {
       const performerEarningsPHP = performerEarningsUSD * USD_TO_PHP;
       
       // Build source summary
+      const fanclubRevenue = (legacyEarnings || []).filter(e => e.earning_type === 'fanclub').reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0);
+      const ppvRevenue = (legacyEarnings || []).filter(e => e.earning_type === 'ppv').reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0);
+      
       const sourceSummary = {
         internal_video_revenue: internalStats.reduce((sum, s) => sum + (s.revenue_usd || 0), 0),
         external_video_revenue: externalOnlySnapshots.reduce((sum, s) => sum + (s.revenue_usd || 0), 0),
-        fanclub_revenue: (legacyEarnings || []).filter(e => e.earning_type === 'fanclub').reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0),
-        ppv_revenue: (legacyEarnings || []).filter(e => e.earning_type === 'ppv').reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0),
-        other_revenue: legacyGross + lineItemGross - sourceSummary.fanclub_revenue - sourceSummary.ppv_revenue
+        fanclub_revenue: fanclubRevenue,
+        ppv_revenue: ppvRevenue,
+        other_revenue: legacyGross + lineItemGross - fanclubRevenue - ppvRevenue
       };
       
       return Response.json({
