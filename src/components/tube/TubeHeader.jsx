@@ -80,12 +80,12 @@ export default function TubeHeader({ onMenuToggle }) {
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-rose-600/40 to-transparent" />
       
       <div className="max-w-[1920px] mx-auto px-4">
-        <div className="flex items-center justify-between h-16 gap-4">
+        <div className="flex items-center justify-between h-14 md:h-16 gap-4">
           {/* Logo */}
           <a href="/" className="flex-shrink-0 group">
             <div className="flex items-center gap-0.5">
-              <span className="text-white font-extrabold text-2xl tracking-tight group-hover:text-rose-500 transition-colors">FLESH</span>
-              <span className="bg-gradient-to-r from-rose-600 to-rose-700 text-white font-extrabold text-2xl px-3 py-1 rounded-md shadow-lg group-hover:shadow-rose-600/40 transition-shadow">LAB</span>
+              <span className="text-white font-extrabold text-xl md:text-2xl tracking-tight group-hover:text-rose-500 transition-colors">FLESH</span>
+              <span className="bg-gradient-to-r from-rose-600 to-rose-700 text-white font-extrabold text-xl md:text-2xl px-2.5 md:px-3 py-0.5 md:py-1 rounded-md shadow-lg group-hover:shadow-rose-600/40 transition-shadow">LAB</span>
             </div>
           </a>
 
@@ -170,7 +170,7 @@ export default function TubeHeader({ onMenuToggle }) {
                 {t('nav.login')}
               </Button>
             </a>
-            <a href="/register">
+            <a href="/register" className="hidden sm:block">
               <Button size="sm" className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-semibold h-9 px-4 shadow-lg shadow-rose-600/30">
                 {t('nav.register')}
               </Button>
@@ -273,7 +273,7 @@ export default function TubeHeader({ onMenuToggle }) {
 
       {/* Mobile Search (hidden on /videos page) */}
       {!isVideosPage && (
-        <div className="md:hidden px-4 py-2 border-t border-rose-600/10">
+        <div className="md:hidden px-3 py-1.5 border-t border-rose-600/10">
           <div className="relative">
             <Input
               type="text"
