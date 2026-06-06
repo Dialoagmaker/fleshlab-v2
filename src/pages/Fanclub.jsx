@@ -322,8 +322,8 @@ export default function Fanclub() {
           {/* fanclub_enabled === false → coming soon */}
           {featuredPerformer.fanclub_enabled === false ? (
             <>
-              <PerformerFanclubComingSoon performer={featuredPerformer} />
-              <FleshlabMembershipUpsell performerName={featuredPerformer.display_name} />
+              <PerformerFanclubComingSoon performer={featuredPerformer} relatedVideos={publishedVideos.slice(0, 3)} />
+              <FleshlabMembershipUpsell performerName={featuredPerformer.display_name} isFanclubComingSoon={true} />
             </>
           ) : (
             <>
@@ -331,7 +331,7 @@ export default function Fanclub() {
               <PerformerFanclubHero performer={featuredPerformer} ctaSlot={performerCTA} />
 
               {/* FLESHLAB Membership upsell */}
-              <FleshlabMembershipUpsell performerName={featuredPerformer.display_name} />
+              <FleshlabMembershipUpsell performerName={featuredPerformer.display_name} isFanclubComingSoon={false} />
 
               {/* Generic value sections below — condensed context */}
               <section className="py-16 px-6 border-t border-white/6">
