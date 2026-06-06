@@ -130,22 +130,14 @@ export default function ClientDashboard() {
                   Manage your Fan Production requests, video purchases, Fanclub access, payments and account details.
                 </p>
               </div>
-              <div className="shrink-0 flex flex-col sm:flex-row gap-3">
-                <Button
-                  onClick={() => window.location.href = "/fan-productions/request"}
-                  className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold gap-2 rounded-xl h-auto py-2.5 px-5 text-sm shadow-lg shadow-rose-700/20"
-                >
-                  <Plus className="w-4 h-4" />
-                  New Fan Production Request
-                </Button>
-                <Button
-                  onClick={handleLogout}
-                  variant="outline"
-                  className="border-white/15 text-white/70 hover:text-white hover:bg-white/8 font-semibold gap-2 rounded-xl h-auto py-2.5 px-5 text-sm"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Log Out
-                </Button>
+              <div className="shrink-0">
+              <Button
+                onClick={() => window.location.href = "/fan-productions/request"}
+                className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold gap-2 rounded-xl h-auto py-2.5 px-5 text-sm shadow-lg shadow-rose-700/20"
+              >
+                <Plus className="w-4 h-4" />
+                New Fan Production Request
+              </Button>
               </div>
             </div>
           </div>

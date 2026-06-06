@@ -57,9 +57,8 @@ export default function Account() {
                 <h1 className="text-3xl font-bold text-foreground">My Account</h1>
                 <p className="text-muted-foreground mt-1">Manage your account settings</p>
               </div>
-              <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+              <Button variant="outline" onClick={() => window.location.href = "/client/dashboard"}>
+                Back to Dashboard
               </Button>
             </div>
           </div>
