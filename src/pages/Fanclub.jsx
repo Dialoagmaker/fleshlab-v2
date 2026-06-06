@@ -286,7 +286,7 @@ export default function Fanclub() {
       { title: 'Bonus clips',              desc: 'Short edits and extras made for members.', badge: 'Bonus' },
       { title: 'Behind the scenes',        desc: 'Shoots, performers and the studio world.', badge: 'BTS' },
       { title: 'Performer updates',        desc: 'Updates from verified FLESHLAB performers.', badge: 'Updates' },
-      { title: 'Better value',             desc: 'Fanclub = ongoing access from $19.99/month. 3-month bundle $49.99.', badge: 'Best Value' },
+      { title: 'Better value',             desc: 'Fanclub = ongoing access from $20.99/month. 3-month bundle $49.99.', badge: 'Best Value' },
     ];
     // Offset by 6 so these images are distinct from hero (0-4) and why-join (0-2 + performer 0)
     return defs.map((d, i) => {
@@ -391,7 +391,7 @@ export default function Fanclub() {
                       </div>
                       <div className="text-right">
                         <div className="flex items-baseline gap-1">
-                          <span className="text-4xl font-black text-white">$19.99</span>
+                          <span className="text-4xl font-black text-white">$20.99</span>
                           <span className="text-white/35 text-base">/mo</span>
                         </div>
                         <p className="text-white/35 text-xs font-bold">Crypto-safe pricing</p>
@@ -415,7 +415,7 @@ export default function Fanclub() {
                       </div>
                       {performerCTA}
                       <p className="text-white/15 text-xs text-center mt-4">
-                        $19.99/month unless cancelled. Cancel anytime. Crypto-safe pricing.
+                        $20.99/month unless cancelled. Cancel anytime. Crypto-safe pricing.
                       </p>
                     </div>
                   </div>
@@ -447,7 +447,7 @@ export default function Fanclub() {
                         </div>
                       </div>
                       <p className="text-white/20 text-xs mt-4">
-                        $19.99/month unless cancelled. Cancel anytime.
+                        $20.99/month unless cancelled. Cancel anytime.
                       </p>
                       <p className="text-white/15 text-xs mt-2">
                         Want more than one performer?{" "}
@@ -533,7 +533,7 @@ export default function Fanclub() {
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
                 <FanclubCTA
                   planId="fanclub_monthly"
-                  label="Join Fanclub — $19.99/month"
+                  label="Join Fanclub — $20.99/month"
                   {...ctaProps}
                   className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 py-4 rounded-xl text-base h-auto shadow-xl shadow-rose-600/35"
                 />
@@ -653,7 +653,7 @@ export default function Fanclub() {
                 <div className="text-xs font-bold tracking-widest text-rose-500/70 uppercase">Fanclub</div>
                 <h3 className="text-xl font-black text-white">Want the full experience?</h3>
                 <p className="text-white/60 text-base leading-relaxed">
-                  Join Fanclub for ongoing member access: exclusive videos, early releases, bonus clips, behind-the-scenes content, performer updates and selected member-only drops. From $19.99/month or $49.99 for 3 months.
+                  Join Fanclub for ongoing member access: exclusive videos, early releases, bonus clips, behind-the-scenes content, performer updates and selected member-only drops. From $20.99/month or $49.99 for 3 months.
                 </p>
               </div>
             </div>
