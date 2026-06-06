@@ -59,6 +59,11 @@ export default function TubeFooter() {
                 </a>
               </li>
               <li>
+                <a href="/fan-productions" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  Fan Productions
+                </a>
+              </li>
+              <li>
                 <a href="/guest-production" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
                   Guest Production
                 </a>

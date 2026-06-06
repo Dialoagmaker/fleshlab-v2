@@ -941,61 +941,24 @@ export default function Fanclub() {
         </section>
 
         {/* ══════════════════════════════════════════════════════════════════
-            8. GUEST PRODUCTION
+            8. FAN PRODUCTIONS TEASER
         ══════════════════════════════════════════════════════════════════ */}
-        <section className="py-20 px-6 border-t border-white/5">
+        <section className="py-12 px-6 border-t border-white/5">
           <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-10">
-              <h2 className="text-4xl font-black mb-3">
-                WANT TO GO <span className="text-rose-500">BEYOND WATCHING?</span>
-              </h2>
-              <p className="text-white/50 text-base max-w-xl mx-auto">
-                Apply for a professional 18+ studio production with verified performers.
-              </p>
-            </div>
-
-            <div className="bg-gradient-to-br from-[#150e0e] to-[#0d0d0d] border border-rose-600/20 rounded-3xl overflow-hidden">
-              <div className="bg-rose-950/30 border-b border-rose-600/15 px-8 py-5 flex items-center justify-between flex-wrap gap-4">
-                <div>
-                  <div className="text-xs font-bold tracking-widest text-rose-500/60 uppercase mb-0.5">Guest Production</div>
-                  <div className="font-black text-white text-xl">Application Required</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-white/30 text-xs mb-0.5">Starting from</div>
-                  <div className="text-4xl font-black text-white">$999</div>
-                </div>
-              </div>
-              <div className="p-8">
-                <p className="text-white/50 text-sm leading-relaxed mb-6">
-                  Guest Production is application-based. Every request is reviewed by the studio and depends on compliance, performer compatibility, production scope, filming time and post-production.
+            <div className="bg-gradient-to-br from-[#130808] to-[#0d0d0d] border border-rose-900/30 rounded-2xl px-8 py-8 flex flex-col sm:flex-row items-center gap-6">
+              <div className="flex-1">
+                <div className="text-xs font-black text-rose-500/60 uppercase tracking-widest mb-2">Fan Productions</div>
+                <h3 className="font-black text-white text-xl mb-2">Want to become part of a FLESHLAB production?</h3>
+                <p className="text-white/45 text-sm leading-relaxed">
+                  Fan Productions are official homemade-style FLESHLAB productions where approved verified 18+ fans may apply to participate as guest performers. Application required. Studio approval required. Performer approval required.
                 </p>
-                <div className="grid sm:grid-cols-2 gap-3 mb-8">
-                  {[
-                    { req: true,  label: 'Application required' },
-                    { req: true,  label: 'Verified 18+ only' },
-                    { req: true,  label: 'Studio approval required' },
-                    { req: true,  label: 'Performer approval required' },
-                    { inc: true,  label: 'Legal contracts & releases' },
-                    { inc: true,  label: 'Safety protocol' },
-                    { inc: true,  label: 'Professional filming' },
-                    { inc: true,  label: 'Post-production included' },
-                  ].map(({ req, label }, i) => (
-                    <div key={i} className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${req ? 'bg-rose-600/20' : 'bg-emerald-600/15'}`}>
-                        {req ? <Lock className="w-2.5 h-2.5 text-rose-400" /> : <Check className="w-2.5 h-2.5 text-emerald-400" />}
-                      </div>
-                      <span className="text-white/60 text-sm">{label}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="text-center">
-                  <Button size="lg"
-                    onClick={() => isAuthenticated ? navigate('/guest-production') : requireSignup('/guest-production')}
-                    className="bg-gradient-to-r from-rose-700 to-rose-800 hover:from-rose-600 hover:to-rose-700 text-white font-bold px-12 py-5 rounded-xl h-auto shadow-xl shadow-rose-700/25 text-base">
-                    Apply for Guest Production
+              </div>
+              <div className="shrink-0">
+                <Link to="/fan-productions">
+                  <Button className="bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-600/35 font-bold px-6 py-3 rounded-xl h-auto text-sm whitespace-nowrap">
+                    Learn About Fan Productions
                   </Button>
-                  {!isAuthenticated && <p className="text-white/25 text-xs mt-3">Account required before submitting application</p>}
-                </div>
+                </Link>
               </div>
             </div>
           </div>
