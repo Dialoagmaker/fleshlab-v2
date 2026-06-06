@@ -39,16 +39,21 @@ Deno.serve(async (req) => {
           allSnapshots.push(...snapshots);
         }
 
-        // Enrich with video titles
+        // Enrich with video titles - handle deleted videos gracefully
         const videoMap = {};
         for (const vp of videoPerformers) {
-          const video = await base44.asServiceRole.entities.Video.get(vp.video_id);
-          if (video) videoMap[video.id] = { title: video.title, slug: video.slug };
+          try {
+            const video = await base44.asServiceRole.entities.Video.get(vp.video_id);
+            if (video) videoMap[video.id] = { title: video.title, slug: video.slug };
+          } catch (err) {
+            // Video was deleted - skip enrichment for this video
+            console.warn('[performerVideoStatsService] Video not found for enrichment:', vp.video_id);
+          }
         }
 
         for (const snap of allSnapshots) {
           const v = videoMap[snap.video_id];
-          snap.video_title = v ? v.title : 'Unknown';
+          snap.video_title = v ? v.title : (snap.external_title || 'Unknown');
           snap.video_slug = v ? v.slug : null;
           snap._is_external_only = false;
         }
@@ -136,12 +141,22 @@ Deno.serve(async (req) => {
 
       // If no internal video and no external_title, reject
       if (!video_id && !external_title) {
-        return Response.json({ error: 'Either video_id or external_title is required' }, { status: 400 });
+        return Response.json({ 
+          success: false,
+          error: 'validation_error',
+          message: 'Either video_id or external_title is required',
+          details: { video_id, external_title, performer_id, platform, period_month }
+        }, { status: 400 });
       }
 
       // Validate period_month format
       if (!/^\d{4}-\d{2}$/.test(period_month)) {
-        return Response.json({ error: 'period_month must be in YYYY-MM format' }, { status: 400 });
+        return Response.json({ 
+          success: false,
+          error: 'validation_error',
+          message: 'period_month must be in YYYY-MM format',
+          details: { period_month, format: 'YYYY-MM' }
+        }, { status: 400 });
       }
 
       // Validate numeric fields
@@ -150,7 +165,34 @@ Deno.serve(async (req) => {
       const likesVal = parseInt(likes) || 0;
       const favsVal = parseInt(favourites) || 0;
       if (revenueVal < 0 || viewsVal < 0 || likesVal < 0 || favsVal < 0) {
-        return Response.json({ error: 'Numeric fields must be >= 0' }, { status: 400 });
+        return Response.json({ 
+          success: false,
+          error: 'validation_error',
+          message: 'Numeric fields must be >= 0',
+          details: { revenue_usd: revenueVal, views: viewsVal, likes: likesVal, favourites: favsVal }
+        }, { status: 400 });
+      }
+
+      // Validate video_id exists if provided (but don't require performer link for external stats)
+      if (video_id) {
+        try {
+          const video = await base44.asServiceRole.entities.Video.get(video_id);
+          if (!video) {
+            return Response.json({
+              success: false,
+              error: 'invalid_video_id',
+              message: `Video with ID ${video_id} does not exist`,
+              details: { video_id, performer_id }
+            }, { status: 400 });
+          }
+        } catch (err) {
+          return Response.json({
+            success: false,
+            error: 'invalid_video_id',
+            message: `Video with ID ${video_id} does not exist`,
+            details: { video_id, performer_id, error: err.message }
+          }, { status: 400 });
+        }
       }
 
       // Deduplication check — return existing_record in 409 so frontend can highlight it
@@ -222,7 +264,25 @@ Deno.serve(async (req) => {
       if (external_title) snapshotData.external_title = external_title;
       if (external_url) snapshotData.external_url = external_url;
 
-      const snapshot = await base44.asServiceRole.entities.VideoStatSnapshot.create(snapshotData);
+      let snapshot;
+      try {
+        snapshot = await base44.asServiceRole.entities.VideoStatSnapshot.create(snapshotData);
+      } catch (err) {
+        console.error('[performerVideoStatsService] Failed to create snapshot:', {
+          performer_id,
+          video_id,
+          platform,
+          period_month,
+          source_type: snapshotData.source_type,
+          error: err.message
+        });
+        return Response.json({
+          success: false,
+          error: 'creation_failed',
+          message: 'Failed to create video stat snapshot',
+          details: { error: err.message, payload_keys: Object.keys(snapshotData) }
+        }, { status: 500 });
+      }
 
       await base44.asServiceRole.entities.AuditLog.create({
         entity_type: 'VideoStatSnapshot',
@@ -306,6 +366,17 @@ Deno.serve(async (req) => {
 
     return Response.json({ error: 'Unknown action' }, { status: 400 });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('[performerVideoStatsService] Unexpected error:', {
+      action,
+      performer_id: body.performer_id,
+      error: error.message,
+      stack: error.stack
+    });
+    return Response.json({ 
+      success: false,
+      error: 'internal_server_error',
+      message: 'An unexpected error occurred',
+      details: { error: error.message }
+    }, { status: 500 });
   }
 });
