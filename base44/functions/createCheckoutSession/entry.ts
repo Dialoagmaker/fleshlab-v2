@@ -47,7 +47,8 @@ const DISABLED_PLANS = ['annual_pass', 'fanclub_3mo', 'fanclub_6mo', 'fanclub_an
 const PROMO_ELIGIBLE_PLANS = ['fanclub_monthly', 'premium_monthly'];
 
 // ── Crypto minimum (NOWPayments) ─────────────────────────────────────────────
-const CRYPTO_MINIMUM_USD = 9.99; // lowered to support $9.99 promo tier
+// Dynamic minimum will be checked via API. This is fallback only.
+const CRYPTO_MINIMUM_USD = 10.99; // safe fallback minimum with buffer
 
 // ── URL safety guard (internal paths only) ────────────────────────────────────
 function safeUrl(url) {
@@ -116,6 +117,40 @@ function resolvePayCurrency(priceAmount) {
   if (priceAmount < 19.18) return 'usdttrc20';
   // At or above floor: omit — customer picks from all enabled currencies (BTC/LTC/TRX/USDT/CUSD)
   return null;
+}
+
+// ── NOWPayments minimum amount check ──────────────────────────────────────────
+async function checkNOWPaymentsMinimum({ priceAmount, payCurrency }) {
+  const apiKey = Deno.env.get('NOWPAYMENTS_API_KEY');
+  const mode = Deno.env.get('NOWPAYMENTS_MODE') || 'test';
+  const baseUrl = mode === 'live'
+    ? 'https://api.nowpayments.io/v1'
+    : 'https://api-sandbox.nowpayments.io/v1';
+
+  // Get minimum for USD → pay_currency pair
+  const targetCurrency = payCurrency || 'usdttrc20';
+  const url = `${baseUrl}/min-amount?currency_from=usd&currency_to=${targetCurrency}`;
+  const res = await fetch(url, {
+    headers: { 'x-api-key': apiKey },
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error('[checkNOWPaymentsMinimum] API error:', res.status, errText);
+    // Fail safe — use fallback minimum
+    return { minimumUsd: CRYPTO_MINIMUM_USD, currency: targetCurrency };
+  }
+
+  const data = await res.json();
+  // API returns: { fiat_equivalent: 11.23, min_amount: 10, currency_from: 'usd', currency_to: 'usdttrc20' }
+  const minimumUsd = parseFloat(data.fiat_equivalent) || parseFloat(data.min_amount) || CRYPTO_MINIMUM_USD;
+
+  // Add 5% safety buffer for fluctuation
+  return {
+    minimumUsd: Math.ceil(minimumUsd * 1.05 * 100) / 100,
+    currency: targetCurrency,
+    rawMinimum: minimumUsd,
+  };
 }
 
 // ── NOWPayments invoice creation ──────────────────────────────────────────────
@@ -198,15 +233,25 @@ Deno.serve(async (req) => {
     const safeCancel = safeUrl(cancelUrl || '/');
 
     // ── Crypto minimum guard ─────────────────────────────────────────────────
-    // Block NOWPayments checkout for amounts below CRYPTO_MINIMUM_USD
-    if (amount < CRYPTO_MINIMUM_USD) {
+    // Check actual NOWPayments minimum for selected currency before creating invoice
+    const payCurrency = resolvePayCurrency(amount);
+    let minCheck;
+    try {
+      minCheck = await checkNOWPaymentsMinimum({ priceAmount: amount, payCurrency });
+    } catch (minErr) {
+      console.error('[createCheckoutSession] Minimum check error:', minErr.message);
+      minCheck = { minimumUsd: CRYPTO_MINIMUM_USD, currency: payCurrency || 'usdttrc20' };
+    }
+
+    if (amount < minCheck.minimumUsd) {
       return Response.json({
         success: false,
         providerConfigured: true,
         blocked_reason: 'below_crypto_minimum',
-        minimum_usd: CRYPTO_MINIMUM_USD,
+        minimum_usd: minCheck.minimumUsd,
         requested_amount: amount,
-        message: `Crypto payments are available from ${CRYPTO_MINIMUM_USD} USD minimum. Please choose a higher plan or bundle.`,
+        currency: minCheck.currency,
+        message: `${minCheck.currency.toUpperCase()} currently requires a minimum payment of $${minCheck.minimumUsd} USD. Your order is $${amount}. Please choose another payment method, select a higher-value package, or use a supported coin with a lower minimum.`,
       }, { status: 422 });
     }
 
@@ -242,23 +287,27 @@ Deno.serve(async (req) => {
     if (provider === 'nowpayments') {
       const orderId = `${paymentType}_${user.id}_${Date.now()}`;
 
-      const promoEligible = PROMO_ELIGIBLE_PLANS.includes(planId);
-      const fanclubDesc = promoEligible
-        ? `FLESHLAB Fanclub — ${planId === 'premium_monthly' ? 'Premium Monthly' : 'Fanclub Monthly'} (Summer Studio Special: 50% off first 3 months)`
-        : `FLESHLAB Fanclub Access — ${planId}`;
-
-      const descriptions = {
-        ppv:                     `FLESHLAB PPV Unlock — ${priceTier || 'standard'}`,
-        fanclub:                 fanclubDesc,
-        guest_production_deposit: 'FLESHLAB Guest Production Deposit',
-      };
+      // Build rich product description with metadata
+      let description;
+      if (paymentType === 'fanclub') {
+        const promoEligible = PROMO_ELIGIBLE_PLANS.includes(planId);
+        description = promoEligible
+          ? `FLESHLAB Fanclub Access — Monthly Subscription (${planId === 'premium_monthly' ? 'Premium' : 'Standard'}, Summer Studio Special: 50% off first 3 months)`
+          : `FLESHLAB Fanclub Access — Monthly Subscription (${planId})`;
+      } else if (paymentType === 'ppv') {
+        description = `FLESHLAB PPV Video Unlock — ${priceTier || 'standard'} tier access`;
+      } else if (paymentType === 'guest_production_deposit') {
+        description = `FLESHLAB Fan Production Reservation — Deposit payment`;
+      } else {
+        description = `FLESHLAB Order — ${paymentType}`;
+      }
 
       let invoiceData;
       try {
         invoiceData = await createNOWPaymentsInvoice({
           orderId,
           priceAmount: amount,
-          description: descriptions[paymentType],
+          description,
           successUrl: safeReturn,
           cancelUrl: safeCancel,
         });
