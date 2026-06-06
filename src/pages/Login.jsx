@@ -16,8 +16,10 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Get redirect destination from URL parameter
-  const fromParam = new URLSearchParams(window.location.search).get("from");
+  // Read ?next= or ?from= or ?from_url= from URL (support all variants)
+  const urlParams = new URLSearchParams(window.location.search);
+  const fromParam = urlParams.get("next") || urlParams.get("from_url") || urlParams.get("from") || null;
+  const isFanProductionFlow = fromParam && fromParam.includes("/fan-productions");
 
   const getRedirectForRole = (role) => {
     console.log("GET_REDIRECT_FOR_ROLE", { role, fromParam });
@@ -29,13 +31,13 @@ export default function Login() {
       return buildRedirectUrl(storedIntent);
     }
     
-    // Priority 2: URL from parameter (validated)
+    // Priority 2: URL next/from parameter (validated)
     if (fromParam) {
       const validated = validateRedirectUrl(fromParam);
-      if (validated !== '/') {
-        // Admin route handling
+      if (validated && validated !== '/') {
+        // Admin route handling — don't send non-admins to admin
         if (validated.startsWith("/admin")) {
-          return role === "admin" ? "/admin/dashboard" : "/account";
+          return role === "admin" ? "/admin/dashboard" : "/client/dashboard";
         }
         return validated;
       }
@@ -44,10 +46,9 @@ export default function Login() {
     // Priority 3: Role-based defaults
     if (role === "admin") return "/admin/dashboard";
     if (role === "performer") return "/performer/dashboard";
-    if (role === "client") return "/account";
     
-    // Fallback
-    return "/";
+    // Fallback for customers/fans
+    return "/client/dashboard";
   };
 
   const handleSubmit = async (e) => {
@@ -93,8 +94,8 @@ export default function Login() {
       return;
     }
     
-    // Priority 2: Use from param (validated)
-    const redirectUrl = fromParam ? validateRedirectUrl(fromParam) : "/";
+    // Priority 2: Use next/from param (validated)
+    const redirectUrl = fromParam ? (validateRedirectUrl(fromParam) || "/client/dashboard") : "/client/dashboard";
     base44.auth.loginWithProvider("google", redirectUrl);
   };
 
@@ -102,11 +103,11 @@ export default function Login() {
     <AuthLayout
       icon={LogIn}
       title="Welcome back"
-      subtitle="Log in to your account"
+      subtitle={isFanProductionFlow ? "Log in to continue your Fan Production Request." : "Log in to your account"}
       footer={
         <>
           Don't have an account?{" "}
-          <Link to="/register" className="text-primary font-medium hover:underline">
+          <Link to={`/register${fromParam ? `?next=${encodeURIComponent(fromParam)}` : ""}`} className="text-primary font-medium hover:underline">
             Create one
           </Link>
         </>

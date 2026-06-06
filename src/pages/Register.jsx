@@ -20,6 +20,11 @@ export default function Register() {
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
 
+  // Read ?next= or ?from_url= from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const nextParam = urlParams.get("next") || urlParams.get("from_url") || null;
+  const isFanProductionFlow = nextParam && nextParam.includes("/fan-productions");
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -46,7 +51,7 @@ export default function Register() {
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
         
-        // Check for stored intent and redirect accordingly
+        // Priority 1: stored intent (set by CTAs before redirect)
         const storedIntent = getStoredAuthIntent();
         if (storedIntent) {
           console.log("REGISTER_INTENT_FOUND", storedIntent);
@@ -54,9 +59,19 @@ export default function Register() {
           window.location.href = redirectUrl;
           return;
         }
+        
+        // Priority 2: ?next= or ?from_url= URL param
+        if (nextParam) {
+          const { validateRedirectUrl } = await import("@/lib/authRedirect");
+          const validated = validateRedirectUrl(nextParam);
+          if (validated && validated !== '/') {
+            window.location.href = validated;
+            return;
+          }
+        }
       }
-      // Fallback to homepage if no intent
-      window.location.href = "/";
+      // Fallback to client dashboard
+      window.location.href = "/client/dashboard";
     } catch (err) {
       setError(err.message || "Invalid verification code");
     } finally {
@@ -78,7 +93,7 @@ export default function Register() {
   };
 
   const handleGoogle = () => {
-    // Check for stored intent
+    // Priority 1: stored intent
     const storedIntent = getStoredAuthIntent();
     if (storedIntent) {
       const redirectUrl = buildRedirectUrl(storedIntent);
@@ -86,8 +101,13 @@ export default function Register() {
       base44.auth.loginWithProvider("google", redirectUrl);
       return;
     }
+    // Priority 2: ?next= param
+    if (nextParam) {
+      base44.auth.loginWithProvider("google", nextParam);
+      return;
+    }
     // Fallback
-    base44.auth.loginWithProvider("google", "/");
+    base44.auth.loginWithProvider("google", "/client/dashboard");
   };
 
   if (showOtp) {
@@ -148,11 +168,11 @@ export default function Register() {
     <AuthLayout
       icon={UserPlus}
       title="Create your account"
-      subtitle="Sign up to get started"
+      subtitle={isFanProductionFlow ? "Create your FLESHLAB account to continue your Fan Production Request." : "Sign up to get started"}
       footer={
         <>
           Already have an account?{" "}
-          <Link to="/login" className="text-primary font-medium hover:underline">
+          <Link to={`/login${nextParam ? `?next=${encodeURIComponent(nextParam)}` : ""}`} className="text-primary font-medium hover:underline">
             Log in
           </Link>
         </>

@@ -197,7 +197,7 @@ export default function FanProductionRequest() {
   useEffect(() => {
     if (!authChecked || isLoadingAuth) return;
     if (!isAuthenticated) {
-      navigate("/register?next=/fan-productions/request");
+      navigate("/register?next=" + encodeURIComponent("/fan-productions/request"));
     }
   }, [authChecked, isLoadingAuth, isAuthenticated, navigate]);
 
@@ -301,15 +301,23 @@ export default function FanProductionRequest() {
           </div>
           <h1 className="text-3xl font-black text-white mb-3">Request Submitted</h1>
           <p className="text-white/50 mb-2">
-            Your Fan Production request has been received. Our team will review it and contact you within 48–72 hours.
+            Your Fan Production request was submitted successfully. Our team will review it and contact you within 48–72 hours.
           </p>
-          <p className="text-white/30 text-sm mb-8">Contact: {form.email}</p>
-          <Button
-            onClick={() => navigate("/fan-productions")}
-            className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-8 py-3 rounded-xl h-auto"
-          >
-            Back to Fan Productions
-          </Button>
+          <p className="text-white/30 text-sm mb-2">Contact: {form.email}</p>
+          <p className="text-white/25 text-xs mb-8">You can track the review status in your client dashboard.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button
+              onClick={() => navigate("/client/dashboard")}
+              className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-8 py-3 rounded-xl h-auto"
+            >
+              Go to Dashboard
+            </Button>
+            <a href="https://wa.me/message/FLESHLAB" target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" className="border-white/15 text-white/70 hover:bg-white/8 px-6 py-3 rounded-xl h-auto text-sm">
+                Contact Management on WhatsApp
+              </Button>
+            </a>
+          </div>
         </div>
       </div>
     );

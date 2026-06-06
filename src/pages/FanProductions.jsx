@@ -155,7 +155,7 @@ export default function FanProductions() {
       navigate("/fan-productions/request");
     } else {
       storeAuthIntent({ actionType: "guest-production", nextUrl: "/fan-productions/request" });
-      navigate("/register?next=/fan-productions/request");
+      navigate("/register?next=" + encodeURIComponent("/fan-productions/request"));
     }
   };
 

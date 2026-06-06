@@ -21,6 +21,7 @@ const ALLOWED_REDIRECT_PATTERNS = [
   '/guest-production',
   '/fan-productions/*',
   '/account',
+  '/client/dashboard',
   '/become-performer',
   '/how-it-works',
   '/faq',
