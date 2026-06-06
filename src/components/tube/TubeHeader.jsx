@@ -380,7 +380,7 @@ export default function TubeHeader({ onMenuToggle }) {
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-40 bg-black/80 md:hidden"
             onClick={() => setMobileOpen(false)}
             aria-hidden="true"
           />

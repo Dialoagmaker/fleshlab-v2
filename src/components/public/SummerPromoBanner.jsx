@@ -60,7 +60,7 @@ export default function SummerPromoBanner() {
 
           {/* Small promo badge — Not aggressive */}
           <div className="mb-6">
-            <span className="inline-flex items-center gap-2 bg-amber-500/15 backdrop-blur-sm border border-amber-500/30 text-amber-300 text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
+            <span className="inline-flex items-center gap-2 bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
               {t('homepage.specialBadge')}
             </span>
@@ -76,7 +76,7 @@ export default function SummerPromoBanner() {
             </Link>
             <Link
               to="/videos"
-              className="w-full sm:w-auto bg-white/10 backdrop-blur-md hover:bg-white/15 text-white font-bold text-sm sm:text-base px-7 sm:px-9 py-3.5 sm:py-4 rounded-xl border border-white/20 hover:border-white/30 transition-all leading-none flex items-center justify-center gap-2"
+              className="w-full sm:w-auto bg-white/10 hover:bg-white/15 text-white font-bold text-sm sm:text-base px-7 sm:px-9 py-3.5 sm:py-4 rounded-xl border border-white/20 hover:border-white/30 transition-all leading-none flex items-center justify-center gap-2"
             >
               <Play className="w-4 h-4" />
               {t('homepage.browsePreviews')}

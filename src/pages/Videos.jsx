@@ -161,7 +161,7 @@ export default function Videos() {
 
             {/* Stats Row - Sleeker */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-              <div className="bg-white/[0.02] backdrop-blur-sm border border-white/5 rounded-lg p-3 flex items-center gap-2.5">
+              <div className="bg-white/[0.02] border border-white/5 rounded-lg p-3 flex items-center gap-2.5">
                 <div className="w-9 h-9 bg-rose-600/15 rounded-md flex items-center justify-center flex-shrink-0">
                   <Users className="w-4 h-4 text-rose-500" />
                 </div>
@@ -170,7 +170,7 @@ export default function Videos() {
                   <p className="text-white/40 text-[10px]">Performers</p>
                 </div>
               </div>
-              <div className="bg-white/[0.02] backdrop-blur-sm border border-white/5 rounded-lg p-3 flex items-center gap-2.5">
+              <div className="bg-white/[0.02] border border-white/5 rounded-lg p-3 flex items-center gap-2.5">
                 <div className="w-9 h-9 bg-purple-600/15 rounded-md flex items-center justify-center flex-shrink-0">
                   <Crown className="w-4 h-4 text-purple-500" />
                 </div>
@@ -179,7 +179,7 @@ export default function Videos() {
                   <p className="text-white/40 text-[10px]">Scenes</p>
                 </div>
               </div>
-              <div className="bg-white/[0.02] backdrop-blur-sm border border-white/5 rounded-lg p-3 flex items-center gap-2.5">
+              <div className="bg-white/[0.02] border border-white/5 rounded-lg p-3 flex items-center gap-2.5">
                 <div className="w-9 h-9 bg-amber-600/15 rounded-md flex items-center justify-center flex-shrink-0">
                   <Sparkles className="w-4 h-4 text-amber-500" />
                 </div>
@@ -188,7 +188,7 @@ export default function Videos() {
                   <p className="text-white/40 text-[10px]">Exclusives</p>
                 </div>
               </div>
-              <div className="bg-white/[0.02] backdrop-blur-sm border border-white/5 rounded-lg p-3 flex items-center gap-2.5">
+              <div className="bg-white/[0.02] border border-white/5 rounded-lg p-3 flex items-center gap-2.5">
                 <div className="w-9 h-9 bg-emerald-600/15 rounded-md flex items-center justify-center flex-shrink-0">
                   <Clock className="w-4 h-4 text-emerald-500" />
                 </div>
