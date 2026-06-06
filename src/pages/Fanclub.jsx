@@ -319,7 +319,7 @@ export default function Fanclub() {
         />
         <div className="min-h-screen bg-[#080808] text-white">
 
-          {/* fanclub_enabled === false → coming soon */}
+          {/* fanclub_enabled must be explicitly false to show coming soon; undefined/null = active */}
           {featuredPerformer.fanclub_enabled === false ? (
             <>
               <PerformerFanclubComingSoon performer={featuredPerformer} relatedVideos={publishedVideos.slice(0, 3)} />
