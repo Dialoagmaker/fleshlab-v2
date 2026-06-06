@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Plus } from "lucide-react";
+import { User, Plus, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
@@ -22,8 +22,13 @@ function getInitialTab() {
 }
 
 export default function ClientDashboard() {
-  const { isAuthenticated, user, isLoadingAuth, authChecked } = useAuth();
-  const [activeTab, setActiveTab] = useState(getInitialTab);
+  const { isAuthenticated, user, isLoadingAuth, authChecked, logout } = useAuth();
+  const [activeTab, setActiveTab] = useState(getInitialTab());
+
+  // Logout handler - reuses existing auth logout with redirect
+  const handleLogout = () => {
+    logout(true); // redirects to /login with return URL preserved
+  };
 
   // Data state
   const [requests, setRequests] = useState([]);
@@ -125,13 +130,21 @@ export default function ClientDashboard() {
                   Manage your Fan Production requests, video purchases, Fanclub access, payments and account details.
                 </p>
               </div>
-              <div className="shrink-0">
+              <div className="shrink-0 flex flex-col sm:flex-row gap-3">
                 <Button
                   onClick={() => window.location.href = "/fan-productions/request"}
                   className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold gap-2 rounded-xl h-auto py-2.5 px-5 text-sm shadow-lg shadow-rose-700/20"
                 >
                   <Plus className="w-4 h-4" />
                   New Fan Production Request
+                </Button>
+                <Button
+                  onClick={handleLogout}
+                  variant="outline"
+                  className="border-white/15 text-white/70 hover:text-white hover:bg-white/8 font-semibold gap-2 rounded-xl h-auto py-2.5 px-5 text-sm"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Log Out
                 </Button>
               </div>
             </div>
@@ -143,7 +156,7 @@ export default function ClientDashboard() {
           <div className="flex flex-col lg:flex-row gap-6">
 
             {/* Nav */}
-            <DashboardNav activeTab={activeTab} setActiveTab={setActiveTab} />
+            <DashboardNav activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
 
             {/* Tab content */}
             <div className="flex-1 min-w-0">

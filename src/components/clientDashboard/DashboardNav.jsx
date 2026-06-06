@@ -1,4 +1,4 @@
-import { Film, Video, Star, CreditCard, Wallet, MessageCircle, User, Shield, Lock, LayoutDashboard, ChevronDown } from "lucide-react";
+import { Film, Video, Star, CreditCard, Wallet, MessageCircle, User, Shield, Lock, LayoutDashboard, ChevronDown, LogOut } from "lucide-react";
 import { useState } from "react";
 
 export const TABS = [
@@ -13,7 +13,7 @@ export const TABS = [
   { id: "security",       label: "Security",          icon: Lock },
 ];
 
-export default function DashboardNav({ activeTab, setActiveTab }) {
+export default function DashboardNav({ activeTab, setActiveTab, onLogout }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const active = TABS.find((t) => t.id === activeTab) || TABS[0];
   const ActiveIcon = active.icon;
@@ -51,6 +51,14 @@ export default function DashboardNav({ activeTab, setActiveTab }) {
                 </button>
               );
             })}
+            {/* Logout button - mobile */}
+            <button
+              onClick={() => { setMobileOpen(false); onLogout?.(); }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/45 hover:text-red-400 hover:bg-red-500/10 transition-colors border-t border-white/5"
+            >
+              <LogOut className="w-4 h-4 shrink-0 text-white/30" />
+              Log Out
+            </button>
           </div>
         )}
       </div>
@@ -75,6 +83,14 @@ export default function DashboardNav({ activeTab, setActiveTab }) {
             </button>
           );
         })}
+        {/* Logout button - desktop */}
+        <button
+          onClick={() => onLogout?.()}
+          className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-white/45 hover:text-red-400 hover:bg-red-500/10 transition-colors text-left mt-2 border-t border-white/5 pt-3"
+        >
+          <LogOut className="w-4 h-4 shrink-0 text-white/30" />
+          Log Out
+        </button>
       </nav>
     </>
   );
