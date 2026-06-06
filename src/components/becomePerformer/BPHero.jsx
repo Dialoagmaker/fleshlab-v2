@@ -3,25 +3,31 @@ import { Button } from "@/components/ui/button";
 import { Shield, FileText, Lock, Film } from "lucide-react";
 
 const EARNINGS_STEPS = [0, 50, 200, 500, 1000, 2000];
+// After reaching 2000, display "$2,000+" permanently until loop restarts
+const isAtMax = (idx) => idx >= EARNINGS_STEPS.length - 1;
 
 export default function BPHero({ onApplyClick, onEarnClick }) {
   const [earningsIdx, setEarningsIdx] = useState(0);
   const [displayVal, setDisplayVal] = useState(0);
+  const [showPlus, setShowPlus] = useState(false);
 
   // Animate the earnings counter upward through steps, then loop
   useEffect(() => {
     let frame;
     const target = EARNINGS_STEPS[earningsIdx];
     let current = earningsIdx === 0 ? 0 : EARNINGS_STEPS[earningsIdx - 1];
+    setShowPlus(false);
 
     const step = () => {
       const diff = target - current;
       if (Math.abs(diff) < 2) {
         setDisplayVal(target);
+        if (isAtMax(earningsIdx)) setShowPlus(true);
         // Pause then advance to next step
         setTimeout(() => {
+          setShowPlus(false);
           setEarningsIdx(i => (i + 1) % EARNINGS_STEPS.length);
-        }, earningsIdx === EARNINGS_STEPS.length - 1 ? 2000 : 900);
+        }, isAtMax(earningsIdx) ? 3000 : 700);
         return;
       }
       current += Math.ceil(diff * 0.12);
@@ -76,11 +82,12 @@ export default function BPHero({ onApplyClick, onEarnClick }) {
           <div className="mb-9">
             <div className="inline-flex flex-col items-start bg-black/50 border border-rose-600/20 rounded-2xl px-6 py-4 backdrop-blur-sm">
               <div className="text-white/30 text-xs font-bold uppercase tracking-widest mb-1">Monthly earning potential</div>
-              <div className="flex items-baseline gap-2">
+              <div className="flex items-baseline gap-1">
                 <span className="text-5xl font-black text-rose-400 tabular-nums transition-all">
                   ${displayVal.toLocaleString()}
                 </span>
-                <span className="text-white/30 text-sm">/ month</span>
+                <span className={`text-4xl font-black text-rose-400 transition-opacity duration-300 ${showPlus ? "opacity-100" : "opacity-0"}`}>+</span>
+                <span className="text-white/30 text-sm ml-1">/ month</span>
               </div>
               <div className="flex gap-1.5 mt-2">
                 {EARNINGS_STEPS.map((v, i) => (
@@ -95,7 +102,7 @@ export default function BPHero({ onApplyClick, onEarnClick }) {
                 ))}
               </div>
               <p className="text-white/20 text-[10px] mt-2 max-w-[280px] leading-relaxed">
-                Estimates only. Not guaranteed. Earnings depend on activity, content quality, viewer demand and consistency.
+                Some earn less. Some earn more. Earnings depend on content, activity and audience demand.
               </p>
             </div>
           </div>

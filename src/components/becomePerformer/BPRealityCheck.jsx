@@ -48,17 +48,25 @@ export default function BPRealityCheck() {
             But performers who are sexually open, creative with scene ideas and consistent usually have stronger chances to grow.
           </p>
 
-          <div className="mt-8 grid grid-cols-3 gap-3">
-            {[
-              { val: "$25–30", label: "typical 3h livecam for starters" },
-              { val: "4–8×", label: "videos/month recommended start" },
-              { val: "Month 3+", label: "when catalog starts to compound" },
-            ].map(({ val, label }, i) => (
-              <div key={i} className="bg-black/40 border border-white/8 rounded-xl p-3 text-center">
-                <div className="text-rose-400 font-black text-lg">{val}</div>
-                <div className="text-white/30 text-[10px] mt-1 leading-tight">{label}</div>
-              </div>
-            ))}
+          <div className="mt-8 space-y-4">
+            <div className="bg-rose-600/10 border border-rose-600/25 rounded-xl p-4">
+              <div className="text-rose-400 font-black text-xl mb-1">20+ full videos / month</div>
+              <div className="text-white/55 text-sm leading-relaxed">Minimum 20 minutes each — with story, sexual energy and viewer appeal.</div>
+            </div>
+            <p className="text-white/40 text-sm leading-relaxed">
+              In the first months, serious performers should build aggressively: 20+ full productions per month, minimum 20 minutes each. Every video adds another chance for views, sales, fanclub subscribers and platform reach.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { val: "$25–30", label: "typical 3h livecam for starters" },
+                { val: "Month 3+", label: "when catalog starts to compound" },
+              ].map(({ val, label }, i) => (
+                <div key={i} className="bg-black/40 border border-white/8 rounded-xl p-3 text-center">
+                  <div className="text-rose-400 font-black text-lg">{val}</div>
+                  <div className="text-white/30 text-[10px] mt-1 leading-tight">{label}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
