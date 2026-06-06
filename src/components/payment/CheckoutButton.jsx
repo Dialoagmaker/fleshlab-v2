@@ -93,12 +93,13 @@ export default function CheckoutButton({
         // Redirect to NOWPayments hosted checkout
         window.location.href = data.checkoutUrl;
       } else if (data.blocked_reason === 'below_crypto_minimum') {
-        setError(data.message || `Crypto payments are available from ${data.minimum_usd || 12.99} USD minimum. Please choose a higher plan or bundle.`);
+        setError(`Crypto checkout is currently not available for this amount with the selected coin/network. ${data.message || `Minimum: $${data.minimum_usd} USD. Your order: $${data.requested_amount}. Please choose the 3-Month Access plan or contact support.`}`);
       } else {
-        setError(data.message || 'Checkout could not be started. Please try again.');
+        setError(data.message || 'Crypto checkout could not be created for this plan. Please choose the 3-Month Access plan or contact support.');
       }
     } catch (err) {
-      setError('Checkout error. Please try again.');
+      console.error('[CheckoutButton] Checkout error:', err);
+      setError('Crypto checkout could not be created. Please try again or contact support.');
     }
     setLoading(false);
   };

@@ -1,22 +1,22 @@
 /**
- * FLESHLAB Pricing Configuration — CRYPTO SAFE
+ * FLESHLAB Pricing Configuration — CRYPTO SAFE (2026-06-06)
  * Central source of truth for all pricing and access tiers.
  *
  * ─── PRICING UPDATE (2026-06-06) ─────────────────────────────────────────────
- * All prices now set safely above NOWPayments crypto minimums.
- * Minimum crypto checkout: $14.99 USD (with buffer for fluctuation).
+ * All prices set safely above NOWPayments crypto minimums.
+ * Minimum crypto checkout: $19.99 USD (with buffer for fluctuation).
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 // NOWPayments crypto minimum with safety buffer
-export const CRYPTO_MINIMUM_USD = 14.99; // safe minimum for USDT TRC20 and other common coins
+export const CRYPTO_MINIMUM_USD = 19.99; // safe minimum for USDT TRC20 and other coins
 
 // ── Fanclub plan definitions ──────────────────────────────────────────────────
 export const FANCLUB_PLANS = {
   fanclub_monthly: {
     id: 'fanclub_monthly',
     name: 'Fanclub Monthly',
-    price: 14.99, // crypto-safe pricing
+    price: 19.99, // crypto-safe pricing
     regularPrice: 19.99,
     currency: 'USD',
     interval: 'month',
@@ -27,7 +27,7 @@ export const FANCLUB_PLANS = {
   premium_monthly: {
     id: 'premium_monthly',
     name: 'Premium Monthly',
-    price: 24.99, // crypto-safe pricing
+    price: 29.99, // crypto-safe pricing
     regularPrice: 29.99,
     currency: 'USD',
     interval: 'month',
@@ -38,10 +38,10 @@ export const FANCLUB_PLANS = {
   fanclub_3mo: {
     id: 'fanclub_3mo',
     name: 'Fanclub 3-Month Access',
-    price: 39.99, // better value bundle
+    price: 49.99, // better value bundle, crypto-safe
     currency: 'USD',
     interval: '3-months',
-    enabled: false, // can be enabled later
+    enabled: true, // ENABLED for crypto-safe pricing
   },
 
   annual_pass: {
@@ -72,6 +72,13 @@ export const PRICING = {
       currency: 'USD',
       billing: 'monthly',
     },
+    '3month': {
+      name: 'Fanclub 3-Month Access',
+      planId: 'fanclub_3mo',
+      price: FANCLUB_PLANS.fanclub_3mo.price,
+      currency: 'USD',
+      billing: '3-months',
+    },
     // Legacy flat reference
     price: FANCLUB_PLANS.fanclub_monthly.price,
     currency: 'USD',
@@ -89,17 +96,17 @@ export const PRICING = {
   ppv: {
     standard: {
       name: 'Standard Scene',
-      price: 14.99, // crypto-safe minimum
+      price: 19.99, // crypto-safe minimum
       currency: 'USD',
     },
     premium: {
       name: 'Premium Scene',
-      price: 19.99,
+      price: 24.99,
       currency: 'USD',
     },
     exclusive: {
       name: 'Exclusive / Long Scene',
-      price: 24.99,
+      price: 29.99,
       currency: 'USD',
     },
   },
@@ -126,7 +133,7 @@ export const ACCESS_TIERS = {
   ppv: {
     label: 'Premium PPV',
     description: 'Pay-per-view unlocks for premium exclusive scenes',
-    priceRange: '$14.99 – $24.99',
+    priceRange: '$19.99 – $29.99',
   },
 };
 
@@ -141,7 +148,7 @@ export const getCTAText = (isAuthenticated, accessTier, isExclusive) => {
   }
 
   if (accessTier === 'fanclub') return `Join Fanclub — $${FANCLUB_PLANS.fanclub_monthly.price}/month`;
-  if (accessTier === 'ppv') return 'Unlock Full Scene — $14.99';
+  if (accessTier === 'ppv') return `Unlock Full Scene — $${PRICING.ppv.standard.price}`;
   return 'Watch Free Video';
 };
 

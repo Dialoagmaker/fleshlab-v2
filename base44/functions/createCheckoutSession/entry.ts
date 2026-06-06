@@ -22,31 +22,32 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 // ── Server-side authoritative pricing (client CANNOT override) ──────────────
-// CRYPTO-SAFE PRICING (2026-06-06): All prices set above NOWPayments minimums.
+// CRYPTO-SAFE PRICING (2026-06-06): All prices set safely above NOWPayments minimums.
 // annual_pass is DISABLED (AsiaPay approval phase). Backend must reject it.
 const SERVER_PRICING = {
   fanclub: {
-    fanclub_monthly:  14.99,  // crypto-safe minimum
-    premium_monthly:  24.99,  // crypto-safe pricing
+    fanclub_monthly:  19.99,  // crypto-safe minimum
+    premium_monthly:  29.99,  // crypto-safe pricing
+    fanclub_3mo:      49.99,  // 3-month bundle, crypto-safe
     // annual_pass: DISABLED — do not add back until payment provider approves
   },
   ppv: {
-    standard:  14.99,  // crypto-safe minimum
-    premium:   19.99,
-    exclusive: 24.99,
+    standard:  19.99,  // crypto-safe minimum
+    premium:   24.99,
+    exclusive: 29.99,
   },
   guest_production_deposit: 999,
 };
 
 // Plans disabled during payment provider approval phase
-const DISABLED_PLANS = ['annual_pass', 'fanclub_3mo', 'fanclub_6mo', 'fanclub_annual'];
+const DISABLED_PLANS = ['annual_pass', 'fanclub_6mo', 'fanclub_annual']; // fanclub_3mo ENABLED for crypto-safe pricing
 
 // Plans eligible for Summer Studio Special promo
 const PROMO_ELIGIBLE_PLANS = ['fanclub_monthly', 'premium_monthly'];
 
 // ── Crypto minimum (NOWPayments) ─────────────────────────────────────────────
 // Dynamic minimum will be checked via API. This is fallback only.
-const CRYPTO_MINIMUM_USD = 14.99; // crypto-safe fallback minimum
+const CRYPTO_MINIMUM_USD = 19.99; // crypto-safe fallback minimum with buffer
 
 // ── URL safety guard (internal paths only) ────────────────────────────────────
 function safeUrl(url) {
@@ -230,18 +231,29 @@ Deno.serve(async (req) => {
     const safeReturn = safeUrl(returnUrl || '/');
     const safeCancel = safeUrl(cancelUrl || '/');
 
-    // ── Crypto minimum guard ─────────────────────────────────────────────────
+    // ── Crypto minimum guard with enhanced logging ─────────────────────────────
     // Check actual NOWPayments minimum for selected currency before creating invoice
     const payCurrency = resolvePayCurrency(amount);
+    console.log('[createCheckoutSession] Checkout request:', {
+      paymentType,
+      planId,
+      priceTier,
+      amount,
+      payCurrency,
+      user_id: user.id,
+    });
+
     let minCheck;
     try {
       minCheck = await checkNOWPaymentsMinimum({ priceAmount: amount, payCurrency });
+      console.log('[createCheckoutSession] NOWPayments minimum check:', minCheck);
     } catch (minErr) {
       console.error('[createCheckoutSession] Minimum check error:', minErr.message);
       minCheck = { minimumUsd: CRYPTO_MINIMUM_USD, currency: payCurrency || 'usdttrc20' };
     }
 
     if (amount < minCheck.minimumUsd) {
+      console.warn('[createCheckoutSession] Amount below minimum:', { amount, minimum: minCheck.minimumUsd });
       return Response.json({
         success: false,
         providerConfigured: true,
@@ -249,7 +261,7 @@ Deno.serve(async (req) => {
         minimum_usd: minCheck.minimumUsd,
         requested_amount: amount,
         currency: minCheck.currency,
-        message: `${minCheck.currency.toUpperCase()} currently requires a minimum payment of $${minCheck.minimumUsd} USD. Your order is $${amount}. Please choose another payment method, select a higher-value package, or use a supported coin with a lower minimum.`,
+        message: `Crypto checkout is currently not available for this amount. ${minCheck.currency.toUpperCase()} requires a minimum of $${minCheck.minimumUsd} USD. Your order is $${amount}. Please choose the 3-Month Access plan ($49.99) or contact support.`,
       }, { status: 422 });
     }
 
@@ -288,14 +300,17 @@ Deno.serve(async (req) => {
       // Build rich product description with metadata
       let description;
       if (paymentType === 'fanclub') {
-        const promoEligible = PROMO_ELIGIBLE_PLANS.includes(planId);
-        description = promoEligible
-          ? `FLESHLAB Fanclub Access — Monthly Subscription (${planId === 'premium_monthly' ? 'Premium' : 'Standard'}, Summer Studio Special: 50% off first 3 months)`
-          : `FLESHLAB Fanclub Access — Monthly Subscription (${planId})`;
+        if (planId === 'fanclub_3mo') {
+          description = 'FLESHLAB Fanclub 3-Month Access — Multi-month bundle';
+        } else if (planId === 'premium_monthly') {
+          description = 'FLESHLAB Fanclub Premium Monthly Access — Premium tier subscription';
+        } else {
+          description = 'FLESHLAB Fanclub Monthly Access — Monthly subscription';
+        }
       } else if (paymentType === 'ppv') {
         description = `FLESHLAB PPV Video Unlock — ${priceTier || 'standard'} tier access`;
       } else if (paymentType === 'guest_production_deposit') {
-        description = `FLESHLAB Fan Production Reservation — Deposit payment`;
+        description = 'FLESHLAB Fan Production Reservation — Deposit payment';
       } else {
         description = `FLESHLAB Order — ${paymentType}`;
       }
@@ -327,11 +342,20 @@ Deno.serve(async (req) => {
           cancel_url:     safeCancel,
           error_message:  invoiceErr.message,
         });
+        // Log real error for debugging
+        console.error('[createCheckoutSession] NOWPayments invoice creation failed:', {
+          paymentType,
+          planId,
+          amount,
+          payCurrency: resolvePayCurrency(amount),
+          error: invoiceErr.message,
+        });
+
         return Response.json({
           success: false,
           providerConfigured: true,
           provider: 'nowpayments',
-          message: 'Checkout could not be created. Please try again.',
+          message: 'Checkout could not be created. Please try again or contact support.',
           error: invoiceErr.message,
         }, { status: 502 });
       }
