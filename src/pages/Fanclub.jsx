@@ -399,7 +399,7 @@ export default function Fanclub() {
                       </div>
                       {performerCTA}
                       <p className="text-white/15 text-xs text-center mt-4">
-                        $19.99/month unless cancelled. Cancel anytime.
+                        $19.99/month unless cancelled. Cancel anytime. Crypto-safe pricing.
                       </p>
                     </div>
                   </div>
@@ -526,7 +526,7 @@ export default function Fanclub() {
                   <Play className="w-4 h-4 mr-2 shrink-0" />Unlock One Scene
                 </Button>
               </div>
-              <p className="text-white/30 text-xs mb-6">$14.99/month unless cancelled. Cancel anytime.</p>
+              <p className="text-white/30 text-xs mb-6">$19.99/month unless cancelled. Cancel anytime.</p>
 
               <div className="flex flex-wrap gap-x-5 gap-y-2 text-white/35 text-sm">
                 <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-rose-500/60 shrink-0" />Verified 18+ performers</span>
@@ -1005,7 +1005,7 @@ export default function Fanclub() {
                   Unlock One Scene
                 </Button>
               </div>
-              <p className="text-white/25 text-xs">$19.99/month unless cancelled. Cancel anytime.</p>
+              <p className="text-white/25 text-xs">$19.99/month unless cancelled. Cancel anytime. Crypto-safe pricing.</p>
             </div>
           </div>
         </section>
