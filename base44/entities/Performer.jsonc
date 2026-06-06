@@ -96,11 +96,21 @@
       "default": 0,
       "description": "Amount owed by performer to platform (if any)"
     },
+    "revenue_model": {
+      "type": "string",
+      "enum": [
+        "studio_managed",
+        "established_network"
+      ],
+      "title": "Revenue Model",
+      "default": "studio_managed",
+      "description": "Studio Managed (40% performer) | Established/Network (70% performer)"
+    },
     "revenue_split_pct": {
       "type": "number",
       "title": "Revenue Split (%)",
-      "default": 70,
-      "description": "Percentage of revenue that goes to the performer"
+      "default": 40,
+      "description": "Percentage of revenue that goes to the performer (default: 40% for Studio Managed)"
     },
     "kyc_status": {
       "type": "string",

@@ -63,8 +63,8 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Validate split_pct
-      const finalSplitPct = split_pct !== undefined ? split_pct : performer.revenue_split_pct || 70;
+      // Validate split_pct (default 40% for Studio Managed, NOT 70%)
+      const finalSplitPct = split_pct !== undefined ? split_pct : (performer.revenue_split_pct !== undefined && performer.revenue_split_pct !== null ? parseFloat(performer.revenue_split_pct) : 40);
       if (finalSplitPct < 0 || finalSplitPct > 100) {
         return Response.json({ error: 'split_pct must be between 0 and 100' }, { status: 400 });
       }

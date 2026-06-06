@@ -84,8 +84,10 @@ Deno.serve(async (req) => {
           // Calculate gross share (equal split among performers)
           const grossShare = videoRevenue / performerCount;
 
-          // Get performer's split percentage (default to 70% if not set)
-          const splitPct = performer.revenue_split_pct || 70;
+          // Get performer's split percentage (default to 40% for Studio Managed, NOT 70%)
+          const splitPct = performer.revenue_split_pct !== undefined && performer.revenue_split_pct !== null 
+            ? parseFloat(performer.revenue_split_pct) 
+            : 40; // DEFAULT: Studio Managed 40%
 
           // Calculate net amount
           const netAmount = grossShare * (splitPct / 100);
@@ -215,9 +217,11 @@ Deno.serve(async (req) => {
             continue;
           }
 
-          // Calculate earnings
+          // Calculate earnings (default 40% for Studio Managed, NOT 70%)
           const grossShare = videoRevenue / performerCount;
-          const splitPct = performer.revenue_split_pct || 70;
+          const splitPct = performer.revenue_split_pct !== undefined && performer.revenue_split_pct !== null 
+            ? parseFloat(performer.revenue_split_pct) 
+            : 40; // DEFAULT: Studio Managed 40%
           const netAmount = grossShare * (splitPct / 100);
 
           // Duplicate check

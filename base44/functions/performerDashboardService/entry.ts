@@ -168,10 +168,12 @@ Deno.serve(async (req) => {
         actionRequired.push({ type: 'earnings', message: 'No earnings recorded this month', priority: 'low' });
       }
 
-      // Determine revenue share (default 40% for managed performers)
-      const revenueSharePct = myPerformer.revenue_split_pct || 40;
+      // Resolve revenue model (default 40% for Studio Managed, 70% ONLY for Established/Network)
+      const revenueSharePct = myPerformer.revenue_split_pct !== undefined && myPerformer.revenue_split_pct !== null 
+        ? parseFloat(myPerformer.revenue_split_pct) 
+        : 40; // DEFAULT: Studio Managed 40%
       const studioSharePct = 100 - revenueSharePct;
-      const revenueModel = revenueSharePct === 70 ? 'Established/Network' : 'Managed Performer';
+      const revenueModel = revenueSharePct === 70 ? 'Established/Network' : 'Studio Managed';
 
       // Sanitize performer data (remove admin-only fields)
       const safePerformer = {
@@ -619,8 +621,10 @@ Deno.serve(async (req) => {
         .filter(vp => vp.lead_performer)
         .map(vp => vp.video_id);
 
-      // Determine revenue share (default 40% for managed performers)
-      const revenueSharePct = myPerformer.revenue_split_pct || 40;
+      // Resolve revenue model (default 40% for Studio Managed, 70% ONLY for Established/Network)
+      const revenueSharePct = myPerformer.revenue_split_pct !== undefined && myPerformer.revenue_split_pct !== null 
+        ? parseFloat(myPerformer.revenue_split_pct) 
+        : 40; // DEFAULT: Studio Managed 40%
 
       // Parallel fetch all videos + all earnings sources + internal video stats + external stats
       const [videoResults, legacyEarnings, lineItems, snapshotSets, externalOnlySnapshots] = await Promise.all([
@@ -943,8 +947,10 @@ Deno.serve(async (req) => {
       
       const grossRevenueUSD = legacyGross + lineItemGross + statsGross;
       
-      // Get performer share percentage
-      const performerSharePct = myPerformer.revenue_split_pct || 40;
+      // Get performer share percentage (default 40% for Studio Managed, NOT 70%)
+      const performerSharePct = myPerformer.revenue_split_pct !== undefined && myPerformer.revenue_split_pct !== null 
+        ? parseFloat(myPerformer.revenue_split_pct) 
+        : 40; // DEFAULT: Studio Managed 40%
       const performerEarningsUSD = grossRevenueUSD * (performerSharePct / 100);
       
       // Convert to PHP
