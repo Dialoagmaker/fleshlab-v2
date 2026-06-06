@@ -9,7 +9,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
-import { getStoredAuthIntent, buildRedirectUrl } from "@/lib/authRedirect";
+import { getStoredAuthIntent, buildRedirectUrl, validateRedirectUrl } from "@/lib/authRedirect";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -62,7 +62,6 @@ export default function Register() {
         
         // Priority 2: ?next= or ?from_url= URL param
         if (nextParam) {
-          const { validateRedirectUrl } = await import("@/lib/authRedirect");
           const validated = validateRedirectUrl(nextParam);
           if (validated && validated !== '/') {
             window.location.href = validated;

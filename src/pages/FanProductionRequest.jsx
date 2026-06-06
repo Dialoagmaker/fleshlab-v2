@@ -193,15 +193,7 @@ export default function FanProductionRequest() {
     confirmed_contact_consent: false,
   });
 
-  // Auth guard
-  useEffect(() => {
-    if (!authChecked || isLoadingAuth) return;
-    if (!isAuthenticated) {
-      navigate("/register?next=" + encodeURIComponent("/fan-productions/request"));
-    }
-  }, [authChecked, isLoadingAuth, isAuthenticated, navigate]);
-
-  // Pre-fill email from user
+  // Pre-fill email/name from logged-in user if available
   useEffect(() => {
     if (user?.email && !form.email) {
       setForm((f) => ({ ...f, email: user.email, applicant_name: f.applicant_name || user.full_name || "" }));
@@ -281,17 +273,55 @@ export default function FanProductionRequest() {
     setSubmitted(true);
   };
 
-  if (!authChecked || isLoadingAuth) {
-    return (
-      <div className="min-h-screen bg-[#080808] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-rose-600/30 border-t-rose-600 rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) return null;
+  const isGuest = !isAuthenticated;
 
   if (submitted) {
+    // Guest flow: request saved, now prompt them to create account
+    if (isGuest) {
+      return (
+        <div className="min-h-screen bg-[#080808] flex items-center justify-center px-4">
+          <SEOMeta title="Request Submitted | FLESHLAB Fan Productions" noIndex={true} />
+          <div className="max-w-lg w-full text-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-600/20 border border-emerald-600/30 flex items-center justify-center mx-auto mb-6">
+              <Check className="w-8 h-8 text-emerald-400" />
+            </div>
+            <h1 className="text-3xl font-black text-white mb-3">Fan Production Request Submitted</h1>
+            <p className="text-white/60 mb-2 leading-relaxed">
+              Your request has been received. We have saved it to your email address.
+            </p>
+            <p className="text-white/35 text-sm mb-6 leading-relaxed">
+              Create a FLESHLAB account to track the review status in your client dashboard. Use the same email address: <span className="text-white/60 font-semibold">{form.email}</span>
+            </p>
+            <div className="bg-[#111] border border-white/8 rounded-xl p-4 mb-7 text-left text-sm text-white/40 leading-relaxed">
+              <span className="text-white/60 font-semibold block mb-1">Next step:</span>
+              FLESHLAB will review your request, check performer compatibility and contact you via <span className="text-white/60">{form.phone || form.email}</span> with the next steps.
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button
+                onClick={() => navigate(`/register?next=${encodeURIComponent("/client/dashboard")}`)}
+                className="w-full sm:w-auto bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 py-3 rounded-xl h-auto"
+              >
+                Create Account &amp; Track Request
+              </Button>
+              <Button
+                onClick={() => navigate(`/login?next=${encodeURIComponent("/client/dashboard")}`)}
+                variant="outline"
+                className="w-full sm:w-auto border-white/15 text-white/70 hover:bg-white/8 px-6 py-3 rounded-xl h-auto text-sm"
+              >
+                Already have an account? Log in
+              </Button>
+            </div>
+            <div className="mt-5">
+              <a href="https://wa.me/message/FLESHLAB" target="_blank" rel="noopener noreferrer" className="text-white/30 text-xs underline-offset-2 hover:text-white/50 underline">
+                Contact Management on WhatsApp
+              </a>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Logged-in flow: redirect CTA to dashboard
     return (
       <div className="min-h-screen bg-[#080808] flex items-center justify-center px-4">
         <SEOMeta title="Request Submitted | FLESHLAB Fan Productions" noIndex={true} />
@@ -299,18 +329,17 @@ export default function FanProductionRequest() {
           <div className="w-16 h-16 rounded-full bg-emerald-600/20 border border-emerald-600/30 flex items-center justify-center mx-auto mb-6">
             <Check className="w-8 h-8 text-emerald-400" />
           </div>
-          <h1 className="text-3xl font-black text-white mb-3">Request Submitted</h1>
-          <p className="text-white/50 mb-2">
-            Your Fan Production request was submitted successfully. Our team will review it and contact you within 48–72 hours.
+          <h1 className="text-3xl font-black text-white mb-3">Fan Production Request Submitted</h1>
+          <p className="text-white/55 mb-2 leading-relaxed">
+            Your request has been received and linked to your FLESHLAB account. Our team will review it and contact you within 48–72 hours.
           </p>
-          <p className="text-white/30 text-sm mb-2">Contact: {form.email}</p>
           <p className="text-white/25 text-xs mb-8">You can track the review status in your client dashboard.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button
               onClick={() => navigate("/client/dashboard")}
               className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-8 py-3 rounded-xl h-auto"
             >
-              Go to Dashboard
+              Go to Client Dashboard
             </Button>
             <a href="https://wa.me/message/FLESHLAB" target="_blank" rel="noopener noreferrer">
               <Button variant="outline" className="border-white/15 text-white/70 hover:bg-white/8 px-6 py-3 rounded-xl h-auto text-sm">

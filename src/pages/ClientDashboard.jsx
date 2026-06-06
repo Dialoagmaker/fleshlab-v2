@@ -38,7 +38,7 @@ export default function ClientDashboard() {
   useEffect(() => {
     if (!authChecked || isLoadingAuth) return;
     if (!isAuthenticated) {
-      navigate("/register?next=/client/dashboard");
+      window.location.href = "/login?next=" + encodeURIComponent("/client/dashboard");
       return;
     }
     loadRequests();
