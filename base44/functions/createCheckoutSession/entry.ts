@@ -352,6 +352,11 @@ Deno.serve(async (req) => {
         : 'https://api-sandbox.nowpayments.io/v1';
       
       try {
+        // Build absolute URLs for logging and API call
+        const appBase = (Deno.env.get('APP_BASE_URL') || 'https://fleshlab.online').replace(/\/$/, '');
+        const absSuccessUrl = (safeReturn && safeReturn.startsWith('http')) ? safeReturn : `${appBase}${safeReturn}`;
+        const absCancelUrl = (safeCancel && safeCancel.startsWith('http')) ? safeCancel : `${appBase}${safeCancel}`;
+
         console.log('[createCheckoutSession] Calling NOWPayments invoice API:', {
           endpoint: `${baseUrl}/invoice`,
           mode,
