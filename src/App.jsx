@@ -199,60 +199,50 @@ const AuthenticatedApp = () => {
     return <Navigate to="/performerlogin" replace />;
   }
 
-  if (path === "/guest-productions") {
-    // Render the real page for headless/non-JS fetchers (SEO safe with canonical + noindex)
-    // JS-capable browsers will see the canonical meta and follow it; no duplicate indexing occurs
+  if (path === "/guest-productions" || path === "/guest-production") {
     return (
       <PublicPageShell>
-        <GuestProduction canonical="/guest-production" noIndex={true} />
+        <GuestProduction canonical={path === "/guest-productions" ? "/guest-production" : undefined} noIndex={path === "/guest-productions"} />
       </PublicPageShell>
     );
   }
 
-  if (path === "/") {
+  if (path === "/" || path === "/Home") {
     return (
       <PublicPageShell>
-        <Home />
+        <Home canonical={path === "/Home" ? "/" : undefined} noIndex={path === "/Home"} />
       </PublicPageShell>
     );
   }
 
-  if (path === "/videos") {
+  if (path === "/videos" || path === "/Videos") {
     return (
       <PublicPageShell>
-        <PublicVideos />
+        <PublicVideos canonical={path === "/Videos" ? "/videos" : undefined} noIndex={path === "/Videos"} />
       </PublicPageShell>
     );
   }
 
-  if (path === "/performers") {
+  if (path === "/performers" || path === "/Actors") {
     return (
       <PublicPageShell>
-        <PublicPerformers />
+        <PublicPerformers canonical={path === "/Actors" ? "/performers" : undefined} noIndex={path === "/Actors"} />
       </PublicPageShell>
     );
   }
 
-  if (path === "/news") {
+  if (path === "/news" || path === "/News" || path === "/NewsCenter") {
     return (
       <PublicPageShell>
-        <PublicNews />
+        <PublicNews canonical={path !== "/news" ? "/news" : undefined} noIndex={path !== "/news"} />
       </PublicPageShell>
     );
   }
 
-  if (path === "/become-performer") {
+  if (path === "/become-performer" || path === "/Gay-Performer-Recruitment" || path === "/Remote-Adult-Content-Creator") {
     return (
       <PublicPageShell>
-        <BecomePerformer />
-      </PublicPageShell>
-    );
-  }
-
-  if (path === "/guest-production") {
-    return (
-      <PublicPageShell>
-        <GuestProduction />
+        <BecomePerformer canonical={path !== "/become-performer" ? "/become-performer" : undefined} noIndex={path !== "/become-performer"} />
       </PublicPageShell>
     );
   }
@@ -321,6 +311,22 @@ const AuthenticatedApp = () => {
     );
   }
 
+  if (path === "/brands" || path === "/Brands") {
+    return (
+      <PublicPageShell>
+        <PublicBrands canonical={path === "/Brands" ? "/brands" : undefined} noIndex={path === "/Brands"} />
+      </PublicPageShell>
+    );
+  }
+
+  if (path === "/how-it-works" || path === "/HowItWorks") {
+    return (
+      <PublicPageShell>
+        <HowItWorks canonical={path === "/HowItWorks" ? "/how-it-works" : undefined} noIndex={path === "/HowItWorks"} />
+      </PublicPageShell>
+    );
+  }
+
   if (path === "/sign-contract") {
     return (
       <PublicPageShell noIndex={true}>
@@ -361,15 +367,8 @@ const AuthenticatedApp = () => {
       <Route path="/reset-password" element={<><SEOMeta title="Set New Password" description="Set your new FLESHLAB password" canonical="/reset-password" noIndex={true} /><ResetPassword /></>} />
       <Route path="/performer/login" element={<PerformerLoginPage />} />
       <Route path="/performerlogin" element={<Navigate to="/performer/login" replace />} />
-      {/* V1 → V2 static path compatibility redirects */}
-      <Route path="/Videos" element={<Navigate to="/videos" replace />} />
-      <Route path="/Actors" element={<Navigate to="/performers" replace />} />
-      <Route path="/News" element={<Navigate to="/news" replace />} />
-      <Route path="/NewsCenter" element={<Navigate to="/news" replace />} />
-      <Route path="/Brands" element={<Navigate to="/brands" replace />} />
-      <Route path="/BecomePerformer" element={<Navigate to="/become-performer" replace />} />
-      <Route path="/HowItWorks" element={<Navigate to="/how-it-works" replace />} />
-      <Route path="/Home" element={<Navigate to="/" replace />} />
+      {/* V1 → V2 static path compatibility - handled by manual dispatch above for immediate render */}
+      {/* These routes are now handled in the manual dispatch section to prevent black screen */}
       {/* V1 query-param legacy routes — lookup entity and redirect to clean V2 URL */}
       <Route path="/VideoDetail" element={<LegacyVideoRedirect />} />
       <Route path="/ActorDetail" element={<LegacyActorRedirect />} />
