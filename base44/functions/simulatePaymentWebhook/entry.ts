@@ -18,10 +18,9 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
-// ── Grant entitlements (COPY from paymentWebhook — exact same logic) ─────────
+// ── Grant entitlements (shared logic - same as paymentWebhook) ─────────
 async function grantEntitlement(base44, intent) {
   if (intent.payment_type === 'ppv') {
-    // Create completed Payment record for PPV unlock
     await base44.asServiceRole.entities.Payment.create({
       user_id:             intent.user_id,
       amount_usd:          intent.amount,
@@ -39,13 +38,12 @@ async function grantEntitlement(base44, intent) {
     console.log('[simulatePaymentWebhook] PPV entitlement granted:', { userId: intent.user_id, videoId: intent.video_id });
 
   } else if (intent.payment_type === 'fanclub') {
-    // One-time access pass (monthly / 3mo / 6mo / annual)
     const ACCESS_PERIODS = {
-      fanclub_monthly:  1,   // months
-      premium_monthly:  1,   // months
-      fanclub_3mo:      3,   // months
-      fanclub_6mo:      6,   // months
-      fanclub_annual:   12,  // months
+      fanclub_monthly:  1,
+      premium_monthly:  1,
+      fanclub_3mo:      3,
+      fanclub_6mo:      6,
+      fanclub_annual:   12,
     };
     const months = ACCESS_PERIODS[intent.plan_id] || 1;
     const periodEnd = new Date();
@@ -63,14 +61,12 @@ async function grantEntitlement(base44, intent) {
     console.log('[simulatePaymentWebhook] Fanclub access pass granted:', { userId: intent.user_id, planId: intent.plan_id, months });
 
   } else if (intent.payment_type === 'guest_production_deposit') {
-    // Update GuestProductionApplication deposit status
     if (intent.application_id) {
       await base44.asServiceRole.entities.GuestProductionApplication.update(intent.application_id, {
         status: 'reviewing',
         admin_notes: `Deposit payment confirmed (SIMULATED). Provider: ${intent.provider}, Session: ${intent.provider_session_id}`,
       });
 
-      // Also create a completed Payment record for the deposit
       await base44.asServiceRole.entities.Payment.create({
         user_id:             intent.user_id,
         amount_usd:          intent.amount,
@@ -107,11 +103,10 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { 
       paymentIntentId, 
-      simulatedStatus,    // 'finished' | 'failed' | 'expired' | 'refunded' | 'waiting'
-      actuallyPaid,       // Optional: amount actually paid (for testing partial payments)
+      simulatedStatus,
+      actuallyPaid,
     } = body;
 
-    // Validate input
     if (!paymentIntentId) {
       return Response.json({ error: 'paymentIntentId required' }, { status: 400 });
     }
@@ -130,13 +125,12 @@ Deno.serve(async (req) => {
       adminUser: user.email 
     });
 
-    // Fetch the PaymentIntent
     const intent = await base44.asServiceRole.entities.PaymentIntent.get(paymentIntentId);
     if (!intent) {
       return Response.json({ error: 'PaymentIntent not found' }, { status: 404 });
     }
 
-    // Check idempotency — don't re-process already completed
+    // Idempotency check
     if (intent.status === 'completed' && testStatus === 'finished') {
       return Response.json({ 
         success: true, 
@@ -147,7 +141,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Build simulated webhook payload (matches NOWPayments format)
     const simulatedPayload = {
       payment_id: intent.provider_session_id || 'SIMULATED_' + Date.now(),
       order_id: JSON.parse(intent.metadata || '{}').order_id || `simulated_${paymentIntentId}`,
@@ -161,7 +154,7 @@ Deno.serve(async (req) => {
 
     console.log('[simulatePaymentWebhook] Simulated webhook payload:', simulatedPayload);
 
-    // Normalize event (same logic as paymentWebhook)
+    // Normalize event
     let eventType;
     switch (testStatus) {
       case 'finished':
@@ -186,10 +179,8 @@ Deno.serve(async (req) => {
 
     console.log('[simulatePaymentWebhook] Normalized event:', { eventType, rawStatus: testStatus });
 
-    // ── Process by event type (same logic as paymentWebhook) ──────────────────
-
+    // Process by event type
     if (eventType === 'payment.completed') {
-      // Update PaymentIntent to completed
       await base44.asServiceRole.entities.PaymentIntent.update(paymentIntentId, {
         status:       'completed',
         completed_at: new Date().toISOString(),
@@ -204,7 +195,6 @@ Deno.serve(async (req) => {
         }),
       });
 
-      // Grant entitlement — ONLY here, ONLY after completed status
       await grantEntitlement(base44, intent);
 
       return Response.json({
@@ -286,7 +276,6 @@ Deno.serve(async (req) => {
       });
 
     } else {
-      // payment.pending / confirming — log only, no DB update, no entitlement
       return Response.json({
         success: true,
         action: 'payment.pending',
