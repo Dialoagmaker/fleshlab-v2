@@ -165,10 +165,10 @@ export default function VideoEdit() {
     onSuccess: (res) => {
       const d = res.data;
       if (d?.status === 'applied') {
-        setCheckStatus({ ok: true, msg: `✓ Assets gefunden: ${d.thumbnail_url ? 'Thumbnail' : ''} ${d.preview_url ? '+ Preview' : ''}`.trim() });
+        setCheckStatus({ ok: true, msg: `✓ Assets found: ${d.thumbnail_url ? 'Thumbnail' : ''} ${d.preview_url ? '+ Preview' : ''}`.trim() });
         queryClient.invalidateQueries({ queryKey: ['video', id] });
       } else {
-        setCheckStatus({ ok: false, msg: 'Noch keine Assets im CDN gefunden. Processor läuft evtl. noch.' });
+        setCheckStatus({ ok: false, msg: 'No assets found in CDN yet. Processor may still be running.' });
       }
     },
     onError: (err) => setCheckStatus({ ok: false, msg: err.message }),
@@ -735,7 +735,7 @@ export default function VideoEdit() {
         </div>
         {!isNew && (
           <button
-            onClick={() => { if (window.confirm("Delete this video?")) remove.mutate(); }}
+            onClick={() => { if (window.confirm("Delete this video? This cannot be undone.")) remove.mutate(); }}
             className="p-2 text-muted-foreground hover:text-destructive transition-colors"
           >
             <Trash2 className="w-4 h-4" />
@@ -782,14 +782,14 @@ export default function VideoEdit() {
           video={video}
           brands={brands}
           onClearThumbnail={() => {
-            if (window.confirm('Thumbnail-URL entfernen?')) {
+            if (window.confirm('Remove thumbnail URL?')) {
               base44.entities.Video.update(id, { primary_thumbnail_url: '' }).then(() =>
                 queryClient.invalidateQueries({ queryKey: ['video', id] })
               );
             }
           }}
           onClearPreview={() => {
-            if (window.confirm('Preview/Trailer-URL entfernen?')) {
+            if (window.confirm('Remove preview/trailer URL?')) {
               base44.entities.Video.update(id, { trailer_url: '' }).then(() =>
                 queryClient.invalidateQueries({ queryKey: ['video', id] })
               );
@@ -804,7 +804,7 @@ export default function VideoEdit() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-foreground">Thumbnail &amp; Preview</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Lässt den Processor Thumbnail und Preview-Video neu erstellen.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Re-triggers the processor to regenerate the thumbnail and preview video.</p>
               {retriggerStatus && (
                 <p className={`text-xs mt-1 ${retriggerStatus.ok ? 'text-green-400' : 'text-destructive'}`}>{retriggerStatus.msg}</p>
               )}
@@ -821,7 +821,7 @@ export default function VideoEdit() {
                 className="gap-2"
               >
                 <RefreshCw className={`w-4 h-4 ${retrigger.isPending ? 'animate-spin' : ''}`} />
-                {retrigger.isPending ? 'Wird gesendet…' : 'Assets neu erstellen'}
+                {retrigger.isPending ? 'Sending…' : 'Regenerate Assets'}
               </Button>
               <Button
                 type="button"
@@ -840,7 +840,7 @@ export default function VideoEdit() {
                 className="gap-2 text-xs"
               >
                 <RefreshCw className="w-3 h-3" />
-                Seite aktualisieren
+                Refresh Page
               </Button>
             </div>
           </div>
@@ -1206,8 +1206,8 @@ export default function VideoEdit() {
       {!isNew && (
         <section className="bg-card border border-border rounded-xl p-5 flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-foreground">AI Metadaten generieren</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Generiert Title, Description, SEO, Tags & Kategorien automatisch und speichert sie direkt auf dem Video.</p>
+            <p className="text-sm font-semibold text-foreground">Generate AI Metadata</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Automatically generates title, description, SEO, tags &amp; categories and saves them directly to the video.</p>
             {metaGenStatus && (
               <p className={`text-xs mt-1 ${metaGenStatus.ok ? 'text-green-400' : 'text-destructive'}`}>{metaGenStatus.msg}</p>
             )}
@@ -1217,19 +1217,19 @@ export default function VideoEdit() {
             variant="outline"
             disabled={!id || id === 'new'}
             onClick={async () => {
-              setMetaGenStatus({ ok: true, msg: 'Generiere Metadaten…' });
+              setMetaGenStatus({ ok: true, msg: 'Generating metadata…' });
               try {
                 await base44.functions.invoke('generateVideoMetadata', { video_id: id });
                 queryClient.invalidateQueries({ queryKey: ['video', id] });
-                setMetaGenStatus({ ok: true, msg: '✓ Metadaten generiert und gespeichert. Seite neu laden zum Anzeigen.' });
+                setMetaGenStatus({ ok: true, msg: '✓ Metadata generated and saved. Reload page to view.' });
               } catch (e) {
-                setMetaGenStatus({ ok: false, msg: e.message || 'Fehler beim Generieren.' });
+                setMetaGenStatus({ ok: false, msg: e.message || 'Error generating metadata.' });
               }
             }}
             className="gap-2 shrink-0"
           >
             <Sparkles className="w-4 h-4" />
-            Jetzt generieren
+            Generate Now
           </Button>
         </section>
       )}

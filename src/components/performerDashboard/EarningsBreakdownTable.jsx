@@ -8,12 +8,20 @@ export default function EarningsBreakdownTable({ earnings, summary }) {
   }
 
   const formatDate = (dateStr) => {
-    if (!dateStr) return "N/A";
+    if (!dateStr) return null;
     return new Date(dateStr).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric"
     });
+  };
+
+  const getDisplayDate = (earning) => {
+    return formatDate(earning.paid_at)
+      || formatDate(earning.date)
+      || formatDate(earning.created_date)
+      || earning.period_month
+      || "—";
   };
 
   const getStatusColor = (status) => {
@@ -54,7 +62,7 @@ export default function EarningsBreakdownTable({ earnings, summary }) {
               {earnings.map((earning, idx) => (
                 <TableRow key={earning.id}>
                   <TableCell className="font-medium text-xs">
-                    {formatDate(earning.paid_at) || earning.period_month}
+                   {getDisplayDate(earning)}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="text-xs capitalize">

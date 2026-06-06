@@ -58,14 +58,14 @@ export default function PlatformStatsTab({ performerId, performerToken, revenueS
                 <SelectContent>
                   {availablePeriods.length > 0 ? (
                     availablePeriods.map(month => (
-                      <option key={month} value={month}>{month}</option>
+                      <SelectItem key={month} value={month}>{month}</SelectItem>
                     ))
                   ) : (
                     Array.from({ length: 12 }, (_, i) => {
                       const date = new Date();
                       date.setMonth(date.getMonth() - i);
                       const monthStr = date.toISOString().slice(0, 7);
-                      return <option key={monthStr} value={monthStr}>{monthStr}</option>;
+                      return <SelectItem key={monthStr} value={monthStr}>{monthStr}</SelectItem>;
                     })
                   )}
                 </SelectContent>
