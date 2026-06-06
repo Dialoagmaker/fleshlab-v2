@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Check, Film, Shield, Users, TrendingUp, Star, ChevronRight, Crown } from "lucide-react";
+import { Check, Film, Shield, Users, TrendingUp, Star, ChevronRight, Crown, Lock, FileText } from "lucide-react";
 import SEOMeta from "@/components/SEOMeta";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -120,18 +120,36 @@ export default function BecomePerformer() {
             <Check className="w-8 h-8 text-rose-400" />
           </div>
 
-          <h1 className="text-3xl md:text-4xl font-black">Application received</h1>
+          <h1 className="text-3xl md:text-4xl font-black">Application received.</h1>
 
           <p className="text-white/60 text-base leading-relaxed">
-            Thank you for applying to FLESHLAB.<br />
-            Your application has been submitted successfully and will now be reviewed by our team.
+            Your application has been submitted and will be reviewed by our team within <strong className="text-white">48 business hours</strong>.
           </p>
+
+          {/* What happens next */}
+          <div className="bg-[#111] border border-white/10 rounded-2xl p-6 text-left space-y-3">
+            <div className="text-xs font-bold uppercase tracking-widest text-white/35 mb-3">What happens next</div>
+            {[
+              "We review your profile and uploaded media",
+              "If approved, we contact you with next steps",
+              "You receive a contract for review and signature",
+              "After signing, you receive performer dashboard access",
+              "Your public profile goes live after approval and publishing consent",
+            ].map((step, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <div className="w-5 h-5 rounded-full bg-rose-600/20 border border-rose-600/30 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-rose-400 text-[10px] font-black">{i + 1}</span>
+                </div>
+                <span className="text-white/60 text-sm">{step}</span>
+              </div>
+            ))}
+          </div>
 
           {/* WhatsApp optional block */}
           <div className="bg-[#111] border border-white/10 rounded-2xl p-6 text-left space-y-4">
-            <div className="text-xs font-bold uppercase tracking-widest text-white/35">Optional: Speed up your review</div>
+            <div className="text-xs font-bold uppercase tracking-widest text-white/35">Want to speed up your review?</div>
             <p className="text-white/60 text-sm leading-relaxed">
-              You can message us on WhatsApp to confirm your application. This helps us identify your submission faster.
+              Message us on WhatsApp to confirm your application. This helps us identify your submission faster.
             </p>
             <a
               href={whatsappUrl}
@@ -191,13 +209,13 @@ export default function BecomePerformer() {
               </div>
 
               <h1 className="text-5xl md:text-7xl font-black leading-[1.0] tracking-tight mb-6">
-                READY TO BECOME<br />
-                A <span className="text-rose-500">FLESHLAB</span><br />
-                PERFORMER?
+                GET PRODUCED.<br />
+                GET PROMOTED.<br />
+                <span className="text-rose-500">GET PAID.</span>
               </h1>
 
               <p className="text-lg text-white/65 leading-relaxed mb-8 max-w-xl">
-                You have seen how FLESHLAB works. Now it is your turn. Apply to become part of an adult content platform built around verified performers, homemade productions, performer branding and long-term visibility.
+                Become a verified FLESHLAB performer. Professional studio workflow, contracts, revenue sharing and promotion across platforms.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -220,9 +238,9 @@ export default function BecomePerformer() {
 
               <div className="flex flex-wrap gap-x-5 gap-y-2 text-white/35 text-sm">
                 <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-rose-500/60 shrink-0" />Verified 18+ only</span>
-                <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-rose-500/60 shrink-0" />Performer consent required</span>
-                <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-rose-500/60 shrink-0" />Studio approval</span>
-                <span className="flex items-center gap-1.5"><Film className="w-3.5 h-3.5 text-rose-500/60 shrink-0" />Professional production workflow</span>
+                <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5 text-rose-500/60 shrink-0" />Contracts included</span>
+                <span className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5 text-rose-500/60 shrink-0" />Private data handling</span>
+                <span className="flex items-center gap-1.5"><Film className="w-3.5 h-3.5 text-rose-500/60 shrink-0" />Studio production workflow</span>
               </div>
             </div>
           </div>
@@ -279,14 +297,14 @@ export default function BecomePerformer() {
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-5xl mx-auto">
               {[
-                { icon: Users,       label: "Performer profile creation",       desc: "A verified public profile that builds your audience over time." },
-                { icon: Film,        label: "Professional content planning",     desc: "Scene planning, location, style and boundary documentation." },
-                { icon: Shield,      label: "Studio production workflow",        desc: "Full safety protocols, contracts, releases and compliance." },
-                { icon: Star,        label: "Scene and boundary planning",       desc: "Your limits, your style, your energy — respected and documented." },
-                { icon: TrendingUp,  label: "Marketing assets",                 desc: "Thumbnails, promos and social content from every production." },
-                { icon: Crown,       label: "Fanclub visibility",               desc: "Your own fanclub space where fans can subscribe for more." },
-                { icon: Film,        label: "PPV monetization",                 desc: "Scenes available as pay-per-view in the FLESHLAB catalogue." },
-                { icon: Star,        label: "Long-term performer positioning",  desc: "An ongoing public identity that grows with each release." },
+                { icon: Users,       label: "Your verified public performer profile", desc: "A verified performer page that builds your audience over time." },
+                { icon: Film,        label: "Scene planning with your boundaries",     desc: "We plan every scene around your stated limits, style and energy." },
+                { icon: Shield,      label: "Full safety workflow",                    desc: "Safety protocols, releases and compliance handled on every production." },
+                { icon: Star,        label: "Documented consent and boundaries",       desc: "Your limits are formally documented before any filming begins." },
+                { icon: TrendingUp,  label: "Promo kit: thumbnails, clips, posts",    desc: "Marketing assets created from every production for your channels." },
+                { icon: Crown,       label: "Your own fanclub — fans subscribe",       desc: "Your personal fanclub space with subscriber access and updates." },
+                { icon: Film,        label: "Earn from PPV scene unlocks",             desc: "Your scenes earn from every pay-per-view unlock in the catalogue." },
+                { icon: Star,        label: "A performer brand that grows over time",  desc: "An ongoing public identity that gets more valuable with every release." },
               ].map(({ icon: Icon, label, desc }, i) => (
                 <div key={i} className="bg-[#111] border border-white/8 rounded-2xl p-6">
                   <div className="w-9 h-9 rounded-lg bg-rose-600/15 flex items-center justify-center mb-4">
@@ -367,24 +385,160 @@ export default function BecomePerformer() {
 
             <div className="bg-[#111] border border-white/8 rounded-2xl p-8">
               <h2 className="text-3xl font-black mb-4">
-                HOW PERFORMERS <span className="text-rose-500">MAY EARN</span>
+                HOW PERFORMERS <span className="text-rose-500">EARN</span>
               </h2>
-              <p className="text-white/55 text-sm leading-relaxed mb-6">
-                Approved performers may earn through professional adult productions, content participation, PPV scenes, fanclub visibility, promotional campaigns and long-term studio collaboration.
+              <p className="text-white/55 text-sm leading-relaxed mb-5">
+                Revenue is split based on your performer model. Here is how it works in practice:
               </p>
-              <ul className="space-y-3">
-                {[
-                  "Professional adult productions",
-                  "PPV scene catalogue revenue",
-                  "Fanclub membership visibility",
-                  "Promotional campaigns",
-                  "Long-term studio collaboration",
-                ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 text-white/65 text-sm">
-                    <ChevronRight className="w-4 h-4 text-rose-500/60 shrink-0" />{item}
-                  </li>
-                ))}
-              </ul>
+              <div className="space-y-4 mb-5">
+                <div className="bg-rose-600/8 border border-rose-600/20 rounded-xl p-4">
+                  <div className="text-xs font-black uppercase tracking-widest text-rose-400/70 mb-1">Managed Performer (40%)</div>
+                  <p className="text-white/65 text-sm leading-relaxed">
+                    If your content earns $500 gross in a month, <strong className="text-white">you receive $200</strong>. FLESHLAB receives $300 for production, infrastructure, marketing and distribution.
+                  </p>
+                </div>
+                <div className="bg-purple-600/8 border border-purple-600/20 rounded-xl p-4">
+                  <div className="text-xs font-black uppercase tracking-widest text-purple-400/70 mb-1">Network Performer (70%)</div>
+                  <p className="text-white/65 text-sm leading-relaxed">
+                    If your content earns $500 gross in a month, <strong className="text-white">you receive $350</strong>. FLESHLAB receives $150 for platform and distribution services.
+                  </p>
+                </div>
+              </div>
+              <p className="text-white/30 text-xs leading-relaxed">
+                Actual earnings depend on content volume, viewer demand, publishing frequency and platform performance.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── TWO PERFORMER MODELS ─────────────────────────────────────── */}
+        <section id="how-it-works" className="py-20 px-6 bg-gradient-to-b from-[#0f0606] to-[#080808] border-t border-white/6">
+          <div className="max-w-[1280px] mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl md:text-5xl font-black mb-3">
+                TWO WAYS TO WORK WITH <span className="text-rose-500">FLESHLAB</span>
+              </h2>
+              <p className="text-white/45 text-base max-w-xl mx-auto">
+                Choose the model that fits where you are. You can discuss the right choice during your application review.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              {/* Managed */}
+              <div className="relative bg-gradient-to-br from-[#1c0808] to-[#0d0505] border-2 border-rose-600/45 rounded-2xl p-8 flex flex-col">
+                <div className="absolute -top-3.5 left-6">
+                  <span className="bg-rose-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">
+                    New Performers
+                  </span>
+                </div>
+                <div className="mb-5 mt-2">
+                  <div className="text-xs font-black uppercase tracking-widest text-rose-400/60 mb-1">Managed Performer</div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-5xl font-black text-rose-500">40%</span>
+                    <span className="text-white/40 text-sm">performer share</span>
+                  </div>
+                  <div className="text-white/25 text-xs mt-0.5">60% studio share</div>
+                </div>
+                <p className="text-white/35 text-xs font-bold uppercase tracking-widest mb-2">Best for</p>
+                <p className="text-white/60 text-sm leading-relaxed mb-4">
+                  New performers, first-time adult workers, performers starting from scratch without existing content or audience.
+                </p>
+                <p className="text-white/35 text-xs font-bold uppercase tracking-widest mb-2">What FLESHLAB provides</p>
+                <p className="text-white/60 text-sm leading-relaxed">
+                  Production planning, filming, compliance, profile setup, marketing, platform distribution and ongoing management. You bring your look, energy and consent.
+                </p>
+              </div>
+
+              {/* Network */}
+              <div className="relative bg-gradient-to-br from-[#12101c] to-[#0d0d0d] border-2 border-purple-600/40 rounded-2xl p-8 flex flex-col">
+                <div className="absolute -top-3.5 left-6">
+                  <span className="bg-purple-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">
+                    Established Creators
+                  </span>
+                </div>
+                <div className="mb-5 mt-2">
+                  <div className="text-xs font-black uppercase tracking-widest text-purple-400/60 mb-1">Network Performer</div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-5xl font-black text-purple-400">70%</span>
+                    <span className="text-white/40 text-sm">performer share</span>
+                  </div>
+                  <div className="text-white/25 text-xs mt-0.5">30% studio share</div>
+                </div>
+                <p className="text-white/35 text-xs font-bold uppercase tracking-widest mb-2">Best for</p>
+                <p className="text-white/60 text-sm leading-relaxed mb-4">
+                  Creators with existing content, an audience, fanbase or platform experience on OnlyFans, Chaturbate, or similar.
+                </p>
+                <p className="text-white/35 text-xs font-bold uppercase tracking-widest mb-2">What FLESHLAB provides</p>
+                <p className="text-white/60 text-sm leading-relaxed">
+                  Platform infrastructure, distribution network, SEO, fanclub tools and audience growth. You bring your existing content and audience.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-center text-white/20 text-xs mt-8 max-w-2xl mx-auto">
+              The revenue model is reviewed and agreed during application review. Splits apply to gross platform revenue. Not sure which fits you? Select Managed — it can be discussed during review.
+            </p>
+          </div>
+        </section>
+
+        {/* ── TRUST & SAFETY ───────────────────────────────────────────── */}
+        <section className="py-20 px-6 border-t border-white/6">
+          <div className="max-w-[1280px] mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl md:text-5xl font-black mb-3">
+                YOUR APPLICATION <span className="text-rose-500">IS PRIVATE</span>
+              </h2>
+              <p className="text-white/45 text-base max-w-xl mx-auto">
+                We take your privacy, consent and safety seriously. Here is what you should know before applying.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
+              {[
+                {
+                  icon: Lock,
+                  title: "ID documents are private",
+                  desc: "All uploaded ID documents are stored in encrypted private storage. Only FLESHLAB compliance staff can access them. They are never made public.",
+                },
+                {
+                  icon: Shield,
+                  title: "Media stays private until approved",
+                  desc: "Uploaded photos and videos are for application review only. Nothing is published without your explicit consent and approval.",
+                },
+                {
+                  icon: FileText,
+                  title: "Contracts are professional and reviewable",
+                  desc: "Contracts are legal documents you can read before signing. You have the right to ask questions and to refuse to sign.",
+                },
+                {
+                  icon: Check,
+                  title: "Consent and boundaries are documented",
+                  desc: "Before any production, your limits and consent are formally recorded. You can withdraw at any time before filming begins.",
+                },
+                {
+                  icon: Shield,
+                  title: "No escort, dating or private meetings",
+                  desc: "FLESHLAB is a professional adult production platform. We do not provide escort, dating or private meeting services. Applications involving these expectations are rejected.",
+                },
+                {
+                  icon: Star,
+                  title: "Compliance explained during onboarding",
+                  desc: "Medical testing and compliance requirements are explained clearly during the onboarding stage — not sprung on you unexpectedly.",
+                },
+              ].map(({ icon: Icon, title, desc }, i) => (
+                <div key={i} className="bg-[#111] border border-white/8 rounded-2xl p-6">
+                  <div className="w-9 h-9 rounded-lg bg-emerald-600/10 flex items-center justify-center mb-4">
+                    <Icon className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div className="font-bold text-white text-sm mb-1.5">{title}</div>
+                  <div className="text-white/45 text-xs leading-relaxed">{desc}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="max-w-3xl mx-auto mt-8 bg-emerald-600/6 border border-emerald-600/20 rounded-2xl px-6 py-4 text-center">
+              <p className="text-emerald-400/70 text-sm font-semibold">Verified 18+ only</p>
+              <p className="text-white/30 text-xs mt-1">All applicants must provide valid identity verification confirming they are 18 years or older before any production work is approved.</p>
             </div>
           </div>
         </section>

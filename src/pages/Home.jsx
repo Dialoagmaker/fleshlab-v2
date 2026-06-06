@@ -7,6 +7,7 @@ import TubeVideoCard from "@/components/tube/TubeVideoCard";
 import PerformerCarousel from "@/components/tube/PerformerCarousel";
 import FanclubBanner from "@/components/tube/FanclubBanner";
 import StudioJournal from "@/components/tube/StudioJournal";
+import PerformerRecruitmentBanner from "@/components/public/PerformerRecruitmentBanner";
 
 export default function Home() {
 
@@ -114,6 +115,9 @@ export default function Home() {
 
         {/* Performer Carousel - Tube Style */}
         <PerformerCarousel performers={performers} />
+
+        {/* Performer Recruitment Banner */}
+        <PerformerRecruitmentBanner />
 
         {/* Fanclub Banner - Summer Match */}
         <FanclubBanner />

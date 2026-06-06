@@ -7,7 +7,7 @@ const navItems = [
   { label: "Performers", href: "/performers" },
   { label: "Fanclub", href: "/fanclub" },
   { label: "News", href: "/news" },
-  { label: "Become a Performer", href: "/become-performer" },
+  { label: "Become a Performer", href: "/become-performer", highlight: true },
 ];
 
 export default function TubeNav() {
@@ -22,7 +22,11 @@ export default function TubeNav() {
               key={item.href}
               to={item.href}
               className={`flex items-center gap-1 px-3 py-2 rounded text-sm font-medium whitespace-nowrap transition-colors ${
-                location.pathname === item.href || (item.href !== "/" && location.pathname.startsWith(item.href))
+                item.highlight
+                  ? location.pathname === item.href
+                    ? "text-rose-400 border border-rose-500/60 bg-rose-600/15"
+                    : "text-rose-300 border border-rose-600/40 bg-rose-600/10 hover:bg-rose-600/20 hover:text-rose-200"
+                  : location.pathname === item.href || (item.href !== "/" && location.pathname.startsWith(item.href))
                   ? "text-rose-500"
                   : "text-white/70 hover:text-white hover:bg-white/5"
               }`}
