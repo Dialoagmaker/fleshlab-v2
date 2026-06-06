@@ -22,18 +22,16 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 // ── Server-side authoritative pricing (client CANNOT override) ──────────────
-// Summer Studio Special: 50% off selected monthly Fanclub plans for first 3 months.
-// Only fanclub_monthly and premium_monthly are promo-eligible.
+// CRYPTO-SAFE PRICING (2026-06-06): All prices set above NOWPayments minimums.
 // annual_pass is DISABLED (AsiaPay approval phase). Backend must reject it.
 const SERVER_PRICING = {
   fanclub: {
-    // Promo prices (50% off for first 3 months)
-    fanclub_monthly:  9.99,   // regular $19.99 — Summer Studio Special promo
-    premium_monthly:  14.99,  // regular $29.99 — Summer Studio Special promo
+    fanclub_monthly:  14.99,  // crypto-safe minimum
+    premium_monthly:  24.99,  // crypto-safe pricing
     // annual_pass: DISABLED — do not add back until payment provider approves
   },
   ppv: {
-    standard:  12.99,
+    standard:  14.99,  // crypto-safe minimum
     premium:   19.99,
     exclusive: 24.99,
   },
@@ -48,7 +46,7 @@ const PROMO_ELIGIBLE_PLANS = ['fanclub_monthly', 'premium_monthly'];
 
 // ── Crypto minimum (NOWPayments) ─────────────────────────────────────────────
 // Dynamic minimum will be checked via API. This is fallback only.
-const CRYPTO_MINIMUM_USD = 10.99; // safe fallback minimum with buffer
+const CRYPTO_MINIMUM_USD = 14.99; // crypto-safe fallback minimum
 
 // ── URL safety guard (internal paths only) ────────────────────────────────────
 function safeUrl(url) {

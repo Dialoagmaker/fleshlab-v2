@@ -8,7 +8,7 @@ import { Lock, Shield, Tag } from "lucide-react";
 import { FANCLUB_PLANS } from "@/lib/pricingConfig";
 
 export default function PerformerFanclubHero({ performer, ctaSlot }) {
-  const plan = FANCLUB_PLANS.fanclub_monthly;
+  // Pricing displayed directly - no promo logic
   const name = performer.display_name;
   const img = performer.profile_image_url || performer.cover_image_url;
 
@@ -50,14 +50,6 @@ export default function PerformerFanclubHero({ performer, ctaSlot }) {
             Unlock selected member-only scenes, raw extras, private updates and drops from {name}. See what does not go public.
           </p>
 
-          {/* Promo */}
-          {plan?.promoEligible && (
-            <div className="inline-flex items-center gap-2 bg-amber-500/12 border border-amber-500/25 rounded-full px-4 py-1.5 mb-6 w-fit">
-              <Tag className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span className="text-amber-300 text-sm font-bold">Summer Studio Special — 50% off for the first 3 months</span>
-            </div>
-          )}
-
           {/* Primary CTA */}
           <div className="mb-3 w-full sm:max-w-sm">
             {ctaSlot}
@@ -65,7 +57,7 @@ export default function PerformerFanclubHero({ performer, ctaSlot }) {
 
           {/* Price line */}
           <p className="text-white/20 text-xs mb-8">
-            $9.99/month for the first 3 months, then $19.99/month unless cancelled. Cancel anytime.
+            $14.99/month unless cancelled. Cancel anytime.
           </p>
 
           {/* Trust */}

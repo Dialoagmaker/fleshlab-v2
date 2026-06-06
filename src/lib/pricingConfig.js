@@ -1,59 +1,47 @@
 /**
- * FLESHLAB Pricing Configuration
+ * FLESHLAB Pricing Configuration — CRYPTO SAFE
  * Central source of truth for all pricing and access tiers.
  *
- * ─── ACTIVE PROMOTION ────────────────────────────────────────────────────────
- * Campaign:   Summer Studio Special
- * Discount:   50% off for the first 3 months
- * Eligible:   fanclub_monthly, premium_monthly ONLY
- * Excluded:   annual_pass (disabled), PPV, Guest Production, all other products
+ * ─── PRICING UPDATE (2026-06-06) ─────────────────────────────────────────────
+ * All prices now set safely above NOWPayments crypto minimums.
+ * Minimum crypto checkout: $14.99 USD (with buffer for fluctuation).
  * ─────────────────────────────────────────────────────────────────────────────
- *
- * NOWPayments crypto minimum: $12.99 USD
- * Any product below this threshold must be blocked at checkout.
  */
 
-export const CRYPTO_MINIMUM_USD = 9.99; // Set to promo price floor to allow fanclub_monthly promo ($9.99) through NOWPayments
-
-// ── Active promotion config ──────────────────────────────────────────────────
-export const SUMMER_PROMO = {
-  campaignName: 'Summer Studio Special',
-  publicLabel: '50% OFF',
-  discountPercent: 50,
-  durationMonths: 3,
-  active: true,
-};
+// NOWPayments crypto minimum with safety buffer
+export const CRYPTO_MINIMUM_USD = 14.99; // safe minimum for USDT TRC20 and other common coins
 
 // ── Fanclub plan definitions ──────────────────────────────────────────────────
 export const FANCLUB_PLANS = {
   fanclub_monthly: {
     id: 'fanclub_monthly',
     name: 'Fanclub Monthly',
+    price: 14.99, // crypto-safe pricing
     regularPrice: 19.99,
-    promoPrice: 9.99,
     currency: 'USD',
     interval: 'month',
     enabled: true,
-    promoEligible: true,
-    promo: {
-      ...SUMMER_PROMO,
-      renewalPrice: 19.99,
-    },
+    promoEligible: false, // promo disabled to avoid crypto minimum issues
   },
 
   premium_monthly: {
     id: 'premium_monthly',
     name: 'Premium Monthly',
+    price: 24.99, // crypto-safe pricing
     regularPrice: 29.99,
-    promoPrice: 14.99,
     currency: 'USD',
     interval: 'month',
     enabled: true,
-    promoEligible: true,
-    promo: {
-      ...SUMMER_PROMO,
-      renewalPrice: 29.99,
-    },
+    promoEligible: false,
+  },
+
+  fanclub_3mo: {
+    id: 'fanclub_3mo',
+    name: 'Fanclub 3-Month Access',
+    price: 39.99, // better value bundle
+    currency: 'USD',
+    interval: '3-months',
+    enabled: false, // can be enabled later
   },
 
   annual_pass: {
@@ -71,7 +59,7 @@ export const PRICING = {
     monthly: {
       name: 'Fanclub Monthly',
       planId: 'fanclub_monthly',
-      price: FANCLUB_PLANS.fanclub_monthly.promoPrice,
+      price: FANCLUB_PLANS.fanclub_monthly.price,
       regularPrice: FANCLUB_PLANS.fanclub_monthly.regularPrice,
       currency: 'USD',
       billing: 'monthly',
@@ -79,13 +67,13 @@ export const PRICING = {
     premium: {
       name: 'Premium Monthly',
       planId: 'premium_monthly',
-      price: FANCLUB_PLANS.premium_monthly.promoPrice,
+      price: FANCLUB_PLANS.premium_monthly.price,
       regularPrice: FANCLUB_PLANS.premium_monthly.regularPrice,
       currency: 'USD',
       billing: 'monthly',
     },
     // Legacy flat reference
-    price: FANCLUB_PLANS.fanclub_monthly.promoPrice,
+    price: FANCLUB_PLANS.fanclub_monthly.price,
     currency: 'USD',
     billing: 'monthly',
     features: [
@@ -101,7 +89,7 @@ export const PRICING = {
   ppv: {
     standard: {
       name: 'Standard Scene',
-      price: 12.99,
+      price: 14.99, // crypto-safe minimum
       currency: 'USD',
     },
     premium: {
@@ -138,7 +126,7 @@ export const ACCESS_TIERS = {
   ppv: {
     label: 'Premium PPV',
     description: 'Pay-per-view unlocks for premium exclusive scenes',
-    priceRange: '$12.99 – $19.99',
+    priceRange: '$14.99 – $24.99',
   },
 };
 
@@ -152,8 +140,8 @@ export const getCTAText = (isAuthenticated, accessTier, isExclusive) => {
     return 'Sign Up to Watch';
   }
 
-  if (accessTier === 'fanclub') return `Join Fanclub — $${FANCLUB_PLANS.fanclub_monthly.promoPrice}/month`;
-  if (accessTier === 'ppv') return 'Unlock Full Scene — $12.99';
+  if (accessTier === 'fanclub') return `Join Fanclub — $${FANCLUB_PLANS.fanclub_monthly.price}/month`;
+  if (accessTier === 'ppv') return 'Unlock Full Scene — $14.99';
   return 'Watch Free Video';
 };
 

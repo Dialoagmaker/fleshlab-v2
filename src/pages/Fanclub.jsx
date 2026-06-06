@@ -270,7 +270,7 @@ export default function Fanclub() {
       { title: 'Bonus clips',              desc: 'Short edits and extras made for members.', badge: 'Bonus' },
       { title: 'Behind the scenes',        desc: 'Shoots, performers and the studio world.', badge: 'BTS' },
       { title: 'Performer updates',        desc: 'Updates from verified FLESHLAB performers.', badge: 'Updates' },
-      { title: 'Better value',             desc: 'Fanclub = ongoing access from $9.99/month (Summer promo).', badge: 'Best Value' },
+      { title: 'Better value',             desc: 'Fanclub = ongoing access from $14.99/month (Summer promo).', badge: 'Best Value' },
     ];
     // Offset by 6 so these images are distinct from hero (0-4) and why-join (0-2 + performer 0)
     return defs.map((d, i) => {
@@ -375,10 +375,10 @@ export default function Fanclub() {
                       </div>
                       <div className="text-right">
                         <div className="flex items-baseline gap-1">
-                          <span className="text-4xl font-black text-white">$9.99</span>
+                          <span className="text-4xl font-black text-white">$14.99</span>
                           <span className="text-white/35 text-base">/mo</span>
                         </div>
-                        <p className="text-amber-300/70 text-xs font-bold">50% off · first 3 months</p>
+                        <p className="text-white/35 text-xs font-bold">Crypto-safe pricing</p>
                       </div>
                     </div>
                     {/* Includes */}
@@ -399,7 +399,7 @@ export default function Fanclub() {
                       </div>
                       {performerCTA}
                       <p className="text-white/15 text-xs text-center mt-4">
-                        $9.99/month for the first 3 months, then $19.99/month unless cancelled. Cancel anytime.
+                        $14.99/month unless cancelled. Cancel anytime.
                       </p>
                     </div>
                   </div>
@@ -431,7 +431,7 @@ export default function Fanclub() {
                         </div>
                       </div>
                       <p className="text-white/20 text-xs mt-4">
-                        $9.99/month for the first 3 months, then $19.99/month unless cancelled. Cancel anytime.
+                        $14.99/month unless cancelled. Cancel anytime.
                       </p>
                       <p className="text-white/15 text-xs mt-2">
                         Want more than one performer?{" "}
@@ -514,16 +514,10 @@ export default function Fanclub() {
                 Browse the trailers, meet the performers and get a taste of FLESHLAB. The real experience starts inside the Fanclub: exclusive scenes, early releases, bonus clips, behind-the-scenes moments and member-only updates from verified performers.
               </p>
 
-              {/* Summer Promo Badge */}
-              <div className="inline-flex items-center gap-2 bg-amber-500/15 border border-amber-500/30 rounded-full px-4 py-1.5 mb-5">
-                <Tag className="w-3.5 h-3.5 text-amber-400" />
-                <span className="text-amber-300 text-sm font-bold">Summer Studio Special — 50% off selected monthly plans for the first 3 months</span>
-              </div>
-
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
                 <FanclubCTA
                   planId="fanclub_monthly"
-                  label="Join Fanclub — $9.99/month"
+                  label="Join Fanclub — $14.99/month"
                   {...ctaProps}
                   className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 py-4 rounded-xl text-base h-auto shadow-xl shadow-rose-600/35"
                 />
@@ -532,7 +526,7 @@ export default function Fanclub() {
                   <Play className="w-4 h-4 mr-2 shrink-0" />Unlock One Scene
                 </Button>
               </div>
-              <p className="text-white/30 text-xs mb-6">$9.99/month for the first 3 months, then $19.99/month unless cancelled. Cancel anytime.</p>
+              <p className="text-white/30 text-xs mb-6">$14.99/month unless cancelled. Cancel anytime.</p>
 
               <div className="flex flex-wrap gap-x-5 gap-y-2 text-white/35 text-sm">
                 <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-rose-500/60 shrink-0" />Verified 18+ performers</span>
@@ -679,7 +673,7 @@ export default function Fanclub() {
               {
                 img: performersWithImage[1]?.profile_image_url || publishedVideos[5]?.primary_thumbnail_url || FALLBACK_THUMBS[2].src,
                 title: "Better value if you want more than one scene",
-                desc: "One PPV from $12.99. Fanclub from $9.99/month right now — with ongoing member access.",
+                desc: "One PPV from $14.99. Fanclub from $14.99/month — with ongoing member access.",
               },
               ].map(({ img, title, desc }, i) => (
                 <div key={i} className="relative overflow-hidden rounded-2xl">
@@ -739,7 +733,7 @@ export default function Fanclub() {
                 <div className="flex flex-col sm:flex-row gap-3">
                   <FanclubCTA
                     planId="fanclub_monthly"
-                    label="Join Fanclub — $9.99/month"
+                    label="Join Fanclub — $14.99/month"
                     {...ctaProps}
                     className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 py-4 rounded-xl h-auto shadow-lg shadow-rose-600/30 text-base"
                   />
@@ -786,53 +780,43 @@ export default function Fanclub() {
         <section className="py-20 px-6">
           <div className="max-w-[1280px] mx-auto">
             <div className="text-center mb-4">
-              {/* Campaign badge */}
-              <div className="inline-flex items-center gap-2 bg-amber-500/15 border border-amber-500/30 rounded-full px-5 py-2 mb-6">
-                <Tag className="w-4 h-4 text-amber-400" />
-                <span className="text-amber-300 text-sm font-black tracking-wide uppercase">Summer Studio Special</span>
-              </div>
               <h2 className="text-4xl md:text-5xl font-black mb-3">
-                50% OFF <span className="text-rose-500">FANCLUB ACCESS</span>
+                SIMPLE <span className="text-rose-500">PRICING</span>
               </h2>
               <p className="text-white/55 text-lg max-w-2xl mx-auto mb-2">
-                Get 50% off selected monthly Fanclub plans for the first 3 months.
+                One price. Full access. Cancel anytime.
               </p>
               <p className="text-white/30 text-sm max-w-xl mx-auto">
-                Annual passes are excluded from this promotion. After the promotional period, your membership renews at the regular monthly price unless cancelled.
+                Fanclub membership provides ongoing access to exclusive content, early releases, bonus clips and performer updates.
               </p>
             </div>
 
-            {/* Two promo plan cards */}
-            <div className="max-w-3xl mx-auto grid md:grid-cols-2 gap-6 mt-10">
+            {/* Single plan card */}
+            <div className="max-w-xl mx-auto mt-10">
 
               {/* Fanclub Monthly */}
               <div className="relative bg-gradient-to-br from-[#1c0909] via-[#160606] to-[#0d0404] border-2 border-rose-600/55 rounded-2xl p-8 flex flex-col shadow-[0_0_50px_rgba(220,38,38,0.18)]">
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap">
                   <Badge className="bg-rose-600 text-white border-0 px-4 py-1.5 text-xs font-black tracking-widest uppercase shadow-lg">
-                    50% OFF — SUMMER STUDIO SPECIAL
+                    MOST POPULAR
                   </Badge>
                 </div>
 
                 <h3 className="text-xl font-black text-white mb-1 mt-2">Fanclub Monthly</h3>
 
-                {/* Promo price */}
+                {/* Price */}
                 <div className="flex items-baseline gap-2 mb-1">
-                  <span className="text-5xl font-black text-white">$9.99</span>
+                  <span className="text-5xl font-black text-white">$14.99</span>
                   <span className="text-white/45 text-lg">/month</span>
                 </div>
-                {/* Regular price struck */}
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="line-through text-white/30 text-base">$19.99/month</span>
-                  <span className="bg-rose-600/20 text-rose-400 text-xs font-bold px-2 py-0.5 rounded">50% OFF</span>
-                </div>
+                <p className="text-white/35 text-xs mb-4">Crypto-safe pricing. Instant access after payment.</p>
 
                 <p className="text-white/55 text-sm leading-relaxed mb-3 flex-1">
                   Full monthly access to exclusive fanclub content, early releases, bonus clips and performer updates.
                 </p>
 
                 <div className="bg-white/5 rounded-xl px-4 py-3 mb-5 text-xs text-white/45 leading-relaxed">
-                  <span className="text-amber-300 font-bold">50% off for the first 3 months.</span><br />
-                  Then $19.99/month unless cancelled. Cancel anytime.
+                  $14.99/month unless cancelled. Cancel anytime.
                 </div>
 
                 <FanclubCTA planId="fanclub_monthly" label="Join Fanclub" {...ctaProps}
@@ -865,7 +849,7 @@ export default function Fanclub() {
                 </p>
 
                 <div className="bg-white/5 rounded-xl px-4 py-3 mb-5 text-xs text-white/45 leading-relaxed">
-                  <span className="text-amber-300 font-bold">50% off for the first 3 months.</span><br />
+                  <span className="text-amber-300 font-bold">ongoing access.</span><br />
                   Then $29.99/month unless cancelled. Cancel anytime.
                 </div>
 
@@ -980,14 +964,14 @@ export default function Fanclub() {
                 Start free, unlock one scene, or join Fanclub for the full FLESHLAB member experience.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
-                <FanclubCTA planId="fanclub_monthly" label="Join Fanclub — $9.99/mo" {...ctaProps}
+                <FanclubCTA planId="fanclub_monthly" label="Join Fanclub — $14.99/mo" {...ctaProps}
                   className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-10 py-4 rounded-xl h-auto shadow-xl shadow-rose-600/35 min-w-[180px] text-base" />
                 <Button size="lg" variant="outline" onClick={scrollToPPV}
                   className="border-white/20 text-white hover:bg-white/8 font-bold px-10 py-4 rounded-xl h-auto min-w-[180px] text-base">
                   Unlock One Scene
                 </Button>
               </div>
-              <p className="text-white/25 text-xs">50% off for the first 3 months (Summer Studio Special). Then $19.99/month unless cancelled.</p>
+              <p className="text-white/25 text-xs">ongoing access (Summer Studio Special). Then $19.99/month unless cancelled.</p>
             </div>
           </div>
         </section>
