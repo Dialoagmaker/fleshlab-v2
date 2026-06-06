@@ -315,7 +315,65 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const { mode = 'dry_run', video_ids = [] } = await req.json();
+    const { mode = 'dry_run', video_ids = [], p0_correction = false } = await req.json();
+    
+    // P0 CORRECTION MODE: Apply revised commercial slugs to 12 specific videos
+    if (p0_correction) {
+      const p0Corrections = [
+        { id: '6a1c2c0b69fc71cba221dde6', slug: 'kraken-asian-bathroom-solo-jerkoff-cumshot' },
+        { id: '6a1c2c0da273608b14f18bc3', slug: 'ze-d-asian-dildo-masturbation-ass-play' },
+        { id: '6a1c2c07d20257c3e1444473', slug: 'kraken-asian-toilet-solo-cumming' },
+        { id: '6a1c2c02a6588ed93755fff3', slug: 'asian-man-cumming-compilation-masturbation' },
+        { id: '6a1c2c0f3ae6c511274fd24c', slug: 'asian-twink-shower-body-play-solo' },
+        { id: '6a1c2c0ec2ec20769d4fc9dd', slug: 'twink-shower-dildo-play-ass-worship' },
+        { id: '6a1c2c0d75163d4961f1a086', slug: 'twink-mirror-solo-jerkoff-cumshot' },
+        { id: '6a1c2c0dc18e1dafa3121b67', slug: 'twink-handjob-cumshot-body-shot' },
+        { id: '6a1c2c0ddea4c758d2a119a1', slug: 'cuban-twink-mirror-stroke-solo' },
+        { id: '6a1c2c0c70d76e735c0bab9d', slug: 'cuban-twink-strip-tease-solo' },
+        { id: '6a1c2c07678e3f727dfbe569', slug: 'cuban-muscular-bathroom-jerkoff-solo' },
+        { id: '6a1c2c067564527466c34ecf', slug: 'twink-shower-solo-cock-ass-play' },
+      ];
+      
+      const results = [];
+      for (const correction of p0Corrections) {
+        const video = await base44.entities.Video.get(correction.id);
+        if (!video) {
+          results.push({ id: correction.id, status: 'error', error: 'Video not found' });
+          continue;
+        }
+        
+        const currentSlug = video.slug;
+        const legacySlugs = video.legacy_slugs || [];
+        
+        // Add current slug to legacy if it's not already there and not the same as new slug
+        if (currentSlug !== correction.slug && !legacySlugs.includes(currentSlug)) {
+          legacySlugs.push(currentSlug);
+        }
+        
+        // Update the video
+        await base44.entities.Video.update(correction.id, {
+          slug: correction.slug,
+          legacy_slugs: legacySlugs
+        });
+        
+        results.push({
+          id: correction.id,
+          old_slug: currentSlug,
+          new_slug: correction.slug,
+          legacy_slugs: legacySlugs,
+          status: 'updated'
+        });
+      }
+      
+      return Response.json({
+        ok: true,
+        mode: 'p0_correction',
+        total: p0Corrections.length,
+        updated: results.filter(r => r.status === 'updated').length,
+        errors: results.filter(r => r.status === 'error').length,
+        results
+      });
+    }
     
     if (!['dry_run', 'apply'].includes(mode)) {
       return Response.json({ error: 'Mode must be "dry_run" or "apply"' }, { status: 400 });
