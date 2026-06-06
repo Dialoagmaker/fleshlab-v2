@@ -11,6 +11,8 @@ const ALLOWED_FILE_TYPES = {
   intro_video: { mimes: ['video/mp4', 'video/quicktime', 'video/webm'], maxBytes: 2 * 1024 * 1024 * 1024, prefix: 'videos' },
   hardcore_video: { mimes: ['video/mp4', 'video/quicktime', 'video/webm'], maxBytes: 2 * 1024 * 1024 * 1024, prefix: 'videos' },
   id_document: { mimes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'], maxBytes: 20 * 1024 * 1024, prefix: 'id_docs' },
+  id_document_back: { mimes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'], maxBytes: 20 * 1024 * 1024, prefix: 'id_docs' },
+  id_selfie: { mimes: ['image/jpeg', 'image/png', 'image/webp'], maxBytes: 20 * 1024 * 1024, prefix: 'id_docs' },
 };
 
 Deno.serve(async (req) => {

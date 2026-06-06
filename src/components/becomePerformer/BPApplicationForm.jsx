@@ -330,7 +330,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess }, r
                 hint="Clear photo of the back of your ID, if it has one."
                 fileType="id_document_back"
                 sessionId={sessionId}
-                accept="image/jpeg,image/png,image/webp,application/pdf"
+                accept="image/jpeg,image/png,image/webp"
                 onUploaded={key => setP3(prev => ({ ...prev, id_back_r2_key: key }))}
                 onCleared={() => setP3(prev => ({ ...prev, id_back_r2_key: null }))}
               />
