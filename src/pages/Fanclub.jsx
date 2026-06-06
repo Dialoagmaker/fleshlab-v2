@@ -956,7 +956,6 @@ export default function Fanclub() {
               </div>
             </div>
           </div>
-        </div>
         </section>
 
         {/* ══════════════════════════════════════════════════════════════════
