@@ -1,10 +1,67 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
+// BANNED SEO TERMS - NEVER GENERATE THESE
+const BANNED_SEO_TERMS = [
+  "lesbian", "lesbian-porn", "lesbian-videos",
+  "adult-toys", "adult-products", "adult-podcasts",
+  "fleshlight", "fleshlight-reviews", "fleshlight-discount-code",
+  "discount-code", "how-to-use-a-fleshlight",
+  "niche-porn-categories", "male-sex-toys",
+  "free-porn", "free-porn-adult-toys-best",
+  "teen", "boy", "young-boy", "young-twink",
+  "live-gay-cams", "gay-video", "twink-porn",
+  "porn-tube", "premium-gay-videos"
+];
+
 const PARENT_GROUP_LABELS = [
   'age', 'ethnicity', 'body', 'orientation', 'number of people',
   'actions', 'production', 'apparel', 'scenario', 'fetish',
   'language', 'location', 'sex toys',
 ];
+
+function containsBannedTerms(text) {
+  if (!text) return { hasBanned: false, found: [] };
+  const lower = text.toLowerCase();
+  const found = BANNED_SEO_TERMS.filter(term => lower.includes(term));
+  return { hasBanned: found.length > 0, found };
+}
+
+function validateSlug(slug) {
+  if (!slug) return { valid: false, issues: ['Slug is empty'] };
+  const issues = [];
+  const words = slug.split('-').filter(w => w.trim());
+  
+  // Check length
+  if (words.length > 10) issues.push(`Too long: ${words.length} words (max 10)`);
+  if (words.length < 3) issues.push(`Too short: ${words.length} words (min 3)`);
+  
+  // Check for banned terms
+  const bannedCheck = containsBannedTerms(slug);
+  if (bannedCheck.hasBanned) issues.push(`Banned terms: ${bannedCheck.found.join(', ')}`);
+  
+  // Check for truncation (words cut off mid-way)
+  const truncated = words.filter(w => w.length > 2 && !/^[a-z0-9]+$/.test(w));
+  if (truncated.length > 0) issues.push(`Truncated words: ${truncated.join(', ')}`);
+  
+  // Check for duplicate consecutive words
+  for (let i = 0; i < words.length - 1; i++) {
+    if (words[i] === words[i + 1]) issues.push(`Duplicate word: ${words[i]}`);
+  }
+  
+  return { valid: issues.length === 0, issues, wordCount: words.length };
+}
+
+function sanitizeSlug(text) {
+  if (!text) return '';
+  // Remove banned terms
+  let slug = text.toLowerCase();
+  BANNED_SEO_TERMS.forEach(term => {
+    slug = slug.replace(new RegExp(term.replace(/-/g, '[-\\s]'), 'gi'), '');
+  });
+  // Clean up
+  slug = slug.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').replace(/-+/g, '-');
+  return slug;
+}
 
 const isParentGroupLabel = (v) => v && PARENT_GROUP_LABELS.includes(v.toLowerCase().trim());
 
@@ -103,15 +160,64 @@ Deno.serve(async (req) => {
       });
     }
 
-    step = 'normalize_taxonomy';
+    step = 'validate_and_clean';
+    // Check for banned terms in all generated fields
+    const fieldsToCheck = ['title', 'description', 'seo_title', 'seo_description', 'short_teaser'];
+    const bannedIssues = [];
+    fieldsToCheck.forEach(field => {
+      if (draft[field]) {
+        const check = containsBannedTerms(draft[field]);
+        if (check.hasBanned) {
+          bannedIssues.push(`${field}: ${check.found.join(', ')}`);
+          // Remove banned terms from the field
+          let cleaned = draft[field];
+          check.found.forEach(term => {
+            cleaned = cleaned.replace(new RegExp(term.replace(/-/g, '[-\\s]'), 'gi'), '');
+          });
+          draft[field] = cleaned.trim();
+        }
+      }
+    });
+    
+    // Validate and clean tags
+    if (draft.tags && Array.isArray(draft.tags)) {
+      draft.tags = draft.tags.filter(tag => {
+        const check = containsBannedTerms(tag);
+        if (check.hasBanned) {
+          bannedIssues.push(`tag "${tag}": ${check.found.join(', ')}`);
+          return false;
+        }
+        return true;
+      });
+    }
+    
+    // Validate categories
     const catVal = normalizeCategories(draft.categories || [], `${draft.title||''} ${draft.description||''}`.toLowerCase());
-    draft.categories = catVal.normalized;
+    draft.categories = catVal.normalized.filter(cat => {
+      const check = containsBannedTerms(cat);
+      if (check.hasBanned) {
+        bannedIssues.push(`category "${cat}": ${check.found.join(', ')}`);
+        return false;
+      }
+      return true;
+    });
 
+    // Fix typos
     if (draft.seo_title) draft.seo_title = fixTypos(draft.seo_title);
     if (draft.seo_description) draft.seo_description = fixTypos(draft.seo_description);
     if (draft.title) draft.title = fixTypos(draft.title);
     if (draft.description) draft.description = fixTypos(draft.description);
     if (draft.seo_title && !draft.seo_title.includes('FLESHLAB')) draft.seo_title = draft.seo_title.replace(/\s*\|.*$/,'').trim() + ' | FLESHLAB';
+    
+    // Generate clean slug from title
+    if (draft.title) {
+      const proposedSlug = sanitizeSlug(draft.title);
+      const slugValidation = validateSlug(proposedSlug);
+      if (!slugValidation.valid) {
+        bannedIssues.push(`slug issues: ${slugValidation.issues.join('; ')}`);
+      }
+      draft.proposed_slug = proposedSlug;
+    }
 
     step = 'save';
     const apply = {};
@@ -140,9 +246,11 @@ Deno.serve(async (req) => {
       categories: draft.categories,
       tags: draft.tags,
       ppv_price: draft.ppv_price,
+      proposed_slug: draft.proposed_slug,
       taxonomy_warnings: catVal.warnings, 
       taxonomy_removed: catVal.removed,
-      warnings: [...warnings, ...catVal.warnings],
+      warnings: [...warnings, ...catVal.warnings, ...bannedIssues],
+      banned_terms_removed: bannedIssues.length > 0,
       input_summary: {
         video_id,
         has_title: !!video.title,
