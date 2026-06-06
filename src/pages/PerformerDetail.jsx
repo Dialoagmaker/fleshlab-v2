@@ -10,6 +10,7 @@ import PremiumTeaserBlock from "@/components/public/PremiumTeaserBlock";
 import PerformerBadges from "@/components/public/PerformerBadges";
 import FanclubSupportBlock from "@/components/public/FanclubSupportBlock";
 import { generatePerformerTitle, generatePerformerMetaDescription, generatePerformerSEOBio } from "@/lib/performerSeoUtils";
+import { FANCLUB_PLANS } from "@/lib/pricingConfig";
 import { 
   ArrowLeft, 
   Loader2, 
@@ -41,7 +42,11 @@ export default function PerformerDetail() {
   };
   
   const handleJoinFanclub = () => {
-    requireSignup('/fanclub');
+    const fanclubUrl = `/fanclub?performer=${slug}`;
+    if (!requireSignup(fanclubUrl, 'fanclub', { planId: 'fanclub_monthly' })) {
+      // User is authenticated — navigate directly to fanclub page with performer context
+      navigate(fanclubUrl);
+    }
   };
 
   // Fetch all data — only published videos for public safety
@@ -306,7 +311,7 @@ export default function PerformerDetail() {
                   {fanclubOrExclusive && (
                     <Button onClick={handleJoinFanclub} variant="outline" className="w-full bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 border-purple-600/40 px-8 py-7 text-lg font-bold gap-2.5 rounded-xl">
                       <Crown className="w-6 h-6" />
-                      {isAuthenticated ? 'Join Fanclub — $12.99/month' : 'Create Account to Join Fanclub'}
+                      {isAuthenticated ? `Join Fanclub — $${FANCLUB_PLANS.fanclub_monthly.promoPrice}/month` : 'Create Account to Join Fanclub'}
                     </Button>
                   )}
                 </div>
