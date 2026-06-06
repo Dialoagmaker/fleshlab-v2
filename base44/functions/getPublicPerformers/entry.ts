@@ -59,7 +59,6 @@ Deno.serve(async (req) => {
       onlyfans_url: p.onlyfans_url,
       twitter_url: p.twitter_url,
       instagram_url: p.instagram_url,
-      date_of_birth: p.date_of_birth,
       created_date: p.created_date,
     }));
 

@@ -2,9 +2,8 @@ import React from "react";
 import { CheckCircle2, MapPin, Film, ArrowRight, Star } from "lucide-react";
 
 export default function PerformerCard({ performer, brands = [], videoCount = 0, featured = false }) {
-  const age = performer.date_of_birth
-    ? Math.floor((new Date() - new Date(performer.date_of_birth)) / (1000 * 60 * 60 * 24 * 365.25))
-    : null;
+  // date_of_birth is not included in the public API response (PII)
+  const age = null;
 
   // Find performer's primary brand/studio
   const brand = performer.brand_id ? brands.find(b => b.id === performer.brand_id) : null;

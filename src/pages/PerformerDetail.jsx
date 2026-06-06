@@ -44,20 +44,20 @@ export default function PerformerDetail() {
     requireSignup('/fanclub');
   };
 
-  // Fetch all data
+  // Fetch all data — only published videos for public safety
   const { data: performers = [] } = useQuery({
     queryKey: ['public-performers'],
-    queryFn: () => base44.entities.Performer.list(),
+    queryFn: () => base44.entities.Performer.filter({ status: 'active' }),
   });
 
   const { data: videos = [] } = useQuery({
-    queryKey: ['public-videos'],
-    queryFn: () => base44.entities.Video.list(),
+    queryKey: ['public-videos-published'],
+    queryFn: () => base44.entities.Video.filter({ status: 'published' }),
   });
 
   const { data: brands = [] } = useQuery({
     queryKey: ['public-brands'],
-    queryFn: () => base44.entities.Brand.list(),
+    queryFn: () => base44.entities.Brand.filter({ status: 'active' }),
   });
 
   const { data: videoPerformers = [] } = useQuery({
