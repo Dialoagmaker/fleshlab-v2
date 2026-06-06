@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import {
   Users, CheckCircle, XCircle, Clock, Eye, MessageSquare, UserPlus,
   Search, Filter, Mail, Phone, FileText, Image as ImageIcon, Video,
-  Download, AlertTriangle, ExternalLink, Send, RefreshCw, Lock, Copy, PhoneCall, Link as LinkIcon
+  Download, AlertTriangle, ExternalLink, Send, RefreshCw, Lock, Copy, PhoneCall, Link as LinkIcon, Trash2
 } from "lucide-react";
 import { format, formatDistanceToNow, differenceInYears } from "date-fns";
 
@@ -121,6 +121,8 @@ export default function Applications() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedApp, setSelectedApp] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null); // app to delete
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [adminNotes, setAdminNotes] = useState("");
@@ -158,6 +160,17 @@ export default function Applications() {
       toast.success("Application updated");
     },
     onError: (e) => toast.error(e.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.GuestProductionApplication.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      setDeleteTarget(null);
+      setDeleteConfirmText("");
+      toast.success("Application deleted");
+    },
+    onError: () => toast.error("Could not delete application. Please try again."),
   });
 
   // Check contract readiness - returns array of missing fields
@@ -657,11 +670,21 @@ export default function Applications() {
                     </Badge>
                   </td>
                   <td className="p-4 text-right">
-                    <Button variant="outline" size="sm" onClick={() => {
-                      setSelectedApp(app); setAdminNotes(""); setContactMsg(""); setActiveTab("info"); setIsDetailOpen(true);
-                    }}>
-                      <Eye className="w-4 h-4" /> Review
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button variant="outline" size="sm" onClick={() => {
+                        setSelectedApp(app); setAdminNotes(""); setContactMsg(""); setActiveTab("info"); setIsDetailOpen(true);
+                      }}>
+                        <Eye className="w-4 h-4" /> Review
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-red-800/40 text-red-400 hover:bg-red-600/10 hover:border-red-600/50"
+                        onClick={() => { setDeleteTarget(app); setDeleteConfirmText(""); }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -1504,6 +1527,70 @@ export default function Applications() {
               >
                 <CheckCircle className="w-4 h-4 mr-2" /> 
                 {selectedApp.status === 'approved' ? 'Save Contract Data' : 'Save & Approve'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* ── Delete Confirmation Dialog ─────────────────────────────── */}
+      {deleteTarget && (
+        <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) { setDeleteTarget(null); setDeleteConfirmText(""); } }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-400">
+                <Trash2 className="w-5 h-5" /> Delete application?
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {deleteTarget.status === "approved" ? (
+                <div className="bg-red-600/10 border border-red-600/30 rounded-lg px-4 py-3 text-sm text-red-300">
+                  <AlertTriangle className="w-4 h-4 inline mr-1.5 mb-0.5" />
+                  <strong>This application is approved.</strong> Deleting it may remove review history and associated compliance data. Type <strong>DELETE</strong> to confirm.
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  This will permanently remove this performer application from the admin list. Uploaded review media and ID documents stored in private R2 will remain in storage until cleaned up separately.
+                </p>
+              )}
+
+              <div className="bg-secondary rounded-lg px-4 py-3 space-y-0.5">
+                <div className="text-sm font-medium text-foreground">{deleteTarget.applicant_name}</div>
+                <div className="text-xs text-muted-foreground">{deleteTarget.email}</div>
+                <Badge className={`${STATUS_COLOR[deleteTarget.status] || "bg-gray-600"} text-white text-xs mt-1`}>
+                  {deleteTarget.status?.replace("_", " ")}
+                </Badge>
+              </div>
+
+              {deleteTarget.status === "approved" && (
+                <div className="space-y-1.5">
+                  <label className="text-xs text-muted-foreground">Type DELETE to confirm</label>
+                  <input
+                    value={deleteConfirmText}
+                    onChange={e => setDeleteConfirmText(e.target.value)}
+                    placeholder="DELETE"
+                    className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground outline-none focus:border-red-500"
+                  />
+                </div>
+              )}
+
+              <p className="text-xs text-muted-foreground/60">
+                Note: Uploaded files in private R2 storage are not deleted by this action. File cleanup is a separate secure admin task.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setDeleteTarget(null); setDeleteConfirmText(""); }}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={
+                  deleteMutation.isPending ||
+                  (deleteTarget.status === "approved" && deleteConfirmText !== "DELETE")
+                }
+                onClick={() => deleteMutation.mutate(deleteTarget.id)}
+              >
+                {deleteMutation.isPending ? "Deleting…" : "Delete Application"}
               </Button>
             </DialogFooter>
           </DialogContent>
