@@ -138,7 +138,7 @@ export default function Videos() {
         }}
       />
       <div className="min-h-screen bg-[#0a0a0a]">
-        {/* Cinematic Hero Section */}
+        {/* Always render hero section immediately for SEO and UX */}
         <div className="relative bg-gradient-to-b from-[#0f0f0f] via-[#0a0a0a] to-[#0a0a0a] border-b border-rose-600/20 pb-6 pt-10 px-4 overflow-hidden">
           {/* Subtle rose glow */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-rose-600/5 rounded-full blur-[100px] pointer-events-none" />
@@ -199,16 +199,18 @@ export default function Videos() {
               </div>
             </div>
 
-            {/* Live counter */}
-            {isLoading ? (
-              <p className="text-white/40 text-xs">Loading videos...</p>
-            ) : (
-              <p className="text-white/50 text-xs">
-                <span className="font-semibold text-white">{total}</span> {total === 1 ? 'video' : 'videos'} available
-                {hasMore && <span className="mx-1">·</span>}
-                {hasMore && <span>Page {page}</span>}
-              </p>
-            )}
+            {/* Live counter - always render immediately */}
+            <p className="text-white/50 text-xs">
+              {isLoading ? (
+                <>Loading {total > 0 ? total : 'videos'}...</>
+              ) : (
+                <>
+                  <span className="font-semibold text-white">{total}</span> {total === 1 ? 'video' : 'videos'} available
+                  {hasMore && <span className="mx-1">·</span>}
+                  {hasMore && <span>Page {page}</span>}
+                </>
+              )}
+            </p>
           </div>
         </div>
 

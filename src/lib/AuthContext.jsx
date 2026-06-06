@@ -22,12 +22,12 @@ export const AuthProvider = ({ children }) => {
       const storedToken = appParams.token || localStorage.getItem('base44_access_token');
       
       if (!storedToken) {
-        // No token - not authenticated
+        // No token - not authenticated, skip user fetch entirely
         setUser(null);
         setIsAuthenticated(false);
         setIsLoadingAuth(false);
         setAuthChecked(true);
-        console.log('AUTH_NO_TOKEN');
+        console.log('AUTH_NO_TOKEN - skipping user fetch');
         return;
       }
 
@@ -47,18 +47,19 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(true);
         console.log('AUTH_SUCCESS', { role: currentUser.role, email: currentUser.email });
       } else {
-        // Token invalid - clear it
+        // Token invalid - clear it and treat as anonymous
         setUser(null);
         setIsAuthenticated(false);
         localStorage.removeItem('base44_access_token');
-        console.log('AUTH_TOKEN_INVALID');
+        console.log('AUTH_TOKEN_INVALID - treating as anonymous');
       }
     } catch (error) {
-      console.warn('AUTH_ERROR', error);
+      console.warn('AUTH_ERROR - treating as anonymous', error);
       setUser(null);
       setIsAuthenticated(false);
       localStorage.removeItem('base44_access_token');
     } finally {
+      // Always complete auth check - public pages must not be blocked
       setIsLoadingAuth(false);
       setAuthChecked(true);
     }
