@@ -88,7 +88,7 @@ export default function PerformerDashboard() {
     <div className="min-h-screen bg-background">
       <DashboardHeader 
         performer={performer?.performer} 
-        onLogout={() => { localStorage.removeItem("performer_session_token"); localStorage.removeItem("performer_data"); navigate("/performerlogin"); }} 
+        onLogout={() => { localStorage.removeItem("performer_session_token"); localStorage.removeItem("performer_data"); navigate("/performer/login"); }} 
       />
       <PerformerDashboardTabs 
         performer={performer} 
