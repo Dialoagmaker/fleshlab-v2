@@ -874,6 +874,108 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Action: get_current_month_earnings_php
+    if (action === 'get_current_month_earnings_php') {
+      // Get current period (YYYY-MM)
+      const now = new Date();
+      const currentMonth = now.toISOString().slice(0, 7); // e.g., "2026-06"
+      const monthName = now.toLocaleString('en-US', { month: 'long' }); // e.g., "June"
+      const year = now.getFullYear();
+      
+      // Get exchange rate from env (default: 57.5 PHP per 1 USD - approximate mid-2026 rate)
+      const USD_TO_PHP = parseFloat(Deno.env.get('USD_TO_PHP') || '57.5');
+      
+      // Fetch all earnings sources for current month
+      const [legacyEarnings, lineItems, videoPerformers] = await Promise.all([
+        base44.asServiceRole.entities.PerformerEarning.filter({
+          performer_id: myPerformer.id,
+          period_month: currentMonth,
+          status: { $in: ['pending', 'approved', 'paid', 'held'] } // exclude draft/cancelled/refunded
+        }),
+        base44.asServiceRole.entities.PerformerEarningLineItem.filter({
+          performer_id: myPerformer.id,
+          period_month: currentMonth,
+          status: { $in: ['pending', 'approved', 'paid', 'held'] }
+        }),
+        base44.asServiceRole.entities.VideoPerformer.filter({
+          performer_id: myPerformer.id
+        })
+      ]);
+      
+      // Get video IDs for stats lookup
+      const videoIds = videoPerformers.map(vp => vp.video_id);
+      
+      // Fetch VideoStatSnapshot for current month (both internal and external-only)
+      const [internalStatsSets, externalOnlySnapshots] = await Promise.all([
+        Promise.all(
+          videoIds.map(vid =>
+            base44.asServiceRole.entities.VideoStatSnapshot.filter({
+              video_id: vid,
+              period_month: currentMonth
+            }).catch(() => [])
+          )
+        ),
+        base44.asServiceRole.entities.VideoStatSnapshot.filter({
+          performer_id: myPerformer.id,
+          source_type: 'external_manual',
+          period_month: currentMonth
+        }).catch(() => [])
+      ]);
+      
+      const internalStats = internalStatsSets.flat();
+      
+      // Check which video_ids are already covered by manual line items to avoid double counting
+      const existingVideoIds = new Set(
+        [...(lineItems || []), ...(legacyEarnings || [])]
+          .filter(e => e.source_type === 'video_platform' || e.earning_type === 'video_platform')
+          .map(e => e.video_id)
+          .filter(Boolean)
+      );
+      
+      // Filter stats: only include if NOT already in manual line items
+      const statsToInclude = internalStats.filter(s => !s.video_id || !existingVideoIds.has(s.video_id));
+      const allStats = [...statsToInclude, ...externalOnlySnapshots];
+      
+      // Calculate gross revenue from all sources
+      const legacyGross = (legacyEarnings || []).reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0);
+      const lineItemGross = (lineItems || []).reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0);
+      const statsGross = allStats.reduce((sum, s) => sum + (s.revenue_usd || 0), 0);
+      
+      const grossRevenueUSD = legacyGross + lineItemGross + statsGross;
+      
+      // Get performer share percentage
+      const performerSharePct = myPerformer.revenue_split_pct || 40;
+      const performerEarningsUSD = grossRevenueUSD * (performerSharePct / 100);
+      
+      // Convert to PHP
+      const performerEarningsPHP = performerEarningsUSD * USD_TO_PHP;
+      
+      // Build source summary
+      const sourceSummary = {
+        internal_video_revenue: internalStats.reduce((sum, s) => sum + (s.revenue_usd || 0), 0),
+        external_video_revenue: externalOnlySnapshots.reduce((sum, s) => sum + (s.revenue_usd || 0), 0),
+        fanclub_revenue: (legacyEarnings || []).filter(e => e.earning_type === 'fanclub').reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0),
+        ppv_revenue: (legacyEarnings || []).filter(e => e.earning_type === 'ppv').reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0),
+        other_revenue: legacyGross + lineItemGross - sourceSummary.fanclub_revenue - sourceSummary.ppv_revenue
+      };
+      
+      return Response.json({
+        success: true,
+        performer_id: myPerformer.id,
+        month: monthName,
+        year,
+        currency: 'PHP',
+        gross_revenue_base: grossRevenueUSD,
+        performer_share_percentage: performerSharePct,
+        performer_earnings_base: performerEarningsUSD,
+        exchange_rate_to_php: USD_TO_PHP,
+        performer_earnings_php: performerEarningsPHP,
+        is_final: false,
+        source_summary: sourceSummary,
+        display_currency: 'PHP'
+      });
+    }
+
     // Action: get_fanclub
     if (action === 'get_fanclub') {
       const fanclubs = await base44.asServiceRole.entities.Fanclub.filter({
