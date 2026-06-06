@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,19 +52,22 @@ const PROMO_VARIANTS = {
 
 export default function VideoStatsTab({ performerId }) {
   const queryClient = useQueryClient();
+  // Filters are always sent as empty strings — backend ignores empty filters
   const [filters, setFilters] = useState({ period_month: '', platform: '' });
   const [editingSnapshot, setEditingSnapshot] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  // ID of the row that was involved in a 409 — highlight it
+  const [highlightedId, setHighlightedId] = useState(null);
+  const highlightTimerRef = useRef(null);
 
   const { data: statsData, isLoading, refetch } = useQuery({
     queryKey: ['performer-video-stats', performerId, filters],
     queryFn: async () => {
-      const res = await base44.functions.invoke('performerVideoStatsService', {
-        action: 'get_performer_video_stats',
-        performer_id: performerId,
-        ...filters
-      });
+      const params = { action: 'get_performer_video_stats', performer_id: performerId };
+      if (filters.period_month) params.period_month = filters.period_month;
+      if (filters.platform) params.platform = filters.platform;
+      const res = await base44.functions.invoke('performerVideoStatsService', params);
       return res.data;
     },
     enabled: !!performerId
@@ -120,6 +123,25 @@ export default function VideoStatsTab({ performerId }) {
     });
   };
 
+  // Called by AddExternalStatForm when a 409 conflict occurs
+  const handleConflict = (existingRecord) => {
+    setShowAddModal(false);
+    toast.warning('A stat entry already exists for this video/platform/month. The existing row is highlighted below.');
+
+    // Apply filters to make the row visible
+    setFilters({
+      period_month: existingRecord.period_month || '',
+      platform: existingRecord.platform || ''
+    });
+
+    // After refetch, highlight the row
+    refetch().then(() => {
+      if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+      setHighlightedId(existingRecord.id);
+      highlightTimerRef.current = setTimeout(() => setHighlightedId(null), 3000);
+    });
+  };
+
   const stats = statsData?.stats || [];
   const canDelete = (stat) => stat.source_type === 'external_manual' || stat.import_source === 'manual_admin_entry';
 
@@ -169,6 +191,16 @@ export default function VideoStatsTab({ performerId }) {
                 </SelectContent>
               </Select>
             </div>
+            {(filters.period_month || filters.platform) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="self-end text-xs text-muted-foreground"
+                onClick={() => setFilters({ period_month: '', platform: '' })}
+              >
+                Clear filters
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={() => refetch()} className="ml-auto self-end">
               <RefreshCw className="w-3 h-3 mr-1" /> Refresh
             </Button>
@@ -178,11 +210,22 @@ export default function VideoStatsTab({ performerId }) {
             <p className="text-sm text-muted-foreground">Loading stats...</p>
           ) : !stats || stats.length === 0 ? (
             <div className="text-center py-8 border border-dashed rounded-lg">
-              <p className="text-sm text-muted-foreground mb-4">No stats found for this performer.</p>
-              <Button onClick={() => setShowAddModal(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add External Video Stat
-              </Button>
+              <p className="text-sm text-muted-foreground mb-2">
+                {filters.period_month || filters.platform
+                  ? 'No stats match the current filters.'
+                  : 'No stats found for this performer.'}
+              </p>
+              {(filters.period_month || filters.platform) && (
+                <Button variant="outline" size="sm" className="mb-3" onClick={() => setFilters({ period_month: '', platform: '' })}>
+                  Clear filters
+                </Button>
+              )}
+              <div className="mt-2">
+                <Button onClick={() => setShowAddModal(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add External Video Stat
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -201,133 +244,145 @@ export default function VideoStatsTab({ performerId }) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {stats.map((stat) => (
-                    <TableRow key={stat.id}>
-                      <TableCell className="max-w-[220px]">
-                        {editingSnapshot?.id === stat.id && stat._is_external_only ? (
-                          <Input
-                            value={editingSnapshot.external_title || ''}
-                            onChange={(e) => setEditingSnapshot({ ...editingSnapshot, external_title: e.target.value })}
-                            className="h-7 text-xs"
-                          />
-                        ) : (
-                          <div className="flex items-center gap-1.5">
-                            <span className="truncate font-medium text-sm">{stat.video_title}</span>
-                            {stat._is_external_only && (
-                              <Badge variant="outline" className="text-[10px] shrink-0 text-amber-500 border-amber-500/30">External</Badge>
-                            )}
-                            {stat.external_url && (
-                              <a href={stat.external_url} target="_blank" rel="noopener noreferrer">
-                                <ExternalLink className="w-3 h-3 text-muted-foreground hover:text-primary" />
-                              </a>
-                            )}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="text-xs">
-                          {PLATFORMS.find(p => p.value === stat.platform)?.label || stat.platform}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">{stat.period_month}</TableCell>
-                      <TableCell>
-                        {editingSnapshot?.id === stat.id ? (
-                          <Input
-                            type="number"
-                            value={editingSnapshot.views ?? ''}
-                            onChange={(e) => setEditingSnapshot({ ...editingSnapshot, views: parseInt(e.target.value) || 0 })}
-                            className="w-20 h-7 text-xs"
-                          />
-                        ) : stat.views?.toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        {editingSnapshot?.id === stat.id ? (
-                          <Input
-                            type="number"
-                            value={editingSnapshot.likes ?? ''}
-                            onChange={(e) => setEditingSnapshot({ ...editingSnapshot, likes: parseInt(e.target.value) || 0 })}
-                            className="w-20 h-7 text-xs"
-                          />
-                        ) : stat.likes?.toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        {editingSnapshot?.id === stat.id ? (
-                          <Input
-                            type="number"
-                            value={editingSnapshot.favourites ?? ''}
-                            onChange={(e) => setEditingSnapshot({ ...editingSnapshot, favourites: parseInt(e.target.value) || 0 })}
-                            className="w-20 h-7 text-xs"
-                          />
-                        ) : stat.favourites?.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {editingSnapshot?.id === stat.id ? (
-                          <Input
-                            type="number"
-                            step="0.01"
-                            value={editingSnapshot.revenue_usd ?? ''}
-                            onChange={(e) => setEditingSnapshot({ ...editingSnapshot, revenue_usd: parseFloat(e.target.value) || 0 })}
-                            className="w-24 h-7 text-xs"
-                          />
-                        ) : `$${stat.revenue_usd?.toFixed(2)}`}
-                      </TableCell>
-                      <TableCell>
-                        {editingSnapshot?.id === stat.id ? (
-                          <Select
-                            value={editingSnapshot.promotion_status || 'none'}
-                            onValueChange={(v) => setEditingSnapshot({ ...editingSnapshot, promotion_status: v })}
-                          >
-                            <SelectTrigger className="w-28 h-7 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">none</SelectItem>
-                              <SelectItem value="planned">planned</SelectItem>
-                              <SelectItem value="active">active</SelectItem>
-                              <SelectItem value="ended">ended</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <Badge variant={PROMO_VARIANTS[stat.promotion_status] || 'outline'} className="text-xs">
-                            {stat.promotion_status || 'none'}
+                  {stats.map((stat) => {
+                    const isHighlighted = stat.id === highlightedId;
+                    const isEditing = editingSnapshot?.id === stat.id;
+                    return (
+                      <TableRow
+                        key={stat.id}
+                        className={isHighlighted ? 'bg-amber-500/10 ring-1 ring-amber-500/40 transition-colors' : ''}
+                      >
+                        <TableCell className="max-w-[220px]">
+                          {isEditing && stat._is_external_only ? (
+                            <Input
+                              value={editingSnapshot.external_title || ''}
+                              onChange={(e) => setEditingSnapshot({ ...editingSnapshot, external_title: e.target.value })}
+                              className="h-7 text-xs"
+                            />
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <span className="truncate font-medium text-sm">
+                                {stat._is_external_only ? (stat.external_title || stat.video_title || 'External') : (stat.video_title || 'Unknown')}
+                              </span>
+                              {stat._is_external_only && (
+                                <Badge variant="outline" className="text-[10px] shrink-0 text-amber-500 border-amber-500/30">External</Badge>
+                              )}
+                              {stat.external_url && (
+                                <a href={stat.external_url} target="_blank" rel="noopener noreferrer">
+                                  <ExternalLink className="w-3 h-3 text-muted-foreground hover:text-primary" />
+                                </a>
+                              )}
+                              {isHighlighted && (
+                                <span className="text-[10px] text-amber-500 font-medium ml-1">← existing</span>
+                              )}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="text-xs">
+                            {PLATFORMS.find(p => p.value === stat.platform)?.label || stat.platform}
                           </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {editingSnapshot?.id === stat.id ? (
-                          <div className="flex gap-1">
-                            <Button size="sm" variant="default" onClick={handleSave} disabled={updateSnapshot.isPending}>
-                              Save
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => setEditingSnapshot(null)}>
-                              Cancel
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex gap-1">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7"
-                              onClick={() => setEditingSnapshot({ ...stat })}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{stat.period_month}</TableCell>
+                        <TableCell>
+                          {isEditing ? (
+                            <Input
+                              type="number"
+                              value={editingSnapshot.views ?? ''}
+                              onChange={(e) => setEditingSnapshot({ ...editingSnapshot, views: parseInt(e.target.value) || 0 })}
+                              className="w-20 h-7 text-xs"
+                            />
+                          ) : stat.views?.toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          {isEditing ? (
+                            <Input
+                              type="number"
+                              value={editingSnapshot.likes ?? ''}
+                              onChange={(e) => setEditingSnapshot({ ...editingSnapshot, likes: parseInt(e.target.value) || 0 })}
+                              className="w-20 h-7 text-xs"
+                            />
+                          ) : stat.likes?.toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          {isEditing ? (
+                            <Input
+                              type="number"
+                              value={editingSnapshot.favourites ?? ''}
+                              onChange={(e) => setEditingSnapshot({ ...editingSnapshot, favourites: parseInt(e.target.value) || 0 })}
+                              className="w-20 h-7 text-xs"
+                            />
+                          ) : stat.favourites?.toLocaleString()}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {isEditing ? (
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={editingSnapshot.revenue_usd ?? ''}
+                              onChange={(e) => setEditingSnapshot({ ...editingSnapshot, revenue_usd: parseFloat(e.target.value) || 0 })}
+                              className="w-24 h-7 text-xs"
+                            />
+                          ) : `$${(stat.revenue_usd || 0).toFixed(2)}`}
+                        </TableCell>
+                        <TableCell>
+                          {isEditing ? (
+                            <Select
+                              value={editingSnapshot.promotion_status || 'none'}
+                              onValueChange={(v) => setEditingSnapshot({ ...editingSnapshot, promotion_status: v })}
                             >
-                              <Pencil className="w-3 h-3" />
-                            </Button>
-                            {canDelete(stat) && (
+                              <SelectTrigger className="w-28 h-7 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">none</SelectItem>
+                                <SelectItem value="planned">planned</SelectItem>
+                                <SelectItem value="active">active</SelectItem>
+                                <SelectItem value="ended">ended</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Badge variant={PROMO_VARIANTS[stat.promotion_status] || 'outline'} className="text-xs">
+                              {stat.promotion_status || 'none'}
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {isEditing ? (
+                            <div className="flex gap-1">
+                              <Button size="sm" variant="default" onClick={handleSave} disabled={updateSnapshot.isPending}>
+                                Save
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => setEditingSnapshot(null)}>
+                                Cancel
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex gap-1">
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-7 w-7 text-destructive hover:text-destructive"
-                                onClick={() => setDeletingId(stat.id)}
+                                className="h-7 w-7"
+                                onClick={() => setEditingSnapshot({ ...stat })}
                               >
-                                <Trash2 className="w-3 h-3" />
+                                <Pencil className="w-3 h-3" />
                               </Button>
-                            )}
-                          </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                              {canDelete(stat) && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 text-destructive hover:text-destructive"
+                                  onClick={() => setDeletingId(stat.id)}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -348,6 +403,7 @@ export default function VideoStatsTab({ performerId }) {
               refetch();
               setShowAddModal(false);
             }}
+            onConflict={handleConflict}
           />
         </DialogContent>
       </Dialog>
@@ -377,7 +433,7 @@ export default function VideoStatsTab({ performerId }) {
   );
 }
 
-function AddExternalStatForm({ performerId, onClose, onSuccess }) {
+function AddExternalStatForm({ performerId, onClose, onSuccess, onConflict }) {
   const [formData, setFormData] = useState({
     platform: 'xhamster',
     period_month: new Date().toISOString().slice(0, 7),
@@ -391,6 +447,7 @@ function AddExternalStatForm({ performerId, onClose, onSuccess }) {
     promotion_status: 'none',
     notes: ''
   });
+  const [conflictRecord, setConflictRecord] = useState(null);
 
   // Fetch performer's internal videos for the optional dropdown
   const { data: performerVideos = [], isLoading: videosLoading } = useQuery({
@@ -407,23 +464,38 @@ function AddExternalStatForm({ performerId, onClose, onSuccess }) {
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      return await base44.functions.invoke('performerVideoStatsService', {
+      const res = await base44.functions.invoke('performerVideoStatsService', {
         action: 'create_external_snapshot',
         performer_id: performerId,
         ...data
       });
+      // Axios resolves even on 4xx — check the response data
+      if (res.data?.error === 'duplicate_stat_snapshot') {
+        const err = new Error(res.data.message || 'Duplicate stat entry');
+        err.existingRecord = res.data.existing_record;
+        throw err;
+      }
+      return res.data;
     },
     onSuccess: () => {
       toast.success('External video stat added');
       onSuccess();
     },
-    onError: (e) => toast.error(e.message || 'Failed to create stat')
+    onError: (e) => {
+      if (e.existingRecord) {
+        setConflictRecord(e.existingRecord);
+        toast.warning('A stat entry already exists for this video/platform/month.');
+      } else {
+        toast.error(e.message || 'Failed to create stat');
+      }
+    }
   });
 
   const isExternalOnly = !formData.video_id;
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setConflictRecord(null);
     if (!formData.platform || !formData.period_month) {
       toast.error('Platform and period month are required');
       return;
@@ -452,10 +524,36 @@ function AddExternalStatForm({ performerId, onClose, onSuccess }) {
     });
   };
 
-  const set = (key, value) => setFormData(prev => ({ ...prev, [key]: value }));
+  const set = (key, value) => {
+    setConflictRecord(null); // clear conflict on any form change
+    setFormData(prev => ({ ...prev, [key]: value }));
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Conflict banner */}
+      {conflictRecord && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 space-y-2">
+          <p className="text-sm font-medium text-amber-600">
+            A stat already exists for this video / platform / month.
+          </p>
+          <div className="text-xs text-muted-foreground space-y-0.5">
+            <p>Platform: <span className="font-mono">{conflictRecord.platform}</span></p>
+            <p>Period: <span className="font-mono">{conflictRecord.period_month}</span></p>
+            <p>Revenue: <span className="font-mono">${(conflictRecord.revenue_usd || 0).toFixed(2)}</span></p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="border-amber-500/40 text-amber-600 hover:bg-amber-500/10"
+            onClick={() => onConflict(conflictRecord)}
+          >
+            View &amp; edit existing stat
+          </Button>
+        </div>
+      )}
+
       {/* Period Month */}
       <div className="grid gap-1.5">
         <Label>Period Month <span className="text-destructive">*</span></Label>

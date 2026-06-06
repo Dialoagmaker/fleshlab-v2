@@ -153,14 +153,34 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Numeric fields must be >= 0' }, { status: 400 });
       }
 
-      // Deduplication check
+      // Deduplication check — return existing_record in 409 so frontend can highlight it
+      const buildExistingRecord = (ex) => ({
+        id: ex.id,
+        video_id: ex.video_id || null,
+        performer_id: ex.performer_id || null,
+        platform: ex.platform,
+        period_month: ex.period_month,
+        external_title: ex.external_title || null,
+        external_url: ex.external_url || null,
+        revenue_usd: ex.revenue_usd || 0,
+        views: ex.views || 0,
+        likes: ex.likes || 0,
+        favourites: ex.favourites || 0,
+        source_type: ex.source_type
+      });
+
       if (video_id) {
         // Internal video: dedupe by video_id + platform + period_month
         const existing = await base44.asServiceRole.entities.VideoStatSnapshot.filter({
           video_id, platform, period_month
         });
         if (existing && existing.length > 0) {
-          return Response.json({ error: `A stat already exists for this video + platform + period (${existing[0].id})` }, { status: 409 });
+          return Response.json({
+            success: false,
+            error: 'duplicate_stat_snapshot',
+            message: `A stat entry already exists for this video + platform + period (ID: ${existing[0].id})`,
+            existing_record: buildExistingRecord(existing[0])
+          }, { status: 409 });
         }
       } else {
         // External only: dedupe by performer_id + platform + period_month + (external_url or external_title)
@@ -172,7 +192,12 @@ Deno.serve(async (req) => {
             const urlMatch = external_url && ex.external_url && ex.external_url === external_url;
             const titleMatch = !external_url && ex.external_title === external_title;
             if (urlMatch || titleMatch) {
-              return Response.json({ error: `A stat already exists for this performer + platform + period + title/URL (${ex.id})` }, { status: 409 });
+              return Response.json({
+                success: false,
+                error: 'duplicate_stat_snapshot',
+                message: `A stat entry already exists for this performer + platform + period + title/URL (ID: ${ex.id})`,
+                existing_record: buildExistingRecord(ex)
+              }, { status: 409 });
             }
           }
         }
