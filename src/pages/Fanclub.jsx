@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Lock, Check, Crown, Shield, Play, Zap, Eye, Film, Users, Tag } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useAccessControl } from "@/lib/useAccessControl";
@@ -12,9 +12,10 @@ import CheckoutButton from "@/components/payment/CheckoutButton";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
-// Read performer slug from ?performer= query param
+// Read performer slug from ?performer= query param — reactive to React Router location
 function usePerformerParam() {
-  const params = new URLSearchParams(window.location.search);
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
   return params.get('performer') || null;
 }
 
@@ -313,15 +314,23 @@ export default function Fanclub() {
                 <span className="text-rose-300 text-sm font-bold tracking-widest uppercase">Fanclub Membership</span>
               </div>
 
-              {/* Performer context banner */}
+              {/* Performer context banner — prominent card when coming from a performer page */}
               {featuredPerformer && (
-                <div className="flex items-center gap-3 bg-purple-600/15 border border-purple-600/30 rounded-2xl px-4 py-3 mb-6">
+                <div className="flex items-center gap-4 bg-gradient-to-r from-purple-900/40 to-purple-800/20 border border-purple-500/40 rounded-2xl px-5 py-4 mb-6 shadow-lg shadow-purple-900/20">
                   {featuredPerformer.profile_image_url && (
-                    <img src={featuredPerformer.profile_image_url} alt={featuredPerformer.display_name} className="w-10 h-10 rounded-full object-cover border border-purple-500/40" />
+                    <img
+                      src={featuredPerformer.profile_image_url}
+                      alt={featuredPerformer.display_name}
+                      className="w-14 h-14 rounded-full object-cover border-2 border-purple-400/50 shadow-md flex-shrink-0"
+                    />
                   )}
-                  <div>
-                    <p className="text-purple-300 text-xs font-bold uppercase tracking-widest">You came from</p>
-                    <p className="text-white font-bold text-sm">Join {featuredPerformer.display_name}'s Fanclub</p>
+                  <div className="min-w-0">
+                    <p className="text-purple-400 text-[10px] font-black uppercase tracking-widest mb-0.5">Joining Fanclub for</p>
+                    <p className="text-white font-black text-lg leading-tight truncate">{featuredPerformer.display_name}</p>
+                    <p className="text-white/50 text-xs mt-0.5">Unlock exclusive content from {featuredPerformer.display_name} and all FLESHLAB performers</p>
+                  </div>
+                  <div className="ml-auto flex-shrink-0">
+                    <Crown className="w-6 h-6 text-purple-400" />
                   </div>
                 </div>
               )}

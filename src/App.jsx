@@ -241,14 +241,6 @@ const AuthenticatedApp = () => {
     );
   }
 
-  if (path === "/fanclub") {
-    return (
-      <PublicPageShell>
-        <Fanclub />
-      </PublicPageShell>
-    );
-  }
-
   if (path === "/guest-production") {
     return (
       <PublicPageShell>
@@ -384,6 +376,7 @@ const AuthenticatedApp = () => {
       <Route path="/news/:slug" element={<PublicPageShell><NewsDetail /></PublicPageShell>} />
       <Route path="/brands/:slug" element={<PublicPageShell><BrandDetail /></PublicPageShell>} />
       <Route path="/fanclub/:slug" element={<PublicPageShell><ComingSoon title="Performer Fanclub" /></PublicPageShell>} />
+      <Route path="/fanclub" element={<PublicPageShell><Fanclub /></PublicPageShell>} />
       {/* Public routes */}
       <Route element={<Layout />}>
         <Route path="/brands" element={<PublicBrands />} />
