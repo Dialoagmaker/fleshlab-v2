@@ -4,7 +4,7 @@
   "properties": {
     "applicant_name": {
       "type": "string",
-      "title": "Stage Name"
+      "title": "Stage Name / Name"
     },
     "legal_name": {
       "type": "string",
@@ -17,11 +17,11 @@
     },
     "phone": {
       "type": "string",
-      "title": "Phone / Messaging"
+      "title": "Phone / WhatsApp / Messaging"
     },
     "nationality": {
       "type": "string",
-      "title": "Nationality"
+      "title": "Country of Residence"
     },
     "city": {
       "type": "string",
@@ -45,7 +45,7 @@
     },
     "message": {
       "type": "string",
-      "title": "Message (Legacy)",
+      "title": "Notes / Fantasy Brief",
       "format": "textarea"
     },
     "package_interest": {
@@ -60,31 +60,26 @@
         "undecided"
       ],
       "title": "Preferred Revenue Model",
-      "default": "undecided",
-      "description": "Applicant's preferred revenue split model (admin can override)"
+      "default": "undecided"
     },
     "profile_photo_r2_keys": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "title": "Profile Photo R2 Keys",
-      "description": "Private R2 keys for uploaded profile/softcore/hardcore photos"
+      "title": "Profile Photo R2 Keys"
     },
     "intro_video_r2_key": {
       "type": "string",
-      "title": "Body Video R2 Key",
-      "description": "Private R2 key for body/intro video"
+      "title": "Body Video R2 Key"
     },
     "hardcore_video_r2_key": {
       "type": "string",
-      "title": "Hardcore Video R2 Key",
-      "description": "Private R2 key for hardcore/action video"
+      "title": "Hardcore Video R2 Key"
     },
     "id_document_r2_key": {
       "type": "string",
-      "title": "ID Document R2 Key",
-      "description": "Private R2 key for government ID (passport/ID/license)"
+      "title": "ID Document R2 Key"
     },
     "id_document_url": {
       "type": "string",
@@ -130,8 +125,7 @@
     "contact_log": {
       "type": "string",
       "title": "Contact Log",
-      "format": "textarea",
-      "description": "Log of admin contact attempts"
+      "format": "textarea"
     },
     "submitted_at": {
       "type": "string",
@@ -146,6 +140,115 @@
     "media_reviewed_by": {
       "type": "string",
       "title": "Media Reviewed By (User ID)"
+    },
+    "request_type": {
+      "type": "string",
+      "enum": [
+        "fan_production",
+        "guest_production",
+        "performer_application"
+      ],
+      "title": "Request Type",
+      "default": "fan_production",
+      "description": "Distinguishes Fan Production requests from other application types"
+    },
+    "preferred_performer": {
+      "type": "string",
+      "title": "Preferred Performer"
+    },
+    "alternate_performer": {
+      "type": "string",
+      "title": "Alternate Performer (Optional)"
+    },
+    "open_to_studio_suggestions": {
+      "type": "boolean",
+      "title": "Open to Studio Suggestions",
+      "default": false
+    },
+    "production_country": {
+      "type": "string",
+      "title": "Production Country"
+    },
+    "requested_city": {
+      "type": "string",
+      "title": "Requested City"
+    },
+    "is_local_fan": {
+      "type": "boolean",
+      "title": "Local Fan (already in country)",
+      "default": false
+    },
+    "expected_travel_date": {
+      "type": "string",
+      "title": "Expected Travel Date / Range"
+    },
+    "production_package": {
+      "type": "string",
+      "enum": [
+        "short_799",
+        "full_1499",
+        "premium_2499",
+        "custom_quote"
+      ],
+      "title": "Production Package"
+    },
+    "production_preferences": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Production Preferences"
+    },
+    "role_dynamic": {
+      "type": "string",
+      "title": "Role / Dynamic"
+    },
+    "dominance_preference": {
+      "type": "string",
+      "title": "Dominance Preference"
+    },
+    "privacy_option": {
+      "type": "string",
+      "title": "Privacy / Face Visibility Option"
+    },
+    "release_preference": {
+      "type": "string",
+      "title": "Release / Delivery Preference"
+    },
+    "confirmed_18_plus": {
+      "type": "boolean",
+      "title": "Confirmed 18+",
+      "default": false
+    },
+    "confirmed_not_private_date": {
+      "type": "boolean",
+      "title": "Confirmed Not a Private Date",
+      "default": false
+    },
+    "confirmed_performer_approval": {
+      "type": "boolean",
+      "title": "Confirmed Performer Approval Required",
+      "default": false
+    },
+    "confirmed_preferences_not_guaranteed": {
+      "type": "boolean",
+      "title": "Confirmed Preferences Not Guaranteed",
+      "default": false
+    },
+    "confirmed_travel_costs": {
+      "type": "boolean",
+      "title": "Confirmed Own Travel Costs",
+      "default": false
+    },
+    "confirmed_contact_consent": {
+      "type": "boolean",
+      "title": "Confirmed Contact Consent",
+      "default": false
+    },
+    "applicant_user_id": {
+      "type": "string",
+      "title": "Applicant User ID",
+      "description": "Base44 user ID if logged in at time of submission"
     }
   },
   "required": [

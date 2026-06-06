@@ -76,6 +76,7 @@ import FAQ from './pages/FAQ';
 import Fanclub from './pages/Fanclub';
 import GuestProduction from './pages/GuestProduction';
 import FanProductions from './pages/FanProductions';
+import FanProductionRequest from './pages/FanProductionRequest';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import DMCA from './pages/DMCA';
@@ -377,7 +378,7 @@ const AuthenticatedApp = () => {
       <Route path="/news/:slug" element={<PublicPageShell><NewsDetail /></PublicPageShell>} />
       <Route path="/brands/:slug" element={<PublicPageShell><BrandDetail /></PublicPageShell>} />
       <Route path="/fan-productions" element={<PublicPageShell><FanProductions /></PublicPageShell>} />
-      <Route path="/fan-productions/request" element={<PublicPageShell><GuestProduction /></PublicPageShell>} />
+      <Route path="/fan-productions/request" element={<PublicPageShell><FanProductionRequest /></PublicPageShell>} />
       <Route path="/fanclub/:slug" element={<PublicPageShell><ComingSoon title="Performer Fanclub" /></PublicPageShell>} />
       <Route path="/fanclub" element={<PublicPageShell><Fanclub /></PublicPageShell>} />
       {/* Public routes */}
