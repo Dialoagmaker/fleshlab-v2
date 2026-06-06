@@ -54,76 +54,74 @@ export default function Home() {
         }}
       />
 
-      {/* SEO Content Block - Natural keyword integration */}
-      <section className="py-8 border-b border-border">
+      {/* 1. Main hero / fanclub promo — first visual impression */}
+      <SummerPromoBanner />
+
+      {/* 2. Latest Videos — prove the platform has real content */}
+      <section className="py-2">
+        <div className="max-w-[1920px] mx-auto px-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-8 bg-gradient-to-b from-rose-600 to-rose-700 rounded-full shadow-lg shadow-rose-600/40" />
+              <h2 className="text-xl font-black text-white tracking-tight">
+                <span className="text-rose-500">LATEST</span> VIDEOS
+              </h2>
+              <div className="h-px w-32 bg-gradient-to-r from-rose-600/50 to-transparent" />
+            </div>
+            <a href="/videos" className="text-xs text-rose-500 hover:text-rose-400 font-semibold flex items-center gap-1.5 uppercase tracking-wide">
+              View All <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            </a>
+          </div>
+
+          {videosLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
+              {[...Array(24)].map((_, i) => (
+                <div key={i} className="aspect-video bg-[#121212] rounded-xl animate-pulse border border-white/5" />
+              ))}
+            </div>
+          ) : videosError ? (
+            <div className="text-center py-8 text-white/60">
+              <p>Error loading videos</p>
+            </div>
+          ) : videos.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
+              {videos.slice(0, 36).map(video => (
+                <TubeVideoCard key={video.id} video={video} brands={videosData?.brands || []} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-white/60">
+              <p>No videos available</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 3. Verified Performers — real people behind the content */}
+      <PerformerCarousel performers={performers} />
+
+      {/* 4. Performer Recruitment Banner — after performers for context */}
+      <PerformerRecruitmentBanner />
+
+      {/* 5. Fanclub / Full Archive CTA — logical after seeing content + performers */}
+      <FanclubBanner />
+
+      {/* 6. SEO Intro / About FLESHLAB — keyword content preserved but below conversion blocks */}
+      <section className="py-12 border-t border-border">
         <div className="max-w-7xl mx-auto px-4">
           <div className="prose prose-invert max-w-none">
-            <h1 className="text-3xl sm:text-4xl font-black text-foreground mb-4">Asian Gay Videos & Verified Filipino Twink Performers</h1>
-            <p className="text-muted-foreground leading-relaxed text-lg">
-              FLESHLAB Studios is a professional gay adult studio producing premium Asian gay videos featuring verified 18+ Filipino twink performers and Asian gay talent. 
-              Our studio-produced gay adult content includes exclusive fanclub videos, full-length scenes, solo content, and behind-the-scenes footage from the Philippines and across Asia. 
+            <h2 className="text-2xl sm:text-3xl font-black text-foreground mb-4">Asian Gay Videos & Verified Filipino Twink Performers</h2>
+            <p className="text-muted-foreground leading-relaxed text-base">
+              FLESHLAB Studios is a professional gay adult studio producing premium Asian gay videos featuring verified 18+ Filipino twink performers and Asian gay talent.
+              Our studio-produced gay adult content includes exclusive fanclub videos, full-length scenes, solo content, and behind-the-scenes footage from the Philippines and across Asia.
               Discover our roster of verified performers, explore our growing library of gay adult videos, and access premium creator content through our gay fanclub membership.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Summer Promo Banner */}
-        <SummerPromoBanner />
-
-        {/* Main Video Grid - Tight spacing below banner */}
-        <section className="py-2">
-          <div className="max-w-[1920px] mx-auto px-4">
-            {/* Section Header with Banner-Matching Style - Tight spacing */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                {/* Red accent line before title */}
-                <div className="w-1.5 h-8 bg-gradient-to-b from-rose-600 to-rose-700 rounded-full shadow-lg shadow-rose-600/40" />
-                <h2 className="text-xl font-black text-white tracking-tight">
-                  <span className="text-rose-500">LATEST</span> VIDEOS
-                </h2>
-                <div className="h-px w-32 bg-gradient-to-r from-rose-600/50 to-transparent" />
-              </div>
-              <a href="/videos" className="text-xs text-rose-500 hover:text-rose-400 font-semibold flex items-center gap-1.5 uppercase tracking-wide">
-                View All <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              </a>
-            </div>
-
-            {videosLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
-                {[...Array(24)].map((_, i) => (
-                  <div key={i} className="aspect-video bg-[#121212] rounded-xl animate-pulse border border-white/5" />
-                ))}
-              </div>
-            ) : videosError ? (
-              <div className="text-center py-8 text-white/60">
-                <p>Error loading videos</p>
-              </div>
-            ) : videos.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
-                {videos.slice(0, 36).map(video => (
-                  <TubeVideoCard key={video.id} video={video} brands={videosData?.brands || []} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-white/60">
-                <p>No videos available</p>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Performer Carousel - Tube Style */}
-        <PerformerCarousel performers={performers} />
-
-        {/* Performer Recruitment Banner */}
-        <PerformerRecruitmentBanner />
-
-        {/* Fanclub Banner - Summer Match */}
-        <FanclubBanner />
-
-        {/* Studio Journal */}
-        <StudioJournal articles={articles} />
+      {/* 7. Studio Journal / News — SEO trust and content depth */}
+      <StudioJournal articles={articles} />
     </>
   );
 }
