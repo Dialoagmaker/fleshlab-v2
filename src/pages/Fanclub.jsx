@@ -11,6 +11,9 @@ import { usePaymentProvider } from "@/hooks/usePaymentProvider";
 import CheckoutButton from "@/components/payment/CheckoutButton";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import PerformerFanclubHero from "@/components/fanclub/PerformerFanclubHero";
+import FleshlabMembershipUpsell from "@/components/fanclub/FleshlabMembershipUpsell";
+import PerformerFanclubComingSoon from "@/components/fanclub/PerformerFanclubComingSoon";
 
 // Read performer slug from ?performer= query param — reactive to React Router location
 function usePerformerParam() {
@@ -272,6 +275,116 @@ export default function Fanclub() {
   // Props bundle (avoids repetition)
   const ctaProps = { isAuthenticated, paymentProvider, returnUrl: fanclubReturnUrl };
 
+  // ── Performer-specific layout ──────────────────────────────────────────────
+  if (performerSlug) {
+    // Still loading performers
+    if (performers.length === 0) {
+      return (
+        <div className="min-h-screen bg-[#080808] flex items-center justify-center">
+          <div className="text-white/30 text-sm">Loading...</div>
+        </div>
+      );
+    }
+
+    // Performer not found
+    if (!featuredPerformer) {
+      return (
+        <div className="min-h-screen bg-[#080808] flex items-center justify-center px-6">
+          <div className="text-center max-w-md">
+            <div className="text-white/30 text-sm mb-4">Performer not found</div>
+            <Button onClick={() => navigate('/fanclub')} className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl px-6 py-3 h-auto font-bold">
+              Browse FLESHLAB Membership
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    const performerCTA = (
+      <FanclubCTA
+        planId="fanclub_monthly"
+        label={`Join ${featuredPerformer.display_name} Fanclub`}
+        {...ctaProps}
+        className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 py-4 rounded-xl text-base h-auto shadow-xl shadow-rose-600/35 w-full"
+      />
+    );
+
+    return (
+      <>
+        <SEOMeta
+          title={`${featuredPerformer.display_name} Fanclub | FLESHLAB`}
+          description={`Join ${featuredPerformer.display_name}'s Fanclub on FLESHLAB. Exclusive performer content, updates, selected scenes and member-only drops.`}
+          canonical={`/fanclub?performer=${performerSlug}`}
+          ogImage={featuredPerformer.profile_image_url || featuredPerformer.cover_image_url}
+        />
+        <div className="min-h-screen bg-[#080808] text-white">
+
+          {/* fanclub_enabled === false → coming soon */}
+          {featuredPerformer.fanclub_enabled === false ? (
+            <>
+              <PerformerFanclubComingSoon performer={featuredPerformer} />
+              <FleshlabMembershipUpsell performerName={featuredPerformer.display_name} />
+            </>
+          ) : (
+            <>
+              {/* Personalized performer fanclub hero */}
+              <PerformerFanclubHero performer={featuredPerformer} ctaSlot={performerCTA} />
+
+              {/* FLESHLAB Membership upsell */}
+              <FleshlabMembershipUpsell performerName={featuredPerformer.display_name} />
+
+              {/* Generic value sections below — condensed context */}
+              <section className="py-16 px-6 border-t border-white/6">
+                <div className="max-w-[1280px] mx-auto">
+                  <div className="text-center mb-10">
+                    <h2 className="text-3xl md:text-4xl font-black mb-3">
+                      WHAT OPENS INSIDE <span className="text-rose-500">THE FANCLUB</span>
+                    </h2>
+                    <p className="text-white/45 text-base max-w-2xl mx-auto">
+                      Member content, early releases and performer updates — the full member side of FLESHLAB.
+                    </p>
+                  </div>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
+                    {valueCards.map((card, i) => (
+                      <ContentValueCard key={i} src={card.src} title={card.title} desc={card.desc} badge={card.badge} />
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              {/* Pricing */}
+              <section className="py-16 px-6 border-t border-white/6">
+                <div className="max-w-[900px] mx-auto text-center">
+                  <div className="inline-flex items-center gap-2 bg-amber-500/15 border border-amber-500/30 rounded-full px-5 py-2 mb-6">
+                    <Tag className="w-4 h-4 text-amber-400" />
+                    <span className="text-amber-300 text-sm font-black tracking-wide uppercase">Summer Studio Special</span>
+                  </div>
+                  <h2 className="text-3xl md:text-4xl font-black mb-3">
+                    50% OFF <span className="text-rose-500">FOR THE FIRST 3 MONTHS</span>
+                  </h2>
+                  <p className="text-white/40 text-sm mb-8">$9.99/month for the first 3 months, then $19.99/month unless cancelled. Cancel anytime.</p>
+                  <div className="max-w-sm mx-auto">
+                    <FanclubCTA
+                      planId="fanclub_monthly"
+                      label={`Join ${featuredPerformer.display_name} Fanclub — $9.99/mo`}
+                      {...ctaProps}
+                      className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 py-4 rounded-xl h-auto shadow-xl shadow-rose-600/35 text-base w-full"
+                    />
+                  </div>
+                  <p className="text-white/15 text-xs mt-6 max-w-lg mx-auto">
+                    FLESHLAB memberships provide access to digital adult content and fanclub features only. Memberships do not include dating, escorting, private meetings or offline services.
+                  </p>
+                </div>
+              </section>
+
+            </>
+          )}
+        </div>
+      </>
+    );
+  }
+
+  // ── Generic platform fanclub layout (no performer param) ──────────────────
   return (
     <>
       <SEOMeta
@@ -313,27 +426,6 @@ export default function Fanclub() {
                 <Crown className="w-4 h-4 text-rose-400" />
                 <span className="text-rose-300 text-sm font-bold tracking-widest uppercase">Fanclub Membership</span>
               </div>
-
-              {/* Performer context banner — prominent card when coming from a performer page */}
-              {featuredPerformer && (
-                <div className="flex items-center gap-4 bg-gradient-to-r from-purple-900/40 to-purple-800/20 border border-purple-500/40 rounded-2xl px-5 py-4 mb-6 shadow-lg shadow-purple-900/20">
-                  {featuredPerformer.profile_image_url && (
-                    <img
-                      src={featuredPerformer.profile_image_url}
-                      alt={featuredPerformer.display_name}
-                      className="w-14 h-14 rounded-full object-cover border-2 border-purple-400/50 shadow-md flex-shrink-0"
-                    />
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-purple-400 text-[10px] font-black uppercase tracking-widest mb-0.5">Joining Fanclub for</p>
-                    <p className="text-white font-black text-lg leading-tight truncate">{featuredPerformer.display_name}</p>
-                    <p className="text-white/50 text-xs mt-0.5">Unlock exclusive content from {featuredPerformer.display_name} and all FLESHLAB performers</p>
-                  </div>
-                  <div className="ml-auto flex-shrink-0">
-                    <Crown className="w-6 h-6 text-purple-400" />
-                  </div>
-                </div>
-              )}
 
               <h1 className="text-5xl md:text-6xl xl:text-7xl font-black leading-[1.0] tracking-tight mb-3">
                 THE PUBLIC SIDE<br />
