@@ -183,15 +183,16 @@ function generateCleanSlug(title, performerNames = [], categories = [], tags = [
     }
   }
   
-  // 3. SCENE LOCATION/CONTEXT from title and tags (max 1)
-  const titleLower = (title || '').toLowerCase();
+  // 3. SCENE LOCATION/CONTEXT - ONLY if explicitly in categories or tags
+  // Do NOT infer from title - only use explicit category/tag data
+  const categoriesLower = (categories || []).map(c => c.toLowerCase());
   const tagsLower = (tags || []).map(t => t.toLowerCase());
-  const allText = titleLower + ' ' + tagsLower.join(' ');
+  const allDataText = [...categoriesLower, ...tagsLower].join(' ');
   
   const locations = ['shower', 'outdoor', 'hotel', 'mirror', 'bathroom', 'bedroom'];
   for (const loc of locations) {
-    if (allText.includes(loc) && !slugParts.includes(loc)) {
-      // Check if we already have a location cluster
+    // Only add if explicitly in categories or tags, not inferred from title
+    if (allDataText.includes(loc) && !slugParts.includes(loc)) {
       if (!usedClusters.has('location')) {
         slugParts.push(loc);
         usedClusters.add('location');
@@ -200,10 +201,13 @@ function generateCleanSlug(title, performerNames = [], categories = [], tags = [
     }
   }
   
-  // 4. SPECIFIC ACT from title/tags (max 2, different clusters)
+  // 4. SPECIFIC ACT - ONLY if explicitly in categories or tags
+  // Do NOT infer from title alone - require explicit category/tag
   for (const [act, keywords] of Object.entries(ACT_KEYWORDS)) {
-    const found = keywords.some(kw => allText.includes(kw));
-    if (found && !slugParts.includes(act)) {
+    // Check if act or its keywords are in categories/tags (not just title)
+    const foundInData = keywords.some(kw => allDataText.includes(kw));
+    
+    if (foundInData && !slugParts.includes(act)) {
       // Check cluster conflicts
       let hasConflict = false;
       for (const [clusterName, clusterTerms] of Object.entries(MEANING_CLUSTERS)) {
@@ -230,14 +234,33 @@ function generateCleanSlug(title, performerNames = [], categories = [], tags = [
     }
   }
   
-  // 5. FALLBACK - if still too short, extract from cleaned title
+  // 5. FALLBACK - if still too short, extract SAFE terms from title
+  // Only use descriptive content words, avoid generic filler
   if (slugParts.length < 3 && title) {
     const cleaned = generateSlugFromText(title);
     const words = cleaned.split('-').filter(w => w.length > 3 && !BANNED_TERMS.some(b => w.includes(b)));
+    
+    // Safe descriptive words from title (avoid generic filler)
+    const SAFE_TITLE_WORDS = [
+      'cumming', 'cumshot', 'solo', 'masturbation', 'compilation',
+      'intense', 'hardcore', 'explicit', 'scene', 'action'
+    ];
+    
     for (const word of words) {
+      // Only add if it's a safe descriptive word and not already included
       if (!slugParts.includes(word) && slugParts.length < 6) {
-        slugParts.push(word);
+        if (SAFE_TITLE_WORDS.includes(word) || word.length >= 5) {
+          slugParts.push(word);
+        }
       }
+    }
+  }
+  
+  // 6. ENSURE MINIMUM LENGTH - add safe generic terms if needed
+  if (slugParts.length < 3 && performerNames.length > 0) {
+    // Add safe content descriptors
+    if (!slugParts.includes('solo') && !slugParts.includes('scene')) {
+      slugParts.push('solo');
     }
   }
   
