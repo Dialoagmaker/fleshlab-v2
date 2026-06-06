@@ -116,14 +116,26 @@ export default function FanProductions() {
       <div className="min-h-screen bg-[#080808] text-white">
 
         {/* ── HERO ───────────────────────────────────────────────────────── */}
-        <section className="relative overflow-hidden py-24 px-6">
-          {/* Atmosphere */}
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-1/3 w-[600px] h-[500px] bg-rose-900/18 rounded-full blur-[140px]" />
-            <div className="absolute bottom-0 right-1/4 w-[500px] h-[400px] bg-rose-950/25 rounded-full blur-[120px]" />
-          </div>
+        <section className="relative overflow-hidden min-h-[600px] md:min-h-[680px] flex items-center py-24 px-6">
+          {/* Background image */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: "url('https://video.fleshlab.online/applications/private/ChatGPT%20Image%206.%20Juni%202026%2C%2022_43_09.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center right",
+            }}
+            aria-hidden="true"
+          />
+          {/* Left-heavy dark overlay — readable text left, image visible right */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/92 via-black/70 to-black/25" aria-hidden="true" />
+          {/* Top & bottom vignette */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/60" aria-hidden="true" />
+          {/* Subtle rose glow bottom-left */}
+          <div className="absolute bottom-0 left-0 w-[400px] h-[250px] bg-rose-900/20 blur-[100px] rounded-full pointer-events-none" />
 
-          <div className="relative max-w-[900px] mx-auto text-center">
+          <div className="relative w-full max-w-[1280px] mx-auto">
+          <div className="max-w-[620px]">
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-rose-600/15 border border-rose-700/30 rounded-full px-4 py-1.5 mb-7">
               <Camera className="w-3.5 h-3.5 text-rose-400" />
@@ -136,14 +148,14 @@ export default function FanProductions() {
               OF THE SCENE.
             </h1>
 
-            <p className="text-white/55 text-lg md:text-xl leading-relaxed max-w-2xl mx-auto mb-5">
+            <p className="text-white/55 text-lg md:text-xl leading-relaxed mb-5">
               Love our videos? Apply as a verified 18+ fan and take part in an official homemade-style FLESHLAB production with approved performers.
             </p>
-            <p className="text-white/35 text-base leading-relaxed max-w-xl mx-auto mb-10">
+            <p className="text-white/35 text-base leading-relaxed mb-10">
               You choose your preferred performer, city, production length, privacy option and production preferences. FLESHLAB reviews the request, checks performer availability and compatibility, and confirms only after performer approval.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+            <div className="flex flex-col sm:flex-row items-start gap-4 mb-8">
               <Button
                 size="lg"
                 onClick={handleApply}
@@ -160,13 +172,14 @@ export default function FanProductions() {
             </div>
 
             {/* Trust line */}
-            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-white/30 text-xs">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-white/30 text-xs">
               {["Verified 18+ only", "Performer approval required", "Filmed production", "Contracts & releases", "Consent rules"].map((t, i) => (
                 <span key={i} className="flex items-center gap-1.5">
                   <Shield className="w-3 h-3 text-rose-600/60 shrink-0" />{t}
                 </span>
               ))}
             </div>
+          </div>
           </div>
         </section>
 
