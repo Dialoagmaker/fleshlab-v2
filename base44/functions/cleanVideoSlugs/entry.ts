@@ -79,36 +79,133 @@ function scoreSlugQuality(slug) {
   };
 }
 
-function generateCleanSlug(title, performerNames = [], categories = []) {
-  // Priority order for slug generation:
-  // 1. Performer name + content
-  // 2. Categories + content
-  // 3. Title-based (cleaned)
+function generateCleanSlug(title, performerNames = [], categories = [], tags = []) {
+  // TARGET AUDIENCE SEO STRATEGY:
+  // 1. Performer name first (discovery)
+  // 2. Gay male identifiers (asian-twink, filipino, pinoy, cuban, etc.)
+  // 3. Scene location/context (shower, outdoor, hotel, mirror, bathroom)
+  // 4. Specific act (solo, cumshot, masturbation, jerk-off, oral, anal)
+  // 5. Avoid generic/boring terms
+  
+  // SEO KEYWORD MAPPING - normalize to target audience terms
+  const CATEGORY_MAP = {
+    'asian': 'asian',
+    'filipino': 'filipino',
+    'pinoy': 'pinoy',
+    'cuban': 'cuban',
+    'latino': 'latino',
+    'twink': 'twink',
+    'muscular_body': 'muscular',
+    'solo': 'solo',
+    'solo_masturbation': 'masturbation',
+    'blowjob': 'oral',
+    'deepthroat': 'deepthroat',
+    'anal': 'anal',
+    'bareback': 'bareback',
+    'shower': 'shower',
+    'outdoor': 'outdoor',
+    'hotel': 'hotel',
+    'piercing': 'pierced',
+    'cumshot': 'cumshot',
+    'masturbation': 'masturbation',
+    'jerk_off': 'jerk-off'
+  };
+  
+  // ACT/SCENE DETECTION - extract from title/tags
+  const ACT_KEYWORDS = {
+    'cumshot': ['cumshot', 'cum', 'finish', 'explode', 'messy', 'load'],
+    'masturbation': ['masturbat', 'jerk', 'stroke', 'solo', 'handjob'],
+    'oral': ['oral', 'blowjob', 'deepthroat', 'suck', 'throat'],
+    'anal': ['anal', 'bareback', 'creampie', 'internal'],
+    'nipple-play': ['nipple', 'torture', 'pierc'],
+    'dildo-play': ['dildo', 'toy', 'fleshlight'],
+    'shower': ['shower', 'bathroom', 'water', 'lather'],
+    'outdoor': ['outdoor', 'outside', 'nature'],
+    'mirror': ['mirror', 'reflection'],
+    'hotel': ['hotel', 'room', 'travel']
+  };
   
   let slugParts = [];
   
-  // Add performer name if available
+  // 1. PERFORMER NAME (highest priority for discovery)
   if (performerNames && performerNames.length > 0) {
-    const firstName = performerNames[0].toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const firstName = performerNames[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-');
+    // Clean up special characters but keep recognizable name
     slugParts.push(firstName);
   }
   
-  // Add key category if available
+  // 2. GAY MALE IDENTIFIER from categories
   if (categories && categories.length > 0) {
-    const primaryCat = categories[0].toLowerCase().replace(/[^a-z0-9]/g, '-');
-    slugParts.push(primaryCat);
+    const gayIdentifiers = categories
+      .map(cat => CATEGORY_MAP[cat.toLowerCase()] || null)
+      .filter(Boolean);
+    
+    // Prioritize: ethnicity > body type > role
+    const priority = ['filipino', 'pinoy', 'asian', 'cuban', 'latino', 'twink', 'muscular'];
+    const sorted = gayIdentifiers.sort((a, b) => {
+      const idxA = priority.indexOf(a);
+      const idxB = priority.indexOf(b);
+      return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+    });
+    
+    // Add top 1-2 identifiers
+    if (sorted.length > 0) {
+      slugParts.push(sorted[0]);
+      if (sorted[1] && sorted[1] !== sorted[0]) {
+        slugParts.push(sorted[1]);
+      }
+    }
   }
   
-  // Extract key content from title (remove banned terms)
-  if (title) {
+  // 3. SCENE LOCATION/CONTEXT from title and tags
+  const titleLower = (title || '').toLowerCase();
+  const tagsLower = (tags || []).map(t => t.toLowerCase());
+  const allText = titleLower + ' ' + tagsLower.join(' ');
+  
+  const locations = ['shower', 'outdoor', 'hotel', 'mirror', 'bathroom', 'bedroom'];
+  for (const loc of locations) {
+    if (allText.includes(loc) && !slugParts.includes(loc)) {
+      slugParts.push(loc);
+      break; // Only one location
+    }
+  }
+  
+  // 4. SPECIFIC ACT from title/tags
+  for (const [act, keywords] of Object.entries(ACT_KEYWORDS)) {
+    const found = keywords.some(kw => allText.includes(kw));
+    if (found && !slugParts.includes(act)) {
+      slugParts.push(act);
+      // Add 1-2 acts max
+      if (slugParts.length >= 5) break;
+    }
+  }
+  
+  // 5. FALLBACK - if still too short, extract from cleaned title
+  if (slugParts.length < 3 && title) {
     const cleaned = generateSlugFromText(title);
-    const words = cleaned.split('-').filter(w => w.length > 3);
-    // Add 2-3 meaningful words
-    slugParts.push(...words.slice(0, 3));
+    const words = cleaned.split('-').filter(w => w.length > 3 && !BANNED_TERMS.some(b => w.includes(b)));
+    for (const word of words) {
+      if (!slugParts.includes(word) && slugParts.length < 6) {
+        slugParts.push(word);
+      }
+    }
   }
   
-  // Join and limit to 10 words
-  const slug = slugParts.join('-').substring(0, 80).replace(/-+$/g, '');
+  // Remove duplicates while preserving order
+  const unique = [...new Set(slugParts)];
+  
+  // Join and validate length (target 4-8 words)
+  let slug = unique.join('-').substring(0, 80).replace(/-+$/g, '');
+  
+  // Final cleanup - remove any remaining banned terms
+  BANNED_TERMS.forEach(term => {
+    slug = slug.replace(new RegExp(term.replace(/-/g, '[-\\s]'), 'gi'), '');
+  });
+  slug = slug.replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+  
   return slug;
 }
 
@@ -162,8 +259,8 @@ Deno.serve(async (req) => {
         );
         const names = performerNames.filter(Boolean);
         
-        // Generate clean slug
-        const cleanSlug = generateCleanSlug(video.title, names, video.categories);
+        // Generate clean slug with performer names, categories, and tags
+        const cleanSlug = generateCleanSlug(video.title, names, video.categories, video.tags);
         
         // Validate the new slug
         const validation = validateSlug(cleanSlug);
