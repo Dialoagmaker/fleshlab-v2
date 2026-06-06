@@ -215,6 +215,16 @@ export default function TubeHeader({ onMenuToggle }) {
               {t('nav.news')}
             </a>
             <a
+              href="/fan-productions"
+              className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+                isActive("/fan-productions")
+                  ? "text-rose-500 bg-rose-600/15 border border-rose-600/30 shadow-lg shadow-rose-600/20"
+                  : "text-white/70 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              Fan Productions
+            </a>
+            <a
               href="/become-performer"
               className={`px-4 py-2 rounded-md text-sm font-semibold transition-all ${
                 isActive("/become-performer")
