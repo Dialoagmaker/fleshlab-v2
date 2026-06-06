@@ -241,7 +241,9 @@ Deno.serve(async (req) => {
       });
 
       // Get all performance data in parallel
-      const [legacyEarnings, lineItems, videoStatSnapshots] = await Promise.all([
+      const videoIds = [...new Set((videoPerformers || []).map(vp => vp.video_id))];
+
+      const [legacyEarnings, lineItems, videoStatSnapshots, externalOnlySnapshots] = await Promise.all([
         base44.asServiceRole.entities.PerformerEarning.filter({
           performer_id: myPerformer.id,
           period_month
@@ -250,24 +252,31 @@ Deno.serve(async (req) => {
           performer_id: myPerformer.id,
           period_month
         }),
-        // Get video stats for all videos this performer is in
+        // Part A: internal video stats (linked by video_id)
         Promise.all(
-          (videoPerformers || []).map(vp =>
+          videoIds.map(vid =>
             base44.asServiceRole.entities.VideoStatSnapshot.filter({
-              video_id: vp.video_id,
+              video_id: vid,
               period_month
             }).catch(() => [])
           )
-        )
+        ),
+        // Part B: external-only stats (performer_id set, no video_id)
+        base44.asServiceRole.entities.VideoStatSnapshot.filter({
+          performer_id: myPerformer.id,
+          source_type: 'external_manual',
+          period_month
+        }).catch(() => [])
       ]);
 
       // Flatten video stats and get video titles
-      const allStats = videoStatSnapshots.flat();
+      const internalStats = videoStatSnapshots.flat();
+      const allStats = [...internalStats, ...externalOnlySnapshots];
+
       const videoMap = {};
       
-      // Build video title lookup
-      if (videoPerformers && videoPerformers.length > 0) {
-        const videoIds = [...new Set(videoPerformers.map(vp => vp.video_id))];
+      // Build video title lookup for internal videos
+      if (videoIds.length > 0) {
         const videos = await Promise.all(
           videoIds.map(vid => base44.asServiceRole.entities.Video.get(vid).catch(() => null))
         );
@@ -328,25 +337,40 @@ Deno.serve(async (req) => {
       );
 
       const videoStatsAsEarnings = allStats
-        .filter(stat => !existingVideoIds.has(stat.video_id)) // Dedup: skip if already in manual earnings
-        .map(stat => ({
-          id: `stat_${stat.id}`, // Pseudo-ID to distinguish from DB records
-          source_type: 'video_platform',
-          source_platform: stat.platform,
-          description: videoMap[stat.video_id] || 'Video platform revenue',
-          video_title: videoMap[stat.video_id],
-          gross_amount_usd: stat.revenue_usd || 0,
-          performer_share_percent: myPerformer.revenue_split_pct || 40,
-          performer_amount_usd: (stat.revenue_usd || 0) * ((myPerformer.revenue_split_pct || 40) / 100),
-          studio_amount_usd: (stat.revenue_usd || 0) * (100 - (myPerformer.revenue_split_pct || 40)) / 100,
-          status: 'pending',
-          period_month: stat.period_month,
-          views: stat.views,
-          likes: stat.likes,
-          favourites: stat.favourites,
-          is_legacy: false,
-          is_from_stats: true
-        }));
+        .filter(stat => {
+          // For internal stats: skip if this video_id is already covered by a manual line item
+          if (stat.video_id) return !existingVideoIds.has(stat.video_id);
+          // External-only stats (no video_id): always include — they can't be in existingVideoIds
+          return true;
+        })
+        .map(stat => {
+          const revenueSharePct = myPerformer.revenue_split_pct || 40;
+          const gross = stat.revenue_usd || 0;
+          const isExternal = !stat.video_id;
+          const description = isExternal
+            ? (stat.external_title || 'External video revenue')
+            : (videoMap[stat.video_id] || 'Video platform revenue');
+          return {
+            id: `stat_${stat.id}`,
+            source_type: 'video_platform',
+            source_platform: stat.platform,
+            description,
+            video_title: isExternal ? null : videoMap[stat.video_id],
+            external_title: isExternal ? stat.external_title : null,
+            is_external_only: isExternal,
+            gross_amount_usd: gross,
+            performer_share_percent: revenueSharePct,
+            performer_amount_usd: gross * (revenueSharePct / 100),
+            studio_amount_usd: gross * ((100 - revenueSharePct) / 100),
+            status: 'estimated',
+            period_month: stat.period_month,
+            views: stat.views,
+            likes: stat.likes,
+            favourites: stat.favourites,
+            is_legacy: false,
+            is_from_stats: true
+          };
+        });
 
       // Combine all earnings sources: legacy + line items + video stats
       const allEarnings = [...legacyWithVideos, ...lineItemsProcessed, ...videoStatsAsEarnings];
