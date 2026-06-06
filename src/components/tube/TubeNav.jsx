@@ -6,6 +6,7 @@ const navItems = [
   { label: "Categories", href: "/videos", dropdown: true },
   { label: "Performers", href: "/performers" },
   { label: "Fanclub", href: "/fanclub" },
+  { label: "Fan Productions", href: "/fan-productions" },
   { label: "News", href: "/news" },
   { label: "Become a Performer", href: "/become-performer", highlight: true },
 ];
