@@ -12,15 +12,25 @@ import CheckoutButton from "@/components/payment/CheckoutButton";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
+// Read performer slug from ?performer= query param
+function usePerformerParam() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('performer') || null;
+}
+
 // ── Checkout helpers (no payment logic changes) ───────────────────────────────
-function FanclubCTA({ planId, className, label, isAuthenticated, requireSignup, paymentProvider }) {
+function FanclubCTA({ planId, className, label, isAuthenticated, paymentProvider, returnUrl }) {
+  const navigate = useNavigate();
+  const fanclubReturn = returnUrl || '/fanclub';
+  const registerUrl = `/register?next=${encodeURIComponent(fanclubReturn)}`;
+
   return (
     <CheckoutButton
       paymentType="fanclub" planId={planId}
       label={label || 'Enter Fanclub'}
-      returnUrl="/fanclub" cancelUrl="/fanclub"
+      returnUrl={fanclubReturn} cancelUrl="/fanclub"
       isAuthenticated={isAuthenticated}
-      onRequireAuth={() => requireSignup('/fanclub', 'fanclub', { planId })}
+      onRequireAuth={() => navigate(registerUrl)}
       paymentProvider={paymentProvider}
       className={className}
       unavailableLabel="Secure crypto checkout coming soon"
@@ -163,6 +173,7 @@ export default function Fanclub() {
   const { requireSignup } = useAccessControl();
   const navigate = useNavigate();
   const paymentProvider = usePaymentProvider();
+  const performerSlug = usePerformerParam();
 
   const scrollToPPV = () => document.getElementById('ppv-section')?.scrollIntoView({ behavior: 'smooth' });
 
@@ -248,8 +259,17 @@ export default function Fanclub() {
     return result;
   }, [publishedVideos]);
 
+  // Resolve featured performer from query param
+  const featuredPerformer = useMemo(
+    () => performerSlug ? performers.find(p => p.slug === performerSlug) : null,
+    [performers, performerSlug]
+  );
+
+  // Return URL preserves performer context for post-register redirect
+  const fanclubReturnUrl = performerSlug ? `/fanclub?performer=${performerSlug}` : '/fanclub';
+
   // Props bundle (avoids repetition)
-  const ctaProps = { isAuthenticated, requireSignup, paymentProvider };
+  const ctaProps = { isAuthenticated, paymentProvider, returnUrl: fanclubReturnUrl };
 
   return (
     <>
@@ -292,6 +312,19 @@ export default function Fanclub() {
                 <Crown className="w-4 h-4 text-rose-400" />
                 <span className="text-rose-300 text-sm font-bold tracking-widest uppercase">Fanclub Membership</span>
               </div>
+
+              {/* Performer context banner */}
+              {featuredPerformer && (
+                <div className="flex items-center gap-3 bg-purple-600/15 border border-purple-600/30 rounded-2xl px-4 py-3 mb-6">
+                  {featuredPerformer.profile_image_url && (
+                    <img src={featuredPerformer.profile_image_url} alt={featuredPerformer.display_name} className="w-10 h-10 rounded-full object-cover border border-purple-500/40" />
+                  )}
+                  <div>
+                    <p className="text-purple-300 text-xs font-bold uppercase tracking-widest">You came from</p>
+                    <p className="text-white font-bold text-sm">Join {featuredPerformer.display_name}'s Fanclub</p>
+                  </div>
+                </div>
+              )}
 
               <h1 className="text-5xl md:text-6xl xl:text-7xl font-black leading-[1.0] tracking-tight mb-3">
                 THE PUBLIC SIDE<br />
@@ -550,7 +583,9 @@ export default function Fanclub() {
                       <PerformerSupportCard
                         key={p.id || i}
                         performer={p}
-                        onJoin={() => isAuthenticated ? null : requireSignup('/fanclub', 'fanclub', { planId: 'fanclub_monthly' })}
+                        onJoin={() => {
+                          if (!isAuthenticated) navigate(`/register?next=${encodeURIComponent(fanclubReturnUrl)}`);
+                        }}
                       />
                     ))
                   : FALLBACK_THUMBS.slice(0, 3).map((fb, i) => (

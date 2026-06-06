@@ -42,11 +42,9 @@ export default function PerformerDetail() {
   };
   
   const handleJoinFanclub = () => {
-    const fanclubUrl = `/fanclub?performer=${slug}`;
-    if (!requireSignup(fanclubUrl, 'fanclub', { planId: 'fanclub_monthly' })) {
-      // User is authenticated — navigate directly to fanclub page with performer context
-      navigate(fanclubUrl);
-    }
+    // Always navigate to fanclub page with performer context.
+    // Auth gate happens on the fanclub page when user clicks subscribe.
+    navigate(`/fanclub?performer=${slug}`);
   };
 
   // Fetch all data — only published videos for public safety
@@ -311,7 +309,7 @@ export default function PerformerDetail() {
                   {fanclubOrExclusive && (
                     <Button onClick={handleJoinFanclub} variant="outline" className="w-full bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 border-purple-600/40 px-8 py-7 text-lg font-bold gap-2.5 rounded-xl">
                       <Crown className="w-6 h-6" />
-                      {isAuthenticated ? `Join Fanclub — $${FANCLUB_PLANS.fanclub_monthly.promoPrice}/month` : 'Create Account to Join Fanclub'}
+                      {isAuthenticated ? `Join Fanclub — $${FANCLUB_PLANS.fanclub_monthly.promoPrice}/month` : 'View Fanclub Plans'}
                     </Button>
                   )}
                 </div>
