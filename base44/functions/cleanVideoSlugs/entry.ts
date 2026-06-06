@@ -317,21 +317,33 @@ Deno.serve(async (req) => {
 
     const { mode = 'dry_run', video_ids = [], p0_correction = false } = await req.json();
     
-    // P0 CORRECTION MODE: Apply revised commercial slugs to 12 specific videos
+    // P0 CORRECTION MODE: Apply CORRECTED commercial slugs based on each video's ACTUAL title/content
     if (p0_correction) {
       const p0Corrections = [
-        { id: '6a1c2c0b69fc71cba221dde6', slug: 'kraken-asian-bathroom-solo-jerkoff-cumshot' },
-        { id: '6a1c2c0da273608b14f18bc3', slug: 'ze-d-asian-dildo-masturbation-ass-play' },
-        { id: '6a1c2c07d20257c3e1444473', slug: 'kraken-asian-toilet-solo-cumming' },
+        // #1: "Intense Asian Boy Bathroom Solo Jerk-off and Cum Show" - performer: Kraken
+        { id: '6a1c2c0b69fc71cba221dde6', slug: 'asian-boy-bathroom-solo-jerkoff-cumshot' },
+        // #2: "Watch a Hot Asian Guy Masturbate with His Fleshlight and Finger His Tight Ass" - performer: Ze[D]
+        { id: '6a1c2c0da273608b14f18bc3', slug: 'asian-man-fleshlight-masturbation-ass-play' },
+        // #3: "Asian Man Explosive Toilet Cumming Hardcore Solo Action" - performer: Kraken
+        { id: '6a1c2c07d20257c3e1444473', slug: 'asian-man-toilet-solo-cumming' },
+        // #4: "Watch Hot Asian Man Cumming Compilation: Intense Masturbation Scenes" - performer: Ze[D]
         { id: '6a1c2c02a6588ed93755fff3', slug: 'asian-man-cumming-compilation-masturbation' },
-        { id: '6a1c2c0f3ae6c511274fd24c', slug: 'asian-twink-shower-body-play-solo' },
-        { id: '6a1c2c0ec2ec20769d4fc9dd', slug: 'twink-shower-dildo-play-ass-worship' },
-        { id: '6a1c2c0d75163d4961f1a086', slug: 'twink-mirror-solo-jerkoff-cumshot' },
-        { id: '6a1c2c0dc18e1dafa3121b67', slug: 'twink-handjob-cumshot-body-shot' },
-        { id: '6a1c2c0ddea4c758d2a119a1', slug: 'cuban-twink-mirror-stroke-solo' },
-        { id: '6a1c2c0c70d76e735c0bab9d', slug: 'cuban-twink-strip-tease-solo' },
-        { id: '6a1c2c07678e3f727dfbe569', slug: 'cuban-muscular-bathroom-jerkoff-solo' },
-        { id: '6a1c2c067564527466c34ecf', slug: 'twink-shower-solo-cock-ass-play' },
+        // #5: "Steamy Shower Session: Twink Guy Dildo Play and Ass Worship" - performer: Jameson
+        { id: '6a1c2c0f3ae6c511274fd24c', slug: 'twink-shower-dildo-play-ass-worship' },
+        // #6: "Twink Guy Strips Naked and Jerks Off His Rock Hard Dick" - performer: Jameson
+        { id: '6a1c2c0ec2ec20769d4fc9dd', slug: 'twink-strip-naked-solo-jerkoff' },
+        // #7: "Horny Cuban Twink Strips Naked and Showcases His Hard Cock" - performer: CubaNuevo
+        { id: '6a1c2c0d75163d4961f1a086', slug: 'cuban-twink-strip-naked-cock-showcase' },
+        // #8: "Watch This Twink Guy Pleasure Himself with His Slippery Cock and Hot Spit - Part 1" - performer: CubaNuevo
+        { id: '6a1c2c0dc18e1dafa3121b67', slug: 'twink-slippery-cock-spit-masturbation' },
+        // #9: "Cuban Bottom Fucks Himself with a Massive Dildo" - performer: CubaNuevo
+        { id: '6a1c2c0ddea4c758d2a119a1', slug: 'cuban-bottom-dildo-ass-play' },
+        // #10: "Asian Man Masturbating Solo in Hotel Room – Intense Self-Pleasure" - performer: Jameson
+        { id: '6a1c2c0c70d76e735c0bab9d', slug: 'asian-man-hotel-room-solo-masturbation' },
+        // #11: "Hot Sunglasses-clad Man Masterbating Intensely" - performer: CubaNuevo
+        { id: '6a1c2c07678e3f727dfbe569', slug: 'sunglasses-man-intense-masturbation' },
+        // #12: "Watch an Asian Man Masturbate Wildly by the Seashore with Intense Orgasm" - performer: Kraken
+        { id: '6a1c2c067564527466c34ecf', slug: 'asian-man-seashore-solo-masturbation' },
       ];
       
       const results = [];
