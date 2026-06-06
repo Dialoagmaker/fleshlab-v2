@@ -92,6 +92,11 @@ export default function CheckoutButton({
       if (data.checkoutUrl) {
         // Redirect to NOWPayments hosted checkout
         window.location.href = data.checkoutUrl;
+      } else if (data.code === 'AUTH_REQUIRED') {
+        // Auth required — redirect to login/register
+        console.log('[CheckoutButton] Auth required, redirecting');
+        onRequireAuth();
+        return;
       } else if (data.blocked_reason === 'below_crypto_minimum') {
         setError(`This crypto payment method currently requires a higher minimum payment than this plan. Please choose a higher-value plan or another payment method.`);
       } else if (data.blocked_reason === 'minimum_amount') {

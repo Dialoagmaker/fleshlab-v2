@@ -20,10 +20,12 @@ export default function Register() {
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
 
-  // Read ?next= or ?from_url= from URL
+  // Read ?next=, ?from_url=, ?checkout= from URL
   const urlParams = new URLSearchParams(window.location.search);
   const nextParam = urlParams.get("next") || urlParams.get("from_url") || null;
+  const checkoutParam = urlParams.get("checkout") || null; // e.g., fanclub_monthly, fanclub_3mo
   const isFanProductionFlow = nextParam && nextParam.includes("/fan-productions");
+  const isFanclubCheckout = checkoutParam && checkoutParam.startsWith("fanclub_");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -60,7 +62,16 @@ export default function Register() {
           return;
         }
         
-        // Priority 2: ?next= or ?from_url= URL param
+        // Priority 2: ?checkout= param (fanclub checkout intent)
+        if (checkoutParam) {
+          // Build fanclub checkout URL with plan
+          const fanclubUrl = `/fanclub?checkout=${checkoutParam}`;
+          console.log("REGISTER_CHECKOUT_INTENT", fanclubUrl);
+          window.location.href = fanclubUrl;
+          return;
+        }
+        
+        // Priority 3: ?next= or ?from_url= URL param
         if (nextParam) {
           const validated = validateRedirectUrl(nextParam);
           if (validated && validated !== '/') {
@@ -100,7 +111,14 @@ export default function Register() {
       base44.auth.loginWithProvider("google", redirectUrl);
       return;
     }
-    // Priority 2: ?next= param
+    // Priority 2: ?checkout= param (fanclub checkout intent)
+    if (checkoutParam) {
+      const fanclubUrl = `/fanclub?checkout=${checkoutParam}`;
+      console.log("GOOGLE_CHECKOUT_INTENT", fanclubUrl);
+      base44.auth.loginWithProvider("google", fanclubUrl);
+      return;
+    }
+    // Priority 3: ?next= param
     if (nextParam) {
       base44.auth.loginWithProvider("google", nextParam);
       return;
@@ -202,6 +220,11 @@ export default function Register() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {isFanclubCheckout && (
+          <div className="p-3 rounded-lg bg-rose-600/10 border border-rose-600/20 text-rose-300 text-sm">
+            <strong>Continue Fanclub Checkout</strong> — Create your account to join Fanclub for $20.99/month.
+          </div>
+        )}
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <div className="relative">

@@ -210,7 +210,13 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user) {
+      return Response.json({ 
+        success: false,
+        code: 'AUTH_REQUIRED',
+        message: 'Please log in or create an account before starting checkout.'
+      }, { status: 401 });
+    }
 
     const body = await req.json();
     const { paymentType, planId, videoId, applicationId, priceTier, returnUrl, cancelUrl } = body;
@@ -446,6 +452,16 @@ Deno.serve(async (req) => {
 
   } catch (err) {
     console.error('[createCheckoutSession]', err);
+    
+    // Check if this is an auth error (shouldn't happen after our check above, but be safe)
+    if (err.message?.includes('Unauthorized') || err.message?.includes('Authentication')) {
+      return Response.json({ 
+        success: false,
+        code: 'AUTH_REQUIRED',
+        message: 'Please log in or create an account before starting checkout.'
+      }, { status: 401 });
+    }
+    
     return Response.json({ error: err.message }, { status: 500 });
   }
 });

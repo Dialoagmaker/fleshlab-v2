@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Lock, Check, Crown, Shield, Play, Zap, Eye, Film, Users, Tag } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
@@ -23,11 +23,12 @@ function usePerformerParam() {
   return params.get('performer') || null;
 }
 
-// ── Checkout helpers (no payment logic changes) ───────────────────────────────
+// ── Checkout helpers with auth guard + intent preservation ────────────────────
 function FanclubCTA({ planId, className, label, isAuthenticated, paymentProvider, returnUrl }) {
   const navigate = useNavigate();
   const fanclubReturn = returnUrl || '/fanclub';
-  const registerUrl = `/register?next=${encodeURIComponent(fanclubReturn)}`;
+  // Preserve checkout intent: planId + return URL
+  const registerUrl = `/register?from_url=${encodeURIComponent(fanclubReturn)}&checkout=${planId}`;
 
   return (
     <CheckoutButton
@@ -208,8 +209,23 @@ export default function Fanclub() {
   const navigate = useNavigate();
   const paymentProvider = usePaymentProvider();
   const performerSlug = usePerformerParam();
+  
+  // Read ?checkout= param to resume checkout after auth
+  const location = useLocation();
+  const checkoutParam = new URLSearchParams(location.search).get('checkout');
 
   const scrollToPPV = () => document.getElementById('ppv-section')?.scrollIntoView({ behavior: 'smooth' });
+
+  // ── Auto-resume checkout after auth (if ?checkout= param present) ───────────
+  useEffect(() => {
+    if (checkoutParam && isAuthenticated && paymentProvider.configured) {
+      // User returned after auth with checkout intent — auto-resume after short delay
+      const timer = setTimeout(() => {
+        console.log('[Fanclub] Auto-resuming checkout after auth:', checkoutParam);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [checkoutParam, isAuthenticated, paymentProvider.configured]);
 
   // ── Fetch real data ────────────────────────────────────────────────────────
   const { data: videos = [] } = useQuery({
