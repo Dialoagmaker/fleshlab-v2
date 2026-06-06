@@ -14,6 +14,7 @@ import { base44 } from "@/api/base44Client";
 import PerformerFanclubHero from "@/components/fanclub/PerformerFanclubHero";
 import FleshlabMembershipUpsell from "@/components/fanclub/FleshlabMembershipUpsell";
 import PerformerFanclubComingSoon from "@/components/fanclub/PerformerFanclubComingSoon";
+import PerformerFanclubBenefits from "@/components/fanclub/PerformerFanclubBenefits";
 
 // Read performer slug from ?performer= query param — reactive to React Router location
 function usePerformerParam() {
@@ -330,48 +331,49 @@ export default function Fanclub() {
               {/* Personalized performer fanclub hero */}
               <PerformerFanclubHero performer={featuredPerformer} ctaSlot={performerCTA} />
 
-              {/* FLESHLAB Membership upsell */}
-              <FleshlabMembershipUpsell performerName={featuredPerformer.display_name} isFanclubComingSoon={false} />
+              {/* What you unlock — benefits section */}
+              <PerformerFanclubBenefits performer={featuredPerformer} ctaSlot={performerCTA} />
 
-              {/* Generic value sections below — condensed context */}
-              <section className="py-16 px-6 border-t border-white/6">
-                <div className="max-w-[1280px] mx-auto">
-                  <div className="text-center mb-10">
-                    <h2 className="text-3xl md:text-4xl font-black mb-3">
-                      WHAT OPENS INSIDE <span className="text-rose-500">THE FANCLUB</span>
-                    </h2>
-                    <p className="text-white/45 text-base max-w-2xl mx-auto">
-                      Member content, early releases and performer updates — the full member side of FLESHLAB.
-                    </p>
-                  </div>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
-                    {valueCards.map((card, i) => (
-                      <ContentValueCard key={i} src={card.src} title={card.title} desc={card.desc} badge={card.badge} />
-                    ))}
-                  </div>
-                </div>
-              </section>
+              {/* Comparison: Performer Fanclub (primary) vs FLESHLAB Membership (secondary) */}
+              <FleshlabMembershipUpsell
+                performerName={featuredPerformer.display_name}
+                isFanclubComingSoon={false}
+                ctaSlot={performerCTA}
+              />
 
-              {/* Pricing */}
+              {/* Footer CTA */}
               <section className="py-16 px-6 border-t border-white/6">
-                <div className="max-w-[900px] mx-auto text-center">
-                  <div className="inline-flex items-center gap-2 bg-amber-500/15 border border-amber-500/30 rounded-full px-5 py-2 mb-6">
-                    <Tag className="w-4 h-4 text-amber-400" />
-                    <span className="text-amber-300 text-sm font-black tracking-wide uppercase">Summer Studio Special</span>
+                <div className="max-w-[700px] mx-auto">
+                  <div className="relative bg-gradient-to-br from-[#1a0808] to-[#0d0808] border border-rose-600/25 rounded-3xl px-8 py-14 text-center overflow-hidden">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[200px] bg-rose-700/12 rounded-full blur-[80px] pointer-events-none" />
+                    <div className="relative z-10">
+                      <h2 className="text-3xl md:text-4xl font-black mb-3">
+                        JOIN <span className="text-rose-500">{featuredPerformer.display_name.toUpperCase()} FANCLUB</span>
+                      </h2>
+                      <p className="text-white/50 text-base mb-8 max-w-md mx-auto">
+                        Unlock selected member-only scenes, raw extras and updates. Support {featuredPerformer.display_name} directly.
+                      </p>
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
+                        <div className="w-full sm:w-auto sm:min-w-[260px]">
+                          {performerCTA}
+                        </div>
+                      </div>
+                      <p className="text-white/20 text-xs mt-4">
+                        $9.99/month for the first 3 months, then $19.99/month unless cancelled. Cancel anytime.
+                      </p>
+                      <p className="text-white/15 text-xs mt-2">
+                        Want more than one performer?{" "}
+                        <button
+                          onClick={() => navigate('/fanclub')}
+                          className="underline hover:text-white/30 transition-colors"
+                        >
+                          Explore FLESHLAB Membership
+                        </button>
+                        .
+                      </p>
+                    </div>
                   </div>
-                  <h2 className="text-3xl md:text-4xl font-black mb-3">
-                    50% OFF <span className="text-rose-500">FOR THE FIRST 3 MONTHS</span>
-                  </h2>
-                  <p className="text-white/40 text-sm mb-8">$9.99/month for the first 3 months, then $19.99/month unless cancelled. Cancel anytime.</p>
-                  <div className="max-w-sm mx-auto">
-                    <FanclubCTA
-                      planId="fanclub_monthly"
-                      label={`Join ${featuredPerformer.display_name} Fanclub — $9.99/mo`}
-                      {...ctaProps}
-                      className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 py-4 rounded-xl h-auto shadow-xl shadow-rose-600/35 text-base w-full"
-                    />
-                  </div>
-                  <p className="text-white/15 text-xs mt-6 max-w-lg mx-auto">
+                  <p className="text-white/12 text-xs text-center mt-5 leading-relaxed max-w-lg mx-auto">
                     FLESHLAB memberships provide access to digital adult content and fanclub features only. Memberships do not include dating, escorting, private meetings or offline services.
                   </p>
                 </div>
