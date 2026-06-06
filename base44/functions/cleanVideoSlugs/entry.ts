@@ -111,6 +111,15 @@ function generateCleanSlug(title, performerNames = [], categories = [], tags = [
     'jerk_off': 'jerk-off'
   };
   
+  // MEANING CLUSTERS - avoid redundant terms from same cluster
+  const MEANING_CLUSTERS = {
+    'ethnicity': ['filipino', 'pinoy', 'asian', 'cuban', 'latino'],
+    'role': ['twink', 'muscular', 'hunk', 'daddy'],
+    'location': ['shower', 'outdoor', 'hotel', 'mirror', 'bathroom', 'bedroom'],
+    'act': ['cumshot', 'masturbation', 'oral', 'anal', 'bareback', 'dildo-play', 'nipple-play'],
+    'solo': ['solo', 'masturbation', 'jerk-off']
+  };
+  
   // ACT/SCENE DETECTION - extract from title/tags
   const ACT_KEYWORDS = {
     'cumshot': ['cumshot', 'cum', 'finish', 'explode', 'messy', 'load'],
@@ -126,6 +135,7 @@ function generateCleanSlug(title, performerNames = [], categories = [], tags = [
   };
   
   let slugParts = [];
+  const usedClusters = new Set();
   
   // 1. PERFORMER NAME (highest priority for discovery)
   if (performerNames && performerNames.length > 0) {
@@ -133,11 +143,10 @@ function generateCleanSlug(title, performerNames = [], categories = [], tags = [
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '-')
       .replace(/-+/g, '-');
-    // Clean up special characters but keep recognizable name
     slugParts.push(firstName);
   }
   
-  // 2. GAY MALE IDENTIFIER from categories
+  // 2. GAY MALE IDENTIFIER from categories (max 2, different clusters)
   if (categories && categories.length > 0) {
     const gayIdentifiers = categories
       .map(cat => CATEGORY_MAP[cat.toLowerCase()] || null)
@@ -151,16 +160,30 @@ function generateCleanSlug(title, performerNames = [], categories = [], tags = [
       return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
     });
     
-    // Add top 1-2 identifiers
-    if (sorted.length > 0) {
-      slugParts.push(sorted[0]);
-      if (sorted[1] && sorted[1] !== sorted[0]) {
-        slugParts.push(sorted[1]);
+    // Add top 1-2 identifiers from different clusters
+    for (const identifier of sorted) {
+      if (slugParts.includes(identifier)) continue;
+      
+      // Check cluster conflicts
+      let hasConflict = false;
+      for (const [clusterName, clusterTerms] of Object.entries(MEANING_CLUSTERS)) {
+        if (clusterTerms.includes(identifier)) {
+          if (usedClusters.has(clusterName)) {
+            hasConflict = true;
+            break;
+          }
+          usedClusters.add(clusterName);
+        }
+      }
+      
+      if (!hasConflict) {
+        slugParts.push(identifier);
+        if (slugParts.length >= 3) break; // Max 2 identifiers after performer
       }
     }
   }
   
-  // 3. SCENE LOCATION/CONTEXT from title and tags
+  // 3. SCENE LOCATION/CONTEXT from title and tags (max 1)
   const titleLower = (title || '').toLowerCase();
   const tagsLower = (tags || []).map(t => t.toLowerCase());
   const allText = titleLower + ' ' + tagsLower.join(' ');
@@ -168,18 +191,42 @@ function generateCleanSlug(title, performerNames = [], categories = [], tags = [
   const locations = ['shower', 'outdoor', 'hotel', 'mirror', 'bathroom', 'bedroom'];
   for (const loc of locations) {
     if (allText.includes(loc) && !slugParts.includes(loc)) {
-      slugParts.push(loc);
-      break; // Only one location
+      // Check if we already have a location cluster
+      if (!usedClusters.has('location')) {
+        slugParts.push(loc);
+        usedClusters.add('location');
+        break;
+      }
     }
   }
   
-  // 4. SPECIFIC ACT from title/tags
+  // 4. SPECIFIC ACT from title/tags (max 2, different clusters)
   for (const [act, keywords] of Object.entries(ACT_KEYWORDS)) {
     const found = keywords.some(kw => allText.includes(kw));
     if (found && !slugParts.includes(act)) {
-      slugParts.push(act);
-      // Add 1-2 acts max
-      if (slugParts.length >= 5) break;
+      // Check cluster conflicts
+      let hasConflict = false;
+      for (const [clusterName, clusterTerms] of Object.entries(MEANING_CLUSTERS)) {
+        if (clusterTerms.includes(act)) {
+          if (usedClusters.has(clusterName)) {
+            hasConflict = true;
+            break;
+          }
+        }
+      }
+      
+      if (!hasConflict) {
+        slugParts.push(act);
+        // Mark cluster as used
+        for (const [clusterName, clusterTerms] of Object.entries(MEANING_CLUSTERS)) {
+          if (clusterTerms.includes(act)) {
+            usedClusters.add(clusterName);
+            break;
+          }
+        }
+        // Max 2 acts
+        if (slugParts.filter(p => MEANING_CLUSTERS.act?.includes(p)).length >= 2) break;
+      }
     }
   }
   
@@ -194,17 +241,44 @@ function generateCleanSlug(title, performerNames = [], categories = [], tags = [
     }
   }
   
-  // Remove duplicates while preserving order
-  const unique = [...new Set(slugParts)];
+  // FINAL NORMALIZATION
+  // Remove exact duplicates while preserving order
+  const unique = [];
+  const seen = new Set();
+  for (const part of slugParts) {
+    if (!seen.has(part)) {
+      unique.push(part);
+      seen.add(part);
+    }
+  }
   
-  // Join and validate length (target 4-8 words)
-  let slug = unique.join('-').substring(0, 80).replace(/-+$/g, '');
+  // Remove duplicate meanings (e.g., "asian" and "asian-gay")
+  const normalized = [];
+  for (const part of unique) {
+    // Skip if this is a redundant variation of something already included
+    const isRedundant = normalized.some(existing => 
+      existing.includes(part) || part.includes(existing)
+    );
+    if (!isRedundant) {
+      normalized.push(part);
+    }
+  }
+  
+  // Join and validate length (target 4-8 words, max 10)
+  let slug = normalized.join('-').substring(0, 100).replace(/-+$/g, '');
   
   // Final cleanup - remove any remaining banned terms
   BANNED_TERMS.forEach(term => {
     slug = slug.replace(new RegExp(term.replace(/-/g, '[-\\s]'), 'gi'), '');
   });
   slug = slug.replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+  
+  // Final validation
+  const words = slug.split('-').filter(w => w.length > 0);
+  if (words.length === 0) {
+    // Fallback to a safe default
+    slug = 'gay-solo-scene';
+  }
   
   return slug;
 }
