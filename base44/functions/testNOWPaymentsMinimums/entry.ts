@@ -20,10 +20,10 @@ const CURRENCY_PAIRS = [
 ];
 
 const TEST_AMOUNTS = {
-  fanclub_monthly: 19.99,
+  fanclub_monthly: 20.99,  // NOWPayments LIVE minimum compliant
   fanclub_3mo: 49.99,
   premium_monthly: 29.99,
-  ppv_standard: 19.99,
+  ppv_standard: 20.99,  // NOWPayments LIVE minimum compliant
   ppv_premium: 24.99,
   ppv_exclusive: 29.99,
 };

@@ -22,19 +22,19 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 // ── Server-side authoritative pricing (client CANNOT override) ──────────────
-// CRYPTO-SAFE PRICING (2026-06-06): All prices set safely above NOWPayments minimums.
+// NOWPayments LIVE MINIMUM FIX (2026-06-06): $19.07 live minimum + 5% buffer = $20.03 required.
 // annual_pass is DISABLED (AsiaPay approval phase). Backend must reject it.
 const SERVER_PRICING = {
   fanclub: {
-    fanclub_monthly:  19.99,  // crypto-safe minimum
-    premium_monthly:  29.99,  // crypto-safe pricing
-    fanclub_3mo:      49.99,  // 3-month bundle, crypto-safe
+    fanclub_monthly:  20.99,  // NOWPayments LIVE minimum + buffer
+    premium_monthly:  29.99,  // passes minimum
+    fanclub_3mo:      49.99,  // passes minimum
     // annual_pass: DISABLED — do not add back until payment provider approves
   },
   ppv: {
-    standard:  19.99,  // crypto-safe minimum
-    premium:   24.99,
-    exclusive: 29.99,
+    standard:  20.99,  // NOWPayments LIVE minimum + buffer
+    premium:   24.99,  // passes minimum
+    exclusive: 29.99,  // passes minimum
   },
   guest_production_deposit: 999,
 };
@@ -47,7 +47,8 @@ const PROMO_ELIGIBLE_PLANS = ['fanclub_monthly', 'premium_monthly'];
 
 // ── Crypto minimum (NOWPayments) ─────────────────────────────────────────────
 // Dynamic minimum will be checked via API. This is fallback only.
-const CRYPTO_MINIMUM_USD = 19.99; // crypto-safe fallback minimum with buffer
+// NOWPayments LIVE minimum: $19.07 + 5% buffer = $20.03 → rounded to $20.99
+const CRYPTO_MINIMUM_USD = 20.99;
 
 // ── URL safety guard (internal paths only) ────────────────────────────────────
 function safeUrl(url) {
@@ -114,8 +115,8 @@ function resolvePayCurrency({ paymentType, planId, priceAmount }) {
     return 'usdttrc20';
   }
   
-  // Force USDT TRC20 for PPV standard tier ($19.99)
-  if (paymentType === 'ppv' && priceAmount <= 19.99) {
+  // Force USDT TRC20 for PPV standard tier ($20.99)
+  if (paymentType === 'ppv' && priceAmount <= 20.99) {
     return 'usdttrc20';
   }
   
@@ -243,7 +244,7 @@ Deno.serve(async (req) => {
     // Check actual NOWPayments minimum for selected currency before creating invoice
     const payCurrency = resolvePayCurrency({ paymentType, planId, priceAmount: amount });
     const payoutCurrency = Deno.env.get('NOWPAYMENTS_PAYOUT_CURRENCY') || 'usdttrc20';
-    console.log('[createCheckoutSession] Checkout request:', {
+    console.log('[createCheckoutSession] Checkout request (NOWPayments LIVE MINIMUM FIX):', {
       paymentType,
       planId,
       priceTier,
@@ -251,6 +252,7 @@ Deno.serve(async (req) => {
       price_currency: 'usd',
       pay_currency: payCurrency,
       payout_currency: payoutCurrency,
+      crypto_minimum_required: 20.03,
       user_id: user.id,
     });
 
@@ -421,7 +423,7 @@ Deno.serve(async (req) => {
         checkout_url:        invoiceData.invoice_url,
         return_url:          safeReturn,
         cancel_url:          safeCancel,
-        metadata:            JSON.stringify({ order_id: orderId, nowpayments_invoice_id: invoiceData.id, pay_currency_strategy: resolvePayCurrency(amount) || 'customer_choice' }),
+        metadata:            JSON.stringify({ order_id: orderId, nowpayments_invoice_id: invoiceData.id, pay_currency_strategy: resolvePayCurrency({ paymentType, planId, priceAmount: amount }) || 'customer_choice' }),
       });
 
       return Response.json({

@@ -8,20 +8,20 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-// NOWPayments crypto minimum with safety buffer
-export const CRYPTO_MINIMUM_USD = 19.99; // safe minimum for USDT TRC20 and other coins
+// NOWPayments crypto minimum with safety buffer (2026-06-06 LIVE: $19.07 + 5% = $20.03)
+export const CRYPTO_MINIMUM_USD = 20.99; // safe minimum for USDT TRC20 and other coins
 
 // ── Fanclub plan definitions ──────────────────────────────────────────────────
 export const FANCLUB_PLANS = {
   fanclub_monthly: {
     id: 'fanclub_monthly',
     name: 'Fanclub Monthly',
-    price: 19.99, // crypto-safe pricing
-    regularPrice: 19.99,
+    price: 20.99, // NOWPayments LIVE minimum + buffer (2026-06-06)
+    regularPrice: 20.99,
     currency: 'USD',
     interval: 'month',
     enabled: true,
-    promoEligible: false, // promo disabled to avoid crypto minimum issues
+    promoEligible: false,
   },
 
   premium_monthly: {
@@ -96,7 +96,7 @@ export const PRICING = {
   ppv: {
     standard: {
       name: 'Standard Scene',
-      price: 19.99, // crypto-safe minimum
+      price: 20.99, // NOWPayments LIVE minimum + buffer (2026-06-06)
       currency: 'USD',
     },
     premium: {
@@ -133,7 +133,7 @@ export const ACCESS_TIERS = {
   ppv: {
     label: 'Premium PPV',
     description: 'Pay-per-view unlocks for premium exclusive scenes',
-    priceRange: '$19.99 – $29.99',
+    priceRange: '$20.99 – $29.99',
   },
 };
 
