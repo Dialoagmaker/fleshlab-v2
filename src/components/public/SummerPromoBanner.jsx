@@ -4,7 +4,7 @@ import { useI18n } from "@/i18n/i18n.jsx";
 export default function SummerPromoBanner() {
   const { t } = useI18n();
   return (
-    <section className="relative w-full h-[360px] sm:h-[380px] md:h-[420px] lg:h-[460px] overflow-hidden">
+    <section className="relative w-full h-[280px] sm:h-[340px] md:h-[420px] lg:h-[460px] overflow-hidden">
       {/* Background Image - Responsive, High-Resolution */}
       <div className="absolute inset-0">
         {/*
@@ -58,7 +58,7 @@ export default function SummerPromoBanner() {
           
           {/* Main Offer - Premium editorial typography */}
           <div className="mb-2 sm:mb-3">
-            <h1 className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl font-black text-white drop-shadow-2xl leading-none tracking-tight">
+            <h1 className="text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-black text-white drop-shadow-2xl leading-none tracking-tight">
               <span className="text-rose-500">
                 {t('homepage.discount')}
               </span>
@@ -67,7 +67,7 @@ export default function SummerPromoBanner() {
           
           {/* Subheadline */}
           <div className="mb-3 sm:mb-4">
-            <p className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white/90 drop-shadow-xl tracking-tight">
+            <p className="text-base sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white/90 drop-shadow-xl tracking-tight">
               {t('homepage.discountSub')}
             </p>
           </div>
@@ -80,16 +80,16 @@ export default function SummerPromoBanner() {
           </div>
           
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-4 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mb-3 sm:mb-4 w-full sm:w-auto">
             <Link 
               to="/register" 
-              className="w-full sm:w-auto bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black text-sm sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-xl shadow-2xl shadow-rose-600/60 transform hover:scale-105 transition-all border-2 border-rose-500/50"
+              className="w-full sm:w-auto bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black text-sm sm:text-lg px-6 sm:px-8 py-2.5 sm:py-4 rounded-xl shadow-2xl shadow-rose-600/60 transition-all border-2 border-rose-500/50"
             >
               {t('homepage.joinNow')}
             </Link>
             <Link 
               to="/videos" 
-              className="w-full sm:w-auto bg-black/40 backdrop-blur-md hover:bg-black/60 text-white font-bold text-sm sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-xl border-2 border-rose-600/60 hover:border-rose-500 transform hover:scale-105 transition-all"
+              className="w-full sm:w-auto bg-black/40 backdrop-blur-md hover:bg-black/60 text-white font-bold text-sm sm:text-lg px-6 sm:px-8 py-2.5 sm:py-4 rounded-xl border-2 border-rose-600/60 hover:border-rose-500 transition-all"
             >
               {t('homepage.browsePreviews')}
             </Link>

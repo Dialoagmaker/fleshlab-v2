@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Search, Menu, LogIn, Star, Globe, ChevronDown, Check } from "lucide-react";
+import { Search, Menu, X, LogIn, Star, Globe, ChevronDown, Check, Home, Film, Users, Crown, Newspaper, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/i18n/i18n.jsx";
@@ -13,9 +13,20 @@ const languages = [
   { code: 'vi', label: 'Vietnamese', native: 'Tiếng Việt' },
 ];
 
+const NAV_LINKS = [
+  { href: "/", label: "Home", icon: Home },
+  { href: "/videos", label: "Videos", icon: Film },
+  { href: "/performers", label: "Performers", icon: Users },
+  { href: "/fanclub", label: "Fanclub", icon: Crown },
+  { href: "/fan-productions", label: "Fan Productions", icon: Camera },
+  { href: "/news", label: "News", icon: Newspaper },
+  { href: "/become-performer", label: "Become a Performer", icon: Star },
+];
+
 export default function TubeHeader({ onMenuToggle }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [langOpen, setLangOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -25,6 +36,28 @@ export default function TubeHeader({ onMenuToggle }) {
   const isActive = (href) => {
     return location.pathname === href || (href !== "/" && location.pathname.startsWith(href + "/"));
   };
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen]);
+
+  // Close on ESC key
+  useEffect(() => {
+    const handleKeyDown = (e) => { if (e.key === 'Escape') setMobileOpen(false); };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Hide global search bar on /videos page to avoid duplicate search bars
   const isVideosPage = location.pathname === '/videos';
@@ -148,14 +181,14 @@ export default function TubeHeader({ onMenuToggle }) {
                 {t('nav.fanclub')}
               </Button>
             </a>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden text-white/80 hover:text-white h-9 w-9"
-              onClick={onMenuToggle}
+            <button
+              className="md:hidden text-white/80 hover:text-white h-10 w-10 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
+              onClick={() => setMobileOpen(prev => !prev)}
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileOpen}
             >
-              <Menu className="w-6 h-6" />
-            </Button>
+              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
           </div>
         </div>
       </div>
@@ -240,24 +273,81 @@ export default function TubeHeader({ onMenuToggle }) {
 
       {/* Mobile Search (hidden on /videos page) */}
       {!isVideosPage && (
-        <div className="md:hidden px-4 pb-3 border-t border-rose-600/10">
-          <div className="relative pt-3">
+        <div className="md:hidden px-4 py-2 border-t border-rose-600/10">
+          <div className="relative">
             <Input
               type="text"
               placeholder={t('nav.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleSearchKeyDown}
-              className="w-full bg-[#121212] border border-rose-600/20 text-white placeholder:text-white/40 h-11 pl-5 pr-14 rounded-lg focus:outline-none focus:border-rose-600/50"
+              className="w-full bg-[#121212] border border-rose-600/20 text-white placeholder:text-white/40 h-10 pl-4 pr-12 rounded-lg text-sm focus:outline-none focus:border-rose-600/50"
             />
             <button 
               onClick={handleSearchSubmit}
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 bg-gradient-to-r from-rose-600 to-rose-700 rounded-lg flex items-center justify-center text-white"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 bg-gradient-to-r from-rose-600 to-rose-700 rounded-md flex items-center justify-center text-white"
             >
-              <Search className="w-5 h-5" />
+              <Search className="w-4 h-4" />
             </button>
           </div>
         </div>
+      )}
+
+      {/* Mobile Navigation Drawer */}
+      {mobileOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden="true"
+          />
+          {/* Drawer */}
+          <div className="fixed top-0 right-0 z-50 h-full w-[280px] max-w-[85vw] bg-[#0f0a0a] border-l border-rose-600/25 shadow-2xl shadow-rose-900/30 flex flex-col md:hidden">
+            {/* Drawer header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-rose-600/15">
+              <span className="text-white font-black text-lg tracking-tight">
+                FLESH<span className="bg-rose-600 px-2 rounded-md ml-0.5">LAB</span>
+              </span>
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="text-white/60 hover:text-white h-9 w-9 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
+                aria-label="Close menu"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Nav links */}
+            <nav className="flex-1 overflow-y-auto py-3 px-3">
+              {NAV_LINKS.map(({ href, label, icon: Icon }) => (
+                <a
+                  key={href}
+                  href={href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3.5 rounded-xl mb-1 text-base font-semibold transition-colors min-h-[48px] ${
+                    isActive(href)
+                      ? 'bg-rose-600/20 text-rose-400 border border-rose-600/30'
+                      : 'text-white/75 hover:text-white hover:bg-white/8'
+                  }`}
+                >
+                  <Icon className="w-5 h-5 shrink-0" />
+                  {label}
+                </a>
+              ))}
+            </nav>
+
+            {/* Bottom auth actions */}
+            <div className="px-4 py-4 border-t border-white/8 space-y-2">
+              <a href="/login" className="flex items-center justify-center gap-2 w-full h-11 rounded-xl border border-white/15 text-white/80 font-semibold text-sm hover:bg-white/8 transition-colors" onClick={() => setMobileOpen(false)}>
+                <LogIn className="w-4 h-4" /> Log In
+              </a>
+              <a href="/register" className="flex items-center justify-center gap-2 w-full h-11 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 text-white font-bold text-sm shadow-lg shadow-rose-700/30 hover:from-rose-500 hover:to-rose-600 transition-all" onClick={() => setMobileOpen(false)}>
+                Sign Up
+              </a>
+            </div>
+          </div>
+        </>
       )}
     </header>
   );

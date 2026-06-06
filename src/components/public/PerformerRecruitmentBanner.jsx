@@ -6,7 +6,7 @@ const BG_IMAGE = "https://video.fleshlab.online/applications/private/ChatGPT%20I
 
 export default function PerformerRecruitmentBanner() {
   return (
-    <section className="relative overflow-hidden min-h-[420px] md:min-h-[460px] flex items-center">
+    <section className="relative overflow-hidden min-h-[500px] sm:min-h-[440px] md:min-h-[460px] flex items-center">
 
       {/* Background image */}
       <div
@@ -19,8 +19,8 @@ export default function PerformerRecruitmentBanner() {
         aria-hidden="true"
       />
 
-      {/* Overlays — left-heavy gradient so text stays readable, image visible right */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/92 via-black/75 to-black/30" aria-hidden="true" />
+      {/* Overlays — heavy on mobile (full coverage), left-heavy on desktop */}
+      <div className="absolute inset-0 bg-black/80 sm:bg-gradient-to-r sm:from-black/92 sm:via-black/75 sm:to-black/30" aria-hidden="true" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40" aria-hidden="true" />
 
       {/* Subtle rose glow bottom-left */}
@@ -59,7 +59,7 @@ export default function PerformerRecruitmentBanner() {
           </div>
 
           {/* CTAs + revenue stats row */}
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3">
             <Link to="/become-performer">
               <Button className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black px-8 py-4 rounded-xl h-auto shadow-xl shadow-rose-700/40 text-sm uppercase tracking-wide">
                 Apply as Performer
@@ -72,8 +72,8 @@ export default function PerformerRecruitmentBanner() {
               </Button>
             </Link>
 
-            {/* Revenue split badges — inline on desktop, wraps on mobile */}
-            <div className="flex gap-2 ml-0 md:ml-2">
+            {/* Revenue split badges — hidden on mobile, inline on desktop */}
+            <div className="hidden sm:flex gap-2 ml-0 md:ml-2">
               <div className="bg-black/50 backdrop-blur-sm border border-rose-600/30 rounded-xl px-4 py-2.5 text-center">
                 <div className="text-2xl font-black text-rose-500 leading-none">40%</div>
                 <div className="text-white/40 text-[10px] mt-0.5 leading-tight">Managed share</div>
