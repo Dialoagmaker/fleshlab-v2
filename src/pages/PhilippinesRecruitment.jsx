@@ -488,6 +488,7 @@ export default function PhilippinesRecruitment() {
                   src="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/creator-beginner-phone.png"
                   alt="Beginner Creator"
                   className="absolute inset-0 w-full h-full object-cover"
+                  style={{ objectPosition: '50% 30%' }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                 <div className="relative z-10 p-7 h-full flex flex-col justify-between">
@@ -511,6 +512,7 @@ export default function PhilippinesRecruitment() {
                   src="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/creator-existing.png"
                   alt="Existing Creator"
                   className="absolute inset-0 w-full h-full object-cover"
+                  style={{ objectPosition: '50% 30%' }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                 <div className="relative z-10 p-7 h-full flex flex-col justify-between">
@@ -534,6 +536,7 @@ export default function PhilippinesRecruitment() {
                   src="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/creator-cam-model.png"
                   alt="Cam Model"
                   className="absolute inset-0 w-full h-full object-cover"
+                  style={{ objectPosition: '50% 30%' }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                 <div className="relative z-10 p-7 h-full flex flex-col justify-between">
@@ -557,6 +560,7 @@ export default function PhilippinesRecruitment() {
                   src="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/creator-couple.png"
                   alt="Couple Creator"
                   className="absolute inset-0 w-full h-full object-cover"
+                  style={{ objectPosition: '50% 30%' }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                 <div className="relative z-10 p-7 h-full flex flex-col justify-between">
@@ -580,6 +584,7 @@ export default function PhilippinesRecruitment() {
                   src="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/creator-fanclub.png"
                   alt="Fanclub Creator"
                   className="absolute inset-0 w-full h-full object-cover"
+                  style={{ objectPosition: '50% 30%' }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                 <div className="relative z-10 p-7 h-full flex flex-col justify-between">
