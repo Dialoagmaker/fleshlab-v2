@@ -83,6 +83,8 @@ import GuestProduction from './pages/GuestProduction';
 import FanProductions from './pages/FanProductions';
 import FanProductionRequest from './pages/FanProductionRequest';
 import ClientDashboard from './pages/ClientDashboard';
+import PhilippinesRecruitment from './pages/PhilippinesRecruitment';
+import ChaturbateRecruitment from './pages/ChaturbateRecruitment';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import DMCA from './pages/DMCA';
@@ -354,6 +356,23 @@ const AuthenticatedApp = () => {
     return (
       <PublicPageShell noIndex={true}>
         <ApplicationUpload />
+      </PublicPageShell>
+    );
+  }
+
+  // Performer recruitment landing pages - INDEX
+  if (path === "/gay-performer-recruitment-philippines") {
+    return (
+      <PublicPageShell>
+        <PhilippinesRecruitment />
+      </PublicPageShell>
+    );
+  }
+
+  if (path === "/chaturbate-model-join-studio") {
+    return (
+      <PublicPageShell>
+        <ChaturbateRecruitment />
       </PublicPageShell>
     );
   }

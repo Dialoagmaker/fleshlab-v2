@@ -10,6 +10,10 @@ import BPFaq from "@/components/becomePerformer/BPFaq";
 import BPCalculator from "@/components/becomePerformer/BPCalculator";
 import BPHowItWorks from "@/components/becomePerformer/BPHowItWorks";
 import BPApplicationForm from "@/components/becomePerformer/BPApplicationForm";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Globe, Video } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import BPSuccessScreen from "@/components/becomePerformer/BPSuccessScreen";
 import { trackBecomePerformerCtaClick } from "@/lib/analytics";
 
@@ -29,6 +33,7 @@ const FAQ_JSON_LD = [
 export default function BecomePerformer() {
   const formRef = useRef(null);
   const earnRef = useRef(null);
+  const navigate = useNavigate();
   const [submitted, setSubmitted] = useState(false);
   const [submittedData, setSubmittedData] = useState(null);
 
@@ -90,6 +95,54 @@ export default function BecomePerformer() {
         <BPFaq />
         <BPCalculator />
         <BPHowItWorks onApplyClick={scrollToForm} />
+
+        {/* Recruitment Landing Pages Links */}
+        <section className="py-16 px-4 bg-[#0A0A0A]">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="text-3xl font-bold text-center mb-8">Specific Recruitment Programs</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card 
+                className="bg-gradient-to-br from-orange-900/50 to-orange-800/30 border-orange-700 cursor-pointer hover:shadow-lg hover:shadow-orange-900/50 transition-all"
+                onClick={() => navigate("/gay-performer-recruitment-philippines")}
+              >
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Globe className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold mb-2">Philippines Recruitment</h3>
+                      <p className="text-gray-300 mb-4">Filipino gay men: Earn from home with full training. Start with your phone. PHP/USD payments. WhatsApp application available.</p>
+                      <Button className="bg-orange-600 hover:bg-orange-700">
+                        Learn More
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card 
+                className="bg-gradient-to-br from-purple-900/50 to-purple-800/30 border-purple-700 cursor-pointer hover:shadow-lg hover:shadow-purple-900/50 transition-all"
+                onClick={() => navigate("/chaturbate-model-join-studio")}
+              >
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Video className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold mb-2">Cam Model Partnership</h3>
+                      <p className="text-gray-300 mb-4">Chaturbate models: Add passive income. Keep camming. 70% revenue share. No exclusivity. Fanclub monetization.</p>
+                      <Button className="bg-purple-600 hover:bg-purple-700">
+                        Learn More
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
 
         <BPApplicationForm ref={formRef} onSuccess={handleSuccess} />
       </div>
