@@ -394,26 +394,20 @@ export default function PhilippinesRecruitment() {
           </div>
         </section>
 
-        {/* Choose Your Creator Path - Warm Light with Visible Background */}
+        {/* Choose Your Creator Path - Full Background Image */}
         <section 
           className="relative overflow-hidden"
           style={{
-            padding: 'clamp(76px, 10vw, 120px) 24px',
-            background: `
-              radial-gradient(circle at 12% 15%, rgba(225, 29, 72, 0.12), transparent 28%),
-              radial-gradient(circle at 85% 20%, rgba(255, 138, 0, 0.1), transparent 30%),
-              radial-gradient(circle at 70% 80%, rgba(168, 85, 247, 0.08), transparent 34%),
-              linear-gradient(135deg, #fff9f6 0%, #fff5f0 42%, #fef7f5 100%)`
+            padding: 'clamp(76px, 10vw, 120px) 24px'
           }}
         >
-          {/* Background Image Layer - Low opacity so cards are still visible */}
+          {/* Full Background Image */}
           <div 
             className="absolute inset-0"
             style={{
               backgroundImage: 'url(https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2007_12_26.png)',
               backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              opacity: 0.15
+              backgroundPosition: 'center'
             }}
           />
 
@@ -459,21 +453,15 @@ export default function PhilippinesRecruitment() {
                 className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
                 onClick={() => handleRevenueModelClick('beginner-with-phone')}
               >
-                <img 
-                  src="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/creator-beginner-phone.png"
-                  alt="Beginner Creator"
-                  className="absolute inset-0 w-full h-full object-cover"
-                  style={{ objectPosition: '50% 30%' }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm" />
                 <div className="relative z-10 p-7 h-full flex flex-col justify-between">
-                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255, 138, 0, 0.25)', border: '1px solid rgba(255, 138, 0, 0.5)' }}>
-                    <Smartphone className="h-5 w-5 text-orange-400" />
+                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255, 138, 0, 0.15)', border: '1px solid rgba(255, 138, 0, 0.3)' }}>
+                    <Smartphone className="h-5 w-5 text-orange-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-lg mb-2">Beginner with Phone</h3>
-                    <p className="text-gray-200 text-sm mb-4 leading-relaxed">Never created before? Start with your phone, private space and full setup support.</p>
-                    <Badge className="bg-gradient-to-r from-orange-600 to-amber-600 text-white text-xs font-semibold px-3 py-1">60/40 Management</Badge>
+                    <h3 className="font-bold text-gray-900 text-lg mb-2">Beginner with Phone</h3>
+                    <p className="text-gray-700 text-sm mb-4 leading-relaxed">Never created before? Start with your phone, private space and full setup support.</p>
+                    <Badge className="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-semibold px-3 py-1">60/40 Management</Badge>
                   </div>
                 </div>
               </div>
@@ -483,21 +471,15 @@ export default function PhilippinesRecruitment() {
                 className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
                 onClick={() => handleRevenueModelClick('existing-creator')}
               >
-                <img 
-                  src="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/creator-existing.png"
-                  alt="Existing Creator"
-                  className="absolute inset-0 w-full h-full object-cover"
-                  style={{ objectPosition: '50% 30%' }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm" />
                 <div className="relative z-10 p-7 h-full flex flex-col justify-between">
-                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(236, 72, 153, 0.25)', border: '1px solid rgba(236, 72, 153, 0.5)' }}>
-                    <Upload className="h-5 w-5 text-pink-400" />
+                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(236, 72, 153, 0.15)', border: '1px solid rgba(236, 72, 153, 0.3)' }}>
+                    <Upload className="h-5 w-5 text-pink-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-lg mb-2">Existing Creator</h3>
-                    <p className="text-gray-200 text-sm mb-4 leading-relaxed">Have clips or followers already? Add FLESHLAB as your fanclub and distribution hub.</p>
-                    <Badge className="bg-gradient-to-r from-pink-600 to-rose-600 text-white text-xs font-semibold px-3 py-1">70/30 Network</Badge>
+                    <h3 className="font-bold text-gray-900 text-lg mb-2">Existing Creator</h3>
+                    <p className="text-gray-700 text-sm mb-4 leading-relaxed">Have clips or followers already? Add FLESHLAB as your fanclub and distribution hub.</p>
+                    <Badge className="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-semibold px-3 py-1">70/30 Network</Badge>
                   </div>
                 </div>
               </div>
@@ -507,21 +489,15 @@ export default function PhilippinesRecruitment() {
                 className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
                 onClick={() => handleRevenueModelClick('cam-model')}
               >
-                <img 
-                  src="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/creator-cam-model.png"
-                  alt="Cam Model"
-                  className="absolute inset-0 w-full h-full object-cover"
-                  style={{ objectPosition: '50% 30%' }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm" />
                 <div className="relative z-10 p-7 h-full flex flex-col justify-between">
-                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(168, 85, 247, 0.25)', border: '1px solid rgba(168, 85, 247, 0.5)' }}>
-                    <Play className="h-5 w-5 text-purple-400" />
+                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+                    <Play className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-lg mb-2">Cam Model</h3>
-                    <p className="text-gray-200 text-sm mb-4 leading-relaxed">Already on Chaturbate or cam sites? Turn live viewers into long-term fans.</p>
-                    <Badge className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-semibold px-3 py-1">Hybrid Model</Badge>
+                    <h3 className="font-bold text-gray-900 text-lg mb-2">Cam Model</h3>
+                    <p className="text-gray-700 text-sm mb-4 leading-relaxed">Already on Chaturbate or cam sites? Turn live viewers into long-term fans.</p>
+                    <Badge className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs font-semibold px-3 py-1">Hybrid Model</Badge>
                   </div>
                 </div>
               </div>
@@ -531,21 +507,15 @@ export default function PhilippinesRecruitment() {
                 className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
                 onClick={() => handleRevenueModelClick('couple-creator')}
               >
-                <img 
-                  src="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/creator-couple.png"
-                  alt="Couple Creator"
-                  className="absolute inset-0 w-full h-full object-cover"
-                  style={{ objectPosition: '50% 30%' }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm" />
                 <div className="relative z-10 p-7 h-full flex flex-col justify-between">
-                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(236, 72, 153, 0.25)', border: '1px solid rgba(236, 72, 153, 0.5)' }}>
-                    <Users className="h-5 w-5 text-pink-400" />
+                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(236, 72, 153, 0.15)', border: '1px solid rgba(236, 72, 153, 0.3)' }}>
+                    <Users className="h-5 w-5 text-pink-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-lg mb-2">Couple Creator</h3>
-                    <p className="text-gray-200 text-sm mb-4 leading-relaxed">Create with a partner. Both must verify 18+ and approve every scene.</p>
-                    <Badge className="bg-gradient-to-r from-red-600 to-pink-600 text-white text-xs font-semibold px-3 py-1">Both Verify 18+</Badge>
+                    <h3 className="font-bold text-gray-900 text-lg mb-2">Couple Creator</h3>
+                    <p className="text-gray-700 text-sm mb-4 leading-relaxed">Create with a partner. Both must verify 18+ and approve every scene.</p>
+                    <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-semibold px-3 py-1">Both Verify 18+</Badge>
                   </div>
                 </div>
               </div>
@@ -555,21 +525,15 @@ export default function PhilippinesRecruitment() {
                 className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
                 onClick={() => handleRevenueModelClick('fanclub-creator')}
               >
-                <img 
-                  src="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/creator-fanclub.png"
-                  alt="Fanclub Creator"
-                  className="absolute inset-0 w-full h-full object-cover"
-                  style={{ objectPosition: '50% 30%' }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm" />
                 <div className="relative z-10 p-7 h-full flex flex-col justify-between">
-                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(251, 146, 60, 0.25)', border: '1px solid rgba(251, 146, 60, 0.5)' }}>
-                    <Sparkles className="h-5 w-5 text-orange-400" />
+                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(251, 146, 60, 0.15)', border: '1px solid rgba(251, 146, 60, 0.3)' }}>
+                    <Sparkles className="h-5 w-5 text-orange-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-lg mb-2">Fanclub Creator</h3>
-                    <p className="text-gray-200 text-sm mb-4 leading-relaxed">Build recurring monthly income with exclusive clips, updates and supporter perks.</p>
-                    <Badge className="bg-gradient-to-r from-orange-600 to-amber-600 text-white text-xs font-semibold px-3 py-1">Fanclub Setup</Badge>
+                    <h3 className="font-bold text-gray-900 text-lg mb-2">Fanclub Creator</h3>
+                    <p className="text-gray-700 text-sm mb-4 leading-relaxed">Build recurring monthly income with exclusive clips, updates and supporter perks.</p>
+                    <Badge className="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-semibold px-3 py-1">Fanclub Setup</Badge>
                   </div>
                 </div>
               </div>
