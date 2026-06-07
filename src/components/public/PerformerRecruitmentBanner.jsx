@@ -19,9 +19,9 @@ export default function PerformerRecruitmentBanner() {
         aria-hidden="true"
       />
 
-      {/* Overlays — heavy on mobile (full coverage), left-heavy on desktop */}
-      <div className="absolute inset-0 bg-black/80 sm:bg-gradient-to-r sm:from-black/92 sm:via-black/75 sm:to-black/30" aria-hidden="true" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40" aria-hidden="true" />
+      {/* Overlays — readable on mobile, image-revealing on desktop */}
+      <div className="absolute inset-0 bg-black/70 sm:bg-gradient-to-r sm:from-black/88 sm:via-black/55 sm:to-black/10" aria-hidden="true" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" aria-hidden="true" />
 
       {/* Subtle rose glow bottom-left */}
       <div className="absolute bottom-0 left-0 w-[400px] h-[250px] bg-rose-900/25 blur-[90px] rounded-full pointer-events-none" />
