@@ -236,23 +236,51 @@ export default function PhilippinesRecruitment() {
           </div>
         </section>
 
-        {/* Start With What You Already Have - Polished */}
-        <section className="px-4 sm:px-6 lg:px-8" style={{ backgroundColor: '#fff6f2', paddingTop: '72px', paddingBottom: '96px' }}>
-          <div className="max-w-[1280px] mx-auto">
+        {/* Start With What You Already Have - Warm Filipino Creator */}
+        <section className="px-4 sm:px-6 lg:px-8 relative overflow-hidden" style={{ paddingTop: '72px', paddingBottom: '96px' }}>
+          {/* Warm Philippines Sunset Background */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              backgroundColor: '#fff1e8',
+              backgroundImage: `
+                radial-gradient(circle at 20% 30%, rgba(255, 138, 0, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(225, 29, 72, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255, 191, 150, 0.05) 0%, transparent 70%)
+              `
+            }}
+          />
+          
+          <div className="max-w-[1280px] mx-auto relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
-              {/* Left: Image Card */}
+              {/* Left: Image Card with Overlay */}
               <div className="order-2 lg:order-1">
-                <img 
-                  src={setupImage}
-                  alt="Filipino creator setup with smartphone, ring light, private bedroom"
-                  className="w-full max-w-[560px] rounded-[28px] overflow-hidden object-cover"
-                  style={{
-                    aspectRatio: '16 / 10',
-                    boxShadow: '0 24px 80px rgba(0, 0, 0, 0.18)',
-                    border: '1px solid rgba(255, 255, 255, 0.45)',
-                    objectPosition: 'center'
-                  }}
-                />
+                <div className="relative max-w-[560px] mx-auto lg:mx-0">
+                  <img 
+                    src={setupImage}
+                    alt="Filipino creator setup with smartphone, ring light, private bedroom"
+                    className="w-full rounded-[32px] overflow-hidden object-cover"
+                    style={{
+                      aspectRatio: '16 / 10',
+                      border: '1px solid rgba(255, 138, 0, 0.28)',
+                      boxShadow: '0 30px 90px rgba(225, 29, 72, 0.22)',
+                      objectPosition: 'center'
+                    }}
+                  />
+                  {/* Subtle Gradient Overlay */}
+                  <div 
+                    className="absolute inset-0 rounded-[32px] overflow-hidden pointer-events-none"
+                    style={{
+                      background: 'linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,0.42) 100%)'
+                    }}
+                  />
+                  {/* HTML Overlay Text */}
+                  <div className="absolute bottom-6 left-6 right-6 text-white">
+                    <p className="text-xs font-semibold tracking-wide uppercase opacity-90">
+                      Phone. Room. Light. Start.
+                    </p>
+                  </div>
+                </div>
               </div>
               
               {/* Right: Text + Requirements */}
@@ -280,16 +308,16 @@ export default function PhilippinesRecruitment() {
                 </h2>
                 
                 <p className="text-base text-gray-700 mb-8 leading-relaxed max-w-[520px]">
-                  No studio needed. A phone, private room, good lighting and verified 18+ application are enough to start the review process.
+                  No studio needed. Your phone, a private room, good lighting and verified 18+ approval are enough to start the review process.
                 </p>
                 
                 {/* 6 Requirement Cards - 2 Column Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                   {/* Smartphone */}
                   <div 
-                    className="p-[22px_24px] rounded-[18px] min-h-[96px] transition-all hover:shadow-lg"
+                    className="p-[22px] rounded-[20px] transition-all hover:-translate-y-0.5 hover:shadow-lg cursor-default"
                     style={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.78)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.82)',
                       border: '1px solid rgba(225, 70, 100, 0.18)',
                       boxShadow: '0 10px 28px rgba(20, 20, 20, 0.05)'
                     }}
@@ -305,9 +333,9 @@ export default function PhilippinesRecruitment() {
 
                   {/* Private Room */}
                   <div 
-                    className="p-[22px_24px] rounded-[18px] min-h-[96px] transition-all hover:shadow-lg"
+                    className="p-[22px] rounded-[20px] transition-all hover:-translate-y-0.5 hover:shadow-lg cursor-default"
                     style={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.78)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.82)',
                       border: '1px solid rgba(225, 70, 100, 0.18)',
                       boxShadow: '0 10px 28px rgba(20, 20, 20, 0.05)'
                     }}
@@ -316,16 +344,16 @@ export default function PhilippinesRecruitment() {
                       <Lock className="h-[22px] w-[22px] text-rose-500 flex-shrink-0 mt-0.5" />
                       <div>
                         <h4 className="font-bold text-gray-900 text-[16px] mb-0.5">Private Room</h4>
-                        <p className="text-[14px] text-gray-700 leading-snug">A space where you can film undisturbed</p>
+                        <p className="text-[14px] text-gray-700 leading-snug">A quiet space where you control the scene</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Good Lighting */}
                   <div 
-                    className="p-[22px_24px] rounded-[18px] min-h-[96px] transition-all hover:shadow-lg"
+                    className="p-[22px] rounded-[20px] transition-all hover:-translate-y-0.5 hover:shadow-lg cursor-default"
                     style={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.78)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.82)',
                       border: '1px solid rgba(225, 70, 100, 0.18)',
                       boxShadow: '0 10px 28px rgba(20, 20, 20, 0.05)'
                     }}
@@ -341,9 +369,9 @@ export default function PhilippinesRecruitment() {
 
                   {/* Stable Internet */}
                   <div 
-                    className="p-[22px_24px] rounded-[18px] min-h-[96px] transition-all hover:shadow-lg"
+                    className="p-[22px] rounded-[20px] transition-all hover:-translate-y-0.5 hover:shadow-lg cursor-default"
                     style={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.78)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.82)',
                       border: '1px solid rgba(225, 70, 100, 0.18)',
                       boxShadow: '0 10px 28px rgba(20, 20, 20, 0.05)'
                     }}
@@ -352,16 +380,16 @@ export default function PhilippinesRecruitment() {
                       <Wifi className="h-[22px] w-[22px] text-amber-500 flex-shrink-0 mt-0.5" />
                       <div>
                         <h4 className="font-bold text-gray-900 text-[16px] mb-0.5">Stable Internet</h4>
-                        <p className="text-[14px] text-gray-700 leading-snug">For uploads and communication</p>
+                        <p className="text-[14px] text-gray-700 leading-snug">Upload clips and stay in contact</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Valid ID 18+ - Full Width */}
                   <div 
-                    className="p-[22px_24px] rounded-[18px] min-h-[96px] transition-all hover:shadow-lg sm:col-span-2"
+                    className="p-[22px] rounded-[20px] transition-all hover:-translate-y-0.5 hover:shadow-lg sm:col-span-2 cursor-default"
                     style={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.78)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.82)',
                       border: '1px solid rgba(225, 70, 100, 0.18)',
                       boxShadow: '0 10px 28px rgba(20, 20, 20, 0.05)'
                     }}
@@ -377,9 +405,9 @@ export default function PhilippinesRecruitment() {
 
                   {/* Payment Method - Full Width */}
                   <div 
-                    className="p-[22px_24px] rounded-[18px] min-h-[96px] transition-all hover:shadow-lg sm:col-span-2"
+                    className="p-[22px] rounded-[20px] transition-all hover:-translate-y-0.5 hover:shadow-lg sm:col-span-2 cursor-default"
                     style={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.78)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.82)',
                       border: '1px solid rgba(225, 70, 100, 0.18)',
                       boxShadow: '0 10px 28px rgba(20, 20, 20, 0.05)'
                     }}
@@ -393,6 +421,21 @@ export default function PhilippinesRecruitment() {
                     </div>
                   </div>
                 </div>
+
+                {/* Local Pills */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/60 text-gray-700 border border-rose-200">Manila</span>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/60 text-gray-700 border border-rose-200">Cebu</span>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/60 text-gray-700 border border-rose-200">Davao</span>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">GCash</span>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200">Maya</span>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-green-100 text-green-700 border border-green-200">PHP</span>
+                </div>
+
+                {/* Small Note */}
+                <p className="text-xs text-gray-600 italic">
+                  Availability and payout methods are confirmed during onboarding.
+                </p>
               </div>
             </div>
           </div>
