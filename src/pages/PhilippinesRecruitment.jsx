@@ -65,7 +65,7 @@ export default function PhilippinesRecruitment() {
 
   // AI-generated visuals for Filipino creator representation
   const heroImage = "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2005_50_08.png";
-  const creatorSetupImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a1b2c3d4e_creator_setup.png";
+  const setupImage = "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2006_13_39.png";
 
   return (
     <>
@@ -236,75 +236,112 @@ export default function PhilippinesRecruitment() {
           </div>
         </section>
 
-        {/* Start With What You Already Have - Warm Creator Setup */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-rose-50 via-orange-50 to-amber-50">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-              {/* Left: Image - Creator Setup */}
+        {/* Start With What You Already Have - Practical Section */}
+        <section className="py-24 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: '#fff6f2' }}>
+          <div className="max-w-[1280px] mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+              {/* Left: Image Card */}
               <div className="order-2 lg:order-1">
-                <div className="relative group">
-                  <img 
-                    src={creatorSetupImage} 
-                    alt="Filipino creator setup with smartphone on tripod, ring light, private bedroom"
-                    className="w-full h-auto rounded-2xl shadow-2xl border-2 border-amber-200"
-                  />
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-amber-500/10 to-rose-500/10 pointer-events-none"></div>
-                </div>
+                <img 
+                  src={setupImage}
+                  alt="Filipino creator setup with smartphone, ring light, private bedroom"
+                  className="w-full max-w-[560px] rounded-[28px] overflow-hidden object-cover shadow-2xl"
+                  style={{
+                    aspectRatio: '4 / 3',
+                    boxShadow: '0 24px 80px rgba(0, 0, 0, 0.18)',
+                    backgroundImage: 'linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0.18))'
+                  }}
+                />
               </div>
               
-              {/* Right: Requirements */}
+              {/* Right: Text + Requirements */}
               <div className="order-1 lg:order-2">
-                <Badge className="mb-4 bg-amber-100 text-amber-900 text-sm px-4 py-1.5 font-semibold">
-                  Creator Essentials
+                <Badge className="mb-4 bg-yellow-100 text-yellow-900 text-xs font-bold px-3 py-1.5">
+                  CREATOR ESSENTIALS
                 </Badge>
-                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 leading-tight">
+                
+                <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
                   Start with what you already have
                 </h2>
-                <p className="text-base text-gray-700 mb-8 leading-relaxed">
-                  No expensive gear needed. Most Filipino creators started exactly where you are now.
+                
+                <p className="text-base text-gray-700 mb-10 leading-relaxed">
+                  No studio needed. Most creators start with a phone, a private room, good lighting and a verified 18+ application.
                 </p>
                 
-                <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                  <div className="flex flex-col items-center text-center p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-amber-200 shadow-sm hover:shadow-md transition-shadow">
-                    <Smartphone className="h-8 w-8 text-rose-600 mb-2" />
-                    <h4 className="font-bold text-gray-900 text-sm">Smartphone</h4>
-                    <p className="text-xs text-gray-600 mt-1">1080p camera</p>
+                {/* 6 Requirement Cards */}
+                <div className="space-y-3">
+                  {/* Smartphone */}
+                  <div 
+                    className="flex items-start gap-4 p-4 bg-white rounded-[18px] border transition-all hover:shadow-md"
+                    style={{ borderColor: 'rgba(225, 70, 100, 0.18)' }}
+                  >
+                    <Smartphone className="h-6 w-6 text-rose-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-base">Smartphone</h4>
+                      <p className="text-sm text-gray-700 mt-0.5">1080p camera is enough to apply</p>
+                    </div>
                   </div>
 
-                  <div className="flex flex-col items-center text-center p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-amber-200 shadow-sm hover:shadow-md transition-shadow">
-                    <Lightbulb className="h-8 w-8 text-amber-600 mb-2" />
-                    <h4 className="font-bold text-gray-900 text-sm">Lighting</h4>
-                    <p className="text-xs text-gray-600 mt-1">Natural or ring light</p>
+                  {/* Private Room */}
+                  <div 
+                    className="flex items-start gap-4 p-4 bg-white rounded-[18px] border transition-all hover:shadow-md"
+                    style={{ borderColor: 'rgba(225, 70, 100, 0.18)' }}
+                  >
+                    <Lock className="h-6 w-6 text-rose-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-base">Private Room</h4>
+                      <p className="text-sm text-gray-700 mt-0.5">A space where you can film undisturbed</p>
+                    </div>
                   </div>
 
-                  <div className="flex flex-col items-center text-center p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-amber-200 shadow-sm hover:shadow-md transition-shadow">
-                    <Lock className="h-8 w-8 text-rose-600 mb-2" />
-                    <h4 className="font-bold text-gray-900 text-sm">Private Room</h4>
-                    <p className="text-xs text-gray-600 mt-1">Film undisturbed</p>
+                  {/* Good Lighting */}
+                  <div 
+                    className="flex items-start gap-4 p-4 bg-white rounded-[18px] border transition-all hover:shadow-md"
+                    style={{ borderColor: 'rgba(225, 70, 100, 0.18)' }}
+                  >
+                    <Lightbulb className="h-6 w-6 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-base">Good Lighting</h4>
+                      <p className="text-sm text-gray-700 mt-0.5">Natural light or a simple ring light</p>
+                    </div>
                   </div>
 
-                  <div className="flex flex-col items-center text-center p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-amber-200 shadow-sm hover:shadow-md transition-shadow">
-                    <Wifi className="h-8 w-8 text-amber-600 mb-2" />
-                    <h4 className="font-bold text-gray-900 text-sm">Internet</h4>
-                    <p className="text-xs text-gray-600 mt-1">Stable connection</p>
+                  {/* Stable Internet */}
+                  <div 
+                    className="flex items-start gap-4 p-4 bg-white rounded-[18px] border transition-all hover:shadow-md"
+                    style={{ borderColor: 'rgba(225, 70, 100, 0.18)' }}
+                  >
+                    <Wifi className="h-6 w-6 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-base">Stable Internet</h4>
+                      <p className="text-sm text-gray-700 mt-0.5">For uploads and communication</p>
+                    </div>
                   </div>
 
-                  <div className="flex flex-col items-center text-center p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-amber-200 shadow-sm hover:shadow-md transition-shadow col-span-2">
-                    <FileCheck className="h-8 w-8 text-rose-600 mb-2" />
-                    <h4 className="font-bold text-gray-900 text-sm">Valid ID (18+)</h4>
-                    <p className="text-xs text-gray-600 mt-1">Passport, UMID, or government ID</p>
+                  {/* Valid ID 18+ */}
+                  <div 
+                    className="flex items-start gap-4 p-4 bg-white rounded-[18px] border transition-all hover:shadow-md"
+                    style={{ borderColor: 'rgba(225, 70, 100, 0.18)' }}
+                  >
+                    <FileCheck className="h-6 w-6 text-rose-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-base">Valid ID 18+</h4>
+                      <p className="text-sm text-gray-700 mt-0.5">Passport, UMID, driver's license or government ID</p>
+                    </div>
                   </div>
 
-                  <div className="flex flex-col items-center text-center p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-amber-200 shadow-sm hover:shadow-md transition-shadow col-span-2">
-                    <Banknote className="h-8 w-8 text-amber-600 mb-2" />
-                    <h4 className="font-bold text-gray-900 text-sm">Payment Method</h4>
-                    <p className="text-xs text-gray-600 mt-1">GCash, Maya, bank, or crypto</p>
+                  {/* Payment Method */}
+                  <div 
+                    className="flex items-start gap-4 p-4 bg-white rounded-[18px] border transition-all hover:shadow-md"
+                    style={{ borderColor: 'rgba(225, 70, 100, 0.18)' }}
+                  >
+                    <Banknote className="h-6 w-6 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-base">Payment Method</h4>
+                      <p className="text-sm text-gray-700 mt-0.5">GCash, Maya, bank or crypto where available</p>
+                    </div>
                   </div>
                 </div>
-
-                <p className="text-xs text-gray-600 mt-6 italic text-center">
-                  💡 Ring lights (₱500-1,000) and tripods (₱300-800) can come later.
-                </p>
               </div>
             </div>
           </div>
