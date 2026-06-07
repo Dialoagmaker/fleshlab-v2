@@ -29,7 +29,8 @@ import {
   Calendar,
   Clock,
   MapPin,
-  Banknote
+  Banknote,
+  Sparkles
 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import SEOMeta from "@/components/SEOMeta";
@@ -62,6 +63,12 @@ export default function PhilippinesRecruitment() {
     }
   };
 
+  // AI-generated visuals for Filipino creator representation
+  const heroImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/fee95ed39_generated_image.png";
+  const setupImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/7d8872b99_generated_image.png";
+  const workflowImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/8390c41e6_generated_image.png";
+  const earningsImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/d2a01df7f_generated_image.png";
+
   return (
     <>
       <SEOMeta
@@ -72,155 +79,375 @@ export default function PhilippinesRecruitment() {
       />
       
       <div className="min-h-screen bg-white">
-        {/* Hero Section - Mobile First, Practical */}
-        <section className="relative py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-rose-50 to-white">
-          <div className="max-w-3xl mx-auto text-center">
-            <Badge className="mb-4 bg-rose-100 text-rose-800 hover:bg-rose-100 text-sm px-4 py-1">
-              🇵🇭 Philippines 18+ Only
-            </Badge>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
-              Start Creating Gay Content From Home in the Philippines
-            </h1>
-            <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              No studio needed. Start with your phone, a private space, and a verified 18+ application. FLESHLAB helps with setup, publishing, promotion and fanclub monetization.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-6">
-              <Button 
-                size="lg" 
-                className="bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-6 text-base sm:text-lg w-full sm:w-auto"
-                onClick={handleWhatsAppClick}
-              >
-                <MessageCircle className="mr-2 h-5 w-5" />
-                Apply on WhatsApp
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-rose-600 text-rose-600 hover:bg-rose-50 px-6 sm:px-8 py-6 text-base sm:text-lg w-full sm:w-auto"
-                onClick={() => handleScrollToSection('how-it-works')}
-              >
-                <Play className="mr-2 h-5 w-5" />
-                See How It Works
-              </Button>
-            </div>
+        {/* Hero Section - Emotional & Visual */}
+        <section className="relative py-0 px-0 bg-gradient-to-b from-rose-100 via-rose-50 to-white overflow-hidden">
+          {/* Hero Image Background */}
+          <div className="absolute inset-0 z-0">
+            <img 
+              src={heroImage} 
+              alt="Filipino content creator in home studio setup"
+              className="w-full h-full object-cover opacity-25"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-rose-100/90 via-rose-50/95 to-white"></div>
+          </div>
+          
+          <div className="relative z-10 py-20 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-4xl mx-auto text-center">
+              <Badge className="mb-6 bg-rose-600 text-white hover:bg-rose-700 text-sm px-5 py-2 shadow-lg">
+                🇵🇭 For Filipino Creators 18+
+              </Badge>
+              
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 mb-6 leading-tight tracking-tight">
+                Start Creating From Home in the Philippines
+              </h1>
+              
+              <p className="text-lg sm:text-xl text-gray-700 mb-10 max-w-2xl mx-auto leading-relaxed">
+                Use your phone, a private space, and a verified 18+ application to get started. FLESHLAB helps with setup, publishing, promotion and fanclub monetization.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 justify-center mb-8">
+                <Button 
+                  size="lg" 
+                  className="bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl px-8 sm:px-10 py-7 text-lg sm:text-xl w-full sm:w-auto font-semibold transition-all"
+                  onClick={handleWhatsAppClick}
+                >
+                  <MessageCircle className="mr-2 h-6 w-6" />
+                  Apply on WhatsApp
+                </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="border-2 border-rose-600 text-rose-700 hover:bg-rose-50 bg-white shadow-md px-8 sm:px-10 py-7 text-lg sm:text-xl w-full sm:w-auto font-semibold transition-all"
+                  onClick={() => handleScrollToSection('how-it-works')}
+                >
+                  <Play className="mr-2 h-6 w-6" />
+                  See How It Works
+                </Button>
+              </div>
 
-            {/* Trust Badges */}
-            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-500 mt-8">
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-green-600" />
-                <span>Verified 18+ Only</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Lock className="h-4 w-4 text-green-600" />
-                <span>Private & Secure</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <FileCheck className="h-4 w-4 text-green-600" />
-                <span>KYC Required</span>
+              {/* Trust Badges */}
+              <div className="flex flex-wrap justify-center gap-6 sm:gap-8 text-sm sm:text-base text-gray-700 font-medium mt-10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center">
+                    <Shield className="h-5 w-5 text-green-600" />
+                  </div>
+                  <span>Verified 18+ Only</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center">
+                    <Lock className="h-5 w-5 text-green-600" />
+                  </div>
+                  <span>Private & Secure</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center">
+                    <FileCheck className="h-5 w-5 text-green-600" />
+                  </div>
+                  <span>KYC Required</span>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Start With Your Phone */}
-        <section className="py-12 px-4 sm:px-6 lg:px-8 bg-white">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-4">
-              Start with your phone
-            </h2>
-            <p className="text-center text-gray-600 mb-8 text-sm sm:text-base">
-              You don't need expensive equipment to begin. Here's what you actually need:
-            </p>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Card className="border-rose-100 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3">
-                    <Smartphone className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
+        {/* Start With What You Already Have - Visual Section */}
+        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-rose-50">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+              {/* Left: Image */}
+              <div className="order-2 lg:order-1">
+                <div className="relative">
+                  <img 
+                    src={setupImage} 
+                    alt="Creator bedroom setup with smartphone and ring light"
+                    className="w-full h-auto rounded-2xl shadow-2xl"
+                  />
+                  <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-rose-600 rounded-full opacity-20 blur-2xl"></div>
+                  <div className="absolute -top-6 -left-6 w-32 h-32 bg-rose-400 rounded-full opacity-20 blur-2xl"></div>
+                </div>
+              </div>
+              
+              {/* Right: Content */}
+              <div className="order-1 lg:order-2">
+                <Badge className="mb-4 bg-rose-100 text-rose-800 text-sm px-4 py-1.5">
+                  What You Need
+                </Badge>
+                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6 leading-tight">
+                  Start with what you already have
+                </h2>
+                <p className="text-lg text-gray-700 mb-8 leading-relaxed">
+                  You don't need expensive equipment to begin. Most successful Filipino creators started with these basics:
+                </p>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-rose-100 shadow-sm">
+                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Smartphone className="h-5 w-5 text-rose-600" />
+                    </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Smartphone</h4>
-                      <p className="text-sm text-gray-600">Any phone with 1080p camera works</p>
+                      <p className="text-sm text-gray-600">Any phone with 1080p camera</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
 
-              <Card className="border-rose-100 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3">
-                    <Lightbulb className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
+                  <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-rose-100 shadow-sm">
+                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Lightbulb className="h-5 w-5 text-rose-600" />
+                    </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Good Lighting</h4>
-                      <p className="text-sm text-gray-600">Natural light or basic ring light</p>
+                      <p className="text-sm text-gray-600">Natural light or ring light</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
 
-              <Card className="border-rose-100 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3">
-                    <Lock className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
+                  <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-rose-100 shadow-sm">
+                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Lock className="h-5 w-5 text-rose-600" />
+                    </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Private Room</h4>
-                      <p className="text-sm text-gray-600">A space where you can film undisturbed</p>
+                      <p className="text-sm text-gray-600">Film undisturbed</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
 
-              <Card className="border-rose-100 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3">
-                    <Wifi className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
+                  <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-rose-100 shadow-sm">
+                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Wifi className="h-5 w-5 text-rose-600" />
+                    </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Stable Internet</h4>
-                      <p className="text-sm text-gray-600">For uploading content and communication</p>
+                      <p className="text-sm text-gray-600">For uploading & communication</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
 
-              <Card className="border-rose-100 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3">
-                    <FileCheck className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
+                  <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-rose-100 shadow-sm sm:col-span-2">
+                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <FileCheck className="h-5 w-5 text-rose-600" />
+                    </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Valid ID (18+)</h4>
                       <p className="text-sm text-gray-600">Passport, driver's license, UMID, or government ID</p>
                     </div>
                   </div>
+
+                  <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-rose-100 shadow-sm sm:col-span-2">
+                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Banknote className="h-5 w-5 text-rose-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Payment Method</h4>
+                      <p className="text-sm text-gray-600">GCash, Maya, bank account, or crypto</p>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-xs text-gray-500 mt-6 italic">
+                  💡 Optional upgrades like ring lights (₱500-1,000) or tripods (₱300-800) can come later. We'll guide you after application.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Who This Is For - Creator Types */}
+        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+          <div className="max-w-6xl mx-auto">
+            <Badge className="mb-4 bg-rose-100 text-rose-800 text-sm px-4 py-1.5">
+              Creator Paths
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-4">
+              Who this is for
+            </h2>
+            <p className="text-center text-gray-600 mb-12 text-lg max-w-2xl mx-auto">
+              Different paths depending on your experience and goals
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Beginner with Phone */}
+              <Card className="border-2 border-rose-200 shadow-lg hover:shadow-xl transition-shadow">
+                <CardContent className="pt-6">
+                  <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mb-4">
+                    <UserCheck className="h-7 w-7 text-rose-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Beginner with Phone</h3>
+                  <p className="text-gray-700 mb-4">
+                    Never created content before? Start with our 60/40 Management Model. We help with everything from planning to publishing.
+                  </p>
+                  <Badge className="bg-rose-600 text-sm">Most common for first-timers</Badge>
                 </CardContent>
               </Card>
 
-              <Card className="border-rose-100 shadow-sm">
+              {/* Existing Creator */}
+              <Card className="border-2 border-rose-200 shadow-lg hover:shadow-xl transition-shadow">
                 <CardContent className="pt-6">
-                  <div className="flex items-start gap-3">
-                    <Banknote className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Payment Method</h4>
-                      <p className="text-sm text-gray-600">GCash, Maya, bank account, or crypto wallet</p>
-                    </div>
+                  <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mb-4">
+                    <Camera className="h-7 w-7 text-rose-600" />
                   </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Existing Amateur Creator</h3>
+                  <p className="text-gray-700 mb-4">
+                    Already have some content or followers? Use our 70/30 Network Model to expand your reach and keep 70% of revenue.
+                  </p>
+                  <Badge className="bg-gray-700 text-sm">Best if you have audience</Badge>
+                </CardContent>
+              </Card>
+
+              {/* Cam Model */}
+              <Card className="border-2 border-rose-200 shadow-lg hover:shadow-xl transition-shadow">
+                <CardContent className="pt-6">
+                  <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mb-4">
+                    <Users className="h-7 w-7 text-rose-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Cam Model</h3>
+                  <p className="text-gray-700 mb-4">
+                    Already doing livecam shows on Chaturbate or other platforms? Add recorded content as passive income while continuing your cam work.
+                  </p>
+                  <Badge className="bg-rose-600 text-sm">Hybrid approach</Badge>
+                </CardContent>
+              </Card>
+
+              {/* Couple Creator */}
+              <Card className="border-2 border-rose-200 shadow-lg hover:shadow-xl transition-shadow md:col-span-2">
+                <CardContent className="pt-6">
+                  <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mb-4">
+                    <Heart className="h-7 w-7 text-rose-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Couple Creator</h3>
+                  <p className="text-gray-700 mb-4">
+                    Creating with a partner or in a relationship? Both must verify 18+ with valid ID and consent to all content. Content requires explicit approval from all parties before publishing.
+                  </p>
+                  <Badge className="bg-rose-600 text-sm">Both partners must verify 18+</Badge>
+                </CardContent>
+              </Card>
+
+              {/* Fanclub Creator */}
+              <Card className="border-2 border-rose-200 shadow-lg hover:shadow-xl transition-shadow">
+                <CardContent className="pt-6">
+                  <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mb-4">
+                    <Sparkles className="h-7 w-7 text-rose-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Fanclub Creator</h3>
+                  <p className="text-gray-700 mb-4">
+                    Want recurring monthly income? Build a subscriber base with exclusive fanclub content. Fans pay monthly for access to your exclusive photos, videos, and personal updates.
+                  </p>
+                  <Badge className="bg-rose-600 text-sm">Recurring revenue</Badge>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* Choose Your Creator Model */}
+        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-rose-50 to-white">
+          <div className="max-w-5xl mx-auto">
+            <Badge className="mb-4 bg-rose-100 text-rose-800 text-sm px-4 py-1.5">
+              Revenue Models
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-4">
+              Choose your creator model
+            </h2>
+            <p className="text-center text-gray-600 mb-12 text-lg max-w-2xl mx-auto">
+              Different support levels, different splits
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* 60/40 Management */}
+              <Card 
+                className="border-2 border-rose-500 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer"
+                onClick={() => handleRevenueModelClick("60-40-management")}
+              >
+                <CardContent className="pt-6">
+                  <Badge className="mb-4 bg-rose-600 text-sm">For Beginners</Badge>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">60/40 Management Model</h3>
+                  <div className="text-center mb-6 py-4 bg-rose-50 rounded-xl">
+                    <p className="text-4xl font-extrabold text-rose-600 mb-1">Studio 60%</p>
+                    <p className="text-4xl font-extrabold text-rose-600">Performer 40%</p>
+                  </div>
+                  <p className="text-gray-700 mb-6">
+                    Best if you need help with setup, editing, publishing, promotion, and fanclub management. We handle the business side while you focus on creating.
+                  </p>
+                  <ul className="space-y-3 text-gray-700">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span>Full content planning & strategy</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span>Professional editing & thumbnails</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span>Fanclub setup & promotion</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span>Platform distribution</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span>Option to graduate to 70/30 later</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              {/* 70/30 Network */}
+              <Card 
+                className="border-2 border-gray-300 shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
+                onClick={() => handleRevenueModelClick("70-30-network")}
+              >
+                <CardContent className="pt-6">
+                  <Badge className="mb-4 bg-gray-700 text-sm">For Existing Creators</Badge>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">70/30 Network Model</h3>
+                  <div className="text-center mb-6 py-4 bg-gray-50 rounded-xl">
+                    <p className="text-4xl font-extrabold text-gray-700 mb-1">Performer 70%</p>
+                    <p className="text-4xl font-extrabold text-gray-700">Studio 30%</p>
+                  </div>
+                  <p className="text-gray-700 mb-6">
+                    Best if you already have content, audience, or experience. Use FLESHLAB as an additional network and fanclub hub while keeping most revenue.
+                  </p>
+                  <ul className="space-y-3 text-gray-700">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span>Keep 70% of all revenue</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span>Upload your own content</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span>Set your own schedule</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span>Multi-platform distribution</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span>Fanclub & PPV tools included</span>
+                    </li>
+                  </ul>
                 </CardContent>
               </Card>
             </div>
 
-            <p className="text-xs text-gray-500 mt-6 text-center italic">
-              Optional upgrades like ring lights (₱500-1,000) or tripods (₱300-800) can come later. We'll guide you after application.
+            <p className="text-xs text-gray-500 mt-8 text-center italic">
+              Revenue splits apply to eligible gross revenue. Specific terms discussed during application review.
             </p>
           </div>
         </section>
 
         {/* How FLESHLAB Helps After Approval */}
-        <section id="how-it-works" className="py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-rose-50">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-4">
+        <section id="how-it-works" className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-rose-50">
+          <div className="max-w-4xl mx-auto">
+            <Badge className="mb-4 bg-rose-100 text-rose-800 text-sm px-4 py-1.5">
+              Step-by-Step Process
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-4">
               How FLESHLAB helps after approval
             </h2>
-            <p className="text-center text-gray-600 mb-8 text-sm sm:text-base">
-              Step-by-step process from application to earning
+            <p className="text-center text-gray-600 mb-12 text-lg max-w-2xl mx-auto">
+              From application to earning - we guide you every step
             </p>
             
             <div className="relative">
@@ -230,104 +457,104 @@ export default function PhilippinesRecruitment() {
               <div className="space-y-4">
                 {/* Step 1 */}
                 <div className="relative flex items-start gap-4">
-                  <div className="w-8 h-8 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10">
+                  <div className="w-10 h-10 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10 shadow-lg">
                     <span className="text-white text-sm font-bold">1</span>
                   </div>
-                  <Card className="flex-1 border-rose-100 shadow-sm">
-                    <CardContent className="pt-4">
-                      <h3 className="font-semibold text-gray-900 mb-1">Apply</h3>
-                      <p className="text-sm text-gray-600">Submit your application via WhatsApp or online form</p>
+                  <Card className="flex-1 border-rose-100 shadow-md bg-white">
+                    <CardContent className="pt-5">
+                      <h3 className="font-bold text-lg text-gray-900 mb-1">Apply</h3>
+                      <p className="text-gray-600">Submit your application via WhatsApp or online form</p>
                     </CardContent>
                   </Card>
                 </div>
 
                 {/* Step 2 */}
                 <div className="relative flex items-start gap-4">
-                  <div className="w-8 h-8 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10">
+                  <div className="w-10 h-10 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10 shadow-lg">
                     <span className="text-white text-sm font-bold">2</span>
                   </div>
-                  <Card className="flex-1 border-rose-100 shadow-sm">
-                    <CardContent className="pt-4">
-                      <h3 className="font-semibold text-gray-900 mb-1">Verify 18+</h3>
-                      <p className="text-sm text-gray-600">Upload valid government ID for age verification (KYC)</p>
+                  <Card className="flex-1 border-rose-100 shadow-md bg-white">
+                    <CardContent className="pt-5">
+                      <h3 className="font-bold text-lg text-gray-900 mb-1">Verify 18+</h3>
+                      <p className="text-gray-600">Upload valid government ID for age verification (KYC)</p>
                     </CardContent>
                   </Card>
                 </div>
 
                 {/* Step 3 */}
                 <div className="relative flex items-start gap-4">
-                  <div className="w-8 h-8 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10">
+                  <div className="w-10 h-10 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10 shadow-lg">
                     <span className="text-white text-sm font-bold">3</span>
                   </div>
-                  <Card className="flex-1 border-rose-100 shadow-sm">
-                    <CardContent className="pt-4">
-                      <h3 className="font-semibold text-gray-900 mb-1">Choose Model</h3>
-                      <p className="text-sm text-gray-600">Select 60/40 Management or 70/30 Network based on your needs</p>
+                  <Card className="flex-1 border-rose-100 shadow-md bg-white">
+                    <CardContent className="pt-5">
+                      <h3 className="font-bold text-lg text-gray-900 mb-1">Choose Model</h3>
+                      <p className="text-gray-600">Select 60/40 Management or 70/30 Network based on your needs</p>
                     </CardContent>
                   </Card>
                 </div>
 
                 {/* Step 4 */}
                 <div className="relative flex items-start gap-4">
-                  <div className="w-8 h-8 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10">
+                  <div className="w-10 h-10 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10 shadow-lg">
                     <span className="text-white text-sm font-bold">4</span>
                   </div>
-                  <Card className="flex-1 border-rose-100 shadow-sm">
-                    <CardContent className="pt-4">
-                      <h3 className="font-semibold text-gray-900 mb-1">Set Up Profile</h3>
-                      <p className="text-sm text-gray-600">We help create your performer profile and fanclub page</p>
+                  <Card className="flex-1 border-rose-100 shadow-md bg-white">
+                    <CardContent className="pt-5">
+                      <h3 className="font-bold text-lg text-gray-900 mb-1">Set Up Profile</h3>
+                      <p className="text-gray-600">We help create your performer profile and fanclub page</p>
                     </CardContent>
                   </Card>
                 </div>
 
                 {/* Step 5 */}
                 <div className="relative flex items-start gap-4">
-                  <div className="w-8 h-8 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10">
+                  <div className="w-10 h-10 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10 shadow-lg">
                     <span className="text-white text-sm font-bold">5</span>
                   </div>
-                  <Card className="flex-1 border-rose-100 shadow-sm">
-                    <CardContent className="pt-4">
-                      <h3 className="font-semibold text-gray-900 mb-1">Upload Content</h3>
-                      <p className="text-sm text-gray-600">Film and upload your first scenes from home</p>
+                  <Card className="flex-1 border-rose-100 shadow-md bg-white">
+                    <CardContent className="pt-5">
+                      <h3 className="font-bold text-lg text-gray-900 mb-1">Upload Content</h3>
+                      <p className="text-gray-600">Film and upload your first scenes from home</p>
                     </CardContent>
                   </Card>
                 </div>
 
                 {/* Step 6 */}
                 <div className="relative flex items-start gap-4">
-                  <div className="w-8 h-8 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10">
+                  <div className="w-10 h-10 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10 shadow-lg">
                     <span className="text-white text-sm font-bold">6</span>
                   </div>
-                  <Card className="flex-1 border-rose-100 shadow-sm">
-                    <CardContent className="pt-4">
-                      <h3 className="font-semibold text-gray-900 mb-1">Publish</h3>
-                      <p className="text-sm text-gray-600">Content goes live after approval and quality check</p>
+                  <Card className="flex-1 border-rose-100 shadow-md bg-white">
+                    <CardContent className="pt-5">
+                      <h3 className="font-bold text-lg text-gray-900 mb-1">Publish</h3>
+                      <p className="text-gray-600">Content goes live after approval and quality check</p>
                     </CardContent>
                   </Card>
                 </div>
 
                 {/* Step 7 */}
                 <div className="relative flex items-start gap-4">
-                  <div className="w-8 h-8 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10">
+                  <div className="w-10 h-10 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10 shadow-lg">
                     <span className="text-white text-sm font-bold">7</span>
                   </div>
-                  <Card className="flex-1 border-rose-100 shadow-sm">
-                    <CardContent className="pt-4">
-                      <h3 className="font-semibold text-gray-900 mb-1">Promote</h3>
-                      <p className="text-sm text-gray-600">We handle SEO, platform distribution, and marketing</p>
+                  <Card className="flex-1 border-rose-100 shadow-md bg-white">
+                    <CardContent className="pt-5">
+                      <h3 className="font-bold text-lg text-gray-900 mb-1">Promote</h3>
+                      <p className="text-gray-600">We handle SEO, platform distribution, and marketing</p>
                     </CardContent>
                   </Card>
                 </div>
 
                 {/* Step 8 */}
                 <div className="relative flex items-start gap-4">
-                  <div className="w-8 h-8 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10">
+                  <div className="w-10 h-10 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10 shadow-lg">
                     <span className="text-white text-sm font-bold">8</span>
                   </div>
-                  <Card className="flex-1 border-rose-100 shadow-sm">
-                    <CardContent className="pt-4">
-                      <h3 className="font-semibold text-gray-900 mb-1">Track Earnings</h3>
-                      <p className="text-sm text-gray-600">Monitor your revenue and request weekly payouts</p>
+                  <Card className="flex-1 border-rose-100 shadow-md bg-white">
+                    <CardContent className="pt-5">
+                      <h3 className="font-bold text-lg text-gray-900 mb-1">Track Earnings</h3>
+                      <p className="text-gray-600">Monitor your revenue and request weekly payouts</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -336,422 +563,143 @@ export default function PhilippinesRecruitment() {
           </div>
         </section>
 
-        {/* Choose Your Creator Model */}
-        <section className="py-12 px-4 sm:px-6 lg:px-8 bg-white">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-4">
-              Choose your creator model
-            </h2>
-            <p className="text-center text-gray-600 mb-8 text-sm sm:text-base">
-              Different support levels, different splits
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              {/* 60/40 Management */}
-              <Card 
-                className="border-2 border-rose-500 shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
-                onClick={() => handleRevenueModelClick("60-40-management")}
-              >
-                <CardContent className="pt-6">
-                  <Badge className="mb-3 bg-rose-600">For Beginners</Badge>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">60/40 Management Model</h3>
-                  <div className="text-center mb-4 py-3 bg-rose-50 rounded-lg">
-                    <p className="text-3xl font-bold text-rose-600">Studio 60%</p>
-                    <p className="text-3xl font-bold text-rose-600">Performer 40%</p>
-                  </div>
-                  <p className="text-sm text-gray-700 mb-4">
-                    Best if you need help with setup, editing, publishing, promotion, and fanclub management. We handle the business side while you focus on creating.
-                  </p>
-                  <ul className="space-y-2 text-sm text-gray-700">
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Full content planning & strategy</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Professional editing & thumbnails</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Fanclub setup & promotion</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Platform distribution</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Option to graduate to 70/30 later</span>
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-
-              {/* 70/30 Network */}
-              <Card 
-                className="border-2 border-gray-300 shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => handleRevenueModelClick("70-30-network")}
-              >
-                <CardContent className="pt-6">
-                  <Badge className="mb-3 bg-gray-700">For Existing Creators</Badge>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">70/30 Network Model</h3>
-                  <div className="text-center mb-4 py-3 bg-gray-50 rounded-lg">
-                    <p className="text-3xl font-bold text-gray-700">Performer 70%</p>
-                    <p className="text-3xl font-bold text-gray-700">Studio 30%</p>
-                  </div>
-                  <p className="text-sm text-gray-700 mb-4">
-                    Best if you already have content, audience, or experience. Use FLESHLAB as an additional network and fanclub hub while keeping most revenue.
-                  </p>
-                  <ul className="space-y-2 text-sm text-gray-700">
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Keep 70% of all revenue</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Upload your own content</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Set your own schedule</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Multi-platform distribution</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Fanclub & PPV tools included</span>
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-
-            <p className="text-xs text-gray-500 mt-6 text-center">
-              Revenue splits apply to eligible gross revenue. Specific terms discussed during application review.
-            </p>
-          </div>
-        </section>
-
-        {/* What FLESHLAB Helps With */}
-        <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-rose-50">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-4">
-              What FLESHLAB helps with
-            </h2>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Card className="border-rose-100 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3">
-                    <FileCheck className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Content Planning</h4>
-                      <p className="text-sm text-gray-600">Scene ideas that work for you</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-rose-100 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3">
-                    <UserCheck className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Profile Setup</h4>
-                      <p className="text-sm text-gray-600">Professional performer page</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-rose-100 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3">
-                    <Camera className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Video Publishing</h4>
-                      <p className="text-sm text-gray-600">Upload, edit, and release</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-rose-100 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3">
-                    <Users className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Fanclub Setup</h4>
-                      <p className="text-sm text-gray-600">Monthly subscriber access</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-rose-100 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3">
-                    <Globe className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Promotion</h4>
-                      <p className="text-sm text-gray-600">SEO and platform marketing</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-rose-100 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3">
-                    <Shield className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Compliance</h4>
-                      <p className="text-sm text-gray-600">18+ verification & contracts</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-rose-100 shadow-sm sm:col-span-2">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3">
-                    <DollarSign className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Payouts</h4>
-                      <p className="text-sm text-gray-600">PHP or USD via GCash, Maya, bank, or crypto</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* For Different Creator Types */}
-        <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-rose-50">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-4">
-              For different creator types
-            </h2>
-            <p className="text-center text-gray-600 mb-8 text-sm sm:text-base">
-              Different paths depending on your experience and goals
-            </p>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Card className="border-rose-100 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <UserCheck className="h-5 w-5 text-rose-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Beginner with Phone</h4>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Never created content before. Start with 60/40 Management Model. We help with everything from planning to publishing.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-rose-100 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Camera className="h-5 w-5 text-rose-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Existing Amateur Creator</h4>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Already have some content or followers. Use 70/30 Network Model to expand your reach and add revenue streams.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-rose-100 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Users className="h-5 w-5 text-rose-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Cam Model</h4>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Already doing livecam shows. Add recorded content as passive income while continuing your cam work.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-rose-100 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Heart className="h-5 w-5 text-rose-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Couple Creator</h4>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Create with a partner. Both must verify 18+ and consent. Content requires explicit approval from all parties.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-rose-100 shadow-sm sm:col-span-2">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Users className="h-5 w-5 text-rose-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">Fanclub Creator</h4>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Build a subscriber base with exclusive monthly content. Recurring revenue from dedicated fans who want more.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
         {/* Philippines Payout Options */}
-        <section className="py-12 px-4 sm:px-6 lg:px-8 bg-white">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-4">
+        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+          <div className="max-w-4xl mx-auto">
+            <Badge className="mb-4 bg-rose-100 text-rose-800 text-sm px-4 py-1.5">
+              Payment Methods
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-4">
               Philippines payout options
             </h2>
-            <p className="text-center text-gray-600 mb-8 text-sm sm:text-base">
+            <p className="text-center text-gray-600 mb-12 text-lg max-w-2xl mx-auto">
               Multiple payment methods available (subject to confirmation)
             </p>
             
-            <Card className="border-rose-200 shadow-md mb-6">
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-3 mb-4">
-                  <Banknote className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
+            <Card className="border-rose-200 shadow-xl mb-8">
+              <CardContent className="pt-8">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <Banknote className="h-7 w-7 text-rose-600" />
+                  </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-3">Available Methods</h3>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge className="bg-blue-100 text-blue-800 text-sm px-3 py-1">GCash</Badge>
-                      <Badge className="bg-purple-100 text-purple-800 text-sm px-3 py-1">Maya</Badge>
-                      <Badge className="bg-red-100 text-red-800 text-sm px-3 py-1">BDO</Badge>
-                      <Badge className="bg-blue-200 text-blue-900 text-sm px-3 py-1">BPI</Badge>
-                      <Badge className="bg-orange-100 text-orange-800 text-sm px-3 py-1">UnionBank</Badge>
-                      <Badge className="bg-green-100 text-green-800 text-sm px-3 py-1">Crypto (USDT)</Badge>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-3">Available Methods</h3>
+                    <div className="flex flex-wrap gap-2.5">
+                      <Badge className="bg-blue-100 text-blue-800 text-sm px-3 py-1.5">GCash</Badge>
+                      <Badge className="bg-purple-100 text-purple-800 text-sm px-3 py-1.5">Maya</Badge>
+                      <Badge className="bg-red-100 text-red-800 text-sm px-3 py-1.5">BDO</Badge>
+                      <Badge className="bg-blue-200 text-blue-900 text-sm px-3 py-1.5">BPI</Badge>
+                      <Badge className="bg-orange-100 text-orange-800 text-sm px-3 py-1.5">UnionBank</Badge>
+                      <Badge className="bg-green-100 text-green-800 text-sm px-3 py-1.5">Crypto (USDT)</Badge>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
-                  <div className="p-3 bg-rose-50 rounded-lg">
-                    <p className="text-xs text-gray-600 mb-1">Currency</p>
-                    <p className="font-semibold text-gray-900 text-sm">PHP or USD equivalent</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
+                  <div className="p-4 bg-rose-50 rounded-xl border border-rose-100">
+                    <p className="text-sm text-gray-600 mb-2 font-medium">Currency</p>
+                    <p className="font-bold text-gray-900 text-lg">PHP or USD equivalent</p>
                   </div>
-                  <div className="p-3 bg-rose-50 rounded-lg">
-                    <p className="text-xs text-gray-600 mb-1">Schedule</p>
-                    <p className="font-semibold text-gray-900 text-sm">Weekly payouts</p>
+                  <div className="p-4 bg-rose-50 rounded-xl border border-rose-100">
+                    <p className="text-sm text-gray-600 mb-2 font-medium">Schedule</p>
+                    <p className="font-bold text-gray-900 text-lg">Weekly payouts</p>
                   </div>
-                  <div className="p-3 bg-rose-50 rounded-lg">
-                    <p className="text-xs text-gray-600 mb-1">Exchange Rate</p>
-                    <p className="font-semibold text-gray-900 text-sm">Market rate at payout</p>
+                  <div className="p-4 bg-rose-50 rounded-xl border border-rose-100">
+                    <p className="text-sm text-gray-600 mb-2 font-medium">Exchange Rate</p>
+                    <p className="font-bold text-gray-900 text-lg">Market rate at payout</p>
                   </div>
-                  <div className="p-3 bg-rose-50 rounded-lg">
-                    <p className="text-xs text-gray-600 mb-1">Payment Method</p>
-                    <p className="font-semibold text-gray-900 text-sm">Confirmed during onboarding</p>
+                  <div className="p-4 bg-rose-50 rounded-xl border border-rose-100">
+                    <p className="text-sm text-gray-600 mb-2 font-medium">Availability</p>
+                    <p className="font-bold text-gray-900 text-lg">Subject to confirmation</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-sm text-gray-700">
-                <strong className="text-yellow-800">Important:</strong> Income is not guaranteed. Earnings depend on content consistency, quality, audience demand, platform performance, and your activity level. Some creators earn modestly, others build more. Your results vary based on your work and commitment.
+            <div className="p-5 bg-yellow-50 border-2 border-yellow-200 rounded-xl">
+              <p className="text-sm text-gray-700 leading-relaxed">
+                <strong className="text-yellow-800 font-semibold">Important:</strong> No guaranteed income. Earnings depend on content consistency, quality, audience demand, platform performance, and your activity level. Results vary by creator.
               </p>
             </div>
           </div>
         </section>
 
         {/* Privacy, Consent and Safety */}
-        <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-rose-50">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-4">
+        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-rose-50">
+          <div className="max-w-4xl mx-auto">
+            <Badge className="mb-4 bg-green-100 text-green-800 text-sm px-4 py-1.5">
+              Safety First
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-4">
               Privacy, consent and safety
             </h2>
-            <p className="text-center text-gray-600 mb-8 text-sm sm:text-base">
+            <p className="text-center text-gray-600 mb-12 text-lg max-w-2xl mx-auto">
               Clear requirements and protections
             </p>
             
-            <Card className="border-green-100 shadow-md mb-6">
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex items-start gap-3">
+            <Card className="border-green-200 shadow-xl mb-8 bg-white">
+              <CardContent className="pt-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="flex items-start gap-3 p-4 bg-green-50 rounded-xl">
                     <Shield className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
-                      <h4 className="font-semibold text-gray-900">Verified 18+ Only</h4>
+                      <h4 className="font-bold text-gray-900 mb-1">Verified 18+ Only</h4>
                       <p className="text-sm text-gray-600">Valid government ID required before any publishing</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 p-4 bg-green-50 rounded-xl">
                     <FileCheck className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
-                      <h4 className="font-semibold text-gray-900">KYC Process</h4>
+                      <h4 className="font-bold text-gray-900 mb-1">KYC Process</h4>
                       <p className="text-sm text-gray-600">Identity verification required</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 p-4 bg-green-50 rounded-xl">
                     <Heart className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
-                      <h4 className="font-semibold text-gray-900">Your Boundaries</h4>
+                      <h4 className="font-bold text-gray-900 mb-1">Your Boundaries</h4>
                       <p className="text-sm text-gray-600">You decide what you're comfortable creating</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 p-4 bg-green-50 rounded-xl">
                     <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
-                      <h4 className="font-semibold text-gray-900">Explicit Consent</h4>
+                      <h4 className="font-bold text-gray-900 mb-1">Explicit Consent</h4>
                       <p className="text-sm text-gray-600">Written approval required for all content</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 p-4 bg-green-50 rounded-xl">
                     <Lock className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
-                      <h4 className="font-semibold text-gray-900">No Forced Content</h4>
+                      <h4 className="font-bold text-gray-900 mb-1">No Forced Content</h4>
                       <p className="text-sm text-gray-600">Nothing published without your approval</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 p-4 bg-green-50 rounded-xl">
                     <Shield className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
-                      <h4 className="font-semibold text-gray-900">No Underage Content</h4>
+                      <h4 className="font-bold text-gray-900 mb-1">No Underage Content</h4>
                       <p className="text-sm text-gray-600">Strict 18+ policy enforced</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3 sm:col-span-2">
+                  <div className="flex items-start gap-3 p-4 bg-green-50 rounded-xl sm:col-span-2">
                     <Eye className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
-                      <h4 className="font-semibold text-gray-900">Performer Approval</h4>
+                      <h4 className="font-bold text-gray-900 mb-1">Performer Approval</h4>
                       <p className="text-sm text-gray-600">All content reviewed and approved by you before publishing</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3 sm:col-span-2">
+                  <div className="flex items-start gap-3 p-4 bg-green-50 rounded-xl sm:col-span-2">
                     <UserCheck className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
-                      <h4 className="font-semibold text-gray-900">No Guaranteed Acceptance</h4>
+                      <h4 className="font-bold text-gray-900 mb-1">No Guaranteed Acceptance</h4>
                       <p className="text-sm text-gray-600">Applications reviewed individually. Not all applicants accepted.</p>
                     </div>
                   </div>
@@ -759,54 +707,60 @@ export default function PhilippinesRecruitment() {
               </CardContent>
             </Card>
 
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm text-gray-700">
-                <strong className="text-green-800">2257 Compliance:</strong> All performers must provide valid government-issued ID proving age 18+. Records kept per international compliance requirements.
+            <div className="p-5 bg-green-50 border-2 border-green-200 rounded-xl">
+              <p className="text-sm text-gray-700 leading-relaxed">
+                <strong className="text-green-800 font-semibold">2257 Compliance:</strong> All performers must provide valid government-issued ID proving age 18+. Records kept per international compliance requirements.
               </p>
             </div>
           </div>
         </section>
 
         {/* Final CTA */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-rose-600 to-rose-700">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+        <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-rose-600 via-rose-700 to-rose-800">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-6 leading-tight">
               Ready to apply from the Philippines?
             </h2>
-            <p className="text-rose-100 mb-8 text-base sm:text-lg">
+            <p className="text-rose-100 mb-10 text-lg sm:text-xl max-w-2xl mx-auto">
               Start your verified 18+ application today
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 justify-center mb-10">
               <Button 
                 size="lg" 
-                className="bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-6 text-base sm:text-lg w-full sm:w-auto"
+                className="bg-green-600 hover:bg-green-700 text-white shadow-xl hover:shadow-2xl px-10 sm:px-12 py-8 text-xl sm:text-2xl w-full sm:w-auto font-bold transition-all"
                 onClick={handleWhatsAppClick}
               >
-                <MessageCircle className="mr-2 h-5 w-5" />
+                <MessageCircle className="mr-3 h-7 w-7" />
                 Apply on WhatsApp
               </Button>
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-white text-white hover:bg-white/20 px-6 sm:px-8 py-6 text-base sm:text-lg w-full sm:w-auto"
+                className="border-2 border-white text-white hover:bg-white/20 bg-transparent shadow-xl px-10 sm:px-12 py-8 text-xl sm:text-2xl w-full sm:w-auto font-bold transition-all"
                 onClick={handleApplyClick}
               >
                 Start Application
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-3 h-7 w-7" />
               </Button>
             </div>
             
-            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-white/90 text-xs sm:text-sm mt-8">
-              <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
+            <div className="flex flex-wrap justify-center gap-6 sm:gap-8 text-white font-medium text-sm sm:text-base">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                  <Shield className="h-5 w-5" />
+                </div>
                 <span>Verified 18+</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Lock className="h-4 w-4" />
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                  <Lock className="h-5 w-5" />
+                </div>
                 <span>Private Application</span>
               </div>
-              <div className="flex items-center gap-2">
-                <FileCheck className="h-4 w-4" />
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                  <FileCheck className="h-5 w-5" />
+                </div>
                 <span>KYC Required</span>
               </div>
             </div>
@@ -814,14 +768,14 @@ export default function PhilippinesRecruitment() {
         </section>
 
         {/* Compliance Footer */}
-        <footer className="py-8 px-4 sm:px-6 lg:px-8 bg-gray-900 text-gray-400 text-xs sm:text-sm">
-          <div className="max-w-3xl mx-auto text-center space-y-3">
-            <p>All performers must be 18+ with valid Philippine government ID. Independent contractor position. Earnings vary and are not guaranteed. You are responsible for your own taxes (BIR).</p>
-            <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
-              <a href="/terms" className="hover:text-white">Terms</a>
-              <a href="/privacy" className="hover:text-white">Privacy</a>
-              <a href="/2257" className="hover:text-white">2257 Compliance</a>
-              <a href="/faq" className="hover:text-white">FAQ</a>
+        <footer className="py-10 px-4 sm:px-6 lg:px-8 bg-gray-900 text-gray-300 text-sm">
+          <div className="max-w-4xl mx-auto text-center space-y-4">
+            <p className="text-gray-400">All performers must be 18+ with valid Philippine government ID. Independent contractor position. Earnings vary and are not guaranteed. You are responsible for your own taxes (BIR).</p>
+            <div className="flex flex-wrap justify-center gap-6">
+              <a href="/terms" className="hover:text-white transition-colors">Terms</a>
+              <a href="/privacy" className="hover:text-white transition-colors">Privacy</a>
+              <a href="/2257" className="hover:text-white transition-colors">2257 Compliance</a>
+              <a href="/faq" className="hover:text-white transition-colors">FAQ</a>
             </div>
           </div>
         </footer>
