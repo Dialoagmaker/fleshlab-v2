@@ -17,10 +17,20 @@ export default function SummerPromoBanner() {
           fetchpriority="high"
           decoding="async"
         />
-        {/* Darker cinematic overlay for premium feel */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80" />
-        {/* Left-to-right gradient for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+        {/* Single cinematic overlay — left text area dark, right image visible */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "linear-gradient(90deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.65) 28%, rgba(0,0,0,0.32) 55%, rgba(0,0,0,0.08) 100%)"
+          }}
+        />
+        {/* Subtle top/bottom vignette only */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "linear-gradient(180deg, rgba(0,0,0,0.25) 0%, transparent 40%, transparent 70%, rgba(0,0,0,0.35) 100%)"
+          }}
+        />
         {/* Subtle rose ambient glow */}
         <div className="absolute top-0 left-0 w-[600px] h-[400px] bg-rose-900/15 rounded-full blur-[120px]" />
       </div>
