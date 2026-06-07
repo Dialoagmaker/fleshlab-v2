@@ -116,30 +116,30 @@ export default function PhilippinesRecruitment() {
             `}
           </style>
           
-          {/* Desktop Overlays */}
+          {/* Desktop Overlays - Lighter */}
           <div className="hidden md:block absolute inset-0 z-10">
-            {/* Left text gradient - optimized to protect model visibility */}
+            {/* Left text gradient - much lighter to show model */}
             <div 
               className="absolute inset-0"
               style={{
-                background: 'linear-gradient(90deg, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.88) 28%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.22) 70%, rgba(0,0,0,0.00) 100%)'
+                background: 'linear-gradient(90deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.65) 28%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.12) 70%, rgba(0,0,0,0.00) 100%)'
               }}
             ></div>
             
-            {/* Bottom vignette - subtle */}
+            {/* Bottom vignette - very subtle */}
             <div 
               className="absolute inset-0"
               style={{
-                background: 'linear-gradient(0deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.25) 35%, rgba(0,0,0,0.00) 70%)'
+                background: 'linear-gradient(0deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.15) 35%, rgba(0,0,0,0.00) 70%)'
               }}
             ></div>
           </div>
 
-          {/* Mobile Overlay - stronger but still show model */}
+          {/* Mobile Overlay - lighter to show model */}
           <div 
             className="md:hidden absolute inset-0 z-10"
             style={{
-              background: 'linear-gradient(180deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.65) 45%, rgba(0,0,0,0.78) 100%)'
+              background: 'linear-gradient(180deg, rgba(0,0,0,0.60) 0%, rgba(0,0,0,0.45) 45%, rgba(0,0,0,0.55) 100%)'
             }}
           ></div>
           
