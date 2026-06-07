@@ -1,9 +1,9 @@
 /**
  * adminUserService — Admin-only backend function
- * 
+ *
  * Provides aggregated user account, payment, subscription, and purchase data
  * for the admin backoffice. All actions require admin role.
- * 
+ *
  * Security:
  * - Every action checks user.role === 'admin' → 403 if not admin
  * - Never returns passwords, tokens, API keys, KYC/compliance docs, private R2 URLs
@@ -32,6 +32,112 @@ function statusDate(intent) {
   if (intent.failed_at) return intent.failed_at;
   if (intent.cancelled_at) return intent.cancelled_at;
   return intent.created_date || null;
+}
+
+// ── Statuses that count toward lifetime spend ─────────────────────────────────
+const COUNTABLE_STATUSES = new Set(['completed']);
+
+/**
+ * calculateDedupedLifetimeSpend
+ *
+ * Rules:
+ * 1. Only count "completed" records on either side.
+ * 2. Never count refunded, pending, failed, cancelled, underpaid,
+ *    currency_mismatch, or payment_review.
+ * 3. If a completed Payment and a completed PaymentIntent represent the same
+ *    transaction, count it ONCE (prefer the Payment record as source of truth).
+ *
+ * Deduplication match priority (any one match is sufficient):
+ *   A. payment.stripe_payment_intent_id === intent.provider_session_id
+ *   B. intent.id appears in payment.metadata JSON
+ *   C. intent.id appears in payment.related_entity_id (edge case)
+ *   D. Fuzzy: same user_id + same payment_type + same amount ± $0.01 + created within 5 min of each other
+ *
+ * Returns: { amount, intentCount, paymentCount, dedupedCount, excludedIntentIds, method }
+ */
+function calculateDedupedLifetimeSpend(userId, paymentIntents, payments) {
+  const completedIntents = paymentIntents.filter(i => COUNTABLE_STATUSES.has(i.status));
+  const completedPayments = payments.filter(p => COUNTABLE_STATUSES.has(p.status));
+
+  // Set of PaymentIntent IDs that are already covered by a completed Payment
+  const coveredIntentIds = new Set();
+  const dedupeMethods = {};
+
+  for (const pmt of completedPayments) {
+    let metadataParsed = null;
+    try {
+      if (pmt.metadata) metadataParsed = JSON.parse(pmt.metadata);
+    } catch (_) {}
+
+    for (const intent of completedIntents) {
+      if (coveredIntentIds.has(intent.id)) continue;
+
+      // A. Stripe payment intent ID matches provider_session_id
+      if (
+        pmt.stripe_payment_intent_id &&
+        intent.provider_session_id &&
+        pmt.stripe_payment_intent_id === intent.provider_session_id
+      ) {
+        coveredIntentIds.add(intent.id);
+        dedupeMethods[intent.id] = 'A:stripe_id_match';
+        continue;
+      }
+
+      // B. Intent ID appears in payment metadata JSON
+      if (metadataParsed) {
+        const metaStr = JSON.stringify(metadataParsed);
+        if (metaStr.includes(intent.id)) {
+          coveredIntentIds.add(intent.id);
+          dedupeMethods[intent.id] = 'B:metadata_intent_id';
+          continue;
+        }
+      }
+
+      // C. Intent ID matches payment's related_entity_id
+      if (pmt.related_entity_id && pmt.related_entity_id === intent.id) {
+        coveredIntentIds.add(intent.id);
+        dedupeMethods[intent.id] = 'C:related_entity_id';
+        continue;
+      }
+
+      // D. Fuzzy: same payment_type + same amount ± $0.01 + created within 5 minutes
+      const pmtType = pmt.payment_type;
+      const intentType = intent.payment_type;
+      const pmtAmount = pmt.amount_usd || 0;
+      const intentAmount = intent.amount || 0;
+      const pmtDate = pmt.created_date ? new Date(pmt.created_date).getTime() : null;
+      const intentDate = intent.created_date ? new Date(intent.created_date).getTime() : null;
+      const FIVE_MIN_MS = 5 * 60 * 1000;
+
+      if (
+        pmtType && intentType && pmtType === intentType &&
+        Math.abs(pmtAmount - intentAmount) <= 0.01 &&
+        pmtDate && intentDate &&
+        Math.abs(pmtDate - intentDate) <= FIVE_MIN_MS
+      ) {
+        coveredIntentIds.add(intent.id);
+        dedupeMethods[intent.id] = 'D:fuzzy_type_amount_time';
+        continue;
+      }
+    }
+  }
+
+  // Sum: all completed payments + completed intents not covered by a payment
+  const paymentTotal = completedPayments.reduce((sum, p) => sum + (p.amount_usd || 0), 0);
+  const uniqueIntentTotal = completedIntents
+    .filter(i => !coveredIntentIds.has(i.id))
+    .reduce((sum, i) => sum + (i.amount || 0), 0);
+
+  const amount = Math.round((paymentTotal + uniqueIntentTotal) * 100) / 100;
+
+  return {
+    amount,
+    intentCount: completedIntents.length,
+    paymentCount: completedPayments.length,
+    dedupedCount: coveredIntentIds.size,
+    excludedIntentIds: [...coveredIntentIds],
+    dedupeMethods,
+  };
 }
 
 // ── list_users ────────────────────────────────────────────────────────────────
@@ -78,12 +184,8 @@ async function listUsers(base44, body) {
     const userSubs = subsByUser[u.id] || [];
     const linkedPerformer = performerByUserId[u.id] || null;
 
-    const completedIntents = userIntents.filter(i => i.status === 'completed');
-    const completedPayments = userPayments.filter(p => p.status === 'completed');
-    const lifetimeSpend = [
-      ...completedIntents.map(i => i.amount || 0),
-      ...completedPayments.map(p => p.amount_usd || 0),
-    ].reduce((a, b) => a + b, 0);
+    // Deduped lifetime spend
+    const deduped = calculateDedupedLifetimeSpend(u.id, userIntents, userPayments);
 
     const now = new Date();
     const activeSubs = userSubs.filter(s =>
@@ -109,7 +211,7 @@ async function listUsers(base44, body) {
       created_date: u.created_date,
       linked_performer: linkedPerformer,
       active_subscription_count: activeSubs.length,
-      lifetime_spend_usd: Math.round(lifetimeSpend * 100) / 100,
+      lifetime_spend_usd: deduped.amount,
       payment_count: userIntents.length + userPayments.length,
       last_payment_status: lastPayment?.status || null,
       last_payment_date: lastPayment?.date || null,
@@ -143,7 +245,6 @@ async function listUsers(base44, body) {
         if (user) {
           const match = enriched.find(e => e.user_id === user.id);
           if (!match) {
-            // Re-run with that user only
             enriched = enriched.concat(users.filter(u => u.id === matchedIntent.user_id));
           }
         }
@@ -201,12 +302,8 @@ async function getUserDetail(base44, body) {
 
   const linkedPerformer = performers.find(p => p.user_id === userId) || null;
 
-  const completedIntents = intents.filter(i => i.status === 'completed');
-  const completedPayments = payments.filter(p => p.status === 'completed');
-  const lifetimeSpend = [
-    ...completedIntents.map(i => i.amount || 0),
-    ...completedPayments.map(p => p.amount_usd || 0),
-  ].reduce((a, b) => a + b, 0);
+  // Deduped lifetime spend
+  const deduped = calculateDedupedLifetimeSpend(userId, intents, payments);
 
   const now = new Date();
   const activeSubs = subs.filter(s =>
@@ -235,7 +332,14 @@ async function getUserDetail(base44, body) {
       profile_image_url: linkedPerformer.profile_image_url,
     } : null,
     summary: {
-      lifetime_spend_usd: Math.round(lifetimeSpend * 100) / 100,
+      lifetime_spend_usd: deduped.amount,
+      lifetime_spend_debug: {
+        completed_intent_count: deduped.intentCount,
+        completed_payment_count: deduped.paymentCount,
+        deduped_intent_count: deduped.dedupedCount,
+        excluded_intent_ids: deduped.excludedIntentIds,
+        dedup_methods: deduped.dedupeMethods,
+      },
       payment_count: intents.length + payments.length,
       active_subscription_count: activeSubs.length,
       ppv_purchase_count: ppvPurchases.length,
@@ -369,7 +473,6 @@ async function getUserPurchases(base44, body) {
     : [];
   const videoById = Object.fromEntries(videos.map(v => [v.id, v]));
 
-  const now = new Date();
   const enriched = ppv
     .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
     .map(p => {
@@ -397,7 +500,6 @@ async function getUserGuestProductions(base44, body) {
 
   const apps = await base44.asServiceRole.entities.GuestProductionApplication.filter({ applicant_user_id: userId });
 
-  // Find related payments for each application
   const appIds = apps.map(a => a.id);
   const payments = appIds.length > 0
     ? await base44.asServiceRole.entities.Payment.list().then(all =>

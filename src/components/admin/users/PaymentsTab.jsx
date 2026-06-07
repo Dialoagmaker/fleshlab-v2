@@ -110,7 +110,11 @@ export default function PaymentsTab({ userId }) {
 
   const intents = data?.intents || [];
   const payments = data?.payments || [];
-  const allRecords = [...intents, ...payments].sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+
+  // Separate sections: attempts (intents) and confirmed payments
+  const intentRecords = [...intents].sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+  const paymentRecords = [...payments].sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+  const allRecords = [...intentRecords, ...paymentRecords];
 
   if (isLoading) return <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
   if (error) return <div className="flex items-center gap-2 p-4 text-destructive text-sm"><AlertCircle className="w-4 h-4" />{error.message}</div>;
@@ -118,20 +122,57 @@ export default function PaymentsTab({ userId }) {
     <div className="py-16 text-center text-muted-foreground text-sm">No payment records found for this user.</div>
   );
 
+  const TABLE_HEADERS = ["Type", "Status", "Payment For", "Provider", "Invoice ID", "Amount", "Date", "Related", ""];
+
   return (
-    <div className="overflow-x-auto rounded-xl border border-border">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-border bg-muted/30">
-            {["Type", "Status", "Payment For", "Provider", "Invoice ID", "Amount", "Date", "Related", ""].map(h => (
-              <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {allRecords.map(r => <PaymentRow key={`${r.record_type}-${r.id}`} record={r} />)}
-        </tbody>
-      </table>
+    <div className="space-y-8">
+      {/* Completed Payments / Entitlements */}
+      {paymentRecords.length > 0 && (
+        <div>
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+            Completed Payments / Entitlements
+            <span className="ml-2 normal-case font-normal text-foreground/60">({paymentRecords.length})</span>
+          </h3>
+          <div className="overflow-x-auto rounded-xl border border-border">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/30">
+                  {TABLE_HEADERS.map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {paymentRecords.map(r => <PaymentRow key={`payment-${r.id}`} record={r} />)}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Attempts */}
+      {intentRecords.length > 0 && (
+        <div>
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+            Payment Attempts
+            <span className="ml-2 normal-case font-normal text-foreground/60">({intentRecords.length})</span>
+          </h3>
+          <div className="overflow-x-auto rounded-xl border border-border">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/30">
+                  {TABLE_HEADERS.map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {intentRecords.map(r => <PaymentRow key={`intent-${r.id}`} record={r} />)}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
