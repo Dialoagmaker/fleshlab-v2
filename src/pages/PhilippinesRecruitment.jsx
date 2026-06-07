@@ -401,11 +401,11 @@ export default function PhilippinesRecruitment() {
             padding: 'clamp(76px, 10vw, 120px) 24px'
           }}
         >
-          {/* Full Background Image */}
+          {/* Full Background Image - New Image with integrated cards */}
           <div 
             className="absolute inset-0"
             style={{
-              backgroundImage: 'url(https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2007_12_26.png)',
+              backgroundImage: 'url(https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2007_17_30.png)',
               backgroundSize: 'cover',
               backgroundPosition: 'center'
             }}
@@ -446,98 +446,7 @@ export default function PhilippinesRecruitment() {
               </p>
             </div>
             
-            {/* 5 Creator Path Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
-              {/* Beginner with Phone */}
-              <div 
-                className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
-                onClick={() => handleRevenueModelClick('beginner-with-phone')}
-              >
-                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm" />
-                <div className="relative z-10 p-7 h-full flex flex-col justify-between">
-                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255, 138, 0, 0.15)', border: '1px solid rgba(255, 138, 0, 0.3)' }}>
-                    <Smartphone className="h-5 w-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-lg mb-2">Beginner with Phone</h3>
-                    <p className="text-gray-700 text-sm mb-4 leading-relaxed">Never created before? Start with your phone, private space and full setup support.</p>
-                    <Badge className="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-semibold px-3 py-1">60/40 Management</Badge>
-                  </div>
-                </div>
-              </div>
 
-              {/* Existing Creator */}
-              <div 
-                className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
-                onClick={() => handleRevenueModelClick('existing-creator')}
-              >
-                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm" />
-                <div className="relative z-10 p-7 h-full flex flex-col justify-between">
-                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(236, 72, 153, 0.15)', border: '1px solid rgba(236, 72, 153, 0.3)' }}>
-                    <Upload className="h-5 w-5 text-pink-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-lg mb-2">Existing Creator</h3>
-                    <p className="text-gray-700 text-sm mb-4 leading-relaxed">Have clips or followers already? Add FLESHLAB as your fanclub and distribution hub.</p>
-                    <Badge className="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-xs font-semibold px-3 py-1">70/30 Network</Badge>
-                  </div>
-                </div>
-              </div>
-
-              {/* Cam Model */}
-              <div 
-                className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
-                onClick={() => handleRevenueModelClick('cam-model')}
-              >
-                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm" />
-                <div className="relative z-10 p-7 h-full flex flex-col justify-between">
-                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
-                    <Play className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-lg mb-2">Cam Model</h3>
-                    <p className="text-gray-700 text-sm mb-4 leading-relaxed">Already on Chaturbate or cam sites? Turn live viewers into long-term fans.</p>
-                    <Badge className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs font-semibold px-3 py-1">Hybrid Model</Badge>
-                  </div>
-                </div>
-              </div>
-
-              {/* Couple Creator */}
-              <div 
-                className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
-                onClick={() => handleRevenueModelClick('couple-creator')}
-              >
-                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm" />
-                <div className="relative z-10 p-7 h-full flex flex-col justify-between">
-                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(236, 72, 153, 0.15)', border: '1px solid rgba(236, 72, 153, 0.3)' }}>
-                    <Users className="h-5 w-5 text-pink-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-lg mb-2">Couple Creator</h3>
-                    <p className="text-gray-700 text-sm mb-4 leading-relaxed">Create with a partner. Both must verify 18+ and approve every scene.</p>
-                    <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-semibold px-3 py-1">Both Verify 18+</Badge>
-                  </div>
-                </div>
-              </div>
-
-              {/* Fanclub Creator */}
-              <div 
-                className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
-                onClick={() => handleRevenueModelClick('fanclub-creator')}
-              >
-                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm" />
-                <div className="relative z-10 p-7 h-full flex flex-col justify-between">
-                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(251, 146, 60, 0.15)', border: '1px solid rgba(251, 146, 60, 0.3)' }}>
-                    <Sparkles className="h-5 w-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-lg mb-2">Fanclub Creator</h3>
-                    <p className="text-gray-700 text-sm mb-4 leading-relaxed">Build recurring monthly income with exclusive clips, updates and supporter perks.</p>
-                    <Badge className="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-semibold px-3 py-1">Fanclub Setup</Badge>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* CTA Panel */}
             <div 
