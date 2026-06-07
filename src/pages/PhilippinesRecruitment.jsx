@@ -419,32 +419,27 @@ export default function PhilippinesRecruitment() {
           </div>
         </section>
 
-        {/* Choose Your Creator Path - Warm Light Neon */}
+        {/* Choose Your Creator Path - Warm Light with Visible Background */}
         <section 
           className="relative overflow-hidden"
           style={{
             padding: 'clamp(76px, 10vw, 120px) 24px',
             background: `
-              radial-gradient(circle at 12% 15%, rgba(225, 29, 72, 0.15), transparent 28%),
-              radial-gradient(circle at 85% 20%, rgba(255, 138, 0, 0.12), transparent 30%),
-              radial-gradient(circle at 70% 80%, rgba(168, 85, 247, 0.1), transparent 34%),
-              linear-gradient(135deg, #fef7f5 0%, #fff5f0 42%, #fff9f6 100%)`
+              radial-gradient(circle at 12% 15%, rgba(225, 29, 72, 0.12), transparent 28%),
+              radial-gradient(circle at 85% 20%, rgba(255, 138, 0, 0.1), transparent 30%),
+              radial-gradient(circle at 70% 80%, rgba(168, 85, 247, 0.08), transparent 34%),
+              linear-gradient(135deg, #fff9f6 0%, #fff5f0 42%, #fef7f5 100%)`
           }}
         >
-          {/* Background Image Layer */}
+          {/* Background Image Layer - Fully Visible */}
           <div 
-            className="absolute inset-0 opacity-15"
+            className="absolute inset-0"
             style={{
               backgroundImage: 'url(https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2006_33_23.png)',
               backgroundSize: 'cover',
-              backgroundPosition: 'center'
+              backgroundPosition: 'center',
+              opacity: 0.85
             }}
-          />
-
-          {/* Light Overlay */}
-          <div 
-            className="absolute inset-0"
-            style={{ background: 'rgba(255, 255, 255, 0.35)' }}
           />
 
           <div className="max-w-[1280px] mx-auto relative z-10">
