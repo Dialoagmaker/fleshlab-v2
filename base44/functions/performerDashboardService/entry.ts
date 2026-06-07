@@ -880,36 +880,33 @@ Deno.serve(async (req) => {
 
     // Action: get_current_month_earnings_php
     if (action === 'get_current_month_earnings_php') {
-      // Get current period (YYYY-MM)
       const now = new Date();
-      const currentMonth = now.toISOString().slice(0, 7); // e.g., "2026-06"
-      const monthName = now.toLocaleString('en-US', { month: 'long' }); // e.g., "June"
+      const currentMonth = now.toISOString().slice(0, 7);
+      const monthName = now.toLocaleString('en-US', { month: 'long' });
       const year = now.getFullYear();
-      
-      // Get exchange rate from env (default: 57.5 PHP per 1 USD - approximate mid-2026 rate)
       const USD_TO_PHP = parseFloat(Deno.env.get('USD_TO_PHP') || '57.5');
-      
-      // Fetch all earnings sources for current month
+
+      const revenueSharePct = myPerformer.revenue_split_pct !== undefined && myPerformer.revenue_split_pct !== null
+        ? parseFloat(myPerformer.revenue_split_pct)
+        : 40;
+
+      // Fetch all earnings sources for current month (same logic as get_earnings)
       const [legacyEarnings, lineItems, videoPerformers] = await Promise.all([
         base44.asServiceRole.entities.PerformerEarning.filter({
           performer_id: myPerformer.id,
-          period_month: currentMonth,
-          status: { $in: ['pending', 'approved', 'paid', 'held'] } // exclude draft/cancelled/refunded
+          period_month: currentMonth
         }),
         base44.asServiceRole.entities.PerformerEarningLineItem.filter({
           performer_id: myPerformer.id,
-          period_month: currentMonth,
-          status: { $in: ['pending', 'approved', 'paid', 'held'] }
+          period_month: currentMonth
         }),
         base44.asServiceRole.entities.VideoPerformer.filter({
           performer_id: myPerformer.id
         })
       ]);
-      
-      // Get video IDs for stats lookup
+
       const videoIds = videoPerformers.map(vp => vp.video_id);
-      
-      // Fetch VideoStatSnapshot for current month (both internal and external-only)
+
       const [internalStatsSets, externalOnlySnapshots] = await Promise.all([
         Promise.all(
           videoIds.map(vid =>
@@ -925,62 +922,118 @@ Deno.serve(async (req) => {
           period_month: currentMonth
         }).catch(() => [])
       ]);
-      
+
       const internalStats = internalStatsSets.flat();
-      
-      // Check which video_ids are already covered by manual line items to avoid double counting
+
+      // Avoid double counting: skip stat rows already covered by manual line items
       const existingVideoIds = new Set(
         [...(lineItems || []), ...(legacyEarnings || [])]
           .filter(e => e.source_type === 'video_platform' || e.earning_type === 'video_platform')
           .map(e => e.video_id)
           .filter(Boolean)
       );
-      
-      // Filter stats: only include if NOT already in manual line items
       const statsToInclude = internalStats.filter(s => !s.video_id || !existingVideoIds.has(s.video_id));
       const allStats = [...statsToInclude, ...externalOnlySnapshots];
-      
-      // Calculate gross revenue from all sources
+
+      // ── Gross totals by source group ──────────────────────────────────────
       const legacyGross = (legacyEarnings || []).reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0);
       const lineItemGross = (lineItems || []).reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0);
       const statsGross = allStats.reduce((sum, s) => sum + (s.revenue_usd || 0), 0);
-      
       const grossRevenueUSD = legacyGross + lineItemGross + statsGross;
-      
-      // Get performer share percentage (default 40% for Studio Managed, NOT 70%)
-      const performerSharePct = myPerformer.revenue_split_pct !== undefined && myPerformer.revenue_split_pct !== null 
-        ? parseFloat(myPerformer.revenue_split_pct) 
-        : 40; // DEFAULT: Studio Managed 40%
-      const performerEarningsUSD = grossRevenueUSD * (performerSharePct / 100);
-      
-      // Convert to PHP
+
+      // ── Performer share: use pre-calculated amounts where available ────────
+      // Legacy PerformerEarning already stores net_amount_usd at the split used at creation time
+      const legacyPerformerShare = (legacyEarnings || []).reduce((sum, e) => sum + (e.net_amount_usd || 0), 0);
+      // Line items store performer_amount_usd explicitly
+      const lineItemPerformerShare = (lineItems || []).reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
+      // Video stat rows: apply current split %
+      const statsPerformerShare = statsGross * (revenueSharePct / 100);
+
+      const performerEarningsUSD = legacyPerformerShare + lineItemPerformerShare + statsPerformerShare;
+      const studioEarningsUSD = grossRevenueUSD - performerEarningsUSD;
       const performerEarningsPHP = performerEarningsUSD * USD_TO_PHP;
-      
-      // Build source summary
-      const fanclubRevenue = (legacyEarnings || []).filter(e => e.earning_type === 'fanclub').reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0);
-      const ppvRevenue = (legacyEarnings || []).filter(e => e.earning_type === 'ppv').reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0);
-      
-      const sourceSummary = {
-        internal_video_revenue: internalStats.reduce((sum, s) => sum + (s.revenue_usd || 0), 0),
-        external_video_revenue: externalOnlySnapshots.reduce((sum, s) => sum + (s.revenue_usd || 0), 0),
-        fanclub_revenue: fanclubRevenue,
-        ppv_revenue: ppvRevenue,
-        other_revenue: legacyGross + lineItemGross - fanclubRevenue - ppvRevenue
-      };
-      
+
+      // ── Source grouping (mirrors get_earnings breakdown) ──────────────────
+      const livecamGross = (legacyEarnings || [])
+        .filter(e => e.earning_type === 'livestream')
+        .reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0);
+      const livecamPerformer = (legacyEarnings || [])
+        .filter(e => e.earning_type === 'livestream')
+        .reduce((sum, e) => sum + (e.net_amount_usd || 0), 0);
+
+      const lineItemLivecamGross = (lineItems || [])
+        .filter(e => e.source_type === 'livecam')
+        .reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0);
+      const lineItemLivecamPerformer = (lineItems || [])
+        .filter(e => e.source_type === 'livecam')
+        .reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
+
+      const videoPlatformGross = statsGross + (lineItems || [])
+        .filter(e => e.source_type === 'video_platform')
+        .reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0);
+      const videoPlatformPerformer = statsPerformerShare + (lineItems || [])
+        .filter(e => e.source_type === 'video_platform')
+        .reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
+
+      const totalLivecamGross = livecamGross + lineItemLivecamGross;
+      const totalLivecamPerformer = livecamPerformer + lineItemLivecamPerformer;
+
+      const otherGross = grossRevenueUSD - totalLivecamGross - videoPlatformGross;
+      const otherPerformer = performerEarningsUSD - totalLivecamPerformer - videoPlatformPerformer;
+
+      // ── Diagnostic rows (admin-facing, safe to include) ───────────────────
+      const includedRows = [
+        ...((legacyEarnings || []).map(e => ({
+          id: e.id,
+          source: `legacy:${e.earning_type}`,
+          gross: e.gross_amount_usd || 0,
+          performer: e.net_amount_usd || 0,
+          status: e.status
+        }))),
+        ...((lineItems || []).map(e => ({
+          id: e.id,
+          source: `line_item:${e.source_type}:${e.source_platform}`,
+          gross: e.gross_amount_usd || 0,
+          performer: e.performer_amount_usd || 0,
+          status: e.status
+        }))),
+        ...allStats.map(s => ({
+          id: s.id,
+          source: `stat:${s.platform}`,
+          gross: s.revenue_usd || 0,
+          performer: (s.revenue_usd || 0) * (revenueSharePct / 100),
+          status: 'estimated'
+        }))
+      ];
+
       return Response.json({
         success: true,
         performer_id: myPerformer.id,
         month: monthName,
         year,
         currency: 'PHP',
-        gross_revenue_base: grossRevenueUSD,
-        performer_share_percentage: performerSharePct,
-        performer_earnings_base: performerEarningsUSD,
+        gross_revenue_usd: grossRevenueUSD,
+        performer_share_percentage: revenueSharePct,
+        performer_earnings_usd: performerEarningsUSD,
+        studio_earnings_usd: studioEarningsUSD,
         exchange_rate_to_php: USD_TO_PHP,
         performer_earnings_php: performerEarningsPHP,
         is_final: false,
-        source_summary: sourceSummary,
+        source_groups: {
+          livecam: { gross: totalLivecamGross, performer: totalLivecamPerformer },
+          video_platform: { gross: videoPlatformGross, performer: videoPlatformPerformer },
+          other: { gross: otherGross, performer: otherPerformer }
+        },
+        diagnostic: {
+          included_rows: includedRows,
+          included_count: includedRows.length,
+          legacy_count: (legacyEarnings || []).length,
+          line_item_count: (lineItems || []).length,
+          stat_rows_count: allStats.length
+        },
+        // legacy field names for backwards compat
+        gross_revenue_base: grossRevenueUSD,
+        performer_earnings_base: performerEarningsUSD,
         display_currency: 'PHP'
       });
     }

@@ -12,9 +12,10 @@ import CurrentMonthEarningsCard from "./CurrentMonthEarningsCard";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
-export default function OverviewTab({ performer, career_stats, performerToken }) {
-  // Fetch current period earnings for breakdown
+export default function OverviewTab({ performer, career_stats, performerToken, isAdmin }) {
   const currentMonth = new Date().toISOString().slice(0, 7);
+
+  // Single data source for all earnings display on this tab
   const { data: earningsData } = useQuery({
     queryKey: ["performer-earnings-breakdown", performer.id, currentMonth],
     queryFn: async () => {
@@ -28,6 +29,21 @@ export default function OverviewTab({ performer, career_stats, performerToken })
     },
     enabled: !!performer.id && !!performerToken
   });
+
+  // Admin diagnostic: fetch the PHP card data too (contains diagnostic rows)
+  const { data: phpData } = useQuery({
+    queryKey: ["performer-earnings-php-diag", performer.id],
+    queryFn: async () => {
+      const res = await base44.functions.invoke("performerDashboardService", {
+        action: "get_current_month_earnings_php",
+        performer_id: performer.id,
+        performer_token: performerToken
+      });
+      return res.data;
+    },
+    enabled: !!performer.id && !!performerToken && !!isAdmin
+  });
+
   if (!performer) {
     return (
       <Card className="bg-card border-border">
@@ -41,16 +57,16 @@ export default function OverviewTab({ performer, career_stats, performerToken })
 
   return (
     <div className="space-y-6">
-      {/* Current Month Earnings Card - Prominent placement at top */}
-      <CurrentMonthEarningsCard 
-        performerId={performer.id} 
-        performerToken={performerToken} 
+      {/* Estimated earnings card — uses same performer share logic as breakdown */}
+      <CurrentMonthEarningsCard
+        performerId={performer.id}
+        performerToken={performerToken}
       />
-      
+
       <ActionRequiredCard performer={performer} />
       <CareerStatisticsCard stats={career_stats} />
-      
-      {/* Revenue Share Display */}
+
+      {/* Revenue Model */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Revenue Model</CardTitle>
@@ -72,21 +88,58 @@ export default function OverviewTab({ performer, career_stats, performerToken })
           </div>
         </CardContent>
       </Card>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <MonthlyCloseoutCard performerId={performer.id} performerToken={performerToken} />
         <ProductionGoalCard performerId={performer.id} />
         <PayoutReadinessCard performer={performer} />
       </div>
-      
-      {/* Earnings Breakdown Table */}
+
+      {/* Earnings Breakdown — same data source, same totals as the card above */}
       {earningsData?.earnings && earningsData.earnings.length > 0 && (
-        <EarningsBreakdownTable 
-          earnings={earningsData.earnings} 
-          summary={earningsData.summary} 
+        <EarningsBreakdownTable
+          earnings={earningsData.earnings}
+          summary={earningsData.summary}
         />
       )}
-      
+
+      {/* Admin-only diagnostic panel */}
+      {isAdmin && phpData?.diagnostic && (
+        <Card className="border-yellow-500/30 bg-yellow-500/5">
+          <CardHeader>
+            <CardTitle className="text-sm text-yellow-500">Admin Diagnostic — Earnings Calculation</CardTitle>
+          </CardHeader>
+          <CardContent className="text-xs space-y-2">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <p className="text-muted-foreground">Included Gross</p>
+                <p className="font-semibold">${(phpData.gross_revenue_usd || 0).toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Performer Share</p>
+                <p className="font-semibold text-green-500">${(phpData.performer_earnings_usd || 0).toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Studio Share</p>
+                <p className="font-semibold text-blue-400">${(phpData.studio_earnings_usd || 0).toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Source Rows</p>
+                <p className="font-semibold">{phpData.diagnostic.included_count} ({phpData.diagnostic.legacy_count} legacy / {phpData.diagnostic.line_item_count} line items / {phpData.diagnostic.stat_rows_count} stats)</p>
+              </div>
+            </div>
+            <div className="mt-2 max-h-48 overflow-y-auto border border-border rounded p-2 space-y-1">
+              {phpData.diagnostic.included_rows.map((row, i) => (
+                <div key={i} className="flex justify-between gap-2 text-muted-foreground">
+                  <span className="truncate">{row.source}</span>
+                  <span className="shrink-0">Gross ${row.gross.toFixed(2)} → You ${row.performer.toFixed(2)} [{row.status}]</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <StudioAdvanceCard performer={performer} />
         <LatestVideosCard performerId={performer.id} />
