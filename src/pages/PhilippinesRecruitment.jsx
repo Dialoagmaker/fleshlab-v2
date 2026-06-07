@@ -406,16 +406,7 @@ export default function PhilippinesRecruitment() {
               linear-gradient(135deg, #fff9f6 0%, #fff5f0 42%, #fef7f5 100%)`
           }}
         >
-          {/* Background Image Layer - Fully Visible */}
-          <div 
-            className="absolute inset-0"
-            style={{
-              backgroundImage: 'url(https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2007_12_26.png)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              opacity: 1
-            }}
-          />
+          {/* No background image - only warm gradient */}
 
           <div className="max-w-[1280px] mx-auto relative z-10">
             {/* Header */}
