@@ -360,16 +360,6 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Performer recruitment landing pages - INDEX
-  if (path === "/gay-performer-recruitment-philippines" || path === "/chaturbate-model-join-studio") {
-    const page = path === "/gay-performer-recruitment-philippines" ? <PhilippinesRecruitment /> : <ChaturbateRecruitment />;
-    return (
-      <PublicPageShell>
-        {page}
-      </PublicPageShell>
-    );
-  }
-
   // Dynamic public routes — now handled by React Router <Routes> below
   // so useParams() works correctly and slug is always available
 
@@ -422,6 +412,8 @@ const AuthenticatedApp = () => {
       <Route path="/client/dashboard" element={<PublicPageShell noIndex={true}><ClientDashboard /></PublicPageShell>} />
       <Route path="/fanclub/:slug" element={<PublicPageShell><ComingSoon title="Performer Fanclub" /></PublicPageShell>} />
       <Route path="/fanclub" element={<PublicPageShell><Fanclub /></PublicPageShell>} />
+      <Route path="/gay-performer-recruitment-philippines" element={<PublicPageShell><PhilippinesRecruitment /></PublicPageShell>} />
+      <Route path="/chaturbate-model-join-studio" element={<PublicPageShell><ChaturbateRecruitment /></PublicPageShell>} />
       {/* Public routes */}
       <Route element={<Layout />}>
         <Route path="/brands" element={<PublicBrands />} />
