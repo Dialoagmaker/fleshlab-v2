@@ -394,18 +394,18 @@ export default function PhilippinesRecruitment() {
           </div>
         </section>
 
-        {/* Choose Your Creator Path - Full Background Image */}
+        {/* Choose Your Creator Path - Full Background Image with Glass Neon Cards */}
         <section 
-          className="relative overflow-hidden"
+          className="relative overflow-hidden bg-black text-white"
           style={{
             padding: 'clamp(76px, 10vw, 120px) 24px'
           }}
         >
-          {/* Full Background Image - New Image with integrated cards */}
+          {/* Full Clean Background Image (07_12_26.png) */}
           <div 
-            className="absolute inset-0"
+            className="absolute inset-0 z-0"
             style={{
-              backgroundImage: 'url(https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2007_17_30.png)',
+              backgroundImage: 'url(https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2007_12_26.png)',
               backgroundSize: 'cover',
               backgroundPosition: 'center'
             }}
@@ -415,102 +415,194 @@ export default function PhilippinesRecruitment() {
             {/* Header */}
             <div className="text-center mb-12">
               <Badge 
-                className="mb-4 inline-block text-xs font-bold px-3 py-1.5 uppercase tracking-[0.16em]"
+                className="mb-4 inline-block text-xs font-black px-4 py-1.5 uppercase tracking-[0.2em] rounded-full"
                 style={{ 
-                  backgroundColor: 'rgba(255, 138, 0, 0.12)',
-                  color: '#9a3412',
-                  border: '1px solid rgba(255, 138, 0, 0.35)'
+                  background: 'transparent',
+                  color: '#ff2d6f',
+                  border: '1.5px solid #ff2d6f',
+                  boxShadow: '0 0 15px rgba(255, 45, 111, 0.4)'
                 }}
               >
-                ★ CHOOSE YOUR PATH
+                CHOOSE YOUR PATH
               </Badge>
               
               <h2 
-                className="mb-4 leading-[1.0] font-black"
-                style={{ fontSize: 'clamp(36px, 8vw, 64px)', color: '#1f2937' }}
+                className="mb-4 font-black tracking-tight text-white"
+                style={{ fontSize: 'clamp(36px, 6vw, 64px)', lineHeight: '1.1' }}
               >
-                <span style={{ color: '#1f2937' }}>Which </span>
-                <span style={{ background: 'linear-gradient(90deg, #ff2d6f 0%, #ff8a00 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>creator type</span>
-                <span style={{ color: '#1f2937' }}> are you?</span>
+                Which creator type are you?
               </h2>
               
               <p 
-                className="text-center mx-auto leading-relaxed"
-                style={{ 
-                  color: '#4b5563',
-                  maxWidth: '720px',
-                  fontSize: 'clamp(15px, 3vw, 18px)'
-                }}
+                className="text-center mx-auto text-gray-300 leading-relaxed max-w-[720px] font-medium"
+                style={{ fontSize: 'clamp(15px, 2.5vw, 17px)' }}
               >
-                Whether you're starting with a phone or already have fans, FLESHLAB helps you choose the right support model.
+                Whether you're starting with a phone or already have fans, <span className="text-[#ff2d6f] font-bold">FLESHLAB</span> helps you choose the right support model.
               </p>
             </div>
-            
 
+            {/* 5 Glassmorphic Creator Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+              
+              {/* Card 1: Beginner with Phone (Orange Glow) */}
+              <div 
+                className="relative rounded-[24px] overflow-hidden border border-orange-500/30 p-6 flex flex-col justify-between min-h-[360px] bg-black/50 backdrop-blur-md hover:border-orange-500/70 hover:shadow-[0_0_30px_rgba(249,115,22,0.25)] transition-all duration-300"
+                style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.4)' }}
+              >
+                <div>
+                  {/* Neon Icon Circle */}
+                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-orange-500/40 bg-orange-500/10 mb-6 shadow-[0_0_15px_rgba(249,115,22,0.3)]">
+                    <Smartphone className="h-5 w-5 text-orange-400" />
+                  </div>
+                  <h3 className="font-extrabold text-white text-[22px] leading-tight mb-3">Beginner with Phone</h3>
+                  <p className="text-gray-300 text-sm leading-relaxed font-medium">Never created before? Start with your phone, private space and full setup support.</p>
+                </div>
+                <div className="mt-6">
+                  <div className="w-full text-center py-2.5 rounded-xl font-bold text-xs bg-orange-950/40 text-orange-400 border border-orange-500/30 uppercase tracking-wide">
+                    60/40 Management
+                  </div>
+                </div>
+              </div>
 
-            {/* CTA Panel */}
+              {/* Card 2: Existing Creator (Pink Glow) */}
+              <div 
+                className="relative rounded-[24px] overflow-hidden border border-rose-500/30 p-6 flex flex-col justify-between min-h-[360px] bg-black/50 backdrop-blur-md hover:border-rose-500/70 hover:shadow-[0_0_30px_rgba(244,63,94,0.25)] transition-all duration-300"
+                style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.4)' }}
+              >
+                <div>
+                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-rose-500/40 bg-rose-500/10 mb-6 shadow-[0_0_15px_rgba(244,63,94,0.3)]">
+                    <Camera className="h-5 w-5 text-rose-400" />
+                  </div>
+                  <h3 className="font-extrabold text-white text-[22px] leading-tight mb-3">Existing Creator</h3>
+                  <p className="text-gray-300 text-sm leading-relaxed font-medium">Have clips or followers already? Add FLESHLAB as your fanclub and distribution hub.</p>
+                </div>
+                <div className="mt-6">
+                  <div className="w-full text-center py-2.5 rounded-xl font-bold text-xs bg-rose-950/40 text-rose-400 border border-rose-500/30 uppercase tracking-wide">
+                    70/30 Network
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Cam Model (Purple Glow) */}
+              <div 
+                className="relative rounded-[24px] overflow-hidden border border-purple-500/30 p-6 flex flex-col justify-between min-h-[360px] bg-black/50 backdrop-blur-md hover:border-purple-500/70 hover:shadow-[0_0_30px_rgba(168,85,247,0.25)] transition-all duration-300"
+                style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.4)' }}
+              >
+                <div>
+                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-purple-500/40 bg-purple-500/10 mb-6 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+                    <Play className="h-5 w-5 text-purple-400" />
+                  </div>
+                  <h3 className="font-extrabold text-white text-[22px] leading-tight mb-3">Cam Model</h3>
+                  <p className="text-gray-300 text-sm leading-relaxed font-medium">Already on Chaturbate, Bigo or other cam sites? Turn live viewers into long-term fans.</p>
+                </div>
+                <div className="mt-6">
+                  <div className="w-full text-center py-2.5 rounded-xl font-bold text-xs bg-purple-950/40 text-purple-400 border border-purple-500/30 uppercase tracking-wide">
+                    Hybrid Model
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 4: Couple Creator (Crimson Glow) */}
+              <div 
+                className="relative rounded-[24px] overflow-hidden border border-[#ff0055]/30 p-6 flex flex-col justify-between min-h-[360px] bg-black/50 backdrop-blur-md hover:border-[#ff0055]/70 hover:shadow-[0_0_30px_rgba(255,0,85,0.25)] transition-all duration-300"
+                style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.4)' }}
+              >
+                <div>
+                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-[#ff0055]/40 bg-[#ff0055]/10 mb-6 shadow-[0_0_15px_rgba(255,0,85,0.3)]">
+                    <Users className="h-5 w-5 text-rose-400" />
+                  </div>
+                  <h3 className="font-extrabold text-white text-[22px] leading-tight mb-3">Couple Creator</h3>
+                  <p className="text-gray-300 text-sm leading-relaxed font-medium">Create with a partner. Both must verify 18+ and approve every scene.</p>
+                </div>
+                <div className="mt-6">
+                  <div className="w-full text-center py-2.5 rounded-xl font-bold text-xs bg-rose-950/40 text-rose-400 border border-[#ff0055]/30 uppercase tracking-wide">
+                    Both Verify 18+
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 5: Fanclub Creator (Amber Glow) */}
+              <div 
+                className="relative rounded-[24px] overflow-hidden border border-amber-500/30 p-6 flex flex-col justify-between min-h-[360px] bg-black/50 backdrop-blur-md hover:border-amber-500/70 hover:shadow-[0_0_30px_rgba(245,158,11,0.25)] transition-all duration-300"
+                style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.4)' }}
+              >
+                <div>
+                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-amber-500/40 bg-amber-500/10 mb-6 shadow-[0_0_15px_rgba(245,158,11,0.3)]">
+                    <Star className="h-5 w-5 text-amber-400" />
+                  </div>
+                  <h3 className="font-extrabold text-white text-[22px] leading-tight mb-3">Fanclub Creator</h3>
+                  <p className="text-gray-300 text-sm leading-relaxed font-medium">Build recurring monthly income with exclusive clips, updates and supporter perks.</p>
+                </div>
+                <div className="mt-6">
+                  <div className="w-full text-center py-2.5 rounded-xl font-bold text-xs bg-amber-950/40 text-amber-400 border border-amber-500/30 uppercase tracking-wide">
+                    Fanclub Setup
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Elegant Dark Glowing CTA Panel */}
             <div 
-              className="p-8 rounded-[28px] mb-8"
-              style={{
-                background: 'rgba(255, 255, 255, 0.75)',
-                border: '1px solid rgba(225, 29, 72, 0.18)',
-                boxShadow: '0 24px 80px rgba(225, 29, 72, 0.12)',
-                backdropFilter: 'blur(16px)'
-              }}
+              className="p-8 rounded-[24px] mb-8 relative overflow-hidden bg-black/60 border border-rose-500/25 shadow-[0_0_40px_rgba(244,63,94,0.1)] backdrop-blur-md"
             >
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-6">
-                <div className="flex items-start sm:items-center gap-4">
-                  <div className="h-12 w-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(225, 29, 72, 0.12)', border: '1px solid rgba(225, 29, 72, 0.25)' }}>
-                    <HelpCircle className="h-6 w-6 text-rose-600" />
+              <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+                
+                {/* Left Side Info */}
+                <div className="flex items-center gap-5 flex-1 w-full">
+                  <div className="h-14 w-14 rounded-full flex items-center justify-center border border-rose-500/35 bg-rose-500/10 shadow-[0_0_15px_rgba(244,63,94,0.25)] flex-shrink-0">
+                    <HelpCircle className="h-7 w-7 text-rose-400" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-gray-900 text-lg">Not sure which path fits you?</h4>
-                    <p className="text-gray-600 text-sm">Chat with our team on WhatsApp. No pressure, ask anything.</p>
+                    <h4 className="font-bold text-white text-xl">Not sure which path fits you?</h4>
+                    <p className="text-gray-300 text-sm">Chat with our team on WhatsApp. No pressure, ask anything.</p>
                   </div>
                 </div>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <Button 
-                  className="bg-green-500 hover:bg-green-600 text-white font-bold px-8 py-3 rounded-lg shadow-lg shadow-green-500/40 transition-all flex items-center justify-center gap-2 flex-1 sm:flex-none"
-                  onClick={handleWhatsAppClick}
-                >
-                  <MessageCircle className="h-5 w-5" />
-                  Chat on WhatsApp
-                </Button>
-                <Button 
-                  className="border-2 border-rose-500 text-rose-600 hover:bg-rose-500/10 font-bold px-8 py-3 rounded-lg transition-all flex items-center justify-center gap-2 flex-1 sm:flex-none bg-transparent"
-                  onClick={() => handleRevenueModelClick('compare')}
-                >
-                  <TrendingUp className="h-5 w-5" />
-                  Compare 60/40 and 70/30
-                </Button>
-              </div>
 
-              {/* Trust Pills */}
-              <div className="flex flex-wrap gap-3">
-                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-700 text-xs font-semibold" style={{ background: 'rgba(225, 29, 72, 0.08)', border: '1px solid rgba(225, 29, 72, 0.2)' }}>
-                  <Shield className="h-4 w-4 text-rose-600" />
-                  <span>Verified 18+ Only</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-700 text-xs font-semibold" style={{ background: 'rgba(168, 85, 247, 0.08)', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
-                  <Lock className="h-4 w-4 text-purple-600" />
-                  <span>Private & Discreet</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-700 text-xs font-semibold" style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                  <CheckCircle2 className="h-4 w-4 text-blue-600" />
-                  <span>You Approve Everything</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-700 text-xs font-semibold" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-                  <Globe className="h-4 w-4 text-amber-600" />
-                  <span>Support for Filipino Creators</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-700 text-xs font-semibold" style={{ background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
-                  <Banknote className="h-4 w-4 text-green-600" />
-                  <span>Payouts in PHP</span>
+                {/* Right Side Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+                  <Button 
+                    className="bg-[#128c7e] hover:bg-[#075e54] text-white font-extrabold px-8 py-3.5 rounded-xl shadow-lg shadow-[#128c7e]/30 transition-all flex items-center justify-center gap-2"
+                    onClick={handleWhatsAppClick}
+                  >
+                    <MessageCircle className="h-5 w-5" />
+                    Chat on WhatsApp
+                  </Button>
+                  
+                  <Button 
+                    className="border-2 border-white/20 text-white hover:bg-white/10 font-extrabold px-8 py-3.5 rounded-xl transition-all flex items-center justify-center bg-transparent"
+                    onClick={() => handleRevenueModelClick('compare')}
+                  >
+                    Compare 60/40 & 70/30
+                  </Button>
                 </div>
               </div>
             </div>
+
+            {/* Bottom Trust Pills - Black Translucent Border */}
+            <div className="flex flex-wrap justify-center gap-3">
+              <div className="flex items-center gap-2 px-5 py-3 rounded-full text-white text-xs font-bold bg-black/40 border border-white/10 shadow-lg">
+                <Shield className="h-4 w-4 text-rose-500" />
+                <span>Verified 18+ Only</span>
+              </div>
+              <div className="flex items-center gap-2 px-5 py-3 rounded-full text-white text-xs font-bold bg-black/40 border border-white/10 shadow-lg">
+                <Lock className="h-4 w-4 text-rose-500" />
+                <span>Private & Discreet</span>
+              </div>
+              <div className="flex items-center gap-2 px-5 py-3 rounded-full text-white text-xs font-bold bg-black/40 border border-white/10 shadow-lg">
+                <CheckCircle2 className="h-4 w-4 text-rose-500" />
+                <span>You Approve Everything</span>
+              </div>
+              <div className="flex items-center gap-2 px-5 py-3 rounded-full text-white text-xs font-bold bg-black/40 border border-white/10 shadow-lg">
+                <span className="text-[14px]">🇵🇭</span>
+                <span>Support for Filipino Creators</span>
+              </div>
+              <div className="flex items-center gap-2 px-5 py-3 rounded-full text-white text-xs font-bold bg-black/40 border border-white/10 shadow-lg">
+                <span className="text-[14px]">₱</span>
+                <span>Payouts in PHP</span>
+              </div>
+            </div>
+
           </div>
         </section>
 
