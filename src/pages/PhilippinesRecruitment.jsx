@@ -576,41 +576,41 @@ export default function PhilippinesRecruitment() {
               Multiple payment methods available (subject to confirmation)
             </p>
             
-            <Card className="border-rose-200 shadow-xl mb-8">
+            <Card className="border-2 border-rose-300 shadow-xl mb-8 bg-gradient-to-br from-rose-50 to-white">
               <CardContent className="pt-8">
-                <div className="flex items-start gap-4 mb-6">
-                  <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-                    <Banknote className="h-7 w-7 text-rose-600" />
+                <div className="flex items-start gap-4 mb-8">
+                  <div className="w-14 h-14 bg-rose-200 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <Banknote className="h-7 w-7 text-rose-700" />
                   </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-3">Available Methods</h3>
-                    <div className="flex flex-wrap gap-2.5">
-                      <Badge className="bg-blue-100 text-blue-800 text-sm px-3 py-1.5">GCash</Badge>
-                      <Badge className="bg-purple-100 text-purple-800 text-sm px-3 py-1.5">Maya</Badge>
-                      <Badge className="bg-red-100 text-red-800 text-sm px-3 py-1.5">BDO</Badge>
-                      <Badge className="bg-blue-200 text-blue-900 text-sm px-3 py-1.5">BPI</Badge>
-                      <Badge className="bg-orange-100 text-orange-800 text-sm px-3 py-1.5">UnionBank</Badge>
-                      <Badge className="bg-green-100 text-green-800 text-sm px-3 py-1.5">Crypto (USDT)</Badge>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-gray-900 mb-4">Available Payout Methods</h3>
+                    <div className="flex flex-wrap gap-3">
+                      <Badge className="bg-blue-600 text-white text-sm px-4 py-2 font-semibold hover:bg-blue-700 transition-colors">GCash</Badge>
+                      <Badge className="bg-purple-600 text-white text-sm px-4 py-2 font-semibold hover:bg-purple-700 transition-colors">Maya</Badge>
+                      <Badge className="bg-red-600 text-white text-sm px-4 py-2 font-semibold hover:bg-red-700 transition-colors">BDO</Badge>
+                      <Badge className="bg-indigo-600 text-white text-sm px-4 py-2 font-semibold hover:bg-indigo-700 transition-colors">BPI</Badge>
+                      <Badge className="bg-orange-600 text-white text-sm px-4 py-2 font-semibold hover:bg-orange-700 transition-colors">UnionBank</Badge>
+                      <Badge className="bg-green-600 text-white text-sm px-4 py-2 font-semibold hover:bg-green-700 transition-colors">Crypto (USDT)</Badge>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
-                  <div className="p-4 bg-rose-50 rounded-xl border border-rose-100">
-                    <p className="text-sm text-gray-800 mb-2 font-bold">Currency</p>
-                    <p className="font-bold text-gray-900 text-lg">PHP or USD equivalent</p>
+                  <div className="p-5 bg-white rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-colors">
+                    <p className="text-xs font-bold text-blue-700 mb-2 uppercase tracking-wide">Currency</p>
+                    <p className="font-bold text-gray-900 text-lg text-blue-900">PHP or USD equivalent</p>
                   </div>
-                  <div className="p-4 bg-rose-50 rounded-xl border border-rose-100">
-                    <p className="text-sm text-gray-800 mb-2 font-bold">Schedule</p>
-                    <p className="font-bold text-gray-900 text-lg">Weekly payouts</p>
+                  <div className="p-5 bg-white rounded-xl border-2 border-purple-200 hover:border-purple-400 transition-colors">
+                    <p className="text-xs font-bold text-purple-700 mb-2 uppercase tracking-wide">Schedule</p>
+                    <p className="font-bold text-gray-900 text-lg text-purple-900">Weekly payouts</p>
                   </div>
-                  <div className="p-4 bg-rose-50 rounded-xl border border-rose-100">
-                    <p className="text-sm text-gray-800 mb-2 font-bold">Exchange Rate</p>
-                    <p className="font-bold text-gray-900 text-lg">Market rate at payout</p>
+                  <div className="p-5 bg-white rounded-xl border-2 border-orange-200 hover:border-orange-400 transition-colors">
+                    <p className="text-xs font-bold text-orange-700 mb-2 uppercase tracking-wide">Exchange Rate</p>
+                    <p className="font-bold text-gray-900 text-lg text-orange-900">Market rate at payout</p>
                   </div>
-                  <div className="p-4 bg-rose-50 rounded-xl border border-rose-100">
-                    <p className="text-sm text-gray-800 mb-2 font-bold">Availability</p>
-                    <p className="font-bold text-gray-900 text-lg">Subject to confirmation</p>
+                  <div className="p-5 bg-white rounded-xl border-2 border-green-200 hover:border-green-400 transition-colors">
+                    <p className="text-xs font-bold text-green-700 mb-2 uppercase tracking-wide">Availability</p>
+                    <p className="font-bold text-gray-900 text-lg text-green-900">Subject to confirmation</p>
                   </div>
                 </div>
               </CardContent>
