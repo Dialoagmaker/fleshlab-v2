@@ -109,6 +109,9 @@ export default function PhilippinesRecruitment() {
                   object-position: 62% 45% !important;
                 }
               }
+              [data-hero-section] {
+                min-height: 720px !important;
+              }
             `}
           </style>
           
@@ -140,9 +143,9 @@ export default function PhilippinesRecruitment() {
           ></div>
           
           {/* Content Container */}
-          <div className="relative z-20 px-4 sm:px-6 lg:px-8" style={{ minHeight: '720px' }}>
+          <div className="relative z-20 px-4 sm:px-6 lg:px-8">
             <div className="max-w-[1280px] mx-auto h-full flex items-center">
-              <div className="max-w-[600px]" style={{ paddingTop: '110px', paddingBottom: '120px' }}>
+              <div className="max-w-[600px]" style={{ paddingTop: '130px', paddingBottom: '130px' }}>
                 {/* Badge */}
                 <div className="flex items-center gap-2 mb-6 w-fit">
                   <span className="text-2xl">🇵🇭</span>
@@ -203,28 +206,28 @@ export default function PhilippinesRecruitment() {
               <div 
                 className="px-4 sm:px-6 lg:px-8"
                 style={{
-                  background: 'rgba(0,0,0,0.58)',
+                  background: 'rgba(0,0,0,0.62)',
                   backdropFilter: 'blur(10px)',
                   borderTop: '1px solid rgba(255,255,255,0.12)',
                   borderBottom: '1px solid rgba(255,255,255,0.08)',
-                  padding: '18px 24px'
+                  padding: '20px 24px'
                 }}
               >
                 <div className="max-w-[1280px] mx-auto">
-                  <div className="flex flex-wrap gap-8 sm:gap-10 justify-center text-white/90 text-[14px] font-semibold">
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap gap-[28px] sm:gap-[32px] justify-center text-white/90 text-[13px] font-semibold">
+                    <div className="flex items-center gap-2.5">
                       <Shield className="w-[16px] h-[16px] text-red-500" />
                       <span>Discreet Process</span>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5">
                       <Smartphone className="w-[16px] h-[16px] text-red-500" />
                       <span>Professional Support</span>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5">
                       <Globe className="w-[16px] h-[16px] text-red-500" />
                       <span>Global Audience</span>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5">
                       <Heart className="w-[16px] h-[16px] text-red-500" />
                       <span>Build Your Fanbase</span>
                     </div>
