@@ -419,21 +419,21 @@ export default function PhilippinesRecruitment() {
           </div>
         </section>
 
-        {/* Choose Your Creator Path - Dark Neon Glassmorphism */}
+        {/* Choose Your Creator Path - Warm Light Neon */}
         <section 
           className="relative overflow-hidden"
           style={{
             padding: 'clamp(76px, 10vw, 120px) 24px',
             background: `
-              radial-gradient(circle at 12% 15%, rgba(225, 29, 72, 0.22), transparent 28%),
-              radial-gradient(circle at 85% 20%, rgba(255, 138, 0, 0.18), transparent 30%),
-              radial-gradient(circle at 70% 80%, rgba(168, 85, 247, 0.16), transparent 34%),
-              linear-gradient(135deg, #030305 0%, #110611 42%, #07070b 100%)`
+              radial-gradient(circle at 12% 15%, rgba(225, 29, 72, 0.15), transparent 28%),
+              radial-gradient(circle at 85% 20%, rgba(255, 138, 0, 0.12), transparent 30%),
+              radial-gradient(circle at 70% 80%, rgba(168, 85, 247, 0.1), transparent 34%),
+              linear-gradient(135deg, #fef7f5 0%, #fff5f0 42%, #fff9f6 100%)`
           }}
         >
           {/* Background Image Layer */}
           <div 
-            className="absolute inset-0 opacity-30"
+            className="absolute inset-0 opacity-15"
             style={{
               backgroundImage: 'url(https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2006_33_23.png)',
               backgroundSize: 'cover',
@@ -441,10 +441,10 @@ export default function PhilippinesRecruitment() {
             }}
           />
 
-          {/* Dark Overlay */}
+          {/* Light Overlay */}
           <div 
             className="absolute inset-0"
-            style={{ background: 'rgba(0, 0, 0, 0.55)' }}
+            style={{ background: 'rgba(255, 255, 255, 0.35)' }}
           />
 
           <div className="max-w-[1280px] mx-auto relative z-10">
@@ -453,27 +453,27 @@ export default function PhilippinesRecruitment() {
               <Badge 
                 className="mb-4 inline-block text-xs font-bold px-3 py-1.5 uppercase tracking-[0.16em]"
                 style={{ 
-                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                  color: '#ff8a00',
-                  border: '1px solid rgba(255, 138, 0, 0.45)'
+                  backgroundColor: 'rgba(255, 138, 0, 0.12)',
+                  color: '#9a3412',
+                  border: '1px solid rgba(255, 138, 0, 0.35)'
                 }}
               >
                 ★ CHOOSE YOUR PATH
               </Badge>
               
               <h2 
-                className="text-white mb-4 leading-[1.0] font-black"
-                style={{ fontSize: 'clamp(36px, 8vw, 64px)' }}
+                className="mb-4 leading-[1.0] font-black"
+                style={{ fontSize: 'clamp(36px, 8vw, 64px)', color: '#1f2937' }}
               >
-                <span style={{ color: 'white' }}>Which </span>
+                <span style={{ color: '#1f2937' }}>Which </span>
                 <span style={{ background: 'linear-gradient(90deg, #ff2d6f 0%, #ff8a00 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>creator type</span>
-                <span style={{ color: 'white' }}> are you?</span>
+                <span style={{ color: '#1f2937' }}> are you?</span>
               </h2>
               
               <p 
                 className="text-center mx-auto leading-relaxed"
                 style={{ 
-                  color: 'rgba(255, 255, 255, 0.74)',
+                  color: '#4b5563',
                   maxWidth: '720px',
                   fontSize: 'clamp(15px, 3vw, 18px)'
                 }}
@@ -634,20 +634,20 @@ export default function PhilippinesRecruitment() {
             <div 
               className="p-8 rounded-[28px] mb-8"
               style={{
-                background: 'rgba(255,255,255,0.045)',
-                border: '1px solid rgba(255,255,255,0.14)',
-                boxShadow: '0 24px 80px rgba(0,0,0,0.38)',
+                background: 'rgba(255, 255, 255, 0.75)',
+                border: '1px solid rgba(225, 29, 72, 0.18)',
+                boxShadow: '0 24px 80px rgba(225, 29, 72, 0.12)',
                 backdropFilter: 'blur(16px)'
               }}
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-6">
                 <div className="flex items-start sm:items-center gap-4">
-                  <div className="h-12 w-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(225, 29, 72, 0.2)', border: '1px solid rgba(225, 29, 72, 0.4)' }}>
-                    <HelpCircle className="h-6 w-6 text-rose-400" />
+                  <div className="h-12 w-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(225, 29, 72, 0.12)', border: '1px solid rgba(225, 29, 72, 0.25)' }}>
+                    <HelpCircle className="h-6 w-6 text-rose-600" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-white text-lg">Not sure which path fits you?</h4>
-                    <p className="text-gray-400 text-sm">Chat with our team on WhatsApp. No pressure, ask anything.</p>
+                    <h4 className="font-bold text-gray-900 text-lg">Not sure which path fits you?</h4>
+                    <p className="text-gray-600 text-sm">Chat with our team on WhatsApp. No pressure, ask anything.</p>
                   </div>
                 </div>
               </div>
@@ -661,7 +661,7 @@ export default function PhilippinesRecruitment() {
                   Chat on WhatsApp
                 </Button>
                 <Button 
-                  className="border-2 border-rose-500 text-white hover:bg-rose-500/10 font-bold px-8 py-3 rounded-lg transition-all flex items-center justify-center gap-2 flex-1 sm:flex-none bg-transparent"
+                  className="border-2 border-rose-500 text-rose-600 hover:bg-rose-500/10 font-bold px-8 py-3 rounded-lg transition-all flex items-center justify-center gap-2 flex-1 sm:flex-none bg-transparent"
                   onClick={() => handleRevenueModelClick('compare')}
                 >
                   <TrendingUp className="h-5 w-5" />
@@ -671,24 +671,24 @@ export default function PhilippinesRecruitment() {
 
               {/* Trust Pills */}
               <div className="flex flex-wrap gap-3">
-                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-300 text-xs font-semibold" style={{ background: 'rgba(225, 29, 72, 0.1)', border: '1px solid rgba(225, 29, 72, 0.3)' }}>
-                  <Shield className="h-4 w-4 text-rose-400" />
+                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-700 text-xs font-semibold" style={{ background: 'rgba(225, 29, 72, 0.08)', border: '1px solid rgba(225, 29, 72, 0.2)' }}>
+                  <Shield className="h-4 w-4 text-rose-600" />
                   <span>Verified 18+ Only</span>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-300 text-xs font-semibold" style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
-                  <Lock className="h-4 w-4 text-purple-400" />
+                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-700 text-xs font-semibold" style={{ background: 'rgba(168, 85, 247, 0.08)', border: '1px solid rgba(168, 85, 247, 0.2)' }}>
+                  <Lock className="h-4 w-4 text-purple-600" />
                   <span>Private & Discreet</span>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-300 text-xs font-semibold" style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-                  <CheckCircle2 className="h-4 w-4 text-blue-400" />
+                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-700 text-xs font-semibold" style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                  <CheckCircle2 className="h-4 w-4 text-blue-600" />
                   <span>You Approve Everything</span>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-300 text-xs font-semibold" style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-                  <Globe className="h-4 w-4 text-amber-400" />
+                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-700 text-xs font-semibold" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                  <Globe className="h-4 w-4 text-amber-600" />
                   <span>Support for Filipino Creators</span>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-300 text-xs font-semibold" style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
-                  <Banknote className="h-4 w-4 text-green-400" />
+                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-700 text-xs font-semibold" style={{ background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+                  <Banknote className="h-4 w-4 text-green-600" />
                   <span>Payouts in PHP</span>
                 </div>
               </div>
