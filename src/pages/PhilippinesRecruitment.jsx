@@ -87,7 +87,7 @@ export default function PhilippinesRecruitment() {
             style={{
               backgroundImage: `url(${heroImage})`,
               backgroundSize: 'cover',
-              backgroundPosition: 'center right',
+              backgroundPosition: 'right center',
             }}
           >
             {/* Mobile: center top */}
