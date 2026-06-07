@@ -93,6 +93,7 @@ Deno.serve(async (req) => {
       { path: '/brands',           changefreq: 'weekly',  priority: '0.8' },
       { path: '/become-performer', changefreq: 'weekly',  priority: '0.9' },
       { path: '/guest-production', changefreq: 'weekly',  priority: '0.8' },
+      { path: '/fan-productions',  changefreq: 'weekly',  priority: '0.7' },
       { path: '/how-it-works',     changefreq: 'monthly', priority: '0.7' },
       { path: '/faq',              changefreq: 'monthly', priority: '0.7' },
       { path: '/fanclub',          changefreq: 'weekly',  priority: '0.5' },

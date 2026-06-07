@@ -36,11 +36,11 @@ export default function News() {
 
   const categories = [
     { value: 'all', label: t('news.categories.all') },
-    { value: 'studio', label: t('news.categories.studio') },
-    { value: 'creator', label: t('news.categories.creator') },
+    { value: 'studioUpdates', label: t('news.categories.studioUpdates') },
+    { value: 'creatorStories', label: t('news.categories.creatorStories') },
     { value: 'fanclub', label: t('news.categories.fanclub') },
-    { value: 'guest', label: t('news.categories.guest') },
-    { value: 'behind', label: t('news.categories.behind') },
+    { value: 'guestProduction', label: t('news.categories.guestProduction') },
+    { value: 'behindTheScenes', label: t('news.categories.behindTheScenes') },
   ];
 
   return (

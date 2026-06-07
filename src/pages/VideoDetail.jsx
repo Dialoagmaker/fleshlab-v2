@@ -258,7 +258,7 @@ export default function VideoDetail() {
     "uploadDate": isoUploadDate,
     "datePublished": isoUploadDate,
     "duration": isoDuration(video.duration_seconds),
-    // contentUrl = public playable file (trailer/preview MP4) — never the private source
+    // contentUrl = trailer/preview URL (public), NOT the full source video
     // embedUrl = canonical page URL (no dedicated embed player exists)
     ...(video.trailer_url && { "contentUrl": video.trailer_url }),
     "embedUrl": canonicalUrl,

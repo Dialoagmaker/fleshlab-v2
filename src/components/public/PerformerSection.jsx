@@ -47,7 +47,7 @@ export default function PerformerSection({ performer, videoCount = 0 }) {
             {videoCount > 0 && (
               <span className="flex items-center gap-1">
                 <Film className="w-3 h-3" />
-                {videoCount} videos
+                {videoCount} {videoCount === 1 ? 'video' : 'videos'}
               </span>
             )}
           </div>
