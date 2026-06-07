@@ -24,6 +24,12 @@ const NAV_GROUPS = [
     ],
   },
   {
+    label: "Customers",
+    items: [
+      { href: "/admin/users", label: "Users & Customers", icon: Users },
+    ],
+  },
+  {
     label: "Operations",
     items: [
       { href: "/admin/applications",                  label: "Applications",    icon: FileText },

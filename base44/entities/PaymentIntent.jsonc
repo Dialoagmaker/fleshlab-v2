@@ -11,7 +11,8 @@
       "enum": [
         "ccbill",
         "segpay",
-        "mock"
+        "mock",
+        "nowpayments"
       ],
       "title": "Payment Provider"
     },
@@ -60,7 +61,10 @@
         "completed",
         "failed",
         "cancelled",
-        "refunded"
+        "refunded",
+        "underpaid",
+        "currency_mismatch",
+        "payment_review"
       ],
       "title": "Status",
       "default": "pending"
