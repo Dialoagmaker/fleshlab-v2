@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useAccessControl } from "@/lib/useAccessControl";
 import SEOMeta from "@/components/SEOMeta";
 import { Button } from "@/components/ui/button";
+import { trackGuestProductionCtaClick } from "@/lib/analytics";
 
 // Real FLESHLAB video thumbnails used as visual proof
 const PROOF_THUMBS = [
@@ -48,6 +49,9 @@ export default function GuestProduction({ canonical, noIndex }) {
   const navigate = useNavigate();
 
   const handleApply = () => {
+    // Track CTA click
+    trackGuestProductionCtaClick('hero', isAuthenticated);
+    
     if (isAuthenticated) {
       document.getElementById('apply-section')?.scrollIntoView({ behavior: 'smooth' });
     } else {

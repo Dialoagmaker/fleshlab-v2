@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -14,6 +14,7 @@ import PremiumTeaserBlock from "@/components/public/PremiumTeaserBlock";
 import FanProductionTeaser from "@/components/public/FanProductionTeaser";
 import FanclubTeaser from "@/components/public/FanclubTeaser";
 import StudioVideosMiniList from "@/components/public/StudioVideosMiniList";
+import { trackVideoDetailView, trackPerformerProfileView } from "@/lib/analytics";
 import {
   Calendar, Clock, Film, ArrowLeft, Loader2, Tag,
   Play, Eye, Crown, Users, Lock
@@ -166,6 +167,22 @@ export default function VideoDetail() {
     }
     setIsUnlocking(false);
   };
+
+  // Track video detail view
+  useEffect(() => {
+    if (video?.slug) {
+      trackVideoDetailView(video.slug);
+    }
+  }, [video?.slug]);
+
+  // Track performer profile views
+  useEffect(() => {
+    performers.forEach(p => {
+      if (p?.slug) {
+        trackPerformerProfileView(p.slug);
+      }
+    });
+  }, [performers]);
 
   // Loading state — render slug-derived content so Googlebot sees real H1 immediately
   if (isLoading) {

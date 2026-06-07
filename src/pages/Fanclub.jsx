@@ -11,6 +11,7 @@ import { usePaymentProvider } from "@/hooks/usePaymentProvider";
 import CheckoutButton from "@/components/payment/CheckoutButton";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { trackFanclubCtaClick } from "@/lib/analytics";
 import PerformerFanclubHero from "@/components/fanclub/PerformerFanclubHero";
 import FleshlabMembershipUpsell from "@/components/fanclub/FleshlabMembershipUpsell";
 import PerformerFanclubComingSoon from "@/components/fanclub/PerformerFanclubComingSoon";
@@ -24,11 +25,15 @@ function usePerformerParam() {
 }
 
 // ── Checkout helpers with auth guard + intent preservation ────────────────────
-function FanclubCTA({ planId, className, label, isAuthenticated, paymentProvider, returnUrl }) {
+function FanclubCTA({ planId, className, label, isAuthenticated, paymentProvider, returnUrl, ctaLocation = 'default' }) {
   const navigate = useNavigate();
   const fanclubReturn = returnUrl || '/fanclub';
   // Preserve checkout intent: planId + return URL
   const registerUrl = `/register?from_url=${encodeURIComponent(fanclubReturn)}&checkout=${planId}`;
+
+  const handleClick = () => {
+    trackFanclubCtaClick(planId, null, ctaLocation);
+  };
 
   return (
     <CheckoutButton
@@ -36,7 +41,7 @@ function FanclubCTA({ planId, className, label, isAuthenticated, paymentProvider
       label={label || 'Enter Fanclub'}
       returnUrl={fanclubReturn} cancelUrl="/fanclub"
       isAuthenticated={isAuthenticated}
-      onRequireAuth={() => navigate(registerUrl)}
+      onRequireAuth={() => { handleClick(); navigate(registerUrl); }}
       paymentProvider={paymentProvider}
       className={className}
       unavailableLabel="Secure crypto checkout coming soon"

@@ -11,6 +11,7 @@ import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
 import { getStoredAuthIntent, buildRedirectUrl, validateRedirectUrl } from "@/lib/authRedirect";
 import SEOMeta from "@/components/SEOMeta";
+import { trackRegistrationStarted } from "@/lib/analytics";
 
 export default function Register() {
   // SEO: Prevent indexing of auth pages
@@ -47,6 +48,8 @@ export default function Register() {
     setLoading(true);
     try {
       await base44.auth.register({ email, password });
+      // Track registration started
+      trackRegistrationStarted(nextParam || 'direct', checkoutParam);
       setShowOtp(true);
     } catch (err) {
       setError(err.message || "Registration failed");

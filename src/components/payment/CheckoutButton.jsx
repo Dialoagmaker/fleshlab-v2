@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import PaymentUnavailableBadge from './PaymentUnavailableBadge';
+import { trackCheckoutStarted } from '@/lib/analytics';
 
 export default function CheckoutButton({
   // Required
@@ -77,6 +78,9 @@ export default function CheckoutButton({
   const handleCheckout = async () => {
     setLoading(true);
     setError(null);
+    
+    // Track checkout started event
+    trackCheckoutStarted(paymentType, planId, videoId, priceTier);
     
     // Debug: Log auth state and checkout params before calling function
     console.log('[CheckoutButton] Checkout initiated:', {

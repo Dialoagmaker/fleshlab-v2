@@ -4,6 +4,7 @@ import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import PageNotFound from './lib/PageNotFound';
+import { trackPageView, getRouteCategory } from './lib/analytics';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { useAuthRedirect } from './hooks/useAuthRedirect';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -123,6 +124,14 @@ const AuthenticatedApp = () => {
       window.removeEventListener('popstate', handlePopState);
       document.removeEventListener('click', handleClick);
     };
+  }, [path]);
+
+  // Track page views for GA4 on route changes
+  useEffect(() => {
+    if (path) {
+      const category = getRouteCategory(path);
+      trackPageView(path, document.title, category);
+    }
   }, [path]);
 
 

@@ -11,6 +11,7 @@ import BPCalculator from "@/components/becomePerformer/BPCalculator";
 import BPHowItWorks from "@/components/becomePerformer/BPHowItWorks";
 import BPApplicationForm from "@/components/becomePerformer/BPApplicationForm";
 import BPSuccessScreen from "@/components/becomePerformer/BPSuccessScreen";
+import { trackBecomePerformerCtaClick } from "@/lib/analytics";
 
 const FAQ_JSON_LD = [
   { q: "Can I really make money with this?", a: "Yes, but not automatically. You can earn through views, video sales, fanclub subscriptions, PPV, partner platforms and livecam tokens." },
@@ -31,8 +32,14 @@ export default function BecomePerformer() {
   const [submitted, setSubmitted] = useState(false);
   const [submittedData, setSubmittedData] = useState(null);
 
-  const scrollToForm = () => formRef.current?.scrollIntoView({ behavior: "smooth" });
-  const scrollToEarn = () => earnRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToForm = () => {
+    trackBecomePerformerCtaClick('hero_apply');
+    formRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+  const scrollToEarn = () => {
+    trackBecomePerformerCtaClick('hero_earn');
+    earnRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const handleSuccess = (data) => {
     setSubmittedData(data);
