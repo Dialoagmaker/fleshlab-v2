@@ -10,6 +10,14 @@
       "type": "string",
       "title": "Slug"
     },
+    "legacy_slugs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Legacy Slugs",
+      "description": "Array of old slugs that should redirect to this article's current slug"
+    },
     "content": {
       "type": "string",
       "title": "Content",

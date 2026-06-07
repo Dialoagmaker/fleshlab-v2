@@ -29,6 +29,15 @@ export default function NewsDetail() {
   });
 
   const article = data?.article;
+  
+  // If found via legacy slug, redirect to canonical new URL
+  useEffect(() => {
+    if (article && article.slug !== slug) {
+      // Found via legacy slug - redirect to canonical
+      const canonicalPath = `/news/${article.slug}`;
+      window.history.replaceState(null, '', canonicalPath);
+    }
+  }, [article, slug]);
 
   // Fetch related articles
   const { data: allNewsData } = useQuery({

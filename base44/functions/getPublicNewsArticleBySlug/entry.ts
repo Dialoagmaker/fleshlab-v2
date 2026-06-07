@@ -11,12 +11,29 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Slug is required' }, { status: 400 });
     }
 
-    // Fetch article by slug
-    const articles = await base44.asServiceRole.entities.NewsArticle.filter(
+    // Fetch article by slug — with legacy slug fallback
+    let articles = await base44.asServiceRole.entities.NewsArticle.filter(
       { slug, status: 'published' },
       '-published_at',
       1
     );
+
+    // If not found by current slug, check legacy_slugs array
+    if (articles.length === 0) {
+      // Fetch all published articles and check legacy_slugs
+      const allArticles = await base44.asServiceRole.entities.NewsArticle.filter(
+        { status: 'published' },
+        '-published_at',
+        100
+      );
+      
+      // Find article where legacy_slugs contains the requested slug
+      const articleViaLegacy = allArticles.find(a => a.legacy_slugs?.includes(slug));
+      
+      if (articleViaLegacy) {
+        articles = [articleViaLegacy];
+      }
+    }
 
     if (articles.length === 0) {
       return Response.json({ error: 'Article not found' }, { status: 404 });
