@@ -337,7 +337,7 @@ export default function PhilippinesRecruitment() {
         </section>
 
         {/* Choose Your Creator Model */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-rose-50 to-white">
+        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
           <div className="max-w-5xl mx-auto">
             <Badge className="mb-4 bg-rose-100 text-rose-800 text-sm px-4 py-1.5">
               Revenue Models
@@ -349,42 +349,42 @@ export default function PhilippinesRecruitment() {
               Different support levels, different splits
             </p>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* 60/40 Management */}
               <Card 
-                className="border-2 border-rose-500 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer"
+                className="border-3 border-rose-400 shadow-2xl hover:shadow-3xl transition-all hover:scale-105 cursor-pointer bg-gradient-to-br from-white to-rose-50"
                 onClick={() => handleRevenueModelClick("60-40-management")}
               >
-                <CardContent className="pt-6">
-                  <Badge className="mb-4 bg-rose-600 text-sm">For Beginners</Badge>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">60/40 Management Model</h3>
-                  <div className="text-center mb-6 py-4 bg-rose-50 rounded-xl">
-                    <p className="text-4xl font-extrabold text-rose-600 mb-1">Studio 60%</p>
-                    <p className="text-4xl font-extrabold text-rose-600">Performer 40%</p>
+                <CardContent className="pt-8">
+                  <Badge className="mb-6 bg-rose-600 text-white font-bold text-sm px-4 py-2">For Beginners</Badge>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-4">60/40<br/>Management Model</h3>
+                  <div className="text-center mb-8 py-6 bg-white rounded-2xl border-3 border-rose-200 shadow-sm">
+                    <p className="text-5xl font-extrabold text-rose-600 mb-2">Studio 60%</p>
+                    <p className="text-5xl font-extrabold text-rose-600">Performer 40%</p>
                   </div>
-                  <p className="text-gray-700 mb-6">
+                  <p className="text-gray-800 font-medium mb-8 leading-relaxed">
                     Best if you need help with setup, editing, publishing, promotion, and fanclub management. We handle the business side while you focus on creating.
                   </p>
-                  <ul className="space-y-3 text-gray-700">
+                  <ul className="space-y-3">
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-800 font-medium">Full content planning & strategy</span>
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5 font-bold" />
+                      <span className="text-gray-900 font-semibold">Full content planning & strategy</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-800 font-medium">Professional editing & thumbnails</span>
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5 font-bold" />
+                      <span className="text-gray-900 font-semibold">Professional editing & thumbnails</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-800 font-medium">Fanclub setup & promotion</span>
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5 font-bold" />
+                      <span className="text-gray-900 font-semibold">Fanclub setup & promotion</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-800 font-medium">Platform distribution</span>
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5 font-bold" />
+                      <span className="text-gray-900 font-semibold">Platform distribution</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-800 font-medium">Option to graduate to 70/30 later</span>
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5 font-bold" />
+                      <span className="text-gray-900 font-semibold">Option to graduate to 70/30 later</span>
                     </li>
                   </ul>
                 </CardContent>
@@ -392,46 +392,46 @@ export default function PhilippinesRecruitment() {
 
               {/* 70/30 Network */}
               <Card 
-                className="border-2 border-gray-300 shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
+                className="border-3 border-green-400 shadow-2xl hover:shadow-3xl transition-all hover:scale-105 cursor-pointer bg-gradient-to-br from-white to-green-50"
                 onClick={() => handleRevenueModelClick("70-30-network")}
               >
-                <CardContent className="pt-6">
-                  <Badge className="mb-4 bg-gray-700 text-sm">For Existing Creators</Badge>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">70/30 Network Model</h3>
-                  <div className="text-center mb-6 py-4 bg-gray-50 rounded-xl">
-                    <p className="text-4xl font-extrabold text-gray-700 mb-1">Performer 70%</p>
-                    <p className="text-4xl font-extrabold text-gray-700">Studio 30%</p>
+                <CardContent className="pt-8">
+                  <Badge className="mb-6 bg-green-600 text-white font-bold text-sm px-4 py-2">For Existing Creators</Badge>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-4">70/30<br/>Network Model</h3>
+                  <div className="text-center mb-8 py-6 bg-white rounded-2xl border-3 border-green-200 shadow-sm">
+                    <p className="text-5xl font-extrabold text-green-600 mb-2">Performer 70%</p>
+                    <p className="text-5xl font-extrabold text-green-600">Studio 30%</p>
                   </div>
-                  <p className="text-gray-700 mb-6">
+                  <p className="text-gray-800 font-medium mb-8 leading-relaxed">
                     Best if you already have content, audience, or experience. Use FLESHLAB as an additional network and fanclub hub while keeping most revenue.
                   </p>
-                  <ul className="space-y-3 text-gray-700">
+                  <ul className="space-y-3">
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-800 font-medium">Keep 70% of all revenue</span>
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5 font-bold" />
+                      <span className="text-gray-900 font-semibold">Keep 70% of all revenue</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-800 font-medium">Upload your own content</span>
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5 font-bold" />
+                      <span className="text-gray-900 font-semibold">Upload your own content</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-800 font-medium">Set your own schedule</span>
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5 font-bold" />
+                      <span className="text-gray-900 font-semibold">Set your own schedule</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-800 font-medium">Multi-platform distribution</span>
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5 font-bold" />
+                      <span className="text-gray-900 font-semibold">Multi-platform distribution</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-800 font-medium">Fanclub & PPV tools included</span>
+                      <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5 font-bold" />
+                      <span className="text-gray-900 font-semibold">Fanclub & PPV tools included</span>
                     </li>
                   </ul>
                 </CardContent>
               </Card>
             </div>
 
-            <p className="text-xs text-gray-500 mt-8 text-center italic">
+            <p className="text-sm text-gray-700 mt-10 text-center font-medium">
               Revenue splits apply to eligible gross revenue. Specific terms discussed during application review.
             </p>
           </div>
