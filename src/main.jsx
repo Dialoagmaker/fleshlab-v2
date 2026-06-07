@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from '@/App.jsx'
+import App from '@/App.jsx';
+import { initAnalytics } from '@/lib/analytics';
 import '@/index.css'
 import { I18nProvider } from '@/i18n/i18n.jsx'
 
@@ -60,3 +61,6 @@ ReactDOM.createRoot(rootEl).render(
     </I18nProvider>
   </RootErrorBoundary>
 );
+
+// Initialize analytics on app startup
+initAnalytics();

@@ -122,7 +122,7 @@ function sendPageView(path, title = document.title, category = 'public') {
   });
 
   // Log for debugging in development
-  if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     console.log('[Analytics] page_view:', { path, title, category });
   }
 }
@@ -161,7 +161,7 @@ export function trackEvent(eventName, params = {}) {
   window.gtag('event', eventName, enrichedParams);
 
   // Log for debugging in development
-  if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     console.log('[Analytics] event:', eventName, enrichedParams);
   }
 }
