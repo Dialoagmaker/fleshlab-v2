@@ -186,7 +186,7 @@ export default function PhilippinesRecruitment() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Smartphone</h4>
-                      <p className="text-sm text-gray-600">Any phone with 1080p camera</p>
+                      <p className="text-sm text-gray-700 font-medium">Any phone with 1080p camera</p>
                     </div>
                   </div>
 
@@ -196,7 +196,7 @@ export default function PhilippinesRecruitment() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Good Lighting</h4>
-                      <p className="text-sm text-gray-600">Natural light or ring light</p>
+                      <p className="text-sm text-gray-700 font-medium">Natural light or ring light</p>
                     </div>
                   </div>
 
@@ -206,7 +206,7 @@ export default function PhilippinesRecruitment() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Private Room</h4>
-                      <p className="text-sm text-gray-600">Film undisturbed</p>
+                      <p className="text-sm text-gray-700 font-medium">Film undisturbed</p>
                     </div>
                   </div>
 
@@ -216,7 +216,7 @@ export default function PhilippinesRecruitment() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Stable Internet</h4>
-                      <p className="text-sm text-gray-600">For uploading & communication</p>
+                      <p className="text-sm text-gray-700 font-medium">For uploading & communication</p>
                     </div>
                   </div>
 
@@ -226,7 +226,7 @@ export default function PhilippinesRecruitment() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Valid ID (18+)</h4>
-                      <p className="text-sm text-gray-600">Passport, driver's license, UMID, or government ID</p>
+                      <p className="text-sm text-gray-700 font-medium">Passport, driver's license, UMID, or government ID</p>
                     </div>
                   </div>
 
@@ -236,7 +236,7 @@ export default function PhilippinesRecruitment() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-900">Payment Method</h4>
-                      <p className="text-sm text-gray-600">GCash, Maya, bank account, or crypto</p>
+                      <p className="text-sm text-gray-700 font-medium">GCash, Maya, bank account, or crypto</p>
                     </div>
                   </div>
                 </div>
@@ -345,7 +345,7 @@ export default function PhilippinesRecruitment() {
             <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-4">
               Choose your creator model
             </h2>
-            <p className="text-center text-gray-600 mb-12 text-lg max-w-2xl mx-auto">
+            <p className="text-center text-gray-800 font-medium mb-12 text-lg max-w-2xl mx-auto">
               Different support levels, different splits
             </p>
             
@@ -368,23 +368,23 @@ export default function PhilippinesRecruitment() {
                   <ul className="space-y-3 text-gray-700">
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Full content planning & strategy</span>
+                      <span className="text-gray-800 font-medium">Full content planning & strategy</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Professional editing & thumbnails</span>
+                      <span className="text-gray-800 font-medium">Professional editing & thumbnails</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Fanclub setup & promotion</span>
+                      <span className="text-gray-800 font-medium">Fanclub setup & promotion</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Platform distribution</span>
+                      <span className="text-gray-800 font-medium">Platform distribution</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Option to graduate to 70/30 later</span>
+                      <span className="text-gray-800 font-medium">Option to graduate to 70/30 later</span>
                     </li>
                   </ul>
                 </CardContent>
@@ -408,23 +408,23 @@ export default function PhilippinesRecruitment() {
                   <ul className="space-y-3 text-gray-700">
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Keep 70% of all revenue</span>
+                      <span className="text-gray-800 font-medium">Keep 70% of all revenue</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Upload your own content</span>
+                      <span className="text-gray-800 font-medium">Upload your own content</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Set your own schedule</span>
+                      <span className="text-gray-800 font-medium">Set your own schedule</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Multi-platform distribution</span>
+                      <span className="text-gray-800 font-medium">Multi-platform distribution</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Fanclub & PPV tools included</span>
+                      <span className="text-gray-800 font-medium">Fanclub & PPV tools included</span>
                     </li>
                   </ul>
                 </CardContent>
@@ -446,7 +446,7 @@ export default function PhilippinesRecruitment() {
             <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-4">
               How FLESHLAB helps after approval
             </h2>
-            <p className="text-center text-gray-600 mb-12 text-lg max-w-2xl mx-auto">
+            <p className="text-center text-gray-700 mb-12 text-lg max-w-2xl mx-auto font-medium">
               From application to earning - we guide you every step
             </p>
             
@@ -463,7 +463,7 @@ export default function PhilippinesRecruitment() {
                   <Card className="flex-1 border-rose-100 shadow-md bg-white">
                     <CardContent className="pt-5">
                       <h3 className="font-bold text-lg text-gray-900 mb-1">Apply</h3>
-                      <p className="text-gray-600">Submit your application via WhatsApp or online form</p>
+                      <p className="text-gray-800 font-medium">Submit your application via WhatsApp or online form</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -476,7 +476,7 @@ export default function PhilippinesRecruitment() {
                   <Card className="flex-1 border-rose-100 shadow-md bg-white">
                     <CardContent className="pt-5">
                       <h3 className="font-bold text-lg text-gray-900 mb-1">Verify 18+</h3>
-                      <p className="text-gray-600">Upload valid government ID for age verification (KYC)</p>
+                      <p className="text-gray-800 font-medium">Upload valid government ID for age verification (KYC)</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -489,7 +489,7 @@ export default function PhilippinesRecruitment() {
                   <Card className="flex-1 border-rose-100 shadow-md bg-white">
                     <CardContent className="pt-5">
                       <h3 className="font-bold text-lg text-gray-900 mb-1">Choose Model</h3>
-                      <p className="text-gray-600">Select 60/40 Management or 70/30 Network based on your needs</p>
+                      <p className="text-gray-800 font-medium">Select 60/40 Management or 70/30 Network based on your needs</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -502,7 +502,7 @@ export default function PhilippinesRecruitment() {
                   <Card className="flex-1 border-rose-100 shadow-md bg-white">
                     <CardContent className="pt-5">
                       <h3 className="font-bold text-lg text-gray-900 mb-1">Set Up Profile</h3>
-                      <p className="text-gray-600">We help create your performer profile and fanclub page</p>
+                      <p className="text-gray-800 font-medium">We help create your performer profile and fanclub page</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -515,7 +515,7 @@ export default function PhilippinesRecruitment() {
                   <Card className="flex-1 border-rose-100 shadow-md bg-white">
                     <CardContent className="pt-5">
                       <h3 className="font-bold text-lg text-gray-900 mb-1">Upload Content</h3>
-                      <p className="text-gray-600">Film and upload your first scenes from home</p>
+                      <p className="text-gray-800 font-medium">Film and upload your first scenes from home</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -528,7 +528,7 @@ export default function PhilippinesRecruitment() {
                   <Card className="flex-1 border-rose-100 shadow-md bg-white">
                     <CardContent className="pt-5">
                       <h3 className="font-bold text-lg text-gray-900 mb-1">Publish</h3>
-                      <p className="text-gray-600">Content goes live after approval and quality check</p>
+                      <p className="text-gray-800 font-medium">Content goes live after approval and quality check</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -541,7 +541,7 @@ export default function PhilippinesRecruitment() {
                   <Card className="flex-1 border-rose-100 shadow-md bg-white">
                     <CardContent className="pt-5">
                       <h3 className="font-bold text-lg text-gray-900 mb-1">Promote</h3>
-                      <p className="text-gray-600">We handle SEO, platform distribution, and marketing</p>
+                      <p className="text-gray-800 font-medium">We handle SEO, platform distribution, and marketing</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -554,7 +554,7 @@ export default function PhilippinesRecruitment() {
                   <Card className="flex-1 border-rose-100 shadow-md bg-white">
                     <CardContent className="pt-5">
                       <h3 className="font-bold text-lg text-gray-900 mb-1">Track Earnings</h3>
-                      <p className="text-gray-600">Monitor your revenue and request weekly payouts</p>
+                      <p className="text-gray-800 font-medium">Monitor your revenue and request weekly payouts</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -572,7 +572,7 @@ export default function PhilippinesRecruitment() {
             <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-4">
               Philippines payout options
             </h2>
-            <p className="text-center text-gray-600 mb-12 text-lg max-w-2xl mx-auto">
+            <p className="text-center text-gray-700 mb-12 text-lg max-w-2xl mx-auto font-medium">
               Multiple payment methods available (subject to confirmation)
             </p>
             
@@ -597,19 +597,19 @@ export default function PhilippinesRecruitment() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
                   <div className="p-4 bg-rose-50 rounded-xl border border-rose-100">
-                    <p className="text-sm text-gray-600 mb-2 font-medium">Currency</p>
+                    <p className="text-sm text-gray-800 mb-2 font-bold">Currency</p>
                     <p className="font-bold text-gray-900 text-lg">PHP or USD equivalent</p>
                   </div>
                   <div className="p-4 bg-rose-50 rounded-xl border border-rose-100">
-                    <p className="text-sm text-gray-600 mb-2 font-medium">Schedule</p>
+                    <p className="text-sm text-gray-800 mb-2 font-bold">Schedule</p>
                     <p className="font-bold text-gray-900 text-lg">Weekly payouts</p>
                   </div>
                   <div className="p-4 bg-rose-50 rounded-xl border border-rose-100">
-                    <p className="text-sm text-gray-600 mb-2 font-medium">Exchange Rate</p>
+                    <p className="text-sm text-gray-800 mb-2 font-bold">Exchange Rate</p>
                     <p className="font-bold text-gray-900 text-lg">Market rate at payout</p>
                   </div>
                   <div className="p-4 bg-rose-50 rounded-xl border border-rose-100">
-                    <p className="text-sm text-gray-600 mb-2 font-medium">Availability</p>
+                    <p className="text-sm text-gray-800 mb-2 font-bold">Availability</p>
                     <p className="font-bold text-gray-900 text-lg">Subject to confirmation</p>
                   </div>
                 </div>
@@ -633,7 +633,7 @@ export default function PhilippinesRecruitment() {
             <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-4">
               Privacy, consent and safety
             </h2>
-            <p className="text-center text-gray-600 mb-12 text-lg max-w-2xl mx-auto">
+            <p className="text-center text-gray-700 mb-12 text-lg max-w-2xl mx-auto font-medium">
               Clear requirements and protections
             </p>
             
@@ -644,7 +644,7 @@ export default function PhilippinesRecruitment() {
                     <Shield className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
                       <h4 className="font-bold text-gray-900 mb-1">Verified 18+ Only</h4>
-                      <p className="text-sm text-gray-600">Valid government ID required before any publishing</p>
+                      <p className="text-sm text-gray-800 font-medium">Valid government ID required before any publishing</p>
                     </div>
                   </div>
 
@@ -652,7 +652,7 @@ export default function PhilippinesRecruitment() {
                     <FileCheck className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
                       <h4 className="font-bold text-gray-900 mb-1">KYC Process</h4>
-                      <p className="text-sm text-gray-600">Identity verification required</p>
+                      <p className="text-sm text-gray-800 font-medium">Identity verification required</p>
                     </div>
                   </div>
 
@@ -660,7 +660,7 @@ export default function PhilippinesRecruitment() {
                     <Heart className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
                       <h4 className="font-bold text-gray-900 mb-1">Your Boundaries</h4>
-                      <p className="text-sm text-gray-600">You decide what you're comfortable creating</p>
+                      <p className="text-sm text-gray-800 font-medium">You decide what you're comfortable creating</p>
                     </div>
                   </div>
 
@@ -668,7 +668,7 @@ export default function PhilippinesRecruitment() {
                     <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
                       <h4 className="font-bold text-gray-900 mb-1">Explicit Consent</h4>
-                      <p className="text-sm text-gray-600">Written approval required for all content</p>
+                      <p className="text-sm text-gray-800 font-medium">Written approval required for all content</p>
                     </div>
                   </div>
 
@@ -676,7 +676,7 @@ export default function PhilippinesRecruitment() {
                     <Lock className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
                       <h4 className="font-bold text-gray-900 mb-1">No Forced Content</h4>
-                      <p className="text-sm text-gray-600">Nothing published without your approval</p>
+                      <p className="text-sm text-gray-800 font-medium">Nothing published without your approval</p>
                     </div>
                   </div>
 
@@ -684,7 +684,7 @@ export default function PhilippinesRecruitment() {
                     <Shield className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
                       <h4 className="font-bold text-gray-900 mb-1">No Underage Content</h4>
-                      <p className="text-sm text-gray-600">Strict 18+ policy enforced</p>
+                      <p className="text-sm text-gray-800 font-medium">Strict 18+ policy enforced</p>
                     </div>
                   </div>
 
@@ -692,7 +692,7 @@ export default function PhilippinesRecruitment() {
                     <Eye className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
                       <h4 className="font-bold text-gray-900 mb-1">Performer Approval</h4>
-                      <p className="text-sm text-gray-600">All content reviewed and approved by you before publishing</p>
+                      <p className="text-sm text-gray-800 font-medium">All content reviewed and approved by you before publishing</p>
                     </div>
                   </div>
 
@@ -700,7 +700,7 @@ export default function PhilippinesRecruitment() {
                     <UserCheck className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
                       <h4 className="font-bold text-gray-900 mb-1">No Guaranteed Acceptance</h4>
-                      <p className="text-sm text-gray-600">Applications reviewed individually. Not all applicants accepted.</p>
+                      <p className="text-sm text-gray-800 font-medium">Applications reviewed individually. Not all applicants accepted.</p>
                     </div>
                   </div>
                 </div>
