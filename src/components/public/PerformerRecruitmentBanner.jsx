@@ -20,8 +20,10 @@ export default function PerformerRecruitmentBanner() {
       />
 
       {/* Overlays — readable on mobile, image-revealing on desktop */}
-      <div className="absolute inset-0 bg-black/70 sm:bg-gradient-to-r sm:from-black/88 sm:via-black/55 sm:to-black/10" aria-hidden="true" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" aria-hidden="true" />
+      {/* Main horizontal gradient: dark left (text), fades to transparent right (model) */}
+      <div className="absolute inset-0 bg-black/70 sm:bg-gradient-to-r sm:from-black/80 sm:via-black/35 sm:to-transparent" aria-hidden="true" />
+      {/* Subtle vertical depth on desktop only */}
+      <div className="hidden sm:block absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-black/10" aria-hidden="true" />
 
       {/* Subtle rose glow bottom-left */}
       <div className="absolute bottom-0 left-0 w-[400px] h-[250px] bg-rose-900/25 blur-[90px] rounded-full pointer-events-none" />
