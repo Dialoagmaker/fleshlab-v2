@@ -80,62 +80,72 @@ export default function PhilippinesRecruitment() {
       
       <div className="min-h-screen bg-white">
         {/* Hero Section - New AI Banner with Overlays */}
-        <section className="relative w-full overflow-hidden" style={{ minHeight: '680px' }}>
-          {/* Hero Image Background */}
-          <div 
-            className="absolute inset-0 z-0"
-            style={{
-              backgroundImage: `url(${heroImage})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'right center',
-            }}
-          >
-            {/* Mobile: center top */}
-            <style>
-              {`
-                @media (max-width: 768px) {
-                  [data-hero-bg] {
-                    background-position: center top !important;
-                  }
+        <section data-hero-section className="relative w-full overflow-hidden" style={{ minHeight: '640px', height: 'auto' }}>
+          {/* Hero Image Background - using img for better control */}
+          <img 
+            data-hero-img
+            src={heroImage}
+            alt=""
+            className="absolute inset-0 z-0 w-full h-full object-cover"
+            style={{ objectPosition: '60% center' }}
+          />
+          <style>
+            {`
+              @media (min-width: 1400px) {
+                [data-hero-section] {
+                  min-height: 700px !important;
                 }
-              `}
-            </style>
-          </div>
+              }
+              @media (max-width: 1024px) {
+                [data-hero-section] {
+                  min-height: 620px !important;
+                }
+              }
+              @media (max-width: 768px) {
+                [data-hero-section] {
+                  min-height: 760px !important;
+                }
+                [data-hero-img] {
+                  object-position: 50% 35% !important;
+                }
+              }
+            `}
+          </style>
           
           {/* Desktop Overlays */}
           <div className="hidden md:block absolute inset-0 z-10">
-            {/* Base dark overlay */}
-            <div className="absolute inset-0 bg-black/25"></div>
+            {/* Base dark overlay - lighter to show more of model */}
+            <div className="absolute inset-0 bg-black/18"></div>
             
-            {/* Left text gradient */}
+            {/* Left text gradient - stops at 60% to keep model visible */}
             <div 
               className="absolute inset-0"
               style={{
-                background: 'linear-gradient(90deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.82) 28%, rgba(0,0,0,0.45) 55%, rgba(0,0,0,0.10) 78%, rgba(0,0,0,0.00) 100%)'
+                background: 'linear-gradient(90deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.82) 28%, rgba(0,0,0,0.45) 50%, rgba(0,0,0,0.12) 62%, rgba(0,0,0,0.00) 100%)'
               }}
             ></div>
             
-            {/* Bottom vignette */}
+            {/* Bottom vignette - lighter */}
             <div 
               className="absolute inset-0"
               style={{
-                background: 'linear-gradient(0deg, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.35) 35%, rgba(0,0,0,0.00) 70%)'
+                background: 'linear-gradient(0deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.28) 35%, rgba(0,0,0,0.00) 65%)'
               }}
             ></div>
           </div>
 
-          {/* Mobile Overlay - stronger */}
+          {/* Mobile Overlay - stronger but still show model */}
           <div 
             className="md:hidden absolute inset-0 z-10"
             style={{
-              background: 'linear-gradient(180deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.72) 45%, rgba(0,0,0,0.88) 100%)'
+              background: 'linear-gradient(180deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.65) 45%, rgba(0,0,0,0.78) 100%)'
             }}
           ></div>
           
           {/* Content Container */}
-          <div className="relative z-20 px-4 sm:px-6 lg:px-8" style={{ minHeight: '680px' }}>
+          <div className="relative z-20 px-4 sm:px-6 lg:px-8" style={{ minHeight: '640px' }}>
             <div className="max-w-[1280px] mx-auto h-full flex items-center">
-              <div className="max-w-[620px] py-24 sm:py-32">
+              <div className="max-w-[560px] py-20 sm:py-24 lg:py-28">
                 {/* Badge */}
                 <div className="flex items-center gap-2 mb-6 w-fit">
                   <span className="text-2xl">🇵🇭</span>
