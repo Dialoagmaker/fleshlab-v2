@@ -64,7 +64,7 @@ export default function PhilippinesRecruitment() {
   };
 
   // AI-generated visuals for Filipino creator representation
-  const heroImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/983fa1fa9_generated_image.png";
+  const heroImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/7d8872b99_generated_image.png";
   const setupImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/7d8872b99_generated_image.png";
   const workflowImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/8390c41e6_generated_image.png";
   const earningsImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/d2a01df7f_generated_image.png";
@@ -85,9 +85,9 @@ export default function PhilippinesRecruitment() {
           <img 
             data-hero-img
             src={heroImage}
-            alt=""
+            alt="Filipino creator bedroom setup with smartphone, ring light and laptop"
             className="absolute inset-0 z-0 w-full h-full object-cover"
-            style={{ objectPosition: '62% center' }}
+            style={{ objectPosition: '62% 45%' }}
           />
           <style>
             {`
