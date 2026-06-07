@@ -361,18 +361,11 @@ const AuthenticatedApp = () => {
   }
 
   // Performer recruitment landing pages - INDEX
-  if (path === "/gay-performer-recruitment-philippines") {
+  if (path === "/gay-performer-recruitment-philippines" || path === "/chaturbate-model-join-studio") {
+    const page = path === "/gay-performer-recruitment-philippines" ? <PhilippinesRecruitment /> : <ChaturbateRecruitment />;
     return (
       <PublicPageShell>
-        <PhilippinesRecruitment />
-      </PublicPageShell>
-    );
-  }
-
-  if (path === "/chaturbate-model-join-studio") {
-    return (
-      <PublicPageShell>
-        <ChaturbateRecruitment />
+        {page}
       </PublicPageShell>
     );
   }
