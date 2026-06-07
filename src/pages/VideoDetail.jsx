@@ -249,6 +249,8 @@ export default function VideoDetail() {
   };
 
   // JSON-LD: VideoObject — never include source/private video URL
+  // contentUrl omitted: trailer_url is a preview, not the full video
+  // embedUrl = canonical page URL (no dedicated embed player exists)
   const videoSchema = {
     "@context": "https://schema.org",
     "@type": "VideoObject",
@@ -258,9 +260,6 @@ export default function VideoDetail() {
     "uploadDate": isoUploadDate,
     "datePublished": isoUploadDate,
     "duration": isoDuration(video.duration_seconds),
-    // contentUrl = trailer/preview URL (public), NOT the full source video
-    // embedUrl = canonical page URL (no dedicated embed player exists)
-    ...(video.trailer_url && { "contentUrl": video.trailer_url }),
     "embedUrl": canonicalUrl,
     "url": canonicalUrl,
     "isFamilyFriendly": false,
