@@ -43,5 +43,8 @@ Allow: /cookie-policy
 Allow: /brands
 Allow: /brands/
 
-# Sitemap location
+# Sitemap location - dynamic endpoint
 Sitemap: https://fleshlab.online/api/functions/sitemapXml
+
+# Crawl-delay (optional, be nice to server)
+Crawl-delay: 1
