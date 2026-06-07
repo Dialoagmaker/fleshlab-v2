@@ -258,78 +258,78 @@ export default function PhilippinesRecruitment() {
             <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-4">
               Who this is for
             </h2>
-            <p className="text-center text-gray-600 mb-12 text-lg max-w-2xl mx-auto">
+            <p className="text-center text-gray-700 mb-12 text-lg max-w-2xl mx-auto font-medium">
               Different paths depending on your experience and goals
             </p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Beginner with Phone */}
-              <Card className="border-2 border-rose-200 shadow-lg hover:shadow-xl transition-shadow">
+              <Card className="border-2 border-rose-300 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-rose-50 to-white">
                 <CardContent className="pt-6">
-                  <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mb-4">
-                    <UserCheck className="h-7 w-7 text-rose-600" />
+                  <div className="w-14 h-14 bg-rose-200 rounded-2xl flex items-center justify-center mb-4">
+                    <UserCheck className="h-7 w-7 text-rose-700" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Beginner with Phone</h3>
-                  <p className="text-gray-700 mb-4">
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">Beginner with Phone</h3>
+                  <p className="text-gray-800 mb-4 leading-relaxed text-sm">
                     Never created content before? Start with our 60/40 Management Model. We help with everything from planning to publishing.
                   </p>
-                  <Badge className="bg-rose-600 text-sm">Most common for first-timers</Badge>
+                  <Badge className="bg-rose-600 text-white text-xs font-semibold">Most common for first-timers</Badge>
                 </CardContent>
               </Card>
 
               {/* Existing Creator */}
-              <Card className="border-2 border-rose-200 shadow-lg hover:shadow-xl transition-shadow">
+              <Card className="border-2 border-rose-300 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-rose-50 to-white">
                 <CardContent className="pt-6">
-                  <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mb-4">
-                    <Camera className="h-7 w-7 text-rose-600" />
+                  <div className="w-14 h-14 bg-rose-200 rounded-2xl flex items-center justify-center mb-4">
+                    <Camera className="h-7 w-7 text-rose-700" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Existing Amateur Creator</h3>
-                  <p className="text-gray-700 mb-4">
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">Existing Amateur Creator</h3>
+                  <p className="text-gray-800 mb-4 leading-relaxed text-sm">
                     Already have some content or followers? Use our 70/30 Network Model to expand your reach and keep 70% of revenue.
                   </p>
-                  <Badge className="bg-gray-700 text-sm">Best if you have audience</Badge>
+                  <Badge className="bg-gray-700 text-white text-xs font-semibold">Best if you have audience</Badge>
                 </CardContent>
               </Card>
 
               {/* Cam Model */}
-              <Card className="border-2 border-rose-200 shadow-lg hover:shadow-xl transition-shadow">
+              <Card className="border-2 border-rose-300 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-rose-50 to-white">
                 <CardContent className="pt-6">
-                  <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mb-4">
-                    <Users className="h-7 w-7 text-rose-600" />
+                  <div className="w-14 h-14 bg-rose-200 rounded-2xl flex items-center justify-center mb-4">
+                    <Users className="h-7 w-7 text-rose-700" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Cam Model</h3>
-                  <p className="text-gray-700 mb-4">
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">Cam Model</h3>
+                  <p className="text-gray-800 mb-4 leading-relaxed text-sm">
                     Already doing livecam shows on Chaturbate or other platforms? Add recorded content as passive income while continuing your cam work.
                   </p>
-                  <Badge className="bg-rose-600 text-sm">Hybrid approach</Badge>
+                  <Badge className="bg-rose-600 text-white text-xs font-semibold">Hybrid approach</Badge>
                 </CardContent>
               </Card>
 
               {/* Couple Creator */}
-              <Card className="border-2 border-rose-200 shadow-lg hover:shadow-xl transition-shadow md:col-span-2">
+              <Card className="border-2 border-rose-300 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-rose-50 to-white md:col-span-2">
                 <CardContent className="pt-6">
-                  <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mb-4">
-                    <Heart className="h-7 w-7 text-rose-600" />
+                  <div className="w-14 h-14 bg-rose-200 rounded-2xl flex items-center justify-center mb-4">
+                    <Heart className="h-7 w-7 text-rose-700" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Couple Creator</h3>
-                  <p className="text-gray-700 mb-4">
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">Couple Creator</h3>
+                  <p className="text-gray-800 mb-4 leading-relaxed text-sm">
                     Creating with a partner or in a relationship? Both must verify 18+ with valid ID and consent to all content. Content requires explicit approval from all parties before publishing.
                   </p>
-                  <Badge className="bg-rose-600 text-sm">Both partners must verify 18+</Badge>
+                  <Badge className="bg-rose-600 text-white text-xs font-semibold">Both partners must verify 18+</Badge>
                 </CardContent>
               </Card>
 
               {/* Fanclub Creator */}
-              <Card className="border-2 border-rose-200 shadow-lg hover:shadow-xl transition-shadow">
+              <Card className="border-2 border-rose-300 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br from-rose-50 to-white">
                 <CardContent className="pt-6">
-                  <div className="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mb-4">
-                    <Sparkles className="h-7 w-7 text-rose-600" />
+                  <div className="w-14 h-14 bg-rose-200 rounded-2xl flex items-center justify-center mb-4">
+                    <Sparkles className="h-7 w-7 text-rose-700" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Fanclub Creator</h3>
-                  <p className="text-gray-700 mb-4">
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">Fanclub Creator</h3>
+                  <p className="text-gray-800 mb-4 leading-relaxed text-sm">
                     Want recurring monthly income? Build a subscriber base with exclusive fanclub content. Fans pay monthly for access to your exclusive photos, videos, and personal updates.
                   </p>
-                  <Badge className="bg-rose-600 text-sm">Recurring revenue</Badge>
+                  <Badge className="bg-rose-600 text-white text-xs font-semibold">Recurring revenue</Badge>
                 </CardContent>
               </Card>
             </div>
