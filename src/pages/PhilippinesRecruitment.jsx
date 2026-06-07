@@ -79,72 +79,129 @@ export default function PhilippinesRecruitment() {
       />
       
       <div className="min-h-screen bg-white">
-        {/* Hero Section - Emotional & Visual */}
-        <section className="relative py-0 px-0 bg-gradient-to-b from-rose-100 via-rose-50 to-white overflow-hidden">
+        {/* Hero Section - Dark & Bold */}
+        <section className="relative py-0 px-0 bg-black overflow-hidden">
           {/* Hero Image Background */}
           <div className="absolute inset-0 z-0">
             <img 
               src={heroImage} 
               alt="Filipino content creator in home studio setup"
-              className="w-full h-full object-cover opacity-25"
+              className="w-full h-full object-cover opacity-60"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-rose-100/90 via-rose-50/95 to-white"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/50 to-transparent"></div>
           </div>
           
-          <div className="relative z-10 py-20 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto text-center">
-              <Badge className="mb-6 bg-rose-600 text-white hover:bg-rose-700 text-sm px-5 py-2 shadow-lg">
-                🇵🇭 For Filipino Creators 18+
-              </Badge>
-              
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 mb-6 leading-tight tracking-tight">
-                Start Creating From Home in the Philippines
-              </h1>
-              
-              <p className="text-lg sm:text-xl text-gray-700 mb-10 max-w-2xl mx-auto leading-relaxed">
-                Use your phone, a private space, and a verified 18+ application to get started. FLESHLAB helps with setup, publishing, promotion and fanclub monetization.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 justify-center mb-8">
-                <Button 
-                  size="lg" 
-                  className="bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl px-8 sm:px-10 py-7 text-lg sm:text-xl w-full sm:w-auto font-semibold transition-all"
-                  onClick={handleWhatsAppClick}
-                >
-                  <MessageCircle className="mr-2 h-6 w-6" />
-                  Apply on WhatsApp
-                </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="border-2 border-rose-600 text-rose-700 hover:bg-rose-50 bg-white shadow-md px-8 sm:px-10 py-7 text-lg sm:text-xl w-full sm:w-auto font-semibold transition-all"
-                  onClick={() => handleScrollToSection('how-it-works')}
-                >
-                  <Play className="mr-2 h-6 w-6" />
-                  See How It Works
-                </Button>
+          <div className="relative z-10 py-16 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-6xl mx-auto">
+              {/* Top Badge */}
+              <div className="flex items-center gap-2 mb-8 w-fit">
+                <div className="w-5 h-5 bg-red-600 rounded-full"></div>
+                <span className="text-white text-sm font-semibold tracking-wide">FOR FILIPINO CREATORS 18+</span>
               </div>
 
-              {/* Trust Badges */}
-              <div className="flex flex-wrap justify-center gap-6 sm:gap-8 text-sm sm:text-base text-gray-700 font-medium mt-10">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center">
-                    <Shield className="h-5 w-5 text-green-600" />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-12">
+                {/* Left: Text Content */}
+                <div>
+                  <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-white mb-4 leading-tight tracking-tight">
+                    START CREATING<br />FROM HOME IN<br />
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-orange-500 to-pink-500">THE PHILIPPINES</span>
+                  </h1>
+                  
+                  <p className="text-base sm:text-lg text-gray-300 mb-8 leading-relaxed max-w-xl">
+                    Use your phone, a private space, and a verified 18+ application to get started. FLESHLAB helps with <span className="text-red-400">setup, publishing, promotion</span> and <span className="text-red-400">fanclub monetization</span>.
+                  </p>
+
+                  {/* Trust Icons */}
+                  <div className="flex flex-wrap gap-8 mb-10">
+                    <div className="flex items-start gap-3">
+                      <div className="pt-1">
+                        <Shield className="w-6 h-6 text-red-500" />
+                      </div>
+                      <div>
+                        <p className="text-white font-bold text-sm">VERIFIED 18+</p>
+                        <p className="text-gray-400 text-xs">Safe & private environment</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="pt-1">
+                        <Lock className="w-6 h-6 text-red-500" />
+                      </div>
+                      <div>
+                        <p className="text-white font-bold text-sm">PRIVATE & SECURE</p>
+                        <p className="text-gray-400 text-xs">Your content, your control</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="pt-1">
+                        <DollarSign className="w-6 h-6 text-red-500" />
+                      </div>
+                      <div>
+                        <p className="text-white font-bold text-sm">EARN IN PHP</p>
+                        <p className="text-gray-400 text-xs">Multiple payout options</p>
+                      </div>
+                    </div>
                   </div>
-                  <span>Verified 18+ Only</span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center">
-                    <Lock className="h-5 w-5 text-green-600" />
+
+                  {/* CTA Buttons */}
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Button 
+                      size="lg" 
+                      className="bg-green-600 hover:bg-green-700 text-white shadow-xl hover:shadow-2xl px-10 py-6 text-lg w-full sm:w-auto font-bold transition-all rounded-lg"
+                      onClick={handleWhatsAppClick}
+                    >
+                      <MessageCircle className="mr-3 h-6 w-6" />
+                      APPLY ON WHATSAPP
+                    </Button>
+                    <Button 
+                      size="lg" 
+                      className="border-2 border-red-600 text-white hover:bg-red-950/20 bg-transparent shadow-lg px-10 py-6 text-lg w-full sm:w-auto font-bold transition-all rounded-lg"
+                      onClick={() => handleScrollToSection('how-it-works')}
+                    >
+                      <Play className="mr-3 h-6 w-6" />
+                      SEE HOW IT WORKS
+                    </Button>
                   </div>
-                  <span>Private & Secure</span>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center">
-                    <FileCheck className="h-5 w-5 text-green-600" />
+
+                {/* Right: Image spacer for right-side content */}
+                <div className="hidden lg:block">
+                  {/* Neon sign effect area - reserved for visual balance */}
+                </div>
+              </div>
+
+              {/* Bottom Trust Bar */}
+              <div className="border-t border-gray-800 pt-6 mt-12">
+                <div className="flex flex-wrap gap-8 justify-between items-center text-gray-400 text-xs font-semibold">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-red-500" />
+                    <span>DISCREET PROCESS</span>
                   </div>
-                  <span>KYC Required</span>
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="w-5 h-5 text-red-500" />
+                    <span>PROFESSIONAL SUPPORT</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-red-500" />
+                    <span>GLOBAL AUDIENCE</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-red-500" />
+                    <span>BUILD YOUR FANBASE</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Lock className="w-5 h-5 text-red-500" />
+                    <span>100% YOUR CONTENT</span>
+                  </div>
                 </div>
+              </div>
+
+              {/* Compliance Bar */}
+              <div className="mt-8 pt-6 border-t border-gray-800 flex flex-wrap gap-6 justify-center text-gray-400 text-xs font-semibold">
+                <div>🔞 18+ ONLY</div>
+                <span className="text-gray-700">|</span>
+                <div>EXPLICIT CONSENT REQUIRED</div>
+                <span className="text-gray-700">|</span>
+                <div>VERIFIED CREATORS ONLY</div>
               </div>
             </div>
           </div>
