@@ -19,8 +19,8 @@ export default function AdminEarningsTab({ performerId, performerName }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [newLineItem, setNewLineItem] = useState({
-    source_type: "video_platform",
-    source_platform: "xhamster",
+    source_type: "livecam",
+    source_platform: "other",
     description: "",
     gross_amount_usd: 0,
     performer_share_percent: 70,
@@ -34,7 +34,7 @@ export default function AdminEarningsTab({ performerId, performerName }) {
     queryKey: ['performer-line-items', performerId, selectedMonth],
     queryFn: async () => {
       const res = await base44.functions.invoke('performerEarningLineItemService', {
-        action: 'get_line_items',
+        action: 'list_line_items',
         performer_id: performerId,
         period_month: selectedMonth
       });
@@ -57,7 +57,7 @@ export default function AdminEarningsTab({ performerId, performerName }) {
   const addLineItemMutation = useMutation({
     mutationFn: async (data) => {
       const res = await base44.functions.invoke('performerEarningLineItemService', {
-        action: 'add_line_item',
+        action: 'create_line_item',
         ...data
       });
       return res.data;
@@ -67,8 +67,8 @@ export default function AdminEarningsTab({ performerId, performerName }) {
       setIsAddModalOpen(false);
       toast.success('Line item added successfully');
       setNewLineItem({
-        source_type: "video_platform",
-        source_platform: "xhamster",
+        source_type: "livecam",
+        source_platform: "other",
         description: "",
         gross_amount_usd: 0,
         performer_share_percent: 70,
