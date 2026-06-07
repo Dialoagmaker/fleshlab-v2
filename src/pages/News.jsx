@@ -9,7 +9,7 @@ import { Loader2, Search, Newspaper } from "lucide-react";
 import { useI18n } from "@/i18n/i18n.jsx";
 
 export default function News() {
-  const { t } = useI18n();
+  const { t } = useI18n(); // Force rebuild
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [category, setCategory] = useState("all");
