@@ -21,6 +21,18 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
+// Safe formatter helpers
+const safeStr = (value, fallback = '—') => (value != null && value !== '') ? String(value) : fallback;
+const safeFmt = (value, fallback = '—') => (value != null && value !== '') ? String(value).replace(/_/g, ' ') : fallback;
+const safeMoney = (value) => {
+  const n = parseFloat(value);
+  return isNaN(n) ? '0.00' : n.toLocaleString('en-US', { minimumFractionDigits: 2 });
+};
+const safeDate = (value) => {
+  if (!value) return '—';
+  try { return new Date(value).toLocaleDateString(); } catch { return '—'; }
+};
+
 export default function EarningsTable({ earnings, videos, isLoading, onRefresh }) {
   const [updatingId, setUpdatingId] = useState(null);
   
@@ -106,55 +118,64 @@ export default function EarningsTable({ earnings, videos, isLoading, onRefresh }
             </TableRow>
           </TableHeader>
           <TableBody>
-            {safeEarnings.map((earning) => (
-              <TableRow key={earning.id}>
-                <TableCell className="text-sm">
-                  {new Date(earning.created_date).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary">{earning.earning_type.replace(/_/g, ' ')}</Badge>
-                </TableCell>
-                <TableCell className="max-w-[200px] truncate">
-                  {earning.video_id ? (videos[earning.video_id] || 'Unknown') : '-'}
-                </TableCell>
-                <TableCell className="font-medium">
-                  ${earning.gross_amount_usd?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
-                </TableCell>
-                <TableCell>{earning.split_pct}%</TableCell>
-                <TableCell className="font-medium">
-                  ${earning.net_amount_usd?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={getStatusBadgeVariant(earning.status)}>
-                    {earning.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="max-w-[150px] truncate text-sm">
-                  {earning.notes || '-'}
-                </TableCell>
-                <TableCell>
-                  {updatingId === earning.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Select
-                      value={earning.status}
-                      onValueChange={(value) => handleStatusChange(earning.id, value)}
-                    >
-                      <SelectTrigger className="w-[120px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">pending</SelectItem>
-                        <SelectItem value="approved">approved</SelectItem>
-                        <SelectItem value="paid">paid</SelectItem>
-                        <SelectItem value="held">held</SelectItem>
-                        <SelectItem value="disputed">disputed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
+            {safeEarnings.map((earning, idx) => {
+              if (!earning || typeof earning !== 'object') {
+                console.warn('[EarningsTable] Skipping invalid earning row at index', idx, earning);
+                return null;
+              }
+              if (!earning.earning_type) {
+                console.warn('[EarningsTable] Row missing earning_type:', earning.id, earning);
+              }
+              return (
+                <TableRow key={earning.id || idx}>
+                  <TableCell className="text-sm">
+                    {safeDate(earning.created_date)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{safeFmt(earning.earning_type, 'unknown')}</Badge>
+                  </TableCell>
+                  <TableCell className="max-w-[200px] truncate">
+                    {earning.video_id ? (videos[earning.video_id] || 'Unknown') : '-'}
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    ${safeMoney(earning.gross_amount_usd)}
+                  </TableCell>
+                  <TableCell>{earning.split_pct != null ? `${earning.split_pct}%` : '—'}</TableCell>
+                  <TableCell className="font-medium">
+                    ${safeMoney(earning.net_amount_usd)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={getStatusBadgeVariant(earning.status)}>
+                      {safeStr(earning.status, 'unknown')}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="max-w-[150px] truncate text-sm">
+                    {earning.notes || '-'}
+                  </TableCell>
+                  <TableCell>
+                    {updatingId === earning.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Select
+                        value={earning.status || 'pending'}
+                        onValueChange={(value) => handleStatusChange(earning.id, value)}
+                      >
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">pending</SelectItem>
+                          <SelectItem value="approved">approved</SelectItem>
+                          <SelectItem value="paid">paid</SelectItem>
+                          <SelectItem value="held">held</SelectItem>
+                          <SelectItem value="disputed">disputed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </CardContent>
