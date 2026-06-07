@@ -36,11 +36,15 @@ Deno.serve(async (req) => {
         source_ref_id
       } = data;
 
-      // Validate required fields
-      if (!performer_id || !earning_type || !gross_amount_usd || !period_month) {
+      // Validate required fields (use explicit checks — !gross_amount_usd would wrongly block 0)
+      if (!performer_id || !earning_type || gross_amount_usd === undefined || gross_amount_usd === null || !period_month) {
         return Response.json({ 
           error: 'Missing required fields: performer_id, earning_type, gross_amount_usd, period_month' 
         }, { status: 400 });
+      }
+      const parsedGross = parseFloat(gross_amount_usd);
+      if (isNaN(parsedGross)) {
+        return Response.json({ error: 'gross_amount_usd must be a valid number' }, { status: 400 });
       }
 
       // Validate period_month format YYYY-MM
@@ -86,7 +90,7 @@ Deno.serve(async (req) => {
         performer_id,
         video_id: video_id || null,
         earning_type,
-        gross_amount_usd,
+        gross_amount_usd: parsedGross,
         split_pct: finalSplitPct,
         net_amount_usd: finalNetAmount,
         period_month,

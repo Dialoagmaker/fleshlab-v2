@@ -38,6 +38,11 @@ export default function EarningEntryModal({ performer, periodMonth, onClose, onS
 
     try {
       const gross = parseFloat(formData.gross_amount_usd);
+      if (isNaN(gross)) {
+        toast.error('Please enter a valid gross amount');
+        setIsSubmitting(false);
+        return;
+      }
       const split = formData.split_pct ? parseFloat(formData.split_pct) : performer.revenue_split_pct || 70;
       const net = gross * split / 100;
 
