@@ -80,25 +80,25 @@ export default function PhilippinesRecruitment() {
       
       <div className="min-h-screen bg-white">
         {/* Hero Section - New AI Banner with Overlays */}
-        <section data-hero-section className="relative w-full overflow-hidden" style={{ minHeight: '640px', height: 'auto' }}>
+        <section data-hero-section className="relative w-full overflow-hidden" style={{ minHeight: '720px', height: 'auto' }}>
           {/* Hero Image Background - using img for better control */}
           <img 
             data-hero-img
             src={heroImage}
             alt=""
             className="absolute inset-0 z-0 w-full h-full object-cover"
-            style={{ objectPosition: 'center center' }}
+            style={{ objectPosition: '62% center' }}
           />
           <style>
             {`
               @media (min-width: 1400px) {
                 [data-hero-section] {
-                  min-height: 700px !important;
+                  min-height: 760px !important;
                 }
               }
               @media (max-width: 1024px) {
                 [data-hero-section] {
-                  min-height: 620px !important;
+                  min-height: 660px !important;
                 }
               }
               @media (max-width: 768px) {
@@ -106,7 +106,7 @@ export default function PhilippinesRecruitment() {
                   min-height: 760px !important;
                 }
                 [data-hero-img] {
-                  object-position: center 40% !important;
+                  object-position: 62% 45% !important;
                 }
               }
             `}
@@ -114,22 +114,19 @@ export default function PhilippinesRecruitment() {
           
           {/* Desktop Overlays */}
           <div className="hidden md:block absolute inset-0 z-10">
-            {/* Base dark overlay - lighter to show more of model */}
-            <div className="absolute inset-0 bg-black/18"></div>
-            
-            {/* Left text gradient - stops at 60% to keep model visible */}
+            {/* Left text gradient - optimized to protect model visibility */}
             <div 
               className="absolute inset-0"
               style={{
-                background: 'linear-gradient(90deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.82) 28%, rgba(0,0,0,0.45) 50%, rgba(0,0,0,0.12) 62%, rgba(0,0,0,0.00) 100%)'
+                background: 'linear-gradient(90deg, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.88) 28%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.22) 70%, rgba(0,0,0,0.00) 100%)'
               }}
             ></div>
             
-            {/* Bottom vignette - lighter */}
+            {/* Bottom vignette - subtle */}
             <div 
               className="absolute inset-0"
               style={{
-                background: 'linear-gradient(0deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.28) 35%, rgba(0,0,0,0.00) 65%)'
+                background: 'linear-gradient(0deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.25) 35%, rgba(0,0,0,0.00) 70%)'
               }}
             ></div>
           </div>
@@ -143,9 +140,9 @@ export default function PhilippinesRecruitment() {
           ></div>
           
           {/* Content Container */}
-          <div className="relative z-20 px-4 sm:px-6 lg:px-8" style={{ minHeight: '640px' }}>
+          <div className="relative z-20 px-4 sm:px-6 lg:px-8" style={{ minHeight: '720px' }}>
             <div className="max-w-[1280px] mx-auto h-full flex items-center">
-              <div className="max-w-[560px] py-20 sm:py-24 lg:py-28">
+              <div className="max-w-[600px]" style={{ paddingTop: '110px', paddingBottom: '120px' }}>
                 {/* Badge */}
                 <div className="flex items-center gap-2 mb-6 w-fit">
                   <span className="text-2xl">🇵🇭</span>
@@ -153,13 +150,13 @@ export default function PhilippinesRecruitment() {
                 </div>
 
                 {/* H1 */}
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-6 leading-tight tracking-tight">
+                <h1 className="text-[40px] sm:text-[48px] lg:text-[56px] xl:text-[64px] font-black text-white mb-6 leading-[0.95] tracking-tight">
                   Start Creating<br />From Home in<br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ff2d6f] to-[#ff8a00]">the Philippines</span>
                 </h1>
                 
                 {/* Subheadline */}
-                <p className="text-base sm:text-lg text-white/90 mb-10 leading-relaxed font-medium">
+                <p className="text-[18px] text-white/90 mb-10 leading-[1.55] font-medium" style={{ maxWidth: '540px' }}>
                   Use your phone, a private space, and a verified 18+ application to get started. FLESHLAB helps with setup, publishing, promotion and fanclub monetization.
                 </p>
 
@@ -167,7 +164,7 @@ export default function PhilippinesRecruitment() {
                 <div className="flex flex-col sm:flex-row gap-4 mb-10">
                   <Button 
                     size="lg" 
-                    className="bg-[#16a34a] hover:bg-[#15803d] text-white shadow-xl hover:shadow-2xl px-10 h-[56px] text-lg w-full sm:w-auto font-bold transition-all rounded-xl"
+                    className="bg-[#16a34a] hover:bg-[#15803d] text-white shadow-xl hover:shadow-2xl px-12 h-[56px] text-lg w-full sm:w-auto font-bold transition-all rounded-xl"
                     onClick={handleWhatsAppClick}
                   >
                     <MessageCircle className="mr-3 h-6 w-6" />
@@ -175,7 +172,7 @@ export default function PhilippinesRecruitment() {
                   </Button>
                   <Button 
                     size="lg" 
-                    className="border border-white/35 text-white hover:bg-white/12 bg-transparent/50 backdrop-blur-sm h-[56px] px-10 text-lg w-full sm:w-auto font-bold transition-all rounded-xl"
+                    className="border border-white/35 text-white hover:bg-white/12 bg-transparent/50 backdrop-blur-sm h-[56px] px-12 text-lg w-full sm:w-auto font-bold transition-all rounded-xl"
                     onClick={() => handleScrollToSection('how-it-works')}
                   >
                     <Play className="mr-3 h-6 w-6" />
@@ -184,17 +181,17 @@ export default function PhilippinesRecruitment() {
                 </div>
 
                 {/* Trust Row */}
-                <div className="flex flex-wrap gap-6 text-white font-semibold text-sm">
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-red-500" />
+                <div className="flex flex-wrap gap-8 text-white font-semibold text-[14px]">
+                  <div className="flex items-center gap-3">
+                    <Shield className="w-6 h-6 text-red-500" />
                     <span>Verified 18+</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Lock className="w-5 h-5 text-red-500" />
+                  <div className="flex items-center gap-3">
+                    <Lock className="w-6 h-6 text-red-500" />
                     <span>Private & Secure</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-red-500" />
+                  <div className="flex items-center gap-3">
+                    <DollarSign className="w-6 h-6 text-red-500" />
                     <span>Earn in PHP or USD</span>
                   </div>
                 </div>
@@ -204,29 +201,31 @@ export default function PhilippinesRecruitment() {
             {/* Bottom Feature Strip */}
             <div className="absolute bottom-0 left-0 right-0 z-20">
               <div 
-                className="px-4 sm:px-6 lg:px-8 py-5"
+                className="px-4 sm:px-6 lg:px-8"
                 style={{
-                  background: 'rgba(0,0,0,0.55)',
-                  backdropFilter: 'blur(12px)',
-                  borderTop: '1px solid rgba(255,255,255,0.12)'
+                  background: 'rgba(0,0,0,0.58)',
+                  backdropFilter: 'blur(10px)',
+                  borderTop: '1px solid rgba(255,255,255,0.12)',
+                  borderBottom: '1px solid rgba(255,255,255,0.08)',
+                  padding: '18px 24px'
                 }}
               >
                 <div className="max-w-[1280px] mx-auto">
-                  <div className="flex flex-wrap gap-6 sm:gap-8 justify-center text-white/90 text-xs sm:text-sm font-semibold">
-                    <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-red-500" />
+                  <div className="flex flex-wrap gap-8 sm:gap-10 justify-center text-white/90 text-[14px] font-semibold">
+                    <div className="flex items-center gap-3">
+                      <Shield className="w-[16px] h-[16px] text-red-500" />
                       <span>Discreet Process</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Smartphone className="w-4 h-4 text-red-500" />
+                    <div className="flex items-center gap-3">
+                      <Smartphone className="w-[16px] h-[16px] text-red-500" />
                       <span>Professional Support</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-red-500" />
+                    <div className="flex items-center gap-3">
+                      <Globe className="w-[16px] h-[16px] text-red-500" />
                       <span>Global Audience</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Heart className="w-4 h-4 text-red-500" />
+                    <div className="flex items-center gap-3">
+                      <Heart className="w-[16px] h-[16px] text-red-500" />
                       <span>Build Your Fanbase</span>
                     </div>
                   </div>
