@@ -236,109 +236,160 @@ export default function PhilippinesRecruitment() {
           </div>
         </section>
 
-        {/* Start With What You Already Have - Practical Section */}
-        <section className="py-24 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: '#fff6f2' }}>
+        {/* Start With What You Already Have - Polished */}
+        <section className="px-4 sm:px-6 lg:px-8" style={{ backgroundColor: '#fff6f2', paddingTop: '72px', paddingBottom: '96px' }}>
           <div className="max-w-[1280px] mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
               {/* Left: Image Card */}
               <div className="order-2 lg:order-1">
                 <img 
                   src={setupImage}
                   alt="Filipino creator setup with smartphone, ring light, private bedroom"
-                  className="w-full max-w-[560px] rounded-[28px] overflow-hidden object-cover shadow-2xl"
+                  className="w-full max-w-[560px] rounded-[28px] overflow-hidden object-cover"
                   style={{
-                    aspectRatio: '4 / 3',
+                    aspectRatio: '16 / 10',
                     boxShadow: '0 24px 80px rgba(0, 0, 0, 0.18)',
-                    backgroundImage: 'linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0.18))'
+                    border: '1px solid rgba(255, 255, 255, 0.45)',
+                    objectPosition: 'center'
                   }}
                 />
               </div>
               
               {/* Right: Text + Requirements */}
               <div className="order-1 lg:order-2">
-                <Badge className="mb-4 bg-yellow-100 text-yellow-900 text-xs font-bold px-3 py-1.5">
+                <Badge 
+                  className="mb-5 inline-block text-xs font-bold px-3 py-1.5"
+                  style={{ 
+                    backgroundColor: 'rgba(255, 138, 0, 0.12)',
+                    color: '#9a3412',
+                    border: '1px solid rgba(255, 138, 0, 0.25)'
+                  }}
+                >
                   CREATOR ESSENTIALS
                 </Badge>
                 
-                <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
+                <h2 
+                  className="font-bold text-gray-900 mb-4 leading-tight"
+                  style={{ 
+                    fontSize: 'clamp(32px, 5vw, 48px)',
+                    lineHeight: '1.05',
+                    maxWidth: '560px'
+                  }}
+                >
                   Start with what you already have
                 </h2>
                 
-                <p className="text-base text-gray-700 mb-10 leading-relaxed">
-                  No studio needed. Most creators start with a phone, a private room, good lighting and a verified 18+ application.
+                <p className="text-base text-gray-700 mb-8 leading-relaxed max-w-[520px]">
+                  No studio needed. A phone, private room, good lighting and verified 18+ application are enough to start the review process.
                 </p>
                 
-                {/* 6 Requirement Cards */}
-                <div className="space-y-3">
+                {/* 6 Requirement Cards - 2 Column Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Smartphone */}
                   <div 
-                    className="flex items-start gap-4 p-4 bg-white rounded-[18px] border transition-all hover:shadow-md"
-                    style={{ borderColor: 'rgba(225, 70, 100, 0.18)' }}
+                    className="p-[22px_24px] rounded-[18px] min-h-[96px] transition-all hover:shadow-lg"
+                    style={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.78)',
+                      border: '1px solid rgba(225, 70, 100, 0.18)',
+                      boxShadow: '0 10px 28px rgba(20, 20, 20, 0.05)'
+                    }}
                   >
-                    <Smartphone className="h-6 w-6 text-rose-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-bold text-gray-900 text-base">Smartphone</h4>
-                      <p className="text-sm text-gray-700 mt-0.5">1080p camera is enough to apply</p>
+                    <div className="flex items-start gap-3">
+                      <Smartphone className="h-[22px] w-[22px] text-rose-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-bold text-gray-900 text-[16px] mb-0.5">Smartphone</h4>
+                        <p className="text-[14px] text-gray-700 leading-snug">1080p camera is enough to apply</p>
+                      </div>
                     </div>
                   </div>
 
                   {/* Private Room */}
                   <div 
-                    className="flex items-start gap-4 p-4 bg-white rounded-[18px] border transition-all hover:shadow-md"
-                    style={{ borderColor: 'rgba(225, 70, 100, 0.18)' }}
+                    className="p-[22px_24px] rounded-[18px] min-h-[96px] transition-all hover:shadow-lg"
+                    style={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.78)',
+                      border: '1px solid rgba(225, 70, 100, 0.18)',
+                      boxShadow: '0 10px 28px rgba(20, 20, 20, 0.05)'
+                    }}
                   >
-                    <Lock className="h-6 w-6 text-rose-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-bold text-gray-900 text-base">Private Room</h4>
-                      <p className="text-sm text-gray-700 mt-0.5">A space where you can film undisturbed</p>
+                    <div className="flex items-start gap-3">
+                      <Lock className="h-[22px] w-[22px] text-rose-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-bold text-gray-900 text-[16px] mb-0.5">Private Room</h4>
+                        <p className="text-[14px] text-gray-700 leading-snug">A space where you can film undisturbed</p>
+                      </div>
                     </div>
                   </div>
 
                   {/* Good Lighting */}
                   <div 
-                    className="flex items-start gap-4 p-4 bg-white rounded-[18px] border transition-all hover:shadow-md"
-                    style={{ borderColor: 'rgba(225, 70, 100, 0.18)' }}
+                    className="p-[22px_24px] rounded-[18px] min-h-[96px] transition-all hover:shadow-lg"
+                    style={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.78)',
+                      border: '1px solid rgba(225, 70, 100, 0.18)',
+                      boxShadow: '0 10px 28px rgba(20, 20, 20, 0.05)'
+                    }}
                   >
-                    <Lightbulb className="h-6 w-6 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-bold text-gray-900 text-base">Good Lighting</h4>
-                      <p className="text-sm text-gray-700 mt-0.5">Natural light or a simple ring light</p>
+                    <div className="flex items-start gap-3">
+                      <Lightbulb className="h-[22px] w-[22px] text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-bold text-gray-900 text-[16px] mb-0.5">Good Lighting</h4>
+                        <p className="text-[14px] text-gray-700 leading-snug">Natural light or a simple ring light</p>
+                      </div>
                     </div>
                   </div>
 
                   {/* Stable Internet */}
                   <div 
-                    className="flex items-start gap-4 p-4 bg-white rounded-[18px] border transition-all hover:shadow-md"
-                    style={{ borderColor: 'rgba(225, 70, 100, 0.18)' }}
+                    className="p-[22px_24px] rounded-[18px] min-h-[96px] transition-all hover:shadow-lg"
+                    style={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.78)',
+                      border: '1px solid rgba(225, 70, 100, 0.18)',
+                      boxShadow: '0 10px 28px rgba(20, 20, 20, 0.05)'
+                    }}
                   >
-                    <Wifi className="h-6 w-6 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-bold text-gray-900 text-base">Stable Internet</h4>
-                      <p className="text-sm text-gray-700 mt-0.5">For uploads and communication</p>
+                    <div className="flex items-start gap-3">
+                      <Wifi className="h-[22px] w-[22px] text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-bold text-gray-900 text-[16px] mb-0.5">Stable Internet</h4>
+                        <p className="text-[14px] text-gray-700 leading-snug">For uploads and communication</p>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Valid ID 18+ */}
+                  {/* Valid ID 18+ - Full Width */}
                   <div 
-                    className="flex items-start gap-4 p-4 bg-white rounded-[18px] border transition-all hover:shadow-md"
-                    style={{ borderColor: 'rgba(225, 70, 100, 0.18)' }}
+                    className="p-[22px_24px] rounded-[18px] min-h-[96px] transition-all hover:shadow-lg sm:col-span-2"
+                    style={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.78)',
+                      border: '1px solid rgba(225, 70, 100, 0.18)',
+                      boxShadow: '0 10px 28px rgba(20, 20, 20, 0.05)'
+                    }}
                   >
-                    <FileCheck className="h-6 w-6 text-rose-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-bold text-gray-900 text-base">Valid ID 18+</h4>
-                      <p className="text-sm text-gray-700 mt-0.5">Passport, UMID, driver's license or government ID</p>
+                    <div className="flex items-start gap-3">
+                      <FileCheck className="h-[22px] w-[22px] text-rose-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-bold text-gray-900 text-[16px] mb-0.5">Valid ID 18+</h4>
+                        <p className="text-[14px] text-gray-700 leading-snug">Passport, UMID, driver's license or government ID</p>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Payment Method */}
+                  {/* Payment Method - Full Width */}
                   <div 
-                    className="flex items-start gap-4 p-4 bg-white rounded-[18px] border transition-all hover:shadow-md"
-                    style={{ borderColor: 'rgba(225, 70, 100, 0.18)' }}
+                    className="p-[22px_24px] rounded-[18px] min-h-[96px] transition-all hover:shadow-lg sm:col-span-2"
+                    style={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.78)',
+                      border: '1px solid rgba(225, 70, 100, 0.18)',
+                      boxShadow: '0 10px 28px rgba(20, 20, 20, 0.05)'
+                    }}
                   >
-                    <Banknote className="h-6 w-6 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-bold text-gray-900 text-base">Payment Method</h4>
-                      <p className="text-sm text-gray-700 mt-0.5">GCash, Maya, bank or crypto where available</p>
+                    <div className="flex items-start gap-3">
+                      <Banknote className="h-[22px] w-[22px] text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-bold text-gray-900 text-[16px] mb-0.5">Payment Method</h4>
+                        <p className="text-[14px] text-gray-700 leading-snug">GCash, Maya, bank or crypto where available</p>
+                      </div>
                     </div>
                   </div>
                 </div>
