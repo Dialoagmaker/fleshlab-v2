@@ -255,7 +255,7 @@ export default function AdminEarningsTab({ performerId, performerName }) {
                     const date = new Date();
                     date.setMonth(date.getMonth() - i);
                     const monthStr = date.toISOString().slice(0, 7);
-                    return <option key={monthStr} value={monthStr}>{monthStr}</option>;
+                    return <SelectItem key={monthStr} value={monthStr}>{monthStr}</SelectItem>;
                   })}
                 </SelectContent>
               </Select>
