@@ -1,5 +1,5 @@
 # robots.txt for FLESHLAB Studios
-# Generated: 2026-06-06
+# Generated: 2026-06-07
 # Purpose: Control search engine crawling and protect private routes
 
 User-agent: *
@@ -44,7 +44,4 @@ Allow: /brands
 Allow: /brands/
 
 # Sitemap location
-Sitemap: https://fleshlab.online/sitemap.xml
-
-# Crawl-delay (optional, be nice to server)
-Crawl-delay: 1
+Sitemap: https://fleshlab.online/api/functions/sitemapXml

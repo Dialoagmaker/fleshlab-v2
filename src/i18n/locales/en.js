@@ -104,6 +104,11 @@ export default {
       fanclub: "Fanclub",
       guest: "Guest Production",
       behind: "Behind the Scenes",
+      // Aliases matching the keys used in pages/News category filter
+      studioUpdates: "Studio Updates",
+      creatorStories: "Creator Stories",
+      guestProduction: "Guest Production",
+      behindTheScenes: "Behind the Scenes",
     },
   },
   // Fanclub page
