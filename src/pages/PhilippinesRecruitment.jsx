@@ -500,7 +500,7 @@ export default function PhilippinesRecruitment() {
                   <Smartphone className="h-8 w-8 text-rose-400" style={{ textShadow: '0 0 10px rgba(225, 70, 100, 0.8)' }} />
                   <div>
                     <h3 className="font-bold text-white text-xl mb-2">Beginner with Phone</h3>
-                    <p className="text-gray-200 text-xs mb-3 leading-relaxed">Never created before. Start with phone, private space and full setup support.</p>
+                    <p className="text-gray-200 text-xs mb-3 leading-relaxed">Never created before? Start with your phone, private space and full setup support.</p>
                     <Badge className="bg-rose-600 text-white text-xs font-semibold">60/40 Management</Badge>
                   </div>
                 </div>
@@ -524,7 +524,7 @@ export default function PhilippinesRecruitment() {
                   <Camera className="h-8 w-8 text-amber-400" style={{ textShadow: '0 0 10px rgba(245, 158, 11, 0.8)' }} />
                   <div>
                     <h3 className="font-bold text-white text-xl mb-2">Existing Creator</h3>
-                    <p className="text-gray-200 text-xs mb-3 leading-relaxed">Have clips or followers already? Add FLESHLAB as your funnel and distribution hub.</p>
+                    <p className="text-gray-200 text-xs mb-3 leading-relaxed">Have clips or followers already? Add FLESHLAB as your fanclub and distribution hub.</p>
                     <Badge className="bg-amber-600 text-white text-xs font-semibold">70/30 Network</Badge>
                   </div>
                 </div>
@@ -548,7 +548,7 @@ export default function PhilippinesRecruitment() {
                   <Zap className="h-8 w-8 text-purple-400" style={{ textShadow: '0 0 10px rgba(168, 85, 247, 0.8)' }} />
                   <div>
                     <h3 className="font-bold text-white text-xl mb-2">Cam Model</h3>
-                    <p className="text-gray-200 text-xs mb-3 leading-relaxed">Already on Chaturbate, Bigo or other sites? Turn live viewers into long-term fans.</p>
+                    <p className="text-gray-200 text-xs mb-3 leading-relaxed">Already on Chaturbate, Bigo or other cam sites? Turn live viewers into long-term fans.</p>
                     <Badge className="bg-purple-600 text-white text-xs font-semibold">Hybrid Model</Badge>
                   </div>
                 </div>
