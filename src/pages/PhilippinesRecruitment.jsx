@@ -419,168 +419,231 @@ export default function PhilippinesRecruitment() {
           </div>
         </section>
 
-        {/* Choose Your Creator Path - Neon Creator Cards with Background Images */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-          {/* Background Image */}
-          <img 
-            src="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2006_33_23.png"
-            alt="Dark neon background"
-            className="absolute inset-0 w-full h-full object-cover"
+        {/* Choose Your Creator Path - Dark Neon Glassmorphism */}
+        <section 
+          className="relative overflow-hidden"
+          style={{
+            padding: 'clamp(76px, 10vw, 120px) 24px',
+            background: `
+              radial-gradient(circle at 12% 15%, rgba(225, 29, 72, 0.22), transparent 28%),
+              radial-gradient(circle at 85% 20%, rgba(255, 138, 0, 0.18), transparent 30%),
+              radial-gradient(circle at 70% 80%, rgba(168, 85, 247, 0.16), transparent 34%),
+              linear-gradient(135deg, #030305 0%, #110611 42%, #07070b 100%)`
+          }}
+        >
+          {/* Background Image Layer */}
+          <div 
+            className="absolute inset-0 opacity-30"
+            style={{
+              backgroundImage: 'url(https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2006_33_23.png)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
           />
 
-          
-          <div className="max-w-7xl mx-auto relative z-10">
-            <div className="relative z-10">
-              <Badge className="mb-4 inline-block bg-rose-600/20 text-rose-400 text-xs font-bold px-3 py-1.5 border border-rose-500/30">
+          {/* Dark Overlay */}
+          <div 
+            className="absolute inset-0"
+            style={{ background: 'rgba(0, 0, 0, 0.55)' }}
+          />
+
+          <div className="max-w-[1280px] mx-auto relative z-10">
+            {/* Header */}
+            <div className="text-center mb-12">
+              <Badge 
+                className="mb-4 inline-block text-xs font-bold px-3 py-1.5 uppercase tracking-[0.16em]"
+                style={{ 
+                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                  color: '#ff8a00',
+                  border: '1px solid rgba(255, 138, 0, 0.45)'
+                }}
+              >
                 ★ CHOOSE YOUR PATH
               </Badge>
               
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-3 leading-tight">
+              <h2 
+                className="text-white mb-4 leading-[1.0] font-black"
+                style={{ fontSize: 'clamp(36px, 8vw, 64px)' }}
+              >
                 <span style={{ color: 'white' }}>Which </span>
-                <span style={{ background: 'linear-gradient(90deg, #ff00ff 0%, #ff4d94 50%, #ff9d2e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>creator type</span>
+                <span style={{ background: 'linear-gradient(90deg, #ff2d6f 0%, #ff8a00 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>creator type</span>
                 <span style={{ color: 'white' }}> are you?</span>
               </h2>
               
-              <p className="text-center text-gray-300 mb-12 text-base max-w-2xl mx-auto">
+              <p 
+                className="text-center mx-auto leading-relaxed"
+                style={{ 
+                  color: 'rgba(255, 255, 255, 0.74)',
+                  maxWidth: '720px',
+                  fontSize: 'clamp(15px, 3vw, 18px)'
+                }}
+              >
                 Whether you're starting with a phone or already have fans, FLESHLAB helps you choose the right support model.
               </p>
+            </div>
             
-            {/* 5 Creator Path Cards with Background Images */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-12 relative z-10">
+            {/* 5 Creator Path Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
               {/* Beginner with Phone */}
               <div 
-                className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all hover:-translate-y-2 hover:shadow-2xl h-80"
+                className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
+                onClick={() => handleRevenueModelClick('beginner-with-phone')}
                 style={{
-                  border: '2px solid rgba(225, 70, 100, 0.8)',
-                  boxShadow: '0 0 25px rgba(225, 70, 100, 0.5), inset 0 0 20px rgba(225, 70, 100, 0.1)'
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.035))',
+                  border: '1px solid rgba(255,255,255,0.14)',
+                  boxShadow: '0 28px 80px rgba(0,0,0,0.42)',
+                  backdropFilter: 'blur(14px)'
                 }}
               >
                 <img 
                   src="https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=400&h=500&fit=crop"
                   alt="Beginner Creator"
-                  className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity"
+                  className="absolute inset-0 w-full h-full object-cover opacity-25 group-hover:opacity-35 transition-opacity"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-                <div className="absolute inset-0 p-5 flex flex-col justify-between relative z-10">
-                  <Smartphone className="h-7 w-7 text-rose-400" style={{ textShadow: '0 0 12px rgba(225, 70, 100, 0.9)' }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                <div className="relative z-10 p-7 h-full flex flex-col justify-between">
+                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255, 138, 0, 0.15)', border: '1px solid rgba(255, 138, 0, 0.3)' }}>
+                    <Smartphone className="h-5 w-5 text-amber-400" />
+                  </div>
                   <div>
-                    <h3 className="font-bold text-white text-lg mb-1.5">Beginner with Phone</h3>
-                    <p className="text-gray-100 text-[11px] mb-2.5 leading-relaxed">Never created before? Start with your phone, private space and full setup support.</p>
-                    <Badge className="bg-rose-600 text-white text-[10px] font-semibold">60/40 Management</Badge>
+                    <h3 className="font-bold text-white text-lg mb-2">Beginner with Phone</h3>
+                    <p className="text-gray-200 text-sm mb-4 leading-relaxed">Never created before? Start with your phone, private space and full setup support.</p>
+                    <Badge className="bg-gradient-to-r from-amber-600 to-orange-600 text-white text-xs font-semibold px-3 py-1">60/40 Management</Badge>
                   </div>
                 </div>
               </div>
 
               {/* Existing Creator */}
               <div 
-                className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all hover:-translate-y-2 hover:shadow-2xl h-80"
+                className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
+                onClick={() => handleRevenueModelClick('existing-creator')}
                 style={{
-                  border: '2px solid rgba(245, 158, 11, 0.8)',
-                  boxShadow: '0 0 25px rgba(245, 158, 11, 0.5), inset 0 0 20px rgba(245, 158, 11, 0.1)'
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.035))',
+                  border: '1px solid rgba(255,255,255,0.14)',
+                  boxShadow: '0 28px 80px rgba(0,0,0,0.42)',
+                  backdropFilter: 'blur(14px)'
                 }}
               >
                 <img 
                   src="https://images.unsplash.com/photo-1533314311201-bb0f0e2e2518?w=400&h=500&fit=crop"
                   alt="Existing Creator"
-                  className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity"
+                  className="absolute inset-0 w-full h-full object-cover opacity-25 group-hover:opacity-35 transition-opacity"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-                <div className="absolute inset-0 p-5 flex flex-col justify-between relative z-10">
-                  <Camera className="h-7 w-7 text-amber-400" style={{ textShadow: '0 0 12px rgba(245, 158, 11, 0.9)' }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                <div className="relative z-10 p-7 h-full flex flex-col justify-between">
+                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(236, 72, 153, 0.15)', border: '1px solid rgba(236, 72, 153, 0.3)' }}>
+                    <Upload className="h-5 w-5 text-pink-400" />
+                  </div>
                   <div>
-                    <h3 className="font-bold text-white text-lg mb-1.5">Existing Creator</h3>
-                    <p className="text-gray-100 text-[11px] mb-2.5 leading-relaxed">Have clips or followers already? Add FLESHLAB as your fanclub and distribution hub.</p>
-                    <Badge className="bg-amber-600 text-white text-[10px] font-semibold">70/30 Network</Badge>
+                    <h3 className="font-bold text-white text-lg mb-2">Existing Creator</h3>
+                    <p className="text-gray-200 text-sm mb-4 leading-relaxed">Have clips or followers already? Add FLESHLAB as your fanclub and distribution hub.</p>
+                    <Badge className="bg-gradient-to-r from-pink-600 to-rose-600 text-white text-xs font-semibold px-3 py-1">70/30 Network</Badge>
                   </div>
                 </div>
               </div>
 
               {/* Cam Model */}
               <div 
-                className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all hover:-translate-y-2 hover:shadow-2xl h-80"
+                className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
+                onClick={() => handleRevenueModelClick('cam-model')}
                 style={{
-                  border: '2px solid rgba(168, 85, 247, 0.8)',
-                  boxShadow: '0 0 25px rgba(168, 85, 247, 0.5), inset 0 0 20px rgba(168, 85, 247, 0.1)'
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.035))',
+                  border: '1px solid rgba(255,255,255,0.14)',
+                  boxShadow: '0 28px 80px rgba(0,0,0,0.42)',
+                  backdropFilter: 'blur(14px)'
                 }}
               >
                 <img 
                   src="https://images.unsplash.com/photo-1526305851911-c6b80f714255?w=400&h=500&fit=crop"
                   alt="Cam Model"
-                  className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity"
+                  className="absolute inset-0 w-full h-full object-cover opacity-25 group-hover:opacity-35 transition-opacity"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-                <div className="absolute inset-0 p-5 flex flex-col justify-between relative z-10">
-                  <Zap className="h-7 w-7 text-purple-400" style={{ textShadow: '0 0 12px rgba(168, 85, 247, 0.9)' }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                <div className="relative z-10 p-7 h-full flex flex-col justify-between">
+                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+                    <Play className="h-5 w-5 text-purple-400" />
+                  </div>
                   <div>
-                    <h3 className="font-bold text-white text-lg mb-1.5">Cam Model</h3>
-                    <p className="text-gray-100 text-[11px] mb-2.5 leading-relaxed">Already on Chaturbate, Bigo or other cam sites? Turn live viewers into long-term fans.</p>
-                    <Badge className="bg-purple-600 text-white text-[10px] font-semibold">Hybrid Model</Badge>
+                    <h3 className="font-bold text-white text-lg mb-2">Cam Model</h3>
+                    <p className="text-gray-200 text-sm mb-4 leading-relaxed">Already on Chaturbate or cam sites? Turn live viewers into long-term fans.</p>
+                    <Badge className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-semibold px-3 py-1">Hybrid Model</Badge>
                   </div>
                 </div>
               </div>
 
               {/* Couple Creator */}
               <div 
-                className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all hover:-translate-y-2 hover:shadow-2xl h-80"
+                className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
+                onClick={() => handleRevenueModelClick('couple-creator')}
                 style={{
-                  border: '2px solid rgba(236, 72, 153, 0.8)',
-                  boxShadow: '0 0 25px rgba(236, 72, 153, 0.5), inset 0 0 20px rgba(236, 72, 153, 0.1)'
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.035))',
+                  border: '1px solid rgba(255,255,255,0.14)',
+                  boxShadow: '0 28px 80px rgba(0,0,0,0.42)',
+                  backdropFilter: 'blur(14px)'
                 }}
               >
                 <img 
                   src="https://images.unsplash.com/photo-1535016120754-fd45c1d54fce?w=400&h=500&fit=crop"
                   alt="Couple Creator"
-                  className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity"
+                  className="absolute inset-0 w-full h-full object-cover opacity-25 group-hover:opacity-35 transition-opacity"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-                <div className="absolute inset-0 p-5 flex flex-col justify-between relative z-10">
-                  <Heart className="h-7 w-7 text-pink-400" style={{ textShadow: '0 0 12px rgba(236, 72, 153, 0.9)' }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                <div className="relative z-10 p-7 h-full flex flex-col justify-between">
+                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                    <Users className="h-5 w-5 text-red-400" />
+                  </div>
                   <div>
-                    <h3 className="font-bold text-white text-lg mb-1.5">Couple Creator</h3>
-                    <p className="text-gray-100 text-[11px] mb-2.5 leading-relaxed">Create with a partner. Both must verify 18+ and approve every scene.</p>
-                    <Badge className="bg-pink-600 text-white text-[10px] font-semibold">Both Verify 18+</Badge>
+                    <h3 className="font-bold text-white text-lg mb-2">Couple Creator</h3>
+                    <p className="text-gray-200 text-sm mb-4 leading-relaxed">Create with a partner. Both must verify 18+ and approve every scene.</p>
+                    <Badge className="bg-gradient-to-r from-red-600 to-pink-600 text-white text-xs font-semibold px-3 py-1">Both Verify 18+</Badge>
                   </div>
                 </div>
               </div>
 
               {/* Fanclub Creator */}
               <div 
-                className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all hover:-translate-y-2 hover:shadow-2xl h-80"
+                className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
+                onClick={() => handleRevenueModelClick('fanclub-creator')}
                 style={{
-                  border: '2px solid rgba(225, 70, 100, 0.8)',
-                  boxShadow: '0 0 25px rgba(225, 70, 100, 0.5), inset 0 0 20px rgba(225, 70, 100, 0.1)'
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.035))',
+                  border: '1px solid rgba(255,255,255,0.14)',
+                  boxShadow: '0 28px 80px rgba(0,0,0,0.42)',
+                  backdropFilter: 'blur(14px)'
                 }}
               >
                 <img 
                   src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400&h=500&fit=crop"
                   alt="Fanclub Creator"
-                  className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity"
+                  className="absolute inset-0 w-full h-full object-cover opacity-25 group-hover:opacity-35 transition-opacity"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-                <div className="absolute inset-0 p-5 flex flex-col justify-between relative z-10">
-                  <Star className="h-7 w-7 text-rose-400" style={{ textShadow: '0 0 12px rgba(225, 70, 100, 0.9)' }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                <div className="relative z-10 p-7 h-full flex flex-col justify-between">
+                  <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(251, 146, 60, 0.15)', border: '1px solid rgba(251, 146, 60, 0.3)' }}>
+                    <Sparkles className="h-5 w-5 text-orange-400" />
+                  </div>
                   <div>
-                    <h3 className="font-bold text-white text-lg mb-1.5">Fanclub Creator</h3>
-                    <p className="text-gray-100 text-[11px] mb-2.5 leading-relaxed">Build recurring monthly income with exclusive clips, updates and supporter perks.</p>
-                    <Badge className="bg-rose-600 text-white text-[10px] font-semibold">Fanclub Setup</Badge>
+                    <h3 className="font-bold text-white text-lg mb-2">Fanclub Creator</h3>
+                    <p className="text-gray-200 text-sm mb-4 leading-relaxed">Build recurring monthly income with exclusive clips, updates and supporter perks.</p>
+                    <Badge className="bg-gradient-to-r from-orange-600 to-amber-600 text-white text-xs font-semibold px-3 py-1">Fanclub Setup</Badge>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Trust & Support Section */}
+            {/* CTA Panel */}
             <div 
-              className="p-8 rounded-2xl mb-8 backdrop-blur-sm relative z-10"
+              className="p-8 rounded-[28px] mb-8"
               style={{
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
-                border: '1px solid rgba(255,255,255,0.15)',
-                boxShadow: '0 10px 40px rgba(0,0,0,0.4), 0 0 30px rgba(225, 70, 100, 0.15)'
+                background: 'rgba(255,255,255,0.045)',
+                border: '1px solid rgba(255,255,255,0.14)',
+                boxShadow: '0 24px 80px rgba(0,0,0,0.38)',
+                backdropFilter: 'blur(16px)'
               }}
             >
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <HelpCircle className="h-12 w-12 text-rose-500 flex-shrink-0" style={{ textShadow: '0 0 15px rgba(225, 70, 100, 0.8)' }} />
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-6">
+                <div className="flex items-start sm:items-center gap-4">
+                  <div className="h-12 w-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(225, 29, 72, 0.2)', border: '1px solid rgba(225, 29, 72, 0.4)' }}>
+                    <HelpCircle className="h-6 w-6 text-rose-400" />
                   </div>
                   <div>
                     <h4 className="font-bold text-white text-lg">Not sure which path fits you?</h4>
@@ -591,15 +654,14 @@ export default function PhilippinesRecruitment() {
               
               <div className="flex flex-col sm:flex-row gap-4 mb-6">
                 <Button 
-                  className="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-green-500/30 transition-all flex items-center justify-center gap-2"
+                  className="bg-green-500 hover:bg-green-600 text-white font-bold px-8 py-3 rounded-lg shadow-lg shadow-green-500/40 transition-all flex items-center justify-center gap-2 flex-1 sm:flex-none"
                   onClick={handleWhatsAppClick}
                 >
                   <MessageCircle className="h-5 w-5" />
                   Chat on WhatsApp
                 </Button>
                 <Button 
-                  variant="outline"
-                  className="border-2 border-rose-500 text-rose-400 hover:bg-rose-500/10 font-bold px-6 py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                  className="border-2 border-rose-500 text-white hover:bg-rose-500/10 font-bold px-8 py-3 rounded-lg transition-all flex items-center justify-center gap-2 flex-1 sm:flex-none bg-transparent"
                   onClick={() => handleRevenueModelClick('compare')}
                 >
                   <TrendingUp className="h-5 w-5" />
@@ -609,28 +671,27 @@ export default function PhilippinesRecruitment() {
 
               {/* Trust Pills */}
               <div className="flex flex-wrap gap-3">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-gray-300 text-xs font-semibold">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-300 text-xs font-semibold" style={{ background: 'rgba(225, 29, 72, 0.1)', border: '1px solid rgba(225, 29, 72, 0.3)' }}>
                   <Shield className="h-4 w-4 text-rose-400" />
                   <span>Verified 18+ Only</span>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-gray-300 text-xs font-semibold">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-300 text-xs font-semibold" style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
                   <Lock className="h-4 w-4 text-purple-400" />
                   <span>Private & Discreet</span>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-gray-300 text-xs font-semibold">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-300 text-xs font-semibold" style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
                   <CheckCircle2 className="h-4 w-4 text-blue-400" />
                   <span>You Approve Everything</span>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-gray-300 text-xs font-semibold">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-300 text-xs font-semibold" style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
                   <Globe className="h-4 w-4 text-amber-400" />
                   <span>Support for Filipino Creators</span>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-gray-300 text-xs font-semibold">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-full text-gray-300 text-xs font-semibold" style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
                   <Banknote className="h-4 w-4 text-green-400" />
                   <span>Payouts in PHP</span>
                 </div>
               </div>
-            </div>
             </div>
           </div>
         </section>
