@@ -88,33 +88,8 @@ export default function PhilippinesRecruitment() {
             src={heroImage}
             alt="Filipino creator bedroom setup with smartphone, ring light and laptop"
             className="absolute inset-0 z-0 w-full h-full object-cover"
-            style={{ objectPosition: '62% 45%' }}
           />
-          <style>
-            {`
-              @media (min-width: 1400px) {
-                [data-hero-section] {
-                  min-height: 760px !important;
-                }
-              }
-              @media (max-width: 1024px) {
-                [data-hero-section] {
-                  min-height: 660px !important;
-                }
-              }
-              @media (max-width: 768px) {
-                [data-hero-section] {
-                  min-height: 760px !important;
-                }
-                [data-hero-img] {
-                  object-position: 62% 45% !important;
-                }
-              }
-              [data-hero-section] {
-                min-height: 720px !important;
-              }
-            `}
-          </style>
+
           
           {/* No overlay - image fully visible */}
           
