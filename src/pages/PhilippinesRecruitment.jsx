@@ -64,7 +64,7 @@ export default function PhilippinesRecruitment() {
   };
 
   // AI-generated visuals for Filipino creator representation
-  const heroImage = "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/Logos/ChatGPT%20Image%208.%20Juni%202026%2C%2005_36_03.png";
+  const heroImage = "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2005_50_08.png";
   const setupImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/7d8872b99_generated_image.png";
   const workflowImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/8390c41e6_generated_image.png";
   const earningsImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/d2a01df7f_generated_image.png";
@@ -87,7 +87,7 @@ export default function PhilippinesRecruitment() {
             src={heroImage}
             alt=""
             className="absolute inset-0 z-0 w-full h-full object-cover"
-            style={{ objectPosition: '60% center' }}
+            style={{ objectPosition: 'center center' }}
           />
           <style>
             {`
@@ -106,7 +106,7 @@ export default function PhilippinesRecruitment() {
                   min-height: 760px !important;
                 }
                 [data-hero-img] {
-                  object-position: 50% 35% !important;
+                  object-position: center 40% !important;
                 }
               }
             `}
