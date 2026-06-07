@@ -489,25 +489,19 @@ export default function PhilippinesRecruitment() {
                 className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
                 onClick={() => handleRevenueModelClick('beginner-with-phone')}
                 style={{
-                  background: 'linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.035))',
-                  border: '1px solid rgba(255,255,255,0.14)',
-                  boxShadow: '0 28px 80px rgba(0,0,0,0.42)',
-                  backdropFilter: 'blur(14px)'
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85))',
+                  border: '1px solid rgba(225, 29, 72, 0.15)',
+                  boxShadow: '0 12px 40px rgba(225, 29, 72, 0.12)',
+                  backdropFilter: 'blur(10px)'
                 }}
               >
-                <img 
-                  src="https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=400&h=500&fit=crop"
-                  alt="Beginner Creator"
-                  className="absolute inset-0 w-full h-full object-cover opacity-25 group-hover:opacity-35 transition-opacity"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                 <div className="relative z-10 p-7 h-full flex flex-col justify-between">
                   <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255, 138, 0, 0.15)', border: '1px solid rgba(255, 138, 0, 0.3)' }}>
-                    <Smartphone className="h-5 w-5 text-amber-400" />
+                    <Smartphone className="h-5 w-5 text-amber-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-lg mb-2">Beginner with Phone</h3>
-                    <p className="text-gray-200 text-sm mb-4 leading-relaxed">Never created before? Start with your phone, private space and full setup support.</p>
+                    <h3 className="font-bold text-gray-900 text-lg mb-2">Beginner with Phone</h3>
+                    <p className="text-gray-700 text-sm mb-4 leading-relaxed">Never created before? Start with your phone, private space and full setup support.</p>
                     <Badge className="bg-gradient-to-r from-amber-600 to-orange-600 text-white text-xs font-semibold px-3 py-1">60/40 Management</Badge>
                   </div>
                 </div>
@@ -518,25 +512,19 @@ export default function PhilippinesRecruitment() {
                 className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
                 onClick={() => handleRevenueModelClick('existing-creator')}
                 style={{
-                  background: 'linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.035))',
-                  border: '1px solid rgba(255,255,255,0.14)',
-                  boxShadow: '0 28px 80px rgba(0,0,0,0.42)',
-                  backdropFilter: 'blur(14px)'
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85))',
+                  border: '1px solid rgba(236, 72, 153, 0.15)',
+                  boxShadow: '0 12px 40px rgba(236, 72, 153, 0.12)',
+                  backdropFilter: 'blur(10px)'
                 }}
               >
-                <img 
-                  src="https://images.unsplash.com/photo-1533314311201-bb0f0e2e2518?w=400&h=500&fit=crop"
-                  alt="Existing Creator"
-                  className="absolute inset-0 w-full h-full object-cover opacity-25 group-hover:opacity-35 transition-opacity"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                 <div className="relative z-10 p-7 h-full flex flex-col justify-between">
                   <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(236, 72, 153, 0.15)', border: '1px solid rgba(236, 72, 153, 0.3)' }}>
-                    <Upload className="h-5 w-5 text-pink-400" />
+                    <Upload className="h-5 w-5 text-pink-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-lg mb-2">Existing Creator</h3>
-                    <p className="text-gray-200 text-sm mb-4 leading-relaxed">Have clips or followers already? Add FLESHLAB as your fanclub and distribution hub.</p>
+                    <h3 className="font-bold text-gray-900 text-lg mb-2">Existing Creator</h3>
+                    <p className="text-gray-700 text-sm mb-4 leading-relaxed">Have clips or followers already? Add FLESHLAB as your fanclub and distribution hub.</p>
                     <Badge className="bg-gradient-to-r from-pink-600 to-rose-600 text-white text-xs font-semibold px-3 py-1">70/30 Network</Badge>
                   </div>
                 </div>
@@ -547,25 +535,19 @@ export default function PhilippinesRecruitment() {
                 className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
                 onClick={() => handleRevenueModelClick('cam-model')}
                 style={{
-                  background: 'linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.035))',
-                  border: '1px solid rgba(255,255,255,0.14)',
-                  boxShadow: '0 28px 80px rgba(0,0,0,0.42)',
-                  backdropFilter: 'blur(14px)'
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85))',
+                  border: '1px solid rgba(168, 85, 247, 0.15)',
+                  boxShadow: '0 12px 40px rgba(168, 85, 247, 0.12)',
+                  backdropFilter: 'blur(10px)'
                 }}
               >
-                <img 
-                  src="https://images.unsplash.com/photo-1526305851911-c6b80f714255?w=400&h=500&fit=crop"
-                  alt="Cam Model"
-                  className="absolute inset-0 w-full h-full object-cover opacity-25 group-hover:opacity-35 transition-opacity"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                 <div className="relative z-10 p-7 h-full flex flex-col justify-between">
                   <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
-                    <Play className="h-5 w-5 text-purple-400" />
+                    <Play className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-lg mb-2">Cam Model</h3>
-                    <p className="text-gray-200 text-sm mb-4 leading-relaxed">Already on Chaturbate or cam sites? Turn live viewers into long-term fans.</p>
+                    <h3 className="font-bold text-gray-900 text-lg mb-2">Cam Model</h3>
+                    <p className="text-gray-700 text-sm mb-4 leading-relaxed">Already on Chaturbate or cam sites? Turn live viewers into long-term fans.</p>
                     <Badge className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-semibold px-3 py-1">Hybrid Model</Badge>
                   </div>
                 </div>
@@ -576,25 +558,19 @@ export default function PhilippinesRecruitment() {
                 className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
                 onClick={() => handleRevenueModelClick('couple-creator')}
                 style={{
-                  background: 'linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.035))',
-                  border: '1px solid rgba(255,255,255,0.14)',
-                  boxShadow: '0 28px 80px rgba(0,0,0,0.42)',
-                  backdropFilter: 'blur(14px)'
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85))',
+                  border: '1px solid rgba(239, 68, 68, 0.15)',
+                  boxShadow: '0 12px 40px rgba(239, 68, 68, 0.12)',
+                  backdropFilter: 'blur(10px)'
                 }}
               >
-                <img 
-                  src="https://images.unsplash.com/photo-1535016120754-fd45c1d54fce?w=400&h=500&fit=crop"
-                  alt="Couple Creator"
-                  className="absolute inset-0 w-full h-full object-cover opacity-25 group-hover:opacity-35 transition-opacity"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                 <div className="relative z-10 p-7 h-full flex flex-col justify-between">
                   <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                    <Users className="h-5 w-5 text-red-400" />
+                    <Users className="h-5 w-5 text-red-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-lg mb-2">Couple Creator</h3>
-                    <p className="text-gray-200 text-sm mb-4 leading-relaxed">Create with a partner. Both must verify 18+ and approve every scene.</p>
+                    <h3 className="font-bold text-gray-900 text-lg mb-2">Couple Creator</h3>
+                    <p className="text-gray-700 text-sm mb-4 leading-relaxed">Create with a partner. Both must verify 18+ and approve every scene.</p>
                     <Badge className="bg-gradient-to-r from-red-600 to-pink-600 text-white text-xs font-semibold px-3 py-1">Both Verify 18+</Badge>
                   </div>
                 </div>
@@ -605,25 +581,19 @@ export default function PhilippinesRecruitment() {
                 className="group relative rounded-[26px] overflow-hidden cursor-pointer transition-all hover:-translate-y-1.5 h-auto min-h-[300px]"
                 onClick={() => handleRevenueModelClick('fanclub-creator')}
                 style={{
-                  background: 'linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.035))',
-                  border: '1px solid rgba(255,255,255,0.14)',
-                  boxShadow: '0 28px 80px rgba(0,0,0,0.42)',
-                  backdropFilter: 'blur(14px)'
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.85))',
+                  border: '1px solid rgba(251, 146, 60, 0.15)',
+                  boxShadow: '0 12px 40px rgba(251, 146, 60, 0.12)',
+                  backdropFilter: 'blur(10px)'
                 }}
               >
-                <img 
-                  src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400&h=500&fit=crop"
-                  alt="Fanclub Creator"
-                  className="absolute inset-0 w-full h-full object-cover opacity-25 group-hover:opacity-35 transition-opacity"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                 <div className="relative z-10 p-7 h-full flex flex-col justify-between">
                   <div className="h-9 w-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(251, 146, 60, 0.15)', border: '1px solid rgba(251, 146, 60, 0.3)' }}>
-                    <Sparkles className="h-5 w-5 text-orange-400" />
+                    <Sparkles className="h-5 w-5 text-orange-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-lg mb-2">Fanclub Creator</h3>
-                    <p className="text-gray-200 text-sm mb-4 leading-relaxed">Build recurring monthly income with exclusive clips, updates and supporter perks.</p>
+                    <h3 className="font-bold text-gray-900 text-lg mb-2">Fanclub Creator</h3>
+                    <p className="text-gray-700 text-sm mb-4 leading-relaxed">Build recurring monthly income with exclusive clips, updates and supporter perks.</p>
                     <Badge className="bg-gradient-to-r from-orange-600 to-amber-600 text-white text-xs font-semibold px-3 py-1">Fanclub Setup</Badge>
                   </div>
                 </div>
