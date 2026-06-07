@@ -441,79 +441,160 @@ export default function PhilippinesRecruitment() {
           </div>
         </section>
 
-        {/* Choose Your Creator Path */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-amber-50 to-rose-100">
-          <div className="max-w-6xl mx-auto">
-            <Badge className="mb-4 bg-rose-600 text-white text-sm px-4 py-1.5 font-semibold">
-              Your Path
+        {/* Choose Your Creator Path - Dark Premium Cards */}
+        <section className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden" style={{ backgroundColor: '#0a0a0a' }}>
+          {/* Dark Gradient Background with Neon Accents */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%)',
+            }}
+          />
+          {/* Blurred Neon Orbs */}
+          <div className="absolute top-20 left-10 w-64 h-64 bg-rose-600/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-10 w-80 h-80 bg-purple-600/15 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl" />
+          
+          <div className="max-w-6xl mx-auto relative z-10">
+            <Badge className="mb-4 bg-rose-600/20 text-rose-400 text-xs font-bold px-3 py-1.5 border border-rose-500/30">
+              YOUR PATH
             </Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-4">
+            
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center text-white mb-4 leading-tight">
               Choose your creator path
             </h2>
-            <p className="text-center text-gray-700 mb-12 text-lg max-w-2xl mx-auto font-medium">
-              Wherever you're starting from, there's a path that fits
+            
+            <p className="text-center text-gray-400 mb-12 text-lg max-w-2xl mx-auto">
+              Which path fits your experience and goals?
             </p>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              {/* Beginner */}
-              <Card className="border-2 border-rose-300 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 bg-white">
-                <CardContent className="pt-5">
-                  <div className="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center mb-3">
-                    <UserCheck className="h-6 w-6 text-rose-700" />
+            {/* 5 Creator Path Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-12">
+              {/* Beginner with Phone */}
+              <div 
+                className="group relative p-6 rounded-2xl cursor-pointer transition-all hover:-translate-y-1 hover:shadow-2xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)',
+                  border: '1px solid rgba(225, 70, 100, 0.3)',
+                  backdropFilter: 'blur(12px)',
+                  boxShadow: '0 10px 40px rgba(0,0,0,0.3)'
+                }}
+              >
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-rose-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative z-10">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-rose-500 to-rose-700 flex items-center justify-center mb-4 shadow-lg shadow-rose-500/30">
+                    <UserCheck className="h-7 w-7 text-white" />
                   </div>
-                  <h3 className="font-bold text-gray-900 mb-2 text-base">Beginner with Phone</h3>
-                  <p className="text-gray-700 mb-3 text-xs leading-relaxed">Never created before. Need full support from start to finish.</p>
+                  <h3 className="font-bold text-white text-lg mb-2">Beginner with Phone</h3>
+                  <p className="text-gray-400 text-sm mb-4 leading-relaxed">Never created before. We guide you from setup to first upload.</p>
                   <Badge className="bg-rose-600 text-white text-xs font-semibold">60/40 Management</Badge>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* Existing Creator */}
-              <Card className="border-2 border-amber-300 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 bg-white">
-                <CardContent className="pt-5">
-                  <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-3">
-                    <Camera className="h-6 w-6 text-amber-700" />
+              <div 
+                className="group relative p-6 rounded-2xl cursor-pointer transition-all hover:-translate-y-1 hover:shadow-2xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)',
+                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                  backdropFilter: 'blur(12px)',
+                  boxShadow: '0 10px 40px rgba(0,0,0,0.3)'
+                }}
+              >
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-amber-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative z-10">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center mb-4 shadow-lg shadow-amber-500/30">
+                    <Camera className="h-7 w-7 text-white" />
                   </div>
-                  <h3 className="font-bold text-gray-900 mb-2 text-base">Existing Creator</h3>
-                  <p className="text-gray-700 mb-3 text-xs leading-relaxed">Already have content or followers. Want to expand reach.</p>
+                  <h3 className="font-bold text-white text-lg mb-2">Existing Creator</h3>
+                  <p className="text-gray-400 text-sm mb-4 leading-relaxed">Already have content or audience. Expand your reach and earnings.</p>
                   <Badge className="bg-amber-600 text-white text-xs font-semibold">70/30 Network</Badge>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* Cam Model */}
-              <Card className="border-2 border-purple-300 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 bg-white">
-                <CardContent className="pt-5">
-                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-3">
-                    <Users className="h-6 w-6 text-purple-700" />
+              <div 
+                className="group relative p-6 rounded-2xl cursor-pointer transition-all hover:-translate-y-1 hover:shadow-2xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)',
+                  border: '1px solid rgba(168, 85, 247, 0.3)',
+                  backdropFilter: 'blur(12px)',
+                  boxShadow: '0 10px 40px rgba(0,0,0,0.3)'
+                }}
+              >
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative z-10">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center mb-4 shadow-lg shadow-purple-500/30">
+                    <Users className="h-7 w-7 text-white" />
                   </div>
-                  <h3 className="font-bold text-gray-900 mb-2 text-base">Cam Model</h3>
-                  <p className="text-gray-700 mb-3 text-xs leading-relaxed">Already on Chaturbate. Add passive recorded content income.</p>
+                  <h3 className="font-bold text-white text-lg mb-2">Cam Model</h3>
+                  <p className="text-gray-400 text-sm mb-4 leading-relaxed">Already on Chaturbate? Add passive income with recorded content.</p>
                   <Badge className="bg-purple-600 text-white text-xs font-semibold">Hybrid</Badge>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
-              {/* Couple */}
-              <Card className="border-2 border-pink-300 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 bg-white">
-                <CardContent className="pt-5">
-                  <div className="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center mb-3">
-                    <Heart className="h-6 w-6 text-pink-700" />
+              {/* Couple Creator */}
+              <div 
+                className="group relative p-6 rounded-2xl cursor-pointer transition-all hover:-translate-y-1 hover:shadow-2xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)',
+                  border: '1px solid rgba(236, 72, 153, 0.3)',
+                  backdropFilter: 'blur(12px)',
+                  boxShadow: '0 10px 40px rgba(0,0,0,0.3)'
+                }}
+              >
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-pink-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative z-10">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-pink-500 to-pink-700 flex items-center justify-center mb-4 shadow-lg shadow-pink-500/30">
+                    <Heart className="h-7 w-7 text-white" />
                   </div>
-                  <h3 className="font-bold text-gray-900 mb-2 text-base">Couple Creator</h3>
-                  <p className="text-gray-700 mb-3 text-xs leading-relaxed">Creating with partner. Both verify 18+, both consent required.</p>
-                  <Badge className="bg-pink-600 text-white text-xs font-semibold">Both Verify 18+</Badge>
-                </CardContent>
-              </Card>
+                  <h3 className="font-bold text-white text-lg mb-2">Couple Creator</h3>
+                  <p className="text-gray-400 text-sm mb-4 leading-relaxed">Creating together? Both partners verify 18+ and consent required.</p>
+                  <Badge className="bg-pink-600 text-white text-xs font-semibold">Approval Required</Badge>
+                </div>
+              </div>
 
-              {/* Fanclub */}
-              <Card className="border-2 border-rose-300 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 bg-white">
-                <CardContent className="pt-5">
-                  <div className="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center mb-3">
-                    <Sparkles className="h-6 w-6 text-rose-700" />
+              {/* Fanclub Creator */}
+              <div 
+                className="group relative p-6 rounded-2xl cursor-pointer transition-all hover:-translate-y-1 hover:shadow-2xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)',
+                  border: '1px solid rgba(225, 70, 100, 0.3)',
+                  backdropFilter: 'blur(12px)',
+                  boxShadow: '0 10px 40px rgba(0,0,0,0.3)'
+                }}
+              >
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-rose-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative z-10">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-rose-500 to-rose-700 flex items-center justify-center mb-4 shadow-lg shadow-rose-500/30">
+                    <Sparkles className="h-7 w-7 text-white" />
                   </div>
-                  <h3 className="font-bold text-gray-900 mb-2 text-base">Fanclub Creator</h3>
-                  <p className="text-gray-700 mb-3 text-xs leading-relaxed">Want recurring monthly income from exclusive content.</p>
-                  <Badge className="bg-rose-600 text-white text-xs font-semibold">Recurring Revenue</Badge>
-                </CardContent>
-              </Card>
+                  <h3 className="font-bold text-white text-lg mb-2">Fanclub Creator</h3>
+                  <p className="text-gray-400 text-sm mb-4 leading-relaxed">Build recurring monthly income with exclusive subscriber content.</p>
+                  <Badge className="bg-rose-600 text-white text-xs font-semibold">Fanclub Setup</Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* CTA Below Cards */}
+            <div className="text-center">
+              <p className="text-gray-400 text-base mb-6">Not sure which path fits?</p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg shadow-green-500/20 transition-all hover:shadow-green-500/40"
+                  onClick={handleWhatsAppClick}
+                >
+                  <MessageCircle className="mr-2 h-5 w-5" />
+                  Chat on WhatsApp
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="border border-rose-500/40 text-rose-400 hover:bg-rose-500/10 font-semibold px-8 py-4 rounded-xl transition-all"
+                  onClick={() => handleRevenueModelClick('compare')}
+                >
+                  Compare 60/40 and 70/30
+                </Button>
+              </div>
             </div>
           </div>
         </section>
