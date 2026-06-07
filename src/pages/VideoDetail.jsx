@@ -221,27 +221,61 @@ export default function VideoDetail() {
   // Get CTA based on auth state and access tier
   const cta = getCTA(video.access_tier === 'fanclub' ? 'fanclub' : video.access_tier === 'ppv' ? 'ppv' : 'full-video');
 
-  // JSON-LD: never include source/full video URL
+  // ISO 8601 duration: PT2H3M45S
+  const isoDuration = (secs) => {
+    if (!secs || secs <= 0) return undefined;
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    return `PT${h > 0 ? h + 'H' : ''}${m > 0 ? m + 'M' : ''}${s > 0 ? s + 'S' : ''}` || `PT${secs}S`;
+  };
+
+  // Safe ISO upload date — never expose raw datetime object
+  const isoUploadDate = (() => {
+    const d = video.release_date || video.created_date;
+    if (!d) return undefined;
+    try { return new Date(d).toISOString().substring(0, 10); } catch { return undefined; }
+  })();
+
+  // JSON-LD: VideoObject — never include source/private video URL
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "VideoObject",
     "name": video.title,
-    "description": video.short_summary || video.description,
+    "description": (video.meta_description || video.short_summary || video.description || '').substring(0, 300),
     "thumbnailUrl": video.primary_thumbnail_url,
-    "uploadDate": video.release_date || video.created_date,
-    "duration": video.duration_seconds ? `PT${video.duration_seconds}S` : undefined,
-    "embedUrl": video.trailer_url,
-    "contentRating": "18+",
-    "actor": performers.map(p => ({
-      "@type": "Person",
-      "name": p.display_name
-    })),
-    "genre": video.categories || [],
-    "interactionStatistic": video.view_count ? {
-      "@type": "InteractionCounter",
-      "interactionType": "https://schema.org/WatchAction",
-      "userInteractionCount": video.view_count
-    } : undefined
+    "uploadDate": isoUploadDate,
+    "datePublished": isoUploadDate,
+    "duration": isoDuration(video.duration_seconds),
+    "embedUrl": video.trailer_url || canonicalUrl,
+    "url": canonicalUrl,
+    "isFamilyFriendly": false,
+    "inLanguage": "en",
+    "contentRating": "adult",
+    "publisher": {
+      "@type": "Organization",
+      "name": "FLESHLAB Studios",
+      "url": "https://fleshlab.online"
+    },
+    ...(performers.length > 0 && {
+      "actor": performers.map(p => ({
+        "@type": "Person",
+        "name": p.display_name,
+        ...(p.slug && { "url": `https://fleshlab.online/performers/${p.slug}` })
+      }))
+    }),
+    ...(video.categories?.length > 0 && { "genre": video.categories }),
+    ...(video.tags?.length > 0 && { "keywords": video.tags.join(', ') }),
+    ...(video.view_count > 0 && {
+      "interactionStatistic": {
+        "@type": "InteractionCounter",
+        "interactionType": "https://schema.org/WatchAction",
+        "userInteractionCount": video.view_count
+      }
+    }),
+    ...((video.access_tier === 'fanclub' || video.access_tier === 'ppv') && {
+      "requiresSubscription": true
+    })
   };
 
   const unlockLabel =
