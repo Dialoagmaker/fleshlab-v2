@@ -237,8 +237,19 @@ export default function VideoDetail() {
     try { return new Date(d).toISOString().substring(0, 10); } catch { return undefined; }
   })();
 
+  // BreadcrumbList for video detail
+  const breadcrumb = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://fleshlab.online/" },
+      { "@type": "ListItem", "position": 2, "name": "Videos", "item": "https://fleshlab.online/videos" },
+      { "@type": "ListItem", "position": 3, "name": video.title, "item": canonicalUrl }
+    ]
+  };
+
   // JSON-LD: VideoObject — never include source/private video URL
-  const jsonLd = {
+  const videoSchema = {
     "@context": "https://schema.org",
     "@type": "VideoObject",
     "name": video.title,
@@ -280,6 +291,8 @@ export default function VideoDetail() {
       "requiresSubscription": true
     })
   };
+
+  const jsonLd = [videoSchema, breadcrumb];
 
   const unlockLabel =
     video.access_tier === 'fanclub' ? 'Join Fanclub' :

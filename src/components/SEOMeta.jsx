@@ -117,8 +117,9 @@ export default function SEOMeta({
       meta.setAttribute('content', content);
     });
 
-    // JSON-LD Structured Data — always use a dedicated page-level script tag
-    // Never overwrite the static index.html block (Organization + WebSite)
+    // JSON-LD Structured Data
+    // Supports single object OR array of schema objects (e.g. [Person, BreadcrumbList])
+    // Uses a single script tag with an array when multiple schemas are provided.
     if (jsonLd) {
       let script = document.querySelector('script[data-page-jsonld]');
       if (!script) {
@@ -127,7 +128,8 @@ export default function SEOMeta({
         script.setAttribute('data-page-jsonld', 'true');
         document.head.appendChild(script);
       }
-      script.textContent = JSON.stringify(jsonLd);
+      // If array: wrap in JSON-LD array; if single object: output as-is
+      script.textContent = JSON.stringify(Array.isArray(jsonLd) ? jsonLd : jsonLd);
     }
 
     // Cleanup function (optional - keeps metadata persistent across navigation)

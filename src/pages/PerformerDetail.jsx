@@ -120,27 +120,51 @@ export default function PerformerDetail() {
   const identityLine = `Verified 18+ ${nationalityShort ? nationalityShort + ' performer' : 'performer'} · FLESHLAB Studios`;
   
   // JSON-LD - NULL SAFE
-  const jsonLd = performer ? {
-    "@context": "https://schema.org",
-    "@type": "Person",
-    "name": performer.display_name || 'Verified Performer',
-    "description": performer.meta_description || generatePerformerMetaDescription(performer),
-    "image": performer.profile_image_url || '/placeholder-performer.jpg',
-    "url": `https://fleshlab.online/performers/${performer.slug}`,
-    "nationality": performer.nationality,
-    "worksFor": {
-      "@type": "Organization",
-      "name": "FLESHLAB Studios",
-      "url": "https://fleshlab.online"
-    },
-    "sameAs": [
-      performer.twitter_url,
-      performer.instagram_url,
-      performer.onlyfans_url
-    ].filter(Boolean)
-  } : undefined;
+  const canonicalPerformerUrl = performer ? `https://fleshlab.online/performers/${performer.slug}` : undefined;
 
-  const canonicalUrl = performer ? `https://fleshlab.online/performers/${performer.slug}` : undefined;
+  // subjectOf: public published video URLs for this performer (max 10)
+  const performerVideoUrls = performerVideos
+    .filter(v => v.slug)
+    .slice(0, 10)
+    .map(v => ({
+      "@type": "VideoObject",
+      "name": v.title,
+      "url": `https://fleshlab.online/videos/${v.slug}`
+    }));
+
+  const jsonLd = performer ? [
+    // Person schema
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": performer.display_name,
+      "url": canonicalPerformerUrl,
+      ...(performer.profile_image_url && { "image": performer.profile_image_url }),
+      "description": (performer.meta_description || generatePerformerMetaDescription(performer) || '').substring(0, 300),
+      ...(performer.nationality && { "nationality": performer.nationality }),
+      "worksFor": {
+        "@type": "Organization",
+        "name": "FLESHLAB Studios",
+        "url": "https://fleshlab.online"
+      },
+      ...((performer.twitter_url || performer.instagram_url || performer.onlyfans_url) && {
+        "sameAs": [performer.twitter_url, performer.instagram_url, performer.onlyfans_url].filter(Boolean)
+      }),
+      ...(performerVideoUrls.length > 0 && { "subjectOf": performerVideoUrls })
+    },
+    // BreadcrumbList schema
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://fleshlab.online/" },
+        { "@type": "ListItem", "position": 2, "name": "Performers", "item": "https://fleshlab.online/performers" },
+        { "@type": "ListItem", "position": 3, "name": performer.display_name, "item": canonicalPerformerUrl }
+      ]
+    }
+  ] : undefined;
+
+  const canonicalUrl = canonicalPerformerUrl;
   
   // Generate SEO content - NULL SAFE
   const seoTitle = performer?.meta_title || generatePerformerTitle(performer || {});

@@ -45,18 +45,37 @@ export default function NewsDetail() {
         .slice(0, 3)
     : [];
 
-  const jsonLd = article ? {
-    "@context": "https://schema.org",
-    "@type": "NewsArticle",
-    "headline": article.title,
-    "description": article.excerpt || article.content?.substring(0, 160),
-    "image": article.cover_image_url,
-    "datePublished": article.published_at,
-    "author": {
-      "@type": "Organization",
-      "name": "FLESHLAB"
+  const jsonLd = article ? [
+    {
+      "@context": "https://schema.org",
+      "@type": "NewsArticle",
+      "headline": article.title,
+      "description": (article.meta_description || article.excerpt || article.content?.substring(0, 160) || '').substring(0, 300),
+      ...(article.cover_image_url && { "image": article.cover_image_url }),
+      "datePublished": article.published_at,
+      "dateModified": article.updated_date || article.published_at,
+      "url": `https://fleshlab.online/news/${article.slug}`,
+      "author": {
+        "@type": "Organization",
+        "name": "FLESHLAB Studios",
+        "url": "https://fleshlab.online"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FLESHLAB Studios",
+        "url": "https://fleshlab.online"
+      }
     },
-  } : undefined;
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://fleshlab.online/" },
+        { "@type": "ListItem", "position": 2, "name": "News", "item": "https://fleshlab.online/news" },
+        { "@type": "ListItem", "position": 3, "name": article.title, "item": `https://fleshlab.online/news/${article.slug}` }
+      ]
+    }
+  ] : undefined;
 
   const canonicalUrl = article ? `https://fleshlab.online/news/${article.slug}` : undefined;
 

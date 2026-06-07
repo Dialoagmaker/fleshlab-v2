@@ -44,16 +44,33 @@ export default function BrandDetail() {
     }
   }, [brands, videos, slug]);
 
-  const jsonLd = brand ? {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": brand.name,
-    "description": brand.description,
-    "logo": brand.logo_url,
-    "image": brand.cover_image_url,
-  } : undefined;
+  const canonicalUrl = brand ? `https://fleshlab.online/brands/${brand.slug}` : undefined;
 
-  const canonicalUrl = brand ? `${window.location.origin}/brands/${brand.slug}` : undefined;
+  const jsonLd = brand ? [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": brand.name,
+      "url": canonicalUrl,
+      ...(brand.description && { "description": brand.description }),
+      ...(brand.logo_url && { "logo": brand.logo_url }),
+      ...(brand.cover_image_url && { "image": brand.cover_image_url }),
+      "parentOrganization": {
+        "@type": "Organization",
+        "name": "FLESHLAB Studios",
+        "url": "https://fleshlab.online"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://fleshlab.online/" },
+        { "@type": "ListItem", "position": 2, "name": "Studios", "item": "https://fleshlab.online/brands" },
+        { "@type": "ListItem", "position": 3, "name": brand.name, "item": canonicalUrl }
+      ]
+    }
+  ] : undefined;
 
   if (!brand) {
     return (
