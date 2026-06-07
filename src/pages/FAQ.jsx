@@ -229,6 +229,8 @@ const CTAs = {
 };
 
 // ── FAQ Item ───────────────────────────────────────────────────────────────────
+// Answer text is ALWAYS in the DOM and readable — accordion only controls
+// visual expansion. No sr-only duplicates.
 function FAQItem({ item, idx, isOpen, onToggle }) {
   return (
     <div className="border border-white/8 rounded-2xl overflow-hidden bg-[#0f0f0f]">
@@ -242,17 +244,22 @@ function FAQItem({ item, idx, isOpen, onToggle }) {
           className={`w-5 h-5 text-rose-500 mt-0.5 flex-shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
-      {/* Answer is always in DOM for crawlability — visibility toggled via CSS only */}
+      {/*
+        Answer is always rendered in the DOM with full text content.
+        CSS max-height/opacity transition handles visual show/hide.
+        No sr-only fallback, no duplicate nodes.
+        Crawlers read the text regardless of open state.
+      */}
+      {/*
+        Text node always present in DOM. Crawlers read it regardless of CSS.
+        max-h-0 + overflow-hidden collapses visual height for users.
+        No visibility:hidden, no display:none, no sr-only duplicate.
+      */}
       <div
-        className={`px-6 transition-all duration-200 overflow-hidden ${isOpen ? "pb-5 max-h-[600px] opacity-100" : "max-h-0 opacity-0 pointer-events-none"}`}
-        aria-hidden={!isOpen}
+        className={`px-6 transition-all duration-200 overflow-hidden ${isOpen ? "pb-5 max-h-[600px] opacity-100" : "max-h-0 opacity-0"}`}
       >
         <p className="text-white/70 leading-relaxed text-sm md:text-base">{item.a}</p>
       </div>
-      {/* Visually hidden but DOM-present for search engines */}
-      {!isOpen && (
-        <span className="sr-only">{item.a}</span>
-      )}
     </div>
   );
 }
