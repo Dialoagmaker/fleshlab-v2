@@ -20,7 +20,16 @@ import {
   Play,
   Users,
   Globe,
-  CreditCard
+  CreditCard,
+  Laptop,
+  Upload,
+  Eye,
+  Settings,
+  TrendingUp,
+  Calendar,
+  Clock,
+  MapPin,
+  Banknote
 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import SEOMeta from "@/components/SEOMeta";
@@ -56,18 +65,18 @@ export default function PhilippinesRecruitment() {
   return (
     <>
       <SEOMeta
-        title="Gay Performer Recruitment Philippines | Become a Filipino Creator"
-        description="Apply as a verified 18+ Filipino gay content creator with FLESHLAB. Start from home with your phone, choose a support model, and build your fanclub safely."
+        title="Gay Performer Recruitment Philippines | Start as a Filipino Creator"
+        description="Apply as a verified 18+ Filipino gay content creator with FLESHLAB. Start from home with your phone, choose a support model, and build your creator profile safely."
         canonical="/gay-performer-recruitment-philippines"
         noIndex={false}
       />
       
       <div className="min-h-screen bg-white">
-        {/* Hero Section - Mobile First, Emotional */}
+        {/* Hero Section - Mobile First, Practical */}
         <section className="relative py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-rose-50 to-white">
           <div className="max-w-3xl mx-auto text-center">
             <Badge className="mb-4 bg-rose-100 text-rose-800 hover:bg-rose-100 text-sm px-4 py-1">
-              🇵🇭 For Filipino Creators 18+
+              🇵🇭 Philippines 18+ Only
             </Badge>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
               Start Creating Gay Content From Home in the Philippines
@@ -114,14 +123,14 @@ export default function PhilippinesRecruitment() {
           </div>
         </section>
 
-        {/* Start With What You Have */}
+        {/* Start With Your Phone */}
         <section className="py-12 px-4 sm:px-6 lg:px-8 bg-white">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-4">
-              Start with what you already have
+              Start with your phone
             </h2>
             <p className="text-center text-gray-600 mb-8 text-sm sm:text-base">
-              You don't need expensive equipment to begin. Most Filipino creators start with these basics:
+              You don't need expensive equipment to begin. Here's what you actually need:
             </p>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -130,8 +139,8 @@ export default function PhilippinesRecruitment() {
                   <div className="flex items-start gap-3">
                     <Smartphone className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
                     <div>
-                      <h4 className="font-semibold text-gray-900">Phone Camera</h4>
-                      <p className="text-sm text-gray-600">Any smartphone with 1080p video works</p>
+                      <h4 className="font-semibold text-gray-900">Smartphone</h4>
+                      <p className="text-sm text-gray-600">Any phone with 1080p camera works</p>
                     </div>
                   </div>
                 </CardContent>
@@ -154,8 +163,8 @@ export default function PhilippinesRecruitment() {
                   <div className="flex items-start gap-3">
                     <Lock className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
                     <div>
-                      <h4 className="font-semibold text-gray-900">Private Space</h4>
-                      <p className="text-sm text-gray-600">A room where you can film privately</p>
+                      <h4 className="font-semibold text-gray-900">Private Room</h4>
+                      <p className="text-sm text-gray-600">A space where you can film undisturbed</p>
                     </div>
                   </div>
                 </CardContent>
@@ -167,19 +176,31 @@ export default function PhilippinesRecruitment() {
                     <Wifi className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
                     <div>
                       <h4 className="font-semibold text-gray-900">Stable Internet</h4>
-                      <p className="text-sm text-gray-600">For uploading and communicating</p>
+                      <p className="text-sm text-gray-600">For uploading content and communication</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-rose-100 shadow-sm sm:col-span-2">
+              <Card className="border-rose-100 shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-3">
                     <FileCheck className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
                     <div>
                       <h4 className="font-semibold text-gray-900">Valid ID (18+)</h4>
-                      <p className="text-sm text-gray-600">Passport, driver's license, UMID, or any government ID</p>
+                      <p className="text-sm text-gray-600">Passport, driver's license, UMID, or government ID</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-rose-100 shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3">
+                    <Banknote className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Payment Method</h4>
+                      <p className="text-sm text-gray-600">GCash, Maya, bank account, or crypto wallet</p>
                     </div>
                   </div>
                 </CardContent>
@@ -192,70 +213,125 @@ export default function PhilippinesRecruitment() {
           </div>
         </section>
 
-        {/* Three Ways to Start */}
+        {/* How FLESHLAB Helps After Approval */}
         <section id="how-it-works" className="py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-rose-50">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-4">
-              Three ways to start
+              How FLESHLAB helps after approval
             </h2>
             <p className="text-center text-gray-600 mb-8 text-sm sm:text-base">
-              Choose the path that fits your situation
+              Step-by-step process from application to earning
             </p>
             
-            <div className="grid grid-cols-1 gap-4">
-              <Card className="border-rose-200 shadow-md">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <UserCheck className="h-5 w-5 text-rose-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg text-gray-900">Beginner / No Fanbase</h3>
-                      <p className="text-sm text-gray-600">Never created content before</p>
-                    </div>
+            <div className="relative">
+              {/* Timeline line */}
+              <div className="absolute left-4 sm:left-1/2 top-0 bottom-0 w-0.5 bg-rose-200 hidden sm:block"></div>
+              
+              <div className="space-y-4">
+                {/* Step 1 */}
+                <div className="relative flex items-start gap-4">
+                  <div className="w-8 h-8 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10">
+                    <span className="text-white text-sm font-bold">1</span>
                   </div>
-                  <p className="text-sm text-gray-700 mb-3">
-                    Start with our 60/40 Management Model. We help with everything: planning your content, setup, editing, publishing, and building your first fans. You focus on being comfortable on camera.
-                  </p>
-                  <Badge className="bg-rose-600 text-sm">Most common for first-timers</Badge>
-                </CardContent>
-              </Card>
+                  <Card className="flex-1 border-rose-100 shadow-sm">
+                    <CardContent className="pt-4">
+                      <h3 className="font-semibold text-gray-900 mb-1">Apply</h3>
+                      <p className="text-sm text-gray-600">Submit your application via WhatsApp or online form</p>
+                    </CardContent>
+                  </Card>
+                </div>
 
-              <Card className="border-rose-200 shadow-md">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Camera className="h-5 w-5 text-rose-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg text-gray-900">Existing Creator</h3>
-                      <p className="text-sm text-gray-600">Already have content or followers</p>
-                    </div>
+                {/* Step 2 */}
+                <div className="relative flex items-start gap-4">
+                  <div className="w-8 h-8 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10">
+                    <span className="text-white text-sm font-bold">2</span>
                   </div>
-                  <p className="text-sm text-gray-700 mb-3">
-                    Use our 70/30 Network Model. Keep 70% of revenue while we handle distribution, SEO, fanclub setup, and platform management. Upload your own content on your schedule.
-                  </p>
-                  <Badge className="bg-gray-700 text-sm">Best if you have audience</Badge>
-                </CardContent>
-              </Card>
+                  <Card className="flex-1 border-rose-100 shadow-sm">
+                    <CardContent className="pt-4">
+                      <h3 className="font-semibold text-gray-900 mb-1">Verify 18+</h3>
+                      <p className="text-sm text-gray-600">Upload valid government ID for age verification (KYC)</p>
+                    </CardContent>
+                  </Card>
+                </div>
 
-              <Card className="border-rose-200 shadow-md">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Users className="h-5 w-5 text-rose-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg text-gray-900">Cam Model</h3>
-                      <p className="text-sm text-gray-600">Already doing livecam shows</p>
-                    </div>
+                {/* Step 3 */}
+                <div className="relative flex items-start gap-4">
+                  <div className="w-8 h-8 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10">
+                    <span className="text-white text-sm font-bold">3</span>
                   </div>
-                  <p className="text-sm text-gray-700 mb-3">
-                    Add recorded content to your income streams. Use FLESHLAB as your content hub while continuing camming. Cross-promote to build multiple revenue sources.
-                  </p>
-                  <Badge className="bg-rose-600 text-sm">Hybrid approach</Badge>
-                </CardContent>
-              </Card>
+                  <Card className="flex-1 border-rose-100 shadow-sm">
+                    <CardContent className="pt-4">
+                      <h3 className="font-semibold text-gray-900 mb-1">Choose Model</h3>
+                      <p className="text-sm text-gray-600">Select 60/40 Management or 70/30 Network based on your needs</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Step 4 */}
+                <div className="relative flex items-start gap-4">
+                  <div className="w-8 h-8 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10">
+                    <span className="text-white text-sm font-bold">4</span>
+                  </div>
+                  <Card className="flex-1 border-rose-100 shadow-sm">
+                    <CardContent className="pt-4">
+                      <h3 className="font-semibold text-gray-900 mb-1">Set Up Profile</h3>
+                      <p className="text-sm text-gray-600">We help create your performer profile and fanclub page</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Step 5 */}
+                <div className="relative flex items-start gap-4">
+                  <div className="w-8 h-8 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10">
+                    <span className="text-white text-sm font-bold">5</span>
+                  </div>
+                  <Card className="flex-1 border-rose-100 shadow-sm">
+                    <CardContent className="pt-4">
+                      <h3 className="font-semibold text-gray-900 mb-1">Upload Content</h3>
+                      <p className="text-sm text-gray-600">Film and upload your first scenes from home</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Step 6 */}
+                <div className="relative flex items-start gap-4">
+                  <div className="w-8 h-8 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10">
+                    <span className="text-white text-sm font-bold">6</span>
+                  </div>
+                  <Card className="flex-1 border-rose-100 shadow-sm">
+                    <CardContent className="pt-4">
+                      <h3 className="font-semibold text-gray-900 mb-1">Publish</h3>
+                      <p className="text-sm text-gray-600">Content goes live after approval and quality check</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Step 7 */}
+                <div className="relative flex items-start gap-4">
+                  <div className="w-8 h-8 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10">
+                    <span className="text-white text-sm font-bold">7</span>
+                  </div>
+                  <Card className="flex-1 border-rose-100 shadow-sm">
+                    <CardContent className="pt-4">
+                      <h3 className="font-semibold text-gray-900 mb-1">Promote</h3>
+                      <p className="text-sm text-gray-600">We handle SEO, platform distribution, and marketing</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Step 8 */}
+                <div className="relative flex items-start gap-4">
+                  <div className="w-8 h-8 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 z-10">
+                    <span className="text-white text-sm font-bold">8</span>
+                  </div>
+                  <Card className="flex-1 border-rose-100 shadow-sm">
+                    <CardContent className="pt-4">
+                      <h3 className="font-semibold text-gray-900 mb-1">Track Earnings</h3>
+                      <p className="text-sm text-gray-600">Monitor your revenue and request weekly payouts</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -277,14 +353,14 @@ export default function PhilippinesRecruitment() {
                 onClick={() => handleRevenueModelClick("60-40-management")}
               >
                 <CardContent className="pt-6">
-                  <Badge className="mb-3 bg-rose-600">Best for Beginners</Badge>
+                  <Badge className="mb-3 bg-rose-600">For Beginners</Badge>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">60/40 Management Model</h3>
                   <div className="text-center mb-4 py-3 bg-rose-50 rounded-lg">
-                    <p className="text-4xl font-bold text-rose-600">40%</p>
-                    <p className="text-sm text-gray-600">Your Share | Studio 60%</p>
+                    <p className="text-3xl font-bold text-rose-600">Studio 60%</p>
+                    <p className="text-3xl font-bold text-rose-600">Performer 40%</p>
                   </div>
                   <p className="text-sm text-gray-700 mb-4">
-                    FLESHLAB handles setup, editing, publishing, promotion, and fanclub management. You focus on creating content.
+                    Best if you need help with setup, editing, publishing, promotion, and fanclub management. We handle the business side while you focus on creating.
                   </p>
                   <ul className="space-y-2 text-sm text-gray-700">
                     <li className="flex items-start gap-2">
@@ -305,7 +381,7 @@ export default function PhilippinesRecruitment() {
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                      <span>Graduate to 70/30 after 6 months</span>
+                      <span>Option to graduate to 70/30 later</span>
                     </li>
                   </ul>
                 </CardContent>
@@ -320,11 +396,11 @@ export default function PhilippinesRecruitment() {
                   <Badge className="mb-3 bg-gray-700">For Existing Creators</Badge>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">70/30 Network Model</h3>
                   <div className="text-center mb-4 py-3 bg-gray-50 rounded-lg">
-                    <p className="text-4xl font-bold text-gray-700">70%</p>
-                    <p className="text-sm text-gray-600">Your Share | Studio 30%</p>
+                    <p className="text-3xl font-bold text-gray-700">Performer 70%</p>
+                    <p className="text-3xl font-bold text-gray-700">Studio 30%</p>
                   </div>
                   <p className="text-sm text-gray-700 mb-4">
-                    You create and upload content. FLESHLAB provides the platform, SEO, distribution, and fanclub infrastructure.
+                    Best if you already have content, audience, or experience. Use FLESHLAB as an additional network and fanclub hub while keeping most revenue.
                   </p>
                   <ul className="space-y-2 text-sm text-gray-700">
                     <li className="flex items-start gap-2">
@@ -453,101 +529,143 @@ export default function PhilippinesRecruitment() {
           </div>
         </section>
 
-        {/* What You Can Create */}
-        <section className="py-12 px-4 sm:px-6 lg:px-8 bg-white">
+        {/* For Different Creator Types */}
+        <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-rose-50">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-4">
-              What you can create
+              For different creator types
             </h2>
             <p className="text-center text-gray-600 mb-8 text-sm sm:text-base">
-              Content types depend on your comfort level, boundaries, and approval
+              Different paths depending on your experience and goals
             </p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Card className="border-rose-100">
-                <CardContent className="pt-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Solo Content</h4>
-                  <p className="text-sm text-gray-600">Masturbation, showers, stripping, teasing</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Card className="border-rose-100 shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <UserCheck className="h-5 w-5 text-rose-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Beginner with Phone</h4>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Never created content before. Start with 60/40 Management Model. We help with everything from planning to publishing.
+                  </p>
                 </CardContent>
               </Card>
 
-              <Card className="border-rose-100">
-                <CardContent className="pt-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Couple Content</h4>
-                  <p className="text-sm text-gray-600">Partner scenes (with consent & approval)</p>
+              <Card className="border-rose-100 shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Camera className="h-5 w-5 text-rose-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Existing Amateur Creator</h4>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Already have some content or followers. Use 70/30 Network Model to expand your reach and add revenue streams.
+                  </p>
                 </CardContent>
               </Card>
 
-              <Card className="border-rose-100">
-                <CardContent className="pt-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Fanclub Clips</h4>
-                  <p className="text-sm text-gray-600">Exclusive content for subscribers</p>
+              <Card className="border-rose-100 shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Users className="h-5 w-5 text-rose-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Cam Model</h4>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Already doing livecam shows. Add recorded content as passive income while continuing your cam work.
+                  </p>
                 </CardContent>
               </Card>
 
-              <Card className="border-rose-100">
-                <CardContent className="pt-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Livecam Add-on</h4>
-                  <p className="text-sm text-gray-600">Recorded content to complement cam shows</p>
+              <Card className="border-rose-100 shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Heart className="h-5 w-5 text-rose-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Couple Creator</h4>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Create with a partner. Both must verify 18+ and consent. Content requires explicit approval from all parties.
+                  </p>
                 </CardContent>
               </Card>
 
-              <Card className="border-rose-100 sm:col-span-2">
-                <CardContent className="pt-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Guest Production</h4>
-                  <p className="text-sm text-gray-600">Only if verified, approved, and matches your boundaries</p>
+              <Card className="border-rose-100 shadow-sm sm:col-span-2">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Users className="h-5 w-5 text-rose-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Fanclub Creator</h4>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Build a subscriber base with exclusive monthly content. Recurring revenue from dedicated fans who want more.
+                  </p>
                 </CardContent>
               </Card>
-            </div>
-
-            <div className="mt-6 p-4 bg-rose-50 border border-rose-200 rounded-lg">
-              <p className="text-sm text-gray-700">
-                <strong className="text-rose-800">Important:</strong> Everything depends on your consent, comfort level, and explicit approval. You set your boundaries. Nothing is forced. All content goes through approval before publishing.
-              </p>
             </div>
           </div>
         </section>
 
-        {/* Payouts for Philippines */}
-        <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-rose-50">
+        {/* Philippines Payout Options */}
+        <section className="py-12 px-4 sm:px-6 lg:px-8 bg-white">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-4">
-              Payouts for Philippines
+              Philippines payout options
             </h2>
+            <p className="text-center text-gray-600 mb-8 text-sm sm:text-base">
+              Multiple payment methods available (subject to confirmation)
+            </p>
             
             <Card className="border-rose-200 shadow-md mb-6">
               <CardContent className="pt-6">
                 <div className="flex items-start gap-3 mb-4">
-                  <CreditCard className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
+                  <Banknote className="h-6 w-6 text-rose-600 flex-shrink-0 mt-1" />
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Payment Methods</h3>
+                    <h3 className="font-semibold text-gray-900 mb-3">Available Methods</h3>
                     <div className="flex flex-wrap gap-2">
-                      <Badge className="bg-blue-100 text-blue-800">GCash</Badge>
-                      <Badge className="bg-purple-100 text-purple-800">Maya</Badge>
-                      <Badge className="bg-red-100 text-red-800">BDO</Badge>
-                      <Badge className="bg-blue-200 text-blue-900">BPI</Badge>
-                      <Badge className="bg-orange-100 text-orange-800">UnionBank</Badge>
-                      <Badge className="bg-green-100 text-green-800">Crypto (USDT)</Badge>
+                      <Badge className="bg-blue-100 text-blue-800 text-sm px-3 py-1">GCash</Badge>
+                      <Badge className="bg-purple-100 text-purple-800 text-sm px-3 py-1">Maya</Badge>
+                      <Badge className="bg-red-100 text-red-800 text-sm px-3 py-1">BDO</Badge>
+                      <Badge className="bg-blue-200 text-blue-900 text-sm px-3 py-1">BPI</Badge>
+                      <Badge className="bg-orange-100 text-orange-800 text-sm px-3 py-1">UnionBank</Badge>
+                      <Badge className="bg-green-100 text-green-800 text-sm px-3 py-1">Crypto (USDT)</Badge>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
                   <div className="p-3 bg-rose-50 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Currency</p>
-                    <p className="font-semibold text-gray-900">PHP or USD equivalent</p>
+                    <p className="text-xs text-gray-600 mb-1">Currency</p>
+                    <p className="font-semibold text-gray-900 text-sm">PHP or USD equivalent</p>
                   </div>
                   <div className="p-3 bg-rose-50 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Schedule</p>
-                    <p className="font-semibold text-gray-900">Weekly payouts</p>
+                    <p className="text-xs text-gray-600 mb-1">Schedule</p>
+                    <p className="font-semibold text-gray-900 text-sm">Weekly payouts</p>
                   </div>
                   <div className="p-3 bg-rose-50 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Exchange Rate</p>
-                    <p className="font-semibold text-gray-900">Market rate at payout</p>
+                    <p className="text-xs text-gray-600 mb-1">Exchange Rate</p>
+                    <p className="font-semibold text-gray-900 text-sm">Market rate at payout</p>
                   </div>
                   <div className="p-3 bg-rose-50 rounded-lg">
-                    <p className="text-sm text-gray-600 mb-1">Minimum</p>
-                    <p className="font-semibold text-gray-900">Contact for details</p>
+                    <p className="text-xs text-gray-600 mb-1">Payment Method</p>
+                    <p className="font-semibold text-gray-900 text-sm">Confirmed during onboarding</p>
                   </div>
                 </div>
               </CardContent>
@@ -555,85 +673,65 @@ export default function PhilippinesRecruitment() {
 
             <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-sm text-gray-700">
-                <strong className="text-yellow-800">Important:</strong> Income is not guaranteed. Earnings depend on content consistency, quality, audience demand, platform performance, and your activity level. Some creators earn modestly, others build significant income. Your results vary based on your work.
+                <strong className="text-yellow-800">Important:</strong> Income is not guaranteed. Earnings depend on content consistency, quality, audience demand, platform performance, and your activity level. Some creators earn modestly, others build more. Your results vary based on your work and commitment.
               </p>
             </div>
           </div>
         </section>
 
         {/* Privacy, Consent and Safety */}
-        <section className="py-12 px-4 sm:px-6 lg:px-8 bg-white">
+        <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-rose-50">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-4">
               Privacy, consent and safety
             </h2>
             <p className="text-center text-gray-600 mb-8 text-sm sm:text-base">
-              Your safety and consent come first
+              Clear requirements and protections
             </p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Card className="border-green-100 shadow-sm">
-                <CardContent className="pt-6">
+            <Card className="border-green-100 shadow-md mb-6">
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex items-start gap-3">
                     <Shield className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
                       <h4 className="font-semibold text-gray-900">Verified 18+ Only</h4>
-                      <p className="text-sm text-gray-600">Valid government ID required</p>
+                      <p className="text-sm text-gray-600">Valid government ID required before any publishing</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
 
-              <Card className="border-green-100 shadow-sm">
-                <CardContent className="pt-6">
                   <div className="flex items-start gap-3">
                     <FileCheck className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
                       <h4 className="font-semibold text-gray-900">KYC Process</h4>
-                      <p className="text-sm text-gray-600">Identity verification before publishing</p>
+                      <p className="text-sm text-gray-600">Identity verification required</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
 
-              <Card className="border-green-100 shadow-sm">
-                <CardContent className="pt-6">
                   <div className="flex items-start gap-3">
                     <Heart className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
                       <h4 className="font-semibold text-gray-900">Your Boundaries</h4>
-                      <p className="text-sm text-gray-600">You decide what you're comfortable with</p>
+                      <p className="text-sm text-gray-600">You decide what you're comfortable creating</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
 
-              <Card className="border-green-100 shadow-sm">
-                <CardContent className="pt-6">
                   <div className="flex items-start gap-3">
                     <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
                       <h4 className="font-semibold text-gray-900">Explicit Consent</h4>
-                      <p className="text-sm text-gray-600">Written approval for all content</p>
+                      <p className="text-sm text-gray-600">Written approval required for all content</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
 
-              <Card className="border-green-100 shadow-sm">
-                <CardContent className="pt-6">
                   <div className="flex items-start gap-3">
                     <Lock className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
                       <h4 className="font-semibold text-gray-900">No Forced Content</h4>
-                      <p className="text-sm text-gray-600">Nothing you don't explicitly approve</p>
+                      <p className="text-sm text-gray-600">Nothing published without your approval</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
 
-              <Card className="border-green-100 shadow-sm">
-                <CardContent className="pt-6">
                   <div className="flex items-start gap-3">
                     <Shield className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                     <div>
@@ -641,13 +739,29 @@ export default function PhilippinesRecruitment() {
                       <p className="text-sm text-gray-600">Strict 18+ policy enforced</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
 
-            <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-start gap-3 sm:col-span-2">
+                    <Eye className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
+                    <div>
+                      <h4 className="font-semibold text-gray-900">Performer Approval</h4>
+                      <p className="text-sm text-gray-600">All content reviewed and approved by you before publishing</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 sm:col-span-2">
+                    <UserCheck className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
+                    <div>
+                      <h4 className="font-semibold text-gray-900">No Guaranteed Acceptance</h4>
+                      <p className="text-sm text-gray-600">Applications reviewed individually. Not all applicants accepted.</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-sm text-gray-700">
-                <strong className="text-green-800">2257 Compliance:</strong> All performers must provide valid government-issued ID proving age 18+. Records are kept per international compliance requirements.
+                <strong className="text-green-800">2257 Compliance:</strong> All performers must provide valid government-issued ID proving age 18+. Records kept per international compliance requirements.
               </p>
             </div>
           </div>
