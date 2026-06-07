@@ -427,13 +427,7 @@ export default function PhilippinesRecruitment() {
             alt="Dark neon background"
             className="absolute inset-0 w-full h-full object-cover"
           />
-          {/* Dark Overlay */}
-          <div 
-            className="absolute inset-0"
-            style={{
-              background: 'linear-gradient(180deg, rgba(10,10,10,0.92) 0%, rgba(10,10,10,0.88) 50%, rgba(10,10,10,0.95) 100%)',
-            }}
-          />
+
           
           <div className="max-w-7xl mx-auto relative z-10">
             <div className="relative z-10">
