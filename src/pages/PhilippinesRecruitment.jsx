@@ -67,7 +67,7 @@ export default function PhilippinesRecruitment() {
   };
 
   // AI-generated visuals for Filipino creator representation
-  const heroImage = "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2005_50_08.png";
+  const heroImage = "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2006_33_23.png";
   const setupImage = "https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2006_13_39.png";
 
   return (
@@ -445,63 +445,59 @@ export default function PhilippinesRecruitment() {
         </section>
 
         {/* Choose Your Creator Path - Neon Creator Cards with Background Images */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden" style={{ backgroundColor: '#0a0a0a' }}>
-          {/* Dark Gradient Background with Neon Accents */}
+        <section className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+          {/* Background Image */}
+          <img 
+            src="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2006_33_23.png"
+            alt="Dark neon background"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Dark Overlay */}
           <div 
             className="absolute inset-0"
             style={{
-              background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%)',
+              background: 'linear-gradient(180deg, rgba(10,10,10,0.92) 0%, rgba(10,10,10,0.88) 50%, rgba(10,10,10,0.95) 100%)',
             }}
           />
-          {/* Blurred Neon Orbs */}
-          <div className="absolute top-20 left-10 w-64 h-64 bg-rose-600/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-10 w-80 h-80 bg-purple-600/15 rounded-full blur-3xl" />
-          
-          {/* FLESHLAB Neon Logo - Top Right */}
-          <div className="absolute top-8 right-8 z-20 font-black text-2xl tracking-wider" style={{
-            color: '#ff00ff',
-            textShadow: '0 0 20px #ff00ff, 0 0 40px #ff00ff'
-          }}>
-            FLESH<br/>LAB
-          </div>
           
           <div className="max-w-7xl mx-auto relative z-10">
-            <Badge className="mb-4 inline-block bg-rose-600/20 text-rose-400 text-xs font-bold px-3 py-1.5 border border-rose-500/30">
-              ★ CHOOSE YOUR PATH
-            </Badge>
-            
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-3 leading-tight">
-              <span style={{ color: 'white' }}>Which </span>
-              <span style={{ background: 'linear-gradient(90deg, #ff00ff 0%, #ff4d94 50%, #ff9d2e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>creator type</span>
-              <span style={{ color: 'white' }}> are you?</span>
-            </h2>
-            
-            <p className="text-center text-gray-300 mb-12 text-base max-w-2xl mx-auto">
-              Whether you're starting with a phone or already have fans, FLESHLAB helps you choose the right support model.
-            </p>
+            <div className="relative z-10">
+              <Badge className="mb-4 inline-block bg-rose-600/20 text-rose-400 text-xs font-bold px-3 py-1.5 border border-rose-500/30">
+                ★ CHOOSE YOUR PATH
+              </Badge>
+              
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-center mb-3 leading-tight">
+                <span style={{ color: 'white' }}>Which </span>
+                <span style={{ background: 'linear-gradient(90deg, #ff00ff 0%, #ff4d94 50%, #ff9d2e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>creator type</span>
+                <span style={{ color: 'white' }}> are you?</span>
+              </h2>
+              
+              <p className="text-center text-gray-300 mb-12 text-base max-w-2xl mx-auto">
+                Whether you're starting with a phone or already have fans, FLESHLAB helps you choose the right support model.
+              </p>
             
             {/* 5 Creator Path Cards with Background Images */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-12 relative z-10">
               {/* Beginner with Phone */}
               <div 
                 className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all hover:-translate-y-2 hover:shadow-2xl h-80"
                 style={{
-                  border: '2px solid rgba(225, 70, 100, 0.6)',
-                  boxShadow: '0 0 20px rgba(225, 70, 100, 0.4)'
+                  border: '2px solid rgba(225, 70, 100, 0.8)',
+                  boxShadow: '0 0 25px rgba(225, 70, 100, 0.5), inset 0 0 20px rgba(225, 70, 100, 0.1)'
                 }}
               >
                 <img 
                   src="https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=400&h=500&fit=crop"
                   alt="Beginner Creator"
-                  className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity"
+                  className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-                <div className="absolute inset-0 p-6 flex flex-col justify-between relative z-10">
-                  <Smartphone className="h-8 w-8 text-rose-400" style={{ textShadow: '0 0 10px rgba(225, 70, 100, 0.8)' }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                <div className="absolute inset-0 p-5 flex flex-col justify-between relative z-10">
+                  <Smartphone className="h-7 w-7 text-rose-400" style={{ textShadow: '0 0 12px rgba(225, 70, 100, 0.9)' }} />
                   <div>
-                    <h3 className="font-bold text-white text-xl mb-2">Beginner with Phone</h3>
-                    <p className="text-gray-200 text-xs mb-3 leading-relaxed">Never created before? Start with your phone, private space and full setup support.</p>
-                    <Badge className="bg-rose-600 text-white text-xs font-semibold">60/40 Management</Badge>
+                    <h3 className="font-bold text-white text-lg mb-1.5">Beginner with Phone</h3>
+                    <p className="text-gray-100 text-[11px] mb-2.5 leading-relaxed">Never created before? Start with your phone, private space and full setup support.</p>
+                    <Badge className="bg-rose-600 text-white text-[10px] font-semibold">60/40 Management</Badge>
                   </div>
                 </div>
               </div>
@@ -510,22 +506,22 @@ export default function PhilippinesRecruitment() {
               <div 
                 className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all hover:-translate-y-2 hover:shadow-2xl h-80"
                 style={{
-                  border: '2px solid rgba(245, 158, 11, 0.6)',
-                  boxShadow: '0 0 20px rgba(245, 158, 11, 0.4)'
+                  border: '2px solid rgba(245, 158, 11, 0.8)',
+                  boxShadow: '0 0 25px rgba(245, 158, 11, 0.5), inset 0 0 20px rgba(245, 158, 11, 0.1)'
                 }}
               >
                 <img 
                   src="https://images.unsplash.com/photo-1533314311201-bb0f0e2e2518?w=400&h=500&fit=crop"
                   alt="Existing Creator"
-                  className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity"
+                  className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-                <div className="absolute inset-0 p-6 flex flex-col justify-between relative z-10">
-                  <Camera className="h-8 w-8 text-amber-400" style={{ textShadow: '0 0 10px rgba(245, 158, 11, 0.8)' }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                <div className="absolute inset-0 p-5 flex flex-col justify-between relative z-10">
+                  <Camera className="h-7 w-7 text-amber-400" style={{ textShadow: '0 0 12px rgba(245, 158, 11, 0.9)' }} />
                   <div>
-                    <h3 className="font-bold text-white text-xl mb-2">Existing Creator</h3>
-                    <p className="text-gray-200 text-xs mb-3 leading-relaxed">Have clips or followers already? Add FLESHLAB as your fanclub and distribution hub.</p>
-                    <Badge className="bg-amber-600 text-white text-xs font-semibold">70/30 Network</Badge>
+                    <h3 className="font-bold text-white text-lg mb-1.5">Existing Creator</h3>
+                    <p className="text-gray-100 text-[11px] mb-2.5 leading-relaxed">Have clips or followers already? Add FLESHLAB as your fanclub and distribution hub.</p>
+                    <Badge className="bg-amber-600 text-white text-[10px] font-semibold">70/30 Network</Badge>
                   </div>
                 </div>
               </div>
@@ -534,22 +530,22 @@ export default function PhilippinesRecruitment() {
               <div 
                 className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all hover:-translate-y-2 hover:shadow-2xl h-80"
                 style={{
-                  border: '2px solid rgba(168, 85, 247, 0.6)',
-                  boxShadow: '0 0 20px rgba(168, 85, 247, 0.4)'
+                  border: '2px solid rgba(168, 85, 247, 0.8)',
+                  boxShadow: '0 0 25px rgba(168, 85, 247, 0.5), inset 0 0 20px rgba(168, 85, 247, 0.1)'
                 }}
               >
                 <img 
                   src="https://images.unsplash.com/photo-1526305851911-c6b80f714255?w=400&h=500&fit=crop"
                   alt="Cam Model"
-                  className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity"
+                  className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-                <div className="absolute inset-0 p-6 flex flex-col justify-between relative z-10">
-                  <Zap className="h-8 w-8 text-purple-400" style={{ textShadow: '0 0 10px rgba(168, 85, 247, 0.8)' }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                <div className="absolute inset-0 p-5 flex flex-col justify-between relative z-10">
+                  <Zap className="h-7 w-7 text-purple-400" style={{ textShadow: '0 0 12px rgba(168, 85, 247, 0.9)' }} />
                   <div>
-                    <h3 className="font-bold text-white text-xl mb-2">Cam Model</h3>
-                    <p className="text-gray-200 text-xs mb-3 leading-relaxed">Already on Chaturbate, Bigo or other cam sites? Turn live viewers into long-term fans.</p>
-                    <Badge className="bg-purple-600 text-white text-xs font-semibold">Hybrid Model</Badge>
+                    <h3 className="font-bold text-white text-lg mb-1.5">Cam Model</h3>
+                    <p className="text-gray-100 text-[11px] mb-2.5 leading-relaxed">Already on Chaturbate, Bigo or other cam sites? Turn live viewers into long-term fans.</p>
+                    <Badge className="bg-purple-600 text-white text-[10px] font-semibold">Hybrid Model</Badge>
                   </div>
                 </div>
               </div>
@@ -558,22 +554,22 @@ export default function PhilippinesRecruitment() {
               <div 
                 className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all hover:-translate-y-2 hover:shadow-2xl h-80"
                 style={{
-                  border: '2px solid rgba(236, 72, 153, 0.6)',
-                  boxShadow: '0 0 20px rgba(236, 72, 153, 0.4)'
+                  border: '2px solid rgba(236, 72, 153, 0.8)',
+                  boxShadow: '0 0 25px rgba(236, 72, 153, 0.5), inset 0 0 20px rgba(236, 72, 153, 0.1)'
                 }}
               >
                 <img 
                   src="https://images.unsplash.com/photo-1535016120754-fd45c1d54fce?w=400&h=500&fit=crop"
                   alt="Couple Creator"
-                  className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity"
+                  className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-                <div className="absolute inset-0 p-6 flex flex-col justify-between relative z-10">
-                  <Heart className="h-8 w-8 text-pink-400" style={{ textShadow: '0 0 10px rgba(236, 72, 153, 0.8)' }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                <div className="absolute inset-0 p-5 flex flex-col justify-between relative z-10">
+                  <Heart className="h-7 w-7 text-pink-400" style={{ textShadow: '0 0 12px rgba(236, 72, 153, 0.9)' }} />
                   <div>
-                    <h3 className="font-bold text-white text-xl mb-2">Couple Creator</h3>
-                    <p className="text-gray-200 text-xs mb-3 leading-relaxed">Create with a partner. Both must verify 18+ and approve every scene.</p>
-                    <Badge className="bg-pink-600 text-white text-xs font-semibold">Both Verify 18+</Badge>
+                    <h3 className="font-bold text-white text-lg mb-1.5">Couple Creator</h3>
+                    <p className="text-gray-100 text-[11px] mb-2.5 leading-relaxed">Create with a partner. Both must verify 18+ and approve every scene.</p>
+                    <Badge className="bg-pink-600 text-white text-[10px] font-semibold">Both Verify 18+</Badge>
                   </div>
                 </div>
               </div>
@@ -582,22 +578,22 @@ export default function PhilippinesRecruitment() {
               <div 
                 className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all hover:-translate-y-2 hover:shadow-2xl h-80"
                 style={{
-                  border: '2px solid rgba(225, 70, 100, 0.6)',
-                  boxShadow: '0 0 20px rgba(225, 70, 100, 0.4)'
+                  border: '2px solid rgba(225, 70, 100, 0.8)',
+                  boxShadow: '0 0 25px rgba(225, 70, 100, 0.5), inset 0 0 20px rgba(225, 70, 100, 0.1)'
                 }}
               >
                 <img 
                   src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400&h=500&fit=crop"
                   alt="Fanclub Creator"
-                  className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity"
+                  className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-                <div className="absolute inset-0 p-6 flex flex-col justify-between relative z-10">
-                  <Star className="h-8 w-8 text-rose-400" style={{ textShadow: '0 0 10px rgba(225, 70, 100, 0.8)' }} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                <div className="absolute inset-0 p-5 flex flex-col justify-between relative z-10">
+                  <Star className="h-7 w-7 text-rose-400" style={{ textShadow: '0 0 12px rgba(225, 70, 100, 0.9)' }} />
                   <div>
-                    <h3 className="font-bold text-white text-xl mb-2">Fanclub Creator</h3>
-                    <p className="text-gray-200 text-xs mb-3 leading-relaxed">Build recurring monthly income with exclusive clips, updates and supporter perks.</p>
-                    <Badge className="bg-rose-600 text-white text-xs font-semibold">Fanclub Setup</Badge>
+                    <h3 className="font-bold text-white text-lg mb-1.5">Fanclub Creator</h3>
+                    <p className="text-gray-100 text-[11px] mb-2.5 leading-relaxed">Build recurring monthly income with exclusive clips, updates and supporter perks.</p>
+                    <Badge className="bg-rose-600 text-white text-[10px] font-semibold">Fanclub Setup</Badge>
                   </div>
                 </div>
               </div>
@@ -605,11 +601,11 @@ export default function PhilippinesRecruitment() {
 
             {/* Trust & Support Section */}
             <div 
-              className="p-8 rounded-2xl mb-8 backdrop-blur-sm relative"
+              className="p-8 rounded-2xl mb-8 backdrop-blur-sm relative z-10"
               style={{
                 background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                boxShadow: '0 10px 40px rgba(0,0,0,0.3)'
+                border: '1px solid rgba(255,255,255,0.15)',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.4), 0 0 30px rgba(225, 70, 100, 0.15)'
               }}
             >
               <div className="flex items-center justify-between mb-6">
@@ -665,6 +661,7 @@ export default function PhilippinesRecruitment() {
                   <span>Payouts in PHP</span>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </section>
