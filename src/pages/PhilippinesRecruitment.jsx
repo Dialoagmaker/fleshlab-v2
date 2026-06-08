@@ -936,7 +936,7 @@ export default function PhilippinesRecruitment() {
                 <div className="relative rounded-2xl overflow-hidden"
                   style={{ border: '1px solid rgba(244,63,94,0.25)', boxShadow: '0 0 60px rgba(244,63,94,0.15)' }}>
                   <img 
-                    src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/16a87eab2_generated_image.png"
+                    src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/f4d689124_generated_image.png"
                     alt="FLESHLAB creator dashboard"
                     className="w-full object-cover"
                     style={{ aspectRatio: '4/3' }}
