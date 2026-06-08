@@ -205,8 +205,8 @@ const AuthenticatedApp = () => {
 
   // Static public pages - MUST be before auth checks
   if (path === "/robots.txt") {
-    // Custom robots.txt served by backend function
-    window.location.href = '/api/functions/serveRobotsTxt';
+    // Static file served from public/robots.txt
+    // No need to handle - Vite serves static files from public/ folder automatically
     return null;
   }
 
