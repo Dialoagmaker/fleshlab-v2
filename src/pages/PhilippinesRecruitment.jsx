@@ -450,24 +450,45 @@ export default function PhilippinesRecruitment() {
               
               {/* Card 1: Beginner with Phone (Orange Glow) */}
               <div 
-                className="relative rounded-[24px] overflow-hidden border-2 border-orange-500/50 flex flex-col justify-between min-h-[400px] hover:border-orange-400/90 hover:shadow-[0_0_40px_rgba(249,115,22,0.45)] transition-all duration-300 group cursor-pointer"
+                className="relative rounded-[24px] overflow-hidden flex flex-col justify-between min-h-[480px] transition-all duration-300 cursor-pointer group"
                 style={{
-                  backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.92) 100%), url('https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/ed31506ef_generated_image.png')`,
+                  backgroundImage: `url('https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/e98b09671_generated_image.png')`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center top',
-                  boxShadow: '0 0 20px rgba(249,115,22,0.2), inset 0 0 0 1px rgba(249,115,22,0.15)'
+                  border: '2px solid rgba(249,115,22,0.6)',
+                  boxShadow: '0 0 30px rgba(249,115,22,0.35), inset 0 0 60px rgba(249,115,22,0.05)'
                 }}
               >
-                <div className="p-6">
-                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-orange-500/60 bg-black/50 mb-auto shadow-[0_0_20px_rgba(249,115,22,0.5)] backdrop-blur-sm">
+                {/* Dark gradient overlay - transparent top, dark bottom */}
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.1) 35%, rgba(0,0,0,0.75) 60%, rgba(0,0,0,0.96) 100%)' }} />
+                
+                {/* Icon top-left with neon circle outline */}
+                <div className="relative z-10 p-5">
+                  <div className="h-12 w-12 rounded-full flex items-center justify-center"
+                    style={{
+                      border: '2px solid rgba(249,115,22,0.9)',
+                      boxShadow: '0 0 16px rgba(249,115,22,0.7), 0 0 32px rgba(249,115,22,0.3)',
+                      background: 'rgba(0,0,0,0.4)',
+                      backdropFilter: 'blur(4px)'
+                    }}
+                  >
                     <Smartphone className="h-5 w-5 text-orange-400" />
                   </div>
                 </div>
-                <div className="p-6 pt-0">
-                  <h3 className="font-extrabold text-white text-[20px] leading-tight mb-2">Beginner with Phone</h3>
-                  <p className="text-gray-300 text-xs leading-relaxed mb-5">Never created before? Start with your phone, private space and full setup support.</p>
-                  <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs text-orange-400 border border-orange-500/50 bg-black/40 backdrop-blur-sm uppercase tracking-wider hover:bg-orange-500/20 transition-all">
-                    <Shield className="h-3.5 w-3.5" />
+
+                {/* Bottom content */}
+                <div className="relative z-10 p-5 pt-0">
+                  <h3 className="font-black text-white leading-[1.1] mb-2" style={{ fontSize: 'clamp(22px, 3vw, 28px)' }}>Beginner<br />with Phone</h3>
+                  <p className="text-gray-300 text-sm leading-relaxed mb-4">Never created before? Start with your phone, private space and full setup support.</p>
+                  <div 
+                    className="w-full flex items-center justify-center gap-2.5 py-3 rounded-2xl font-bold text-sm text-orange-300 transition-all group-hover:bg-orange-900/60"
+                    style={{
+                      background: 'rgba(60,25,0,0.75)',
+                      border: '1px solid rgba(249,115,22,0.5)',
+                      backdropFilter: 'blur(8px)'
+                    }}
+                  >
+                    <Shield className="h-4 w-4 text-orange-400" />
                     60/40 Management
                   </div>
                 </div>
@@ -475,24 +496,30 @@ export default function PhilippinesRecruitment() {
 
               {/* Card 2: Existing Creator (Pink Glow) */}
               <div 
-                className="relative rounded-[24px] overflow-hidden border-2 border-rose-500/50 flex flex-col justify-between min-h-[400px] hover:border-rose-400/90 hover:shadow-[0_0_40px_rgba(244,63,94,0.45)] transition-all duration-300 group cursor-pointer"
+                className="relative rounded-[24px] overflow-hidden flex flex-col justify-between min-h-[480px] transition-all duration-300 cursor-pointer group"
                 style={{
-                  backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.92) 100%), url('https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/c8392743d_generated_image.png')`,
+                  backgroundImage: `url('https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/11a24a421_generated_image.png')`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center top',
-                  boxShadow: '0 0 20px rgba(244,63,94,0.2), inset 0 0 0 1px rgba(244,63,94,0.15)'
+                  border: '2px solid rgba(244,63,94,0.6)',
+                  boxShadow: '0 0 30px rgba(244,63,94,0.35), inset 0 0 60px rgba(244,63,94,0.05)'
                 }}
               >
-                <div className="p-6">
-                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-rose-500/60 bg-black/50 mb-auto shadow-[0_0_20px_rgba(244,63,94,0.5)] backdrop-blur-sm">
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.1) 35%, rgba(0,0,0,0.75) 60%, rgba(0,0,0,0.96) 100%)' }} />
+                <div className="relative z-10 p-5">
+                  <div className="h-12 w-12 rounded-full flex items-center justify-center"
+                    style={{ border: '2px solid rgba(244,63,94,0.9)', boxShadow: '0 0 16px rgba(244,63,94,0.7), 0 0 32px rgba(244,63,94,0.3)', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
+                  >
                     <Camera className="h-5 w-5 text-rose-400" />
                   </div>
                 </div>
-                <div className="p-6 pt-0">
-                  <h3 className="font-extrabold text-white text-[20px] leading-tight mb-2">Existing Creator</h3>
-                  <p className="text-gray-300 text-xs leading-relaxed mb-5">Have clips or followers already? Add FLESHLAB as your fanclub and distribution hub.</p>
-                  <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs text-rose-400 border border-rose-500/50 bg-black/40 backdrop-blur-sm uppercase tracking-wider hover:bg-rose-500/20 transition-all">
-                    <Share2 className="h-3.5 w-3.5" />
+                <div className="relative z-10 p-5 pt-0">
+                  <h3 className="font-black text-white leading-[1.1] mb-2" style={{ fontSize: 'clamp(22px, 3vw, 28px)' }}>Existing<br />Creator</h3>
+                  <p className="text-gray-300 text-sm leading-relaxed mb-4">Have clips or followers already? Add FLESHLAB as your fanclub and distribution hub.</p>
+                  <div className="w-full flex items-center justify-center gap-2.5 py-3 rounded-2xl font-bold text-sm text-rose-300 transition-all group-hover:bg-rose-900/60"
+                    style={{ background: 'rgba(60,0,15,0.75)', border: '1px solid rgba(244,63,94,0.5)', backdropFilter: 'blur(8px)' }}
+                  >
+                    <Share2 className="h-4 w-4 text-rose-400" />
                     70/30 Network
                   </div>
                 </div>
@@ -500,24 +527,30 @@ export default function PhilippinesRecruitment() {
 
               {/* Card 3: Cam Model (Purple Glow) */}
               <div 
-                className="relative rounded-[24px] overflow-hidden border-2 border-purple-500/50 flex flex-col justify-between min-h-[400px] hover:border-purple-400/90 hover:shadow-[0_0_40px_rgba(168,85,247,0.45)] transition-all duration-300 group cursor-pointer"
+                className="relative rounded-[24px] overflow-hidden flex flex-col justify-between min-h-[480px] transition-all duration-300 cursor-pointer group"
                 style={{
-                  backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.92) 100%), url('https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/11f26b1a2_generated_image.png')`,
+                  backgroundImage: `url('https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/e541eedd1_generated_image.png')`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center top',
-                  boxShadow: '0 0 20px rgba(168,85,247,0.2), inset 0 0 0 1px rgba(168,85,247,0.15)'
+                  border: '2px solid rgba(168,85,247,0.6)',
+                  boxShadow: '0 0 30px rgba(168,85,247,0.35), inset 0 0 60px rgba(168,85,247,0.05)'
                 }}
               >
-                <div className="p-6">
-                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-purple-500/60 bg-black/50 mb-auto shadow-[0_0_20px_rgba(168,85,247,0.5)] backdrop-blur-sm">
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.1) 35%, rgba(0,0,0,0.75) 60%, rgba(0,0,0,0.96) 100%)' }} />
+                <div className="relative z-10 p-5">
+                  <div className="h-12 w-12 rounded-full flex items-center justify-center"
+                    style={{ border: '2px solid rgba(168,85,247,0.9)', boxShadow: '0 0 16px rgba(168,85,247,0.7), 0 0 32px rgba(168,85,247,0.3)', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
+                  >
                     <Play className="h-5 w-5 text-purple-400" />
                   </div>
                 </div>
-                <div className="p-6 pt-0">
-                  <h3 className="font-extrabold text-white text-[20px] leading-tight mb-2">Cam Model</h3>
-                  <p className="text-gray-300 text-xs leading-relaxed mb-5">Already on Chaturbate, Bigo or other cam sites? Turn live viewers into long-term fans.</p>
-                  <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs text-purple-400 border border-purple-500/50 bg-black/40 backdrop-blur-sm uppercase tracking-wider hover:bg-purple-500/20 transition-all">
-                    <Zap className="h-3.5 w-3.5" />
+                <div className="relative z-10 p-5 pt-0">
+                  <h3 className="font-black text-white leading-[1.1] mb-2" style={{ fontSize: 'clamp(22px, 3vw, 28px)' }}>Cam<br />Model</h3>
+                  <p className="text-gray-300 text-sm leading-relaxed mb-4">Already on Chaturbate, Bigo or other cam sites? Turn live viewers into long-term fans.</p>
+                  <div className="w-full flex items-center justify-center gap-2.5 py-3 rounded-2xl font-bold text-sm text-purple-300 transition-all group-hover:bg-purple-900/60"
+                    style={{ background: 'rgba(25,0,50,0.75)', border: '1px solid rgba(168,85,247,0.5)', backdropFilter: 'blur(8px)' }}
+                  >
+                    <Zap className="h-4 w-4 text-purple-400" />
                     Hybrid Model
                   </div>
                 </div>
@@ -525,24 +558,30 @@ export default function PhilippinesRecruitment() {
 
               {/* Card 4: Couple Creator (Crimson Glow) */}
               <div 
-                className="relative rounded-[24px] overflow-hidden border-2 border-[#ff0055]/50 flex flex-col justify-between min-h-[400px] hover:border-[#ff0055]/90 hover:shadow-[0_0_40px_rgba(255,0,85,0.45)] transition-all duration-300 group cursor-pointer"
+                className="relative rounded-[24px] overflow-hidden flex flex-col justify-between min-h-[480px] transition-all duration-300 cursor-pointer group"
                 style={{
-                  backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.92) 100%), url('https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/fafc949f8_generated_image.png')`,
+                  backgroundImage: `url('https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/baa4098e9_generated_image.png')`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center top',
-                  boxShadow: '0 0 20px rgba(255,0,85,0.2), inset 0 0 0 1px rgba(255,0,85,0.15)'
+                  border: '2px solid rgba(255,0,85,0.6)',
+                  boxShadow: '0 0 30px rgba(255,0,85,0.35), inset 0 0 60px rgba(255,0,85,0.05)'
                 }}
               >
-                <div className="p-6">
-                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-[#ff0055]/60 bg-black/50 mb-auto shadow-[0_0_20px_rgba(255,0,85,0.5)] backdrop-blur-sm">
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.1) 35%, rgba(0,0,0,0.75) 60%, rgba(0,0,0,0.96) 100%)' }} />
+                <div className="relative z-10 p-5">
+                  <div className="h-12 w-12 rounded-full flex items-center justify-center"
+                    style={{ border: '2px solid rgba(255,0,85,0.9)', boxShadow: '0 0 16px rgba(255,0,85,0.7), 0 0 32px rgba(255,0,85,0.3)', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
+                  >
                     <Users className="h-5 w-5 text-rose-400" />
                   </div>
                 </div>
-                <div className="p-6 pt-0">
-                  <h3 className="font-extrabold text-white text-[20px] leading-tight mb-2">Couple Creator</h3>
-                  <p className="text-gray-300 text-xs leading-relaxed mb-5">Create with a partner. Both must verify 18+ and approve every scene.</p>
-                  <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs text-rose-400 border border-[#ff0055]/50 bg-black/40 backdrop-blur-sm uppercase tracking-wider hover:bg-rose-500/20 transition-all">
-                    <Shield className="h-3.5 w-3.5" />
+                <div className="relative z-10 p-5 pt-0">
+                  <h3 className="font-black text-white leading-[1.1] mb-2" style={{ fontSize: 'clamp(22px, 3vw, 28px)' }}>Couple<br />Creator</h3>
+                  <p className="text-gray-300 text-sm leading-relaxed mb-4">Create with a partner. Both must verify 18+ and approve every scene.</p>
+                  <div className="w-full flex items-center justify-center gap-2.5 py-3 rounded-2xl font-bold text-sm text-rose-300 transition-all group-hover:bg-rose-900/60"
+                    style={{ background: 'rgba(60,0,20,0.75)', border: '1px solid rgba(255,0,85,0.5)', backdropFilter: 'blur(8px)' }}
+                  >
+                    <Shield className="h-4 w-4 text-rose-400" />
                     Both Verify 18+
                   </div>
                 </div>
@@ -550,24 +589,30 @@ export default function PhilippinesRecruitment() {
 
               {/* Card 5: Fanclub Creator (Amber Glow) */}
               <div 
-                className="relative rounded-[24px] overflow-hidden border-2 border-amber-500/50 flex flex-col justify-between min-h-[400px] hover:border-amber-400/90 hover:shadow-[0_0_40px_rgba(245,158,11,0.45)] transition-all duration-300 group cursor-pointer"
+                className="relative rounded-[24px] overflow-hidden flex flex-col justify-between min-h-[480px] transition-all duration-300 cursor-pointer group"
                 style={{
-                  backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.92) 100%), url('https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a7ef04944_generated_image.png')`,
+                  backgroundImage: `url('https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/fa764b3c8_generated_image.png')`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center top',
-                  boxShadow: '0 0 20px rgba(245,158,11,0.2), inset 0 0 0 1px rgba(245,158,11,0.15)'
+                  border: '2px solid rgba(245,158,11,0.6)',
+                  boxShadow: '0 0 30px rgba(245,158,11,0.35), inset 0 0 60px rgba(245,158,11,0.05)'
                 }}
               >
-                <div className="p-6">
-                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-amber-500/60 bg-black/50 mb-auto shadow-[0_0_20px_rgba(245,158,11,0.5)] backdrop-blur-sm">
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.1) 35%, rgba(0,0,0,0.75) 60%, rgba(0,0,0,0.96) 100%)' }} />
+                <div className="relative z-10 p-5">
+                  <div className="h-12 w-12 rounded-full flex items-center justify-center"
+                    style={{ border: '2px solid rgba(245,158,11,0.9)', boxShadow: '0 0 16px rgba(245,158,11,0.7), 0 0 32px rgba(245,158,11,0.3)', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
+                  >
                     <Star className="h-5 w-5 text-amber-400" />
                   </div>
                 </div>
-                <div className="p-6 pt-0">
-                  <h3 className="font-extrabold text-white text-[20px] leading-tight mb-2">Fanclub Creator</h3>
-                  <p className="text-gray-300 text-xs leading-relaxed mb-5">Build recurring monthly income with exclusive clips, updates and supporter perks.</p>
-                  <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs text-amber-400 border border-amber-500/50 bg-black/40 backdrop-blur-sm uppercase tracking-wider hover:bg-amber-500/20 transition-all">
-                    <Crown className="h-3.5 w-3.5" />
+                <div className="relative z-10 p-5 pt-0">
+                  <h3 className="font-black text-white leading-[1.1] mb-2" style={{ fontSize: 'clamp(22px, 3vw, 28px)' }}>Fanclub<br />Creator</h3>
+                  <p className="text-gray-300 text-sm leading-relaxed mb-4">Build recurring monthly income with exclusive clips, updates and supporter perks.</p>
+                  <div className="w-full flex items-center justify-center gap-2.5 py-3 rounded-2xl font-bold text-sm text-amber-300 transition-all group-hover:bg-amber-900/60"
+                    style={{ background: 'rgba(50,30,0,0.75)', border: '1px solid rgba(245,158,11,0.5)', backdropFilter: 'blur(8px)' }}
+                  >
+                    <Crown className="h-4 w-4 text-amber-400" />
                     Fanclub Setup
                   </div>
                 </div>
