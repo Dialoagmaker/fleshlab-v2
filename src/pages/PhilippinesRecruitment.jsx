@@ -633,25 +633,41 @@ export default function PhilippinesRecruitment() {
 
             {/* Elegant Dark Glowing CTA Panel */}
             <div 
-              className="p-8 rounded-[24px] mb-8 relative overflow-hidden bg-black/60 border border-rose-500/25 shadow-[0_0_40px_rgba(244,63,94,0.1)] backdrop-blur-md"
+              className="px-8 py-6 rounded-[20px] mb-6 relative overflow-hidden backdrop-blur-md"
+              style={{
+                background: 'rgba(10,0,5,0.75)',
+                border: '1.5px solid rgba(244,63,94,0.35)',
+                boxShadow: '0 0 40px rgba(244,63,94,0.12), inset 0 0 60px rgba(0,0,0,0.3)'
+              }}
             >
               <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
                 
                 {/* Left Side Info */}
                 <div className="flex items-center gap-5 flex-1 w-full">
-                  <div className="h-14 w-14 rounded-full flex items-center justify-center border border-rose-500/35 bg-rose-500/10 shadow-[0_0_15px_rgba(244,63,94,0.25)] flex-shrink-0">
+                  <div 
+                    className="h-14 w-14 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{
+                      border: '2px solid rgba(244,63,94,0.7)',
+                      background: 'rgba(244,63,94,0.12)',
+                      boxShadow: '0 0 16px rgba(244,63,94,0.4)'
+                    }}
+                  >
                     <HelpCircle className="h-7 w-7 text-rose-400" />
                   </div>
                   <div>
                     <h4 className="font-bold text-white text-xl">Not sure which path fits you?</h4>
-                    <p className="text-gray-300 text-sm">Chat with our team on WhatsApp. No pressure, ask anything.</p>
+                    <p className="text-gray-400 text-sm">Chat with our team on WhatsApp. No pressure, ask anything.</p>
                   </div>
                 </div>
 
                 {/* Right Side Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+                <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                   <Button 
-                    className="bg-[#128c7e] hover:bg-[#075e54] text-white font-extrabold px-8 py-3.5 rounded-xl shadow-lg shadow-[#128c7e]/30 transition-all flex items-center justify-center gap-2"
+                    className="text-white font-extrabold px-8 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2"
+                    style={{
+                      background: '#25D366',
+                      boxShadow: '0 0 20px rgba(37,211,102,0.4)'
+                    }}
                     onClick={handleWhatsAppClick}
                   >
                     <MessageCircle className="h-5 w-5" />
@@ -659,7 +675,10 @@ export default function PhilippinesRecruitment() {
                   </Button>
                   
                   <Button 
-                    className="border-2 border-white/20 text-white hover:bg-white/10 font-extrabold px-8 py-3.5 rounded-xl transition-all flex items-center justify-center bg-transparent"
+                    className="text-white font-extrabold px-8 py-3.5 rounded-xl transition-all flex items-center justify-center bg-transparent hover:bg-white/5"
+                    style={{
+                      border: '2px solid rgba(255,255,255,0.35)'
+                    }}
                     onClick={() => handleRevenueModelClick('compare')}
                   >
                     Compare 60/40 & 70/30
@@ -668,25 +687,40 @@ export default function PhilippinesRecruitment() {
               </div>
             </div>
 
-            {/* Bottom Trust Pills - Black Translucent Border */}
+            {/* Bottom Trust Pills */}
             <div className="flex flex-wrap justify-center gap-3">
-              <div className="flex items-center gap-2 px-5 py-3 rounded-full text-white text-xs font-bold bg-black/40 border border-white/10 shadow-lg">
-                <Shield className="h-4 w-4 text-rose-500" />
+              <div 
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-xs font-bold"
+                style={{ background: 'rgba(10,0,5,0.75)', border: '1.5px solid rgba(244,63,94,0.35)', boxShadow: '0 0 10px rgba(244,63,94,0.15)' }}
+              >
+                <Shield className="h-3.5 w-3.5 text-rose-400" />
                 <span>Verified 18+ Only</span>
               </div>
-              <div className="flex items-center gap-2 px-5 py-3 rounded-full text-white text-xs font-bold bg-black/40 border border-white/10 shadow-lg">
-                <Lock className="h-4 w-4 text-rose-500" />
+              <div 
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-xs font-bold"
+                style={{ background: 'rgba(10,0,5,0.75)', border: '1.5px solid rgba(244,63,94,0.35)', boxShadow: '0 0 10px rgba(244,63,94,0.15)' }}
+              >
+                <Lock className="h-3.5 w-3.5 text-rose-400" />
                 <span>Private & Discreet</span>
               </div>
-              <div className="flex items-center gap-2 px-5 py-3 rounded-full text-white text-xs font-bold bg-black/40 border border-white/10 shadow-lg">
-                <CheckCircle2 className="h-4 w-4 text-rose-500" />
+              <div 
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-xs font-bold"
+                style={{ background: 'rgba(10,0,5,0.75)', border: '1.5px solid rgba(244,63,94,0.35)', boxShadow: '0 0 10px rgba(244,63,94,0.15)' }}
+              >
+                <CheckCircle2 className="h-3.5 w-3.5 text-rose-400" />
                 <span>You Approve Everything</span>
               </div>
-              <div className="flex items-center gap-2 px-5 py-3 rounded-full text-white text-xs font-bold bg-black/40 border border-white/10 shadow-lg">
+              <div 
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-xs font-bold"
+                style={{ background: 'rgba(10,0,5,0.75)', border: '1.5px solid rgba(244,63,94,0.35)', boxShadow: '0 0 10px rgba(244,63,94,0.15)' }}
+              >
                 <span className="text-[14px]">🇵🇭</span>
                 <span>Support for Filipino Creators</span>
               </div>
-              <div className="flex items-center gap-2 px-5 py-3 rounded-full text-white text-xs font-bold bg-black/40 border border-white/10 shadow-lg">
+              <div 
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-xs font-bold"
+                style={{ background: 'rgba(10,0,5,0.75)', border: '1.5px solid rgba(244,63,94,0.35)', boxShadow: '0 0 10px rgba(244,63,94,0.15)' }}
+              >
                 <span className="text-[14px]">₱</span>
                 <span>Payouts in PHP</span>
               </div>
