@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useI18n } from "@/i18n/i18n.jsx";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
+import { getDashboardPath } from "@/lib/roleResolver";
 
 const languages = [
   { code: 'en', label: 'English', native: 'English' },
@@ -25,9 +26,10 @@ const BASE_NAV_LINKS = [
   { href: "/become-performer", label: "Become a Performer", icon: Star },
 ];
 
+// Note: AUTHENTICATED_NAV_LINKS uses placeholder href - actual path resolved by getDashboardPath()
 const AUTHENTICATED_NAV_LINKS = [
   ...BASE_NAV_LINKS,
-  { href: "/client/dashboard", label: "Dashboard", icon: UserCircle },
+  { href: "/dashboard-placeholder", label: "Dashboard", icon: UserCircle, resolvePath: true },
 ];
 
 export default function TubeHeader({ onMenuToggle }) {
@@ -181,7 +183,7 @@ export default function TubeHeader({ onMenuToggle }) {
             {/* Authenticated User - Dashboard + User Menu */}
             {isAuthenticated ? (
               <>
-                <Link to="/client/dashboard">
+                <Link to={getDashboardPath(user)}>
                   <Button variant="ghost" size="sm" className="text-white/80 hover:text-white hover:bg-white/10 h-9 px-4 border border-white/10 mr-2">
                     <UserCircle className="w-4 h-4 mr-2" />
                     Dashboard
@@ -215,7 +217,7 @@ export default function TubeHeader({ onMenuToggle }) {
                         </div>
                         {/* Menu items */}
                         <Link
-                          to="/client/dashboard"
+                          to={getDashboardPath(user)}
                           onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-3 px-4 py-3 text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
                         >
@@ -402,13 +404,13 @@ export default function TubeHeader({ onMenuToggle }) {
 
             {/* Nav links */}
             <nav className="flex-1 overflow-y-auto py-3 px-3">
-              {(isAuthenticated ? AUTHENTICATED_NAV_LINKS : BASE_NAV_LINKS).map(({ href, label, icon: Icon }) => (
+              {(isAuthenticated ? AUTHENTICATED_NAV_LINKS : BASE_NAV_LINKS).map(({ href, label, icon: Icon, resolvePath }) => (
                 <a
                   key={href}
-                  href={href}
+                  href={resolvePath ? getDashboardPath(user) : href}
                   onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3.5 rounded-xl mb-1 text-base font-semibold transition-colors min-h-[48px] ${
-                    isActive(href)
+                    isActive(resolvePath ? getDashboardPath(user) : href)
                       ? 'bg-rose-600/20 text-rose-400 border border-rose-600/30'
                       : 'text-white/75 hover:text-white hover:bg-white/8'
                   }`}
@@ -422,7 +424,7 @@ export default function TubeHeader({ onMenuToggle }) {
             {/* Bottom auth actions - Mobile */}
             {isAuthenticated ? (
               <div className="px-4 py-4 border-t border-white/8 space-y-2">
-                <Link to="/client/dashboard" onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 w-full h-11 rounded-xl border border-white/15 text-white font-semibold text-sm hover:bg-white/8 transition-colors">
+                <Link to={getDashboardPath(user)} onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 w-full h-11 rounded-xl border border-white/15 text-white font-semibold text-sm hover:bg-white/8 transition-colors">
                   <UserCircle className="w-4 h-4" /> Dashboard
                 </Link>
                 <button onClick={() => { handleLogout(); setMobileOpen(false); }} className="flex items-center justify-center gap-2 w-full h-11 rounded-xl bg-red-600/20 border border-red-600/30 text-red-400 font-semibold text-sm hover:bg-red-600/30 transition-colors">

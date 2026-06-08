@@ -19,6 +19,19 @@ export default function Account() {
     try {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
+      
+      // Debug logging for role-based routing
+      console.log('ACCOUNT_USER_DEBUG', {
+        user_email: currentUser?.email,
+        user_role: currentUser?.role,
+        is_admin: currentUser?.role === 'admin' || currentUser?.role === 'super_admin',
+        has_performer_profile: !!currentUser?.performer_profile_id || !!currentUser?.performer_id,
+        resolved_dashboard_path: currentUser?.role === 'admin' || currentUser?.role === 'super_admin' 
+          ? '/admin/dashboard' 
+          : currentUser?.performer_profile_id || currentUser?.performer_id || currentUser?.role === 'performer'
+            ? '/performer/dashboard'
+            : '/client/dashboard'
+      });
     } catch (error) {
       console.error("Failed to load user:", error);
       navigate("/login");
@@ -57,7 +70,14 @@ export default function Account() {
                 <h1 className="text-3xl font-bold text-foreground">My Account</h1>
                 <p className="text-muted-foreground mt-1">Manage your account settings</p>
               </div>
-              <Button variant="outline" onClick={() => window.location.href = "/client/dashboard"}>
+              <Button variant="outline" onClick={() => {
+                const dashboardPath = user?.role === 'admin' || user?.role === 'super_admin' 
+                  ? '/admin/dashboard' 
+                  : user?.performer_profile_id || user?.performer_id 
+                    ? '/performer/dashboard' 
+                    : '/client/dashboard';
+                window.location.href = dashboardPath;
+              }}>
                 Back to Dashboard
               </Button>
             </div>

@@ -33,8 +33,11 @@ export default function Login() {
   const fromParam = urlParams.get("next") || urlParams.get("from_url") || urlParams.get("from") || null;
   const isFanProductionFlow = fromParam && fromParam.includes("/fan-productions");
 
-  const getRedirectForRole = (role) => {
-    console.log("GET_REDIRECT_FOR_ROLE", { role, fromParam });
+  const getRedirectForRole = (user) => {
+    const role = user?.role;
+    const hasPerformerProfile = user?.performer_profile_id || user?.performer_id;
+    
+    console.log("GET_REDIRECT_FOR_ROLE", { role, hasPerformerProfile, fromParam });
     
     // Priority 1: Check stored auth intent (from monetization CTAs)
     const storedIntent = getStoredAuthIntent();
@@ -55,11 +58,21 @@ export default function Login() {
       }
     }
     
-    // Priority 3: Role-based defaults
-    if (role === "admin") return "/admin/dashboard";
-    if (role === "performer") return "/performer/dashboard";
+    // Priority 3: Role-based defaults with proper precedence
+    // 1. Admin
+    if (role === "admin" || role === "super_admin") {
+      console.log("ROLE_REDIRECT_ADMIN");
+      return "/admin/dashboard";
+    }
     
-    // Fallback for customers/fans
+    // 2. Performer (by role OR linked profile)
+    if (role === "performer" || hasPerformerProfile) {
+      console.log("ROLE_REDIRECT_PERFORMER", { hasPerformerProfile });
+      return "/performer/dashboard";
+    }
+    
+    // 3. Client/Customer fallback
+    console.log("ROLE_REDIRECT_CLIENT_FALLBACK");
     return "/client/dashboard";
   };
 
@@ -73,7 +86,7 @@ export default function Login() {
       
       // Get user data to determine role
       const user = await base44.auth.me();
-      console.log("LOGIN_SUCCESS", { role: user?.role, email: user?.email });
+      console.log("LOGIN_SUCCESS", { role: user?.role, email: user?.email, performer_profile_id: user?.performer_profile_id, performer_id: user?.performer_id });
       
       // If non-admin tried to access admin, show error
       if (fromParam && fromParam.startsWith("/admin") && user?.role !== "admin") {
@@ -82,8 +95,8 @@ export default function Login() {
         return;
       }
       
-      // Determine redirect URL
-      const redirectUrl = getRedirectForRole(user?.role);
+      // Determine redirect URL based on full user object (role + linked entities)
+      const redirectUrl = getRedirectForRole(user);
       console.log("LOGIN_REDIRECT", { redirectUrl });
       
       // Force reload to ensure AuthContext picks up the new token
