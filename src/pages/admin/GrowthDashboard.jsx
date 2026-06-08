@@ -67,18 +67,30 @@ export default function GrowthDashboard() {
   // Debug: Log full data structure
   useEffect(() => {
     if (ga4Data && !ga4Loading) {
-      console.log('[GrowthDashboard] FULL GA4 Response:', ga4Data);
-      console.log('[GrowthDashboard] Parsed Data:', {
-        ga4_property_id: ga4Data?.ga4_property_id,
-        top_pages_count: topPages?.length,
-        events_count: events?.length,
-        traffic_sources_count: trafficSources?.length,
-        total_page_views: topPages?.reduce((sum, p) => sum + (p.page_views || 0), 0),
-      });
+      console.log('='.repeat(60));
+      console.log('[GrowthDashboard] GA4 BACKEND RESPONSE');
+      console.log('='.repeat(60));
+      console.log('Property ID:', ga4Data?.ga4_property_id);
+      console.log('Date Range:', ga4Data?.date_range);
+      console.log('Top Pages Count:', topPages?.length);
+      console.log('Top Pages Sample:', topPages?.slice(0, 3));
+      console.log('Events Count:', events?.length);
+      console.log('Events Sample:', events?.slice(0, 5));
+      console.log('Traffic Sources Count:', trafficSources?.length);
+      console.log('Total Page Views:', totalPageViews);
+      console.log('Pages by Category:', Object.keys(pagesByCategory || {}));
+      console.log('='.repeat(60));
     }
     if (gscData && !gscLoading) {
-      console.log('[GrowthDashboard] FULL GSC Response:', gscData);
-      console.log('[GrowthDashboard] GSC Summary:', gscData?.summary);
+      console.log('='.repeat(60));
+      console.log('[GrowthDashboard] GSC BACKEND RESPONSE');
+      console.log('='.repeat(60));
+      console.log('Site URL:', gscData?.site_url);
+      console.log('Date Range:', gscData?.date_range);
+      console.log('Summary:', gscData?.summary);
+      console.log('Top Queries Count:', gscData?.top_queries?.length);
+      console.log('Top Pages Count:', gscData?.top_pages?.length);
+      console.log('='.repeat(60));
     }
   }, [ga4Data, gscData, ga4Loading, gscLoading]);
 
@@ -122,22 +134,39 @@ export default function GrowthDashboard() {
         ) : (
           <>
             {/* DEBUG PANEL */}
-            <Card className="border-red-500/50 bg-red-950/20">
+            <Card className="border-green-500/50 bg-green-950/20">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold text-red-400">🐛 DEBUG INFO</CardTitle>
+                <CardTitle className="text-sm font-semibold text-green-400">✅ GA4 BACKEND STATUS</CardTitle>
               </CardHeader>
               <CardContent className="text-xs space-y-1 font-mono">
-                <div>GA4 Property ID: <code className="bg-black/50 px-1 rounded">{ga4Data?.ga4_property_id || "MISSING"}</code></div>
-                <div>GA4 Measurement ID: <code className="bg-black/50 px-1 rounded">G-3Z4DV3SVR8</code></div>
-                <div>Top Pages Count: <code>{topPages?.length || 0}</code></div>
-                <div>Events Count: <code>{events?.length || 0}</code></div>
-                <div>Total Page Views: <code className="text-green-400">{totalPageViews.toLocaleString()}</code></div>
-                <div>Fanclub CTA Clicks: <code>{fanclubClicks.toLocaleString()}</code></div>
-                <div>GSC Clicks: <code className="text-green-400">{gscData?.summary?.clicks || 0}</code></div>
-                <div>GSC Impressions: <code className="text-green-400">{gscData?.summary?.impressions || 0}</code></div>
-                <div>Date Range: <code>Last {dateRange} days</code></div>
-                <div>isLoading: <code>{isLoading ? 'true' : 'false'}</code></div>
-                <div className="text-yellow-400">Check browser console (F12) for full data dump</div>
+                <div className="flex items-center gap-2">
+                  <span>GA4 Property ID (Backend):</span>
+                  <code className="bg-black/50 px-2 py-0.5 rounded text-green-400 font-bold">{ga4Data?.ga4_property_id || "MISSING"}</code>
+                  {ga4Data?.ga4_property_id && <CheckCircle2 className="w-3 h-3 text-green-500" />}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span>GA4 Measurement ID (Frontend):</span>
+                  <code className="bg-black/50 px-2 py-0.5 rounded text-blue-400">G-3Z4DV3SVR8</code>
+                </div>
+                <div className="pt-2 border-t border-green-500/20">
+                  <div className="text-green-300 font-semibold mb-1">API Response:</div>
+                  <div>Top Pages: <code className="text-green-400">{topPages?.length || 0} rows</code></div>
+                  <div>Events: <code className="text-green-400">{events?.length || 0} unique events</code></div>
+                  <div>Total Page Views: <code className="text-green-400 font-bold">{totalPageViews.toLocaleString()}</code></div>
+                  <div>Traffic Sources: <code className="text-green-400">{trafficSources?.length || 0} sources</code></div>
+                </div>
+                <div className="pt-2 border-t border-green-500/20">
+                  <div className="text-green-300 font-semibold mb-1">GSC Status:</div>
+                  <div>Clicks (28d): <code className="text-green-400 font-bold">{gscData?.summary?.clicks || 0}</code></div>
+                  <div>Impressions (28d): <code className="text-green-400 font-bold">{gscData?.summary?.impressions || 0}</code></div>
+                  <div>Site URL: <code className="text-blue-400">https://fleshlab.online/</code></div>
+                </div>
+                <div className="pt-2 border-t border-green-500/20">
+                  <div className="text-xs text-green-300/80">
+                    <strong>Note:</strong> Property ID (537674804) ≠ Measurement ID (G-3Z4DV3SVR8).<br/>
+                    Backend uses Property ID for GA4 Data API. Frontend uses Measurement ID for gtag tracking.
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
