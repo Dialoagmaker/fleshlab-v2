@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User, LogOut, Settings, Video, CreditCard } from "lucide-react";
+import { getDashboardPath } from "@/lib/roleResolver";
 import SEOMeta from "@/components/SEOMeta";
 
 export default function Account() {
@@ -26,11 +27,7 @@ export default function Account() {
         user_role: currentUser?.role,
         is_admin: currentUser?.role === 'admin' || currentUser?.role === 'super_admin',
         has_performer_profile: !!currentUser?.performer_profile_id || !!currentUser?.performer_id,
-        resolved_dashboard_path: currentUser?.role === 'admin' || currentUser?.role === 'super_admin' 
-          ? '/admin/dashboard' 
-          : currentUser?.performer_profile_id || currentUser?.performer_id || currentUser?.role === 'performer'
-            ? '/performer/dashboard'
-            : '/client/dashboard'
+        resolved_dashboard_path: getDashboardPath(currentUser)
       });
     } catch (error) {
       console.error("Failed to load user:", error);
@@ -71,11 +68,8 @@ export default function Account() {
                 <p className="text-muted-foreground mt-1">Manage your account settings</p>
               </div>
               <Button variant="outline" onClick={() => {
-                const dashboardPath = user?.role === 'admin' || user?.role === 'super_admin' 
-                  ? '/admin/dashboard' 
-                  : user?.performer_profile_id || user?.performer_id 
-                    ? '/performer/dashboard' 
-                    : '/client/dashboard';
+                const dashboardPath = getDashboardPath(user);
+                console.log('[AccountBackButton]', { email: user.email, role: user.role, dashboardPath });
                 window.location.href = dashboardPath;
               }}>
                 Back to Dashboard
