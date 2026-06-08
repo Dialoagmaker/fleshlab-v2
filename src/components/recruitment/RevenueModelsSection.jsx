@@ -1,7 +1,5 @@
 import { CheckCircle2 } from "lucide-react";
 
-import { CheckCircle2 } from "lucide-react";
-
 export default function RevenueModelsSection() {
   return (
     <section className="py-16 md:py-20 border-b border-white/6 bg-[#0a0505]">
