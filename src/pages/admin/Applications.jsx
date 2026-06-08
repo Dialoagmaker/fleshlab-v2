@@ -47,7 +47,7 @@ export default function Applications() {
     email: '',
     phone: '',
   });
-    const [isLinkUserOpen, setIsLinkUserOpen] = useState(false);
+  const [isLinkUserOpen, setIsLinkUserOpen] = useState(false);
 
 
   const { data: applications = [], isLoading } = useQuery({
@@ -100,8 +100,8 @@ export default function Applications() {
     updateMutation.mutate({ id: applicationId, data: updates });
     setSelectedApp(prev => prev ? { ...prev, ...updates } : prev);
   };
-  
-    const handleRequestMoreInfo = (message) => {
+
+  const handleRequestMoreInfo = (message) => {
     if (!selectedApp) return;
     handleStatusUpdate(selectedApp.id, 'more_info_requested', { more_info_request_message: message, more_info_requested_at: new Date().toISOString() });
     setIsMoreInfoOpen(false);
@@ -163,7 +163,7 @@ export default function Applications() {
     }
   };
 
-    const handleLinkUser = async (userId) => {
+  const handleLinkUser = async (userId) => {
     if (!selectedApp || !userId) return;
     try {
       if (selectedApp.performer_id) {

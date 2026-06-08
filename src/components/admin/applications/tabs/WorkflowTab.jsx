@@ -1,45 +1,196 @@
-import React from 'react';
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { UserPlus, Link as LinkIcon, Zap } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { FileText, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 
-export default function WorkflowTab({ selectedApp, handleStatusUpdate, setIsCreatePerformerOpen, setIsLinkUserOpen }) {
+export default function WorkflowTab({ application, handleStatusUpdate }) {
+  const [isCreatingContract, setIsCreatingContract] = useState(false);
+  const [isCreatingPerformer, setIsCreatingPerformer] = useState(false);
+  const [isLinkingUser, setIsLinkingUser] = useState(false);
+
+  const statusColors = {
+    pending: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+    media_pending: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+    reviewing: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+    contacted: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+    more_info_requested: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+    approved: "bg-green-500/10 text-green-500 border-green-500/20",
+    rejected: "bg-red-500/10 text-red-500 border-red-500/20",
+    contract_pending: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20",
+    contract_sent: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20",
+    contract_signed: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20",
+    performer_created: "bg-pink-500/10 text-pink-500 border-pink-500/20",
+    user_linked: "bg-cyan-500/10 text-cyan-500 border-cyan-500/20",
+    active: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  };
+
+  const canCreateContract = application.status === 'approved' && !application.contract_id;
+  const canCreatePerformer = application.status === 'contract_signed' && !application.performer_id;
+  const canLinkUser = application.status === 'performer_created' && !application.linked_user_id;
+  const canActivate = application.status === 'user_linked' && application.performer_id && application.linked_user_id;
+
   return (
-    <div className="space-y-4">
-      <h3 className="font-semibold">Workflow Actions</h3>
-      <div className="flex flex-wrap gap-2">
-        {selectedApp.status === 'approved' && (
-          <Button size="sm" onClick={() => handleStatusUpdate(selectedApp.id, 'contract_pending')}>Mark Contract Pending</Button>
-        )}
-        {selectedApp.status === 'contract_pending' && (
-          <Button size="sm" onClick={() => handleStatusUpdate(selectedApp.id, 'contract_sent')}>Mark Contract Sent</Button>
-        )}
-        {selectedApp.status === 'contract_sent' && (
-          <Button size="sm" onClick={() => handleStatusUpdate(selectedApp.id, 'contract_signed')}>Mark Contract Signed</Button>
-        )}
-        {selectedApp.status === 'contract_signed' && !selectedApp.performer_id && (
-          <Button size="sm" onClick={() => setIsCreatePerformerOpen(true)}><UserPlus className="w-4 h-4 mr-2" />Create Performer</Button>
-        )}
-        {selectedApp.performer_id && (
-            <div className="text-xs text-green-400">Performer created: {selectedApp.performer_id}</div>
-        )}
-        {selectedApp.status === 'performer_created' && (
-          <Button size="sm" onClick={() => setIsLinkUserOpen(true)}><LinkIcon className="w-4 h-4 mr-2" />Link User</Button>
-        )}
-        {selectedApp.status === 'user_linked' && (
-          <Button size="sm" onClick={() => handleStatusUpdate(selectedApp.id, 'active')}><Zap className="w-4 h-4 mr-2" />Activate Performer</Button>
-        )}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Workflow Status</h3>
+          <p className="text-sm text-muted-foreground">Manage the application lifecycle</p>
+        </div>
+        <Badge className={statusColors[application.status] || "bg-gray-500/10 text-gray-500"}>
+          {application.status}
+        </Badge>
       </div>
-      <h4 className="font-semibold pt-4 border-t border-border">Status History</h4>
-      <div className="text-xs font-mono bg-secondary p-2 rounded max-h-60 overflow-y-auto">
-        {selectedApp.status_history?.map((item, index) => {
-          try {
-            const log = JSON.parse(item);
-            return <div key={index}>{log.timestamp}: {log.action}</div>
-          } catch (e) {
-            return <div key={index}>{item}</div>
-          }
-        }) || 'No history'}
+
+      <div className="grid gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">1. Review Application</p>
+                  <p className="text-sm text-muted-foreground">Check media and ID documents</p>
+                </div>
+              </div>
+              {['reviewing', 'contacted', 'more_info_requested'].includes(application.status) && (
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">2. Approve Application</p>
+                  <p className="text-sm text-muted-foreground">Mark as approved to proceed</p>
+                </div>
+              </div>
+              {application.status === 'approved' && (
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">3. Create Contract</p>
+                  <p className="text-sm text-muted-foreground">Generate and send contract</p>
+                </div>
+              </div>
+              {application.contract_id && (
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              )}
+            </div>
+            {canCreateContract && (
+              <Button className="mt-3" size="sm" onClick={() => setIsCreatingContract(true)}>
+                Create Contract
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">4. Create Performer Profile</p>
+                  <p className="text-sm text-muted-foreground">Create performer record</p>
+                </div>
+              </div>
+              {application.performer_id && (
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              )}
+            </div>
+            {canCreatePerformer && (
+              <Button className="mt-3" size="sm" onClick={() => setIsCreatingPerformer(true)}>
+                Create Performer
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">5. Link User Account</p>
+                  <p className="text-sm text-muted-foreground">Connect to Base44 user</p>
+                </div>
+              </div>
+              {application.linked_user_id && (
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              )}
+            </div>
+            {canLinkUser && (
+              <Button className="mt-3" size="sm" onClick={() => setIsLinkingUser(true)}>
+                Link User
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">6. Activate Performer</p>
+                  <p className="text-sm text-muted-foreground">Grant dashboard access</p>
+                </div>
+              </div>
+              {application.status === 'active' && (
+                <CheckCircle className="w-5 h-5 text-green-500" />
+              )}
+            </div>
+            {canActivate && (
+              <Button 
+                className="mt-3" 
+                size="sm"
+                onClick={() => handleStatusUpdate(application.id, 'active', {
+                  activated_at: new Date().toISOString()
+                })}
+              >
+                Activate
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+      {application.status_history && application.status_history.length > 0 && (
+        <div className="mt-6">
+          <h4 className="text-sm font-semibold mb-2">Status History</h4>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {application.status_history.map((entry, idx) => {
+              try {
+                const parsed = typeof entry === 'string' ? JSON.parse(entry) : entry;
+                return (
+                  <div key={idx} className="text-xs text-muted-foreground p-2 bg-secondary rounded">
+                    <span className="font-mono">{new Date(parsed.timestamp).toLocaleString()}</span>: {parsed.action}
+                  </div>
+                );
+              } catch {
+                return null;
+              }
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
