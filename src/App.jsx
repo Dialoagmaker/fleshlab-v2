@@ -216,6 +216,16 @@ const AuthenticatedApp = () => {
     return <Navigate to="/performerlogin" replace />;
   }
 
+  // Legacy URL redirects (301 to canonical lowercase)
+  if (path === "/Videos") return <Navigate to="/videos" replace />;
+  if (path === "/Home") return <Navigate to="/" replace />;
+  if (path === "/Actors") return <Navigate to="/performers" replace />;
+  if (path === "/Gay-Performer-Recruitment") return <Navigate to="/become-performer" replace />;
+  if (path === "/guest-productions") return <Navigate to="/guest-production" replace />;
+  if (path === "/NewsCenter") return <Navigate to="/news" replace />;
+  if (path === "/Brands") return <Navigate to="/brands" replace />;
+  if (path === "/HowItWorks") return <Navigate to="/how-it-works" replace />;
+  
   if (path === "/guest-productions" || path === "/guest-production") {
     return (
       <PublicPageShell>
@@ -224,42 +234,42 @@ const AuthenticatedApp = () => {
     );
   }
 
-  if (path === "/" || path === "/Home") {
+  if (path === "/") {
     return (
       <PublicPageShell>
-        <Home canonical={path === "/Home" ? "/" : undefined} noIndex={path === "/Home"} />
+        <Home />
       </PublicPageShell>
     );
   }
 
-  if (path === "/videos" || path === "/Videos") {
+  if (path === "/videos") {
     return (
       <PublicPageShell>
-        <PublicVideos canonical={path === "/Videos" ? "/videos" : undefined} noIndex={path === "/Videos"} />
+        <PublicVideos />
       </PublicPageShell>
     );
   }
 
-  if (path === "/performers" || path === "/Actors") {
+  if (path === "/performers") {
     return (
       <PublicPageShell>
-        <PublicPerformers canonical={path === "/Actors" ? "/performers" : undefined} noIndex={path === "/Actors"} />
+        <PublicPerformers />
       </PublicPageShell>
     );
   }
 
-  if (path === "/news" || path === "/News" || path === "/NewsCenter") {
+  if (path === "/news") {
     return (
       <PublicPageShell>
-        <PublicNews canonical={path !== "/news" ? "/news" : undefined} noIndex={path !== "/news"} />
+        <PublicNews />
       </PublicPageShell>
     );
   }
 
-  if (path === "/become-performer" || path === "/Gay-Performer-Recruitment" || path === "/Remote-Adult-Content-Creator") {
+  if (path === "/become-performer") {
     return (
       <PublicPageShell>
-        <BecomePerformer canonical={path !== "/become-performer" ? "/become-performer" : undefined} noIndex={path !== "/become-performer"} />
+        <BecomePerformer />
       </PublicPageShell>
     );
   }
@@ -328,18 +338,18 @@ const AuthenticatedApp = () => {
     );
   }
 
-  if (path === "/brands" || path === "/Brands") {
+  if (path === "/brands") {
     return (
       <PublicPageShell>
-        <PublicBrands canonical={path === "/Brands" ? "/brands" : undefined} noIndex={path === "/Brands"} />
+        <PublicBrands />
       </PublicPageShell>
     );
   }
 
-  if (path === "/how-it-works" || path === "/HowItWorks") {
+  if (path === "/how-it-works") {
     return (
       <PublicPageShell>
-        <HowItWorks canonical={path === "/HowItWorks" ? "/how-it-works" : undefined} noIndex={path === "/HowItWorks"} />
+        <HowItWorks />
       </PublicPageShell>
     );
   }
@@ -390,7 +400,12 @@ const AuthenticatedApp = () => {
       <Route path="/VideoDetail" element={<LegacyVideoRedirect />} />
       <Route path="/ActorDetail" element={<LegacyActorRedirect />} />
       <Route path="/ArticleReader" element={<LegacyArticleRedirect />} />
-      {/* /guest-productions (plural) → /guest-production (canonical) */}
+      {/* Legacy uppercase/mixed-case URL redirects → canonical lowercase */}
+      <Route path="/Videos" element={<Navigate to="/videos" replace />} />
+      <Route path="/Home" element={<Navigate to="/" replace />} />
+      <Route path="/Actors" element={<Navigate to="/performers" replace />} />
+      <Route path="/Gay-Performer-Recruitment" element={<Navigate to="/become-performer" replace />} />
+      <Route path="/Remote-Adult-Content-Creator" element={<Navigate to="/become-performer" replace />} />
       <Route path="/guest-productions" element={<Navigate to="/guest-production" replace />} />
       {/* Ghost routes — V1/old tool paths blocked before /:slug wildcard */}
       <Route path="/AdminSmartThumbnails" element={<GhostRoute />} />

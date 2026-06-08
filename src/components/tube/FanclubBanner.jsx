@@ -1,8 +1,17 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Lock, Star, Flame, PlayCircle } from "lucide-react";
+import { trackFanclubCtaClick, trackEvent } from "@/lib/analytics";
 
 export default function FanclubBanner() {
+  const handleFanclubClick = () => {
+    trackFanclubCtaClick('general', 'general', 'homepage_banner');
+  };
+
+  const handleRegisterClick = () => {
+    trackEvent('registration_cta_click', { cta_location: 'homepage_banner' });
+  };
+
   return (
     <section className="py-8 px-4 bg-[#070707]">
       <div className="max-w-[1280px] mx-auto">
@@ -35,13 +44,13 @@ export default function FanclubBanner() {
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-7">
-              <Link to="/fanclub" className="w-full sm:w-auto">
+              <Link to="/fanclub" onClick={handleFanclubClick} className="w-full sm:w-auto">
                 <Button size="lg" className="w-full bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black px-8 py-4 rounded-xl h-auto shadow-xl shadow-rose-700/30 text-sm uppercase tracking-wide">
                   <Star className="w-4 h-4 mr-1.5 fill-current" />
                   Join Fanclub
                 </Button>
               </Link>
-              <Link to="/register" className="w-full sm:w-auto">
+              <Link to="/register" onClick={handleRegisterClick} className="w-full sm:w-auto">
                 <Button size="lg" variant="outline" className="w-full border-white/15 text-white hover:bg-white/6 font-semibold px-8 py-4 rounded-xl h-auto text-sm">
                   Create Free Account
                 </Button>

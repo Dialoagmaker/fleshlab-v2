@@ -87,7 +87,8 @@ export default function GrowthDashboard() {
   const registrationStarted = eventMap['registration_started'] || 0;
   const gpClicks = eventMap['guest_production_cta_click'] || 0;
   const bpClicks = eventMap['become_performer_cta_click'] || 0;
-  const totalPageViews = topPages?.reduce((sum, p) => sum + (p.page_views || 0), 0) || 0;
+  // Calculate total page views as INTEGER (sum of top 50 pages)
+  const totalPageViews = topPages?.reduce((sum, p) => sum + (parseInt(p.page_views, 10) || 0), 0) || 0;
   
   // Debug: Log full data structure
   useEffect(() => {
@@ -196,7 +197,7 @@ export default function GrowthDashboard() {
               </Card>
               <Card>
                 <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold flex items-center gap-2"><Eye className="w-4 h-4 text-primary" />Page Views</CardTitle></CardHeader>
-                <CardContent><p className="text-3xl font-bold">{fmt(totalPageViews)}</p><p className="text-xs text-muted-foreground mt-1">Last {dateRange} days</p></CardContent>
+                <CardContent><p className="text-3xl font-bold">{totalPageViews.toLocaleString()}</p><p className="text-xs text-muted-foreground mt-1">Last {dateRange} days (top 50 pages)</p></CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold flex items-center gap-2"><MousePointerClick className="w-4 h-4 text-primary" />Fanclub CTA</CardTitle></CardHeader>
@@ -216,7 +217,7 @@ export default function GrowthDashboard() {
               <Card>
                 <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold flex items-center gap-2"><ShoppingCart className="w-4 h-4 text-primary" />Fan Conversion Funnel</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">Page Views</span><span className="font-semibold">{fmt(totalPageViews)}</span></div>
+                  <div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">Page Views</span><span className="font-semibold">{totalPageViews.toLocaleString()}</span></div>
                   <div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">Fanclub CTA</span><span className="font-semibold">{fmt(fanclubClicks)}</span></div>
                   <div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">Checkout</span><span className="font-semibold">{fmt(checkoutStarted)}</span></div>
                   <div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">Registration</span><span className="font-semibold">{fmt(registrationStarted)}</span></div>
@@ -312,9 +313,20 @@ export default function GrowthDashboard() {
               <TabsContent value="events" className="space-y-4">
                 <Card>
                   <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold flex items-center gap-2"><Zap className="w-4 h-4 text-primary" />All Events (Last {dateRange} Days)</CardTitle></CardHeader>
-                  <CardContent>
-                    {events?.length ? (<Table><TableHeader><TableRow><TableHead>Event Name</TableHead><TableHead className="text-right">Count</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{events.slice(0, 30).map((e, i) => { const isKeyEvent = ['page_view', 'fanclub_cta_click', 'guest_production_cta_click', 'become_performer_cta_click', 'registration_started', 'checkout_started', 'video_detail_view'].includes(e.event_name); return (<TableRow key={i}><TableCell className="font-medium text-xs"><code className="bg-muted px-1.5 py-0.5 rounded">{e.event_name}</code></TableCell><TableCell className="text-right">{fmt(e.event_count)}</TableCell><TableCell>{e.event_count > 0 ? (<Badge variant="default" className="text-xs bg-green-500">Active</Badge>) : (<Badge variant="outline" className="text-xs"><AlertCircle className="w-3 h-3 mr-1" />No data</Badge>)}</TableCell></TableRow>); })}</TableBody></Table>) : (<p className="text-sm text-muted-foreground">No event data available</p>)}
-                    <p className="text-xs text-yellow-500 mt-3 flex items-center gap-1"><AlertCircle className="w-3 h-3" />Events just installed — historical data may be limited</p>
+                  <CardContent className="space-y-4">
+                    {/* Key CTA Events Summary */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="p-3 rounded-lg border bg-card"><p className="text-xs text-muted-foreground">Fanclub CTA</p><p className="text-lg font-bold">{fmt(fanclubClicks)}</p></div>
+                      <div className="p-3 rounded-lg border bg-card"><p className="text-xs text-muted-foreground">Become Performer</p><p className="text-lg font-bold">{fmt(bpClicks)}</p></div>
+                      <div className="p-3 rounded-lg border bg-card"><p className="text-xs text-muted-foreground">Guest Production</p><p className="text-lg font-bold">{fmt(gpClicks)}</p></div>
+                      <div className="p-3 rounded-lg border bg-card"><p className="text-xs text-muted-foreground">Checkout Started</p><p className="text-lg font-bold">{fmt(checkoutStarted)}</p></div>
+                    </div>
+                    {/* Full Events Table */}
+                    {events?.length ? (<Table><TableHeader><TableRow><TableHead>Event Name</TableHead><TableHead className="text-right">Count</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{events.slice(0, 50).map((e, i) => { const isKeyEvent = ['page_view', 'fanclub_cta_click', 'guest_production_cta_click', 'become_performer_cta_click', 'registration_started', 'checkout_started', 'video_detail_view', 'performer_profile_view'].includes(e.event_name); return (<TableRow key={i} className={isKeyEvent ? 'bg-primary/5' : ''}><TableCell className="font-medium text-xs"><code className="bg-muted px-1.5 py-0.5 rounded">{e.event_name}</code></TableCell><TableCell className="text-right">{fmt(e.event_count)}</TableCell><TableCell>{e.event_count > 0 ? (<Badge variant="default" className="text-xs bg-green-500">Active</Badge>) : (<Badge variant="outline" className="text-xs"><AlertCircle className="w-3 h-3 mr-1" />No data</Badge>)}</TableCell></TableRow>); })}</TableBody></Table>) : (<p className="text-sm text-muted-foreground">No event data available</p>)}
+                    <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                      <p className="text-xs text-yellow-500 flex items-center gap-1 mb-1"><AlertCircle className="w-3 h-3" />Event tracking recently installed</p>
+                      <p className="text-xs text-yellow-500/80">Historical data may be limited. Events will accumulate going forward.</p>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>

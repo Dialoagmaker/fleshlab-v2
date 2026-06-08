@@ -1,10 +1,15 @@
 import { Link } from "react-router-dom";
 import { Film, Shield, TrendingUp, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { trackBecomePerformerCtaClick } from "@/lib/analytics";
 
 const BG_IMAGE = "https://video.fleshlab.online/applications/private/ChatGPT%20Image%206.%20Juni%202026%2C%2021_16_49.png";
 
 export default function PerformerRecruitmentBanner() {
+  const handlePerformerClick = () => {
+    trackBecomePerformerCtaClick('homepage_banner');
+  };
+
   return (
     <section className="relative overflow-hidden min-h-[500px] sm:min-h-[440px] md:min-h-[460px] flex items-center">
 
@@ -65,13 +70,13 @@ export default function PerformerRecruitmentBanner() {
 
           {/* CTAs + revenue stats row */}
           <div className="flex flex-wrap items-center gap-3">
-            <Link to="/become-performer">
+            <Link to="/become-performer" onClick={handlePerformerClick}>
               <Button className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black px-8 py-4 rounded-xl h-auto shadow-xl shadow-rose-700/40 text-sm uppercase tracking-wide">
                 Apply as Performer
                 <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             </Link>
-            <Link to="/become-performer#how-it-works">
+            <Link to="/become-performer#how-it-works" onClick={handlePerformerClick}>
               <Button variant="outline" className="border-white/20 text-white hover:bg-white/8 font-semibold px-6 py-4 rounded-xl h-auto text-sm">
                 See performer models
               </Button>
