@@ -267,16 +267,16 @@ export default function PhilippinesRecruitment() {
                 {/* 6 Requirement Cards - 2 Column Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                   {[
-                    { icon: <Smartphone className="h-[22px] w-[22px] text-rose-500 flex-shrink-0 mt-0.5" />, title: "Smartphone", desc: "1080p camera is enough to apply" },
-                    { icon: <Lock className="h-[22px] w-[22px] text-rose-500 flex-shrink-0 mt-0.5" />, title: "Private Room", desc: "A quiet space where you control the scene" },
-                    { icon: <Lightbulb className="h-[22px] w-[22px] text-amber-500 flex-shrink-0 mt-0.5" />, title: "Good Lighting", desc: "Natural light or a simple ring light" },
-                    { icon: <Wifi className="h-[22px] w-[22px] text-amber-500 flex-shrink-0 mt-0.5" />, title: "Stable Internet", desc: "Upload clips and stay in contact" },
-                    { icon: <FileCheck className="h-[22px] w-[22px] text-rose-500 flex-shrink-0 mt-0.5" />, title: "Valid ID 18+", desc: "Passport, UMID, driver's license or government ID", wide: true },
-                    { icon: <Banknote className="h-[22px] w-[22px] text-amber-500 flex-shrink-0 mt-0.5" />, title: "Payment Method", desc: "GCash, Maya, bank or crypto where available", wide: true },
+                    { icon: <Smartphone className="h-[22px] w-[22px] text-rose-400 flex-shrink-0 mt-0.5" />, title: "Smartphone", desc: "1080p camera is enough to apply" },
+                    { icon: <Lock className="h-[22px] w-[22px] text-rose-400 flex-shrink-0 mt-0.5" />, title: "Private Room", desc: "A quiet space where you control the scene" },
+                    { icon: <Lightbulb className="h-[22px] w-[22px] text-amber-400 flex-shrink-0 mt-0.5" />, title: "Good Lighting", desc: "Natural light or a simple ring light" },
+                    { icon: <Wifi className="h-[22px] w-[22px] text-amber-400 flex-shrink-0 mt-0.5" />, title: "Stable Internet", desc: "Upload clips and stay in contact" },
+                    { icon: <FileCheck className="h-[22px] w-[22px] text-rose-400 flex-shrink-0 mt-0.5" />, title: "Valid ID 18+", desc: "Passport, UMID, driver's license or government ID", wide: true },
+                    { icon: <Banknote className="h-[22px] w-[22px] text-amber-400 flex-shrink-0 mt-0.5" />, title: "Payment Method", desc: "GCash, Maya, bank or crypto where available", wide: true },
                   ].map(item => (
                     <div key={item.title}
                       className={`p-[22px] rounded-[20px] transition-all hover:-translate-y-0.5 cursor-default ${item.wide ? 'sm:col-span-2' : ''}`}
-                      style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(244,63,94,0.2)', boxShadow: '0 10px 28px rgba(0,0,0,0.3)' }}
+                      style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(244,63,94,0.2)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
                     >
                       <div className="flex items-start gap-3">
                         {item.icon}
@@ -291,16 +291,16 @@ export default function PhilippinesRecruitment() {
 
                 {/* Local Pills */}
                 <div className="flex flex-wrap gap-2 mb-4">
-                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full text-gray-300 border border-white/15" style={{ background: 'rgba(255,255,255,0.06)' }}>Manila</span>
-                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full text-gray-300 border border-white/15" style={{ background: 'rgba(255,255,255,0.06)' }}>Cebu</span>
-                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full text-gray-300 border border-white/15" style={{ background: 'rgba(255,255,255,0.06)' }}>Davao</span>
-                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full text-rose-300 border border-rose-500/30" style={{ background: 'rgba(244,63,94,0.1)' }}>GCash</span>
-                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full text-purple-300 border border-purple-500/30" style={{ background: 'rgba(168,85,247,0.1)' }}>Maya</span>
-                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full text-green-300 border border-green-500/30" style={{ background: 'rgba(22,163,74,0.1)' }}>PHP</span>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/10 text-gray-300 border border-white/15">Manila</span>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/10 text-gray-300 border border-white/15">Cebu</span>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/10 text-gray-300 border border-white/15">Davao</span>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">GCash</span>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">Maya</span>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30">PHP</span>
                 </div>
 
                 {/* Small Note */}
-                <p className="text-xs text-gray-600 italic">
+                <p className="text-xs text-gray-500 italic">
                   Availability and payout methods are confirmed during onboarding.
                 </p>
               </div>
@@ -886,18 +886,18 @@ export default function PhilippinesRecruitment() {
             {/* Payment method logos */}
             <div className="flex flex-wrap gap-3 mb-8 items-center">
               {[
-                { name: 'GCash', logo: 'https://logo.clearbit.com/gcash.com', bg: '#fff', shadow: 'rgba(0,112,224,0.3)' },
-                { name: 'Maya', logo: 'https://logo.clearbit.com/paymaya.com', bg: '#fff', shadow: 'rgba(0,168,89,0.3)' },
-                { name: 'BDO', logo: 'https://logo.clearbit.com/bdo.com.ph', bg: '#fff', shadow: 'rgba(192,0,0,0.3)' },
-                { name: 'BPI', logo: 'https://logo.clearbit.com/bpi.com.ph', bg: '#fff', shadow: 'rgba(29,58,138,0.3)' },
-                { name: 'UnionBank', logo: 'https://logo.clearbit.com/unionbankph.com', bg: '#fff', shadow: 'rgba(234,88,12,0.3)' },
-                { name: 'USDT', logo: 'https://assets.coingecko.com/coins/images/325/small/Tether.png', bg: '#fff', shadow: 'rgba(38,161,123,0.3)' },
+                { name: 'GCash', logo: 'https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/1fa2efa81_generated_image.png', shadow: 'rgba(0,112,224,0.4)' },
+                { name: 'Maya', logo: 'https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/2a6161fc0_generated_image.png', shadow: 'rgba(0,168,89,0.4)' },
+                { name: 'BDO', logo: 'https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/78d5a5e05_generated_image.png', shadow: 'rgba(192,0,0,0.4)' },
+                { name: 'BPI', logo: 'https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3a0e4c484_generated_image.png', shadow: 'rgba(29,58,138,0.4)' },
+                { name: 'UnionBank', logo: 'https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/22bebcbb9_generated_image.png', shadow: 'rgba(234,88,12,0.4)' },
+                { name: 'USDT', logo: 'https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/e403a0d8b_generated_image.png', shadow: 'rgba(38,161,123,0.4)' },
               ].map(p => (
                 <div key={p.name}
                   className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
-                  style={{ background: p.bg, boxShadow: `0 0 14px ${p.shadow}`, border: `1px solid ${p.shadow}` }}>
-                  <img src={p.logo} alt={p.name} className="h-6 w-6 object-contain rounded" />
-                  <span className="text-gray-800 font-bold text-sm">{p.name}</span>
+                  style={{ background: 'rgba(255,255,255,0.07)', boxShadow: `0 0 14px ${p.shadow}`, border: `1px solid ${p.shadow}` }}>
+                  <img src={p.logo} alt={p.name} className="h-8 w-8 object-contain rounded-lg" />
+                  <span className="text-white font-bold text-sm">{p.name}</span>
                 </div>
               ))}
             </div>
