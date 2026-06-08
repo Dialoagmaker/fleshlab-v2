@@ -8,6 +8,7 @@ export default function WorkflowTab({ application, handleStatusUpdate }) {
   const [isCreatingContract, setIsCreatingContract] = useState(false);
   const [isCreatingPerformer, setIsCreatingPerformer] = useState(false);
   const [isLinkingUser, setIsLinkingUser] = useState(false);
+  const [contractAction, setContractAction] = useState(null);
 
   const statusColors = {
     pending: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
@@ -92,8 +93,18 @@ export default function WorkflowTab({ application, handleStatusUpdate }) {
               )}
             </div>
             {canCreateContract && (
-              <Button className="mt-3" size="sm" onClick={() => setIsCreatingContract(true)}>
+              <Button className="mt-3" size="sm" onClick={() => handleStatusUpdate(application.id, 'contract_pending', { contract_status: 'pending', contract_generated_at: new Date().toISOString() })}>
                 Create Contract
+              </Button>
+            )}
+            {application.status === 'contract_pending' && (
+              <Button className="mt-3" size="sm" onClick={() => handleStatusUpdate(application.id, 'contract_sent', { contract_status: 'sent', contract_sent_at: new Date().toISOString() })}>
+                Mark as Sent
+              </Button>
+            )}
+            {application.status === 'contract_sent' && (
+              <Button className="mt-3" size="sm" onClick={() => handleStatusUpdate(application.id, 'contract_signed', { contract_status: 'signed', contract_signed_at: new Date().toISOString() })}>
+                Mark as Signed
               </Button>
             )}
           </CardContent>
@@ -114,7 +125,7 @@ export default function WorkflowTab({ application, handleStatusUpdate }) {
               )}
             </div>
             {canCreatePerformer && (
-              <Button className="mt-3" size="sm" onClick={() => setIsCreatingPerformer(true)}>
+              <Button className="mt-3" size="sm" onClick={() => handleStatusUpdate(application.id, 'performer_created', { performer_created_at: new Date().toISOString() })}>
                 Create Performer
               </Button>
             )}
@@ -136,7 +147,7 @@ export default function WorkflowTab({ application, handleStatusUpdate }) {
               )}
             </div>
             {canLinkUser && (
-              <Button className="mt-3" size="sm" onClick={() => setIsLinkingUser(true)}>
+              <Button className="mt-3" size="sm" onClick={() => handleStatusUpdate(application.id, 'user_linked', { user_linked_at: new Date().toISOString() })}>
                 Link User
               </Button>
             )}

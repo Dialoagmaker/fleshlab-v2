@@ -12,11 +12,57 @@ import ContactTab from "./tabs/ContactTab";
 export default function ApplicationDetailDialog({ isOpen, onClose, selectedApp, updateMutation, handleStatusUpdate }) {
   if (!selectedApp) return null;
 
+  const canApprove = ['reviewing', 'contacted', 'more_info_requested'].includes(selectedApp.status);
+  const canRequestMoreInfo = ['reviewing', 'pending', 'media_pending'].includes(selectedApp.status);
+  const canReject = !['rejected', 'active', 'contract_signed', 'performer_created', 'user_linked'].includes(selectedApp.status);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Application: {selectedApp.applicant_name}</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Application: {selectedApp.applicant_name}</DialogTitle>
+            <div className="flex gap-2">
+              {canRequestMoreInfo && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    onClose();
+                    setTimeout(() => {
+                      const event = new CustomEvent('open-more-info-modal');
+                      window.dispatchEvent(event);
+                    }, 100);
+                  }}
+                >
+                  Request Info
+                </Button>
+              )}
+              {canApprove && (
+                <Button
+                  size="sm"
+                  onClick={() => handleStatusUpdate(selectedApp.id, 'approved')}
+                >
+                  Approve
+                </Button>
+              )}
+              {canReject && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => {
+                    onClose();
+                    setTimeout(() => {
+                      const event = new CustomEvent('open-reject-modal');
+                      window.dispatchEvent(event);
+                    }, 100);
+                  }}
+                >
+                  Reject
+                </Button>
+              )}
+            </div>
+          </div>
         </DialogHeader>
         
         <Tabs defaultValue="info" className="w-full">

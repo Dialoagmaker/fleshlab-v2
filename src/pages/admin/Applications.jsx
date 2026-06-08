@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -54,6 +54,20 @@ export default function Applications() {
     queryKey: ['applications'],
     queryFn: () => base44.entities.GuestProductionApplication.list('-submitted_at', 200),
   });
+
+  // Listen for custom events from dialog to open modals
+  useEffect(() => {
+    const handleOpenMoreInfo = () => setIsMoreInfoOpen(true);
+    const handleOpenReject = () => setIsRejectModalOpen(true);
+    
+    window.addEventListener('open-more-info-modal', handleOpenMoreInfo);
+    window.addEventListener('open-reject-modal', handleOpenReject);
+    
+    return () => {
+      window.removeEventListener('open-more-info-modal', handleOpenMoreInfo);
+      window.removeEventListener('open-reject-modal', handleOpenReject);
+    };
+  }, []);
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.GuestProductionApplication.update(id, data),
@@ -116,6 +130,49 @@ export default function Applications() {
   const handleApprove = () => {
     if (!selectedApp) return;
     handleStatusUpdate(selectedApp.id, "approved");
+  };
+
+  const handleCreateContract = async () => {
+    if (!selectedApp || selectedApp.contract_id) {
+      toast.error("Contract already exists for this application.");
+      return;
+    }
+    try {
+      const updates = {
+        contract_status: 'pending',
+        status: 'contract_pending',
+        contract_generated_at: new Date().toISOString(),
+      };
+      const logEntry = {
+        timestamp: new Date().toISOString(),
+        action: `Contract created: pending`,
+        contract_status: 'pending',
+      };
+      updates.status_history = [...(selectedApp.status_history || []), JSON.stringify(logEntry)];
+      
+      await base44.entities.GuestProductionApplication.update(selectedApp.id, updates);
+      await queryClient.invalidateQueries({ queryKey: ['applications'] });
+      toast.success("Contract created - pending review");
+      setSelectedApp(prev => prev ? { ...prev, ...updates } : prev);
+    } catch (err) {
+      toast.error(`Failed to create contract: ${err.message}`);
+    }
+  };
+
+  const handleContractSent = () => {
+    if (!selectedApp) return;
+    handleStatusUpdate(selectedApp.id, 'contract_sent', {
+      contract_status: 'sent',
+      contract_sent_at: new Date().toISOString(),
+    });
+  };
+
+  const handleContractSigned = () => {
+    if (!selectedApp) return;
+    handleStatusUpdate(selectedApp.id, 'contract_signed', {
+      contract_status: 'signed',
+      contract_signed_at: new Date().toISOString(),
+    });
   };
 
   const handleCreatePerformer = async () => {
