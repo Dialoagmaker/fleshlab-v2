@@ -66,6 +66,17 @@ export default function GrowthDashboard() {
   const pagesByCategory = ga4Data?.pages_by_category || ga4Data?.pagesByCategory || {};
   const totalPageViewsBackend = ga4Data?.total_page_views || ga4Data?.totalPageViews || 0;
   
+  // Derive all data BEFORE useEffect references it
+  const eventMap = {};
+  events.forEach(e => { eventMap[e.event_name] = e.event_count; });
+
+  const fanclubClicks = eventMap['fanclub_cta_click'] || 0;
+  const checkoutStarted = eventMap['checkout_started'] || 0;
+  const registrationStarted = eventMap['registration_started'] || 0;
+  const gpClicks = eventMap['guest_production_cta_click'] || 0;
+  const bpClicks = eventMap['become_performer_cta_click'] || 0;
+  const totalPageViews = topPages?.reduce((sum, p) => sum + (p.page_views || 0), 0) || 0;
+  
   // Debug: Log full data structure
   useEffect(() => {
     if (ga4Data && !ga4Loading) {
@@ -95,17 +106,7 @@ export default function GrowthDashboard() {
       console.log('✅ Top Pages Count:', gscData?.top_pages?.length);
       console.log('='.repeat(80));
     }
-  }, [ga4Data, gscData, ga4Loading, gscLoading, ga4PropertyId, topPages, events, trafficSources, totalPageViewsBackend, totalPageViews]);
-
-  const eventMap = {};
-  events.forEach(e => { eventMap[e.event_name] = e.event_count; });
-
-  const fanclubClicks = eventMap['fanclub_cta_click'] || 0;
-  const checkoutStarted = eventMap['checkout_started'] || 0;
-  const registrationStarted = eventMap['registration_started'] || 0;
-  const gpClicks = eventMap['guest_production_cta_click'] || 0;
-  const bpClicks = eventMap['become_performer_cta_click'] || 0;
-  const totalPageViews = topPages?.reduce((sum, p) => sum + (p.page_views || 0), 0) || 0;
+  }, [ga4Data, gscData, ga4Loading, gscLoading, ga4PropertyId, topPages, events, trafficSources, totalPageViewsBackend, totalPageViews, fanclubClicks, checkoutStarted, registrationStarted, gpClicks, bpClicks]);
 
   return (
     <>
