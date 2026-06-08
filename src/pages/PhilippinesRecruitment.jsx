@@ -714,7 +714,7 @@ export default function PhilippinesRecruitment() {
                 className="flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-xs font-bold"
                 style={{ background: 'rgba(10,0,5,0.75)', border: '1.5px solid rgba(244,63,94,0.35)', boxShadow: '0 0 10px rgba(244,63,94,0.15)' }}
               >
-                <span className="text-[14px]">🇵🇭</span>
+                <span>PH</span>
                 <span>Support for Filipino Creators</span>
               </div>
               <div 
