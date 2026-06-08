@@ -85,6 +85,14 @@
       "type": "string",
       "title": "ID Document URL (Legacy)"
     },
+    "id_document_back_r2_key": {
+      "type": "string",
+      "title": "ID Document Back R2 Key"
+    },
+    "selfie_with_id_r2_key": {
+      "type": "string",
+      "title": "Selfie with ID R2 Key"
+    },
     "media_upload_status": {
       "type": "string",
       "enum": [
@@ -111,8 +119,16 @@
         "pending",
         "media_pending",
         "reviewing",
+        "contacted",
+        "more_info_requested",
         "approved",
-        "rejected"
+        "rejected",
+        "contract_pending",
+        "contract_sent",
+        "contract_signed",
+        "performer_created",
+        "user_linked",
+        "active"
       ],
       "title": "Status",
       "default": "pending"
@@ -127,10 +143,26 @@
       "title": "Contact Log",
       "format": "textarea"
     },
+    "status_history": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Status History Log (JSON)"
+    },
     "submitted_at": {
       "type": "string",
       "format": "date-time",
       "title": "Submitted At"
+    },
+    "assigned_admin": {
+      "type": "string",
+      "title": "Assigned Admin ID"
+    },
+    "review_started_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Review Started At"
     },
     "media_reviewed_at": {
       "type": "string",
@@ -140,6 +172,107 @@
     "media_reviewed_by": {
       "type": "string",
       "title": "Media Reviewed By (User ID)"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Approved At"
+    },
+    "approved_by": {
+      "type": "string",
+      "title": "Approved By"
+    },
+    "rejected_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Rejected At"
+    },
+    "rejected_by": {
+      "type": "string",
+      "title": "Rejected By"
+    },
+    "rejection_reason": {
+      "type": "string",
+      "title": "Rejection Reason",
+      "format": "textarea"
+    },
+    "more_info_requested_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "More Info Requested At"
+    },
+    "more_info_requested_by": {
+      "type": "string",
+      "title": "More Info Requested By"
+    },
+    "more_info_request_message": {
+      "type": "string",
+      "title": "More Info Request Message",
+      "format": "textarea"
+    },
+    "contract_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "sent",
+        "signed",
+        "negotiating"
+      ],
+      "title": "Contract Status"
+    },
+    "contract_id": {
+      "type": "string",
+      "title": "Contract ID"
+    },
+    "contract_generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Contract Generated At"
+    },
+    "contract_sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Contract Sent At"
+    },
+    "contract_signed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Contract Signed At"
+    },
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "performer_created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Performer Created At"
+    },
+    "performer_created_by": {
+      "type": "string",
+      "title": "Performer Created By"
+    },
+    "linked_user_id": {
+      "type": "string",
+      "title": "Linked User ID"
+    },
+    "user_linked_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "User Linked At"
+    },
+    "user_linked_by": {
+      "type": "string",
+      "title": "User Linked By"
+    },
+    "activated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Activated At"
+    },
+    "activated_by": {
+      "type": "string",
+      "title": "Activated By"
     },
     "request_type": {
       "type": "string",

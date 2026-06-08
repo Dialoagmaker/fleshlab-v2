@@ -14,26 +14,40 @@ import { toast } from "sonner";
 import {
   Users, CheckCircle, XCircle, Clock, Eye, MessageSquare, UserPlus,
   Search, Filter, Mail, Phone, FileText, Image as ImageIcon, Video,
-  Download, AlertTriangle, ExternalLink, Send, RefreshCw, Lock, Copy, PhoneCall, Link as LinkIcon, Trash2
+  Download, AlertTriangle, ExternalLink, Send, RefreshCw, Lock, Copy, PhoneCall, Link as LinkIcon, Trash2, HelpCircle, Zap, FileCheck
 } from "lucide-react";
 import { format, formatDistanceToNow, differenceInYears } from "date-fns";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 const STATUS_COLOR = {
-  pending:       "bg-yellow-600",
+  pending: "bg-yellow-600",
   media_pending: "bg-orange-600",
-  reviewing:     "bg-blue-600",
-  contacted:     "bg-purple-600",
-  approved:      "bg-green-600",
-  rejected:      "bg-red-600",
+  reviewing: "bg-blue-600",
+  contacted: "bg-purple-600",
+  more_info_requested: "bg-cyan-600",
+  approved: "bg-green-600",
+  rejected: "bg-red-600",
+  contract_pending: "bg-indigo-500",
+  contract_sent: "bg-indigo-500",
+  contract_signed: "bg-teal-500",
+  performer_created: "bg-pink-500",
+  user_linked: "bg-lime-500",
+  active: "bg-green-500",
 };
 const STATUS_ICON = {
-  pending:       <Clock className="w-3.5 h-3.5" />,
+  pending: <Clock className="w-3.5 h-3.5" />,
   media_pending: <AlertTriangle className="w-3.5 h-3.5" />,
-  reviewing:     <MessageSquare className="w-3.5 h-3.5" />,
-  contacted:     <Phone className="w-3.5 h-3.5" />,
-  approved:      <CheckCircle className="w-3.5 h-3.5" />,
-  rejected:      <XCircle className="w-3.5 h-3.5" />,
+  reviewing: <MessageSquare className="w-3.5 h-3.5" />,
+  contacted: <Phone className="w-3.5 h-3.5" />,
+  more_info_requested: <HelpCircle className="w-3.5 h-3.5" />,
+  approved: <CheckCircle className="w-3.5 h-3.5" />,
+  rejected: <XCircle className="w-3.5 h-3.5" />,
+  contract_pending: <FileText className="w-3.5 h-3.5" />,
+  contract_sent: <Send className="w-3.5 h-3.5" />,
+  contract_signed: <FileCheck className="w-3.5 h-3.5" />,
+  performer_created: <UserPlus className="w-3.5 h-3.5" />,
+  user_linked: <LinkIcon className="w-3.5 h-3.5" />,
+  active: <Zap className="w-3.5 h-3.5" />,
 };
 
 function copyToClipboard(text) {
@@ -133,6 +147,10 @@ export default function Applications() {
   const [selectedMissingFiles, setSelectedMissingFiles] = useState([]);
   const [isCreatePerformerOpen, setIsCreatePerformerOpen] = useState(false);
   const [isCreateContractOpen, setIsCreateContractOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [isLinkUserOpen, setIsLinkUserOpen] = useState(false);
+  const [userToLink, setUserToLink] = useState(null);
   const [activeTab, setActiveTab] = useState("info");
   const [contractData, setContractData] = useState(null);
   const [isEditingContractData, setIsEditingContractData] = useState(false);
@@ -191,13 +209,45 @@ export default function Applications() {
     return missingFields;
   };
 
-  const handleStatusUpdate = (applicationId, newStatus, extra = {}) => {
+    const handleStatusUpdate = (applicationId, newStatus, extra = {}) => {
     const updates = { status: newStatus, ...extra };
-    if (newStatus === "reviewing") {
-      updates.media_reviewed_at = new Date().toISOString();
+    const oldStatus = selectedApp?.status;
+
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      action: `Status changed: ${oldStatus} -> ${newStatus}`,
+      old_status: oldStatus,
+      new_status: newStatus,
+      // admin: user.email // Assuming user object is available from auth context
+    };
+
+    const existingHistory = selectedApp?.status_history || [];
+    updates.status_history = [...existingHistory, JSON.stringify(logEntry)];
+
+    if (newStatus === "reviewing" && oldStatus !== "reviewing") {
+      updates.review_started_at = new Date().toISOString();
+    } else if (newStatus === "approved") {
+      updates.approved_at = new Date().toISOString();
+    } else if (newStatus === "rejected") {
+      updates.rejected_at = new Date().toISOString();
     }
+
     updateMutation.mutate({ id: applicationId, data: updates });
     setSelectedApp(prev => prev ? { ...prev, ...updates } : prev);
+  };
+
+    const [isMoreInfoOpen, setIsMoreInfoOpen] = useState(false);
+  const [moreInfoMessage, setMoreInfoMessage] = useState("");
+
+  const handleRequestMoreInfo = () => {
+    if (!selectedApp) return;
+    const updates = {
+      status: 'more_info_requested',
+      more_info_requested_at: new Date().toISOString(),
+      more_info_request_message: moreInfoMessage,
+    };
+    handleStatusUpdate(selectedApp.id, 'more_info_requested', updates);
+    setIsMoreInfoOpen(false);
   };
 
   const handleApprove = () => {
@@ -611,6 +661,13 @@ export default function Applications() {
             <SelectItem value="contacted">Contacted</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="more_info_requested">More Info Requested</SelectItem>
+            <SelectItem value="contract_pending">Contract Pending</SelectItem>
+            <SelectItem value="contract_sent">Contract Sent</SelectItem>
+            <SelectItem value="contract_signed">Contract Signed</SelectItem>
+            <SelectItem value="performer_created">Performer Created</SelectItem>
+            <SelectItem value="user_linked">User Linked</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -1178,7 +1235,88 @@ export default function Applications() {
                     <UserPlus className="w-4 h-4 mr-2" /> Create Performer Profile
                   </Button>
                 )}
-                {selectedApp.admin_notes?.includes('Performer created:') && (() => {
+                 {isMoreInfoOpen && (
+        <Dialog open={isMoreInfoOpen} onOpenChange={setIsMoreInfoOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Request More Information</DialogTitle>
+            </DialogHeader>
+            <div className=\"space-y-4\">
+              <Label>Message to applicant</Label>
+              <Textarea value={moreInfoMessage} onChange={(e) => setMoreInfoMessage(e.target.value)} />
+            </div>
+            <DialogFooter>
+              <Button variant=\"outline\" onClick={() => setIsMoreInfoOpen(false)}>Cancel</Button>
+              <Button onClick={handleRequestMoreInfo}>Send Request</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {isRejectModalOpen && (
+        <Dialog open={isRejectModalOpen} onOpenChange={setIsRejectModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reject Application</DialogTitle>
+            </DialogHeader>
+            <div className=\"space-y-4\">
+              <Label>Reason for rejection (internal)</Label>
+              <Textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} />
+            </div>
+            <DialogFooter>
+              <Button variant=\"outline\" onClick={() => setIsRejectModalOpen(false)}>Cancel</Button>
+              <Button variant=\"destructive\" onClick={() => {
+                handleStatusUpdate(selectedApp.id, "rejected", { rejection_reason: rejectionReason });
+                setIsRejectModalOpen(false);
+              }}>Reject</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {isRejectModalOpen && (
+        <Dialog open={isRejectModalOpen} onOpenChange={setIsRejectModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reject Application</DialogTitle>
+            </DialogHeader>
+            <div className=\"space-y-4\">
+              <Label>Reason for rejection (internal)</Label>
+              <Textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} />
+            </div>
+            <DialogFooter>
+              <Button variant=\"outline\" onClick={() => setIsRejectModalOpen(false)}>Cancel</Button>
+              <Button variant=\"destructive\" onClick={() => {
+                handleStatusUpdate(selectedApp.id, "rejected", { rejection_reason: rejectionReason });
+                setIsRejectModalOpen(false);
+              }}>Reject</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {isRejectModalOpen && (
+        <Dialog open={isRejectModalOpen} onOpenChange={setIsRejectModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reject Application</DialogTitle>
+            </DialogHeader>
+            <div className=\"space-y-4\">
+              <Label>Reason for rejection (internal)</Label>
+              <Textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} />
+            </div>
+            <DialogFooter>
+              <Button variant=\"outline\" onClick={() => setIsRejectModalOpen(false)}>Cancel</Button>
+              <Button variant=\"destructive\" onClick={() => {
+                handleStatusUpdate(selectedApp.id, "rejected", { rejection_reason: rejectionReason });
+                setIsRejectModalOpen(false);
+              }}>Reject</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {selectedApp.admin_notes?.includes('Performer created:') && (() => {
                   // Check ALL required contract fields
                   const hasLegalName = !!selectedApp.legal_name;
                   const hasDOB = !!selectedApp.date_of_birth;
@@ -1228,7 +1366,61 @@ export default function Applications() {
 
       {/* Create performer confirm */}
       {selectedApp && (
-        <Dialog open={isCreatePerformerOpen} onOpenChange={setIsCreatePerformerOpen}>
+        {isLinkUserOpen && (
+        <Dialog open={isLinkUserOpen} onOpenChange={setIsLinkUserOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Link User Account</DialogTitle>
+            </DialogHeader>
+            {/* Dummy user selection, replace with actual user search component */}
+            <Select onValueChange={(val) => setUserToLink(val)}>
+              <SelectTrigger>
+                <SelectValue placeholder=\"Select user to link...\" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value=\"user1\">user1@example.com</SelectItem>
+                <SelectItem value=\"user2\">user2@example.com</SelectItem>
+              </SelectContent>
+            </Select>
+            <DialogFooter>
+              <Button variant=\"outline\" onClick={() => setIsLinkUserOpen(false)}>Cancel</Button>
+              <Button onClick={() => {
+                handleStatusUpdate(selectedApp.id, 'user_linked', { linked_user_id: userToLink });
+                setIsLinkUserOpen(false);
+              }} disabled={!userToLink}>Link User</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {isLinkUserOpen && (
+        <Dialog open={isLinkUserOpen} onOpenChange={setIsLinkUserOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Link User Account</DialogTitle>
+            </DialogHeader>
+            {/* Dummy user selection, replace with actual user search component */}
+            <Select onValueChange={(val) => setUserToLink(val)}>
+              <SelectTrigger>
+                <SelectValue placeholder=\"Select user to link...\" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value=\"user1\">user1@example.com</SelectItem>
+                <SelectItem value=\"user2\">user2@example.com</SelectItem>
+              </SelectContent>
+            </Select>
+            <DialogFooter>
+              <Button variant=\"outline\" onClick={() => setIsLinkUserOpen(false)}>Cancel</Button>
+              <Button onClick={() => {
+                handleStatusUpdate(selectedApp.id, 'user_linked', { linked_user_id: userToLink });
+                setIsLinkUserOpen(false);
+              }} disabled={!userToLink}>Link User</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      <Dialog open={isCreatePerformerOpen} onOpenChange={setIsCreatePerformerOpen}>
           <DialogContent>
             <DialogHeader><DialogTitle>Create Performer Profile</DialogTitle></DialogHeader>
             <div className="space-y-3 text-sm">
