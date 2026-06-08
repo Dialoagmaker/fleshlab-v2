@@ -957,8 +957,8 @@ export default function PhilippinesRecruitment() {
         <section style={{ background: '#06030c' }} className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
           {/* Right side visual */}
           <div className="absolute right-0 top-0 bottom-0 w-1/3 hidden xl:block overflow-hidden">
-            <img src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/14dcbc4fd_generated_image.png"
-              alt="" className="w-full h-full object-cover object-center opacity-30"
+            <img src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/07e76e1e0_generated_image.png"
+              alt="" className="w-full h-full object-cover object-center opacity-40"
               style={{ maskImage: 'linear-gradient(to left, rgba(0,0,0,0.7), transparent)', WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,0.7), transparent)' }} />
             <div className="absolute inset-0" style={{ background: 'linear-gradient(to left, rgba(220,0,100,0.15), transparent)' }} />
           </div>
@@ -971,21 +971,39 @@ export default function PhilippinesRecruitment() {
             <h2 className="text-3xl sm:text-4xl font-black text-white mb-2">Philippines payout options</h2>
             <p className="text-gray-400 mb-8">Multiple methods (subject to confirmation)</p>
 
-            {/* Payment method badges */}
-            <div className="flex flex-wrap gap-3 mb-8">
-              {[
-                { label: 'GCash', color: '#0070e0', icon: '💙' },
-                { label: 'Maya', color: '#6b21a8', icon: '💜' },
-                { label: 'BDO', color: '#c00000', icon: '🏦' },
-                { label: 'BPI', color: '#1d4ed8', icon: '🏦' },
-                { label: 'UnionBank', color: '#ea580c', icon: '🏦' },
-                { label: 'Crypto (USDT)', color: '#16a34a', icon: '₿' },
-              ].map(p => (
-                <div key={p.label} className="flex items-center gap-2 px-4 py-2 rounded-full text-white text-sm font-bold"
-                  style={{ background: p.color, boxShadow: `0 0 12px ${p.color}55` }}>
-                  {p.label}
-                </div>
-              ))}
+            {/* Payment method logos */}
+            <div className="flex flex-wrap gap-4 mb-8 items-center">
+              {/* GCash */}
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl"
+                style={{ background: '#fff', boxShadow: '0 0 16px rgba(0,112,224,0.3)', border: '1px solid rgba(0,112,224,0.3)' }}>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/GCash_logo.svg/320px-GCash_logo.svg.png" alt="GCash" className="h-5 object-contain" style={{ width: 'auto' }} />
+              </div>
+              {/* Maya */}
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl"
+                style={{ background: '#fff', boxShadow: '0 0 16px rgba(0,153,102,0.3)', border: '1px solid rgba(0,153,102,0.2)' }}>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Maya_logo_%28payment_app%29.svg/320px-Maya_logo_%28payment_app%29.svg.png" alt="Maya" className="h-5 object-contain" style={{ width: 'auto' }} />
+              </div>
+              {/* BDO */}
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl"
+                style={{ background: '#fff', boxShadow: '0 0 16px rgba(192,0,0,0.25)', border: '1px solid rgba(192,0,0,0.2)' }}>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/BDO_Unibank_%28logo%29.svg/320px-BDO_Unibank_%28logo%29.svg.png" alt="BDO" className="h-5 object-contain" style={{ width: 'auto' }} />
+              </div>
+              {/* BPI */}
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl"
+                style={{ background: '#fff', boxShadow: '0 0 16px rgba(29,78,216,0.25)', border: '1px solid rgba(29,78,216,0.2)' }}>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Bank_of_the_Philippine_Islands_logo.svg/320px-Bank_of_the_Philippine_Islands_logo.svg.png" alt="BPI" className="h-5 object-contain" style={{ width: 'auto' }} />
+              </div>
+              {/* UnionBank */}
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl"
+                style={{ background: '#fff', boxShadow: '0 0 16px rgba(234,88,12,0.25)', border: '1px solid rgba(234,88,12,0.2)' }}>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/UnionBank_of_the_Philippines_logo.svg/320px-UnionBank_of_the_Philippines_logo.svg.png" alt="UnionBank" className="h-5 object-contain" style={{ width: 'auto' }} />
+              </div>
+              {/* USDT/Crypto */}
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl"
+                style={{ background: '#fff', boxShadow: '0 0 16px rgba(22,163,74,0.3)', border: '1px solid rgba(22,163,74,0.2)' }}>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Tether_USDT.svg/320px-Tether_USDT.svg.png" alt="USDT" className="h-5 object-contain" style={{ width: 'auto' }} />
+                <span className="text-gray-700 text-sm font-bold">USDT</span>
+              </div>
             </div>
 
             {/* Info grid */}
