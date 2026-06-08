@@ -49,9 +49,9 @@ const NAV_GROUPS = [
   {
     label: "System",
     items: [
-      { href: "/admin/seo",       label: "SEO",       icon: Settings },
-      { href: "/admin/migration", label: "Migration", icon: Database },
-    ],
+       { href: "/admin/growth",     label: "SEO",       icon: Settings },
+       { href: "/admin/migration", label: "Migration", icon: Database },
+     ],
   },
 ];
 
