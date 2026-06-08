@@ -50,7 +50,7 @@ function ChoiceButton({ label, selected, onClick }) {
   );
 }
 
-const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sourcePage, sourceCountry }, ref) {
+const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sourcePage, sourceCountry, utmSource, utmMarket, utmCampaign }, ref) {
   const sessionId = useMemo(() => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, []);
   const [step, setStep] = useState(0);
 
@@ -121,6 +121,9 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
         // Source attribution
         source_page: sourcePage || null,
         source_country: sourceCountry || null,
+        utm_source: utmSource || null,
+        utm_market: utmMarket || null,
+        utm_campaign: utmCampaign || null,
       };
 
       const response = await base44.functions.invoke("submitPerformerApplication", payload);

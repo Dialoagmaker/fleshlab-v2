@@ -778,6 +778,29 @@ export default function Applications() {
                       <div className="bg-secondary rounded-lg p-3 text-xs text-foreground whitespace-pre-wrap mt-1 max-h-32 overflow-y-auto">{selectedApp.message}</div>
                     </div>
                   )}
+                  {/* Source Attribution */}
+                  {(selectedApp.source_page || selectedApp.source_country || selectedApp.utm_source || selectedApp.utm_market || selectedApp.utm_campaign) && (
+                    <div className="border-t border-border pt-4 mt-4">
+                      <Label className="text-xs text-muted-foreground mb-2 block">Source Attribution</Label>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        {selectedApp.source_page && (
+                          <div><Label className="text-xs text-muted-foreground">Source Page</Label><div className="text-foreground text-sm font-mono bg-secondary px-2 py-1 rounded mt-0.5">{selectedApp.source_page}</div></div>
+                        )}
+                        {selectedApp.source_country && (
+                          <div><Label className="text-xs text-muted-foreground">Source Country</Label><div className="text-foreground text-sm font-mono bg-secondary px-2 py-1 rounded mt-0.5">{selectedApp.source_country}</div></div>
+                        )}
+                        {selectedApp.utm_source && (
+                          <div><Label className="text-xs text-muted-foreground">UTM Source</Label><div className="text-foreground text-sm font-mono bg-secondary px-2 py-1 rounded mt-0.5">{selectedApp.utm_source}</div></div>
+                        )}
+                        {selectedApp.utm_market && (
+                          <div><Label className="text-xs text-muted-foreground">UTM Market</Label><div className="text-foreground text-sm font-mono bg-secondary px-2 py-1 rounded mt-0.5">{selectedApp.utm_market}</div></div>
+                        )}
+                        {selectedApp.utm_campaign && (
+                          <div><Label className="text-xs text-muted-foreground">UTM Campaign</Label><div className="text-foreground text-sm font-mono bg-secondary px-2 py-1 rounded mt-0.5">{selectedApp.utm_campaign}</div></div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -249,6 +249,31 @@
       "type": "string",
       "title": "Applicant User ID",
       "description": "Base44 user ID if logged in at time of submission"
+    },
+    "source_page": {
+      "type": "string",
+      "title": "Source Page",
+      "description": "Page slug where application was submitted (e.g., gay-performer-recruitment-philippines)"
+    },
+    "source_country": {
+      "type": "string",
+      "title": "Source Country",
+      "description": "Country/market from application URL (e.g., Philippines)"
+    },
+    "utm_source": {
+      "type": "string",
+      "title": "UTM Source",
+      "description": "URL param: source (e.g., philippines-recruitment)"
+    },
+    "utm_market": {
+      "type": "string",
+      "title": "UTM Market",
+      "description": "URL param: market (e.g., philippines)"
+    },
+    "utm_campaign": {
+      "type": "string",
+      "title": "UTM Campaign",
+      "description": "URL param: campaign (e.g., pinoy_recruitment)"
     }
   },
   "required": [

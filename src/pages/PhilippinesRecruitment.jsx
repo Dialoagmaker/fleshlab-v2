@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
   MessageCircle, 
@@ -43,11 +43,27 @@ import usdtLogo from "@/assets/payment-logos/usdt.svg";
 
 export default function PhilippinesRecruitment() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Extract URL params for attribution
+  const urlParams = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return {
+      source: params.get("source") || "philippines-recruitment",
+      market: params.get("market") || "philippines",
+      campaign: params.get("campaign") || "pinoy_recruitment",
+    };
+  }, [location.search]);
 
   useEffect(() => {
     // Track Philippines-specific page view
-    trackEvent("philippines_recruitment_page_view", { page: "philippines", market: "philippines" });
-  }, []);
+    trackEvent("philippines_recruitment_page_view", { 
+      page: "philippines", 
+      market: urlParams.market,
+      source: urlParams.source,
+      campaign: urlParams.campaign 
+    });
+  }, [urlParams]);
 
   const handleApplyClick = () => {
     trackEvent("philippines_recruitment_cta_click", { source: "philippines_page", market: "philippines" });
@@ -694,7 +710,13 @@ export default function PhilippinesRecruitment() {
               </h2>
               <p className="text-gray-400 max-w-md mx-auto">Private application · Reviewed within 48 hours · All uploads are confidential</p>
             </div>
-            <BPApplicationForm sourcePage="gay-performer-recruitment-philippines" sourceCountry="Philippines" />
+            <BPApplicationForm 
+              sourcePage="gay-performer-recruitment-philippines" 
+              sourceCountry="Philippines"
+              utmSource={urlParams.source}
+              utmMarket={urlParams.market}
+              utmCampaign={urlParams.campaign}
+            />
           </div>
         </section>
 

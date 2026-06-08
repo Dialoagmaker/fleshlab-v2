@@ -59,6 +59,35 @@ export default function GrowthDashboard() {
     staleTime: 0,
   });
 
+  // Applications attribution data
+  const { data: applicationsData, isLoading: applicationsLoading } = useQuery({
+    queryKey: ['applications-attribution', dateRange],
+    queryFn: async () => {
+      const response = await base44.entities.GuestProductionApplication.list();
+      const all = response || [];
+      // Filter by date range
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - parseInt(dateRange));
+      const filtered = all.filter(app => {
+        if (!app.submitted_at) return false;
+        return new Date(app.submitted_at) >= cutoff;
+      });
+      // Count by market and source
+      const phApps = filtered.filter(app => app.utm_market === 'philippines' || app.source_country === 'Philippines');
+      const phSourceApps = filtered.filter(app => app.utm_source === 'philippines-recruitment');
+      const phCampaignApps = filtered.filter(app => app.utm_campaign === 'pinoy_recruitment');
+      return {
+        total: filtered.length,
+        philippines_total: phApps.length,
+        philippines_source: phSourceApps.length,
+        philippines_campaign: phCampaignApps.length,
+        all_apps: filtered,
+      };
+    },
+    retry: 1,
+    staleTime: 0,
+  });
+
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
@@ -249,7 +278,12 @@ export default function GrowthDashboard() {
                     <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">Page → CTA</span><span className="font-medium">{fmtPct(phPageViews > 0 ? (phCtaClicks / phPageViews) * 100 : 0)}</span></div>
                     <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">CTA → WhatsApp</span><span className="font-medium">{fmtPct(phCtaClicks > 0 ? (phWhatsappClicks / phCtaClicks) * 100 : 0)}</span></div>
                   </div>
-                  {(phPageViews === 0 && phCtaClicks === 0) && (<div className="p-2 bg-yellow-500/10 border border-yellow-500/20 rounded"><p className="text-[10px] text-yellow-500 flex items-center gap-1"><AlertCircle className="w-2.5 h-2.5" />No Philippines recruitment data yet</p></div>)}
+                  <div className="pt-2 border-t border-green-500/20">
+                    <div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">Applications (PH)</span><span className="font-semibold">{fmt(applicationsData?.philippines_total || 0)}</span></div>
+                    <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">Source: philippines-recruitment</span><span className="font-medium">{fmt(applicationsData?.philippines_source || 0)}</span></div>
+                    <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">Campaign: pinoy_recruitment</span><span className="font-medium">{fmt(applicationsData?.philippines_campaign || 0)}</span></div>
+                  </div>
+                  {(phPageViews === 0 && phCtaClicks === 0 && (!applicationsData || applicationsData.philippines_total === 0)) && (<div className="p-2 bg-yellow-500/10 border border-yellow-500/20 rounded"><p className="text-[10px] text-yellow-500 flex items-center gap-1"><AlertCircle className="w-2.5 h-2.5" />No Philippines recruitment data yet</p></div>)}
                 </CardContent>
               </Card>
               <Card>
