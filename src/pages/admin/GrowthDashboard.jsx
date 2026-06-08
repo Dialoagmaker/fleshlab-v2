@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SEOMeta from "@/components/SEOMeta";
@@ -29,13 +29,21 @@ export default function GrowthDashboard() {
 
   const { data: ga4Data, isLoading: ga4Loading, refetch: refetchGa4 } = useQuery({
     queryKey: ['growth-analytics', dateRange],
-    queryFn: () => base44.functions.invoke('growthAnalytics', { days: parseInt(dateRange) }),
+    queryFn: async () => {
+      const res = await base44.functions.invoke('growthAnalytics', { days: parseInt(dateRange) });
+      console.log('[GrowthDashboard] GA4 Response:', JSON.stringify(res, null, 2));
+      return res;
+    },
     retry: 1,
   });
 
   const { data: gscData, isLoading: gscLoading } = useQuery({
     queryKey: ['gsc-analytics'],
-    queryFn: () => base44.functions.invoke('seoGscSearchAnalytics', {}),
+    queryFn: async () => {
+      const res = await base44.functions.invoke('seoGscSearchAnalytics', {});
+      console.log('[GrowthDashboard] GSC Response:', JSON.stringify(res, null, 2));
+      return res;
+    },
     retry: 1,
   });
 
@@ -54,6 +62,20 @@ export default function GrowthDashboard() {
   const topPages = ga4Data?.top_pages || [];
   const pagesByCategory = ga4Data?.pages_by_category || {};
   const trackingHealth = ga4Data?.tracking_health || {};
+  
+  // Debug: Log data structure
+  useEffect(() => {
+    if (ga4Data && !ga4Loading) {
+      console.log('[GrowthDashboard] Parsed GA4 Data:', {
+        ga4_property_id: ga4Data?.ga4_property_id,
+        top_pages_count: topPages?.length,
+        events_count: events?.length,
+        traffic_sources_count: trafficSources?.length,
+        total_page_views: topPages?.reduce((sum, p) => sum + (p.page_views || 0), 0),
+        raw_keys: Object.keys(ga4Data || {}),
+      });
+    }
+  }, [ga4Data, ga4Loading]);
 
   const eventMap = {};
   events.forEach(e => { eventMap[e.event_name] = e.event_count; });
@@ -94,6 +116,23 @@ export default function GrowthDashboard() {
           <div className="flex items-center justify-center py-20"><RefreshCw className="w-8 h-8 animate-spin text-primary" /></div>
         ) : (
           <>
+            {/* DEBUG PANEL */}
+            <Card className="border-red-500/50 bg-red-950/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold text-red-400">🐛 DEBUG INFO</CardTitle>
+              </CardHeader>
+              <CardContent className="text-xs space-y-1 font-mono">
+                <div>GA4 Property ID: <code className="bg-black/50 px-1 rounded">{ga4Data?.ga4_property_id || "MISSING"}</code></div>
+                <div>Top Pages Count: <code>{topPages?.length || 0}</code></div>
+                <div>Events Count: <code>{events?.length || 0}</code></div>
+                <div>Total Page Views: <code className="text-green-400">{totalPageViews.toLocaleString()}</code></div>
+                <div>Fanclub CTA Clicks: <code>{fanclubClicks.toLocaleString()}</code></div>
+                <div>GSC Clicks: <code>{gscData?.summary?.clicks || 0}</code></div>
+                <div>isLoading: <code>{isLoading ? 'true' : 'false'}</code></div>
+                <div className="text-yellow-400">Check browser console for full data dump</div>
+              </CardContent>
+            </Card>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card>
                 <CardHeader className="pb-3">
@@ -119,9 +158,9 @@ export default function GrowthDashboard() {
               <Card>
                 <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-500" />Tracking Status</CardTitle></CardHeader>
                 <CardContent className="space-y-2">
-                  <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">GA4 ID</span><code className="bg-muted px-1.5 py-0.5 rounded text-[10px]">{trackingHealth?.ga4_property_id?.split('-')[1] || "—"}</code></div>
+                  <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">GA4 ID</span><code className="bg-muted px-1.5 py-0.5 rounded text-[10px]">{ga4Data?.ga4_property_id || "—"}</code></div>
                   <div className="flex flex-wrap gap-1">{['page_view', 'fanclub_cta_click', 'checkout_started'].map(event => (<Badge key={event} variant="outline" className="text-[10px]">{eventMap[event] > 0 ? '✓' : '○'} {event.split('_').pop()}</Badge>))}</div>
-                  <p className="text-[10px] text-yellow-500"><AlertCircle className="w-2.5 h-2.5 inline mr-0.5" />Events just installed</p>
+                  {events.length === 0 && <p className="text-[10px] text-yellow-500"><AlertCircle className="w-2.5 h-2.5 inline mr-0.5" />No events in response</p>}
                 </CardContent>
               </Card>
             </div>
