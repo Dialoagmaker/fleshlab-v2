@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import SEOMeta from "@/components/SEOMeta";
 import BPHero from "@/components/becomePerformer/BPHero";
 import BPEarnSection from "@/components/becomePerformer/BPEarnSection";
@@ -101,25 +102,26 @@ export default function BecomePerformer() {
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl font-bold text-center mb-8">Specific Recruitment Programs</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card 
-                className="bg-gradient-to-br from-orange-900/50 to-orange-800/30 border-orange-700 cursor-pointer hover:shadow-lg hover:shadow-orange-900/50 transition-all"
-                onClick={() => navigate("/gay-performer-recruitment-philippines")}
-              >
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Globe className="h-6 w-6 text-white" />
+              <Link to="/gay-performer-recruitment-philippines" className="block">
+                <Card 
+                  className="bg-gradient-to-br from-orange-900/50 to-orange-800/30 border-orange-700 cursor-pointer hover:shadow-lg hover:shadow-orange-900/50 transition-all"
+                >
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <Globe className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold mb-2">Philippines Recruitment 🇵🇭</h3>
+                        <p className="text-gray-300 mb-4">Filipino gay men: Earn from home with full training. Start with your phone. PHP/USD payments. WhatsApp application available.</p>
+                        <Button className="bg-orange-600 hover:bg-orange-700">
+                          Learn More
+                        </Button>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-bold mb-2">Philippines Recruitment</h3>
-                      <p className="text-gray-300 mb-4">Filipino gay men: Earn from home with full training. Start with your phone. PHP/USD payments. WhatsApp application available.</p>
-                      <Button className="bg-orange-600 hover:bg-orange-700">
-                        Learn More
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
               
               <Card 
                 className="bg-gradient-to-br from-purple-900/50 to-purple-800/30 border-purple-700 cursor-pointer hover:shadow-lg hover:shadow-purple-900/50 transition-all"

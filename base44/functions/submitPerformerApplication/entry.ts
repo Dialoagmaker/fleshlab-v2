@@ -18,6 +18,8 @@ Deno.serve(async (req) => {
       media_upload_status, compliance_upload_status,
       // Legacy fallback
       message, id_document_url,
+      // Source attribution
+      source_page, source_country,
     } = payload;
 
     if (!applicant_name || !email) {
@@ -59,7 +61,7 @@ Deno.serve(async (req) => {
       id_document_url: id_document_url || null,
       status: initialStatus,
       submitted_at: new Date().toISOString(),
-      admin_notes: `Source: become_performer\nPreferred Path: ${package_interest || 'Not specified'}`,
+      admin_notes: `Source: ${source_page || 'become_performer'}\nCountry: ${source_country || 'Not specified'}\nPreferred Path: ${package_interest || 'Not specified'}`,
     });
 
     return Response.json({

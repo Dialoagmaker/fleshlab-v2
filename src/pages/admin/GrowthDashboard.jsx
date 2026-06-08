@@ -87,6 +87,10 @@ export default function GrowthDashboard() {
   const registrationStarted = eventMap['registration_started'] || 0;
   const gpClicks = eventMap['guest_production_cta_click'] || 0;
   const bpClicks = eventMap['become_performer_cta_click'] || 0;
+  // Philippines-specific events
+  const phPageViews = eventMap['philippines_recruitment_page_view'] || 0;
+  const phCtaClicks = eventMap['philippines_recruitment_cta_click'] || 0;
+  const phWhatsappClicks = eventMap['philippines_whatsapp_click'] || 0;
   // Calculate total page views as INTEGER (sum of top 50 pages)
   const totalPageViews = topPages?.reduce((sum, p) => sum + (parseInt(p.page_views, 10) || 0), 0) || 0;
   
@@ -233,6 +237,19 @@ export default function GrowthDashboard() {
                 <CardContent className="space-y-3">
                   <div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">Become Performer CTA</span><span className="font-semibold">{fmt(bpClicks)}</span></div>
                   {(bpClicks === 0) && (<div className="p-2 bg-yellow-500/10 border border-yellow-500/20 rounded"><p className="text-[10px] text-yellow-500 flex items-center gap-1"><AlertCircle className="w-2.5 h-2.5" />No event data yet</p></div>)}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold flex items-center gap-2"><span className="text-xl">🇵🇭</span> Philippines Recruitment</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">Page Views</span><span className="font-semibold">{fmt(phPageViews)}</span></div>
+                  <div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">CTA Clicks</span><span className="font-semibold">{fmt(phCtaClicks)}</span></div>
+                  <div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">WhatsApp Clicks</span><span className="font-semibold">{fmt(phWhatsappClicks)}</span></div>
+                  <div className="pt-2 border-t space-y-1">
+                    <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">Page → CTA</span><span className="font-medium">{fmtPct(phPageViews > 0 ? (phCtaClicks / phPageViews) * 100 : 0)}</span></div>
+                    <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">CTA → WhatsApp</span><span className="font-medium">{fmtPct(phCtaClicks > 0 ? (phWhatsappClicks / phCtaClicks) * 100 : 0)}</span></div>
+                  </div>
+                  {(phPageViews === 0 && phCtaClicks === 0) && (<div className="p-2 bg-yellow-500/10 border border-yellow-500/20 rounded"><p className="text-[10px] text-yellow-500 flex items-center gap-1"><AlertCircle className="w-2.5 h-2.5" />No Philippines recruitment data yet</p></div>)}
                 </CardContent>
               </Card>
               <Card>

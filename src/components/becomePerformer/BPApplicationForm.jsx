@@ -50,7 +50,7 @@ function ChoiceButton({ label, selected, onClick }) {
   );
 }
 
-const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess }, ref) {
+const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sourcePage, sourceCountry }, ref) {
   const sessionId = useMemo(() => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, []);
   const [step, setStep] = useState(0);
 
@@ -118,6 +118,9 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess }, r
           p3.selfie_r2_key ? `Selfie R2: ${p3.selfie_r2_key}` : "",
           p3.id_back_r2_key ? `ID back R2: ${p3.id_back_r2_key}` : "",
         ].filter(Boolean).join("\n") || null,
+        // Source attribution
+        source_page: sourcePage || null,
+        source_country: sourceCountry || null,
       };
 
       const response = await base44.functions.invoke("submitPerformerApplication", payload);

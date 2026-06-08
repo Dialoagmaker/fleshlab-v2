@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import SEOMeta from "@/components/SEOMeta";
+import BPApplicationForm from "@/components/becomePerformer/BPApplicationForm";
 import gcashLogo from "@/assets/payment-logos/gcash.svg";
 import mayaLogo from "@/assets/payment-logos/maya.svg";
 import bdoLogo from "@/assets/payment-logos/bdo.svg";
@@ -44,16 +45,17 @@ export default function PhilippinesRecruitment() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    trackEvent("recruitment_landing_view", { page: "philippines" });
+    // Track Philippines-specific page view
+    trackEvent("philippines_recruitment_page_view", { page: "philippines", market: "philippines" });
   }, []);
 
   const handleApplyClick = () => {
-    trackEvent("become_performer_cta_click", { source: "philippines_page" });
-    navigate("/become-performer");
+    trackEvent("philippines_recruitment_cta_click", { source: "philippines_page", market: "philippines" });
+    navigate("/application-upload?source=philippines-recruitment&market=philippines");
   };
 
   const handleWhatsAppClick = () => {
-    trackEvent("whatsapp_recruitment_click", { source: "philippines_page" });
+    trackEvent("philippines_whatsapp_click", { source: "philippines_page", market: "philippines" });
     window.open("https://wa.me/886958679186?text=Hi%20FLESHLAB%2C%20I'm%20interested%20in%20becoming%20a%20performer%20from%20the%20Philippines", "_blank");
   };
 
@@ -72,9 +74,9 @@ export default function PhilippinesRecruitment() {
   return (
     <>
       <SEOMeta
-        title="Gay Performer Recruitment Philippines | Start as a Filipino Creator"
-        description="Apply as a verified 18+ Filipino gay content creator with FLESHLAB. Start from home with your phone, choose a support model, and build your creator profile safely."
-        canonical="/gay-performer-recruitment-philippines"
+        title="Gay Performer Recruitment Philippines | FLESHLAB"
+        description="Apply as a verified Filipino gay performer or adult content creator with FLESHLAB. Professional studio support, content distribution, performer contracts, and revenue share options."
+        canonical="https://fleshlab.online/gay-performer-recruitment-philippines"
         noIndex={false}
       />
       
@@ -676,6 +678,23 @@ export default function PhilippinesRecruitment() {
                 <div className="flex items-center gap-2.5"><FileCheck className="h-4 w-4 text-rose-500" /><span>KYC Required</span></div>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* ── APPLICATION FORM ── */}
+        <section id="apply-section" className="py-24 px-4 bg-[#050505]">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4 text-xs font-black uppercase tracking-widest text-rose-400"
+                style={{ background: 'rgba(255,45,111,0.1)', border: '1px solid rgba(255,45,111,0.35)' }}>
+                <span>🇵🇭 Philippines Application</span>
+              </div>
+              <h2 className="font-black text-white mb-3" style={{ fontSize: 'clamp(30px, 5vw, 44px)' }}>
+                Start Your <span className="text-rose-400">Application</span>
+              </h2>
+              <p className="text-gray-400 max-w-md mx-auto">Private application · Reviewed within 48 hours · All uploads are confidential</p>
+            </div>
+            <BPApplicationForm sourcePage="gay-performer-recruitment-philippines" sourceCountry="Philippines" />
           </div>
         </section>
 
