@@ -58,6 +58,8 @@ Allow: /performers/
 Allow: /news
 Allow: /news/
 Allow: /fanclub
+Allow: /fan-productions
+Allow: /gay-performer-recruitment
 Allow: /guest-production
 Allow: /become-performer
 Allow: /how-it-works
