@@ -31,6 +31,8 @@ Allow: /news/
 Allow: /fanclub
 Allow: /fan-productions
 Allow: /gay-performer-recruitment
+Allow: /gay-performer-recruitment-philippines
+Allow: /chaturbate-model-join-studio
 Allow: /guest-production
 Allow: /become-performer
 Allow: /how-it-works
