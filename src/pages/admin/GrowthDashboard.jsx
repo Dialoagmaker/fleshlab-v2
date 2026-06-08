@@ -31,20 +31,27 @@ export default function GrowthDashboard() {
     queryKey: ['growth-analytics', dateRange],
     queryFn: async () => {
       const res = await base44.functions.invoke('growthAnalytics', { days: parseInt(dateRange) });
-      console.log('[GrowthDashboard] RAW GA4 RESPONSE:', JSON.stringify(res, null, 2));
+      console.log('🔍 [GrowthDashboard] RAW GA4 RESPONSE:', res);
+      console.log('🔍 [GrowthDashboard] GA4 Property ID from backend:', res?.ga4_property_id);
+      console.log('🔍 [GrowthDashboard] Top Pages count:', res?.top_pages?.length);
+      console.log('🔍 [GrowthDashboard] Events count:', res?.events?.all_events?.length);
       return res;
     },
     retry: 1,
+    staleTime: 0, // Always fetch fresh data
   });
 
   const { data: gscData, isLoading: gscLoading } = useQuery({
     queryKey: ['gsc-analytics'],
     queryFn: async () => {
       const res = await base44.functions.invoke('seoGscSearchAnalytics', {});
-      console.log('[GrowthDashboard] RAW GSC RESPONSE:', JSON.stringify(res, null, 2));
+      console.log('🔍 [GrowthDashboard] RAW GSC RESPONSE:', res);
+      console.log('🔍 [GrowthDashboard] GSC Summary:', res?.summary);
+      console.log('🔍 [GrowthDashboard] Top Pages count:', res?.top_pages?.length);
       return res;
     },
     retry: 1,
+    staleTime: 0, // Always fetch fresh data
   });
 
   const handleRefresh = async () => {
@@ -154,10 +161,11 @@ export default function GrowthDashboard() {
                 </div>
                 <div className="pt-2 border-t border-green-500/20">
                   <div className="text-green-300 font-semibold mb-1">API Response:</div>
-                  <div>Top Pages: <code className="text-green-400">{topPages.length} rows</code></div>
-                  <div>Events: <code className="text-green-400">{events.length} unique events</code></div>
-                  <div>Total Page Views: <code className="text-green-400 font-bold">{totalPageViews.toLocaleString()}</code></div>
-                  <div>Traffic Sources: <code className="text-green-400">{trafficSources.length} sources</code></div>
+                  <div>Top Pages: <code className="text-green-400">{topPages?.length || 0} rows</code></div>
+                  <div>Events: <code className="text-green-400">{events?.length || 0} unique events</code></div>
+                  <div>Total Page Views: <code className="text-green-400 font-bold">{totalPageViews?.toLocaleString() || 0}</code></div>
+                  <div>Traffic Sources: <code className="text-green-400">{trafficSources?.length || 0} sources</code></div>
+                  <div className="mt-2 text-green-300/70">Raw ga4Data keys: <code className="text-xs">{ga4Data ? Object.keys(ga4Data).join(', ') : 'UNDEFINED'}</code></div>
                 </div>
                 <div className="pt-2 border-t border-green-500/20">
                   <div className="text-green-300 font-semibold mb-1">GSC Status:</div>
