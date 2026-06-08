@@ -114,7 +114,7 @@ async function grantEntitlement(base44, intent) {
       status: 'active',
     });
     
-    // Check if any existing subscription matches this provider payment
+    // Check if any existing subscription matches this provider payment (by stripe_subscription_id which stores nowpayments_${payment_id})
     const existingSubscription = existingSubscriptions.find(s => {
       return s.stripe_subscription_id === `nowpayments_${intent.provider_session_id}` ||
              s.stripe_subscription_id === intent.provider_session_id;
@@ -145,6 +145,22 @@ async function grantEntitlement(base44, intent) {
       return { ok: true, duplicate: true, entitlement_type: 'fanclub', subscription_id: overlappingSubscription.id };
     }
     
+    // IDEMPOTENCY CHECK #3: Check by payment_intent_id (NEW - defense in depth)
+    const subscriptionsByIntent = await base44.asServiceRole.entities.Subscription.filter({
+      user_id: intent.user_id,
+      fanclub_id: intent.plan_id,
+      payment_intent_id: intent.id,
+    });
+    
+    if (subscriptionsByIntent.length > 0) {
+      console.log('[paymentWebhook] Fanclub subscription already exists by payment_intent_id — skipping (idempotent)', {
+        userId: intent.user_id,
+        planId: intent.plan_id,
+        existingSubscriptionId: subscriptionsByIntent[0].id,
+      });
+      return { ok: true, duplicate: true, entitlement_type: 'fanclub', subscription_id: subscriptionsByIntent[0].id };
+    }
+    
     // Safe to create Subscription
     const ACCESS_PERIODS = {
       fanclub_monthly:  1,   // months
@@ -165,6 +181,8 @@ async function grantEntitlement(base44, intent) {
       current_period_end:     periodEnd.toISOString(),
       amount_usd:             intent.amount,
       stripe_subscription_id: `nowpayments_${intent.provider_session_id}`,
+      payment_intent_id:      intent.id,
+      provider:               'nowpayments',
     });
     console.log('[paymentWebhook] Fanclub access pass granted:', { userId: intent.user_id, planId: intent.plan_id, months, subscriptionId: subscription.id });
     return { ok: true, duplicate: false, entitlement_type: 'fanclub', subscription_id: subscription.id };

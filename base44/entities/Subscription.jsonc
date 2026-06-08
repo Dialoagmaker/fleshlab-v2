@@ -12,11 +12,12 @@
     },
     "stripe_subscription_id": {
       "type": "string",
-      "title": "Stripe Subscription ID"
+      "title": "Subscription ID (Legacy Stripe Field Name - Reused for NOWPayments)",
+      "description": "For NOWPayments: stores 'nowpayments_${payment_id}'. Legacy field name from Stripe integration, now reused generically."
     },
     "stripe_customer_id": {
       "type": "string",
-      "title": "Stripe Customer ID"
+      "title": "Customer ID (Legacy Stripe Field Name)"
     },
     "status": {
       "type": "string",
@@ -47,6 +48,22 @@
     "amount_usd": {
       "type": "number",
       "title": "Amount (USD)"
+    },
+    "payment_intent_id": {
+      "type": "string",
+      "title": "Payment Intent ID",
+      "description": "Reference to PaymentIntent record that created this subscription"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "stripe",
+        "nowpayments",
+        "ccbill",
+        "segpay"
+      ],
+      "title": "Payment Provider",
+      "description": "Which payment provider created this subscription"
     }
   },
   "required": [
