@@ -77,8 +77,13 @@
     },
     "idempotency_key": {
       "type": "string",
-      "title": "Idempotency Key",
-      "description": "Unique key for deduplication: provider:payment_id:status"
+      "title": "Event Idempotency Key",
+      "description": "Event-level key for deduplication: provider:payment_id:status"
+    },
+    "payment_idempotency_key": {
+      "type": "string",
+      "title": "Payment Idempotency Key",
+      "description": "Payment-level key for entitlement deduplication: provider:payment_id (no status)"
     },
     "signature_valid": {
       "type": "boolean",
@@ -99,6 +104,12 @@
       "type": "boolean",
       "title": "Entitlement Granted",
       "default": false
+    },
+    "entitlement_duplicate": {
+      "type": "boolean",
+      "title": "Entitlement Duplicate",
+      "default": false,
+      "description": "True if entitlement was already granted by another webhook"
     },
     "verification_details": {
       "type": "string",

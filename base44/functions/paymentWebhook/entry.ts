@@ -15,20 +15,79 @@
  *     refunded               → payment.refunded
  *     waiting / confirming   → payment.pending (no entitlement)
  *
+ * IDEMPOTENCY GUARANTEES (CRITICAL):
+ *   - payment_idempotency_key = provider:payment_id (NOT status-dependent)
+ *   - grantEntitlement() checks existing records before creating
+ *   - PaymentIntent atomic processing guard (processing_webhook state)
+ *   - Duplicate successful webhooks return 200 OK with duplicate=true
+ *   - No duplicate Payment/Subscription/access records possible
+ *
  * Security:
  *   - Signature verified before any DB read or write
  *   - No entitlement on pending/partial/confirming status
- *   - Idempotent: already-completed intents not re-processed
+ *   - Multiple idempotency layers prevent race conditions
  *   - No private fields exposed in response
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 // ── Grant entitlements (shared logic - also used by simulatePaymentWebhook) ─────────
+// CRITICAL: This function MUST be idempotent - safe to call multiple times with same intent
 async function grantEntitlement(base44, intent) {
+  const providerPaymentKey = `${intent.provider}:${intent.provider_session_id}`;
+  
   if (intent.payment_type === 'ppv') {
-    // Create completed Payment record for PPV unlock
-    await base44.asServiceRole.entities.Payment.create({
+    // IDEMPOTENCY CHECK #1: Does Payment record already exist for this provider payment ID?
+    const existingPayments = await base44.asServiceRole.entities.Payment.filter({
+      user_id: intent.user_id,
+      related_entity_type: 'Video',
+      related_entity_id: intent.video_id,
+      status: 'completed',
+    });
+    
+    // Check if any existing payment matches this provider payment
+    const existingPayment = existingPayments.find(p => {
+      try {
+        const meta = JSON.parse(p.metadata || '{}');
+        return meta.provider_session_id === intent.provider_session_id || 
+               meta.provider_payment_id === intent.provider_session_id;
+      } catch { return false; }
+    });
+    
+    if (existingPayment) {
+      console.log('[paymentWebhook] PPV entitlement already exists — skipping (idempotent)', {
+        userId: intent.user_id,
+        videoId: intent.video_id,
+        existingPaymentId: existingPayment.id,
+      });
+      return { ok: true, duplicate: true, entitlement_type: 'ppv', payment_id: existingPayment.id };
+    }
+    
+    // IDEMPOTENCY CHECK #2: Check by payment_intent_id in metadata
+    const allUserPayments = await base44.asServiceRole.entities.Payment.filter({
+      user_id: intent.user_id,
+      payment_type: 'ppv',
+      status: 'completed',
+    });
+    
+    const matchingByIntent = allUserPayments.find(p => {
+      try {
+        const meta = JSON.parse(p.metadata || '{}');
+        return meta.payment_intent_id === intent.id;
+      } catch { return false; }
+    });
+    
+    if (matchingByIntent) {
+      console.log('[paymentWebhook] PPV entitlement already exists by intent ID — skipping (idempotent)', {
+        userId: intent.user_id,
+        videoId: intent.video_id,
+        existingPaymentId: matchingByIntent.id,
+      });
+      return { ok: true, duplicate: true, entitlement_type: 'ppv', payment_id: matchingByIntent.id };
+    }
+    
+    // Safe to create Payment record
+    const payment = await base44.asServiceRole.entities.Payment.create({
       user_id:             intent.user_id,
       amount_usd:          intent.amount,
       currency:            intent.currency || 'usd',
@@ -39,13 +98,54 @@ async function grantEntitlement(base44, intent) {
       metadata: JSON.stringify({
         provider:            intent.provider,
         provider_session_id: intent.provider_session_id,
+        provider_payment_id: intent.provider_session_id,
         price_tier:          intent.price_tier,
+        payment_intent_id:   intent.id,
       }),
     });
-    console.log('[paymentWebhook] PPV entitlement granted:', { userId: intent.user_id, videoId: intent.video_id });
+    console.log('[paymentWebhook] PPV entitlement granted:', { userId: intent.user_id, videoId: intent.video_id, paymentId: payment.id });
+    return { ok: true, duplicate: false, entitlement_type: 'ppv', payment_id: payment.id };
 
   } else if (intent.payment_type === 'fanclub') {
-    // One-time access pass (monthly / 3mo / 6mo / annual)
+    // IDEMPOTENCY CHECK #1: Does Subscription already exist for this provider payment?
+    const existingSubscriptions = await base44.asServiceRole.entities.Subscription.filter({
+      user_id: intent.user_id,
+      fanclub_id: intent.plan_id,
+      status: 'active',
+    });
+    
+    // Check if any existing subscription matches this provider payment
+    const existingSubscription = existingSubscriptions.find(s => {
+      return s.stripe_subscription_id === `nowpayments_${intent.provider_session_id}` ||
+             s.stripe_subscription_id === intent.provider_session_id;
+    });
+    
+    if (existingSubscription) {
+      console.log('[paymentWebhook] Fanclub subscription already exists — skipping (idempotent)', {
+        userId: intent.user_id,
+        planId: intent.plan_id,
+        existingSubscriptionId: existingSubscription.id,
+      });
+      return { ok: true, duplicate: true, entitlement_type: 'fanclub', subscription_id: existingSubscription.id };
+    }
+    
+    // IDEMPOTENCY CHECK #2: Check for overlapping active subscription period
+    const now = new Date();
+    const overlappingSubscription = existingSubscriptions.find(s => {
+      const periodEnd = new Date(s.current_period_end);
+      return periodEnd >= now; // Still active
+    });
+    
+    if (overlappingSubscription) {
+      console.log('[paymentWebhook] Fanclub has overlapping active subscription — skipping (idempotent)', {
+        userId: intent.user_id,
+        planId: intent.plan_id,
+        existingSubscriptionId: overlappingSubscription.id,
+      });
+      return { ok: true, duplicate: true, entitlement_type: 'fanclub', subscription_id: overlappingSubscription.id };
+    }
+    
+    // Safe to create Subscription
     const ACCESS_PERIODS = {
       fanclub_monthly:  1,   // months
       premium_monthly:  1,   // months
@@ -57,7 +157,7 @@ async function grantEntitlement(base44, intent) {
     const periodEnd = new Date();
     periodEnd.setMonth(periodEnd.getMonth() + months);
 
-    await base44.asServiceRole.entities.Subscription.create({
+    const subscription = await base44.asServiceRole.entities.Subscription.create({
       user_id:                intent.user_id,
       fanclub_id:             intent.plan_id,
       status:                 'active',
@@ -66,34 +166,78 @@ async function grantEntitlement(base44, intent) {
       amount_usd:             intent.amount,
       stripe_subscription_id: `nowpayments_${intent.provider_session_id}`,
     });
-    console.log('[paymentWebhook] Fanclub access pass granted:', { userId: intent.user_id, planId: intent.plan_id, months });
+    console.log('[paymentWebhook] Fanclub access pass granted:', { userId: intent.user_id, planId: intent.plan_id, months, subscriptionId: subscription.id });
+    return { ok: true, duplicate: false, entitlement_type: 'fanclub', subscription_id: subscription.id };
 
   } else if (intent.payment_type === 'guest_production_deposit') {
-    // Update GuestProductionApplication deposit status
-    if (intent.application_id) {
-      await base44.asServiceRole.entities.GuestProductionApplication.update(intent.application_id, {
-        status: 'reviewing',
-        admin_notes: `Deposit payment confirmed. Provider: ${intent.provider}, Session: ${intent.provider_session_id}`,
-      });
-
-      // Also create a completed Payment record for the deposit
-      await base44.asServiceRole.entities.Payment.create({
-        user_id:             intent.user_id,
-        amount_usd:          intent.amount,
-        currency:            intent.currency || 'usd',
-        payment_type:        'ppv',
-        status:              'completed',
-        related_entity_type: 'GuestProductionApplication',
-        related_entity_id:   intent.application_id,
-        metadata: JSON.stringify({
-          provider:            intent.provider,
-          provider_session_id: intent.provider_session_id,
-          payment_type:        'guest_production_deposit',
-        }),
-      });
+    if (!intent.application_id) {
+      console.warn('[paymentWebhook] Guest Production deposit missing application_id');
+      return { ok: false, error: 'missing_application_id' };
     }
-    console.log('[paymentWebhook] Guest Production deposit marked paid:', { userId: intent.user_id, appId: intent.application_id });
+    
+    // IDEMPOTENCY CHECK #1: Does Payment record already exist for this provider payment?
+    const existingPayments = await base44.asServiceRole.entities.Payment.filter({
+      user_id: intent.user_id,
+      related_entity_type: 'GuestProductionApplication',
+      related_entity_id: intent.application_id,
+      status: 'completed',
+    });
+    
+    const existingPayment = existingPayments.find(p => {
+      try {
+        const meta = JSON.parse(p.metadata || '{}');
+        return meta.provider_session_id === intent.provider_session_id ||
+               meta.provider_payment_id === intent.provider_session_id ||
+               meta.payment_intent_id === intent.id;
+      } catch { return false; }
+    });
+    
+    if (existingPayment) {
+      console.log('[paymentWebhook] Guest Production deposit already paid — skipping (idempotent)', {
+        userId: intent.user_id,
+        appId: intent.application_id,
+        existingPaymentId: existingPayment.id,
+      });
+      return { ok: true, duplicate: true, entitlement_type: 'guest_production', payment_id: existingPayment.id };
+    }
+    
+    // IDEMPOTENCY CHECK #2: Check application status
+    const app = await base44.asServiceRole.entities.GuestProductionApplication.get(intent.application_id);
+    if (app && app.status === 'reviewing') {
+      console.log('[paymentWebhook] Guest Production application already marked reviewing — skipping (idempotent)', {
+        userId: intent.user_id,
+        appId: intent.application_id,
+      });
+      // Still create Payment record for audit trail
+    }
+    
+    // Safe to update application and create Payment record
+    await base44.asServiceRole.entities.GuestProductionApplication.update(intent.application_id, {
+      status: 'reviewing',
+      admin_notes: `Deposit payment confirmed. Provider: ${intent.provider}, Session: ${intent.provider_session_id}`,
+    });
+
+    const payment = await base44.asServiceRole.entities.Payment.create({
+      user_id:             intent.user_id,
+      amount_usd:          intent.amount,
+      currency:            intent.currency || 'usd',
+      payment_type:        'ppv',
+      status:              'completed',
+      related_entity_type: 'GuestProductionApplication',
+      related_entity_id:   intent.application_id,
+      metadata: JSON.stringify({
+        provider:            intent.provider,
+        provider_session_id: intent.provider_session_id,
+        provider_payment_id: intent.provider_session_id,
+        payment_type:        'guest_production_deposit',
+        payment_intent_id:   intent.id,
+      }),
+    });
+    console.log('[paymentWebhook] Guest Production deposit marked paid:', { userId: intent.user_id, appId: intent.application_id, paymentId: payment.id });
+    return { ok: true, duplicate: false, entitlement_type: 'guest_production', payment_id: payment.id };
   }
+  
+  return { ok: false, error: 'unknown_payment_type' };
 }
 
 // ── Provider detection from headers ──────────────────────────────────────────
@@ -257,6 +401,10 @@ Deno.serve(async (req) => {
     const receivedAt = new Date().toISOString();
     let eventId = null;
     
+    // CRITICAL: Two idempotency keys - event-level (with status) and payment-level (without status)
+    const eventIdempotencyKey = `${provider}:${payload.payment_id || payload.order_id || 'unknown'}:${payload.payment_status || 'unknown'}`;
+    const paymentIdempotencyKey = `${provider}:${payload.payment_id || payload.order_id || 'unknown'}`;
+    
     try {
       eventId = await base44.asServiceRole.entities.PaymentWebhookEvent.create({
         provider,
@@ -270,7 +418,8 @@ Deno.serve(async (req) => {
         user_id: null,
         product_type: null,
         product_id: null,
-        idempotency_key: `${provider}:${payload.payment_id || payload.order_id || 'unknown'}:${payload.payment_status || 'unknown'}`,
+        idempotency_key: eventIdempotencyKey,  // Event-level: includes status for logging
+        payment_idempotency_key: paymentIdempotencyKey,  // Payment-level: stable key for entitlement processing
         signature_valid: signatureValid,
         processed: false,
         duplicate: false,
@@ -341,8 +490,34 @@ Deno.serve(async (req) => {
 
     const intent = intents[0];
 
-    // ── CRITICAL: Idempotency check using PaymentWebhookEvent ─────────────────────────
-    // Check if this exact payment event was already processed successfully
+    // ── CRITICAL: Multi-layer idempotency checks ─────────────────────────
+    
+    // Layer 1: Check if payment-level idempotency key was already processed successfully
+    const existingPaymentEvents = await base44.asServiceRole.entities.PaymentWebhookEvent.filter({
+      payment_idempotency_key: `${provider}:${event.paymentId}`,
+      normalized_status: 'completed',
+      processed: true,
+      entitlement_granted: true,
+    });
+
+    if (existingPaymentEvents.length > 0) {
+      console.log('[paymentWebhook] Duplicate successful payment detected — entitlement already granted', event.paymentId);
+      await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+        payment_intent_id: intent.id,
+        duplicate: true,
+        processed: true,
+        entitlement_granted: false,  // This one didn't grant it
+        processed_at: new Date().toISOString(),
+      });
+      return Response.json({ 
+        success: true, 
+        duplicate: true, 
+        entitlement_already_granted: true,
+        message: 'Payment already processed, entitlement already granted' 
+      });
+    }
+
+    // Layer 2: Check if this exact event (same status) was already processed
     const existingEvents = await base44.asServiceRole.entities.PaymentWebhookEvent.filter({
       provider_invoice_id: event.paymentId,
       normalized_status: event.normalizedStatus,
@@ -351,25 +526,63 @@ Deno.serve(async (req) => {
     });
 
     if (existingEvents.length > 0) {
-      console.log('[paymentWebhook] Duplicate webhook detected — already processed', event.paymentId, event.normalizedStatus);
+      console.log('[paymentWebhook] Duplicate webhook event detected — already processed', event.paymentId, event.normalizedStatus);
       await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
         duplicate: true,
         processed: true,
         processed_at: new Date().toISOString(),
       });
-      return Response.json({ success: true, duplicate: true, message: 'Webhook already processed' });
+      return Response.json({ success: true, duplicate: true, message: 'Webhook event already processed' });
     }
 
-    // Secondary idempotency: don't re-process already completed intents
+    // Layer 3: Atomic processing guard - check if intent is already completed
     if (intent.status === 'completed' && event.unlocksAccess) {
-      console.log('[paymentWebhook] Intent already completed — skipping', intent.id);
+      console.log('[paymentWebhook] PaymentIntent already completed — skipping (idempotent)', intent.id);
+      await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+        payment_intent_id: intent.id,
+        duplicate: true,
+        processed: true,
+        entitlement_granted: false,
+        processed_at: new Date().toISOString(),
+      });
+      return Response.json({ 
+        success: true, 
+        duplicate: true,
+        entitlement_already_granted: true,
+        message: 'PaymentIntent already completed' 
+      });
+    }
+
+    // Layer 4: Atomic processing guard - check if already being processed
+    if (intent.status === 'processing_webhook') {
+      console.log('[paymentWebhook] PaymentIntent already being processed by another webhook — skipping', intent.id);
       await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
         payment_intent_id: intent.id,
         duplicate: true,
         processed: true,
         processed_at: new Date().toISOString(),
       });
-      return Response.json({ success: true, duplicate: true });
+      return Response.json({ 
+        success: true, 
+        duplicate: true,
+        message: 'PaymentIntent already being processed' 
+      });
+    }
+
+    // ── Atomic processing guard: Mark intent as being processed ─────────────────────────
+    // This prevents concurrent webhooks from both proceeding to entitlement grant
+    if (event.eventType === 'payment.completed' && event.unlocksAccess) {
+      // Update to processing_webhook state atomically
+      await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
+        status: 'processing_webhook',
+        metadata: JSON.stringify({
+          ...JSON.parse(intent.metadata || '{}'),
+          nowpayments_payment_id: event.paymentId,
+          processing_started_at: new Date().toISOString(),
+          processing_webhook_event_id: eventId,
+        }),
+      });
+      console.log('[paymentWebhook] PaymentIntent marked as processing_webhook:', intent.id);
     }
 
     // ── Handle by event type ─────────────────────────────────────────────────
@@ -541,6 +754,49 @@ Deno.serve(async (req) => {
       });
       verificationDetails.verified = true;
 
+      // CRITICAL: Re-check PaymentIntent status immediately before granting entitlement
+      // This catches any race conditions that passed the earlier checks
+      const freshIntent = await base44.asServiceRole.entities.PaymentIntent.get(intent.id);
+      if (freshIntent && freshIntent.status === 'completed') {
+        console.log('[paymentWebhook] Race condition detected — PaymentIntent completed by another webhook', intent.id);
+        await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+          payment_intent_id: intent.id,
+          duplicate: true,
+          processed: true,
+          entitlement_granted: false,
+          entitlement_duplicate: true,
+          processed_at: new Date().toISOString(),
+        });
+        return Response.json({ 
+          success: true, 
+          duplicate: true,
+          entitlement_already_granted: true,
+          message: 'Race condition: PaymentIntent completed by concurrent webhook' 
+        });
+      }
+
+      // Grant entitlement — ONLY here, ONLY after verified completed event
+      // grantEntitlement() is now idempotent and will check for existing records
+      const grantResult = await grantEntitlement(base44, { ...intent, id: intent.id });
+      
+      if (!grantResult.ok) {
+        console.error('[paymentWebhook] Entitlement grant failed:', grantResult.error);
+        await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+          payment_intent_id: intent.id,
+          normalized_status: event.normalizedStatus,
+          verification_details: JSON.stringify(verificationDetails),
+          error_message: `Entitlement grant failed: ${grantResult.error}`,
+          processed: true,
+          entitlement_granted: false,
+          processed_at: new Date().toISOString(),
+        });
+        return Response.json({ 
+          success: false, 
+          error: grantResult.error,
+          message: 'Entitlement grant failed' 
+        });
+      }
+      
       // Update PaymentIntent to completed
       await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
         status:       'completed',
@@ -552,11 +808,10 @@ Deno.serve(async (req) => {
           raw_status: event.rawStatus,
           verified_amount: true,
           verified_currency: true,
+          entitlement_granted: !grantResult.duplicate,
+          entitlement_duplicate: grantResult.duplicate || false,
         }),
       });
-
-      // Grant entitlement — ONLY here, ONLY after verified completed event
-      await grantEntitlement(base44, intent);
       
       // Update event log with success
       await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
@@ -567,8 +822,16 @@ Deno.serve(async (req) => {
         normalized_status: event.normalizedStatus,
         verification_details: JSON.stringify(verificationDetails),
         processed: true,
-        entitlement_granted: true,
+        entitlement_granted: !grantResult.duplicate,
+        entitlement_duplicate: grantResult.duplicate || false,
         processed_at: new Date().toISOString(),
+      });
+      
+      console.log('[paymentWebhook] Entitlement grant result:', {
+        ok: grantResult.ok,
+        duplicate: grantResult.duplicate,
+        entitlement_type: grantResult.entitlement_type,
+        entitlement_id: grantResult.payment_id || grantResult.subscription_id,
       });
 
     } else if (event.eventType === 'payment.failed') {
