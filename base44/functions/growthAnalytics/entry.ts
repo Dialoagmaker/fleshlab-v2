@@ -141,8 +141,22 @@ Deno.serve(async (req) => {
       eventByPage[eventName].push({ page_path: pagePath, event_count: count });
     });
 
+    // Combine duplicate event names (canonical naming)
+    // checkout_start + checkout_started → checkout_start
+    // registration_start + registration_started → registration_start
+    const combinedCounts = {};
+    Object.entries(eventCounts).forEach(([name, count]) => {
+      if (name === 'checkout_started') {
+        combinedCounts['checkout_start'] = (combinedCounts['checkout_start'] || 0) + count;
+      } else if (name === 'registration_started') {
+        combinedCounts['registration_start'] = (combinedCounts['registration_start'] || 0) + count;
+      } else {
+        combinedCounts[name] = (combinedCounts[name] || 0) + count;
+      }
+    });
+    
     // Sort events by count
-    const sortedEvents = Object.entries(eventCounts)
+    const sortedEvents = Object.entries(combinedCounts)
       .map(([event_name, event_count]) => ({ event_name, event_count }))
       .sort((a, b) => b.event_count - a.event_count);
 

@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, ChevronRight, ChevronLeft } from "lucide-react";
+import { trackPhilippinesApplicationStart } from "@/lib/analytics";
 import { base44 } from "@/api/base44Client";
 import toast from "react-hot-toast";
 import FileUploadField from "@/components/application/FileUploadField";
@@ -82,7 +83,12 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
     consent5: false,
   });
 
-  const submitMutation = useMutation({
+    const submitMutation = useMutation({
+    onMutate: () => {
+      if (sourcePage === "gay-performer-recruitment-philippines") {
+        trackPhilippinesApplicationStart({ utmSource, utmMarket, utmCampaign });
+      }
+    },
     mutationFn: async () => {
       const modelMap = {
         "managed_40": "standard_studio_60_performer_40",

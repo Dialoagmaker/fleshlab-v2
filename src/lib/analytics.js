@@ -228,9 +228,14 @@ export function trackBecomePerformerCtaClick(ctaLocation) {
 }
 
 /**
- * Track registration started
+ * Track registration started (canonical: registration_start)
  */
 export function trackRegistrationStarted(source, checkoutParam) {
+  // Fire both events for backward compatibility + canonical naming
+  trackEvent('registration_start', {
+    source: source || 'direct',
+    checkout_intent: checkoutParam || null,
+  });
   trackEvent('registration_started', {
     source: source || 'direct',
     checkout_intent: checkoutParam || null,
@@ -238,9 +243,17 @@ export function trackRegistrationStarted(source, checkoutParam) {
 }
 
 /**
- * Track checkout started
+ * Track checkout started (canonical: checkout_start)
  */
 export function trackCheckoutStarted(paymentType, planId, videoId, priceTier) {
+  // Fire both events for backward compatibility + canonical naming
+  trackEvent('checkout_start', {
+    payment_type: paymentType,
+    plan_id: planId || null,
+    video_id: videoId || null,
+    price_tier: priceTier || null,
+    plan_or_product_type: paymentType === 'ppv' ? 'ppv_unlock' : paymentType === 'fanclub' ? 'fanclub_membership' : 'guest_production_deposit',
+  });
   trackEvent('checkout_started', {
     payment_type: paymentType,
     plan_id: planId || null,
@@ -266,6 +279,19 @@ export function trackExternalPlatformClick(platformName, sourcePage) {
 export function trackWhatsappRecruitmentClick(sourcePage) {
   trackEvent('whatsapp_recruitment_click', {
     source_page: sourcePage,
+  });
+}
+
+/**
+ * Track Philippines application start
+ */
+export function trackPhilippinesApplicationStart(utmParams = {}) {
+  trackEvent('philippines_application_start', {
+    source_page: 'gay-performer-recruitment-philippines',
+    source_country: 'Philippines',
+    utm_source: utmParams.utm_source || 'philippines-recruitment',
+    utm_market: utmParams.utm_market || 'philippines',
+    utm_campaign: utmParams.utm_campaign || 'pinoy_recruitment',
   });
 }
 
