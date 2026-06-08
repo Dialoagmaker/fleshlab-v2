@@ -757,7 +757,7 @@ export default function PhilippinesRecruitment() {
                 {/* Background portrait image right side */}
                 <div className="absolute right-0 top-0 bottom-0 w-2/5 overflow-hidden">
                   <img 
-                    src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/7a1c1e9ab_generated_image.png"
+                    src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/db389db9b_generated_image.png"
                     alt="" className="w-full h-full object-cover object-top opacity-40"
                     style={{ maskImage: 'linear-gradient(to left, rgba(0,0,0,0.6), transparent)', WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,0.6), transparent)' }}
                   />
@@ -794,7 +794,7 @@ export default function PhilippinesRecruitment() {
               >
                 <div className="absolute right-0 top-0 bottom-0 w-2/5 overflow-hidden">
                   <img 
-                    src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/14dcbc4fd_generated_image.png"
+                    src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/107a335d7_generated_image.png"
                     alt="" className="w-full h-full object-cover object-top opacity-40"
                     style={{ maskImage: 'linear-gradient(to left, rgba(0,0,0,0.6), transparent)', WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,0.6), transparent)' }}
                   />
