@@ -501,25 +501,63 @@ export default function PhilippinesRecruitment() {
             </h2>
             <p className="text-gray-500 mb-10 text-base">Local payout methods are confirmed during onboarding.</p>
 
-            {/* Payment pills */}
+            {/* Payment method logos — clean SVG brand treatments */}
             <div className="flex flex-wrap gap-3 mb-10">
-              {[
-                { label: "GCash", r:0, g:112, b:224 },
-                { label: "Maya", r:0, g:168, b:89 },
-                { label: "BDO", r:192, g:0, b:0 },
-                { label: "BPI", r:29, g:58, b:138 },
-                { label: "UnionBank", r:234, g:88, b:12 },
-                { label: "Crypto / USDT", r:38, g:161, b:123 },
-              ].map(p => (
-                <div key={p.label} className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
-                  style={{ background: `rgba(${p.r},${p.g},${p.b},0.1)`, border: `1px solid rgba(${p.r},${p.g},${p.b},0.4)`, boxShadow: `0 0 12px rgba(${p.r},${p.g},${p.b},0.2)` }}>
-                  <div className="h-7 w-7 rounded-lg flex items-center justify-center font-black text-[10px] text-white flex-shrink-0"
-                    style={{ background: `rgb(${p.r},${p.g},${p.b})` }}>
-                    {p.label[0]}
-                  </div>
-                  <span className="text-white font-bold text-sm">{p.label}</span>
-                </div>
-              ))}
+
+              {/* GCash — blue wordmark */}
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(0,90,200,0.12)', border: '1px solid rgba(0,112,224,0.35)' }}>
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="22" height="22" rx="5" fill="#0070E0"/>
+                  <text x="11" y="15.5" textAnchor="middle" fill="white" fontSize="10" fontWeight="900" fontFamily="Arial,sans-serif">G</text>
+                </svg>
+                <span className="font-bold text-sm" style={{ color: '#60a5fa' }}>GCash</span>
+              </div>
+
+              {/* Maya — green wordmark */}
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(0,140,70,0.12)', border: '1px solid rgba(0,168,89,0.35)' }}>
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="22" height="22" rx="5" fill="#00A859"/>
+                  <text x="11" y="15.5" textAnchor="middle" fill="white" fontSize="9" fontWeight="900" fontFamily="Arial,sans-serif">M</text>
+                </svg>
+                <span className="font-bold text-sm" style={{ color: '#4ade80' }}>Maya</span>
+              </div>
+
+              {/* BDO — dark red wordmark */}
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(160,0,0,0.12)', border: '1px solid rgba(192,0,0,0.35)' }}>
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="22" height="22" rx="5" fill="#C00000"/>
+                  <text x="11" y="15" textAnchor="middle" fill="white" fontSize="7.5" fontWeight="900" fontFamily="Arial,sans-serif">BDO</text>
+                </svg>
+                <span className="font-bold text-sm" style={{ color: '#fca5a5' }}>BDO</span>
+              </div>
+
+              {/* BPI — navy wordmark */}
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(20,40,120,0.15)', border: '1px solid rgba(29,58,138,0.4)' }}>
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="22" height="22" rx="5" fill="#1D3A8A"/>
+                  <text x="11" y="15.5" textAnchor="middle" fill="white" fontSize="8.5" fontWeight="900" fontFamily="Arial,sans-serif">BPI</text>
+                </svg>
+                <span className="font-bold text-sm" style={{ color: '#93c5fd' }}>BPI</span>
+              </div>
+
+              {/* UnionBank — orange wordmark */}
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(200,70,0,0.12)', border: '1px solid rgba(234,88,12,0.35)' }}>
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="22" height="22" rx="5" fill="#EA580C"/>
+                  <text x="11" y="15" textAnchor="middle" fill="white" fontSize="7" fontWeight="900" fontFamily="Arial,sans-serif">UB</text>
+                </svg>
+                <span className="font-bold text-sm" style={{ color: '#fdba74' }}>UnionBank</span>
+              </div>
+
+              {/* USDT — tether green with ₮ symbol */}
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(30,130,100,0.12)', border: '1px solid rgba(38,161,123,0.35)' }}>
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="22" height="22" rx="5" fill="#26A17B"/>
+                  <text x="11" y="15.5" textAnchor="middle" fill="white" fontSize="13" fontWeight="900" fontFamily="Arial,sans-serif">₮</text>
+                </svg>
+                <span className="font-bold text-sm" style={{ color: '#6ee7b7' }}>USDT</span>
+              </div>
+
             </div>
 
             {/* 3 info cards */}
@@ -616,7 +654,19 @@ export default function PhilippinesRecruitment() {
             <div className="max-w-xl">
               <h2 className="font-black text-white mb-4 leading-tight" style={{ fontSize: 'clamp(36px, 6vw, 58px)' }}>
                 Ready to apply from<br />the <span className="text-rose-400">Philippines?</span>
-                <img src="https://flagcdn.com/w20/ph.png" alt="PH" className="inline-block ml-2 h-7 w-auto align-middle" />
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" className="inline-block ml-2 align-middle" style={{ height: '26px', width: 'auto', borderRadius: '3px', verticalAlign: 'middle', flexShrink: 0 }}>
+                  <rect width="900" height="300" fill="#0038A8"/>
+                  <rect width="900" height="300" y="300" fill="#CE1126"/>
+                  <polygon points="0,0 450,300 0,600" fill="white"/>
+                  <g transform="translate(155,300)">
+                    <polygon points="0,-38 8.6,-11.8 32.4,-11.8 13,4.5 20.5,30.4 0,15.6 -20.5,30.4 -13,4.5 -32.4,-11.8 -8.6,-11.8" fill="#FCD116" transform="translate(-85,-105)"/>
+                    <polygon points="0,-38 8.6,-11.8 32.4,-11.8 13,4.5 20.5,30.4 0,15.6 -20.5,30.4 -13,4.5 -32.4,-11.8 -8.6,-11.8" fill="#FCD116" transform="translate(-85,105)"/>
+                    <polygon points="0,-38 8.6,-11.8 32.4,-11.8 13,4.5 20.5,30.4 0,15.6 -20.5,30.4 -13,4.5 -32.4,-11.8 -8.6,-11.8" fill="#FCD116" transform="translate(75,0)"/>
+                    <circle r="50" fill="none" stroke="#FCD116" strokeWidth="9"/>
+                    <circle r="28" fill="#FCD116"/>
+                    <circle r="18" fill="#0038A8"/>
+                  </g>
+                </svg>
               </h2>
               <p className="text-gray-400 mb-10 text-lg leading-relaxed">
                 Ask questions first. No pressure.<br />
