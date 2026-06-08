@@ -57,25 +57,30 @@ export default function GrowthDashboard() {
   };
 
   const isLoading = ga4Loading || gscLoading;
-  const events = ga4Data?.events?.all_events || [];
-  const trafficSources = ga4Data?.traffic_sources || [];
-  const topPages = ga4Data?.top_pages || [];
-  const pagesByCategory = ga4Data?.pages_by_category || {};
-  const trackingHealth = ga4Data?.tracking_health || {};
   
-  // Debug: Log data structure
+  // Correct data extraction based on actual API response structure
+  const topPages = ga4Data?.top_pages || [];
+  const trafficSources = ga4Data?.traffic_sources || [];
+  const events = ga4Data?.events?.all_events || [];
+  const pagesByCategory = ga4Data?.pages_by_category || {};
+  
+  // Debug: Log full data structure
   useEffect(() => {
     if (ga4Data && !ga4Loading) {
-      console.log('[GrowthDashboard] Parsed GA4 Data:', {
+      console.log('[GrowthDashboard] FULL GA4 Response:', ga4Data);
+      console.log('[GrowthDashboard] Parsed Data:', {
         ga4_property_id: ga4Data?.ga4_property_id,
         top_pages_count: topPages?.length,
         events_count: events?.length,
         traffic_sources_count: trafficSources?.length,
         total_page_views: topPages?.reduce((sum, p) => sum + (p.page_views || 0), 0),
-        raw_keys: Object.keys(ga4Data || {}),
       });
     }
-  }, [ga4Data, ga4Loading]);
+    if (gscData && !gscLoading) {
+      console.log('[GrowthDashboard] FULL GSC Response:', gscData);
+      console.log('[GrowthDashboard] GSC Summary:', gscData?.summary);
+    }
+  }, [ga4Data, gscData, ga4Loading, gscLoading]);
 
   const eventMap = {};
   events.forEach(e => { eventMap[e.event_name] = e.event_count; });
@@ -123,13 +128,16 @@ export default function GrowthDashboard() {
               </CardHeader>
               <CardContent className="text-xs space-y-1 font-mono">
                 <div>GA4 Property ID: <code className="bg-black/50 px-1 rounded">{ga4Data?.ga4_property_id || "MISSING"}</code></div>
+                <div>GA4 Measurement ID: <code className="bg-black/50 px-1 rounded">G-3Z4DV3SVR8</code></div>
                 <div>Top Pages Count: <code>{topPages?.length || 0}</code></div>
                 <div>Events Count: <code>{events?.length || 0}</code></div>
                 <div>Total Page Views: <code className="text-green-400">{totalPageViews.toLocaleString()}</code></div>
                 <div>Fanclub CTA Clicks: <code>{fanclubClicks.toLocaleString()}</code></div>
-                <div>GSC Clicks: <code>{gscData?.summary?.clicks || 0}</code></div>
+                <div>GSC Clicks: <code className="text-green-400">{gscData?.summary?.clicks || 0}</code></div>
+                <div>GSC Impressions: <code className="text-green-400">{gscData?.summary?.impressions || 0}</code></div>
+                <div>Date Range: <code>Last {dateRange} days</code></div>
                 <div>isLoading: <code>{isLoading ? 'true' : 'false'}</code></div>
-                <div className="text-yellow-400">Check browser console for full data dump</div>
+                <div className="text-yellow-400">Check browser console (F12) for full data dump</div>
               </CardContent>
             </Card>
 
