@@ -408,8 +408,8 @@ export default function PhilippinesRecruitment() {
             className="absolute inset-0 z-0"
             style={{
               backgroundImage: 'url(https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2007_12_26.png)',
-              backgroundSize: '100% auto',
-              backgroundPosition: 'center top',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center center',
               backgroundRepeat: 'no-repeat',
               backgroundColor: '#000000'
             }}
