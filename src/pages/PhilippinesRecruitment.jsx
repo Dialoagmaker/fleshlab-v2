@@ -501,63 +501,22 @@ export default function PhilippinesRecruitment() {
             </h2>
             <p className="text-gray-500 mb-10 text-base">Local payout methods are confirmed during onboarding.</p>
 
-            {/* Payment method logos — clean SVG brand treatments */}
-            <div className="flex flex-wrap gap-3 mb-10">
-
-              {/* GCash — blue wordmark */}
-              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(0,90,200,0.12)', border: '1px solid rgba(0,112,224,0.35)' }}>
-                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="22" height="22" rx="5" fill="#0070E0"/>
-                  <text x="11" y="15.5" textAnchor="middle" fill="white" fontSize="10" fontWeight="900" fontFamily="Arial,sans-serif">G</text>
-                </svg>
-                <span className="font-bold text-sm" style={{ color: '#60a5fa' }}>GCash</span>
-              </div>
-
-              {/* Maya — green wordmark */}
-              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(0,140,70,0.12)', border: '1px solid rgba(0,168,89,0.35)' }}>
-                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="22" height="22" rx="5" fill="#00A859"/>
-                  <text x="11" y="15.5" textAnchor="middle" fill="white" fontSize="9" fontWeight="900" fontFamily="Arial,sans-serif">M</text>
-                </svg>
-                <span className="font-bold text-sm" style={{ color: '#4ade80' }}>Maya</span>
-              </div>
-
-              {/* BDO — dark red wordmark */}
-              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(160,0,0,0.12)', border: '1px solid rgba(192,0,0,0.35)' }}>
-                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="22" height="22" rx="5" fill="#C00000"/>
-                  <text x="11" y="15" textAnchor="middle" fill="white" fontSize="7.5" fontWeight="900" fontFamily="Arial,sans-serif">BDO</text>
-                </svg>
-                <span className="font-bold text-sm" style={{ color: '#fca5a5' }}>BDO</span>
-              </div>
-
-              {/* BPI — navy wordmark */}
-              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(20,40,120,0.15)', border: '1px solid rgba(29,58,138,0.4)' }}>
-                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="22" height="22" rx="5" fill="#1D3A8A"/>
-                  <text x="11" y="15.5" textAnchor="middle" fill="white" fontSize="8.5" fontWeight="900" fontFamily="Arial,sans-serif">BPI</text>
-                </svg>
-                <span className="font-bold text-sm" style={{ color: '#93c5fd' }}>BPI</span>
-              </div>
-
-              {/* UnionBank — orange wordmark */}
-              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(200,70,0,0.12)', border: '1px solid rgba(234,88,12,0.35)' }}>
-                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="22" height="22" rx="5" fill="#EA580C"/>
-                  <text x="11" y="15" textAnchor="middle" fill="white" fontSize="7" fontWeight="900" fontFamily="Arial,sans-serif">UB</text>
-                </svg>
-                <span className="font-bold text-sm" style={{ color: '#fdba74' }}>UnionBank</span>
-              </div>
-
-              {/* USDT — tether green with ₮ symbol */}
-              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(30,130,100,0.12)', border: '1px solid rgba(38,161,123,0.35)' }}>
-                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="22" height="22" rx="5" fill="#26A17B"/>
-                  <text x="11" y="15.5" textAnchor="middle" fill="white" fontSize="13" fontWeight="900" fontFamily="Arial,sans-serif">₮</text>
-                </svg>
-                <span className="font-bold text-sm" style={{ color: '#6ee7b7' }}>USDT</span>
-              </div>
-
+            {/* Payment method chips — text-only, brand-inspired, intentional */}
+            <div className="flex flex-wrap gap-2.5 mb-10">
+              {[
+                { label: 'GCash',      color: '#60a5fa', bg: 'rgba(0,112,224,0.10)',   border: 'rgba(0,112,224,0.30)' },
+                { label: 'Maya',       color: '#4ade80', bg: 'rgba(0,168,89,0.10)',    border: 'rgba(0,168,89,0.30)'  },
+                { label: 'BDO',        color: '#fca5a5', bg: 'rgba(192,0,0,0.10)',     border: 'rgba(192,0,0,0.30)'   },
+                { label: 'BPI',        color: '#93c5fd', bg: 'rgba(29,58,138,0.12)',   border: 'rgba(29,58,138,0.35)' },
+                { label: 'UnionBank',  color: '#fdba74', bg: 'rgba(234,88,12,0.10)',   border: 'rgba(234,88,12,0.30)' },
+                { label: 'USDT',       color: '#6ee7b7', bg: 'rgba(38,161,123,0.10)',  border: 'rgba(38,161,123,0.30)'},
+              ].map(p => (
+                <span key={p.label}
+                  className="inline-flex items-center h-9 px-4 rounded-lg text-sm font-semibold tracking-wide"
+                  style={{ color: p.color, background: p.bg, border: `1px solid ${p.border}` }}>
+                  {p.label}
+                </span>
+              ))}
             </div>
 
             {/* 3 info cards */}
