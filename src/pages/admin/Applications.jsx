@@ -145,12 +145,14 @@ export default function Applications() {
   const [isRequestFilesOpen, setIsRequestFilesOpen] = useState(false);
   const [uploadLink, setUploadLink] = useState(null);
   const [selectedMissingFiles, setSelectedMissingFiles] = useState([]);
-  const [isCreatePerformerOpen, setIsCreatePerformerOpen] = useState(false);
+    const [isCreatePerformerOpen, setIsCreatePerformerOpen] = useState(false);
+  const [isLinkUserOpen, setIsLinkUserOpen] = useState(false);
+  const [userToLink, setUserToLink] = useState(null);
   const [isCreateContractOpen, setIsCreateContractOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [isLinkUserOpen, setIsLinkUserOpen] = useState(false);
-  const [userToLink, setUserToLink] = useState(null);
+  
+  
   const [activeTab, setActiveTab] = useState("info");
   const [contractData, setContractData] = useState(null);
   const [isEditingContractData, setIsEditingContractData] = useState(false);
@@ -251,32 +253,13 @@ export default function Applications() {
 
   const handleApprove = () => {
     if (!selectedApp) return;
-    
-    // Validate contract readiness BEFORE approval
-    const hasPerformer = selectedApp.admin_notes?.includes('Performer created:');
-    const hasLegalName = !!selectedApp.legal_name;
-    const hasDOB = !!selectedApp.date_of_birth;
-    const hasFullAddress = !!selectedApp.address;
-    const hasCountry = !!selectedApp.country;
-    const hasEmail = !!selectedApp.email;
-    
-    const missingFields = [];
-    if (!hasPerformer) missingFields.push('Performer profile');
-    if (!hasLegalName) missingFields.push('Legal name');
-    if (!hasDOB) missingFields.push('Date of Birth');
-    if (!hasFullAddress) missingFields.push('Full Residential Address');
-    if (!hasCountry) missingFields.push('Country');
-    if (!hasEmail) missingFields.push('Email');
-    
-    if (missingFields.length > 0) {
-      // Do NOT approve - open contract data modal instead
-      toast.error(`Cannot approve - missing contract data: ${missingFields.join(', ')}`);
-      handleOpenEditContractData();
-      return;
-    }
-    
-    // All fields complete - proceed with approval
     handleStatusUpdate(selectedApp.id, "approved");
+  };
+
+  const handleReject = (reason) => {
+    if (!selectedApp) return;
+    handleStatusUpdate(selectedApp.id, "rejected", { rejection_reason: reason, rejected_at: new Date().toISOString() });
+    setIsRejectModalOpen(false);
   };
 
   const handleSaveContractDataAndApprove = async (approveAfter = false) => {
@@ -363,24 +346,48 @@ export default function Applications() {
   };
 
   const handleCreatePerformer = async () => {
-    if (!selectedApp) return;
+    if (!selectedApp || selectedApp.performer_id) {
+      toast.error("Performer already exists for this application.");
+      return;
+    }
+
     const slug = `${selectedApp.applicant_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}-${Date.now()}`;
-    const performer = await base44.entities.Performer.create({
-      display_name: selectedApp.applicant_name,
-      slug,
-      bio: selectedApp.experience || selectedApp.message || "",
-      nationality: selectedApp.nationality,
-      status: "pending", verified: false,
-    });
-    await base44.entities.GuestProductionApplication.update(selectedApp.id, {
-      status: "approved",
-      admin_notes: `${selectedApp.admin_notes || ""}\n\nPerformer created: ${performer.id}`,
-    });
-    toast.success("Performer profile created");
-    queryClient.invalidateQueries({ queryKey: ['applications'] });
-    setIsCreatePerformerOpen(false);
-    setIsDetailOpen(false);
-    navigate(`/admin/performers/${performer.id}`);
+    
+    try {
+      const performer = await base44.entities.Performer.create({
+        display_name: selectedApp.applicant_name,
+        slug,
+        bio: selectedApp.experience || selectedApp.message || "",
+        nationality: selectedApp.nationality,
+        status: "pending",
+        verified: false,
+        internal_notes: `Created from application: ${selectedApp.id}`,
+        revenue_model: selectedApp.preferred_revenue_model === 'network_performer_70_studio_30' ? 'established_network' : 'studio_managed',
+        revenue_split_pct: selectedApp.preferred_revenue_model === 'network_performer_70_studio_30' ? 70 : 40,
+      });
+
+      const updates = {
+        performer_id: performer.id,
+        performer_created_at: new Date().toISOString(),
+        status: 'performer_created',
+      };
+
+      const logEntry = {
+        timestamp: new Date().toISOString(),
+        action: `Performer created: ${performer.id}`,
+        performer_id: performer.id,
+      };
+      updates.status_history = [...(selectedApp.status_history || []), JSON.stringify(logEntry)];
+
+      await base44.entities.GuestProductionApplication.update(selectedApp.id, updates);
+      await queryClient.invalidateQueries({ queryKey: ['applications'] });
+
+      toast.success("Performer profile created");
+      setIsCreatePerformerOpen(false);
+      setSelectedApp(prev => prev ? { ...prev, ...updates } : prev);
+    } catch (err) {
+      toast.error(`Failed to create performer: ${err.message}`);
+    }
   };
 
   const [selectedTemplateId, setSelectedTemplateId] = useState("6a21d0c9e52a37dd1042e42a"); // Default: Performer Management v3.0
@@ -395,19 +402,11 @@ export default function Applications() {
   const handleCreateContract = async (templateId, variables) => {
     if (!selectedApp) return;
     
-    // DEBUG: Show current application state
-    console.log('[CONTRACT DEBUG] Application state:', {
-      id: selectedApp.id,
-      applicant_name: selectedApp.applicant_name,
-      legal_name: selectedApp.legal_name,
-      date_of_birth: selectedApp.date_of_birth,
-      city: selectedApp.city,
-      address: selectedApp.address,
-      email: selectedApp.email,
-      status: selectedApp.status,
-      admin_notes: selectedApp.admin_notes?.substring(0, 100),
-      has_performer: selectedApp.admin_notes?.includes('Performer created:'),
-    });
+    // Duplicate prevention: check if contract already exists
+    if (selectedApp.contract_id) {
+      toast.error(`Contract already exists for this application. ID: ${selectedApp.contract_id}`);
+      return;
+    }
     
     try {
       // Extract performer_id from admin notes if available
@@ -416,21 +415,8 @@ export default function Applications() {
         const performerMatch = selectedApp.admin_notes.match(/Performer created:\s*([a-zA-Z0-9]+)/);
         if (performerMatch && performerMatch[1]) {
           performer_id = performerMatch[1];
-          console.log('[CONTRACT] Extracted performer_id from admin notes:', performer_id);
         }
       }
-
-      console.log('[CONTRACT] Calling contractService with:', {
-        action: 'create_from_application',
-        application_id: selectedApp.id,
-        template_id: templateId,
-        performer_id,
-        variables_keys: Object.keys(variables),
-        variables_legal_name: variables.legal_name,
-        variables_date_of_birth: variables.date_of_birth,
-        variables_address: variables.address,
-        variables_email: variables.email,
-      });
 
       const res = await base44.functions.invoke("contractService", {
         action: "create_from_application",
@@ -440,28 +426,40 @@ export default function Applications() {
         ...variables,
       });
 
-      console.log('[CONTRACT] Response status:', res.data?.success ? 'SUCCESS' : 'ERROR', res.data);
-
       if (res.data?.success) {
+        // Update application with contract reference
+        const updates = {
+          contract_id: res.data.contract_id,
+          contract_status: 'pending',
+          contract_generated_at: new Date().toISOString(),
+          status: 'contract_pending',
+        };
+        
+        const logEntry = {
+          timestamp: new Date().toISOString(),
+          action: `Contract created: ${res.data.contract_id}`,
+          contract_id: res.data.contract_id,
+        };
+        updates.status_history = [...(selectedApp.status_history || []), JSON.stringify(logEntry)];
+        
+        await base44.entities.GuestProductionApplication.update(selectedApp.id, updates);
+        await queryClient.invalidateQueries({ queryKey: ['applications'] });
+        
         setContractData({
           id: res.data.contract_id,
           signing_url: res.data.signing_url,
           title: res.data.title,
         });
         setIsCreateContractOpen(true);
-        toast.success("Contract created");
+        setSelectedApp(prev => prev ? { ...prev, ...updates } : prev);
+        toast.success("Contract created successfully");
       } else if (res.data?.error) {
-        // Backend returned an error (400) - show detailed message
-        console.error('[CONTRACT] Backend validation failed:', res.data);
         const errorMsg = res.data.missing_fields 
           ? `Cannot create final contract. Missing: ${res.data.missing_fields.join(', ')}`
           : res.data.error;
         toast.error(errorMsg);
       }
     } catch (err) {
-      console.error('[CONTRACT] Exception:', err);
-      console.error('[CONTRACT] Error response:', err.response?.data);
-      // Show detailed error message from backend
       const errorMsg = err.response?.data?.error || err.message || 'Failed to create contract';
       const missingFields = err.response?.data?.missing_fields;
       if (missingFields && Array.isArray(missingFields)) {
@@ -485,31 +483,20 @@ export default function Applications() {
       }
     }
     
-    // Debug: Log current application state
-    console.log('[CONTRACT DEBUG] Application state before create:', {
-      application_id: selectedApp.id,
-      applicant_name: selectedApp.applicant_name,
-      status: selectedApp.status,
-      legal_name: selectedApp.legal_name || 'MISSING',
-      date_of_birth: selectedApp.date_of_birth || 'MISSING',
-      address: selectedApp.address || 'MISSING',
-      city: selectedApp.city || 'MISSING',
-      nationality: selectedApp.nationality || 'MISSING',
-      email: selectedApp.email || 'MISSING',
-      admin_notes_has_performer: selectedApp.admin_notes?.includes('Performer created:') || false,
-    });
-    
     setContractVariables({
       signing_date: today,
-      studio_email: 'legal@fleshlab.online',
+      studio_email: 'studiosupport@fleshlab.online',
       legal_name: legalName || selectedApp.applicant_name,
       stage_name: selectedApp.applicant_name,
       date_of_birth: selectedApp.date_of_birth || '',
-      address: `${selectedApp.city || ''}, ${selectedApp.nationality || ''}`.trim(),
+      address: selectedApp.address || '',
+      city: selectedApp.city || '',
+      country: selectedApp.country || selectedApp.nationality || '',
       email: selectedApp.email,
       phone_or_messenger: selectedApp.phone || selectedApp.whatsapp_number || '',
       id_number: '',
       contract_model: 'full_management',
+      revenue_share_percent: selectedApp.preferred_revenue_model === 'network_performer_70_studio_30' ? 70 : 40,
     });
     setSelectedTemplateId("6a21d0c9e52a37dd1042e42a");
     setIsTemplateDialogOpen(true);
@@ -615,7 +602,7 @@ export default function Applications() {
     toast.success(`Marked as contacted via ${method}`);
   };
 
-  const TABS = ["info", "media", "id", "notes", "contact"];
+  const TABS = ["info", "media", "id", "workflow", "notes", "contact"];
 
   return (
     <div className="p-6 space-y-6">
@@ -770,7 +757,7 @@ export default function Applications() {
 
             {/* Tab nav */}
             <div className="flex gap-1 border-b border-border pb-0 mb-4">
-              {["info", "media", "id", "notes", "contact"].map(tab => (
+              {TABS.map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
                   className={`px-3 py-1.5 text-xs font-medium rounded-t capitalize transition-colors ${
                     activeTab === tab ? "bg-secondary text-foreground border border-b-secondary border-border" : "text-muted-foreground hover:text-foreground"
@@ -1104,45 +1091,71 @@ export default function Applications() {
                 <div className="border-t border-border pt-4 mt-4">
                   <Label className="text-xs text-muted-foreground block mb-2">Contract</Label>
                   
-                  {/* DEBUG: Contract Readiness Panel */}
-                  <div className="mb-3 bg-blue-500/5 border border-blue-500/20 rounded-lg p-3 text-xs space-y-2">
-                    <div className="font-semibold text-blue-400 flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5" /> Contract Readiness Debug
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-[10px]">
-                      <div className={selectedApp.status === 'approved' ? 'text-green-400' : 'text-orange-400'}>
-                        Status: {selectedApp.status}
+                  {/* Show existing contract if one exists */}
+                  {selectedApp.contract_id ? (
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-green-500/10 text-green-500">Contract Exists</Badge>
+                        <span className="text-muted-foreground">ID: {selectedApp.contract_id?.substr(0, 8)}...</span>
                       </div>
-                      <div className={selectedApp.admin_notes?.includes('Performer created:') ? 'text-green-400' : 'text-orange-400'}>
-                        Performer: {selectedApp.admin_notes?.includes('Performer created:') ? '✓ Linked' : '✗ Missing'}
-                      </div>
-                      <div className={selectedApp.legal_name ? 'text-green-400' : 'text-orange-400'}>
-                        Legal Name: {selectedApp.legal_name || '✗ MISSING'}
-                      </div>
-                      <div className={selectedApp.date_of_birth ? 'text-green-400' : 'text-orange-400'}>
-                        DOB: {selectedApp.date_of_birth || '✗ MISSING'}
-                      </div>
-                      <div className={selectedApp.address ? 'text-green-400' : 'text-orange-400'}>
-                        Full Address: {selectedApp.address || '✗ MISSING'}
-                      </div>
-                      <div className={selectedApp.country ? 'text-green-400' : 'text-orange-400'}>
-                        Country: {selectedApp.country || '✗ MISSING'}
-                      </div>
-                      <div className={selectedApp.email ? 'text-green-400' : 'text-orange-400'}>
-                        Email: {selectedApp.email || '✗ MISSING'}
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => {
+                          setContractData({ id: selectedApp.contract_id, signing_url: selectedApp.signing_url, title: selectedApp.contract_title });
+                          setIsCreateContractOpen(true);
+                        }}>
+                          <Eye className="w-3.5 h-3.5 mr-1" /> View
+                        </Button>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Edit Contract Data Button */}
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleOpenEditContractData}
-                    className="w-full mb-3"
-                  >
-                    <FileText className="w-4 h-4 mr-2" /> Edit Contract Data
-                  </Button>
+                  ) : (
+                    <>
+                      {/* Edit Contract Data Button */}
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleOpenEditContractData}
+                        className="w-full mb-3"
+                      >
+                        <FileText className="w-4 h-4 mr-2" /> Complete Contract Data
+                      </Button>
+                      
+                      {(() => {
+                        const missingFields = [
+                          !selectedApp.legal_name && 'Legal name',
+                          !selectedApp.date_of_birth && 'Date of Birth',
+                          !selectedApp.address && 'Full Residential Address',
+                          !selectedApp.country && 'Country',
+                          !selectedApp.email && 'Email',
+                        ].filter(Boolean);
+                        
+                        return missingFields.length > 0 ? (
+                          <div className="space-y-3">
+                            <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 text-xs space-y-1">
+                              <div className="text-orange-400 font-semibold flex items-center gap-1.5">
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                                Missing contract data ({missingFields.length}):
+                              </div>
+                              <ul className="list-disc list-inside text-orange-300 ml-1 space-y-0.5">
+                                {missingFields.map(field => (
+                                  <li key={field}>{field}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        ) : (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={handleOpenContractDialog} 
+                            className="w-full"
+                            disabled={selectedApp.status !== 'approved'}
+                          >
+                            <FileText className="w-4 h-4 mr-2" /> Create Contract
+                          </Button>
+                        );
+                      })()}
+                    </>
+                  )}
                   
                   {contractData ? (
                     <div className="space-y-2 text-xs">
@@ -1334,7 +1347,23 @@ export default function Applications() {
         </Dialog>
       )}
 
-      <Dialog open={isCreatePerformerOpen} onOpenChange={setIsCreatePerformerOpen}>
+      {selectedApp && isCreatePerformerOpen && (
+        <Dialog open={isCreatePerformerOpen} onOpenChange={setIsCreatePerformerOpen}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Create Performer Profile</DialogTitle></DialogHeader>
+            <div className="space-y-3 text-sm">
+              <p className="text-muted-foreground">Creates a pending Performer record from this application.</p>
+              <div><strong>Stage Name:</strong> {selectedApp.applicant_name}</div>
+              <div><strong>Nationality:</strong> {selectedApp.nationality || "—"}</div>
+              <div><strong>Revenue Model:</strong> {selectedApp.preferred_revenue_model}</div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCreatePerformerOpen(false)}>Cancel</Button>
+              <Button onClick={handleCreatePerformer}><UserPlus className="w-4 h-4 mr-1" /> Create</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
           <DialogContent>
             <DialogHeader><DialogTitle>Create Performer Profile</DialogTitle></DialogHeader>
             <div className="space-y-3 text-sm">
