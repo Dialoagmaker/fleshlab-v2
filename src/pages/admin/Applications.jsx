@@ -52,7 +52,7 @@ export default function Applications() {
 
   const { data: applications = [], isLoading } = useQuery({
     queryKey: ['applications'],
-    queryFn: () => base44.entities.GuestProductionApplication.list('-submitted_at', 200),
+    queryFn: () => base44.entities.GuestProductionApplication.filter({ request_type: "performer_application" }, '-submitted_at', 200),
   });
 
   // Listen for custom events from dialog to open modals
@@ -268,11 +268,17 @@ export default function Applications() {
     rejected: applications.filter(a => a.status === "rejected").length,
   };
 
+  // Verify all applications are performer applications (safety check)
+  const nonPerformerApps = applications.filter(a => a.request_type !== "performer_application");
+  if (nonPerformerApps.length > 0 && import.meta.env.MODE === "development") {
+    console.warn("[Admin Applications] WARNING: Found", nonPerformerApps.length, "non-performer applications in the list. Check request_type filter.");
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground mb-1">Performer Applications</h1>
-        <p className="text-muted-foreground text-sm">Review applications and uploaded media before progressing applicants.</p>
+        <p className="text-muted-foreground text-sm">Review performer applications and uploaded media before progressing applicants. Fan Production requests are managed separately.</p>
       </div>
 
       {/* Stats */}
