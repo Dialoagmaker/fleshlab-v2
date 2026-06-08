@@ -31,7 +31,7 @@ export default function GrowthDashboard() {
     queryKey: ['growth-analytics', dateRange],
     queryFn: async () => {
       const res = await base44.functions.invoke('growthAnalytics', { days: parseInt(dateRange) });
-      console.log('[GrowthDashboard] GA4 Response:', JSON.stringify(res, null, 2));
+      console.log('[GrowthDashboard] RAW GA4 RESPONSE:', JSON.stringify(res, null, 2));
       return res;
     },
     retry: 1,
@@ -41,7 +41,7 @@ export default function GrowthDashboard() {
     queryKey: ['gsc-analytics'],
     queryFn: async () => {
       const res = await base44.functions.invoke('seoGscSearchAnalytics', {});
-      console.log('[GrowthDashboard] GSC Response:', JSON.stringify(res, null, 2));
+      console.log('[GrowthDashboard] RAW GSC RESPONSE:', JSON.stringify(res, null, 2));
       return res;
     },
     retry: 1,
@@ -58,41 +58,44 @@ export default function GrowthDashboard() {
 
   const isLoading = ga4Loading || gscLoading;
   
-  // Correct data extraction based on actual API response structure
-  const topPages = ga4Data?.top_pages || [];
-  const trafficSources = ga4Data?.traffic_sources || [];
-  const events = ga4Data?.events?.all_events || [];
-  const pagesByCategory = ga4Data?.pages_by_category || {};
+  // Defensive data mapping with fallback for multiple naming conventions
+  const ga4PropertyId = ga4Data?.ga4_property_id || ga4Data?.ga4PropertyId || ga4Data?.property_id || 'MISSING';
+  const topPages = ga4Data?.top_pages || ga4Data?.topPages || [];
+  const trafficSources = ga4Data?.traffic_sources || ga4Data?.trafficSources || [];
+  const events = ga4Data?.events?.all_events || ga4Data?.events || ga4Data?.eventRows || [];
+  const pagesByCategory = ga4Data?.pages_by_category || ga4Data?.pagesByCategory || {};
+  const totalPageViewsBackend = ga4Data?.total_page_views || ga4Data?.totalPageViews || 0;
   
   // Debug: Log full data structure
   useEffect(() => {
     if (ga4Data && !ga4Loading) {
-      console.log('='.repeat(60));
-      console.log('[GrowthDashboard] GA4 BACKEND RESPONSE');
-      console.log('='.repeat(60));
-      console.log('Property ID:', ga4Data?.ga4_property_id);
-      console.log('Date Range:', ga4Data?.date_range);
-      console.log('Top Pages Count:', topPages?.length);
-      console.log('Top Pages Sample:', topPages?.slice(0, 3));
-      console.log('Events Count:', events?.length);
-      console.log('Events Sample:', events?.slice(0, 5));
-      console.log('Traffic Sources Count:', trafficSources?.length);
-      console.log('Total Page Views:', totalPageViews);
-      console.log('Pages by Category:', Object.keys(pagesByCategory || {}));
-      console.log('='.repeat(60));
+      console.log('='.repeat(80));
+      console.log('[GrowthDashboard] 📊 GA4 BACKEND RESPONSE - FULL DEBUG');
+      console.log('='.repeat(80));
+      console.log('✅ Property ID:', ga4PropertyId);
+      console.log('✅ Date Range:', ga4Data?.date_range);
+      console.log('✅ Top Pages Count:', topPages?.length);
+      console.log('✅ Top Pages Sample:', topPages?.slice(0, 3));
+      console.log('✅ Events Count:', events?.length);
+      console.log('✅ Events Sample:', events?.slice(0, 5));
+      console.log('✅ Traffic Sources Count:', trafficSources?.length);
+      console.log('✅ Total Page Views (backend):', totalPageViewsBackend);
+      console.log('✅ Total Page Views (calculated):', totalPageViews);
+      console.log('✅ Pages by Category:', Object.keys(pagesByCategory || {}));
+      console.log('='.repeat(80));
     }
     if (gscData && !gscLoading) {
-      console.log('='.repeat(60));
-      console.log('[GrowthDashboard] GSC BACKEND RESPONSE');
-      console.log('='.repeat(60));
-      console.log('Site URL:', gscData?.site_url);
-      console.log('Date Range:', gscData?.date_range);
-      console.log('Summary:', gscData?.summary);
-      console.log('Top Queries Count:', gscData?.top_queries?.length);
-      console.log('Top Pages Count:', gscData?.top_pages?.length);
-      console.log('='.repeat(60));
+      console.log('='.repeat(80));
+      console.log('[GrowthDashboard] 🔍 GSC BACKEND RESPONSE - FULL DEBUG');
+      console.log('='.repeat(80));
+      console.log('✅ Site URL:', gscData?.site_url);
+      console.log('✅ Date Range:', gscData?.date_range);
+      console.log('✅ Summary:', gscData?.summary);
+      console.log('✅ Top Queries Count:', gscData?.top_queries?.length);
+      console.log('✅ Top Pages Count:', gscData?.top_pages?.length);
+      console.log('='.repeat(80));
     }
-  }, [ga4Data, gscData, ga4Loading, gscLoading]);
+  }, [ga4Data, gscData, ga4Loading, gscLoading, ga4PropertyId, topPages, events, trafficSources, totalPageViewsBackend, totalPageViews]);
 
   const eventMap = {};
   events.forEach(e => { eventMap[e.event_name] = e.event_count; });
@@ -141,8 +144,8 @@ export default function GrowthDashboard() {
               <CardContent className="text-xs space-y-1 font-mono">
                 <div className="flex items-center gap-2">
                   <span>GA4 Property ID (Backend):</span>
-                  <code className="bg-black/50 px-2 py-0.5 rounded text-green-400 font-bold">{ga4Data?.ga4_property_id || "MISSING"}</code>
-                  {ga4Data?.ga4_property_id && <CheckCircle2 className="w-3 h-3 text-green-500" />}
+                  <code className="bg-black/50 px-2 py-0.5 rounded text-green-400 font-bold">{ga4PropertyId}</code>
+                  {ga4PropertyId !== 'MISSING' && <CheckCircle2 className="w-3 h-3 text-green-500" />}
                 </div>
                 <div className="flex items-center gap-2">
                   <span>GA4 Measurement ID (Frontend):</span>
@@ -150,15 +153,16 @@ export default function GrowthDashboard() {
                 </div>
                 <div className="pt-2 border-t border-green-500/20">
                   <div className="text-green-300 font-semibold mb-1">API Response:</div>
-                  <div>Top Pages: <code className="text-green-400">{topPages?.length || 0} rows</code></div>
-                  <div>Events: <code className="text-green-400">{events?.length || 0} unique events</code></div>
+                  <div>Top Pages: <code className="text-green-400">{topPages.length} rows</code></div>
+                  <div>Events: <code className="text-green-400">{events.length} unique events</code></div>
                   <div>Total Page Views: <code className="text-green-400 font-bold">{totalPageViews.toLocaleString()}</code></div>
-                  <div>Traffic Sources: <code className="text-green-400">{trafficSources?.length || 0} sources</code></div>
+                  <div>Traffic Sources: <code className="text-green-400">{trafficSources.length} sources</code></div>
                 </div>
                 <div className="pt-2 border-t border-green-500/20">
                   <div className="text-green-300 font-semibold mb-1">GSC Status:</div>
-                  <div>Clicks (28d): <code className="text-green-400 font-bold">{gscData?.summary?.clicks || 0}</code></div>
-                  <div>Impressions (28d): <code className="text-green-400 font-bold">{gscData?.summary?.impressions || 0}</code></div>
+                  <div>Clicks (28d): <code className="text-green-400 font-bold">{gscData?.summary?.clicks ?? 0}</code></div>
+                  <div>Impressions (28d): <code className="text-green-400 font-bold">{gscData?.summary?.impressions ?? 0}</code></div>
+                  <div>CTR: <code className="text-green-400">{fmtPct(gscData?.summary?.ctr)}</code></div>
                   <div>Site URL: <code className="text-blue-400">https://fleshlab.online/</code></div>
                 </div>
                 <div className="pt-2 border-t border-green-500/20">
@@ -195,7 +199,7 @@ export default function GrowthDashboard() {
               <Card>
                 <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-500" />Tracking Status</CardTitle></CardHeader>
                 <CardContent className="space-y-2">
-                  <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">GA4 ID</span><code className="bg-muted px-1.5 py-0.5 rounded text-[10px]">{ga4Data?.ga4_property_id || "—"}</code></div>
+                  <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">GA4 ID</span><code className="bg-muted px-1.5 py-0.5 rounded text-[10px]">{ga4PropertyId}</code></div>
                   <div className="flex flex-wrap gap-1">{['page_view', 'fanclub_cta_click', 'checkout_started'].map(event => (<Badge key={event} variant="outline" className="text-[10px]">{eventMap[event] > 0 ? '✓' : '○'} {event.split('_').pop()}</Badge>))}</div>
                   {events.length === 0 && <p className="text-[10px] text-yellow-500"><AlertCircle className="w-2.5 h-2.5 inline mr-0.5" />No events in response</p>}
                 </CardContent>
