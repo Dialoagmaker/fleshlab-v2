@@ -729,361 +729,387 @@ export default function PhilippinesRecruitment() {
           </div>
         </section>
 
-        {/* Choose Your Creator Model - Dark Premium */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-900">
+        {/* Choose Your Creator Model - Dark Cinematic */}
+        <section style={{ background: '#07030a' }} className="py-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-5xl mx-auto">
-            <Badge className="mb-4 bg-rose-600 text-white text-sm px-4 py-1.5 font-semibold">
-              Revenue Models
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold text-center text-white mb-4">
-              Choose your creator model
-            </h2>
-            <p className="text-center text-gray-300 font-medium mb-12 text-lg max-w-2xl mx-auto">
-              Different support levels, different splits — both positive paths
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* 60/40 Management */}
-              <Card 
-                className="border-2 border-rose-500 shadow-2xl hover:shadow-rose-900/50 transition-all bg-gradient-to-br from-gray-800 to-gray-900"
+            {/* Header */}
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-rose-500/60 text-rose-400 text-xs font-black uppercase tracking-widest mb-5"
+                style={{ background: 'rgba(244,63,94,0.08)', boxShadow: '0 0 14px rgba(244,63,94,0.2)' }}>
+                Revenue Models
+              </div>
+              <h2 className="text-4xl sm:text-5xl font-black text-white mb-3 leading-tight">
+                Choose your <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-rose-600">creator</span> model
+              </h2>
+              <p className="text-gray-400 text-base max-w-xl mx-auto">
+                Different support levels, different splits — both are real paths<br />depending on where you start.
+              </p>
+            </div>
+
+            {/* Two Model Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+              {/* 60/40 Management Card */}
+              <div 
+                className="relative rounded-2xl overflow-hidden cursor-pointer group"
+                style={{ border: '1.5px solid rgba(244,63,94,0.4)', boxShadow: '0 0 30px rgba(244,63,94,0.12)', background: 'rgba(20,5,12,0.95)' }}
                 onClick={() => handleRevenueModelClick("60-40-management")}
               >
-                <CardContent className="pt-6">
-                  <Badge className="mb-4 bg-rose-600 text-white font-bold text-xs px-3 py-1.5">Full Support</Badge>
-                  <h3 className="text-2xl font-bold text-white mb-2">60/40 Management</h3>
-                  <div className="flex items-baseline gap-2 mb-4">
-                    <span className="text-3xl font-extrabold text-rose-500">Studio 60%</span>
-                    <span className="text-gray-400">/</span>
-                    <span className="text-3xl font-extrabold text-white">Performer 40%</span>
+                {/* Background portrait image right side */}
+                <div className="absolute right-0 top-0 bottom-0 w-2/5 overflow-hidden">
+                  <img 
+                    src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/7a1c1e9ab_generated_image.png"
+                    alt="" className="w-full h-full object-cover object-top opacity-40"
+                    style={{ maskImage: 'linear-gradient(to left, rgba(0,0,0,0.6), transparent)', WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,0.6), transparent)' }}
+                  />
+                </div>
+                <div className="relative z-10 p-6">
+                  <span className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-4 text-white"
+                    style={{ background: 'rgba(244,63,94,0.85)', boxShadow: '0 0 12px rgba(244,63,94,0.5)' }}>
+                    FULL SUPPORT
+                  </span>
+                  <h3 className="text-lg font-bold text-gray-300 mb-1">60/40 Management Model</h3>
+                  <div className="flex items-baseline gap-2 mb-3">
+                    <span className="text-3xl font-black text-rose-500">Studio 60%</span>
+                    <span className="text-white text-2xl font-black">/ Performer 40%</span>
                   </div>
-                  <p className="text-gray-300 text-sm mb-5 leading-relaxed">
-                    We handle everything: planning, editing, thumbnails, publishing, promotion, fanclub management. You focus on creating. Perfect for first-timers.
+                  <p className="text-gray-400 text-sm mb-5 leading-relaxed max-w-xs">
+                    Best if you want FLESHLAB to help with planning, editing, thumbnails, publishing, promotion, fanclub setup and management.
                   </p>
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-start gap-2 text-gray-300">
-                      <CheckCircle2 className="h-5 w-5 text-rose-500 flex-shrink-0 mt-0.5" />
-                      <span>Full content strategy & planning</span>
-                    </li>
-                    <li className="flex items-start gap-2 text-gray-300">
-                      <CheckCircle2 className="h-5 w-5 text-rose-500 flex-shrink-0 mt-0.5" />
-                      <span>Professional editing & thumbnails</span>
-                    </li>
-                    <li className="flex items-start gap-2 text-gray-300">
-                      <CheckCircle2 className="h-5 w-5 text-rose-500 flex-shrink-0 mt-0.5" />
-                      <span>Fanclub setup & promotion</span>
-                    </li>
-                    <li className="flex items-start gap-2 text-gray-300">
-                      <CheckCircle2 className="h-5 w-5 text-rose-500 flex-shrink-0 mt-0.5" />
-                      <span>Platform distribution & SEO</span>
-                    </li>
-                    <li className="flex items-start gap-2 text-gray-300">
-                      <CheckCircle2 className="h-5 w-5 text-rose-500 flex-shrink-0 mt-0.5" />
-                      <span>Graduate to 70/30 when ready</span>
-                    </li>
+                  <ul className="space-y-2">
+                    {["Full content strategy & planning", "Professional editing & thumbnails", "Fanclub setup & promotion", "Platform distribution & SEO", "Graduate to 70/30 when ready"].map(item => (
+                      <li key={item} className="flex items-center gap-2 text-gray-300 text-sm">
+                        <CheckCircle2 className="h-4 w-4 text-rose-500 flex-shrink-0" />
+                        {item}
+                      </li>
+                    ))}
                   </ul>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
-              {/* 70/30 Network */}
-              <Card 
-                className="border-2 border-amber-500 shadow-2xl hover:shadow-amber-900/50 transition-all bg-gradient-to-br from-gray-800 to-gray-900"
+              {/* 70/30 Network Card */}
+              <div 
+                className="relative rounded-2xl overflow-hidden cursor-pointer group"
+                style={{ border: '1.5px solid rgba(245,158,11,0.4)', boxShadow: '0 0 30px rgba(245,158,11,0.1)', background: 'rgba(15,10,3,0.95)' }}
                 onClick={() => handleRevenueModelClick("70-30-network")}
               >
-                <CardContent className="pt-6">
-                  <Badge className="mb-4 bg-amber-600 text-white font-bold text-xs px-3 py-1.5">Maximum Control</Badge>
-                  <h3 className="text-2xl font-bold text-white mb-2">70/30 Network</h3>
-                  <div className="flex items-baseline gap-2 mb-4">
-                    <span className="text-3xl font-extrabold text-amber-500">Performer 70%</span>
-                    <span className="text-gray-400">/</span>
-                    <span className="text-3xl font-extrabold text-white">Studio 30%</span>
+                <div className="absolute right-0 top-0 bottom-0 w-2/5 overflow-hidden">
+                  <img 
+                    src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/14dcbc4fd_generated_image.png"
+                    alt="" className="w-full h-full object-cover object-top opacity-40"
+                    style={{ maskImage: 'linear-gradient(to left, rgba(0,0,0,0.6), transparent)', WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,0.6), transparent)' }}
+                  />
+                </div>
+                <div className="relative z-10 p-6">
+                  <span className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-4 text-white"
+                    style={{ background: 'rgba(245,158,11,0.85)', boxShadow: '0 0 12px rgba(245,158,11,0.5)' }}>
+                    MAXIMUM CONTROL
+                  </span>
+                  <h3 className="text-lg font-bold text-gray-300 mb-1">70/30 Network Model</h3>
+                  <div className="flex items-baseline gap-2 mb-3">
+                    <span className="text-3xl font-black text-amber-400">Performer 70%</span>
+                    <span className="text-white text-2xl font-black">/ Studio 30%</span>
                   </div>
-                  <p className="text-gray-300 text-sm mb-5 leading-relaxed">
-                    You upload your own content, set your schedule. We provide platform, fanclub tools, and multi-platform distribution. Best for experienced creators.
+                  <p className="text-gray-400 text-sm mb-5 leading-relaxed max-w-xs">
+                    Best if you already have content, followers, cam traffic or experience and want FLESHLAB as an additional fanclub, SEO and distribution hub.
                   </p>
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-start gap-2 text-gray-300">
-                      <CheckCircle2 className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                      <span>Keep 70% of all revenue</span>
-                    </li>
-                    <li className="flex items-start gap-2 text-gray-300">
-                      <CheckCircle2 className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                      <span>Upload your own content</span>
-                    </li>
-                    <li className="flex items-start gap-2 text-gray-300">
-                      <CheckCircle2 className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                      <span>Set your own schedule</span>
-                    </li>
-                    <li className="flex items-start gap-2 text-gray-300">
-                      <CheckCircle2 className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                      <span>Multi-platform distribution</span>
-                    </li>
-                    <li className="flex items-start gap-2 text-gray-300">
-                      <CheckCircle2 className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                      <span>Fanclub & PPV tools included</span>
-                    </li>
+                  <ul className="space-y-2">
+                    {["Keep 70% of all revenue", "Upload your own content", "Set your own schedule", "Multi-platform distribution", "Fanclub & PPV tools included"].map(item => (
+                      <li key={item} className="flex items-center gap-2 text-gray-300 text-sm">
+                        <CheckCircle2 className="h-4 w-4 text-amber-400 flex-shrink-0" />
+                        {item}
+                      </li>
+                    ))}
                   </ul>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
 
-            <p className="text-xs text-gray-400 mt-8 text-center">
-              Revenue splits apply to eligible gross revenue. Specific terms discussed during application review.
-            </p>
+            {/* Comparison Table */}
+            <div className="rounded-2xl overflow-hidden mb-8" style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)' }}>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                    <th className="text-left py-3 px-4 text-gray-500 font-semibold">Model</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-semibold">Support Level</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-semibold hidden sm:table-cell">Best For</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-semibold hidden md:table-cell">Content Ownership</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-semibold hidden lg:table-cell">Promotion Help</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-semibold hidden lg:table-cell">Fanclub Setup</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <td className="py-3 px-4 text-rose-400 font-bold">60/40 Management</td>
+                    <td className="py-3 px-4">
+                      <div className="flex gap-0.5">{[1,2,3,4].map(i=><Star key={i} className="h-3.5 w-3.5 text-rose-500 fill-rose-500"/>)}<Star className="h-3.5 w-3.5 text-gray-600"/></div>
+                    </td>
+                    <td className="py-3 px-4 text-gray-400 hidden sm:table-cell">Beginners or creators who want full support</td>
+                    <td className="py-3 px-4 text-gray-400 hidden md:table-cell">Studio manages & publishes</td>
+                    <td className="py-3 px-4 text-gray-400 hidden lg:table-cell">Full promotion by FLESHLAB</td>
+                    <td className="py-3 px-4 text-gray-400 hidden lg:table-cell">We handle everything</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 px-4 text-amber-400 font-bold">70/30 Network</td>
+                    <td className="py-3 px-4">
+                      <div className="flex gap-0.5">{[1,2,3].map(i=><Star key={i} className="h-3.5 w-3.5 text-amber-400 fill-amber-400"/>)}<Star className="h-3.5 w-3.5 text-gray-600"/><Star className="h-3.5 w-3.5 text-gray-600"/></div>
+                    </td>
+                    <td className="py-3 px-4 text-gray-400 hidden sm:table-cell">Experienced creators who want more control</td>
+                    <td className="py-3 px-4 text-gray-400 hidden md:table-cell">You own & control your content</td>
+                    <td className="py-3 px-4 text-gray-400 hidden lg:table-cell">Shared tools & platform support</td>
+                    <td className="py-3 px-4 text-gray-400 hidden lg:table-cell">You set up & we support</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* CTA Row */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 rounded-2xl"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="flex items-center gap-3">
+                <HelpCircle className="h-5 w-5 text-rose-400 flex-shrink-0" />
+                <div>
+                  <p className="text-white font-semibold text-sm">Not sure which model fits?</p>
+                  <p className="text-gray-500 text-xs">Let's find the best path for your goals.</p>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <Button className="font-bold text-white rounded-xl gap-2 flex-shrink-0"
+                  style={{ background: '#25D366', boxShadow: '0 0 16px rgba(37,211,102,0.35)' }}
+                  onClick={handleWhatsAppClick}>
+                  <MessageCircle className="h-4 w-4" /> Chat on WhatsApp
+                </Button>
+                <Button variant="outline" className="border-white/20 text-white bg-transparent hover:bg-white/5 rounded-xl font-semibold flex-shrink-0"
+                  onClick={handleApplyClick}>
+                  Ask during application
+                </Button>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* How FLESHLAB Helps - 5 Steps */}
-        <section id="how-it-works" className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+        {/* How FLESHLAB Helps - Dark with Visual */}
+        <section id="how-it-works" style={{ background: '#0a0610' }} className="py-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-5xl mx-auto">
-            <Badge className="mb-4 bg-rose-600 text-white text-sm px-4 py-1.5 font-semibold">
-              Simple Process
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-4">
-              How FLESHLAB helps after approval
-            </h2>
-            <p className="text-center text-gray-700 mb-12 text-lg max-w-2xl mx-auto font-medium">
-              Five steps from application to earning
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              {/* Step 1 */}
-              <div className="relative">
-                <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center mb-3 shadow-lg">
-                  <span className="text-white font-bold text-lg">1</span>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              {/* Left: Steps */}
+              <div>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-rose-500/40 text-rose-400 text-xs font-black uppercase tracking-widest mb-5"
+                  style={{ background: 'rgba(244,63,94,0.06)' }}>
+                  Your Journey
                 </div>
-                <h3 className="font-bold text-gray-900 mb-1">Apply</h3>
-                <p className="text-sm text-gray-600">Submit via WhatsApp or online form</p>
-                <div className="hidden md:block absolute top-6 left-12 w-full h-0.5 bg-rose-200 -z-10"></div>
+                <h2 className="text-3xl sm:text-4xl font-black text-white mb-2">
+                  How FLESHLAB helps <span className="text-rose-400">after approval</span>
+                </h2>
+                <p className="text-gray-400 mb-10">Five simple steps from application to earning.</p>
+
+                <div className="relative">
+                  {/* Vertical line */}
+                  <div className="absolute left-5 top-5 bottom-5 w-px" style={{ background: 'linear-gradient(to bottom, rgba(244,63,94,0.6), rgba(244,63,94,0.1))' }} />
+                  <div className="space-y-7">
+                    {[
+                      { n: 1, icon: <ArrowRight className="h-4 w-4 text-rose-400" />, title: "Apply", desc: "Submit via WhatsApp or online form" },
+                      { n: 2, icon: <Shield className="h-4 w-4 text-rose-400" />, title: "Verify 18+", desc: "Upload valid ID (KYC) to verify" },
+                      { n: 3, icon: <UserCheck className="h-4 w-4 text-rose-400" />, title: "Choose Model", desc: "Pick 60/40 or 70/30 based on your goals" },
+                      { n: 4, icon: <Settings className="h-4 w-4 text-rose-400" />, title: "Set Up Profile", desc: "We build your performer & fanclub page" },
+                      { n: 5, icon: <TrendingUp className="h-4 w-4 text-rose-400" />, title: "Publish & Grow", desc: "Upload, we handle SEO & promotion — you earn" },
+                    ].map(step => (
+                      <div key={step.n} className="flex items-start gap-4 relative z-10">
+                        <div className="h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0"
+                          style={{ background: 'rgba(244,63,94,0.15)', border: '1.5px solid rgba(244,63,94,0.6)', boxShadow: '0 0 12px rgba(244,63,94,0.25)' }}>
+                          {step.icon}
+                        </div>
+                        <div className="pt-1">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-xs text-rose-500 font-black">0{step.n}</span>
+                            <h4 className="text-white font-bold text-sm">{step.title}</h4>
+                          </div>
+                          <p className="text-gray-400 text-xs">{step.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              {/* Step 2 */}
-              <div className="relative">
-                <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center mb-3 shadow-lg">
-                  <span className="text-white font-bold text-lg">2</span>
+              {/* Right: Dashboard mockup visual */}
+              <div className="relative hidden lg:block">
+                <div className="relative rounded-2xl overflow-hidden"
+                  style={{ border: '1px solid rgba(244,63,94,0.25)', boxShadow: '0 0 60px rgba(244,63,94,0.15)' }}>
+                  <img 
+                    src="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/ChatGPT%20Image%208.%20Juni%202026%2C%2006_13_39.png"
+                    alt="FLESHLAB creator dashboard"
+                    className="w-full object-cover"
+                    style={{ aspectRatio: '4/3' }}
+                  />
+                  <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(10,3,18,0.1) 0%, rgba(10,3,18,0.4) 100%)' }} />
+                  <div className="absolute bottom-4 left-4 right-4 px-4 py-3 rounded-xl backdrop-blur-sm"
+                    style={{ background: 'rgba(10,3,18,0.75)', border: '1px solid rgba(244,63,94,0.3)' }}>
+                    <p className="text-xs text-rose-400 font-bold mb-0.5">Welcome to FLESHLAB</p>
+                    <p className="text-white text-xs">Your performer portal — manage earnings, uploads & fanclub.</p>
+                  </div>
                 </div>
-                <h3 className="font-bold text-gray-900 mb-1">Verify 18+</h3>
-                <p className="text-sm text-gray-600">Upload valid government ID (KYC)</p>
-                <div className="hidden md:block absolute top-6 left-12 w-full h-0.5 bg-rose-200 -z-10"></div>
-              </div>
-
-              {/* Step 3 */}
-              <div className="relative">
-                <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center mb-3 shadow-lg">
-                  <span className="text-white font-bold text-lg">3</span>
-                </div>
-                <h3 className="font-bold text-gray-900 mb-1">Choose Model</h3>
-                <p className="text-sm text-gray-600">60/40 or 70/30 based on needs</p>
-                <div className="hidden md:block absolute top-6 left-12 w-full h-0.5 bg-rose-200 -z-10"></div>
-              </div>
-
-              {/* Step 4 */}
-              <div className="relative">
-                <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center mb-3 shadow-lg">
-                  <span className="text-white font-bold text-lg">4</span>
-                </div>
-                <h3 className="font-bold text-gray-900 mb-1">Set Up Profile</h3>
-                <p className="text-sm text-gray-600">We build your performer & fanclub page</p>
-                <div className="hidden md:block absolute top-6 left-12 w-full h-0.5 bg-rose-200 -z-10"></div>
-              </div>
-
-              {/* Step 5 */}
-              <div className="relative">
-                <div className="w-12 h-12 bg-rose-600 rounded-2xl flex items-center justify-center mb-3 shadow-lg">
-                  <span className="text-white font-bold text-lg">5</span>
-                </div>
-                <h3 className="font-bold text-gray-900 mb-1">Publish & Grow</h3>
-                <p className="text-sm text-gray-600">Upload, we handle SEO & promotion</p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Philippines Payout Options - Concise */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-amber-50">
-          <div className="max-w-4xl mx-auto">
-            <Badge className="mb-4 bg-amber-600 text-white text-sm px-4 py-1.5 font-semibold">
+        {/* Philippines Payout Options - Dark with Side Visual */}
+        <section style={{ background: '#06030c' }} className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+          {/* Right side visual */}
+          <div className="absolute right-0 top-0 bottom-0 w-1/3 hidden xl:block overflow-hidden">
+            <img src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/14dcbc4fd_generated_image.png"
+              alt="" className="w-full h-full object-cover object-center opacity-30"
+              style={{ maskImage: 'linear-gradient(to left, rgba(0,0,0,0.7), transparent)', WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,0.7), transparent)' }} />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to left, rgba(220,0,100,0.15), transparent)' }} />
+          </div>
+
+          <div className="max-w-3xl mx-auto relative z-10">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber-500/40 text-amber-400 text-xs font-black uppercase tracking-widest mb-5"
+              style={{ background: 'rgba(245,158,11,0.06)' }}>
               Payouts
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-4">
-              Philippines payout options
-            </h2>
-            <p className="text-center text-gray-700 mb-8 text-lg max-w-2xl mx-auto font-medium">
-              Multiple methods (subject to confirmation)
-            </p>
-            
-            <div className="flex flex-wrap justify-center gap-3 mb-8">
-              <Badge className="bg-blue-600 text-white text-sm px-4 py-2.5 font-semibold shadow-sm">GCash</Badge>
-              <Badge className="bg-purple-600 text-white text-sm px-4 py-2.5 font-semibold shadow-sm">Maya</Badge>
-              <Badge className="bg-red-600 text-white text-sm px-4 py-2.5 font-semibold shadow-sm">BDO</Badge>
-              <Badge className="bg-indigo-600 text-white text-sm px-4 py-2.5 font-semibold shadow-sm">BPI</Badge>
-              <Badge className="bg-orange-600 text-white text-sm px-4 py-2.5 font-semibold shadow-sm">UnionBank</Badge>
-              <Badge className="bg-green-600 text-white text-sm px-4 py-2.5 font-semibold shadow-sm">Crypto (USDT)</Badge>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black text-white mb-2">Philippines payout options</h2>
+            <p className="text-gray-400 mb-8">Multiple methods (subject to confirmation)</p>
+
+            {/* Payment method badges */}
+            <div className="flex flex-wrap gap-3 mb-8">
+              {[
+                { label: 'GCash', color: '#0070e0', icon: '💙' },
+                { label: 'Maya', color: '#6b21a8', icon: '💜' },
+                { label: 'BDO', color: '#c00000', icon: '🏦' },
+                { label: 'BPI', color: '#1d4ed8', icon: '🏦' },
+                { label: 'UnionBank', color: '#ea580c', icon: '🏦' },
+                { label: 'Crypto (USDT)', color: '#16a34a', icon: '₿' },
+              ].map(p => (
+                <div key={p.label} className="flex items-center gap-2 px-4 py-2 rounded-full text-white text-sm font-bold"
+                  style={{ background: p.color, boxShadow: `0 0 12px ${p.color}55` }}>
+                  {p.label}
+                </div>
+              ))}
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="text-center p-4 bg-white rounded-xl border border-amber-200 shadow-sm">
-                <p className="text-xs font-bold text-amber-700 uppercase tracking-wide mb-1">Currency</p>
-                <p className="font-bold text-gray-900 text-sm">PHP or USD</p>
-              </div>
-              <div className="text-center p-4 bg-white rounded-xl border border-amber-200 shadow-sm">
-                <p className="text-xs font-bold text-amber-700 uppercase tracking-wide mb-1">Schedule</p>
-                <p className="font-bold text-gray-900 text-sm">Weekly</p>
-              </div>
-              <div className="text-center p-4 bg-white rounded-xl border border-amber-200 shadow-sm">
-                <p className="text-xs font-bold text-amber-700 uppercase tracking-wide mb-1">Exchange</p>
-                <p className="font-bold text-gray-900 text-sm">Market Rate</p>
-              </div>
-              <div className="text-center p-4 bg-white rounded-xl border border-amber-200 shadow-sm">
-                <p className="text-xs font-bold text-amber-700 uppercase tracking-wide mb-1">Status</p>
-                <p className="font-bold text-gray-900 text-sm">Subject to Confirmation</p>
-              </div>
+            {/* Info grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+              {[
+                { label: 'Currency', value: 'PHP or USD equivalent', icon: <Banknote className="h-5 w-5 text-amber-400" /> },
+                { label: 'Schedule', value: 'Weekly / Monthly depending on agreement', icon: <Calendar className="h-5 w-5 text-amber-400" /> },
+                { label: 'Exchange', value: 'Market Rate applied', icon: <TrendingUp className="h-5 w-5 text-amber-400" /> },
+                { label: 'Confirmation', value: 'Payout method confirmed during onboarding', icon: <CheckCircle2 className="h-5 w-5 text-amber-400" /> },
+              ].map(item => (
+                <div key={item.label} className="p-4 rounded-xl flex flex-col gap-2"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                  {item.icon}
+                  <p className="text-amber-400 text-xs font-bold uppercase tracking-wide">{item.label}</p>
+                  <p className="text-gray-300 text-xs leading-snug">{item.value}</p>
+                </div>
+              ))}
             </div>
 
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
-              <p className="text-xs text-gray-700 leading-relaxed text-center">
-                <strong className="text-amber-800 font-semibold">Important:</strong> No guaranteed income. Earnings vary based on content quality, consistency, audience demand, and your activity level.
+            <div className="flex items-start gap-3 px-4 py-3 rounded-xl"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <HelpCircle className="h-4 w-4 text-gray-500 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-gray-500 leading-relaxed">
+                <strong className="text-gray-400">Important:</strong> No guaranteed income. Earnings vary based on content quality, consistency, audience demand, and your activity level.
               </p>
             </div>
           </div>
         </section>
 
-        {/* Privacy, Consent & Safety - Clean Trust Block */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+        {/* Privacy, Consent & Safety - Dark */}
+        <section style={{ background: '#040208' }} className="py-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
-            <Badge className="mb-4 bg-green-600 text-white text-sm px-4 py-1.5 font-semibold">
-              Trust & Safety
-            </Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold text-center text-gray-900 mb-4">
-              Privacy, consent & safety
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-green-500/40 text-green-400 text-xs font-black uppercase tracking-widest mb-5"
+              style={{ background: 'rgba(22,163,74,0.06)' }}>
+              Trust &amp; Safety
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black text-white mb-2">
+              Privacy, consent &amp; <span className="text-green-400">safety</span>
             </h2>
-            <p className="text-center text-gray-700 mb-10 text-lg max-w-2xl mx-auto font-medium">
-              Non-negotiable protections for all creators
-            </p>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="flex items-start gap-3 p-4 bg-green-50 rounded-xl border border-green-200">
-                <Shield className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-bold text-gray-900 text-sm mb-0.5">Verified 18+ Only</h4>
-                  <p className="text-xs text-gray-700">Valid government ID required</p>
-                </div>
-              </div>
+            <p className="text-gray-400 mb-10">Non-negotiable protections for all creators.</p>
 
-              <div className="flex items-start gap-3 p-4 bg-green-50 rounded-xl border border-green-200">
-                <FileCheck className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-bold text-gray-900 text-sm mb-0.5">KYC Process</h4>
-                  <p className="text-xs text-gray-700">Identity verification required</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              {[
+                { icon: <Shield className="h-5 w-5 text-green-400" />, title: "Verified 18+ Only", desc: "Valid government ID required" },
+                { icon: <FileCheck className="h-5 w-5 text-green-400" />, title: "KYC Process", desc: "Identity verification required" },
+                { icon: <CheckCircle2 className="h-5 w-5 text-green-400" />, title: "Explicit Consent", desc: "Written approval for all content" },
+                { icon: <Lock className="h-5 w-5 text-green-400" />, title: "No Forced Content", desc: "Nothing published without approval" },
+                { icon: <Shield className="h-5 w-5 text-green-400" />, title: "No Underage Content", desc: "Strict 18+ policy enforced" },
+                { icon: <Heart className="h-5 w-5 text-green-400" />, title: "Your Boundaries", desc: "You decide what to create" },
+                { icon: <Eye className="h-5 w-5 text-green-400" />, title: "Performer Approval Required", desc: "All content reviewed and approved by you before publishing", wide: true },
+                { icon: <UserCheck className="h-5 w-5 text-green-400" />, title: "No Guaranteed Acceptance", desc: "Applications reviewed individually. Not all applicants are accepted.", wide: true },
+              ].map(item => (
+                <div key={item.title}
+                  className={`flex items-start gap-3 p-4 rounded-xl ${item.wide ? 'sm:col-span-2 lg:col-span-3' : ''}`}
+                  style={{ background: 'rgba(22,163,74,0.06)', border: '1px solid rgba(22,163,74,0.2)' }}>
+                  {item.icon}
+                  <div>
+                    <h4 className="font-bold text-white text-sm mb-0.5">{item.title}</h4>
+                    <p className="text-xs text-gray-400">{item.desc}</p>
+                  </div>
                 </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-4 bg-green-50 rounded-xl border border-green-200">
-                <Heart className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-bold text-gray-900 text-sm mb-0.5">Your Boundaries</h4>
-                  <p className="text-xs text-gray-700">You decide what to create</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-4 bg-green-50 rounded-xl border border-green-200">
-                <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-bold text-gray-900 text-sm mb-0.5">Explicit Consent</h4>
-                  <p className="text-xs text-gray-700">Written approval for all content</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-4 bg-green-50 rounded-xl border border-green-200">
-                <Lock className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-bold text-gray-900 text-sm mb-0.5">No Forced Content</h4>
-                  <p className="text-xs text-gray-700">Nothing published without approval</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-4 bg-green-50 rounded-xl border border-green-200">
-                <Shield className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-bold text-gray-900 text-sm mb-0.5">No Underage Content</h4>
-                  <p className="text-xs text-gray-700">Strict 18+ policy enforced</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-4 bg-green-50 rounded-xl border border-green-200 sm:col-span-2 lg:col-span-3">
-                <Eye className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-bold text-gray-900 text-sm mb-0.5">Performer Approval Required</h4>
-                  <p className="text-xs text-gray-700">All content reviewed and approved by you before publishing. No exceptions.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-4 bg-green-50 rounded-xl border border-green-200 sm:col-span-2 lg:col-span-3">
-                <UserCheck className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-bold text-gray-900 text-sm mb-0.5">No Guaranteed Acceptance</h4>
-                  <p className="text-xs text-gray-700">Applications reviewed individually. Not all applicants are accepted.</p>
-                </div>
-              </div>
+              ))}
             </div>
 
-            <div className="mt-8 p-4 bg-green-50 border border-green-200 rounded-xl">
-              <p className="text-xs text-gray-700 leading-relaxed text-center">
-                <strong className="text-green-800 font-semibold">2257 Compliance:</strong> All performers must provide valid government-issued ID proving age 18+. Records maintained per international compliance requirements.
+            <div className="flex items-start gap-3 p-4 rounded-xl"
+              style={{ background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.25)' }}>
+              <FileCheck className="h-4 w-4 text-green-400 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-gray-400 leading-relaxed">
+                <strong className="text-green-400">2257 Compliance:</strong> All performers must provide valid government-issued ID proving age 18+. Records maintained as required.
               </p>
             </div>
           </div>
         </section>
 
-        {/* Final CTA - Dark Emotional Banner */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-gray-900 via-rose-950 to-gray-900">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-4 leading-tight">
-              Ready to apply from the Philippines?
-            </h2>
-            <p className="text-gray-300 mb-10 text-base sm:text-lg max-w-2xl mx-auto">
-              Ask questions first. No pressure. Verified 18+ applicants only.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-5 justify-center mb-10">
-              <Button 
-                size="lg" 
-                className="bg-green-600 hover:bg-green-700 text-white shadow-xl hover:shadow-2xl px-10 sm:px-12 py-8 text-lg sm:text-xl w-full sm:w-auto font-bold transition-all"
-                onClick={handleWhatsAppClick}
-              >
-                <MessageCircle className="mr-3 h-6 w-6" />
-                Chat on WhatsApp
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-2 border-white/60 text-white hover:bg-white/15 bg-transparent shadow-xl px-10 sm:px-12 py-8 text-lg sm:text-xl w-full sm:w-auto font-bold transition-all"
-                onClick={handleApplyClick}
-              >
-                Start Application
-                <ArrowRight className="ml-3 h-6 w-6" />
-              </Button>
-            </div>
-            
-            <div className="flex flex-wrap justify-center gap-6 sm:gap-8 text-gray-300 font-medium text-sm">
-              <div className="flex items-center gap-2.5">
-                <Shield className="h-5 w-5 text-rose-500" />
-                <span>Verified 18+</span>
+        {/* Final CTA - Cinematic Dark Banner */}
+        <section className="relative py-20 px-4 sm:px-6 lg:px-8 overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, #0a0610 0%, #1a0510 50%, #0a0610 100%)' }}>
+          {/* Right side image */}
+          <div className="absolute right-0 top-0 bottom-0 w-2/5 hidden md:block overflow-hidden">
+            <img src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/792333559_image.png"
+              alt="" className="w-full h-full object-cover object-center opacity-50"
+              style={{ maskImage: 'linear-gradient(to left, rgba(0,0,0,0.8), transparent)', WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,0.8), transparent)' }} />
+            {/* Neon vertical lines overlay */}
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to left, rgba(220,0,100,0.2), transparent)' }} />
+          </div>
+
+          <div className="max-w-4xl mx-auto relative z-10">
+            <div className="max-w-xl">
+              <h2 className="text-4xl sm:text-5xl font-black text-white mb-3 leading-tight">
+                Ready to apply from<br />the <span className="text-rose-400">Philippines?</span>
+                <img src="https://flagcdn.com/w20/ph.png" alt="PH" className="inline-block ml-2 h-6 w-auto align-middle" />
+              </h2>
+              <p className="text-gray-400 mb-8 text-base">
+                Ask questions first. No pressure.<br />Verified 18+ applicants only.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 mb-10">
+                <Button 
+                  size="lg"
+                  className="font-bold text-white px-8 h-14 text-base rounded-xl gap-2"
+                  style={{ background: '#25D366', boxShadow: '0 0 24px rgba(37,211,102,0.4)' }}
+                  onClick={handleWhatsAppClick}>
+                  <MessageCircle className="h-5 w-5" /> Chat on WhatsApp
+                </Button>
+                <Button 
+                  size="lg"
+                  className="font-bold text-white px-8 h-14 text-base rounded-xl gap-2 bg-transparent border-white/30 hover:bg-white/8"
+                  variant="outline"
+                  onClick={handleApplyClick}>
+                  Start Application <ArrowRight className="h-5 w-5" />
+                </Button>
               </div>
-              <div className="flex items-center gap-2.5">
-                <Lock className="h-5 w-5 text-rose-500" />
-                <span>Private & Secure</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <FileCheck className="h-5 w-5 text-rose-500" />
-                <span>KYC Required</span>
+              <div className="flex flex-wrap gap-6 text-gray-400 text-sm">
+                <div className="flex items-center gap-2"><Shield className="h-4 w-4 text-rose-500" /> Verified 18+</div>
+                <div className="flex items-center gap-2"><Lock className="h-4 w-4 text-rose-500" /> Private &amp; Secure</div>
+                <div className="flex items-center gap-2"><FileCheck className="h-4 w-4 text-rose-500" /> KYC Required</div>
               </div>
             </div>
           </div>
         </section>
 
         {/* Compliance Footer */}
-        <footer className="py-10 px-4 sm:px-6 lg:px-8 bg-gray-900 text-gray-300 text-sm">
+        <footer className="py-10 px-4 sm:px-6 lg:px-8 text-gray-500 text-sm" style={{ background: '#030106' }}>
           <div className="max-w-4xl mx-auto text-center space-y-4">
-            <p className="text-gray-400">All performers must be 18+ with valid Philippine government ID. Independent contractor position. Earnings vary and are not guaranteed. You are responsible for your own taxes (BIR).</p>
+            <p className="text-gray-600">All performers must be 18+ with valid Philippine government ID. Independent contractor position. Earnings vary and are not guaranteed. You are responsible for your own taxes (BIR).</p>
             <div className="flex flex-wrap justify-center gap-6">
               <a href="/terms" className="hover:text-white transition-colors">Terms</a>
               <a href="/privacy" className="hover:text-white transition-colors">Privacy</a>
