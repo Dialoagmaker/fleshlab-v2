@@ -347,6 +347,14 @@ const AuthenticatedApp = () => {
     );
   }
 
+  if (path === "/gay-onlyfans-alternative") {
+    return (
+      <PublicPageShell>
+        <GayOnlyfansAlternative />
+      </PublicPageShell>
+    );
+  }
+
   if (path === "/brands") {
     return (
       <PublicPageShell>
