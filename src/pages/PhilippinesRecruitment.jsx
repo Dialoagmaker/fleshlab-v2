@@ -973,36 +973,21 @@ export default function PhilippinesRecruitment() {
 
             {/* Payment method logos */}
             <div className="flex flex-wrap gap-3 mb-8 items-center">
-              {/* GCash */}
-              <div className="flex items-center justify-center px-5 py-2.5 rounded-xl min-w-[90px]"
-                style={{ background: '#0070e0', boxShadow: '0 0 16px rgba(0,112,224,0.4)' }}>
-                <span className="text-white font-black text-sm tracking-tight">GCash</span>
-              </div>
-              {/* Maya */}
-              <div className="flex items-center justify-center px-5 py-2.5 rounded-xl min-w-[80px]"
-                style={{ background: '#00a859', boxShadow: '0 0 16px rgba(0,168,89,0.4)' }}>
-                <span className="text-white font-black text-sm tracking-tight">Maya</span>
-              </div>
-              {/* BDO */}
-              <div className="flex items-center justify-center px-5 py-2.5 rounded-xl min-w-[70px]"
-                style={{ background: '#c00000', boxShadow: '0 0 16px rgba(192,0,0,0.4)' }}>
-                <span className="text-white font-black text-sm tracking-tight">BDO</span>
-              </div>
-              {/* BPI */}
-              <div className="flex items-center justify-center px-5 py-2.5 rounded-xl min-w-[60px]"
-                style={{ background: '#1d3a8a', boxShadow: '0 0 16px rgba(29,58,138,0.4)' }}>
-                <span className="text-white font-black text-sm tracking-tight">BPI</span>
-              </div>
-              {/* UnionBank */}
-              <div className="flex items-center justify-center px-5 py-2.5 rounded-xl min-w-[110px]"
-                style={{ background: '#ea580c', boxShadow: '0 0 16px rgba(234,88,12,0.4)' }}>
-                <span className="text-white font-black text-sm tracking-tight">UnionBank</span>
-              </div>
-              {/* USDT */}
-              <div className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl min-w-[90px]"
-                style={{ background: '#26a17b', boxShadow: '0 0 16px rgba(38,161,123,0.4)' }}>
-                <span className="text-white font-black text-sm tracking-tight">₮ USDT</span>
-              </div>
+              {[
+                { name: 'GCash', logo: 'https://logo.clearbit.com/gcash.com', bg: '#fff', shadow: 'rgba(0,112,224,0.3)' },
+                { name: 'Maya', logo: 'https://logo.clearbit.com/paymaya.com', bg: '#fff', shadow: 'rgba(0,168,89,0.3)' },
+                { name: 'BDO', logo: 'https://logo.clearbit.com/bdo.com.ph', bg: '#fff', shadow: 'rgba(192,0,0,0.3)' },
+                { name: 'BPI', logo: 'https://logo.clearbit.com/bpi.com.ph', bg: '#fff', shadow: 'rgba(29,58,138,0.3)' },
+                { name: 'UnionBank', logo: 'https://logo.clearbit.com/unionbankph.com', bg: '#fff', shadow: 'rgba(234,88,12,0.3)' },
+                { name: 'USDT', logo: 'https://assets.coingecko.com/coins/images/325/small/Tether.png', bg: '#fff', shadow: 'rgba(38,161,123,0.3)' },
+              ].map(p => (
+                <div key={p.name}
+                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
+                  style={{ background: p.bg, boxShadow: `0 0 14px ${p.shadow}`, border: `1px solid ${p.shadow}` }}>
+                  <img src={p.logo} alt={p.name} className="h-6 w-6 object-contain rounded" />
+                  <span className="text-gray-800 font-bold text-sm">{p.name}</span>
+                </div>
+              ))}
             </div>
 
             {/* Info grid */}
