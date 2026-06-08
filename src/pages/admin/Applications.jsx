@@ -218,7 +218,6 @@ export default function Applications() {
       action: `Status changed: ${oldStatus} -> ${newStatus}`,
       old_status: oldStatus,
       new_status: newStatus,
-      // admin: user.email // Assuming user object is available from auth context
     };
 
     const existingHistory = selectedApp?.status_history || [];
@@ -236,7 +235,7 @@ export default function Applications() {
     setSelectedApp(prev => prev ? { ...prev, ...updates } : prev);
   };
 
-    const [isMoreInfoOpen, setIsMoreInfoOpen] = useState(false);
+  const [isMoreInfoOpen, setIsMoreInfoOpen] = useState(false);
   const [moreInfoMessage, setMoreInfoMessage] = useState("");
 
   const handleRequestMoreInfo = () => {
@@ -1241,12 +1240,12 @@ export default function Applications() {
             <DialogHeader>
               <DialogTitle>Request More Information</DialogTitle>
             </DialogHeader>
-            <div className=\"space-y-4\">
+            <div className="space-y-4">
               <Label>Message to applicant</Label>
               <Textarea value={moreInfoMessage} onChange={(e) => setMoreInfoMessage(e.target.value)} />
             </div>
             <DialogFooter>
-              <Button variant=\"outline\" onClick={() => setIsMoreInfoOpen(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setIsMoreInfoOpen(false)}>Cancel</Button>
               <Button onClick={handleRequestMoreInfo}>Send Request</Button>
             </DialogFooter>
           </DialogContent>
@@ -1259,13 +1258,13 @@ export default function Applications() {
             <DialogHeader>
               <DialogTitle>Reject Application</DialogTitle>
             </DialogHeader>
-            <div className=\"space-y-4\">
+            <div className="space-y-4">
               <Label>Reason for rejection (internal)</Label>
               <Textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} />
             </div>
             <DialogFooter>
-              <Button variant=\"outline\" onClick={() => setIsRejectModalOpen(false)}>Cancel</Button>
-              <Button variant=\"destructive\" onClick={() => {
+              <Button variant="outline" onClick={() => setIsRejectModalOpen(false)}>Cancel</Button>
+              <Button variant="destructive" onClick={() => {
                 handleStatusUpdate(selectedApp.id, "rejected", { rejection_reason: rejectionReason });
                 setIsRejectModalOpen(false);
               }}>Reject</Button>
@@ -1274,19 +1273,19 @@ export default function Applications() {
         </Dialog>
       )}
 
-      {isRejectModalOpen && (
+      {selectedApp.admin_notes?.includes('Performer created:') && (
         <Dialog open={isRejectModalOpen} onOpenChange={setIsRejectModalOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Reject Application</DialogTitle>
             </DialogHeader>
-            <div className=\"space-y-4\">
+            <div className="space-y-4">
               <Label>Reason for rejection (internal)</Label>
               <Textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} />
             </div>
             <DialogFooter>
-              <Button variant=\"outline\" onClick={() => setIsRejectModalOpen(false)}>Cancel</Button>
-              <Button variant=\"destructive\" onClick={() => {
+              <Button variant="outline" onClick={() => setIsRejectModalOpen(false)}>Cancel</Button>
+              <Button variant="destructive" onClick={() => {
                 handleStatusUpdate(selectedApp.id, "rejected", { rejection_reason: rejectionReason });
                 setIsRejectModalOpen(false);
               }}>Reject</Button>
@@ -1295,65 +1294,6 @@ export default function Applications() {
         </Dialog>
       )}
 
-      {isRejectModalOpen && (
-        <Dialog open={isRejectModalOpen} onOpenChange={setIsRejectModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Reject Application</DialogTitle>
-            </DialogHeader>
-            <div className=\"space-y-4\">
-              <Label>Reason for rejection (internal)</Label>
-              <Textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} />
-            </div>
-            <DialogFooter>
-              <Button variant=\"outline\" onClick={() => setIsRejectModalOpen(false)}>Cancel</Button>
-              <Button variant=\"destructive\" onClick={() => {
-                handleStatusUpdate(selectedApp.id, "rejected", { rejection_reason: rejectionReason });
-                setIsRejectModalOpen(false);
-              }}>Reject</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {selectedApp.admin_notes?.includes('Performer created:') && (() => {
-                  // Check ALL required contract fields
-                  const hasLegalName = !!selectedApp.legal_name;
-                  const hasDOB = !!selectedApp.date_of_birth;
-                  const hasFullAddress = !!selectedApp.address; // Require full address, not just city
-                  const hasEmail = !!selectedApp.email;
-                  const hasCountry = !!selectedApp.country;
-                  
-                  const missingContractFields = [];
-                  if (!hasLegalName) missingContractFields.push('Legal name');
-                  if (!hasDOB) missingContractFields.push('Date of Birth');
-                  if (!hasFullAddress) missingContractFields.push('Full Residential Address');
-                  if (!hasEmail) missingContractFields.push('Email');
-                  if (!hasCountry) missingContractFields.push('Country');
-                  
-                  const isContractReady = missingContractFields.length === 0;
-                  
-                  return (
-                    <div className="mt-3 space-y-2">
-                      {isContractReady ? (
-                        <div className="text-xs text-emerald-400 flex items-center gap-1.5">
-                          <CheckCircle className="w-3.5 h-3.5" />
-                          <span>Ready for final contract</span>
-                        </div>
-                      ) : (
-                        <div className="text-xs text-amber-400 flex items-start gap-1.5">
-                          <AlertTriangle className="w-3.5 h-3.5 mt-0.5" />
-                          <span>
-                            {selectedApp.status === 'approved' 
-                              ? 'Approved, but contract data is incomplete. Click "Complete Contract Data" to add missing fields and enable contract generation.'
-                              : 'Contract data incomplete — complete data before approval'}
-                            ({missingContractFields.length} field(s) missing)
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
               </div>
             </div>
 
@@ -1364,53 +1304,27 @@ export default function Applications() {
         </Dialog>
       )}
 
-      {/* Create performer confirm */}
+      {/* Link User Dialog */}
       {selectedApp && (
-        {isLinkUserOpen && (
         <Dialog open={isLinkUserOpen} onOpenChange={setIsLinkUserOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Link User Account</DialogTitle>
             </DialogHeader>
-            {/* Dummy user selection, replace with actual user search component */}
-            <Select onValueChange={(val) => setUserToLink(val)}>
-              <SelectTrigger>
-                <SelectValue placeholder=\"Select user to link...\" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value=\"user1\">user1@example.com</SelectItem>
-                <SelectItem value=\"user2\">user2@example.com</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">Select a user account to link to this performer application.</p>
+              <Select onValueChange={(val) => setUserToLink(val)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select user to link..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user1">user1@example.com</SelectItem>
+                  <SelectItem value="user2">user2@example.com</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <DialogFooter>
-              <Button variant=\"outline\" onClick={() => setIsLinkUserOpen(false)}>Cancel</Button>
-              <Button onClick={() => {
-                handleStatusUpdate(selectedApp.id, 'user_linked', { linked_user_id: userToLink });
-                setIsLinkUserOpen(false);
-              }} disabled={!userToLink}>Link User</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {isLinkUserOpen && (
-        <Dialog open={isLinkUserOpen} onOpenChange={setIsLinkUserOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Link User Account</DialogTitle>
-            </DialogHeader>
-            {/* Dummy user selection, replace with actual user search component */}
-            <Select onValueChange={(val) => setUserToLink(val)}>
-              <SelectTrigger>
-                <SelectValue placeholder=\"Select user to link...\" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value=\"user1\">user1@example.com</SelectItem>
-                <SelectItem value=\"user2\">user2@example.com</SelectItem>
-              </SelectContent>
-            </Select>
-            <DialogFooter>
-              <Button variant=\"outline\" onClick={() => setIsLinkUserOpen(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setIsLinkUserOpen(false)}>Cancel</Button>
               <Button onClick={() => {
                 handleStatusUpdate(selectedApp.id, 'user_linked', { linked_user_id: userToLink });
                 setIsLinkUserOpen(false);
