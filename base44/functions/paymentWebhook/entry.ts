@@ -170,26 +170,41 @@ function normalizeNOWPaymentsEvent(payload) {
   const { payment_id, order_id, payment_status, price_amount, price_currency, actually_paid } = payload;
 
   let eventType;
+  let normalizedStatus;
+  let unlocksAccess = false;
+  
   switch (payment_status) {
     case 'finished':
     case 'confirmed':
       eventType = 'payment.completed';
+      normalizedStatus = 'completed';
+      unlocksAccess = true;
       break;
     case 'failed':
       eventType = 'payment.failed';
+      normalizedStatus = 'failed';
       break;
     case 'expired':
       eventType = 'payment.cancelled';
+      normalizedStatus = 'cancelled';
       break;
     case 'refunded':
       eventType = 'payment.refunded';
+      normalizedStatus = 'refunded';
       break;
     case 'waiting':
     case 'confirming':
+      eventType = 'payment.pending';
+      normalizedStatus = 'pending';
+      break;
     case 'sending':
     case 'partially_paid':
+      eventType = 'payment.pending';
+      normalizedStatus = 'processing';
+      break;
     default:
       eventType = 'payment.pending';
+      normalizedStatus = 'unknown';
       break;
   }
 
@@ -201,6 +216,8 @@ function normalizeNOWPaymentsEvent(payload) {
     currency: price_currency,
     actuallyPaid: actually_paid,
     rawStatus: payment_status,
+    normalizedStatus,
+    unlocksAccess,
     errorMessage: payment_status === 'failed' ? `Payment ${payment_status}` : null,
   };
 }
@@ -235,6 +252,35 @@ Deno.serve(async (req) => {
 
     // Verify signature FIRST — reject without DB access if invalid
     const signatureValid = await verifySignature(provider, rawBody, headers);
+    
+    // Create initial event log entry (even for invalid signature)
+    const receivedAt = new Date().toISOString();
+    let eventId = null;
+    
+    try {
+      eventId = await base44.asServiceRole.entities.PaymentWebhookEvent.create({
+        provider,
+        provider_event_id: payload.payment_id || payload.order_id || 'unknown',
+        provider_invoice_id: String(payload.payment_id || ''),
+        payment_intent_id: null,
+        raw_status: payload.payment_status || 'unknown',
+        normalized_status: 'unknown',
+        amount: payload.price_amount || 0,
+        currency: payload.price_currency || 'usd',
+        user_id: null,
+        product_type: null,
+        product_id: null,
+        idempotency_key: `${provider}:${payload.payment_id || payload.order_id || 'unknown'}:${payload.payment_status || 'unknown'}`,
+        signature_valid: signatureValid,
+        processed: false,
+        duplicate: false,
+        error_message: signatureValid ? null : 'Invalid signature',
+        received_at: receivedAt,
+      });
+    } catch (logErr) {
+      console.error('[paymentWebhook] Failed to create event log:', logErr.message);
+    }
+
     if (!signatureValid) {
       console.error('[paymentWebhook] Signature verification failed for provider:', provider);
       return Response.json({ error: 'Invalid signature' }, { status: 401 });
@@ -243,6 +289,10 @@ Deno.serve(async (req) => {
     // Normalize event to common shape
     const event = normalizeEvent(provider, payload);
     if (!event) {
+      await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+        error_message: 'Could not normalize webhook event',
+        processed_at: new Date().toISOString(),
+      });
       return Response.json({ error: 'Could not normalize webhook event' }, { status: 422 });
     }
 
@@ -251,6 +301,11 @@ Deno.serve(async (req) => {
     // Look up PaymentIntent by provider_session_id
     if (!event.paymentId && !event.orderId) {
       console.warn('[paymentWebhook] No paymentId or orderId in event — cannot match intent');
+      await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+        error_message: 'No paymentId or orderId in event',
+        processed: true,
+        processed_at: new Date().toISOString(),
+      });
       return Response.json({ success: true, skipped: true });
     }
 
@@ -275,26 +330,65 @@ Deno.serve(async (req) => {
 
     if (intents.length === 0) {
       console.warn('[paymentWebhook] No matching PaymentIntent for paymentId:', event.paymentId, 'orderId:', event.orderId);
+      await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+        error_message: 'No matching PaymentIntent found',
+        processed: true,
+        processed_at: new Date().toISOString(),
+      });
       // Still return 200 so NOWPayments doesn't retry indefinitely
       return Response.json({ success: true, matched: false });
     }
 
     const intent = intents[0];
 
-    // Idempotency: don't re-process already completed intents
-    if (intent.status === 'completed') {
+    // ── CRITICAL: Idempotency check using PaymentWebhookEvent ─────────────────────────
+    // Check if this exact payment event was already processed successfully
+    const existingEvents = await base44.asServiceRole.entities.PaymentWebhookEvent.filter({
+      provider_invoice_id: event.paymentId,
+      normalized_status: event.normalizedStatus,
+      processed: true,
+      entitlement_granted: event.unlocksAccess || false,
+    });
+
+    if (existingEvents.length > 0) {
+      console.log('[paymentWebhook] Duplicate webhook detected — already processed', event.paymentId, event.normalizedStatus);
+      await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+        duplicate: true,
+        processed: true,
+        processed_at: new Date().toISOString(),
+      });
+      return Response.json({ success: true, duplicate: true, message: 'Webhook already processed' });
+    }
+
+    // Secondary idempotency: don't re-process already completed intents
+    if (intent.status === 'completed' && event.unlocksAccess) {
       console.log('[paymentWebhook] Intent already completed — skipping', intent.id);
+      await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+        payment_intent_id: intent.id,
+        duplicate: true,
+        processed: true,
+        processed_at: new Date().toISOString(),
+      });
       return Response.json({ success: true, duplicate: true });
     }
 
     // ── Handle by event type ─────────────────────────────────────────────────
 
-    if (event.eventType === 'payment.completed') {
+    if (event.eventType === 'payment.completed' && event.unlocksAccess) {
       // ── CRITICAL: Amount and Currency Verification BEFORE granting entitlement ────────────────
       const expectedAmount = intent.amount;
       const expectedCurrency = (intent.currency || 'usd').toLowerCase();
       const actuallyPaid = event.actuallyPaid !== undefined ? event.actuallyPaid : event.amount;
       const paidCurrency = (event.currency || 'usd').toLowerCase();
+
+      let verificationDetails = {
+        expected_amount: expectedAmount,
+        expected_currency: expectedCurrency,
+        actually_paid: actuallyPaid,
+        paid_currency: paidCurrency,
+        verified: false,
+        fail_reason: null,
+      };
 
       // Validate actually_paid is present and numeric
       if (actuallyPaid === undefined || actuallyPaid === null || isNaN(actuallyPaid)) {
@@ -304,6 +398,8 @@ Deno.serve(async (req) => {
           actuallyPaid,
           event,
         });
+        verificationDetails.fail_reason = 'actually_paid_missing';
+        
         await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
           status:       'payment_review',
           error_message: 'Payment verification failed: actually_paid missing or invalid',
@@ -316,6 +412,19 @@ Deno.serve(async (req) => {
             fail_reason: 'actually_paid_missing',
           }),
         });
+        
+        await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+          payment_intent_id: intent.id,
+          user_id: intent.user_id,
+          product_type: intent.payment_type,
+          product_id: intent.plan_id || intent.video_id || intent.application_id,
+          normalized_status: 'payment_review',
+          verification_details: JSON.stringify(verificationDetails),
+          error_message: 'actually_paid missing or invalid',
+          processed: true,
+          processed_at: new Date().toISOString(),
+        });
+        
         return Response.json({ 
           success: true, 
           matched: true,
@@ -337,6 +446,8 @@ Deno.serve(async (req) => {
           minRequired,
           tolerance,
         });
+        verificationDetails.fail_reason = 'underpayment';
+        
         await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
           status:       'underpaid',
           error_message: `Underpayment: expected $${expectedAmount}, received $${actuallyPaid} (min: $${minRequired.toFixed(2)})`,
@@ -351,6 +462,19 @@ Deno.serve(async (req) => {
             actually_paid: actuallyPaid,
           }),
         });
+        
+        await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+          payment_intent_id: intent.id,
+          user_id: intent.user_id,
+          product_type: intent.payment_type,
+          product_id: intent.plan_id || intent.video_id || intent.application_id,
+          normalized_status: 'underpaid',
+          verification_details: JSON.stringify(verificationDetails),
+          error_message: 'Underpayment detected',
+          processed: true,
+          processed_at: new Date().toISOString(),
+        });
+        
         return Response.json({ 
           success: true, 
           matched: true,
@@ -369,6 +493,8 @@ Deno.serve(async (req) => {
           expectedCurrency,
           paidCurrency,
         });
+        verificationDetails.fail_reason = 'currency_mismatch';
+        
         await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
           status:       'currency_mismatch',
           error_message: `Currency mismatch: expected ${expectedCurrency}, received ${paidCurrency}`,
@@ -383,6 +509,19 @@ Deno.serve(async (req) => {
             paid_currency: paidCurrency,
           }),
         });
+        
+        await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+          payment_intent_id: intent.id,
+          user_id: intent.user_id,
+          product_type: intent.payment_type,
+          product_id: intent.plan_id || intent.video_id || intent.application_id,
+          normalized_status: 'currency_mismatch',
+          verification_details: JSON.stringify(verificationDetails),
+          error_message: 'Currency mismatch',
+          processed: true,
+          processed_at: new Date().toISOString(),
+        });
+        
         return Response.json({ 
           success: true, 
           matched: true,
@@ -400,6 +539,7 @@ Deno.serve(async (req) => {
         expectedCurrency,
         paidCurrency,
       });
+      verificationDetails.verified = true;
 
       // Update PaymentIntent to completed
       await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
@@ -417,6 +557,19 @@ Deno.serve(async (req) => {
 
       // Grant entitlement — ONLY here, ONLY after verified completed event
       await grantEntitlement(base44, intent);
+      
+      // Update event log with success
+      await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+        payment_intent_id: intent.id,
+        user_id: intent.user_id,
+        product_type: intent.payment_type,
+        product_id: intent.plan_id || intent.video_id || intent.application_id,
+        normalized_status: event.normalizedStatus,
+        verification_details: JSON.stringify(verificationDetails),
+        processed: true,
+        entitlement_granted: true,
+        processed_at: new Date().toISOString(),
+      });
 
     } else if (event.eventType === 'payment.failed') {
       await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {

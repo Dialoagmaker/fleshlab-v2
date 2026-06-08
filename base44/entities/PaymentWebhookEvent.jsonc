@@ -1,0 +1,129 @@
+{
+  "name": "PaymentWebhookEvent",
+  "type": "object",
+  "properties": {
+    "provider": {
+      "type": "string",
+      "enum": [
+        "nowpayments",
+        "ccbill",
+        "segpay"
+      ],
+      "title": "Payment Provider"
+    },
+    "provider_event_id": {
+      "type": "string",
+      "title": "Provider Event ID",
+      "description": "Unique event ID from provider (e.g., NOWPayments payment_id)"
+    },
+    "provider_invoice_id": {
+      "type": "string",
+      "title": "Provider Invoice ID",
+      "description": "Invoice/payment ID from provider"
+    },
+    "payment_intent_id": {
+      "type": "string",
+      "title": "Payment Intent ID",
+      "description": "Internal PaymentIntent record ID"
+    },
+    "raw_status": {
+      "type": "string",
+      "title": "Raw Provider Status",
+      "description": "Original status from provider (e.g., finished, failed)"
+    },
+    "normalized_status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "failed",
+        "cancelled",
+        "refunded",
+        "pending",
+        "processing",
+        "unknown",
+        "payment_review",
+        "underpaid",
+        "currency_mismatch"
+      ],
+      "title": "Normalized Status",
+      "description": "Internal normalized status"
+    },
+    "amount": {
+      "type": "number",
+      "title": "Amount"
+    },
+    "currency": {
+      "type": "string",
+      "title": "Currency",
+      "default": "usd"
+    },
+    "user_id": {
+      "type": "string",
+      "title": "User ID"
+    },
+    "product_type": {
+      "type": "string",
+      "enum": [
+        "fanclub",
+        "ppv",
+        "guest_production_deposit"
+      ],
+      "title": "Product Type"
+    },
+    "product_id": {
+      "type": "string",
+      "title": "Product ID",
+      "description": "plan_id, video_id, or application_id"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "title": "Idempotency Key",
+      "description": "Unique key for deduplication: provider:payment_id:status"
+    },
+    "signature_valid": {
+      "type": "boolean",
+      "title": "Signature Valid",
+      "default": false
+    },
+    "processed": {
+      "type": "boolean",
+      "title": "Processed",
+      "default": false
+    },
+    "duplicate": {
+      "type": "boolean",
+      "title": "Duplicate",
+      "default": false
+    },
+    "entitlement_granted": {
+      "type": "boolean",
+      "title": "Entitlement Granted",
+      "default": false
+    },
+    "verification_details": {
+      "type": "string",
+      "title": "Verification Details (JSON)",
+      "description": "JSON with amount/currency verification results"
+    },
+    "error_message": {
+      "type": "string",
+      "title": "Error Message"
+    },
+    "received_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Received At"
+    },
+    "processed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Processed At"
+    }
+  },
+  "required": [
+    "provider",
+    "provider_event_id",
+    "raw_status",
+    "received_at"
+  ]
+}

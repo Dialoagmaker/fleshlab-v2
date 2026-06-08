@@ -296,6 +296,42 @@ export function trackPhilippinesApplicationStart(utmParams = {}) {
 }
 
 /**
+ * Track payment success (server-side event, called from webhook)
+ * This is for client-side tracking only - server-side uses PaymentWebhookEvent entity
+ */
+export function trackPaymentSuccess(paymentType, provider, amount) {
+  trackEvent('payment_success', {
+    payment_type: paymentType,
+    provider,
+    amount_usd: amount,
+    plan_or_product_type: paymentType === 'ppv' ? 'ppv_unlock' : paymentType === 'fanclub' ? 'fanclub_membership' : 'guest_production_deposit',
+  });
+}
+
+/**
+ * Track payment failure (server-side event, called from webhook)
+ */
+export function trackPaymentFailed(paymentType, provider, reason) {
+  trackEvent('payment_failed', {
+    payment_type: paymentType,
+    provider,
+    failure_reason: reason,
+    plan_or_product_type: paymentType === 'ppv' ? 'ppv_unlock' : paymentType === 'fanclub' ? 'fanclub_membership' : 'guest_production_deposit',
+  });
+}
+
+/**
+ * Track provider error (server-side event)
+ */
+export function trackProviderError(provider, errorType, paymentType) {
+  trackEvent('provider_error', {
+    provider,
+    error_type: errorType,
+    payment_type: paymentType || null,
+  });
+}
+
+/**
  * Initialize analytics on app startup
  * Tracks initial page load
  */
