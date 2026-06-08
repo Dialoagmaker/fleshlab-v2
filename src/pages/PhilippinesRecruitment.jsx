@@ -191,17 +191,15 @@ export default function PhilippinesRecruitment() {
           </div>
         </section>
 
-        {/* Start With What You Already Have - Warm Filipino Creator */}
+        {/* Start With What You Already Have - Dark */}
         <section className="px-4 sm:px-6 lg:px-8 relative overflow-hidden" style={{ paddingTop: '72px', paddingBottom: '96px' }}>
-          {/* Warm Philippines Sunset Background */}
           <div 
             className="absolute inset-0"
             style={{
-              backgroundColor: '#fff1e8',
+              backgroundColor: '#07030a',
               backgroundImage: `
-                radial-gradient(circle at 20% 30%, rgba(255, 138, 0, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 80% 70%, rgba(225, 29, 72, 0.06) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, rgba(255, 191, 150, 0.05) 0%, transparent 70%)
+                radial-gradient(circle at 20% 30%, rgba(244, 63, 94, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(245, 158, 11, 0.04) 0%, transparent 50%)
               `
             }}
           />
@@ -243,16 +241,16 @@ export default function PhilippinesRecruitment() {
                 <Badge 
                   className="mb-5 inline-block text-xs font-bold px-3 py-1.5"
                   style={{ 
-                    backgroundColor: 'rgba(255, 138, 0, 0.12)',
-                    color: '#9a3412',
-                    border: '1px solid rgba(255, 138, 0, 0.25)'
+                    backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                    color: '#f87171',
+                    border: '1px solid rgba(244, 63, 94, 0.3)'
                   }}
                 >
                   CREATOR ESSENTIALS
                 </Badge>
                 
                 <h2 
-                  className="font-bold text-gray-900 mb-4 leading-tight"
+                  className="font-bold text-white mb-4 leading-tight"
                   style={{ 
                     fontSize: 'clamp(32px, 5vw, 48px)',
                     lineHeight: '1.05',
@@ -262,129 +260,43 @@ export default function PhilippinesRecruitment() {
                   Start with what you already have
                 </h2>
                 
-                <p className="text-base text-gray-700 mb-8 leading-relaxed max-w-[520px]">
+                <p className="text-base text-gray-400 mb-8 leading-relaxed max-w-[520px]">
                   No studio needed. Your phone, a private room, good lighting and verified 18+ approval are enough to start the review process.
                 </p>
                 
                 {/* 6 Requirement Cards - 2 Column Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                  {/* Smartphone */}
-                  <div 
-                    className="p-[22px] rounded-[20px] transition-all hover:-translate-y-0.5 hover:shadow-lg cursor-default"
-                    style={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.82)',
-                      border: '1px solid rgba(225, 70, 100, 0.18)',
-                      boxShadow: '0 10px 28px rgba(20, 20, 20, 0.05)'
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <Smartphone className="h-[22px] w-[22px] text-rose-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="font-bold text-gray-900 text-[16px] mb-0.5">Smartphone</h4>
-                        <p className="text-[14px] text-gray-700 leading-snug">1080p camera is enough to apply</p>
+                  {[
+                    { icon: <Smartphone className="h-[22px] w-[22px] text-rose-500 flex-shrink-0 mt-0.5" />, title: "Smartphone", desc: "1080p camera is enough to apply" },
+                    { icon: <Lock className="h-[22px] w-[22px] text-rose-500 flex-shrink-0 mt-0.5" />, title: "Private Room", desc: "A quiet space where you control the scene" },
+                    { icon: <Lightbulb className="h-[22px] w-[22px] text-amber-500 flex-shrink-0 mt-0.5" />, title: "Good Lighting", desc: "Natural light or a simple ring light" },
+                    { icon: <Wifi className="h-[22px] w-[22px] text-amber-500 flex-shrink-0 mt-0.5" />, title: "Stable Internet", desc: "Upload clips and stay in contact" },
+                    { icon: <FileCheck className="h-[22px] w-[22px] text-rose-500 flex-shrink-0 mt-0.5" />, title: "Valid ID 18+", desc: "Passport, UMID, driver's license or government ID", wide: true },
+                    { icon: <Banknote className="h-[22px] w-[22px] text-amber-500 flex-shrink-0 mt-0.5" />, title: "Payment Method", desc: "GCash, Maya, bank or crypto where available", wide: true },
+                  ].map(item => (
+                    <div key={item.title}
+                      className={`p-[22px] rounded-[20px] transition-all hover:-translate-y-0.5 cursor-default ${item.wide ? 'sm:col-span-2' : ''}`}
+                      style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(244,63,94,0.2)', boxShadow: '0 10px 28px rgba(0,0,0,0.3)' }}
+                    >
+                      <div className="flex items-start gap-3">
+                        {item.icon}
+                        <div>
+                          <h4 className="font-bold text-white text-[16px] mb-0.5">{item.title}</h4>
+                          <p className="text-[14px] text-gray-400 leading-snug">{item.desc}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Private Room */}
-                  <div 
-                    className="p-[22px] rounded-[20px] transition-all hover:-translate-y-0.5 hover:shadow-lg cursor-default"
-                    style={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.82)',
-                      border: '1px solid rgba(225, 70, 100, 0.18)',
-                      boxShadow: '0 10px 28px rgba(20, 20, 20, 0.05)'
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <Lock className="h-[22px] w-[22px] text-rose-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="font-bold text-gray-900 text-[16px] mb-0.5">Private Room</h4>
-                        <p className="text-[14px] text-gray-700 leading-snug">A quiet space where you control the scene</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Good Lighting */}
-                  <div 
-                    className="p-[22px] rounded-[20px] transition-all hover:-translate-y-0.5 hover:shadow-lg cursor-default"
-                    style={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.82)',
-                      border: '1px solid rgba(225, 70, 100, 0.18)',
-                      boxShadow: '0 10px 28px rgba(20, 20, 20, 0.05)'
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <Lightbulb className="h-[22px] w-[22px] text-amber-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="font-bold text-gray-900 text-[16px] mb-0.5">Good Lighting</h4>
-                        <p className="text-[14px] text-gray-700 leading-snug">Natural light or a simple ring light</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Stable Internet */}
-                  <div 
-                    className="p-[22px] rounded-[20px] transition-all hover:-translate-y-0.5 hover:shadow-lg cursor-default"
-                    style={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.82)',
-                      border: '1px solid rgba(225, 70, 100, 0.18)',
-                      boxShadow: '0 10px 28px rgba(20, 20, 20, 0.05)'
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <Wifi className="h-[22px] w-[22px] text-amber-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="font-bold text-gray-900 text-[16px] mb-0.5">Stable Internet</h4>
-                        <p className="text-[14px] text-gray-700 leading-snug">Upload clips and stay in contact</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Valid ID 18+ - Full Width */}
-                  <div 
-                    className="p-[22px] rounded-[20px] transition-all hover:-translate-y-0.5 hover:shadow-lg sm:col-span-2 cursor-default"
-                    style={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.82)',
-                      border: '1px solid rgba(225, 70, 100, 0.18)',
-                      boxShadow: '0 10px 28px rgba(20, 20, 20, 0.05)'
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <FileCheck className="h-[22px] w-[22px] text-rose-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="font-bold text-gray-900 text-[16px] mb-0.5">Valid ID 18+</h4>
-                        <p className="text-[14px] text-gray-700 leading-snug">Passport, UMID, driver's license or government ID</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Payment Method - Full Width */}
-                  <div 
-                    className="p-[22px] rounded-[20px] transition-all hover:-translate-y-0.5 hover:shadow-lg sm:col-span-2 cursor-default"
-                    style={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.82)',
-                      border: '1px solid rgba(225, 70, 100, 0.18)',
-                      boxShadow: '0 10px 28px rgba(20, 20, 20, 0.05)'
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <Banknote className="h-[22px] w-[22px] text-amber-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="font-bold text-gray-900 text-[16px] mb-0.5">Payment Method</h4>
-                        <p className="text-[14px] text-gray-700 leading-snug">GCash, Maya, bank or crypto where available</p>
-                      </div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
 
                 {/* Local Pills */}
                 <div className="flex flex-wrap gap-2 mb-4">
-                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/60 text-gray-700 border border-rose-200">Manila</span>
-                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/60 text-gray-700 border border-rose-200">Cebu</span>
-                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/60 text-gray-700 border border-rose-200">Davao</span>
-                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">GCash</span>
-                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200">Maya</span>
-                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-green-100 text-green-700 border border-green-200">PHP</span>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full text-gray-300 border border-white/15" style={{ background: 'rgba(255,255,255,0.06)' }}>Manila</span>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full text-gray-300 border border-white/15" style={{ background: 'rgba(255,255,255,0.06)' }}>Cebu</span>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full text-gray-300 border border-white/15" style={{ background: 'rgba(255,255,255,0.06)' }}>Davao</span>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full text-rose-300 border border-rose-500/30" style={{ background: 'rgba(244,63,94,0.1)' }}>GCash</span>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full text-purple-300 border border-purple-500/30" style={{ background: 'rgba(168,85,247,0.1)' }}>Maya</span>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full text-green-300 border border-green-500/30" style={{ background: 'rgba(22,163,74,0.1)' }}>PHP</span>
                 </div>
 
                 {/* Small Note */}
