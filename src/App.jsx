@@ -204,6 +204,12 @@ const AuthenticatedApp = () => {
   // Temporary manual public route dispatch until React Router is rebuilt cleanly.
 
   // Static public pages - MUST be before auth checks
+  if (path === "/robots.txt") {
+    // Custom robots.txt served by backend function
+    window.location.href = '/api/functions/serveRobotsTxt';
+    return null;
+  }
+
   if (path === "/performerlogin") {
     return (
       <PublicPageShell noIndex={true}>
@@ -221,15 +227,16 @@ const AuthenticatedApp = () => {
   if (path === "/Home") return <Navigate to="/" replace />;
   if (path === "/Actors") return <Navigate to="/performers" replace />;
   if (path === "/Gay-Performer-Recruitment") return <Navigate to="/become-performer" replace />;
+  if (path === "/Remote-Adult-Content-Creator") return <Navigate to="/become-performer" replace />;
   if (path === "/guest-productions") return <Navigate to="/guest-production" replace />;
   if (path === "/NewsCenter") return <Navigate to="/news" replace />;
   if (path === "/Brands") return <Navigate to="/brands" replace />;
   if (path === "/HowItWorks") return <Navigate to="/how-it-works" replace />;
   
-  if (path === "/guest-productions" || path === "/guest-production") {
+  if (path === "/guest-production") {
     return (
       <PublicPageShell>
-        <GuestProduction canonical={path === "/guest-productions" ? "/guest-production" : undefined} noIndex={path === "/guest-productions"} />
+        <GuestProduction />
       </PublicPageShell>
     );
   }
@@ -342,14 +349,6 @@ const AuthenticatedApp = () => {
     return (
       <PublicPageShell>
         <PublicBrands />
-      </PublicPageShell>
-    );
-  }
-
-  if (path === "/how-it-works") {
-    return (
-      <PublicPageShell>
-        <HowItWorks />
       </PublicPageShell>
     );
   }
