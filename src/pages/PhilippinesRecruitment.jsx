@@ -33,6 +33,12 @@ import {
 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import SEOMeta from "@/components/SEOMeta";
+import gcashLogo from "@/assets/payment-logos/gcash.svg";
+import mayaLogo from "@/assets/payment-logos/maya.svg";
+import bdoLogo from "@/assets/payment-logos/bdo.svg";
+import bpiLogo from "@/assets/payment-logos/bpi.svg";
+import unionbankLogo from "@/assets/payment-logos/unionbank.svg";
+import usdtLogo from "@/assets/payment-logos/usdt.svg";
 
 export default function PhilippinesRecruitment() {
   const navigate = useNavigate();
@@ -501,21 +507,37 @@ export default function PhilippinesRecruitment() {
             </h2>
             <p className="text-gray-500 mb-10 text-base">Local payout methods are confirmed during onboarding.</p>
 
-            {/* Payment method chips — text-only, brand-inspired, intentional */}
+            {/* Payment method logos — real SVG assets */}
             <div className="flex flex-wrap gap-2.5 mb-10">
               {[
-                { label: 'GCash',      color: '#60a5fa', bg: 'rgba(0,112,224,0.10)',   border: 'rgba(0,112,224,0.30)' },
-                { label: 'Maya',       color: '#4ade80', bg: 'rgba(0,168,89,0.10)',    border: 'rgba(0,168,89,0.30)'  },
-                { label: 'BDO',        color: '#fca5a5', bg: 'rgba(192,0,0,0.10)',     border: 'rgba(192,0,0,0.30)'   },
-                { label: 'BPI',        color: '#93c5fd', bg: 'rgba(29,58,138,0.12)',   border: 'rgba(29,58,138,0.35)' },
-                { label: 'UnionBank',  color: '#fdba74', bg: 'rgba(234,88,12,0.10)',   border: 'rgba(234,88,12,0.30)' },
-                { label: 'USDT',       color: '#6ee7b7', bg: 'rgba(38,161,123,0.10)',  border: 'rgba(38,161,123,0.30)'},
-              ].map(p => (
-                <span key={p.label}
-                  className="inline-flex items-center h-9 px-4 rounded-lg text-sm font-semibold tracking-wide"
-                  style={{ color: p.color, background: p.bg, border: `1px solid ${p.border}` }}>
-                  {p.label}
-                </span>
+                { name: 'GCash',      logo: gcashLogo },
+                { name: 'Maya',       logo: mayaLogo },
+                { name: 'BDO',        logo: bdoLogo },
+                { name: 'BPI',        logo: bpiLogo },
+                { name: 'UnionBank',  logo: unionbankLogo },
+                { name: 'USDT',       logo: usdtLogo },
+              ].map(method => (
+                <div key={method.name}
+                  className="flex items-center justify-center rounded-[14px]"
+                  style={{
+                    height: '56px',
+                    minWidth: '120px',
+                    padding: '0 18px',
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.12)'
+                  }}>
+                  <img
+                    src={method.logo}
+                    alt={`${method.name} payout option`}
+                    style={{
+                      maxHeight: '28px',
+                      maxWidth: '120px',
+                      width: 'auto',
+                      height: 'auto',
+                      objectFit: 'contain',
+                      display: 'block'
+                    }} />
+                </div>
               ))}
             </div>
 
