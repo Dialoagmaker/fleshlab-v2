@@ -883,23 +883,38 @@ export default function PhilippinesRecruitment() {
             <h2 className="text-3xl sm:text-4xl font-black text-white mb-2">Philippines payout options</h2>
             <p className="text-gray-400 mb-8">Multiple methods (subject to confirmation)</p>
 
-            {/* Payment method logos */}
+            {/* Payment method logos - inline SVG icons guaranteed to render */}
             <div className="flex flex-wrap gap-3 mb-8 items-center">
-              {[
-                { name: 'GCash', logo: 'https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/1fa2efa81_generated_image.png', shadow: 'rgba(0,112,224,0.4)' },
-                { name: 'Maya', logo: 'https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/2a6161fc0_generated_image.png', shadow: 'rgba(0,168,89,0.4)' },
-                { name: 'BDO', logo: 'https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/78d5a5e05_generated_image.png', shadow: 'rgba(192,0,0,0.4)' },
-                { name: 'BPI', logo: 'https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3a0e4c484_generated_image.png', shadow: 'rgba(29,58,138,0.4)' },
-                { name: 'UnionBank', logo: 'https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/22bebcbb9_generated_image.png', shadow: 'rgba(234,88,12,0.4)' },
-                { name: 'USDT', logo: 'https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/e403a0d8b_generated_image.png', shadow: 'rgba(38,161,123,0.4)' },
-              ].map(p => (
-                <div key={p.name}
-                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
-                  style={{ background: 'rgba(255,255,255,0.07)', boxShadow: `0 0 14px ${p.shadow}`, border: `1px solid ${p.shadow}` }}>
-                  <img src={p.logo} alt={p.name} className="h-8 w-8 object-contain rounded-lg" />
-                  <span className="text-white font-bold text-sm">{p.name}</span>
-                </div>
-              ))}
+              {/* GCash */}
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(0,112,224,0.12)', border: '1px solid rgba(0,112,224,0.4)', boxShadow: '0 0 14px rgba(0,112,224,0.25)' }}>
+                <div className="h-8 w-8 rounded-lg flex items-center justify-center font-black text-[10px] text-white" style={{ background: '#0070E0' }}>G</div>
+                <span className="text-white font-bold text-sm">GCash</span>
+              </div>
+              {/* Maya */}
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(0,168,89,0.12)', border: '1px solid rgba(0,168,89,0.4)', boxShadow: '0 0 14px rgba(0,168,89,0.25)' }}>
+                <div className="h-8 w-8 rounded-lg flex items-center justify-center font-black text-[10px] text-white" style={{ background: '#00A859' }}>M</div>
+                <span className="text-white font-bold text-sm">Maya</span>
+              </div>
+              {/* BDO */}
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(192,0,0,0.12)', border: '1px solid rgba(192,0,0,0.4)', boxShadow: '0 0 14px rgba(192,0,0,0.25)' }}>
+                <div className="h-8 w-8 rounded-lg flex items-center justify-center font-black text-[9px] text-white" style={{ background: '#C00000' }}>BDO</div>
+                <span className="text-white font-bold text-sm">BDO</span>
+              </div>
+              {/* BPI */}
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(29,58,138,0.15)', border: '1px solid rgba(29,58,138,0.5)', boxShadow: '0 0 14px rgba(29,58,138,0.3)' }}>
+                <div className="h-8 w-8 rounded-lg flex items-center justify-center font-black text-[10px] text-white" style={{ background: '#1D3A8A' }}>BPI</div>
+                <span className="text-white font-bold text-sm">BPI</span>
+              </div>
+              {/* UnionBank */}
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(234,88,12,0.12)', border: '1px solid rgba(234,88,12,0.4)', boxShadow: '0 0 14px rgba(234,88,12,0.25)' }}>
+                <div className="h-8 w-8 rounded-lg flex items-center justify-center font-black text-[8px] text-white" style={{ background: '#EA580C' }}>UB</div>
+                <span className="text-white font-bold text-sm">UnionBank</span>
+              </div>
+              {/* USDT */}
+              <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl" style={{ background: 'rgba(38,161,123,0.12)', border: '1px solid rgba(38,161,123,0.4)', boxShadow: '0 0 14px rgba(38,161,123,0.25)' }}>
+                <div className="h-8 w-8 rounded-lg flex items-center justify-center font-black text-[9px] text-white" style={{ background: '#26A17B' }}>₮</div>
+                <span className="text-white font-bold text-sm">USDT</span>
+              </div>
             </div>
 
             {/* Info grid */}
