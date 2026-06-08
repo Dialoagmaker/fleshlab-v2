@@ -86,6 +86,7 @@ import FanProductionRequest from './pages/FanProductionRequest';
 import ClientDashboard from './pages/ClientDashboard';
 import PhilippinesRecruitment from './pages/PhilippinesRecruitment';
 import ChaturbateRecruitment from './pages/ChaturbateRecruitment';
+import GayOnlyfansAlternative from './pages/GayOnlyfansAlternative';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import DMCA from './pages/DMCA';
@@ -435,6 +436,7 @@ const AuthenticatedApp = () => {
       <Route path="/fanclub" element={<PublicPageShell><Fanclub /></PublicPageShell>} />
       <Route path="/gay-performer-recruitment-philippines" element={<PublicPageShell><PhilippinesRecruitment /></PublicPageShell>} />
       <Route path="/chaturbate-model-join-studio" element={<PublicPageShell><ChaturbateRecruitment /></PublicPageShell>} />
+      <Route path="/gay-onlyfans-alternative" element={<PublicPageShell><GayOnlyfansAlternative /></PublicPageShell>} />
       {/* Public routes */}
       <Route element={<Layout />}>
         <Route path="/brands" element={<PublicBrands />} />
