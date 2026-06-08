@@ -305,19 +305,25 @@ export default function Applications() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="media_pending">Media Pending</SelectItem>
             <SelectItem value="pending">New</SelectItem>
+            <SelectItem value="media_pending">Media Pending</SelectItem>
             <SelectItem value="reviewing">Reviewing</SelectItem>
             <SelectItem value="contacted">Contacted</SelectItem>
+            <SelectItem value="more_info_requested">More Info Requested</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
-            <SelectItem value="more_info_requested">More Info Requested</SelectItem>
             <SelectItem value="contract_pending">Contract Pending</SelectItem>
             <SelectItem value="contract_sent">Contract Sent</SelectItem>
             <SelectItem value="contract_signed">Contract Signed</SelectItem>
             <SelectItem value="performer_created">Performer Created</SelectItem>
             <SelectItem value="user_linked">User Linked</SelectItem>
             <SelectItem value="active">Active</SelectItem>
+            {/* Legacy statuses for backward compatibility */}
+            <SelectItem value="submitted">Submitted (Legacy)</SelectItem>
+            <SelectItem value="new">New (Legacy)</SelectItem>
+            <SelectItem value="pending_review">Pending Review (Legacy)</SelectItem>
+            <SelectItem value="awaiting_review">Awaiting Review (Legacy)</SelectItem>
+            <SelectItem value="media_uploaded">Media Uploaded (Legacy)</SelectItem>
           </SelectContent>
         </Select>
       </div>
