@@ -60,10 +60,18 @@ export default function NewsDetail() {
       "@type": "NewsArticle",
       "headline": article.title,
       "description": (article.meta_description || article.excerpt || article.content?.substring(0, 160) || '').substring(0, 300),
-      ...(article.cover_image_url && { "image": article.cover_image_url }),
+      ...(article.cover_image_url && { 
+        "image": [
+          article.cover_image_url
+        ]
+      }),
       "datePublished": article.published_at,
       "dateModified": article.updated_date || article.published_at,
       "url": `https://fleshlab.online/news/${article.slug}`,
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": `https://fleshlab.online/news/${article.slug}`
+      },
       "author": {
         "@type": "Organization",
         "name": "FLESHLAB Studios",
@@ -72,7 +80,11 @@ export default function NewsDetail() {
       "publisher": {
         "@type": "Organization",
         "name": "FLESHLAB Studios",
-        "url": "https://fleshlab.online"
+        "url": "https://fleshlab.online",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://fleshlab.online/logo.png"
+        }
       }
     },
     {
@@ -121,48 +133,39 @@ export default function NewsDetail() {
         jsonLd={jsonLd}
       />
       <div className="min-h-screen bg-background">
-        {/* Back Navigation */}
-        <div className="bg-card border-b border-border">
-          <div className="max-w-4xl mx-auto px-4 py-4">
+        {/* Article Content - Compact Layout */}
+        <div className="max-w-3xl mx-auto px-4 py-8">
+          {/* Back Navigation - Inline */}
+          <div className="mb-6">
             <Button
               variant="ghost"
               onClick={() => navigate('/news')}
-              className="gap-2 text-white hover:text-white"
+              className="gap-2 text-muted-foreground hover:text-foreground"
+              size="sm"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to News
             </Button>
           </div>
-        </div>
 
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          {/* Header */}
-          <div className="mb-8 space-y-4">
-            {/* Cover Image */}
-            {article.cover_image_url && (
-              <div className="relative aspect-video rounded-xl overflow-hidden mb-6">
-                <img
-                  src={article.cover_image_url}
-                  alt={article.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-
+          {/* Header - Compact */}
+          <div className="mb-6 space-y-4">
             {/* Category Badge */}
             {article.category && (
-              <Badge className="bg-primary/10 text-primary">
+              <Badge className="bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wide">
                 {article.category}
               </Badge>
             )}
 
             {/* Title */}
-            <h1 className="text-3xl md:text-4xl font-bold text-white">{article.title}</h1>
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white leading-tight">
+              {article.title}
+            </h1>
 
             {/* Meta */}
-            <div className="flex flex-wrap gap-4 text-muted-foreground text-sm">
+            <div className="flex flex-wrap items-center gap-4 text-muted-foreground text-sm">
               {article.published_at && (
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5">
                   <Calendar className="w-4 h-4" />
                   {new Date(article.published_at).toLocaleDateString('en-US', {
                     year: 'numeric',
@@ -177,7 +180,7 @@ export default function NewsDetail() {
             {article.tags && article.tags.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {article.tags.map((tag, idx) => (
-                  <Badge key={idx} variant="secondary" className="gap-1">
+                  <Badge key={idx} variant="secondary" className="gap-1 text-xs">
                     <Tag className="w-3 h-3" />
                     {tag}
                   </Badge>
@@ -186,25 +189,66 @@ export default function NewsDetail() {
             )}
           </div>
 
-          {/* Content */}
-          {article.content && (
-            <div className="prose prose-invert prose-lg max-w-none">
-              <div className="whitespace-pre-wrap text-muted-foreground leading-relaxed">
-                {article.content}
-              </div>
+          {/* Cover Image - Below header for better flow */}
+          {article.cover_image_url && (
+            <div className="relative aspect-video rounded-xl overflow-hidden mb-8">
+              <img
+                src={article.cover_image_url}
+                alt={article.title}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
             </div>
           )}
 
+          {/* Content - Optimized Readability */}
+          {article.content && (
+            <article className="prose prose-invert prose-lg max-w-none">
+              <div 
+                className="text-muted-foreground leading-relaxed space-y-4"
+                style={{
+                  maxWidth: '65ch',
+                  marginLeft: 'auto',
+                  marginRight: 'auto'
+                }}
+                dangerouslySetInnerHTML={{ __html: article.content.replace(/\n/g, '<br/>') }}
+              />
+            </article>
+          )}
+
           {/* Social Sharing */}
-          <ShareArticle
-            title={article.title}
-            url={canonicalUrl || window.location.href}
-          />
+          <div className="mt-8 pt-6 border-t border-border">
+            <ShareArticle
+              title={article.title}
+              url={canonicalUrl || window.location.href}
+            />
+          </div>
+
+          {/* Bottom CTA - Conversion Links */}
+          <div className="mt-12 pt-8 border-t border-border">
+            <h3 className="text-lg font-semibold text-white mb-4 text-center">
+              Explore More from FLESHLAB
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <a href="/videos" className="group text-center p-3 rounded-lg bg-card border border-border hover:border-primary/30 transition-all">
+                <div className="text-sm font-medium text-foreground group-hover:text-primary">Watch Latest Videos</div>
+              </a>
+              <a href="/performers" className="group text-center p-3 rounded-lg bg-card border border-border hover:border-primary/30 transition-all">
+                <div className="text-sm font-medium text-foreground group-hover:text-primary">Meet Our Performers</div>
+              </a>
+              <a href="/fanclub" className="group text-center p-3 rounded-lg bg-card border border-border hover:border-primary/30 transition-all">
+                <div className="text-sm font-medium text-foreground group-hover:text-primary">Join the Fanclub</div>
+              </a>
+              <a href="/become-performer" className="group text-center p-3 rounded-lg bg-card border border-border hover:border-primary/30 transition-all">
+                <div className="text-sm font-medium text-foreground group-hover:text-primary">Apply as Performer</div>
+              </a>
+            </div>
+          </div>
         </div>
 
         {/* Related Articles */}
         {relatedArticles.length > 0 && (
-          <div className="max-w-7xl mx-auto px-4 py-12 border-t border-border">
+          <div className="max-w-7xl mx-auto px-4 py-12 border-t border-border mt-8">
             <div className="flex items-center gap-2 mb-6">
               <Newspaper className="w-6 h-6 text-primary" />
               <h2 className="text-2xl font-bold text-white">Related Articles</h2>
