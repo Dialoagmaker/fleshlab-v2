@@ -58,6 +58,7 @@ import PerformerDashboard from './pages/performer/PerformerDashboard';
 import PerformerLogin from './pages/performer/PerformerLogin';
 
 import Account from './pages/Account';
+import ClientDashboardGuard from './components/ClientDashboardGuard';
 // Public pages
 import PublicVideos from './pages/Videos';
 import VideoDetail from './pages/VideoDetail';
@@ -423,7 +424,13 @@ const AuthenticatedApp = () => {
       <Route path="/brands/:slug" element={<PublicPageShell><BrandDetail /></PublicPageShell>} />
       <Route path="/fan-productions" element={<PublicPageShell><FanProductions /></PublicPageShell>} />
       <Route path="/fan-productions/request" element={<PublicPageShell noIndex={true}><FanProductionRequest /></PublicPageShell>} />
-      <Route path="/client/dashboard" element={<PublicPageShell noIndex={true}><ClientDashboard /></PublicPageShell>} />
+      <Route path="/client/dashboard" element={
+        <PublicPageShell noIndex={true}>
+          <ClientDashboardGuard>
+            <ClientDashboard />
+          </ClientDashboardGuard>
+        </PublicPageShell>
+      } />
       <Route path="/fanclub/:slug" element={<PublicPageShell><ComingSoon title="Performer Fanclub" /></PublicPageShell>} />
       <Route path="/fanclub" element={<PublicPageShell><Fanclub /></PublicPageShell>} />
       <Route path="/gay-performer-recruitment-philippines" element={<PublicPageShell><PhilippinesRecruitment /></PublicPageShell>} />

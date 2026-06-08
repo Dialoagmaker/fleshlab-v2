@@ -183,6 +183,18 @@ export default function TubeHeader({ onMenuToggle }) {
             {/* Authenticated User - Dashboard + User Menu */}
             {isAuthenticated ? (
               <>
+                {(() => {
+                  const resolvedPath = getDashboardPath(user);
+                  console.log("[DashboardLink]", {
+                    email: user.email,
+                    role: user.role,
+                    performer_profile_id: user.performer_profile_id,
+                    performer_id: user.performer_id,
+                    resolvedDashboardPath: resolvedPath,
+                    currentPath: window.location.pathname,
+                  });
+                  return null;
+                })()}
                 <Link to={getDashboardPath(user)}>
                   <Button variant="ghost" size="sm" className="text-white/80 hover:text-white hover:bg-white/10 h-9 px-4 border border-white/10 mr-2">
                     <UserCircle className="w-4 h-4 mr-2" />
@@ -216,6 +228,15 @@ export default function TubeHeader({ onMenuToggle }) {
                           <div className="text-xs text-white/50 truncate">{user?.email}</div>
                         </div>
                         {/* Menu items */}
+                        {(() => {
+                          const resolvedPath = getDashboardPath(user);
+                          console.log("[UserMenuDashboardLink]", {
+                            email: user.email,
+                            role: user.role,
+                            resolvedDashboardPath: resolvedPath,
+                          });
+                          return null;
+                        })()}
                         <Link
                           to={getDashboardPath(user)}
                           onClick={() => setUserMenuOpen(false)}

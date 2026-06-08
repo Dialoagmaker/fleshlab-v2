@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { User, Plus, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
+import { getDashboardPath } from "@/lib/roleResolver";
 import SEOMeta from "@/components/SEOMeta";
 
 import DashboardNav from "@/components/clientDashboard/DashboardNav";
@@ -22,8 +24,36 @@ function getInitialTab() {
 }
 
 export default function ClientDashboard() {
+  const navigate = useNavigate();
   const { isAuthenticated, user, isLoadingAuth, authChecked, logout } = useAuth();
   const [activeTab, setActiveTab] = useState(getInitialTab());
+
+  // ADMIN GUARD: Redirect admin/super_admin to admin dashboard
+  useEffect(() => {
+    if (authChecked && isAuthenticated && user) {
+      console.log("[ClientDashboardGuard]", {
+        email: user.email,
+        role: user.role,
+        performer_profile_id: user.performer_profile_id,
+        performer_id: user.performer_id,
+      });
+      
+      const isAdmin = user.role === "admin" || user.role === "super_admin";
+      const resolvedPath = getDashboardPath(user);
+      
+      console.log("[ClientDashboardGuard]", {
+        shouldRedirectToAdmin: isAdmin,
+        redirectTarget: resolvedPath,
+        currentPath: window.location.pathname,
+      });
+      
+      // If admin is on client dashboard, redirect to admin dashboard
+      if (isAdmin && resolvedPath !== "/client/dashboard") {
+        console.log("[ClientDashboardGuard] Redirecting admin to", resolvedPath);
+        navigate(resolvedPath, { replace: true });
+      }
+    }
+  }, [authChecked, isAuthenticated, user, navigate]);
 
   // Logout handler - reuses existing auth logout with redirect
   const handleLogout = () => {
