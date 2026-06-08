@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   Shield, Film, Check, Lock, ChevronRight, Camera, Clock,
   MapPin, User, Eye, EyeOff, HelpCircle, Star, ArrowRight,
+  Clapperboard, Users, FileText, Heart, Sparkles, XCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/AuthContext";
@@ -15,32 +16,36 @@ const PACKAGES = [
   {
     key: "short",
     label: "Short Fan Production",
-    filmed: "30 min filmed scene",
-    window: "Production window: up to 2 hours",
+    filmed: "30 min filmed scene content",
+    window: "Production window: up to 2 hours total",
+    scenePrefs: "Up to 2 scene preferences",
     price: "from $799",
     recommended: false,
   },
   {
     key: "full",
     label: "Full Fan Production",
-    filmed: "60 min filmed scene",
-    window: "Production window: up to 3 hours",
+    filmed: "60 min filmed scene content",
+    window: "Production window: up to 3 hours total",
+    scenePrefs: "Up to 5 scene preferences",
     price: "from $1,499",
     recommended: true,
   },
   {
     key: "premium",
     label: "Premium Fan Production",
-    filmed: "90 min filmed scene",
-    window: "Production window: up to 4.5 hours",
+    filmed: "90 min filmed scene content",
+    window: "Production window: up to 4.5 hours total",
+    scenePrefs: "Up to 6 scene preferences",
     price: "from $2,499",
     recommended: false,
   },
   {
     key: "custom",
     label: "Custom / Multi-scene",
-    filmed: "On request",
-    window: "Multiple scenes, special locations or complex concepts",
+    filmed: "Custom filmed content",
+    window: "Multiple scenes, extended production",
+    scenePrefs: "Up to 8 scene preferences",
     price: "Quote on request",
     recommended: false,
     custom: true,
@@ -67,42 +72,54 @@ const PREFERENCES = [
   "BDSM / Fetish elements", "Soft / Teasing", "Explicit production", "Other / On request",
 ];
 
-const PHASES = [
+const HOW_IT_WORKS = [
   {
-    phase: "Phase 1",
-    title: "Build Your Request",
-    color: "border-rose-600/40 bg-gradient-to-br from-[#160606] to-[#0f0606]",
-    badge: "bg-rose-600/20 text-rose-400 border-rose-600/30",
-    steps: [
-      "Choose your preferred performer",
-      "Choose production country & city",
-      "Choose production length",
-      "Submit production preferences",
-      "Choose your privacy option",
-    ],
+    icon: FileText,
+    step: "Step 1",
+    title: "Submit Fan Production Request",
+    desc: "Complete your application with performer preference, location, package choice and production preferences.",
   },
   {
-    phase: "Phase 2",
-    title: "Studio Review",
-    color: "border-white/10 bg-[#0f0f0f]",
-    badge: "bg-white/8 text-white/50 border-white/15",
-    steps: [
-      "Studio reviews feasibility, safety & compliance",
-      "Performer approval required",
-      "Compatibility & boundary check",
-      "Final quote prepared",
-    ],
+    icon: Heart,
+    step: "Step 2",
+    title: "Choose Production Preferences",
+    desc: "Select scene preferences based on your package. These guide compatibility review and consent planning.",
   },
   {
-    phase: "Phase 3",
-    title: "Confirm & Produce",
-    color: "border-white/10 bg-[#0f0f0f]",
-    badge: "bg-white/8 text-white/50 border-white/15",
-    steps: [
-      "50% reservation after approval",
-      "Production scheduling confirmed",
-      "Production day / filming",
-    ],
+    icon: Shield,
+    step: "Step 3",
+    title: "Studio Compatibility Review",
+    desc: "FLESHLAB reviews feasibility, safety, compliance and performer availability before proceeding.",
+  },
+  {
+    icon: Users,
+    step: "Step 4",
+    title: "Performer Approval",
+    desc: "The selected performer must explicitly approve the guest and production scope before confirmation.",
+  },
+  {
+    icon: Lock,
+    step: "Step 5",
+    title: "ID / 18+ Verification",
+    desc: "All participants provide valid government ID and complete 18+ age verification documentation.",
+  },
+  {
+    icon: FileText,
+    step: "Step 6",
+    title: "Consent & Release Forms",
+    desc: "Boundaries, consent rules and release agreements are documented and signed before scheduling.",
+  },
+  {
+    icon: Clapperboard,
+    step: "Step 7",
+    title: "Production & Filming",
+    desc: "Production day is scheduled and filmed with professional oversight and safety protocols.",
+  },
+  {
+    icon: Camera,
+    step: "Step 8",
+    title: "Post-Production & Publishing",
+    desc: "Editing, post-production and publishing follow agreed privacy options and release terms.",
   },
 ];
 
@@ -171,61 +188,61 @@ export default function FanProductions() {
       <div className="min-h-screen bg-[#080808] text-white overflow-x-hidden">
 
         {/* ── 1. HERO ──────────────────────────────────────────────────────── */}
-        <section className="relative overflow-hidden min-h-[580px] md:min-h-[680px] flex items-center py-20 md:py-28 px-5 sm:px-8">
+        <section className="relative overflow-hidden min-h-[600px] md:min-h-[700px] flex items-center py-20 md:py-28 px-5 sm:px-8">
           <div
             className="absolute inset-0"
             style={{
               backgroundImage: "url('https://video.fleshlab.online/applications/private/ChatGPT%20Image%206.%20Juni%202026%2C%2022_43_09.png')",
               backgroundSize: "cover",
-              backgroundPosition: "center right",
+              backgroundPosition: "center",
             }}
             aria-hidden="true"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/92 via-black/70 to-black/25" aria-hidden="true" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/65" aria-hidden="true" />
-          <div className="absolute bottom-0 left-0 w-[400px] h-[250px] bg-rose-900/20 blur-[100px] rounded-full pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-[#080808]" aria-hidden="true" />
+          <div className="absolute bottom-0 left-0 w-[600px] h-[300px] bg-rose-900/25 blur-[120px] rounded-full pointer-events-none" />
+          <div className="absolute top-0 right-0 w-[500px] h-[400px] bg-rose-800/15 blur-[100px] rounded-full pointer-events-none" />
 
           <div className="relative w-full max-w-[1280px] mx-auto">
-            <div className="max-w-[620px]">
+            <div className="max-w-[720px]">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 bg-rose-600/15 border border-rose-700/30 rounded-full px-4 py-1.5 mb-6">
-                <Camera className="w-3.5 h-3.5 text-rose-400" />
-                <span className="text-rose-300 text-xs font-black uppercase tracking-widest">FLESHLAB Fan Productions · Verified 18+ Only</span>
+              <div className="inline-flex items-center gap-2.5 bg-rose-600/20 border border-rose-500/40 rounded-full px-5 py-2 mb-8 backdrop-blur-sm">
+                <Camera className="w-4 h-4 text-rose-400" />
+                <span className="text-rose-300 text-xs font-bold uppercase tracking-widest">FLESHLAB Fan Productions · Verified 18+ Only</span>
               </div>
 
-              <h1 className="text-4xl sm:text-5xl md:text-7xl font-black leading-[0.92] tracking-tight mb-5">
-                STOP WATCHING.<br />
-                <span className="text-rose-500">BECOME PART</span><br />
-                OF THE SCENE.
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[0.95] tracking-tight mb-6 text-white">
+                Join a Real<br />
+                <span className="text-rose-500">FLESHLAB Fan</span><br />
+                Production
               </h1>
 
-              <p className="text-white/60 text-base md:text-lg leading-relaxed mb-4">
-                Love our videos? Got a favorite performer? Apply as a verified 18+ fan and become part of an official homemade-style FLESHLAB production with approved performers.
+              <p className="text-white/80 text-lg md:text-xl leading-relaxed mb-4 font-medium">
+                Apply to take part in a verified 18+ adult-content production with performer approval, studio review, consent planning and professional releases.
               </p>
-              <p className="text-white/35 text-sm leading-relaxed mb-9">
-                Choose your preferred performer, city, production length, privacy option and production preferences. FLESHLAB reviews the request, checks compatibility and confirms only after performer approval.
+              <p className="text-white/50 text-sm md:text-base leading-relaxed mb-10 max-w-xl">
+                Choose your preferred performer, production country, package length and scene preferences. Every request undergoes studio review and requires explicit performer approval before confirmation.
               </p>
 
-              <div className="flex flex-col sm:flex-row items-start gap-3 mb-8">
+              <div className="flex flex-col sm:flex-row items-start gap-4 mb-10">
                 <Button
                   size="lg"
                   onClick={handleApply}
-                  className="w-full sm:w-auto bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black px-8 py-4 rounded-xl h-auto shadow-xl shadow-rose-700/35 text-sm md:text-base"
+                  className="w-full sm:w-auto bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-10 py-5 rounded-xl h-auto shadow-xl shadow-rose-700/40 text-base md:text-lg"
                 >
-                  Build Your Fan Production Request
-                  <ChevronRight className="w-4 h-4 ml-1" />
+                  Start Fan Production Request
+                  <ChevronRight className="w-5 h-5 ml-1" />
                 </Button>
                 <a href="#how-it-works" className="w-full sm:w-auto">
-                  <Button size="lg" variant="outline" className="w-full border-white/20 text-white hover:bg-white/8 font-semibold px-8 py-4 rounded-xl h-auto text-sm md:text-base">
+                  <Button size="lg" variant="outline" className="w-full border-white/30 text-white hover:bg-white/10 font-semibold px-10 py-5 rounded-xl h-auto text-base md:text-lg backdrop-blur-sm">
                     How It Works
                   </Button>
                 </a>
               </div>
 
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-white/30 text-xs">
-                {["Verified 18+ only", "Performer approval required", "Filmed production", "Contracts & releases", "Consent rules"].map((t, i) => (
-                  <span key={i} className="flex items-center gap-1.5">
-                    <Shield className="w-3 h-3 text-rose-600/60 shrink-0" />{t}
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5 text-white/40 text-xs md:text-sm">
+                {["Verified 18+ only", "Performer approval required", "Professional filming", "Contracts & releases", "Consent documentation"].map((t, i) => (
+                  <span key={i} className="flex items-center gap-2">
+                    <Check className="w-3.5 h-3.5 text-rose-500/70 shrink-0" />{t}
                   </span>
                 ))}
               </div>
@@ -355,33 +372,39 @@ export default function FanProductions() {
           </div>
         </section>
 
-        {/* ── 6. HOW IT WORKS — 3 PHASES ───────────────────────────────────── */}
-        <section id="how-it-works" className="py-16 px-5 sm:px-8 bg-gradient-to-b from-[#0d0606] to-[#080808] border-t border-white/5">
-          <div className="max-w-[1100px] mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-black mb-3">HOW FAN PRODUCTIONS WORK</h2>
-              <p className="text-white/45 text-base max-w-xl mx-auto">From your first request to production day — in three clear phases.</p>
+        {/* ── 6. HOW IT WORKS — 8 STEPS ───────────────────────────────────── */}
+        <section id="how-it-works" className="py-20 px-5 sm:px-8 bg-gradient-to-b from-[#0d0606] to-[#080808] border-t border-white/5">
+          <div className="max-w-[1200px] mx-auto">
+            <div className="text-center mb-14">
+              <h2 className="text-3xl md:text-4xl font-black mb-4 text-white">HOW FAN PRODUCTIONS WORK</h2>
+              <p className="text-white/60 text-lg max-w-2xl mx-auto leading-relaxed">
+                From initial request to final production — a transparent, compliant process with performer approval at every stage.
+              </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-5">
-              {PHASES.map(({ phase, title, color, badge, steps }, i) => (
-                <div key={i} className={`rounded-2xl border p-6 flex flex-col gap-4 ${color}`}>
-                  <div>
-                    <span className={`inline-block text-xs font-black uppercase tracking-widest border rounded-full px-3 py-1 mb-3 ${badge}`}>{phase}</span>
-                    <h3 className="text-white font-black text-lg leading-tight">{title}</h3>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {HOW_IT_WORKS.map(({ icon: Icon, step, title, desc }, i) => (
+                <div key={i} className="bg-[#0f0f0f] border border-white/10 hover:border-rose-600/30 rounded-2xl p-6 transition-all group">
+                  <div className="w-12 h-12 rounded-xl bg-rose-600/15 border border-rose-700/30 flex items-center justify-center mb-4 group-hover:bg-rose-600/25 transition-colors">
+                    <Icon className="w-6 h-6 text-rose-400" />
                   </div>
-                  <ul className="space-y-2.5">
-                    {steps.map((step, j) => (
-                      <li key={j} className="flex items-start gap-2.5">
-                        <div className="w-5 h-5 rounded-full bg-rose-600/20 border border-rose-600/30 flex items-center justify-center shrink-0 mt-0.5">
-                          <span className="text-rose-400 text-[9px] font-black">{j + 1}</span>
-                        </div>
-                        <span className="text-white/55 text-sm leading-snug">{step}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="text-rose-400/70 text-xs font-bold uppercase tracking-wider mb-2">{step}</div>
+                  <h3 className="text-white font-bold text-sm mb-3 leading-tight">{title}</h3>
+                  <p className="text-white/45 text-xs leading-relaxed">{desc}</p>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-10 bg-rose-900/15 border border-rose-600/25 rounded-2xl p-6 max-w-3xl mx-auto">
+              <div className="flex items-start gap-3">
+                <Shield className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-white/70 text-sm font-semibold mb-1">Performer Approval Required</p>
+                  <p className="text-white/40 text-xs leading-relaxed">
+                    No production proceeds without explicit performer approval. All preferences are subject to compatibility review, consent planning, safety requirements and signed release forms.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -411,23 +434,25 @@ export default function FanProductions() {
         </section>
 
         {/* ── 8. PRICING ───────────────────────────────────────────────────── */}
-        <section className="py-16 px-5 sm:px-8 bg-gradient-to-b from-[#0d0606] to-[#080808] border-t border-white/5">
-          <div className="max-w-[1100px] mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-black mb-3">FAN PRODUCTION PRICING</h2>
-              <p className="text-white/50 text-base max-w-xl mx-auto mb-2">
-                Production packages — not a per-service menu. Final quote is calculated individually.
+        <section className="py-20 px-5 sm:px-8 bg-gradient-to-b from-[#0d0606] to-[#080808] border-t border-white/5">
+          <div className="max-w-[1200px] mx-auto">
+            <div className="text-center mb-14">
+              <h2 className="text-3xl md:text-4xl font-black mb-4 text-white">FAN PRODUCTION PACKAGES</h2>
+              <p className="text-white/60 text-base max-w-2xl mx-auto mb-3 leading-relaxed">
+                Production packages based on filmed content length, production complexity, planning depth and post-production work.
               </p>
-              <p className="text-amber-400/70 text-sm font-bold">Your personal travel costs are not included.</p>
+              <div className="bg-amber-900/20 border border-amber-600/25 rounded-xl px-5 py-3 inline-block">
+                <p className="text-amber-300 text-xs font-bold">Your personal travel costs are not included</p>
+              </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-              {PACKAGES.map(({ key, label, filmed, window: w, price, recommended, custom }) => (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+              {PACKAGES.map(({ key, label, filmed, window: w, scenePrefs, price, recommended, custom }) => (
                 <div
                   key={key}
                   className={`relative rounded-2xl p-6 border flex flex-col gap-3 ${recommended
                     ? "bg-gradient-to-br from-[#1a0808] to-[#0f0606] border-rose-600/50 shadow-[0_0_40px_rgba(220,38,38,0.12)]"
-                    : "bg-[#0f0f0f] border-white/8"
+                    : "bg-[#0f0f0f] border-white/10"
                   }`}
                 >
                   {recommended && (
@@ -435,18 +460,19 @@ export default function FanProductions() {
                       Most Popular
                     </div>
                   )}
-                  <div className="font-black text-white text-base leading-tight">{label}</div>
-                  <div className="text-rose-400 font-black text-3xl leading-none">{price}</div>
-                  <div className="text-white/55 text-xs leading-relaxed">
-                    <div className="mb-1 font-semibold">{filmed}</div>
-                    <div className="text-white/35">{w}</div>
+                  <div className="font-bold text-white text-sm leading-tight">{label}</div>
+                  <div className="text-rose-400 font-black text-2xl md:text-3xl leading-none">{price}</div>
+                  <div className="text-white/55 text-xs leading-relaxed space-y-1.5">
+                    <div className="font-semibold text-white/70">{filmed}</div>
+                    <div className="text-white/40">{w}</div>
+                    <div className="text-white/40">{scenePrefs}</div>
                   </div>
-                  <div className="mt-auto pt-1">
+                  <div className="mt-auto pt-2">
                     {!custom ? (
                       <Button
                         onClick={handleApply}
                         size="sm"
-                        className={`w-full font-bold rounded-xl h-auto py-2.5 text-xs ${recommended
+                        className={`w-full font-semibold rounded-xl h-auto py-2.5 text-xs ${recommended
                           ? "bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white shadow-lg shadow-rose-700/25"
                           : "bg-white/8 hover:bg-white/14 text-white border border-white/12"
                         }`}
@@ -457,9 +483,9 @@ export default function FanProductions() {
                       <Button
                         onClick={handleApply}
                         size="sm"
-                        className="w-full bg-white/5 hover:bg-white/10 text-white/70 border border-white/12 font-bold rounded-xl h-auto py-2.5 text-xs"
+                        className="w-full bg-white/5 hover:bg-white/10 text-white/70 border border-white/12 font-semibold rounded-xl h-auto py-2.5 text-xs"
                       >
-                        Request a Custom Quote
+                        Request Custom Quote
                       </Button>
                     )}
                   </div>
@@ -467,26 +493,40 @@ export default function FanProductions() {
               ))}
             </div>
 
+            {/* Scene preferences disclaimer */}
+            <div className="bg-rose-900/15 border border-rose-600/25 rounded-2xl p-6 mb-6 max-w-3xl mx-auto">
+              <div className="flex items-start gap-3">
+                <FileText className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-white/70 text-sm font-semibold mb-1">Scene Preference Slots by Package</p>
+                  <p className="text-white/45 text-xs leading-relaxed">
+                    Preferences guide compatibility review and consent planning. They are not guaranteed services and remain subject to studio review, performer approval, safety rules and signed consent forms.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Quote factors */}
-            <div className="bg-[#0f0f0f] border border-white/8 rounded-2xl p-6 mb-4">
-              <p className="text-white/35 text-xs font-black uppercase tracking-widest mb-3">Final quote depends on</p>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl p-6 mb-4">
+              <p className="text-white/40 text-xs font-bold uppercase tracking-wider mb-4">Final quote depends on</p>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
                   "Selected performer", "Performer availability", "Production country & city",
-                  "Hotel / location setup", "Domestic round-trip performer travel", "Production length",
-                  "Production preferences", "Complexity / intensity", "Privacy or release model", "Post-production requirements",
+                  "Hotel / location setup", "Domestic performer travel", "Production length",
+                  "Scene preferences", "Production complexity", "Privacy / release model", "Post-production requirements",
                 ].map((f, i) => (
-                  <div key={i} className="flex items-center gap-2 text-white/45 text-xs">
-                    <div className="w-1 h-1 rounded-full bg-rose-600/60 shrink-0" />{f}
+                  <div key={i} className="flex items-center gap-2.5 bg-white/3 rounded-xl px-3 py-2.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500/70 shrink-0" />
+                    <span className="text-white/60 text-xs">{f}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             <div className="bg-[#111] border border-amber-900/25 rounded-2xl p-5 text-center">
-              <p className="text-amber-400/70 text-xs font-bold mb-1 uppercase tracking-wider">Not included in your quote</p>
-              <p className="text-white/40 text-xs leading-relaxed max-w-xl mx-auto">
-                Your personal flights, your own hotel outside the production booking, meals, visa requirements, travel insurance and personal expenses are <strong className="text-white/55">not included</strong>.
+              <p className="text-amber-400/70 text-xs font-bold mb-2 uppercase tracking-wider">Not included in your quote</p>
+              <p className="text-white/40 text-xs leading-relaxed max-w-2xl mx-auto">
+                Your personal flights, your own hotel outside the production booking, meals, visa requirements, travel insurance and personal expenses are <strong className="text-white/60">not included</strong>.
               </p>
             </div>
           </div>
@@ -573,32 +613,54 @@ export default function FanProductions() {
           </div>
         </section>
 
-        {/* ── 12. CONTROLLED / VERIFIED / APPROVED ─────────────────────────── */}
+        {/* ── 12. COMPLIANCE BOX ────────────────────────────────────────────── */}
         <section className="py-16 px-5 sm:px-8 border-t border-white/5">
           <div className="max-w-[900px] mx-auto">
-            <div className="text-center mb-10">
-              <h2 className="text-3xl md:text-4xl font-black mb-3">CONTROLLED. VERIFIED. APPROVED.</h2>
-              <p className="text-white/50 text-base max-w-xl mx-auto">
-                FLESHLAB Fan Productions are planned adult productions. They are not private dates, escort bookings or off-camera meetings.
-              </p>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {[
-                "Verified 18+ only",
-                "Performer approval required",
-                "Studio approval required",
-                "Consent and boundaries documented",
-                "Contracts and releases required",
-                "No illegal, unsafe or non-consensual content",
-                "No off-schedule private meetings",
-                "No unapproved extensions",
-                "Studio can reject any request",
-              ].map((rule, i) => (
-                <div key={i} className="flex items-start gap-3 bg-[#0f0f0f] border border-white/6 rounded-xl p-4">
-                  <Shield className="w-4 h-4 text-rose-500/70 shrink-0 mt-0.5" />
-                  <span className="text-white/55 text-sm leading-snug">{rule}</span>
+            <div className="bg-gradient-to-br from-rose-900/20 to-[#1a0808] border border-rose-600/30 rounded-3xl p-8 md:p-10">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-rose-600/20 border border-rose-600/40 flex items-center justify-center shrink-0">
+                  <Shield className="w-7 h-7 text-rose-400" />
                 </div>
-              ))}
+                <div>
+                  <h2 className="text-2xl md:text-3xl font-black text-white mb-2">Verified 18+ Fan Production Only</h2>
+                  <p className="text-white/70 text-base leading-relaxed">
+                    FLESHLAB Fan Productions are professional adult-content productions. Participation requires 18+ verification, valid government ID, signed consent and release forms, studio review and performer approval.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-[#111] border border-white/8 rounded-2xl p-6 mb-6">
+                <p className="text-white/80 text-sm font-semibold mb-3">We do not arrange:</p>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {[
+                    "Private dates or dating services",
+                    "Escort services or bookings",
+                    "Off-platform meetings",
+                    "Guaranteed sexual services",
+                    "Unfilmed private sessions",
+                    "Services without performer approval",
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-2.5">
+                      <XCircle className="w-4 h-4 text-red-400 shrink-0" />
+                      <span className="text-white/50 text-sm">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-3 gap-4">
+                {[
+                  { icon: Lock, label: "18+ Verification Required", desc: "Valid government ID and age documentation" },
+                  { icon: Users, label: "Performer Approval", desc: "Explicit consent before any production" },
+                  { icon: FileText, label: "Signed Releases", desc: "Legal contracts and consent forms" },
+                ].map(({ icon: Icon, label, desc }, i) => (
+                  <div key={i} className="bg-[#0f0f0f] border border-white/8 rounded-xl p-5">
+                    <Icon className="w-5 h-5 text-rose-400 mb-3" />
+                    <div className="text-white font-bold text-sm mb-1">{label}</div>
+                    <div className="text-white/40 text-xs leading-relaxed">{desc}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
