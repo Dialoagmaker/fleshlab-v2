@@ -54,7 +54,7 @@ export default function PhilippinesRecruitment() {
 
   const handleWhatsAppClick = () => {
     trackEvent("whatsapp_recruitment_click", { source: "philippines_page" });
-    window.open("https://wa.me/639001234567?text=Hi%20FLESHLAB%2C%20I'm%20interested%20in%20becoming%20a%20performer%20from%20the%20Philippines", "_blank");
+    window.open("https://wa.me/886958679186?text=Hi%20FLESHLAB%2C%20I'm%20interested%20in%20becoming%20a%20performer%20from%20the%20Philippines", "_blank");
   };
 
   const handleRevenueModelClick = (model) => {
@@ -296,11 +296,6 @@ export default function PhilippinesRecruitment() {
                     style={{ background: '#25D366', boxShadow: '0 0 22px rgba(37,211,102,0.45)' }}
                     onClick={handleWhatsAppClick}>
                     <MessageCircle className="h-5 w-5" /> Chat on WhatsApp
-                  </Button>
-                  <Button className="font-bold text-white px-7 py-3.5 rounded-xl gap-2 bg-transparent hover:bg-white/5"
-                    style={{ border: '2px solid rgba(255,255,255,0.3)' }}
-                    onClick={() => handleRevenueModelClick('compare')}>
-                    Compare 60/40 & 70/30
                   </Button>
                 </div>
               </div>
