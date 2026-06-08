@@ -480,16 +480,19 @@ export default function PhilippinesRecruitment() {
                 <div className="relative z-10 p-5 pt-0">
                   <h3 className="font-black text-white leading-[1.1] mb-2" style={{ fontSize: 'clamp(22px, 3vw, 28px)' }}>Beginner<br />with Phone</h3>
                   <p className="text-gray-300 text-sm leading-relaxed mb-4">Never created before? Start with your phone, private space and full setup support.</p>
-                  <div 
-                    className="w-full flex items-center justify-center gap-2.5 py-3 rounded-2xl font-bold text-sm text-orange-300 transition-all group-hover:bg-orange-900/60"
-                    style={{
-                      background: 'rgba(60,25,0,0.75)',
-                      border: '1px solid rgba(249,115,22,0.5)',
-                      backdropFilter: 'blur(8px)'
-                    }}
-                  >
-                    <Shield className="h-4 w-4 text-orange-400" />
-                    60/40 Management
+                  <div className="flex justify-center">
+                    <div 
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm text-orange-300 transition-all group-hover:bg-orange-900/60"
+                      style={{
+                        background: 'rgba(60,25,0,0.85)',
+                        border: '1.5px solid rgba(249,115,22,0.7)',
+                        backdropFilter: 'blur(8px)',
+                        boxShadow: '0 0 12px rgba(249,115,22,0.3)'
+                      }}
+                    >
+                      <Shield className="h-3.5 w-3.5 text-orange-400" />
+                      60/40 Management
+                    </div>
                   </div>
                 </div>
               </div>
@@ -516,11 +519,13 @@ export default function PhilippinesRecruitment() {
                 <div className="relative z-10 p-5 pt-0">
                   <h3 className="font-black text-white leading-[1.1] mb-2" style={{ fontSize: 'clamp(22px, 3vw, 28px)' }}>Existing<br />Creator</h3>
                   <p className="text-gray-300 text-sm leading-relaxed mb-4">Have clips or followers already? Add FLESHLAB as your fanclub and distribution hub.</p>
-                  <div className="w-full flex items-center justify-center gap-2.5 py-3 rounded-2xl font-bold text-sm text-rose-300 transition-all group-hover:bg-rose-900/60"
-                    style={{ background: 'rgba(60,0,15,0.75)', border: '1px solid rgba(244,63,94,0.5)', backdropFilter: 'blur(8px)' }}
-                  >
-                    <Share2 className="h-4 w-4 text-rose-400" />
-                    70/30 Network
+                  <div className="flex justify-center">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm text-rose-300 transition-all group-hover:bg-rose-900/60"
+                      style={{ background: 'rgba(60,0,15,0.85)', border: '1.5px solid rgba(244,63,94,0.7)', backdropFilter: 'blur(8px)', boxShadow: '0 0 12px rgba(244,63,94,0.3)' }}
+                    >
+                      <Share2 className="h-3.5 w-3.5 text-rose-400" />
+                      70/30 Network
+                    </div>
                   </div>
                 </div>
               </div>
@@ -547,11 +552,13 @@ export default function PhilippinesRecruitment() {
                 <div className="relative z-10 p-5 pt-0">
                   <h3 className="font-black text-white leading-[1.1] mb-2" style={{ fontSize: 'clamp(22px, 3vw, 28px)' }}>Cam<br />Model</h3>
                   <p className="text-gray-300 text-sm leading-relaxed mb-4">Already on Chaturbate, Bigo or other cam sites? Turn live viewers into long-term fans.</p>
-                  <div className="w-full flex items-center justify-center gap-2.5 py-3 rounded-2xl font-bold text-sm text-purple-300 transition-all group-hover:bg-purple-900/60"
-                    style={{ background: 'rgba(25,0,50,0.75)', border: '1px solid rgba(168,85,247,0.5)', backdropFilter: 'blur(8px)' }}
-                  >
-                    <Zap className="h-4 w-4 text-purple-400" />
-                    Hybrid Model
+                  <div className="flex justify-center">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm text-purple-300 transition-all group-hover:bg-purple-900/60"
+                      style={{ background: 'rgba(25,0,50,0.85)', border: '1.5px solid rgba(168,85,247,0.7)', backdropFilter: 'blur(8px)', boxShadow: '0 0 12px rgba(168,85,247,0.3)' }}
+                    >
+                      <Zap className="h-3.5 w-3.5 text-purple-400" />
+                      Hybrid Model
+                    </div>
                   </div>
                 </div>
               </div>
@@ -578,11 +585,13 @@ export default function PhilippinesRecruitment() {
                 <div className="relative z-10 p-5 pt-0">
                   <h3 className="font-black text-white leading-[1.1] mb-2" style={{ fontSize: 'clamp(22px, 3vw, 28px)' }}>Couple<br />Creator</h3>
                   <p className="text-gray-300 text-sm leading-relaxed mb-4">Create with a partner. Both must verify 18+ and approve every scene.</p>
-                  <div className="w-full flex items-center justify-center gap-2.5 py-3 rounded-2xl font-bold text-sm text-rose-300 transition-all group-hover:bg-rose-900/60"
-                    style={{ background: 'rgba(60,0,20,0.75)', border: '1px solid rgba(255,0,85,0.5)', backdropFilter: 'blur(8px)' }}
-                  >
-                    <Shield className="h-4 w-4 text-rose-400" />
-                    Both Verify 18+
+                  <div className="flex justify-center">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm text-rose-300 transition-all group-hover:bg-rose-900/60"
+                      style={{ background: 'rgba(60,0,20,0.85)', border: '1.5px solid rgba(255,0,85,0.7)', backdropFilter: 'blur(8px)', boxShadow: '0 0 12px rgba(255,0,85,0.3)' }}
+                    >
+                      <Shield className="h-3.5 w-3.5 text-rose-400" />
+                      Both Verify 18+
+                    </div>
                   </div>
                 </div>
               </div>
@@ -609,11 +618,13 @@ export default function PhilippinesRecruitment() {
                 <div className="relative z-10 p-5 pt-0">
                   <h3 className="font-black text-white leading-[1.1] mb-2" style={{ fontSize: 'clamp(22px, 3vw, 28px)' }}>Fanclub<br />Creator</h3>
                   <p className="text-gray-300 text-sm leading-relaxed mb-4">Build recurring monthly income with exclusive clips, updates and supporter perks.</p>
-                  <div className="w-full flex items-center justify-center gap-2.5 py-3 rounded-2xl font-bold text-sm text-amber-300 transition-all group-hover:bg-amber-900/60"
-                    style={{ background: 'rgba(50,30,0,0.75)', border: '1px solid rgba(245,158,11,0.5)', backdropFilter: 'blur(8px)' }}
-                  >
-                    <Crown className="h-4 w-4 text-amber-400" />
-                    Fanclub Setup
+                  <div className="flex justify-center">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm text-amber-300 transition-all group-hover:bg-amber-900/60"
+                      style={{ background: 'rgba(50,30,0,0.85)', border: '1.5px solid rgba(245,158,11,0.7)', backdropFilter: 'blur(8px)', boxShadow: '0 0 12px rgba(245,158,11,0.3)' }}
+                    >
+                      <Crown className="h-3.5 w-3.5 text-amber-400" />
+                      Fanclub Setup
+                    </div>
                   </div>
                 </div>
               </div>
