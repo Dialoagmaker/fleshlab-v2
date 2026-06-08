@@ -33,7 +33,9 @@ import {
   Sparkles,
   Zap,
   Star,
-  HelpCircle
+  HelpCircle,
+  Crown,
+  Share2
 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import SEOMeta from "@/components/SEOMeta";
@@ -448,19 +450,24 @@ export default function PhilippinesRecruitment() {
               
               {/* Card 1: Beginner with Phone (Orange Glow) */}
               <div 
-                className="relative rounded-[24px] overflow-hidden border border-orange-500/30 p-6 flex flex-col justify-between min-h-[360px] bg-black/50 backdrop-blur-md hover:border-orange-500/70 hover:shadow-[0_0_30px_rgba(249,115,22,0.25)] transition-all duration-300"
-                style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.4)' }}
+                className="relative rounded-[24px] overflow-hidden border-2 border-orange-500/50 flex flex-col justify-between min-h-[400px] hover:border-orange-400/90 hover:shadow-[0_0_40px_rgba(249,115,22,0.45)] transition-all duration-300 group cursor-pointer"
+                style={{
+                  backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.92) 100%), url('https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/ed31506ef_generated_image.png')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center top',
+                  boxShadow: '0 0 20px rgba(249,115,22,0.2), inset 0 0 0 1px rgba(249,115,22,0.15)'
+                }}
               >
-                <div>
-                  {/* Neon Icon Circle */}
-                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-orange-500/40 bg-orange-500/10 mb-6 shadow-[0_0_15px_rgba(249,115,22,0.3)]">
+                <div className="p-6">
+                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-orange-500/60 bg-black/50 mb-auto shadow-[0_0_20px_rgba(249,115,22,0.5)] backdrop-blur-sm">
                     <Smartphone className="h-5 w-5 text-orange-400" />
                   </div>
-                  <h3 className="font-extrabold text-white text-[22px] leading-tight mb-3">Beginner with Phone</h3>
-                  <p className="text-gray-300 text-sm leading-relaxed font-medium">Never created before? Start with your phone, private space and full setup support.</p>
                 </div>
-                <div className="mt-6">
-                  <div className="w-full text-center py-2.5 rounded-xl font-bold text-xs bg-orange-950/40 text-orange-400 border border-orange-500/30 uppercase tracking-wide">
+                <div className="p-6 pt-0">
+                  <h3 className="font-extrabold text-white text-[20px] leading-tight mb-2">Beginner with Phone</h3>
+                  <p className="text-gray-300 text-xs leading-relaxed mb-5">Never created before? Start with your phone, private space and full setup support.</p>
+                  <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs text-orange-400 border border-orange-500/50 bg-black/40 backdrop-blur-sm uppercase tracking-wider hover:bg-orange-500/20 transition-all">
+                    <Shield className="h-3.5 w-3.5" />
                     60/40 Management
                   </div>
                 </div>
@@ -468,18 +475,24 @@ export default function PhilippinesRecruitment() {
 
               {/* Card 2: Existing Creator (Pink Glow) */}
               <div 
-                className="relative rounded-[24px] overflow-hidden border border-rose-500/30 p-6 flex flex-col justify-between min-h-[360px] bg-black/50 backdrop-blur-md hover:border-rose-500/70 hover:shadow-[0_0_30px_rgba(244,63,94,0.25)] transition-all duration-300"
-                style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.4)' }}
+                className="relative rounded-[24px] overflow-hidden border-2 border-rose-500/50 flex flex-col justify-between min-h-[400px] hover:border-rose-400/90 hover:shadow-[0_0_40px_rgba(244,63,94,0.45)] transition-all duration-300 group cursor-pointer"
+                style={{
+                  backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.92) 100%), url('https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/c8392743d_generated_image.png')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center top',
+                  boxShadow: '0 0 20px rgba(244,63,94,0.2), inset 0 0 0 1px rgba(244,63,94,0.15)'
+                }}
               >
-                <div>
-                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-rose-500/40 bg-rose-500/10 mb-6 shadow-[0_0_15px_rgba(244,63,94,0.3)]">
+                <div className="p-6">
+                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-rose-500/60 bg-black/50 mb-auto shadow-[0_0_20px_rgba(244,63,94,0.5)] backdrop-blur-sm">
                     <Camera className="h-5 w-5 text-rose-400" />
                   </div>
-                  <h3 className="font-extrabold text-white text-[22px] leading-tight mb-3">Existing Creator</h3>
-                  <p className="text-gray-300 text-sm leading-relaxed font-medium">Have clips or followers already? Add FLESHLAB as your fanclub and distribution hub.</p>
                 </div>
-                <div className="mt-6">
-                  <div className="w-full text-center py-2.5 rounded-xl font-bold text-xs bg-rose-950/40 text-rose-400 border border-rose-500/30 uppercase tracking-wide">
+                <div className="p-6 pt-0">
+                  <h3 className="font-extrabold text-white text-[20px] leading-tight mb-2">Existing Creator</h3>
+                  <p className="text-gray-300 text-xs leading-relaxed mb-5">Have clips or followers already? Add FLESHLAB as your fanclub and distribution hub.</p>
+                  <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs text-rose-400 border border-rose-500/50 bg-black/40 backdrop-blur-sm uppercase tracking-wider hover:bg-rose-500/20 transition-all">
+                    <Share2 className="h-3.5 w-3.5" />
                     70/30 Network
                   </div>
                 </div>
@@ -487,18 +500,24 @@ export default function PhilippinesRecruitment() {
 
               {/* Card 3: Cam Model (Purple Glow) */}
               <div 
-                className="relative rounded-[24px] overflow-hidden border border-purple-500/30 p-6 flex flex-col justify-between min-h-[360px] bg-black/50 backdrop-blur-md hover:border-purple-500/70 hover:shadow-[0_0_30px_rgba(168,85,247,0.25)] transition-all duration-300"
-                style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.4)' }}
+                className="relative rounded-[24px] overflow-hidden border-2 border-purple-500/50 flex flex-col justify-between min-h-[400px] hover:border-purple-400/90 hover:shadow-[0_0_40px_rgba(168,85,247,0.45)] transition-all duration-300 group cursor-pointer"
+                style={{
+                  backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.92) 100%), url('https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/11f26b1a2_generated_image.png')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center top',
+                  boxShadow: '0 0 20px rgba(168,85,247,0.2), inset 0 0 0 1px rgba(168,85,247,0.15)'
+                }}
               >
-                <div>
-                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-purple-500/40 bg-purple-500/10 mb-6 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+                <div className="p-6">
+                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-purple-500/60 bg-black/50 mb-auto shadow-[0_0_20px_rgba(168,85,247,0.5)] backdrop-blur-sm">
                     <Play className="h-5 w-5 text-purple-400" />
                   </div>
-                  <h3 className="font-extrabold text-white text-[22px] leading-tight mb-3">Cam Model</h3>
-                  <p className="text-gray-300 text-sm leading-relaxed font-medium">Already on Chaturbate, Bigo or other cam sites? Turn live viewers into long-term fans.</p>
                 </div>
-                <div className="mt-6">
-                  <div className="w-full text-center py-2.5 rounded-xl font-bold text-xs bg-purple-950/40 text-purple-400 border border-purple-500/30 uppercase tracking-wide">
+                <div className="p-6 pt-0">
+                  <h3 className="font-extrabold text-white text-[20px] leading-tight mb-2">Cam Model</h3>
+                  <p className="text-gray-300 text-xs leading-relaxed mb-5">Already on Chaturbate, Bigo or other cam sites? Turn live viewers into long-term fans.</p>
+                  <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs text-purple-400 border border-purple-500/50 bg-black/40 backdrop-blur-sm uppercase tracking-wider hover:bg-purple-500/20 transition-all">
+                    <Zap className="h-3.5 w-3.5" />
                     Hybrid Model
                   </div>
                 </div>
@@ -506,18 +525,24 @@ export default function PhilippinesRecruitment() {
 
               {/* Card 4: Couple Creator (Crimson Glow) */}
               <div 
-                className="relative rounded-[24px] overflow-hidden border border-[#ff0055]/30 p-6 flex flex-col justify-between min-h-[360px] bg-black/50 backdrop-blur-md hover:border-[#ff0055]/70 hover:shadow-[0_0_30px_rgba(255,0,85,0.25)] transition-all duration-300"
-                style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.4)' }}
+                className="relative rounded-[24px] overflow-hidden border-2 border-[#ff0055]/50 flex flex-col justify-between min-h-[400px] hover:border-[#ff0055]/90 hover:shadow-[0_0_40px_rgba(255,0,85,0.45)] transition-all duration-300 group cursor-pointer"
+                style={{
+                  backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.92) 100%), url('https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/fafc949f8_generated_image.png')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center top',
+                  boxShadow: '0 0 20px rgba(255,0,85,0.2), inset 0 0 0 1px rgba(255,0,85,0.15)'
+                }}
               >
-                <div>
-                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-[#ff0055]/40 bg-[#ff0055]/10 mb-6 shadow-[0_0_15px_rgba(255,0,85,0.3)]">
+                <div className="p-6">
+                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-[#ff0055]/60 bg-black/50 mb-auto shadow-[0_0_20px_rgba(255,0,85,0.5)] backdrop-blur-sm">
                     <Users className="h-5 w-5 text-rose-400" />
                   </div>
-                  <h3 className="font-extrabold text-white text-[22px] leading-tight mb-3">Couple Creator</h3>
-                  <p className="text-gray-300 text-sm leading-relaxed font-medium">Create with a partner. Both must verify 18+ and approve every scene.</p>
                 </div>
-                <div className="mt-6">
-                  <div className="w-full text-center py-2.5 rounded-xl font-bold text-xs bg-rose-950/40 text-rose-400 border border-[#ff0055]/30 uppercase tracking-wide">
+                <div className="p-6 pt-0">
+                  <h3 className="font-extrabold text-white text-[20px] leading-tight mb-2">Couple Creator</h3>
+                  <p className="text-gray-300 text-xs leading-relaxed mb-5">Create with a partner. Both must verify 18+ and approve every scene.</p>
+                  <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs text-rose-400 border border-[#ff0055]/50 bg-black/40 backdrop-blur-sm uppercase tracking-wider hover:bg-rose-500/20 transition-all">
+                    <Shield className="h-3.5 w-3.5" />
                     Both Verify 18+
                   </div>
                 </div>
@@ -525,18 +550,24 @@ export default function PhilippinesRecruitment() {
 
               {/* Card 5: Fanclub Creator (Amber Glow) */}
               <div 
-                className="relative rounded-[24px] overflow-hidden border border-amber-500/30 p-6 flex flex-col justify-between min-h-[360px] bg-black/50 backdrop-blur-md hover:border-amber-500/70 hover:shadow-[0_0_30px_rgba(245,158,11,0.25)] transition-all duration-300"
-                style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.4)' }}
+                className="relative rounded-[24px] overflow-hidden border-2 border-amber-500/50 flex flex-col justify-between min-h-[400px] hover:border-amber-400/90 hover:shadow-[0_0_40px_rgba(245,158,11,0.45)] transition-all duration-300 group cursor-pointer"
+                style={{
+                  backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.92) 100%), url('https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a7ef04944_generated_image.png')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center top',
+                  boxShadow: '0 0 20px rgba(245,158,11,0.2), inset 0 0 0 1px rgba(245,158,11,0.15)'
+                }}
               >
-                <div>
-                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-amber-500/40 bg-amber-500/10 mb-6 shadow-[0_0_15px_rgba(245,158,11,0.3)]">
+                <div className="p-6">
+                  <div className="h-11 w-11 rounded-full flex items-center justify-center border border-amber-500/60 bg-black/50 mb-auto shadow-[0_0_20px_rgba(245,158,11,0.5)] backdrop-blur-sm">
                     <Star className="h-5 w-5 text-amber-400" />
                   </div>
-                  <h3 className="font-extrabold text-white text-[22px] leading-tight mb-3">Fanclub Creator</h3>
-                  <p className="text-gray-300 text-sm leading-relaxed font-medium">Build recurring monthly income with exclusive clips, updates and supporter perks.</p>
                 </div>
-                <div className="mt-6">
-                  <div className="w-full text-center py-2.5 rounded-xl font-bold text-xs bg-amber-950/40 text-amber-400 border border-amber-500/30 uppercase tracking-wide">
+                <div className="p-6 pt-0">
+                  <h3 className="font-extrabold text-white text-[20px] leading-tight mb-2">Fanclub Creator</h3>
+                  <p className="text-gray-300 text-xs leading-relaxed mb-5">Build recurring monthly income with exclusive clips, updates and supporter perks.</p>
+                  <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs text-amber-400 border border-amber-500/50 bg-black/40 backdrop-blur-sm uppercase tracking-wider hover:bg-amber-500/20 transition-all">
+                    <Crown className="h-3.5 w-3.5" />
                     Fanclub Setup
                   </div>
                 </div>
