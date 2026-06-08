@@ -4,7 +4,6 @@ import { Shield, Film, Users, TrendingUp, CheckCircle2, AlertTriangle, ExternalL
 import { Button } from "@/components/ui/button";
 import SEOMeta from "@/components/SEOMeta";
 import { base44 } from "@/api/base44Client";
-import PublicPageShell from "@/components/PublicPageShell";
 import RevenueModelsSection from "@/components/recruitment/RevenueModelsSection";
 import WhoIsThisForSection from "@/components/recruitment/WhoIsThisForSection";
 import ComplianceSection from "@/components/recruitment/ComplianceSection";
@@ -112,8 +111,7 @@ export default function GayOnlyfansAlternative() {
         jsonLd={jsonLd}
       />
 
-      <PublicPageShell>
-        <div className="min-h-screen bg-[#080808] text-white">
+      <div className="min-h-screen bg-[#080808] text-white">
           
           {/* ── HERO SECTION ─────────────────────────────────────────────── */}
           <section className="relative overflow-hidden border-b border-white/6 bg-[#0a0505]">
@@ -269,7 +267,6 @@ export default function GayOnlyfansAlternative() {
           </section>
 
         </div>
-      </PublicPageShell>
     </>
   );
 }
