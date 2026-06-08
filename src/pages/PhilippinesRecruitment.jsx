@@ -529,7 +529,7 @@ export default function PhilippinesRecruitment() {
               <div 
                 className="relative rounded-[24px] overflow-hidden flex flex-col justify-between min-h-[480px] transition-all duration-300 cursor-pointer group"
                 style={{
-                  backgroundImage: `url('https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/e541eedd1_generated_image.png')`,
+                  backgroundImage: `url('https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/d55ea64b1_generated_image.png')`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center top',
                   border: '2px solid rgba(168,85,247,0.6)',
