@@ -18,51 +18,53 @@ export const AuthProvider = ({ children }) => {
   const checkAppState = async () => {
     console.log('=== AUTH_CHECK ===', { path: window.location.pathname });
     
-    try {
-      const storedToken = appParams.token || localStorage.getItem('base44_access_token');
-      
-      if (!storedToken) {
-        // No token - not authenticated, skip user fetch entirely
-        setUser(null);
-        setIsAuthenticated(false);
-        setIsLoadingAuth(false);
-        setAuthChecked(true);
-        console.log('AUTH_NO_TOKEN - skipping user fetch');
-        return;
-      }
+    const storedToken = appParams.token || localStorage.getItem('base44_access_token');
+    
+    if (!storedToken) {
+      // No token - not authenticated, skip user fetch entirely
+      setUser(null);
+      setIsAuthenticated(false);
+      setIsLoadingAuth(false);
+      setAuthChecked(true);
+      console.log('AUTH_NO_TOKEN - skipping user fetch');
+      return;
+    }
 
-      // Token exists - verify it and get user data
-      const resp = await fetch(`/api/apps/${appParams.appId}/entities/User/me`, {
-        headers: {
-          'Authorization': `Bearer ${storedToken}`,
-          'X-App-Id': appParams.appId,
-        }
-      });
-
+    // Token exists - verify it and get user data
+    // CRITICAL: Use .then() chain to prevent any unhandled rejections
+    fetch(`/api/apps/${appParams.appId}/entities/User/me`, {
+      headers: {
+        'Authorization': `Bearer ${storedToken}`,
+        'X-App-Id': appParams.appId,
+      },
+    })
+    .then(resp => {
       if (resp.ok) {
-        const currentUser = await resp.json();
-        base44.auth.setToken(storedToken);
-        localStorage.setItem('base44_access_token', storedToken);
-        setUser(currentUser);
-        setIsAuthenticated(true);
-        console.log('AUTH_SUCCESS', { role: currentUser.role, email: currentUser.email });
+        return resp.json();
       } else {
-        // Token invalid - clear it and treat as anonymous
-        setUser(null);
-        setIsAuthenticated(false);
-        localStorage.removeItem('base44_access_token');
-        console.log('AUTH_TOKEN_INVALID - treating as anonymous');
+        // Token invalid (401, 403, etc) - clear it and treat as anonymous
+        throw new Error('Token invalid: ' + resp.status);
       }
-    } catch (error) {
-      console.warn('AUTH_ERROR - treating as anonymous', error);
+    })
+    .then(currentUser => {
+      // Valid user
+      base44.auth.setToken(storedToken);
+      localStorage.setItem('base44_access_token', storedToken);
+      setUser(currentUser);
+      setIsAuthenticated(true);
+      setIsLoadingAuth(false);
+      setAuthChecked(true);
+      console.log('AUTH_SUCCESS', { role: currentUser.role, email: currentUser.email });
+    })
+    .catch(error => {
+      // Any error (network, 401, JSON parse, etc) - treat as anonymous
+      console.warn('AUTH_ERROR - treating as anonymous', error?.message || error);
       setUser(null);
       setIsAuthenticated(false);
       localStorage.removeItem('base44_access_token');
-    } finally {
-      // Always complete auth check - public pages must not be blocked
       setIsLoadingAuth(false);
       setAuthChecked(true);
-    }
+    });
   };
 
   const logout = (shouldRedirect = true) => {

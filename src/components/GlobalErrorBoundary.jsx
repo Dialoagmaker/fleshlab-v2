@@ -18,6 +18,10 @@ export default class GlobalErrorBoundary extends React.Component {
 
   componentDidCatch(error, info) {
     console.error('[GlobalErrorBoundary] Caught render error:', error, info?.componentStack);
+    // Also log to help debug auth-related crashes
+    if (error?.message?.includes('401') || error?.message?.includes('Unauthorized')) {
+      console.warn('[GlobalErrorBoundary] Auth error caught - public page should still render');
+    }
   }
 
   render() {
