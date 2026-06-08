@@ -38,16 +38,16 @@ export default function PerformerFanclubHero({ performer, ctaSlot }) {
           {/* Headline */}
           <h1 className="text-5xl md:text-6xl xl:text-7xl font-black leading-[0.92] tracking-tight mb-5">
             <span className="text-white/55 text-3xl md:text-4xl xl:text-5xl block mb-2 font-black leading-tight">
-              His public page<br />is only the preview.
+              The public preview<br />is only the beginning.
             </span>
-            <span className="text-white">Get {name}'s</span>
+            <span className="text-white">Unlock {name}'s</span>
             <br />
-            <span className="text-rose-500">private side.</span>
+            <span className="text-rose-500">full fanclub.</span>
           </h1>
 
           {/* Sub */}
           <p className="text-white/55 text-base md:text-lg leading-relaxed mb-8 max-w-md">
-            Unlock selected member-only scenes, raw extras, private updates and drops from {name}. See what does not go public.
+            Get exclusive member-only scenes, behind-the-scenes content, performer updates and early access to selected releases from {name}.
           </p>
 
           {/* Primary CTA */}

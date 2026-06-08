@@ -524,15 +524,15 @@ export default function Fanclub() {
 
               <h1 className="text-5xl md:text-6xl xl:text-7xl font-black leading-[1.0] tracking-tight mb-3">
                 THE PUBLIC PREVIEW<br />
-                <span className="text-white/25">IS JUST THE</span><br />
+                <span className="text-white/25">IS ONLY THE</span><br />
                 <span className="text-rose-500">BEGINNING</span>
               </h1>
               <p className="text-xl md:text-2xl font-black text-white/80 mt-4 mb-6 max-w-2xl">
-                Unlock the Full FLESHLAB Fanclub Experience
+                Unlock the Full FLESHLAB Fanclub
               </p>
 
               <p className="text-lg text-white/55 leading-relaxed mb-10 max-w-xl">
-                Get closer to FLESHLAB Studios with exclusive videos, performer updates, behind-the-scenes content and early access to selected releases. Support independent creators while unlocking member-only access.
+                Get closer to FLESHLAB Studios with exclusive videos, performer updates, behind-the-scenes content and early access to selected releases. Support independent adult creators while unlocking member-only access.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
@@ -755,7 +755,8 @@ export default function Fanclub() {
                     "Support creator-led adult productions",
                     "Help fund new scenes and performer shoots",
                     "Get closer to the studio's release pipeline",
-                    "Discover new performers early"
+                    "Discover new performers early",
+                    "Enable more diverse content creation"
                   ].map((item, i) => (
                     <li key={i} className="flex items-start gap-2 text-white/60 text-sm">
                       <Check className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
@@ -817,7 +818,7 @@ export default function Fanclub() {
                 CHOOSE YOUR <span className="text-rose-500">ACCESS</span>
               </h2>
               <p className="text-white/55 text-lg max-w-2xl mx-auto">
-                Fanclub for ongoing membership. Single scenes for one-time unlocks. Premium for deeper access.
+                Clear options: Fanclub for ongoing access, single scenes for one-time unlocks, premium for deeper content.
               </p>
             </div>
 
@@ -832,32 +833,33 @@ export default function Fanclub() {
                   </Badge>
                 </div>
 
-                <h3 className="text-xl font-black text-white mb-1 mt-2">Monthly Membership</h3>
-                <p className="text-white/40 text-sm mb-4">For fans who want ongoing FLESHLAB updates and member content.</p>
+                <h3 className="text-2xl font-black text-white mb-2 mt-2">Fanclub Access</h3>
+                <p className="text-white/50 text-base mb-6">For fans who want ongoing FLESHLAB updates and member content.</p>
 
                 {/* Price */}
-                <div className="flex items-baseline gap-2 mb-3">
+                <div className="flex items-baseline gap-2 mb-4">
                   <span className="text-5xl font-black text-white">$20.99</span>
                   <span className="text-white/45 text-lg">/month</span>
                 </div>
 
-                <ul className="space-y-2 mb-6 flex-1">
+                <ul className="space-y-3 mb-8 flex-1">
                   {[
                     "Exclusive member-only scenes",
                     "Early access to selected releases",
                     "Behind-the-scenes content",
                     "Performer updates and drops",
+                    "Support independent creators",
                     "Cancel anytime"
                   ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-white/60">
-                      <Check className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                    <li key={i} className="flex items-start gap-2 text-base text-white/60">
+                      <Check className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
                       {item}
                     </li>
                   ))}
                 </ul>
 
                 <FanclubCTA planId="fanclub_monthly" label="Join Fanclub" {...ctaProps}
-                  className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 py-4 rounded-xl h-auto shadow-xl shadow-rose-600/30 text-base w-full" />
+                  className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 py-5 rounded-xl h-auto shadow-xl shadow-rose-600/30 text-lg w-full" />
               </div>
 
               {/* Single Scene */}
@@ -877,7 +879,7 @@ export default function Fanclub() {
                   <span className="text-white/45 text-lg">one-time</span>
                 </div>
 
-                <ul className="space-y-2 mb-6 flex-1">
+                <ul className="space-y-3 mb-8 flex-1">
                   {[
                     "Unlock one full scene",
                     "Permanent access",
@@ -885,15 +887,15 @@ export default function Fanclub() {
                     "Watch anytime",
                     "Selected releases only"
                   ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-white/60">
-                      <Check className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                      {item}
+                    <li key={i} className="flex items-start gap-2 text-base text-white/60">
+                      <Check className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                      <span className="text-base">{item}</span>
                     </li>
                   ))}
                 </ul>
 
                 <Button onClick={scrollToPPV}
-                  className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold px-8 py-4 rounded-xl h-auto shadow-xl shadow-amber-600/20 text-base w-full">
+                  className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold px-8 py-5 rounded-xl h-auto shadow-xl shadow-amber-600/20 text-lg w-full">
                   Browse Single Scenes
                 </Button>
               </div>
@@ -915,7 +917,7 @@ export default function Fanclub() {
                   <span className="text-white/45 text-lg">/month</span>
                 </div>
 
-                <ul className="space-y-2 mb-6 flex-1">
+                <ul className="space-y-3 mb-8 flex-1">
                   {[
                     "Everything in Fanclub",
                     "Premium-tier content",
@@ -923,15 +925,15 @@ export default function Fanclub() {
                     "Extended access to exclusives",
                     "Cancel anytime"
                   ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-white/60">
-                      <Check className="w-4 h-4 text-purple-500 shrink-0 mt-0.5" />
-                      {item}
+                    <li key={i} className="flex items-start gap-2 text-base text-white/60">
+                      <Check className="w-5 h-5 text-purple-500 shrink-0 mt-0.5" />
+                      <span className="text-base">{item}</span>
                     </li>
                   ))}
                 </ul>
 
                 <FanclubCTA planId="premium_monthly" label="Join Premium" {...ctaProps}
-                  className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white font-bold px-8 py-4 rounded-xl h-auto shadow-xl shadow-purple-600/20 text-base w-full" />
+                  className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white font-bold px-8 py-5 rounded-xl h-auto shadow-xl shadow-purple-600/20 text-lg w-full" />
               </div>
 
             </div>
