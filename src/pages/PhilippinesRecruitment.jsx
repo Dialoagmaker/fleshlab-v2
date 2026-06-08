@@ -518,20 +518,25 @@ export default function PhilippinesRecruitment() {
                 { name: 'USDT',       logo: usdtLogo },
               ].map(method => (
                 <div key={method.name}
-                  className="flex items-center justify-center rounded-[14px]"
+                  className="payment-logo-chip"
                   style={{
                     height: '56px',
-                    minWidth: '120px',
+                    minWidth: '130px',
                     padding: '0 18px',
+                    borderRadius: '14px',
                     background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.12)'
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }}>
                   <img
                     src={method.logo}
                     alt={`${method.name} payout option`}
+                    className="payment-logo"
                     style={{
-                      maxHeight: '28px',
-                      maxWidth: '120px',
+                      maxHeight: '30px',
+                      maxWidth: '125px',
                       width: 'auto',
                       height: 'auto',
                       objectFit: 'contain',
