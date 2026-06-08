@@ -30,28 +30,33 @@ export default function GrowthDashboard() {
   const { data: ga4Data, isLoading: ga4Loading, refetch: refetchGa4 } = useQuery({
     queryKey: ['growth-analytics', dateRange],
     queryFn: async () => {
-      const res = await base44.functions.invoke('growthAnalytics', { days: parseInt(dateRange) });
-      console.log('🔍 [GrowthDashboard] RAW GA4 RESPONSE:', res);
-      console.log('🔍 [GrowthDashboard] GA4 Property ID from backend:', res?.ga4_property_id);
-      console.log('🔍 [GrowthDashboard] Top Pages count:', res?.top_pages?.length);
-      console.log('🔍 [GrowthDashboard] Events count:', res?.events?.all_events?.length);
-      return res;
+      const response = await base44.functions.invoke('growthAnalytics', { days: parseInt(dateRange) });
+      // base44.functions.invoke returns Axios response: {data, status, headers, ...}
+      // Backend returns JSON via Response.json(), so actual payload is in response.data
+      const payload = response?.data || response;
+      console.log('🔍 [GrowthDashboard] GA4 RAW RESPONSE KEYS:', Object.keys(response || {}));
+      console.log('🔍 [GrowthDashboard] GA4 PAYLOAD KEYS:', Object.keys(payload || {}));
+      console.log('🔍 [GrowthDashboard] GA4 Property ID:', payload?.ga4_property_id);
+      console.log('🔍 [GrowthDashboard] GA4 Top Pages:', payload?.top_pages?.length);
+      return payload;
     },
     retry: 1,
-    staleTime: 0, // Always fetch fresh data
+    staleTime: 0,
   });
 
   const { data: gscData, isLoading: gscLoading } = useQuery({
     queryKey: ['gsc-analytics'],
     queryFn: async () => {
-      const res = await base44.functions.invoke('seoGscSearchAnalytics', {});
-      console.log('🔍 [GrowthDashboard] RAW GSC RESPONSE:', res);
-      console.log('🔍 [GrowthDashboard] GSC Summary:', res?.summary);
-      console.log('🔍 [GrowthDashboard] Top Pages count:', res?.top_pages?.length);
-      return res;
+      const response = await base44.functions.invoke('seoGscSearchAnalytics', {});
+      const payload = response?.data || response;
+      console.log('🔍 [GrowthDashboard] GSC RAW RESPONSE KEYS:', Object.keys(response || {}));
+      console.log('🔍 [GrowthDashboard] GSC PAYLOAD KEYS:', Object.keys(payload || {}));
+      console.log('🔍 [GrowthDashboard] GSC Summary:', payload?.summary);
+      console.log('🔍 [GrowthDashboard] GSC Top Pages:', payload?.top_pages?.length);
+      return payload;
     },
     retry: 1,
-    staleTime: 0, // Always fetch fresh data
+    staleTime: 0,
   });
 
   const handleRefresh = async () => {
@@ -160,19 +165,11 @@ export default function GrowthDashboard() {
                   <code className="bg-black/50 px-2 py-0.5 rounded text-blue-400">G-3Z4DV3SVR8</code>
                 </div>
                 <div className="pt-2 border-t border-green-500/20">
-                  <div className="text-green-300 font-semibold mb-1">API Response:</div>
-                  <div>Top Pages: <code className="text-green-400">{topPages?.length || 0} rows</code></div>
-                  <div>Events: <code className="text-green-400">{events?.length || 0} unique events</code></div>
-                  <div>Total Page Views: <code className="text-green-400 font-bold">{totalPageViews?.toLocaleString() || 0}</code></div>
-                  <div>Traffic Sources: <code className="text-green-400">{trafficSources?.length || 0} sources</code></div>
-                  <div className="mt-2 text-green-300/70">Raw ga4Data keys: <code className="text-xs">{ga4Data ? Object.keys(ga4Data).join(', ') : 'UNDEFINED'}</code></div>
-                </div>
-                <div className="pt-2 border-t border-green-500/20">
                   <div className="text-green-300 font-semibold mb-1">GSC Status:</div>
                   <div>Clicks (28d): <code className="text-green-400 font-bold">{gscData?.summary?.clicks ?? 0}</code></div>
                   <div>Impressions (28d): <code className="text-green-400 font-bold">{gscData?.summary?.impressions ?? 0}</code></div>
                   <div>CTR: <code className="text-green-400">{fmtPct(gscData?.summary?.ctr)}</code></div>
-                  <div>Site URL: <code className="text-blue-400">https://fleshlab.online/</code></div>
+                  <div>Site URL: <code className="text-blue-400">{gscData?.site_url || 'https://fleshlab.online/'}</code></div>
                 </div>
                 <div className="pt-2 border-t border-green-500/20">
                   <div className="text-xs text-green-300/80">
