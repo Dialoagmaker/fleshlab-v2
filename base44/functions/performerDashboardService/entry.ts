@@ -1117,16 +1117,28 @@ Deno.serve(async (req) => {
       const availableBalance = Math.max(0, totalEarned - totalCommitted);
 
       // Next payout date calculation
+      // If available balance is 0 (all paid/committed), skip to next window
       const day = now.getDate();
       const month = now.getMonth(); // 0-indexed
       const year = now.getFullYear();
       let nextPayoutDate;
-      if (day < 5) {
-        nextPayoutDate = new Date(year, month, 5);
-      } else if (day < 15) {
-        nextPayoutDate = new Date(year, month, 15);
+      if (availableBalance <= 0.005) {
+        // Balance is zero — skip current window, go to next
+        if (day < 5) {
+          nextPayoutDate = new Date(year, month, 15);
+        } else if (day < 15) {
+          nextPayoutDate = new Date(year, month + 1, 5);
+        } else {
+          nextPayoutDate = new Date(year, month + 1, 5);
+        }
       } else {
-        nextPayoutDate = new Date(year, month + 1, 5);
+        if (day < 5) {
+          nextPayoutDate = new Date(year, month, 5);
+        } else if (day < 15) {
+          nextPayoutDate = new Date(year, month, 15);
+        } else {
+          nextPayoutDate = new Date(year, month + 1, 5);
+        }
       }
       const nextPayoutFormatted = nextPayoutDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
 
