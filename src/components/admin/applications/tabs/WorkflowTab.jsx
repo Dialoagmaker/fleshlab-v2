@@ -1,206 +1,376 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { 
+  CheckCircle, 
+  XCircle, 
+  AlertTriangle, 
+  FileSignature, 
+  Copy, 
+  ExternalLink, 
+  Loader2
+} from "lucide-react";
+import { toast } from "sonner";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { LifecycleStep, ValidationSummary, ContractDetailsCard } from "../WorkflowComponents";
 
-export default function WorkflowTab({ application, handleStatusUpdate }) {
-  const [isCreatingContract, setIsCreatingContract] = useState(false);
-  const [isCreatingPerformer, setIsCreatingPerformer] = useState(false);
-  const [isLinkingUser, setIsLinkingUser] = useState(false);
-  const [contractAction, setContractAction] = useState(null);
+export default function WorkflowTab({ application, onRefresh }) {
+  const [isGeneratingContract, setIsGeneratingContract] = useState(false);
+  const queryClient = useQueryClient();
 
-  const statusColors = {
-    pending: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-    media_pending: "bg-orange-500/10 text-orange-500 border-orange-500/20",
-    reviewing: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-    contacted: "bg-purple-500/10 text-purple-500 border-purple-500/20",
-    more_info_requested: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-    approved: "bg-green-500/10 text-green-500 border-green-500/20",
-    rejected: "bg-red-500/10 text-red-500 border-red-500/20",
-    contract_pending: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20",
-    contract_sent: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20",
-    contract_signed: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20",
-    performer_created: "bg-pink-500/10 text-pink-500 border-pink-500/20",
-    user_linked: "bg-cyan-500/10 text-cyan-500 border-cyan-500/20",
-    active: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+  // Fetch contract data
+  const { data: contractData } = useQuery({
+    queryKey: ['contract', application.contract_id],
+    queryFn: async () => {
+      if (!application.contract_id) return null;
+      return await base44.entities.Contract.get(application.contract_id);
+    },
+    enabled: !!application.contract_id,
+  });
+
+  // Fetch performer profile
+  const { data: performerProfile } = useQuery({
+    queryKey: ['performerProfile', application.performer_id],
+    queryFn: async () => {
+      if (!application.performer_id) return null;
+      const profiles = await base44.entities.PerformerProfilePrivate.filter({ 
+        performer_id: application.performer_id 
+      });
+      return profiles?.[0] || null;
+    },
+    enabled: !!application.performer_id,
+  });
+
+  // Fetch compliance records
+  const { data: complianceRecords } = useQuery({
+    queryKey: ['complianceRecords', application.performer_id],
+    queryFn: async () => {
+      if (!application.performer_id) return [];
+      return await base44.entities.ComplianceRecord.filter({ 
+        performer_id: application.performer_id 
+      });
+    },
+    enabled: !!application.performer_id,
+  });
+
+  // Validation checks
+  const validation = useMemo(() => {
+    const checks = [];
+    const errors = [];
+
+    if (application.media_upload_status === 'complete') {
+      checks.push('Media uploads complete');
+    } else {
+      errors.push('Media uploads incomplete');
+    }
+
+    if (application.compliance_upload_status !== 'none') {
+      checks.push('ID documents uploaded');
+    } else {
+      errors.push('ID documents not uploaded');
+    }
+
+    if (application.work_type && ['solo', 'pair', 'both'].includes(application.work_type)) {
+      checks.push(`Work type: ${application.work_type}`);
+    } else {
+      errors.push('Work type missing or invalid');
+    }
+
+    if (application.preferred_revenue_model && application.preferred_revenue_model !== 'undecided') {
+      checks.push(`Revenue model: ${application.preferred_revenue_model.replace(/_/g, ' ')}`);
+    } else {
+      errors.push('Revenue model undecided');
+    }
+
+    if (application.performer_id) {
+      checks.push('Performer record exists');
+    } else {
+      errors.push('Performer not created');
+    }
+
+    if (performerProfile && (performerProfile.address_line_1 || performerProfile.city || performerProfile.country)) {
+      checks.push('Address complete');
+    } else if (performerProfile) {
+      errors.push('Missing full residential address');
+    }
+
+    if (application.legal_name || application.email) {
+      checks.push('Contact information present');
+    } else {
+      errors.push('Legal name or email missing');
+    }
+
+    return { checks, errors };
+  }, [application, performerProfile]);
+
+  const canGenerateContract = !contractData && 
+                             application.performer_id && 
+                             validation.errors.length === 0;
+
+  const handleGenerateContract = async () => {
+    setIsGeneratingContract(true);
+    try {
+      const response = await base44.functions.invoke('contractService', {
+        action: 'create_from_application',
+        application_id: application.id,
+      });
+      
+      if (response.error) {
+        toast.error(response.error);
+        return;
+      }
+      
+      const updates = {
+        contract_id: response.contract_id,
+        contract_status: 'draft',
+        status: 'contract_pending',
+        contract_generated_at: new Date().toISOString(),
+      };
+      
+      await base44.entities.GuestProductionApplication.update(application.id, updates);
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      if (onRefresh) onRefresh();
+      
+      toast.success(`Contract generated for "${application.applicant_name}"`);
+    } catch (err) {
+      toast.error(`Failed: ${err.message}`);
+    } finally {
+      setIsGeneratingContract(false);
+    }
   };
 
-  const canCreateContract = application.status === 'approved' && !application.contract_id;
-  const canCreatePerformer = application.status === 'contract_signed' && !application.performer_id;
-  const canLinkUser = application.status === 'performer_created' && !application.linked_user_id;
-  const canActivate = application.status === 'user_linked' && application.performer_id && application.linked_user_id;
+  const handleCopySigningLink = async () => {
+    if (!contractData?.signing_url) return;
+    try {
+      await navigator.clipboard.writeText(contractData.signing_url);
+      toast.success('Signing link copied');
+    } catch {
+      toast.error('Failed to copy');
+    }
+  };
+
+  const handleOpenSigningPage = () => {
+    if (!contractData?.signing_url) return;
+    window.open(contractData.signing_url, '_blank');
+  };
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Workflow Status</h3>
-          <p className="text-sm text-muted-foreground">Manage the application lifecycle</p>
+          <h3 className="text-lg font-semibold">Workflow Lifecycle</h3>
+          <p className="text-sm text-muted-foreground">Application onboarding progress</p>
         </div>
-        <Badge className={statusColors[application.status] || "bg-gray-500/10 text-gray-500"}>
+        <Badge variant={application.status === 'active' ? 'default' : 'outline'}>
           {application.status}
         </Badge>
       </div>
 
-      <div className="grid gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">1. Review Application</p>
-                  <p className="text-sm text-muted-foreground">Check media and ID documents</p>
-                </div>
-              </div>
-              {['reviewing', 'contacted', 'more_info_requested'].includes(application.status) && (
-                <CheckCircle className="w-5 h-5 text-green-500" />
-              )}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Blocking Issues */}
+      {validation.errors.length > 0 && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            <p className="font-semibold mb-2">Cannot generate contract:</p>
+            <ul className="list-disc list-inside text-sm space-y-1">
+              {validation.errors.map((error, idx) => (
+                <li key={idx}>{error}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">2. Approve Application</p>
-                  <p className="text-sm text-muted-foreground">Mark as approved to proceed</p>
-                </div>
-              </div>
-              {application.status === 'approved' && (
-                <CheckCircle className="w-5 h-5 text-green-500" />
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">3. Create Contract</p>
-                  <p className="text-sm text-muted-foreground">Generate and send contract</p>
-                </div>
-              </div>
-              {application.contract_id && (
-                <CheckCircle className="w-5 h-5 text-green-500" />
-              )}
-            </div>
-            {canCreateContract && (
-              <Button className="mt-3" size="sm" onClick={() => handleStatusUpdate(application.id, 'contract_pending', { contract_status: 'pending', contract_generated_at: new Date().toISOString() })}>
-                Create Contract
-              </Button>
-            )}
-            {application.status === 'contract_pending' && (
-              <Button className="mt-3" size="sm" onClick={() => handleStatusUpdate(application.id, 'contract_sent', { contract_status: 'sent', contract_sent_at: new Date().toISOString() })}>
-                Mark as Sent
-              </Button>
-            )}
-            {application.status === 'contract_sent' && (
-              <Button className="mt-3" size="sm" onClick={() => handleStatusUpdate(application.id, 'contract_signed', { contract_status: 'signed', contract_signed_at: new Date().toISOString() })}>
-                Mark as Signed
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">4. Create Performer Profile</p>
-                  <p className="text-sm text-muted-foreground">Create performer record</p>
-                </div>
-              </div>
-              {application.performer_id && (
-                <CheckCircle className="w-5 h-5 text-green-500" />
-              )}
-            </div>
-            {canCreatePerformer && (
-              <Button className="mt-3" size="sm" onClick={() => handleStatusUpdate(application.id, 'performer_created', { performer_created_at: new Date().toISOString() })}>
-                Create Performer
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">5. Link User Account</p>
-                  <p className="text-sm text-muted-foreground">Connect to Base44 user</p>
-                </div>
-              </div>
-              {application.linked_user_id && (
-                <CheckCircle className="w-5 h-5 text-green-500" />
-              )}
-            </div>
-            {canLinkUser && (
-              <Button className="mt-3" size="sm" onClick={() => handleStatusUpdate(application.id, 'user_linked', { user_linked_at: new Date().toISOString() })}>
-                Link User
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">6. Activate Performer</p>
-                  <p className="text-sm text-muted-foreground">Grant dashboard access</p>
-                </div>
-              </div>
-              {application.status === 'active' && (
-                <CheckCircle className="w-5 h-5 text-green-500" />
-              )}
-            </div>
-            {canActivate && (
-              <Button 
-                className="mt-3" 
-                size="sm"
-                onClick={() => handleStatusUpdate(application.id, 'active', {
-                  activated_at: new Date().toISOString()
-                })}
-              >
-                Activate
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {application.status_history && application.status_history.length > 0 && (
-        <div className="mt-6">
-          <h4 className="text-sm font-semibold mb-2">Status History</h4>
-          <div className="space-y-2 max-h-48 overflow-y-auto">
-            {application.status_history.map((entry, idx) => {
-              try {
-                const parsed = typeof entry === 'string' ? JSON.parse(entry) : entry;
-                return (
-                  <div key={idx} className="text-xs text-muted-foreground p-2 bg-secondary rounded">
-                    <span className="font-mono">{new Date(parsed.timestamp).toLocaleString()}</span>: {parsed.action}
-                  </div>
-                );
-              } catch {
-                return null;
-              }
-            })}
+      {/* Lifecycle Timeline */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Lifecycle Steps</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <LifecycleStep 
+              step={{
+                title: '1. Uploads Complete',
+                status: application.media_upload_status === 'complete' ? 'complete' : 'pending',
+                description: application.media_upload_status === 'complete' ? 'All media uploaded' : 'Waiting for uploads',
+                badge: application.media_upload_status,
+              }}
+              isLast={false}
+            />
+            <LifecycleStep 
+              step={{
+                title: '2. Application Review',
+                status: ['approved', 'contract_pending', 'contract_sent', 'contract_signed', 'performer_created', 'user_linked', 'active'].includes(application.status) ? 'complete' : 'pending',
+                description: 'Pending admin review',
+                badge: application.status,
+              }}
+              isLast={false}
+            />
+            <LifecycleStep 
+              step={{
+                title: '3. Performer Record',
+                status: application.performer_id ? 'complete' : 'pending',
+                description: application.performer_id ? 'Performer created' : 'Not created',
+                badge: application.performer_id ? 'Created' : 'Missing',
+              }}
+              isLast={false}
+            />
+            <LifecycleStep 
+              step={{
+                title: '4. Private Profile',
+                status: performerProfile && (performerProfile.address_line_1 || performerProfile.city) ? 'complete' : (performerProfile ? 'blocked' : 'pending'),
+                description: performerProfile ? 'Address details' : 'Profile not created',
+                badge: performerProfile ? (performerProfile.address_line_1 ? 'Complete' : 'Incomplete') : 'Missing',
+              }}
+              isLast={false}
+            />
+            <LifecycleStep 
+              step={{
+                title: '5. Compliance',
+                status: complianceRecords && complianceRecords.length > 0 ? 'complete' : 'pending',
+                description: complianceRecords?.length > 0 ? `${complianceRecords.length} record(s)` : 'No records',
+                badge: complianceRecords?.length || 'Missing',
+              }}
+              isLast={false}
+            />
+            <LifecycleStep 
+              step={{
+                title: '6. Contract',
+                status: contractData ? (contractData.status === 'signed' ? 'complete' : 'pending') : 'pending',
+                description: contractData ? `Status: ${contractData.status}` : 'Not generated',
+                badge: contractData ? contractData.status : 'None',
+              }}
+              isLast={false}
+            />
+            <LifecycleStep 
+              step={{
+                title: '7. User Account',
+                status: application.linked_user_id ? 'complete' : 'pending',
+                description: application.linked_user_id ? 'User linked' : 'Not linked',
+                badge: application.linked_user_id ? 'Linked' : 'Missing',
+              }}
+              isLast={false}
+            />
+            <LifecycleStep 
+              step={{
+                title: '8. Dashboard Access',
+                status: (application.linked_user_id && contractData?.status === 'signed') ? 'complete' : 'blocked',
+                description: 'Blocked until user linked + contract signed',
+                badge: (application.linked_user_id && contractData?.status === 'signed') ? 'Ready' : 'Blocked',
+              }}
+              isLast={true}
+            />
           </div>
-        </div>
+        </CardContent>
+      </Card>
+
+      {/* Validation Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Validation Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ValidationSummary checks={validation.checks} errors={validation.errors} />
+        </CardContent>
+      </Card>
+
+      {/* Contract Details */}
+      {contractData && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileSignature className="w-4 h-4" />
+              Contract Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ContractDetailsCard 
+              contract={contractData}
+              onCopyLink={handleCopySigningLink}
+              onOpenLink={handleOpenSigningPage}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Actions</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {!contractData ? (
+            <Button 
+              className="w-full" 
+              onClick={handleGenerateContract}
+              disabled={!canGenerateContract || isGeneratingContract}
+            >
+              {isGeneratingContract ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <FileSignature className="w-4 h-4 mr-2" />
+                  Generate Contract
+                </>
+              )}
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Button className="flex-1" variant="outline" onClick={handleCopySigningLink}>
+                <Copy className="w-4 h-4 mr-2" />
+                Copy Link
+              </Button>
+              <Button className="flex-1" variant="outline" onClick={handleOpenSigningPage}>
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Open
+              </Button>
+            </div>
+          )}
+
+          {!canGenerateContract && !contractData && (
+            <Alert variant="destructive">
+              <AlertDescription className="text-xs flex items-center gap-2">
+                <XCircle className="w-4 h-4" />
+                Cannot generate: {validation.errors[0] || 'Validation failed'}
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Status History */}
+      {application.status_history && application.status_history.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Status History</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {application.status_history.map((entry, idx) => {
+                try {
+                  const parsed = typeof entry === 'string' ? JSON.parse(entry) : entry;
+                  return (
+                    <div key={idx} className="text-xs text-muted-foreground p-2 bg-secondary rounded">
+                      <span className="font-mono">
+                        {new Date(parsed.timestamp).toLocaleString()}
+                      </span>
+                      : {parsed.action}
+                    </div>
+                  );
+                } catch {
+                  return null;
+                }
+              })}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
