@@ -37,6 +37,8 @@ Deno.serve(async (req) => {
       const userLinked = !!performer.user_id;
       const hasLoginCredentials = !!performer.performer_username;
 
+      // Determine access method
+      let accessMethod = 'None';
       let accessStatus = 'blocked';
       let accessMessage = 'Dashboard access unavailable.';
 
@@ -46,18 +48,24 @@ Deno.serve(async (req) => {
       } else if (!contractSigned) {
         accessStatus = 'blocked_until_contract_signed';
         accessMessage = 'Dashboard access is not available until your performer agreement is signed.';
-      } else if (!userLinked && !hasLoginCredentials) {
+      } else if (userLinked) {
+        accessStatus = 'ready';
+        accessMethod = 'Linked User Account';
+        accessMessage = 'Dashboard access ready via linked user account.';
+      } else if (hasLoginCredentials) {
+        accessStatus = 'ready';
+        accessMethod = 'Performer Login Credentials';
+        accessMessage = 'Dashboard access ready via performer login credentials.';
+      } else {
         accessStatus = 'blocked_until_user_linked';
         accessMessage = 'Your performer account is active, but no login user is linked yet. Please contact FLESHLAB support.';
-      } else {
-        accessStatus = 'ready';
-        accessMessage = 'Dashboard access ready.';
       }
 
       return Response.json({
         success: true,
         access_status: accessStatus,
         access_message: accessMessage,
+        access_method: accessMethod,
         contract_signed: contractSigned,
         performer_active: performerActive,
         user_linked: userLinked,
@@ -66,7 +74,8 @@ Deno.serve(async (req) => {
     }
 
     // ── ACTION: send_welcome_email ────────────────────────────────────
-    // SECURITY: Only sends if user linked OR has login credentials
+    // SECURITY: Only sends if user linked or has credentials
+    // Does NOT include passwords in email
     if (action === 'send_welcome_email') {
       if (!performer_id) {
         return Response.json({ error: 'performer_id required' }, { status: 400 });
@@ -82,7 +91,7 @@ Deno.serve(async (req) => {
         application = await base44.asServiceRole.entities.GuestProductionApplication.get(application_id);
       }
 
-      const recipientEmail = application?.email || body.email;
+      const recipientEmail = application?.email;
       if (!recipientEmail) {
         return Response.json({ error: 'No email address available' }, { status: 400 });
       }
@@ -107,6 +116,14 @@ Deno.serve(async (req) => {
       const baseUrl = Deno.env.get('APP_BASE_URL') || 'https://fleshlab.app';
       const loginUrl = `${baseUrl}/performer/login`;
 
+      // Determine login instructions based on access method
+      let loginInstructions = '';
+      if (userLinked) {
+        loginInstructions = `<p style="background: #d4edda; padding: 10px; border-radius: 5px;"><strong>✓ Login Method:</strong> You can log in using your Base44 user account email: <strong>${recipientEmail}</strong></p>`;
+      } else if (hasLoginCredentials) {
+        loginInstructions = `<p style="background: #fff3cd; padding: 10px; border-radius: 5px;"><strong>⚠ Login Credentials:</strong> Your performer username has been set up. If you haven't received your login credentials, please contact support.</p>`;
+      }
+
       const emailSubject = `Welcome to FLESHLAB Studios — Your Performer Dashboard Access`;
       
       const emailBody = `
@@ -123,6 +140,8 @@ Deno.serve(async (req) => {
                 '<p style="background: #d4edda; padding: 10px; border-radius: 5px;"><strong>✓ Contract Status:</strong> Your management agreement has been signed and is active.</p>' : 
                 '<p style="background: #fff3cd; padding: 10px; border-radius: 5px;"><strong>⚠ Contract Status:</strong> Your contract is pending signature. Please complete the signing process.</p>'
               }
+              
+              ${loginInstructions}
               
               <h2>Dashboard Access</h2>
               <p>Your performer dashboard includes:</p>
@@ -190,8 +209,8 @@ Deno.serve(async (req) => {
           changes_json: JSON.stringify({ 
             recipient: recipientEmail,
             contract_signed: contractSigned,
-            performer_active: performerActive,
-            user_linked: userLinked
+            user_linked: userLinked,
+            has_login_credentials: hasLoginCredentials
           }),
           notes: `Welcome email sent to ${recipientEmail}`
         });
@@ -200,7 +219,9 @@ Deno.serve(async (req) => {
           success: true,
           message: 'Welcome email sent successfully',
           recipient: recipientEmail,
-          contract_signed: contractSigned
+          contract_signed: contractSigned,
+          user_linked: userLinked,
+          has_login_credentials: hasLoginCredentials
         });
 
       } catch (emailError) {

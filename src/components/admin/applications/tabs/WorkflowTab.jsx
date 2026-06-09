@@ -10,12 +10,15 @@ import {
   FileSignature, 
   Copy, 
   ExternalLink, 
-  Loader2
+  Loader2,
+  KeyRound,
+  UserCheck
 } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LifecycleStep, ValidationSummary, ContractDetailsCard } from "../WorkflowComponents";
+import AccessMethodCard from "../AccessMethodCard";
 
 export default function WorkflowTab({ application, onRefresh }) {
   const [isGeneratingContract, setIsGeneratingContract] = useState(false);
@@ -40,6 +43,16 @@ export default function WorkflowTab({ application, onRefresh }) {
         performer_id: application.performer_id 
       });
       return profiles?.[0] || null;
+    },
+    enabled: !!application.performer_id,
+  });
+
+  // Fetch performer to check access method
+  const { data: performer } = useQuery({
+    queryKey: ['performer', application.performer_id],
+    queryFn: async () => {
+      if (!application.performer_id) return null;
+      return await base44.entities.Performer.get(application.performer_id);
     },
     enabled: !!application.performer_id,
   });
@@ -157,6 +170,56 @@ export default function WorkflowTab({ application, onRefresh }) {
     window.open(contractData.signing_url, '_blank');
   };
 
+  // Determine access method and status
+  const determineAccessStatus = () => {
+    const contractSigned = contractData?.status === 'signed';
+    const userLinked = !!application.linked_user_id;
+    
+    // Fetch performer to check legacy credentials
+    const hasLegacyCredentials = application.performer_id ? 
+      // Would need to fetch performer to check performer_username
+      // For now, we'll show "checking" status
+      false : false;
+    
+    if (!contractSigned) return 'blocked';
+    if (userLinked) return 'complete';
+    if (hasLegacyCredentials) return 'complete';
+    return 'blocked';
+  };
+
+  const getAccessDescription = () => {
+    const contractSigned = contractData?.status === 'signed';
+    const userLinked = !!application.linked_user_id;
+    
+    if (!contractSigned) {
+      return 'Blocked until contract signed';
+    }
+    if (userLinked) {
+      return 'Access via linked user account';
+    }
+    // Check if performer has legacy credentials (would need performer fetch)
+    return 'Blocked until login method setup';
+  };
+
+  const getAccessBadge = () => {
+    const status = determineAccessStatus();
+    return status === 'complete' ? 'Ready' : 'Blocked';
+  };
+
+  const getAccessMethod = () => {
+    const contractSigned = contractData?.status === 'signed';
+    const userLinked = !!application.linked_user_id;
+    
+    if (!contractSigned) {
+      return { method: 'None', icon: null, color: 'text-muted-foreground' };
+    }
+    if (userLinked) {
+      return { method: 'Linked User Account', icon: UserCheck, color: 'text-green-600' };
+    }
+    // Would need performer fetch to check legacy credentials
+    return { method: 'Not Setup', icon: null, color: 'text-orange-500' };
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -258,9 +321,9 @@ export default function WorkflowTab({ application, onRefresh }) {
             <LifecycleStep 
               step={{
                 title: '8. Dashboard Access',
-                status: (application.linked_user_id && contractData?.status === 'signed') ? 'complete' : 'blocked',
-                description: 'Blocked until user linked + contract signed',
-                badge: (application.linked_user_id && contractData?.status === 'signed') ? 'Ready' : 'Blocked',
+                status: determineAccessStatus(),
+                description: getAccessDescription(),
+                badge: getAccessBadge(),
               }}
               isLast={true}
             />
@@ -296,6 +359,13 @@ export default function WorkflowTab({ application, onRefresh }) {
           </CardContent>
         </Card>
       )}
+
+      {/* Access Method Card */}
+      <AccessMethodCard 
+        application={application}
+        contractData={contractData}
+        performer={performer}
+      />
 
       {/* Actions */}
       <Card>
