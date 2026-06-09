@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
     if (!entitled && video.access_tier === 'ppv') {
       const purchases = await base44.asServiceRole.entities.Payment.filter({
         user_id: user.id,
+        payment_type: 'ppv',
         related_entity_type: 'Video',
         related_entity_id: videoId,
         status: 'completed',
