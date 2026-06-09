@@ -127,9 +127,143 @@ export default function Applications() {
     setIsRejectModalOpen(false);
   };
 
-  const handleApprove = () => {
+  const validateApproval = (app) => {
+    const missing = [];
+    
+    // Check required uploads
+    const photoCount = (app.profile_photo_r2_keys || []).length;
+    const hasIntroVideo = !!app.intro_video_r2_key;
+    const hasHardcoreVideo = !!app.hardcore_video_r2_key;
+    const hasIdFront = !!(app.id_document_front_r2_key || app.id_document_r2_key);
+    const hasSelfie = !!app.selfie_with_id_r2_key;
+    
+    if (photoCount < 5) missing.push(`${5 - photoCount} photo${5 - photoCount > 1 ? 's' : ''}`);
+    if (!hasIntroVideo) missing.push('intro video');
+    if (!hasHardcoreVideo) missing.push('hardcore video');
+    if (!hasIdFront) missing.push('ID document');
+    if (!hasSelfie) missing.push('selfie with ID');
+    
+    // Check business fields
+    const revenueModel = app.preferred_revenue_model;
+    if (!revenueModel || revenueModel === 'undecided') {
+      missing.push('revenue model selection');
+    }
+    
+    // Check legal fields
+    if (!app.legal_name || !app.legal_name.trim()) {
+      missing.push('legal name');
+    }
+    if (!app.email || !app.email.trim()) {
+      missing.push('email');
+    }
+    
+    return missing;
+  };
+
+  const handleApprove = async () => {
     if (!selectedApp) return;
-    handleStatusUpdate(selectedApp.id, "approved");
+    
+    // Validate before approval
+    const missing = validateApproval(selectedApp);
+    
+    if (missing.length > 0) {
+      toast.error(`Cannot approve yet. Missing: ${missing.join(', ')}`);
+      return;
+    }
+    
+    // Auto-create performer, profile private, and compliance records
+    try {
+      // Check if performer already exists
+      if (selectedApp.performer_id) {
+        toast.error("Performer already exists for this application.");
+        return;
+      }
+      
+      // Create Performer
+      const slug = `${selectedApp.applicant_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}-${Date.now()}`;
+      const revenueModel = selectedApp.preferred_revenue_model;
+      const isNetwork = revenueModel === 'network_performer_70_studio_30';
+      
+      const performer = await base44.entities.Performer.create({
+        display_name: selectedApp.applicant_name,
+        slug,
+        bio: selectedApp.experience || selectedApp.message || "",
+        nationality: selectedApp.nationality,
+        status: "pending_contract",
+        verified: false,
+        internal_notes: `Created from application: ${selectedApp.id}`,
+        revenue_model: isNetwork ? 'established_network' : 'studio_managed',
+        revenue_split_pct: isNetwork ? 70 : 40,
+      });
+      
+      // Create PerformerProfilePrivate
+      const legalNameParts = (selectedApp.legal_name || selectedApp.applicant_name).trim().split(' ');
+      const legalFirstName = legalNameParts[0] || '';
+      const legalLastName = legalNameParts.slice(1).join(' ') || '';
+      
+      await base44.entities.PerformerProfilePrivate.create({
+        performer_id: performer.id,
+        legal_first_name: legalFirstName,
+        legal_last_name: legalLastName,
+        city: selectedApp.city || '',
+        country: selectedApp.nationality || '',
+        phone: selectedApp.phone || '',
+        payout_method: 'pending',
+        payout_status: 'not_set',
+      });
+      
+      // Create ComplianceRecords for ID and Selfie
+      const idDocKey = selectedApp.id_document_front_r2_key || selectedApp.id_document_r2_key;
+      if (idDocKey) {
+        await base44.entities.ComplianceRecord.create({
+          performer_id: performer.id,
+          document_type: 'id',
+          document_url: idDocKey,
+          verification_method: 'manual',
+          verification_status: 'pending_review',
+          notes: `Imported from application: ${selectedApp.id}`,
+        });
+      }
+      
+      if (selectedApp.selfie_with_id_r2_key) {
+        await base44.entities.ComplianceRecord.create({
+          performer_id: performer.id,
+          document_type: 'other',
+          document_url: selectedApp.selfie_with_id_r2_key,
+          verification_method: 'manual',
+          verification_status: 'pending_review',
+          notes: `Selfie with ID from application: ${selectedApp.id}`,
+        });
+      }
+      
+      // Update application with performer link and approval
+      const updates = {
+        performer_id: performer.id,
+        performer_created_at: new Date().toISOString(),
+        status: 'performer_created',
+        approved_at: new Date().toISOString(),
+      };
+      
+      const logEntry = {
+        timestamp: new Date().toISOString(),
+        action: `Application approved - Performer created: ${performer.id}`,
+        performer_id: performer.id,
+        old_status: selectedApp.status,
+        new_status: 'performer_created',
+      };
+      updates.status_history = [...(selectedApp.status_history || []), JSON.stringify(logEntry)];
+      
+      await base44.entities.GuestProductionApplication.update(selectedApp.id, updates);
+      await queryClient.invalidateQueries({ queryKey: ['applications'] });
+      
+      toast.success(`Application approved! Performer "${selectedApp.applicant_name}" created with ${isNetwork ? '70/30' : '60/40'} revenue split.`);
+      setIsDetailOpen(false);
+      setSelectedApp(null);
+      
+    } catch (err) {
+      console.error('Approval error:', err);
+      toast.error(`Failed to approve application: ${err.message}`);
+    }
   };
 
   const handleCreateContract = async () => {
