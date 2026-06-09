@@ -52,6 +52,8 @@ export default function ProfileAndPayoutTab({ performer, performerToken }) {
             profile={profileData?.profile}
             performer={profileData?.performer}
             onProfileUpdated={loadProfile}
+            performerId={performer?.performer?.id}
+            performerToken={performerToken}
           />
         </TabsContent>
 

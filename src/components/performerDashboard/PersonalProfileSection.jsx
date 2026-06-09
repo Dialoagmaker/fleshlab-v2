@@ -17,7 +17,7 @@ function isOver18(dob) {
   return age >= 18;
 }
 
-export default function PersonalProfileSection({ profile, performer, onProfileUpdated }) {
+export default function PersonalProfileSection({ profile, performer, onProfileUpdated, performerId, performerToken }) {
   const [contactData, setContactData] = useState({
     phone: profile?.phone || "",
     preferred_language: profile?.preferred_language || "",
@@ -70,6 +70,8 @@ export default function PersonalProfileSection({ profile, performer, onProfileUp
     try {
       const response = await base44.functions.invoke("performerIdVerificationService", {
         action: "save_legal_profile",
+        performer_id: performerId,
+        performer_token: performerToken,
         ...legalData,
       });
       if (response.data?.error) {

@@ -54,15 +54,38 @@ Deno.serve(async (req) => {
 
     // ─── PERFORMER ACTIONS ─────────────────────────────────────────────────────
     if (['get_id_documents', 'create_upload_url', 'confirm_upload', 'save_legal_profile'].includes(action)) {
-      const user = await base44.auth.me();
-      if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      let performer = null;
 
-      // Find linked performer
-      const performers = await base44.asServiceRole.entities.Performer.filter({ user_id: user.id });
-      if (!performers || performers.length === 0) {
-        return Response.json({ error: 'No performer profile linked to your account' }, { status: 404 });
+      // Auth path 1: Performer session token (used by PerformerDashboard)
+      const { performer_id, performer_token } = body;
+      if (performer_id && performer_token) {
+        const sessions = await base44.asServiceRole.entities.PerformerSession.filter({
+          performer_id,
+          token: performer_token,
+          revoked: false
+        });
+        if (!sessions || sessions.length === 0) {
+          return Response.json({ error: 'Invalid or expired performer session' }, { status: 401 });
+        }
+        const session = sessions[0];
+        if (new Date(session.expires_at) < new Date()) {
+          return Response.json({ error: 'Performer session expired' }, { status: 401 });
+        }
+        performer = await base44.asServiceRole.entities.Performer.get(performer_id);
+      } else {
+        // Auth path 2: Base44 user auth (linked performer profile)
+        const user = await base44.auth.me();
+        if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+        const performers = await base44.asServiceRole.entities.Performer.filter({ user_id: user.id });
+        if (!performers || performers.length === 0) {
+          return Response.json({ error: 'No performer profile linked to your account' }, { status: 404 });
+        }
+        performer = performers[0];
       }
-      const performer = performers[0];
+
+      if (!performer) {
+        return Response.json({ error: 'Performer profile not found' }, { status: 404 });
+      }
 
       // ── get_id_documents ──────────────────────────────────────────────────
       if (action === 'get_id_documents') {
