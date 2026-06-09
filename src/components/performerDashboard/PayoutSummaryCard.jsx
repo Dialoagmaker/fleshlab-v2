@@ -51,6 +51,11 @@ export default function PayoutSummaryCard({ performerId, performerToken }) {
   const history = data?.payout_history || [];
   const available = s.available_balance_usd || 0;
   const isZeroBalance = available <= 0.005;
+  const totalEarned = s.total_earned_usd || 0;
+  const currentMonthEarned = s.current_month_earned_usd || 0;
+  const currentMonthGross = s.current_month_gross_usd || 0;
+  const totalPaid = s.total_paid_usd || 0;
+  const totalApprovedPending = s.total_approved_pending_usd || 0;
 
   return (
     <div className="space-y-4">
@@ -60,11 +65,11 @@ export default function PayoutSummaryCard({ performerId, performerToken }) {
         <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">Total Earned</p>
+              <TrendingUp className="w-4 h-4 text-green-500" />
+              <p className="text-xs text-muted-foreground">Earned This Period</p>
             </div>
-            <p className="text-xl font-bold text-foreground">{fmt(s.current_month_earned_usd)}</p>
-            <p className="text-xs text-muted-foreground mt-1">This period (gross: {fmt(s.current_month_gross_usd)})</p>
+            <p className="text-xl font-bold text-green-500">{fmt(currentMonthEarned)}</p>
+            <p className="text-xs text-muted-foreground mt-1">Gross: {fmt(currentMonthGross)}</p>
           </CardContent>
         </Card>
 
@@ -80,10 +85,10 @@ export default function PayoutSummaryCard({ performerId, performerToken }) {
             </p>
             {isZeroBalance ? (
               <p className="text-xs text-muted-foreground mt-1">
-                Paid out. Next payout: {s.next_payout_date}
+                All paid. Next: {s.next_payout_date}
               </p>
             ) : (
-              <p className="text-xs text-green-500/70 mt-1">Ready for payout</p>
+              <p className="text-xs text-green-500/70 mt-1">Available for payout</p>
             )}
           </CardContent>
         </Card>
@@ -93,10 +98,12 @@ export default function PayoutSummaryCard({ performerId, performerToken }) {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle2 className="w-4 h-4 text-blue-400" />
-              <p className="text-xs text-muted-foreground">Paid</p>
+              <p className="text-xs text-muted-foreground">Paid Out</p>
             </div>
-            <p className="text-xl font-bold text-blue-400">{fmt(s.total_paid_usd)}</p>
-            <p className="text-xs text-muted-foreground mt-1">Lifetime payouts received</p>
+            <p className="text-xl font-bold text-blue-400">{fmt(totalPaid)}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {totalApprovedPending > 0 ? `+ ${fmt(totalApprovedPending)} approved` : 'Lifetime total'}
+            </p>
           </CardContent>
         </Card>
 
@@ -115,14 +122,17 @@ export default function PayoutSummaryCard({ performerId, performerToken }) {
 
       {/* Info notice */}
       <div className="text-xs text-muted-foreground px-1 space-y-1">
-        {s.total_approved_pending_usd > 0 && (
+        {totalApprovedPending > 0 && (
           <div className="flex items-center gap-1.5">
             <Clock className="w-3 h-3 text-yellow-400 shrink-0" />
-            <span className="text-yellow-400">{fmt(s.total_approved_pending_usd)} approved — processing</span>
+            <span className="text-yellow-400">{fmt(totalApprovedPending)} approved — processing</span>
           </div>
         )}
         <p>{s.payout_schedule}</p>
-        <p>Available balance shows approved earnings that have not yet been paid. Final payout approval is handled by management.</p>
+        <p className="pt-1 border-t mt-1">
+          <strong>Calculation:</strong> Available Balance = Approved/Paid Earnings − Paid/Approved Payouts.
+          Estimated/pending earnings are shown in breakdown but not included in available balance.
+        </p>
       </div>
 
       {/* Payout History */}

@@ -52,8 +52,16 @@ export default function MonthlyCloseoutCard({ performerId, performerToken }) {
   const summary = data?.summary || {};
   const earnings = data?.earnings || [];
   const hasEarnings = earnings.length > 0 || summary.gross_total > 0;
-  const totalPaid = payoutData?.summary?.total_paid_usd || 0;
-  const totalApprovedPending = payoutData?.summary?.total_approved_pending_usd || 0;
+  const payoutSummary = payoutData?.summary || {};
+  const totalPaid = payoutSummary.total_paid_usd || 0;
+  const totalApprovedPending = payoutSummary.total_approved_pending_usd || 0;
+  const availableBalance = payoutSummary.available_balance_usd || 0;
+
+  // Calculate status breakdown from earnings
+  const approvedPaidEarnings = (earnings || []).filter(e => ['approved', 'paid'].includes(e.status))
+    .reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
+  const pendingEstimatedEarnings = (earnings || []).filter(e => ['pending', 'estimated'].includes(e.status))
+    .reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
 
   if (!hasEarnings) {
     return (
@@ -72,25 +80,42 @@ export default function MonthlyCloseoutCard({ performerId, performerToken }) {
         <CardTitle className="text-lg">Monthly Closeout - {currentMonth}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {/* Main totals */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <p className="text-xs text-muted-foreground">Gross Revenue</p>
             <p className="text-lg font-semibold">${summary.gross_total?.toFixed(2) || '0.00'}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Your Share</p>
+            <p className="text-xs text-muted-foreground">Your Share (All)</p>
             <p className="text-lg font-semibold text-green-400">${summary.performer_total?.toFixed(2) || '0.00'}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Paid</p>
-            <p className="text-sm">${totalPaid.toFixed(2)}</p>
+            <p className="text-xs text-muted-foreground">Approved + Paid</p>
+            <p className="text-sm font-medium text-green-500">${approvedPaidEarnings.toFixed(2)}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Pending</p>
-            <p className="text-sm text-yellow-400">${totalApprovedPending.toFixed(2)}</p>
+            <p className="text-xs text-muted-foreground">Pending / Estimated</p>
+            <p className="text-sm text-yellow-400">${pendingEstimatedEarnings.toFixed(2)}</p>
           </div>
         </div>
         
+        {/* Payout status */}
+        <div className="pt-3 border-t grid grid-cols-3 gap-2">
+          <div>
+            <p className="text-xs text-muted-foreground">Available</p>
+            <p className="text-sm font-semibold text-green-500">${availableBalance.toFixed(2)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Paid Out</p>
+            <p className="text-sm">${totalPaid.toFixed(2)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Approved Pending</p>
+            <p className="text-sm text-yellow-400">${totalApprovedPending.toFixed(2)}</p>
+          </div>
+        </div>
+
         {/* Breakdown by source type */}
         {summary.by_source_type && Object.keys(summary.by_source_type).length > 0 && (
           <div className="pt-3 border-t space-y-2">
@@ -111,14 +136,14 @@ export default function MonthlyCloseoutCard({ performerId, performerToken }) {
 
         {/* Status breakdown */}
         {summary.by_status && (
-          <div className="pt-2 border-t flex gap-2">
+          <div className="pt-2 border-t flex gap-2 flex-wrap">
             {Object.entries(summary.by_status).map(([status, statusData]) => (
               <Badge 
                 key={status} 
-                variant={status === 'paid' ? 'default' : status === 'approved' ? 'secondary' : 'outline'}
+                variant={status === 'paid' ? 'default' : status === 'approved' ? 'secondary' : status === 'estimated' ? 'outline' : 'outline'}
                 className="text-xs"
               >
-                {status}: {statusData.count}
+                {status}: {statusData.count} (${statusData.performer.toFixed(2)})
               </Badge>
             ))}
           </div>
@@ -126,7 +151,7 @@ export default function MonthlyCloseoutCard({ performerId, performerToken }) {
 
         <p className="text-xs text-muted-foreground pt-2 border-t">
           Includes video platform revenue, livecam, fanclub, bonuses, and adjustments.
-          Final payout subject to management approval.
+          Available balance = approved earnings minus paid payouts. Final payout approval by management.
         </p>
       </CardContent>
     </Card>

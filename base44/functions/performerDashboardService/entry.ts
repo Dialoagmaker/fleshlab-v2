@@ -1039,7 +1039,7 @@ Deno.serve(async (req) => {
     }
 
     // Action: get_payout_summary
-    // Returns available balance = total approved/estimated earnings minus paid payouts
+    // Returns available balance = approved/paid earnings minus paid/approved payouts
     if (action === 'get_payout_summary') {
       const now = new Date();
       const currentMonth = now.toISOString().slice(0, 7);
@@ -1055,14 +1055,15 @@ Deno.serve(async (req) => {
         base44.asServiceRole.entities.VideoPerformer.filter({ performer_id: myPerformer.id })
       ]);
 
-      // Total paid out (paid + approved payouts count as committed)
+      // ── Payout totals ─────────────────────────────────────────────────────
       const paidPayouts = (allPayoutRequests || []).filter(r => r.status === 'paid');
       const approvedPayouts = (allPayoutRequests || []).filter(r => r.status === 'approved');
       const totalPaid = paidPayouts.reduce((sum, r) => sum + (r.amount || 0), 0);
       const totalApprovedPending = approvedPayouts.reduce((sum, r) => sum + (r.amount || 0), 0);
       const totalCommitted = totalPaid + totalApprovedPending;
 
-      // Total lifetime performer earnings from all sources
+      // ── Earnings totals (lifetime) ────────────────────────────────────────
+      // Only count earnings with status: approved or paid (not pending/estimated/held)
       const videoIds = videoPerformers.map(vp => vp.video_id);
 
       const [internalStatsSets, externalOnlySnapshots] = await Promise.all([
@@ -1086,19 +1087,23 @@ Deno.serve(async (req) => {
           .map(e => e.video_id).filter(Boolean)
       );
 
+      // Legacy earnings: only approved/paid count as "earned"
       const legacyTotal = (legacyEarnings || [])
-        .filter(e => !['draft', 'cancelled', 'held'].includes(e.status))
+        .filter(e => ['approved', 'paid'].includes(e.status))
         .reduce((sum, e) => sum + (e.net_amount_usd || 0), 0);
+      
+      // Line items: only approved/paid count as "earned"
       const lineItemTotal = (lineItems || [])
-        .filter(e => !['draft', 'cancelled', 'held'].includes(e.status))
+        .filter(e => ['approved', 'paid'].includes(e.status))
         .reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
-      const snapTotal = allSnapshots
-        .filter(s => !s.video_id || !existingVideoIds.has(s.video_id))
-        .reduce((sum, s) => sum + (s.revenue_usd || 0), 0) * (revenueSharePct / 100);
+      
+      // Snapshots: treated as "estimated" - do NOT count toward available balance
+      // They will appear in breakdown but not in available balance calculation
+      const snapTotal = 0;
 
       const totalEarned = legacyTotal + lineItemTotal + snapTotal;
 
-      // Current month breakdown
+      // ── Current month breakdown (for display only) ────────────────────────
       const currentMonthLineItems = (lineItems || []).filter(e => e.period_month === currentMonth);
       const currentMonthLegacy = (legacyEarnings || []).filter(e => e.period_month === currentMonth);
       const currentMonthSnaps = allSnapshots.filter(s => s.period_month === currentMonth && (!s.video_id || !existingVideoIds.has(s.video_id)));
@@ -1109,11 +1114,11 @@ Deno.serve(async (req) => {
         currentMonthSnaps.reduce((sum, s) => sum + (s.revenue_usd || 0), 0);
 
       const currentMonthEarned =
-        currentMonthLegacy.filter(e => !['draft','cancelled','held'].includes(e.status)).reduce((sum, e) => sum + (e.net_amount_usd || 0), 0) +
-        currentMonthLineItems.filter(e => !['draft','cancelled','held'].includes(e.status)).reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0) +
+        currentMonthLegacy.filter(e => ['approved','paid'].includes(e.status)).reduce((sum, e) => sum + (e.net_amount_usd || 0), 0) +
+        currentMonthLineItems.filter(e => ['approved','paid'].includes(e.status)).reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0) +
         currentMonthSnaps.reduce((sum, s) => sum + (s.revenue_usd || 0), 0) * (revenueSharePct / 100);
 
-      // Available balance = total earned - all committed (paid + approved) payouts
+      // ── Available balance = earned (approved/paid) - committed (paid + approved payouts) ──
       const availableBalance = Math.max(0, totalEarned - totalCommitted);
 
       // Next payout date calculation
