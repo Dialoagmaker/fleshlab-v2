@@ -31,13 +31,70 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
+// ── Revenue Model Resolver (inline) ──────────────────────────────────────────
+function resolvePerformerRevenueModel(performer) {
+  if (!performer) return { model_key: 'studio_managed', model_label: 'Studio Managed', performer_share_percentage: 40, studio_share_percentage: 60, source: 'default' };
+  if (performer.revenue_model === 'established_network') return { model_key: 'established_network', model_label: 'Established/Network', performer_share_percentage: 70, studio_share_percentage: 30, source: 'explicit_contract' };
+  if (performer.revenue_split_pct !== undefined && performer.revenue_split_pct !== null) {
+    const splitPct = parseFloat(performer.revenue_split_pct);
+    if (splitPct === 70) return { model_key: 'established_network', model_label: 'Established/Network', performer_share_percentage: 70, studio_share_percentage: 30, source: 'performer_profile' };
+    return { model_key: 'studio_managed', model_label: 'Studio Managed', performer_share_percentage: splitPct, studio_share_percentage: 100 - splitPct, source: 'performer_profile' };
+  }
+  return { model_key: 'studio_managed', model_label: 'Studio Managed', performer_share_percentage: 40, studio_share_percentage: 60, source: 'default' };
+}
+
+// ── Create PerformerEarningLineItem with idempotency ─────────────────────────
+async function createPerformerEarningLineItem(base44, params) {
+  const { performer_id, gross_amount_usd, performer_share_percent, source_type, source_platform, payment_idempotency_key, video_id, subscription_id, period_month, description, payment_intent_id, provider } = params;
+  
+  // IDEMPOTENCY CHECK
+  const existingItems = await base44.asServiceRole.entities.PerformerEarningLineItem.filter({ performer_id, source_type, period_month });
+  const existingItem = existingItems.find(item => {
+    try {
+      const meta = JSON.parse(item.description || '{}');
+      return meta.payment_idempotency_key === payment_idempotency_key || meta.payment_intent_id === payment_intent_id;
+    } catch { return false; }
+  });
+  
+  if (existingItem) {
+    console.log('[paymentWebhook] PerformerEarningLineItem already exists — skipping (idempotent)', { performer_id, source_type, existingItemId: existingItem.id });
+    return { duplicate: true, item: existingItem };
+  }
+  
+  const performer_amount_usd = gross_amount_usd * performer_share_percent / 100;
+  const studio_amount_usd = gross_amount_usd - performer_amount_usd;
+  
+  const lineItem = await base44.asServiceRole.entities.PerformerEarningLineItem.create({
+    performer_id,
+    performer_earning_id: null,
+    period_month,
+    source_type,
+    source_platform,
+    source_reference_id: video_id || subscription_id,
+    description: JSON.stringify({ payment_idempotency_key, payment_intent_id, provider, ...(description ? { note: description } : {}) }),
+    gross_amount_usd,
+    performer_share_percent,
+    performer_amount_usd,
+    studio_amount_usd,
+    currency: 'usd',
+    exchange_rate: 1,
+    status: 'approved',
+    notes: `Auto-created from ${source_type} payment via webhook`,
+  });
+  
+  console.log('[paymentWebhook] PerformerEarningLineItem created:', { performer_id, source_type, gross: gross_amount_usd, performer_share: performer_share_percent, performer_amount: performer_amount_usd, studio_amount: studio_amount_usd, lineItemId: lineItem.id });
+  return { duplicate: false, item: lineItem };
+}
+
 // ── Grant entitlements (shared logic - also used by simulatePaymentWebhook) ─────────
 // CRITICAL: This function MUST be idempotent - safe to call multiple times with same intent
+// REVENUE ATTRIBUTION: Creates PerformerEarningLineItem records automatically
 async function grantEntitlement(base44, intent) {
   const providerPaymentKey = `${intent.provider}:${intent.provider_session_id}`;
+  const periodMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
   
   if (intent.payment_type === 'ppv') {
-    // IDEMPOTENCY CHECK #1: Does Payment record already exist for this provider payment ID?
+    // IDEMPOTENCY CHECK #1: Does Payment record already exist?
     const existingPayments = await base44.asServiceRole.entities.Payment.filter({
       user_id: intent.user_id,
       related_entity_type: 'Video',
@@ -45,29 +102,23 @@ async function grantEntitlement(base44, intent) {
       status: 'completed',
     });
     
-    // Check if any existing payment matches this provider payment
     const existingPayment = existingPayments.find(p => {
       try {
         const meta = JSON.parse(p.metadata || '{}');
-        return meta.provider_session_id === intent.provider_session_id || 
-               meta.provider_payment_id === intent.provider_session_id;
+        return meta.provider_session_id === intent.provider_session_id || meta.provider_payment_id === intent.provider_session_id;
       } catch { return false; }
     });
     
     if (existingPayment) {
       console.log('[paymentWebhook] PPV entitlement already exists — skipping (idempotent)', {
-        userId: intent.user_id,
-        videoId: intent.video_id,
-        existingPaymentId: existingPayment.id,
+        userId: intent.user_id, videoId: intent.video_id, existingPaymentId: existingPayment.id,
       });
       return { ok: true, duplicate: true, entitlement_type: 'ppv', payment_id: existingPayment.id };
     }
     
-    // IDEMPOTENCY CHECK #2: Check by payment_intent_id in metadata
+    // IDEMPOTENCY CHECK #2
     const allUserPayments = await base44.asServiceRole.entities.Payment.filter({
-      user_id: intent.user_id,
-      payment_type: 'ppv',
-      status: 'completed',
+      user_id: intent.user_id, payment_type: 'ppv', status: 'completed',
     });
     
     const matchingByIntent = allUserPayments.find(p => {
@@ -79,73 +130,104 @@ async function grantEntitlement(base44, intent) {
     
     if (matchingByIntent) {
       console.log('[paymentWebhook] PPV entitlement already exists by intent ID — skipping (idempotent)', {
-        userId: intent.user_id,
-        videoId: intent.video_id,
-        existingPaymentId: matchingByIntent.id,
+        userId: intent.user_id, videoId: intent.video_id, existingPaymentId: matchingByIntent.id,
       });
       return { ok: true, duplicate: true, entitlement_type: 'ppv', payment_id: matchingByIntent.id };
     }
     
-    // Safe to create Payment record
+    // Create Payment record
     const payment = await base44.asServiceRole.entities.Payment.create({
-      user_id:             intent.user_id,
-      amount_usd:          intent.amount,
-      currency:            intent.currency || 'usd',
-      payment_type:        'ppv',
-      status:              'completed',
+      user_id: intent.user_id,
+      amount_usd: intent.amount,
+      currency: intent.currency || 'usd',
+      payment_type: 'ppv',
+      status: 'completed',
       related_entity_type: 'Video',
-      related_entity_id:   intent.video_id,
+      related_entity_id: intent.video_id,
       metadata: JSON.stringify({
-        provider:            intent.provider,
+        provider: intent.provider,
         provider_session_id: intent.provider_session_id,
         provider_payment_id: intent.provider_session_id,
-        price_tier:          intent.price_tier,
-        payment_intent_id:   intent.id,
+        price_tier: intent.price_tier,
+        payment_intent_id: intent.id,
       }),
     });
     console.log('[paymentWebhook] PPV entitlement granted:', { userId: intent.user_id, videoId: intent.video_id, paymentId: payment.id });
-    return { ok: true, duplicate: false, entitlement_type: 'ppv', payment_id: payment.id };
+    
+    // REVENUE ATTRIBUTION: Find performers for this video
+    const videoPerformers = await base44.asServiceRole.entities.VideoPerformer.filter({ video_id: intent.video_id });
+    
+    if (videoPerformers.length === 0) {
+      console.warn('[paymentWebhook] PPV payment has no VideoPerformer records — skipping revenue attribution', { videoId: intent.video_id, paymentId: payment.id });
+      return { ok: true, duplicate: false, entitlement_type: 'ppv', payment_id: payment.id, revenue_attribution: 'no_performers' };
+    }
+    
+    // Create earning line items for each performer
+    const revenueAttributions = [];
+    for (const vp of videoPerformers) {
+      const performer = await base44.asServiceRole.entities.Performer.get(vp.performer_id);
+      if (!performer || performer.status === 'inactive') {
+        console.warn('[paymentWebhook] Performer not found or inactive — skipping', { performer_id: vp.performer_id, videoId: intent.video_id });
+        continue;
+      }
+      
+      const revenueModel = resolvePerformerRevenueModel(performer);
+      const performerGross = intent.amount / videoPerformers.length;
+      
+      const lineItemResult = await createPerformerEarningLineItem(base44, {
+        performer_id: vp.performer_id,
+        gross_amount_usd: performerGross,
+        performer_share_percent: revenueModel.performer_share_percentage,
+        source_type: 'ppv_purchase',
+        source_platform: 'fleshlab',
+        payment_idempotency_key: providerPaymentKey,
+        payment_intent_id: intent.id,
+        video_id: intent.video_id,
+        period_month: periodMonth,
+        description: `PPV purchase - ${performer.display_name}`,
+        provider: intent.provider,
+      });
+      
+      revenueAttributions.push({
+        performer_id: vp.performer_id,
+        performer_name: performer.display_name,
+        gross: performerGross,
+        performer_share_percent: revenueModel.performer_share_percentage,
+        line_item_id: lineItemResult.item?.id,
+        duplicate: lineItemResult.duplicate,
+      });
+    }
+    
+    return { ok: true, duplicate: false, entitlement_type: 'ppv', payment_id: payment.id, revenue_attribution: revenueAttributions };
 
   } else if (intent.payment_type === 'fanclub') {
-    // IDEMPOTENCY CHECK #1: Does Subscription already exist for this provider payment?
+    // IDEMPOTENCY CHECKS
     const existingSubscriptions = await base44.asServiceRole.entities.Subscription.filter({
       user_id: intent.user_id,
       fanclub_id: intent.plan_id,
       status: 'active',
     });
     
-    // Check if any existing subscription matches this provider payment (by stripe_subscription_id which stores nowpayments_${payment_id})
     const existingSubscription = existingSubscriptions.find(s => {
-      return s.stripe_subscription_id === `nowpayments_${intent.provider_session_id}` ||
-             s.stripe_subscription_id === intent.provider_session_id;
+      return s.stripe_subscription_id === `nowpayments_${intent.provider_session_id}` || s.stripe_subscription_id === intent.provider_session_id;
     });
     
     if (existingSubscription) {
-      console.log('[paymentWebhook] Fanclub subscription already exists — skipping (idempotent)', {
-        userId: intent.user_id,
-        planId: intent.plan_id,
-        existingSubscriptionId: existingSubscription.id,
-      });
+      console.log('[paymentWebhook] Fanclub subscription already exists — skipping (idempotent)', { userId: intent.user_id, planId: intent.plan_id, existingSubscriptionId: existingSubscription.id });
       return { ok: true, duplicate: true, entitlement_type: 'fanclub', subscription_id: existingSubscription.id };
     }
     
-    // IDEMPOTENCY CHECK #2: Check for overlapping active subscription period
     const now = new Date();
     const overlappingSubscription = existingSubscriptions.find(s => {
       const periodEnd = new Date(s.current_period_end);
-      return periodEnd >= now; // Still active
+      return periodEnd >= now;
     });
     
     if (overlappingSubscription) {
-      console.log('[paymentWebhook] Fanclub has overlapping active subscription — skipping (idempotent)', {
-        userId: intent.user_id,
-        planId: intent.plan_id,
-        existingSubscriptionId: overlappingSubscription.id,
-      });
+      console.log('[paymentWebhook] Fanclub has overlapping active subscription — skipping (idempotent)', { userId: intent.user_id, planId: intent.plan_id, existingSubscriptionId: overlappingSubscription.id });
       return { ok: true, duplicate: true, entitlement_type: 'fanclub', subscription_id: overlappingSubscription.id };
     }
     
-    // IDEMPOTENCY CHECK #3: Check by payment_intent_id (NEW - defense in depth)
     const subscriptionsByIntent = await base44.asServiceRole.entities.Subscription.filter({
       user_id: intent.user_id,
       fanclub_id: intent.plan_id,
@@ -153,39 +235,76 @@ async function grantEntitlement(base44, intent) {
     });
     
     if (subscriptionsByIntent.length > 0) {
-      console.log('[paymentWebhook] Fanclub subscription already exists by payment_intent_id — skipping (idempotent)', {
-        userId: intent.user_id,
-        planId: intent.plan_id,
-        existingSubscriptionId: subscriptionsByIntent[0].id,
-      });
+      console.log('[paymentWebhook] Fanclub subscription already exists by payment_intent_id — skipping (idempotent)', { userId: intent.user_id, planId: intent.plan_id, existingSubscriptionId: subscriptionsByIntent[0].id });
       return { ok: true, duplicate: true, entitlement_type: 'fanclub', subscription_id: subscriptionsByIntent[0].id };
     }
     
-    // Safe to create Subscription
-    const ACCESS_PERIODS = {
-      fanclub_monthly:  1,   // months
-      premium_monthly:  1,   // months
-      fanclub_3mo:      3,   // months
-      fanclub_6mo:      6,   // months
-      fanclub_annual:   12,  // months
-    };
+    // Create Subscription
+    const ACCESS_PERIODS = { fanclub_monthly: 1, premium_monthly: 1, fanclub_3mo: 3, fanclub_6mo: 6, fanclub_annual: 12 };
     const months = ACCESS_PERIODS[intent.plan_id] || 1;
     const periodEnd = new Date();
     periodEnd.setMonth(periodEnd.getMonth() + months);
 
     const subscription = await base44.asServiceRole.entities.Subscription.create({
-      user_id:                intent.user_id,
-      fanclub_id:             intent.plan_id,
-      status:                 'active',
-      current_period_start:   new Date().toISOString(),
-      current_period_end:     periodEnd.toISOString(),
-      amount_usd:             intent.amount,
+      user_id: intent.user_id,
+      fanclub_id: intent.plan_id,
+      status: 'active',
+      current_period_start: new Date().toISOString(),
+      current_period_end: periodEnd.toISOString(),
+      amount_usd: intent.amount,
       stripe_subscription_id: `nowpayments_${intent.provider_session_id}`,
-      payment_intent_id:      intent.id,
-      provider:               'nowpayments',
+      payment_intent_id: intent.id,
+      provider: 'nowpayments',
     });
     console.log('[paymentWebhook] Fanclub access pass granted:', { userId: intent.user_id, planId: intent.plan_id, months, subscriptionId: subscription.id });
-    return { ok: true, duplicate: false, entitlement_type: 'fanclub', subscription_id: subscription.id };
+    
+    // REVENUE ATTRIBUTION: Check if fanclub is performer-specific
+    const fanclub = await base44.asServiceRole.entities.Fanclub.get(intent.plan_id);
+    
+    if (!fanclub) {
+      console.warn('[paymentWebhook] Fanclub not found — skipping revenue attribution', { planId: intent.plan_id, subscriptionId: subscription.id });
+      return { ok: true, duplicate: false, entitlement_type: 'fanclub', subscription_id: subscription.id, revenue_attribution: 'fanclub_not_found' };
+    }
+    
+    if (!fanclub.performer_id) {
+      console.log('[paymentWebhook] Fanclub is global (no performer_id) — marking as unattributed revenue', { fanclubId: fanclub.id, fanclubName: fanclub.name });
+      return { ok: true, duplicate: false, entitlement_type: 'fanclub', subscription_id: subscription.id, revenue_attribution: 'global_fanclub_unattributed', fanclub_name: fanclub.name };
+    }
+    
+    const performer = await base44.asServiceRole.entities.Performer.get(fanclub.performer_id);
+    if (!performer || performer.status === 'inactive') {
+      console.warn('[paymentWebhook] Performer not found or inactive for fanclub — skipping revenue attribution', { performer_id: fanclub.performer_id, fanclubId: fanclub.id });
+      return { ok: true, duplicate: false, entitlement_type: 'fanclub', subscription_id: subscription.id, revenue_attribution: 'performer_not_found' };
+    }
+    
+    const revenueModel = resolvePerformerRevenueModel(performer);
+    
+    const lineItemResult = await createPerformerEarningLineItem(base44, {
+      performer_id: fanclub.performer_id,
+      gross_amount_usd: intent.amount,
+      performer_share_percent: revenueModel.performer_share_percentage,
+      source_type: 'fanclub_subscription',
+      source_platform: 'fleshlab',
+      payment_idempotency_key: providerPaymentKey,
+      payment_intent_id: intent.id,
+      subscription_id: subscription.id,
+      period_month: periodMonth,
+      description: `Fanclub subscription - ${fanclub.name} - ${performer.display_name}`,
+      provider: intent.provider,
+    });
+    
+    return {
+      ok: true, duplicate: false, entitlement_type: 'fanclub', subscription_id: subscription.id,
+      revenue_attribution: {
+        performer_id: fanclub.performer_id,
+        performer_name: performer.display_name,
+        fanclub_name: fanclub.name,
+        gross: intent.amount,
+        performer_share_percent: revenueModel.performer_share_percentage,
+        line_item_id: lineItemResult.item?.id,
+        duplicate: lineItemResult.duplicate,
+      },
+    };
 
   } else if (intent.payment_type === 'guest_production_deposit') {
     if (!intent.application_id) {
