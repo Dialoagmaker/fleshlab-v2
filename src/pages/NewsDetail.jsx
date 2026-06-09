@@ -225,23 +225,21 @@ export default function NewsDetail() {
           </div>
 
           {/* Bottom CTA - Conversion Links */}
-          <div className="mt-12 pt-8 border-t border-border">
-            <h3 className="text-lg font-semibold text-white mb-4 text-center">
-              Explore More from FLESHLAB
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <a href="/videos" className="group text-center p-3 rounded-lg bg-card border border-border hover:border-primary/30 transition-all">
-                <div className="text-sm font-medium text-foreground group-hover:text-primary">Watch Latest Videos</div>
-              </a>
-              <a href="/performers" className="group text-center p-3 rounded-lg bg-card border border-border hover:border-primary/30 transition-all">
-                <div className="text-sm font-medium text-foreground group-hover:text-primary">Meet Our Performers</div>
-              </a>
-              <a href="/fanclub" className="group text-center p-3 rounded-lg bg-card border border-border hover:border-primary/30 transition-all">
-                <div className="text-sm font-medium text-foreground group-hover:text-primary">Join the Fanclub</div>
-              </a>
-              <a href="/become-performer" className="group text-center p-3 rounded-lg bg-card border border-border hover:border-primary/30 transition-all">
-                <div className="text-sm font-medium text-foreground group-hover:text-primary">Apply as Performer</div>
-              </a>
+          <div className="mt-12 pt-8 border-t border-white/8">
+            <p className="text-xs font-black uppercase tracking-widest text-rose-400/70 text-center mb-4">More from FLESHLAB</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+              {[
+                { href: "/videos", label: "Watch Videos" },
+                { href: "/performers", label: "Meet Performers" },
+                { href: "/fanclub", label: "Join Fanclub" },
+                { href: "/become-performer", label: "Apply as Performer" },
+              ].map(({ href, label }) => (
+                <a key={href} href={href}
+                  className="group text-center px-3 py-3 rounded-xl text-white/55 text-xs font-semibold hover:text-rose-400 transition-colors"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  {label}
+                </a>
+              ))}
             </div>
           </div>
         </div>
