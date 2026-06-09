@@ -4,7 +4,7 @@ import { Progress } from "@/components/ui/progress";
 
 export default function ProductionGoalCard({ performerId }) {
   // Placeholder - in production this would fetch actual production data
-  const [videosThisMonth] = useState(0);
+  const [videosThisMonth] = useState(3);
   const [target] = useState(20);
   const progress = (videosThisMonth / target) * 100;
 
