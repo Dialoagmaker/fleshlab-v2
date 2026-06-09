@@ -256,93 +256,165 @@ export default function GayOnlyfansAlternative() {
         </section>
 
         {/* ── CREATOR MODELS ─────────────────────────────────────────── */}
-        <section id="creator-models" style={{ background: 'linear-gradient(180deg, #050505 0%, #0b0610 50%, #100713 100%)' }} className="py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <section id="creator-models" className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden"
+          style={{ background: 'linear-gradient(180deg, #0a0610 0%, #0d0810 50%, #100713 100%)' }}>
           <div className="absolute inset-0 pointer-events-none"
-            style={{ backgroundImage: 'radial-gradient(ellipse 70% 50% at 20% 60%, rgba(244,63,94,0.06) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 80% 30%, rgba(245,158,11,0.05) 0%, transparent 60%)' }} />
+            style={{ backgroundImage: 'radial-gradient(ellipse 70% 50% at 20% 60%, rgba(244,63,94,0.08) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 80% 30%, rgba(245,158,11,0.07) 0%, transparent 60%)' }} />
+
           <div className="max-w-5xl mx-auto relative z-10">
-            <div className="text-center mb-14">
+            {/* Header */}
+            <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-5 text-xs font-black uppercase tracking-widest text-rose-400"
                 style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.35)', boxShadow: '0 0 16px rgba(244,63,94,0.2)' }}>
                 Creator Business Model
               </div>
-              <h2 className="font-black text-white mb-3 leading-tight" style={{ fontSize: 'clamp(34px, 5vw, 52px)' }}>
+              <h2 className="font-black text-white mb-3 leading-tight" style={{ fontSize: 'clamp(32px, 5vw, 50px)' }}>
                 Choose your <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-amber-400">creator model</span>
               </h2>
-              <p className="text-gray-400 max-w-lg mx-auto text-base">
-                Different support levels, different splits — both paths are built for different starting points.
+              <p className="text-white/50 max-w-lg mx-auto text-base">
+                Different support levels, different splits — both paths built for different starting points.
               </p>
             </div>
 
-            {/* Two premium model cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              {/* 60/40 Management */}
-              <div className="relative rounded-2xl overflow-hidden cursor-pointer group transition-all hover:-translate-y-1"
-                style={{ background: 'linear-gradient(135deg, rgba(30,5,15,0.98) 0%, rgba(20,3,10,0.98) 100%)', border: '1.5px solid rgba(244,63,94,0.45)', boxShadow: '0 0 40px rgba(244,63,94,0.15)' }}
+            {/* Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+
+              {/* ── LEFT: 60/40 Management ── */}
+              <div className="relative rounded-2xl overflow-hidden cursor-pointer group transition-all duration-200 hover:-translate-y-1"
+                style={{ border: '1.5px solid rgba(244,63,94,0.5)', boxShadow: '0 0 40px rgba(244,63,94,0.14)' }}
                 onClick={() => handleRevenueModelClick("60-40-management")}>
-                <div className="relative right-0 top-0 bottom-0 w-2/5 overflow-hidden">
-                  <img src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/db389db9b_generated_image.png"
-                    alt="" className="w-full h-full object-cover object-top opacity-30"
-                    style={{ maskImage: 'linear-gradient(to left, rgba(0,0,0,0.5), transparent)', WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,0.5), transparent)' }} />
+
+                {/* Background portrait — visible, top-anchored */}
+                <div className="absolute inset-0">
+                  <img
+                    src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/db389db9b_generated_image.png"
+                    alt=""
+                    className="w-full h-full object-cover object-top"
+                    style={{ opacity: 0.55 }}
+                  />
+                  {/* Left-to-right gradient: content side dark, image side fades */}
+                  <div className="absolute inset-0"
+                    style={{ background: 'linear-gradient(105deg, rgba(18,3,10,0.97) 0%, rgba(18,3,10,0.88) 45%, rgba(18,3,10,0.45) 70%, rgba(18,3,10,0.15) 100%)' }} />
+                  {/* Bottom fade for text readability */}
+                  <div className="absolute bottom-0 left-0 right-0 h-32"
+                    style={{ background: 'linear-gradient(to top, rgba(18,3,10,0.98) 0%, transparent 100%)' }} />
                 </div>
-                <div className="relative z-10 p-8">
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-black mb-5 text-white"
-                    style={{ background: 'rgba(244,63,94,0.85)', boxShadow: '0 0 14px rgba(244,63,94,0.55)' }}>
-                    ✦ FULL SUPPORT
-                  </span>
-                  <h3 className="text-2xl font-black text-white mb-1">Management / Build-Up Model</h3>
-                  <div className="flex items-baseline gap-2 mb-4">
-                    <span className="text-3xl font-black text-rose-400">Studio 60%</span>
-                    <span className="text-gray-400 text-xl font-bold">/ You 40%</span>
+
+                {/* Content */}
+                <div className="relative z-10 p-7 flex flex-col gap-4">
+                  {/* Label */}
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block px-3 py-1 rounded-full text-xs font-black text-white"
+                      style={{ background: 'rgba(244,63,94,0.9)', boxShadow: '0 0 14px rgba(244,63,94,0.5)' }}>
+                      ✦ FULL SUPPORT
+                    </span>
                   </div>
-                  <p className="text-gray-400 text-sm mb-6 leading-relaxed max-w-xs">
-                    Best if you want FLESHLAB to help build your creator presence — from setup to publishing, promotion and fanclub management.
+
+                  {/* Title */}
+                  <div>
+                    <h3 className="text-xl font-black text-white leading-tight mb-0.5">Management / Build-Up</h3>
+                    <p className="text-white/40 text-xs font-medium uppercase tracking-wide">Studio-Managed Creator Path</p>
+                  </div>
+
+                  {/* Revenue split — MOST PROMINENT */}
+                  <div className="rounded-xl px-4 py-3 flex items-center gap-3"
+                    style={{ background: 'rgba(244,63,94,0.12)', border: '1px solid rgba(244,63,94,0.3)' }}>
+                    <div className="text-center flex-1">
+                      <div className="text-rose-400 font-black text-3xl leading-none">60%</div>
+                      <div className="text-white/35 text-[10px] font-bold uppercase tracking-widest mt-1">Studio</div>
+                    </div>
+                    <div className="text-white/20 font-black text-lg">/</div>
+                    <div className="text-center flex-1">
+                      <div className="text-white font-black text-3xl leading-none">40%</div>
+                      <div className="text-white/35 text-[10px] font-bold uppercase tracking-widest mt-1">You</div>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-white/60 text-sm leading-relaxed">
+                    Best if you want FLESHLAB to handle setup, publishing, promotion and fanclub management — you focus on creating.
                   </p>
-                  <div className="space-y-3">
+
+                  {/* Feature rows */}
+                  <div className="space-y-2.5 pt-1">
                     {[
                       { label: "Best for", value: "Beginners who want full creative support" },
-                      { label: "Support level", value: "Studio handles editing, promotion & fanclub" },
+                      { label: "Support", value: "Studio handles editing, promotion & fanclub" },
                       { label: "Publishing", value: "FLESHLAB manages & publishes for you" },
                     ].map(row => (
-                      <div key={row.label} className="flex gap-3">
-                        <span className="text-rose-500 font-bold text-xs w-28 flex-shrink-0 mt-0.5">{row.label}</span>
-                        <span className="text-gray-300 text-xs leading-snug">{row.value}</span>
+                      <div key={row.label} className="flex gap-2.5 items-start">
+                        <span className="text-rose-400 font-bold text-[11px] w-20 flex-shrink-0 mt-0.5 uppercase tracking-wide">{row.label}</span>
+                        <span className="text-white/70 text-xs leading-snug">{row.value}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              {/* 70/30 Network */}
-              <div className="relative rounded-2xl overflow-hidden cursor-pointer group transition-all hover:-translate-y-1"
-                style={{ background: 'linear-gradient(135deg, rgba(20,12,3,0.98) 0%, rgba(15,8,2,0.98) 100%)', border: '1.5px solid rgba(245,158,11,0.45)', boxShadow: '0 0 40px rgba(245,158,11,0.12)' }}
+              {/* ── RIGHT: 70/30 Network ── */}
+              <div className="relative rounded-2xl overflow-hidden cursor-pointer group transition-all duration-200 hover:-translate-y-1"
+                style={{ border: '1.5px solid rgba(245,158,11,0.5)', boxShadow: '0 0 40px rgba(245,158,11,0.12)' }}
                 onClick={() => handleRevenueModelClick("70-30-network")}>
-                <div className="absolute right-0 top-0 bottom-0 w-2/5 overflow-hidden">
-                  <img src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/107a335d7_generated_image.png"
-                    alt="" className="w-full h-full object-cover object-top opacity-30"
-                    style={{ maskImage: 'linear-gradient(to left, rgba(0,0,0,0.5), transparent)', WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,0.5), transparent)' }} />
+
+                {/* Background portrait — visible */}
+                <div className="absolute inset-0">
+                  <img
+                    src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/107a335d7_generated_image.png"
+                    alt=""
+                    className="w-full h-full object-cover object-top"
+                    style={{ opacity: 0.55 }}
+                  />
+                  <div className="absolute inset-0"
+                    style={{ background: 'linear-gradient(105deg, rgba(14,8,2,0.97) 0%, rgba(14,8,2,0.88) 45%, rgba(14,8,2,0.45) 70%, rgba(14,8,2,0.15) 100%)' }} />
+                  <div className="absolute bottom-0 left-0 right-0 h-32"
+                    style={{ background: 'linear-gradient(to top, rgba(14,8,2,0.98) 0%, transparent 100%)' }} />
                 </div>
-                <div className="relative z-10 p-8">
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-black mb-5 text-black"
-                    style={{ background: 'rgba(245,158,11,0.9)', boxShadow: '0 0 14px rgba(245,158,11,0.5)' }}>
-                    ✦ MAXIMUM CONTROL
-                  </span>
-                  <h3 className="text-2xl font-black text-white mb-1">Network / Distribution Model</h3>
-                  <div className="flex items-baseline gap-2 mb-4">
-                    <span className="text-3xl font-black text-amber-400">You 70%</span>
-                    <span className="text-gray-400 text-xl font-bold">/ Studio 30%</span>
+
+                {/* Content */}
+                <div className="relative z-10 p-7 flex flex-col gap-4">
+                  {/* Label */}
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block px-3 py-1 rounded-full text-xs font-black text-black"
+                      style={{ background: 'rgba(245,158,11,0.95)', boxShadow: '0 0 14px rgba(245,158,11,0.5)' }}>
+                      ✦ MAXIMUM CONTROL
+                    </span>
                   </div>
-                  <p className="text-gray-400 text-sm mb-6 leading-relaxed max-w-xs">
-                    Best if you already have content, followers, cam traffic or experience and want FLESHLAB as an extra fanclub, SEO and distribution hub.
+
+                  {/* Title */}
+                  <div>
+                    <h3 className="text-xl font-black text-white leading-tight mb-0.5">Network / Distribution</h3>
+                    <p className="text-white/40 text-xs font-medium uppercase tracking-wide">Independent Creator Path</p>
+                  </div>
+
+                  {/* Revenue split — MOST PROMINENT */}
+                  <div className="rounded-xl px-4 py-3 flex items-center gap-3"
+                    style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}>
+                    <div className="text-center flex-1">
+                      <div className="text-amber-400 font-black text-3xl leading-none">70%</div>
+                      <div className="text-white/35 text-[10px] font-bold uppercase tracking-widest mt-1">You</div>
+                    </div>
+                    <div className="text-white/20 font-black text-lg">/</div>
+                    <div className="text-center flex-1">
+                      <div className="text-white font-black text-3xl leading-none">30%</div>
+                      <div className="text-white/35 text-[10px] font-bold uppercase tracking-widest mt-1">Studio</div>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-white/60 text-sm leading-relaxed">
+                    Best if you already have content, followers, or cam traffic and want FLESHLAB for SEO, distribution and fanclub infrastructure.
                   </p>
-                  <div className="space-y-3">
+
+                  {/* Feature rows */}
+                  <div className="space-y-2.5 pt-1">
                     {[
                       { label: "Best for", value: "Creators with existing audience or experience" },
-                      { label: "Support level", value: "Platform tools, SEO & distribution" },
+                      { label: "Support", value: "Platform tools, SEO & distribution only" },
                       { label: "Publishing", value: "You upload & control your own content" },
                     ].map(row => (
-                      <div key={row.label} className="flex gap-3">
-                        <span className="text-amber-400 font-bold text-xs w-28 flex-shrink-0 mt-0.5">{row.label}</span>
-                        <span className="text-gray-300 text-xs leading-snug">{row.value}</span>
+                      <div key={row.label} className="flex gap-2.5 items-start">
+                        <span className="text-amber-400 font-bold text-[11px] w-20 flex-shrink-0 mt-0.5 uppercase tracking-wide">{row.label}</span>
+                        <span className="text-white/70 text-xs leading-snug">{row.value}</span>
                       </div>
                     ))}
                   </div>
@@ -350,21 +422,27 @@ export default function GayOnlyfansAlternative() {
               </div>
             </div>
 
-            {/* Model CTA */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-5 rounded-2xl"
+            {/* CTA row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center px-6 py-5 rounded-2xl"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-              <div className="flex items-center gap-3">
+              <div className="sm:col-span-1 flex items-center gap-3">
                 <HelpCircle className="h-5 w-5 text-rose-400 flex-shrink-0" />
                 <div>
-                  <p className="text-white font-semibold text-sm">Not sure which model fits?</p>
-                  <p className="text-gray-500 text-xs">Chat on WhatsApp — we'll figure it out together.</p>
+                  <p className="text-white font-semibold text-sm">Not sure which model?</p>
+                  <p className="text-white/35 text-xs">We'll help you decide.</p>
                 </div>
               </div>
-              <Button className="font-bold text-white rounded-xl gap-2 flex-shrink-0 px-7"
-                style={{ background: '#25D366', boxShadow: '0 0 18px rgba(37,211,102,0.4)' }}
-                onClick={handleWhatsAppClick}>
-                <MessageCircle className="h-4 w-4" /> Chat on WhatsApp
-              </Button>
+              <div className="sm:col-span-2 flex flex-col sm:flex-row gap-3 justify-end">
+                <Button className="font-bold text-white rounded-xl gap-2 px-6 h-11"
+                  style={{ background: '#25D366', boxShadow: '0 0 16px rgba(37,211,102,0.35)' }}
+                  onClick={handleWhatsAppClick}>
+                  <MessageCircle className="h-4 w-4" /> Chat on WhatsApp
+                </Button>
+                <Button className="font-bold text-white rounded-xl gap-2 px-6 h-11 border border-rose-500/40 bg-rose-600/15 hover:bg-rose-600/25"
+                  onClick={handleCtaClick}>
+                  <ChevronRight className="h-4 w-4" /> Start Your Application
+                </Button>
+              </div>
             </div>
           </div>
         </section>
