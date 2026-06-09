@@ -92,7 +92,7 @@ export default function PhilippinesRecruitment() {
       <SEOMeta
         title="Gay Performer Recruitment Philippines | FLESHLAB"
         description="Apply as a verified Filipino gay performer or adult content creator with FLESHLAB. Professional studio support, content distribution, performer contracts, and revenue share options."
-        canonical="https://fleshlab.online/gay-performer-recruitment-philippines"
+        canonical="/gay-performer-recruitment-philippines"
         noIndex={false}
       />
       
