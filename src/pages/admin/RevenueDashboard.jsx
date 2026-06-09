@@ -448,6 +448,138 @@ export default function AdminRevenueDashboard() {
             </Card>
           )}
 
+          {/* Attribution Coverage Summary */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Internal Payment Attribution Coverage</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Internal Payments</p>
+                  <p className="text-2xl font-bold">{data?.revenue_summary?.internal_payments_count || 0}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Unattributed Payments</p>
+                  <p className={`text-2xl font-bold ${(data?.diagnostics?.internal_unattributed_payments_count || 0) > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                    {data?.diagnostics?.internal_unattributed_payments_count || 0}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Unattributed Amount</p>
+                  <p className={`text-2xl font-bold ${(data?.diagnostics?.internal_unattributed_amount || 0) > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                    ${(data?.diagnostics?.internal_unattributed_amount || 0).toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Attribution Coverage</p>
+                  <p className={`text-2xl font-bold ${(data?.revenue_summary?.internal_attribution_coverage_percent || 0) >= 90 ? 'text-green-600' : (data?.revenue_summary?.internal_attribution_coverage_percent || 0) >= 50 ? 'text-orange-600' : 'text-red-600'}`}>
+                    {data?.revenue_summary?.internal_attribution_coverage_percent || 0}%
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Unattributed Payments by Reason */}
+          {data?.diagnostics?.unattributed_by_reason && Object.keys(data.diagnostics.unattributed_by_reason).length > 0 && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Unattributed Payments by Reason</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {Object.entries(data.diagnostics.unattributed_by_reason).map(([reason, data]) => (
+                    <Card key={reason} className="bg-muted/30">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm">{reason.replace(/_/g, ' ')}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-xs text-muted-foreground">Count</span>
+                            <span className="font-medium">{data.count}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-xs text-muted-foreground">Total Amount</span>
+                            <span className="font-medium">${data.total_amount.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Internal Payments Without Attribution - Detailed Table */}
+          {data?.diagnostics?.unattributed_payments_detailed && data.diagnostics.unattributed_payments_detailed.length > 0 && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-orange-600" />
+                  Internal Payments Without Attribution ({data.diagnostics.unattributed_payments_detailed.length} payments, ${data.diagnostics.internal_unattributed_amount?.toFixed(2) || '0.00'})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-muted/50">
+                      <tr className="border-b">
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Date</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Amount</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Type</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Linked Content</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Buyer/User</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Provider</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Missing Reason</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Suggested Fix</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.diagnostics.unattributed_payments_detailed.map((payment) => (
+                        <tr key={payment.payment_id} className="border-b hover:bg-muted/30">
+                          <td className="p-3 text-sm text-muted-foreground">
+                            {new Date(payment.created_date).toLocaleDateString()}
+                          </td>
+                          <td className="p-3 text-sm font-medium">${payment.amount.toFixed(2)}</td>
+                          <td className="p-3 text-sm">
+                            <Badge variant="outline">{payment.payment_type}</Badge>
+                          </td>
+                          <td className="p-3 text-sm max-w-xs truncate" title={payment.linked_content}>
+                            {payment.linked_content}
+                          </td>
+                          <td className="p-3 text-sm text-muted-foreground">
+                            {payment.user_id ? payment.user_id.substring(0, 8) + '...' : 'Unknown'}
+                          </td>
+                          <td className="p-3 text-sm">
+                            <div className="flex flex-col">
+                              <span>{payment.provider}</span>
+                              {payment.provider_session_id && (
+                                <span className="text-xs text-muted-foreground truncate max-w-[150px]">
+                                  {payment.provider_session_id.substring(0, 20)}...
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3 text-sm">
+                            <Badge variant={payment.missing_reason.includes('TEST') ? 'secondary' : 'destructive'} className="text-xs">
+                              {payment.missing_reason.replace(/_/g, ' ')}
+                            </Badge>
+                          </td>
+                          <td className="p-3 text-xs text-muted-foreground max-w-xs truncate" title={payment.suggested_fix}>
+                            {payment.suggested_fix}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Diagnostics */}
           <Card>
             <CardHeader>

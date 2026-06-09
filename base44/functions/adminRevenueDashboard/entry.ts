@@ -401,7 +401,120 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── I) DIAGNOSTICS ─────────────────────────────────────────────────────
+    // ── I) INTERNAL PAYMENTS WITHOUT ATTRIBUTION (DETAILED DIAGNOSTICS) ────
+    const unattributedInternalPayments = completedPayments.filter(p => {
+      return !internalLineItems.some(li => {
+        try {
+          const desc = JSON.parse(li.description || '{}');
+          return desc.payment_intent_id === p.id || desc.payment_reference === p.id;
+        } catch {
+          return false;
+        }
+      });
+    });
+
+    const unattributedPaymentsDetailed = unattributedInternalPayments.map(p => {
+      const metadata = (() => {
+        try {
+          return typeof p.metadata === 'string' ? JSON.parse(p.metadata) : p.metadata;
+        } catch {
+          return null;
+        }
+      })();
+
+      // Classify missing attribution reason
+      let missingReason = 'UNKNOWN';
+      let linkedContent = 'None';
+      let suggestedFix = 'Manual review required';
+
+      if (p.payment_type === 'ppv' && p.related_entity_id) {
+        // PPV payment with video reference but no line item
+        const video = videoMap[p.related_entity_id];
+        linkedContent = `Video: ${video?.title || p.related_entity_id}`;
+        missingReason = 'PAYMENT_HAS_VIDEO_BUT_NO_LINEITEM';
+        suggestedFix = `Create line item for video ${p.related_entity_id} with performer attribution`;
+      } else if (p.payment_type === 'fanclub' && p.related_entity_id) {
+        // Fanclub payment with subscription reference but no line item
+        const subscription = allSubscriptions.find(s => s.id === p.related_entity_id);
+        if (subscription) {
+          const fanclub = subscription.fanclub_id;
+          linkedContent = `Subscription: ${p.related_entity_id} (Fanclub: ${fanclub})`;
+          missingReason = 'PAYMENT_HAS_SUBSCRIPTION_BUT_NO_LINEITEM';
+          suggestedFix = `Create fanclub subscription line item for period ${subscription.current_period_start?.substring(0, 7) || 'unknown'}`;
+        } else {
+          linkedContent = `Subscription: ${p.related_entity_id} (not found)`;
+          missingReason = 'PAYMENT_HAS_SUBSCRIPTION_BUT_NO_LINEITEM';
+          suggestedFix = 'Verify subscription exists and create line item';
+        }
+      } else if (p.related_entity_id && !p.payment_type) {
+        // Has entity reference but unclear type
+        linkedContent = `Entity: ${p.related_entity_id}`;
+        missingReason = 'PAYMENT_HAS_NO_CONTENT_REFERENCE';
+        suggestedFix = 'Determine content type and create appropriate line item';
+      } else if (!p.related_entity_id && !p.payment_type) {
+        // No content reference at all
+        linkedContent = 'None';
+        missingReason = 'PAYMENT_HAS_NO_CONTENT_REFERENCE';
+        suggestedFix = 'Review payment metadata to determine what was purchased';
+      } else if (metadata && !metadata.payment_intent_id && !metadata.payment_reference) {
+        // Metadata exists but missing payment references
+        linkedContent = metadata.video_id ? `Video: ${metadata.video_id}` : 
+                       metadata.subscription_id ? `Subscription: ${metadata.subscription_id}` : 'Unknown';
+        missingReason = 'PAYMENT_METADATA_INCOMPLETE';
+        suggestedFix = 'Update payment metadata with proper references and create line item';
+      } else if (p.provider_session_id && p.provider_session_id.includes('TEST')) {
+        linkedContent = 'Test payment';
+        missingReason = 'POSSIBLE_TEST_OR_LEGACY_PAYMENT';
+        suggestedFix = 'Verify if test payment should be excluded or attributed';
+      } else {
+        linkedContent = p.related_entity_id || 'None';
+        missingReason = 'UNKNOWN';
+        suggestedFix = 'Manual investigation required - check payment webhook logs';
+      }
+
+      return {
+        payment_id: p.id,
+        created_date: p.created_date,
+        amount: p.amount_usd,
+        currency: p.currency || 'USD',
+        payment_type: p.payment_type || 'unknown',
+        video_id: p.related_entity_id && p.payment_type === 'ppv' ? p.related_entity_id : null,
+        subscription_id: p.related_entity_id && p.payment_type === 'fanclub' ? p.related_entity_id : null,
+        fanclub_id: null, // Would need to lookup from subscription
+        user_id: p.user_id,
+        buyer_email: null, // Would need to lookup user
+        provider: p.provider || 'unknown',
+        provider_session_id: p.provider_session_id,
+        metadata: metadata,
+        missing_reason: missingReason,
+        linked_content: linkedContent,
+        suggested_fix: suggestedFix,
+      };
+    });
+
+    // Group by missing reason
+    const unattributedByReason = {};
+    unattributedPaymentsDetailed.forEach(p => {
+      if (!unattributedByReason[p.missing_reason]) {
+        unattributedByReason[p.missing_reason] = {
+          count: 0,
+          total_amount: 0,
+          payments: [],
+        };
+      }
+      unattributedByReason[p.missing_reason].count++;
+      unattributedByReason[p.missing_reason].total_amount += p.amount;
+      unattributedByReason[p.missing_reason].payments.push(p);
+    });
+
+    // Calculate attribution coverage
+    const internalUnattributedPaymentsCount = unattributedInternalPayments.length;
+    const internalUnattributedAmount = unattributedInternalPayments.reduce((sum, p) => sum + (p.amount_usd || 0), 0);
+    const internalAttributionCoveragePercent = internalPaymentGross > 0 
+      ? ((internalPaymentGross - internalUnattributedAmount) / internalPaymentGross * 100).toFixed(2)
+      : 0;
+
+    // ── J) OTHER DIAGNOSTICS ───────────────────────────────────────────────
     const paymentsWithoutEntitlement = completedPayments.filter(p => !p.related_entity_id).length;
     const ppvWithoutAttribution = ppvPayments.filter(p => {
       return !internalLineItems.some(li => {
@@ -438,6 +551,11 @@ Deno.serve(async (req) => {
       external_line_items_count: externalLineItems.length,
       livecam_line_items_count: livecamLineItems.length,
       imported_platform_line_items_count: importedPlatformLineItems.length,
+      internal_unattributed_payments_count: internalUnattributedPaymentsCount,
+      internal_unattributed_amount: internalUnattributedAmount,
+      internal_attribution_coverage_percent: internalAttributionCoveragePercent,
+      unattributed_by_reason: unattributedByReason,
+      unattributed_payments_detailed: unattributedPaymentsDetailed,
     };
 
     // ── TEST DATA SUMMARY ──────────────────────────────────────────────────
@@ -466,6 +584,10 @@ Deno.serve(async (req) => {
         total_business_revenue: totalBusinessRevenue,
         performer_share_total: totalPerformerAmount,
         studio_share_total: totalStudioAmount,
+        internal_payments_count: completedPayments.length,
+        internal_unattributed_payments_count: internalUnattributedPaymentsCount,
+        internal_unattributed_amount: internalUnattributedAmount,
+        internal_attribution_coverage_percent: internalAttributionCoveragePercent,
       },
       internal_breakdown: {
         gross: internalPaymentGross,
