@@ -89,7 +89,6 @@
   },
   "required": [
     "performer_id",
-    "requested_by_user_id",
     "amount",
     "currency",
     "payout_method"

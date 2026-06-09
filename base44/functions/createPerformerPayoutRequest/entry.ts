@@ -59,9 +59,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    const payoutRequest = await base44.asServiceRole.entities.PayoutRequest.create({
+    const payoutReqData = {
       performer_id: performer.id,
-      requested_by_user_id: performer.user_id || null,
       amount,
       currency,
       payout_method: profile.payout_method,
@@ -69,7 +68,9 @@ Deno.serve(async (req) => {
       status: 'pending_review',
       performer_note: performer_note || '',
       requested_at: new Date().toISOString()
-    });
+    };
+    if (performer.user_id) payoutReqData.requested_by_user_id = performer.user_id;
+    const payoutRequest = await base44.asServiceRole.entities.PayoutRequest.create(payoutReqData);
 
     await base44.asServiceRole.entities.AuditLog.create({
       entity_type: 'PayoutRequest',
