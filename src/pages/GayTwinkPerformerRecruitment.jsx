@@ -117,23 +117,28 @@ export default function GayTwinkPerformerRecruitment() {
       <div style={{ background: '#050505' }}>
 
         {/* ── 1. HERO ────────────────────────────────────────────────────── */}
-        <section className="relative overflow-hidden min-h-[680px] flex items-center py-24 px-5 sm:px-8">
-          {/* Abstract gradient — no private asset */}
-          <div className="absolute inset-0 pointer-events-none"
+        <style>{`
+          @media (max-width: 768px) {
+            .twink-hero-bg { background-position: 65% center !important; }
+          }
+        `}</style>
+        <section className="relative overflow-hidden flex items-center py-28 px-5 sm:px-8" style={{ minHeight: '820px' }}>
+          {/* Hero background image */}
+          <div
+            className="twink-hero-bg absolute inset-0"
             style={{
-              background: [
-                'radial-gradient(ellipse 80% 60% at 15% 40%, rgba(244,63,94,0.18) 0%, transparent 55%)',
-                'radial-gradient(ellipse 60% 50% at 85% 70%, rgba(168,85,247,0.10) 0%, transparent 55%)',
-                'linear-gradient(180deg, #050505 0%, #0d0509 50%, #080508 100%)'
-              ].join(', ')
-            }} />
-          {/* Subtle studio light lines */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
-            <div style={{ position: 'absolute', top: '22%', left: '-8%', width: '55%', height: '1px', background: 'linear-gradient(to right, transparent, rgba(244,63,94,0.7), transparent)', transform: 'rotate(-13deg)' }} />
-            <div style={{ position: 'absolute', top: '55%', right: '-8%', width: '45%', height: '1px', background: 'linear-gradient(to left, transparent, rgba(168,85,247,0.55), transparent)', transform: 'rotate(9deg)' }} />
-          </div>
-          <div className="absolute top-0 right-0 w-[700px] h-[700px] rounded-full opacity-5 pointer-events-none"
-            style={{ background: 'radial-gradient(circle, rgba(244,63,94,1) 0%, transparent 70%)' }} />
+              backgroundImage: "url('https://video.fleshlab.online/banner%20and%20logos/ChatGPT%20Image%2010.%20Juni%202026%2C%2001_04_21.png')",
+              backgroundSize: 'cover',
+              backgroundPosition: '68% center',
+              backgroundRepeat: 'no-repeat',
+            }}
+          />
+          {/* Asymmetric overlay: left dark for text, right minimal so creator stays visible */}
+          <div className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.58) 28%, rgba(0,0,0,0.42) 52%, rgba(0,0,0,0.12) 100%)' }} />
+          {/* Bottom fade into next section */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+            style={{ background: 'linear-gradient(to bottom, transparent, #080508)' }} />
 
           <div className="relative z-10 max-w-[1280px] mx-auto w-full">
             <div className="max-w-[640px]">
