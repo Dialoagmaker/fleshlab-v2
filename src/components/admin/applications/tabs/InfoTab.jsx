@@ -2,8 +2,18 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { base44 } from "@/api/base44Client";
 
 export default function InfoTab({ application }) {
+  const handleWorkTypeChange = async (value) => {
+    try {
+      await base44.entities.GuestProductionApplication.update(application.id, { work_type: value });
+    } catch (err) {
+      console.error('Failed to update work type:', err);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
@@ -48,11 +58,32 @@ export default function InfoTab({ application }) {
         <p className="text-sm mt-1">{application.package_interest || "—"}</p>
       </div>
 
-      <div>
-        <label className="text-sm text-muted-foreground">Preferred Revenue Model</label>
-        <Badge variant="outline" className="mt-1">
-          {application.preferred_revenue_model?.replace(/_/g, ' ') || "Undecided"}
-        </Badge>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm text-muted-foreground">Preferred Revenue Model</label>
+          <Badge variant="outline" className="mt-1">
+            {application.preferred_revenue_model?.replace(/_/g, ' ') || "Undecided"}
+          </Badge>
+        </div>
+        <div>
+          <label className="text-sm text-muted-foreground">Work Type *</label>
+          <Select
+            value={application.work_type || ''}
+            onValueChange={handleWorkTypeChange}
+          >
+            <SelectTrigger className="mt-1">
+              <SelectValue placeholder="Select work type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="solo">Solo Only</SelectItem>
+              <SelectItem value="pair">Pair Only</SelectItem>
+              <SelectItem value="both">Both (Solo & Pair)</SelectItem>
+            </SelectContent>
+          </Select>
+          {!application.work_type && (
+            <p className="text-xs text-orange-400 mt-1">Required before approval</p>
+          )}
+        </div>
       </div>
 
       <div>

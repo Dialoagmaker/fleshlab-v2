@@ -149,6 +149,12 @@ export default function Applications() {
       missing.push('revenue model selection');
     }
     
+    // Check work type
+    const workType = app.work_type;
+    if (!workType || !['solo', 'pair', 'both'].includes(workType)) {
+      missing.push('work type (solo/pair/both)');
+    }
+    
     // Check legal fields
     if (!app.legal_name || !app.legal_name.trim()) {
       missing.push('legal name');
@@ -196,44 +202,88 @@ export default function Applications() {
         revenue_split_pct: isNetwork ? 70 : 40,
       });
       
-      // Create PerformerProfilePrivate
+      // Create or update PerformerProfilePrivate
       const legalNameParts = (selectedApp.legal_name || selectedApp.applicant_name).trim().split(' ');
       const legalFirstName = legalNameParts[0] || '';
       const legalLastName = legalNameParts.slice(1).join(' ') || '';
       
-      await base44.entities.PerformerProfilePrivate.create({
-        performer_id: performer.id,
-        legal_first_name: legalFirstName,
-        legal_last_name: legalLastName,
-        city: selectedApp.city || '',
-        country: selectedApp.nationality || '',
-        phone: selectedApp.phone || '',
-        payout_method: 'pending',
-        payout_status: 'not_set',
-      });
+      // Check if profile already exists
+      const existingProfiles = await base44.entities.PerformerProfilePrivate.filter({ performer_id: performer.id });
       
-      // Create ComplianceRecords for ID and Selfie
-      const idDocKey = selectedApp.id_document_front_r2_key || selectedApp.id_document_r2_key;
-      if (idDocKey) {
-        await base44.entities.ComplianceRecord.create({
+      if (existingProfiles && existingProfiles.length > 0) {
+        // Update existing profile
+        await base44.entities.PerformerProfilePrivate.update(existingProfiles[0].id, {
+          legal_first_name: legalFirstName,
+          legal_last_name: legalLastName,
+          city: selectedApp.city || '',
+          country: selectedApp.nationality || '',
+          phone: selectedApp.phone || '',
+          updated_at: new Date().toISOString(),
+        });
+      } else {
+        // Create new profile
+        await base44.entities.PerformerProfilePrivate.create({
           performer_id: performer.id,
-          document_type: 'id',
-          document_url: idDocKey,
-          verification_method: 'manual',
-          verification_status: 'pending_review',
-          notes: `Imported from application: ${selectedApp.id}`,
+          legal_first_name: legalFirstName,
+          legal_last_name: legalLastName,
+          city: selectedApp.city || '',
+          country: selectedApp.nationality || '',
+          phone: selectedApp.phone || '',
+          payout_method: 'pending',
+          payout_status: 'not_set',
         });
       }
       
+      // Create or update ComplianceRecords for ID and Selfie
+      const idDocKey = selectedApp.id_document_front_r2_key || selectedApp.id_document_r2_key;
+      
+      // Check for existing compliance records
+      const existingRecords = await base44.entities.ComplianceRecord.filter({ performer_id: performer.id });
+      const existingIdRecord = existingRecords?.find(r => r.document_type === 'id');
+      const existingSelfieRecord = existingRecords?.find(r => r.document_type === 'other' && r.notes?.includes('Selfie'));
+      
+      if (idDocKey) {
+        if (existingIdRecord) {
+          // Update existing ID record
+          await base44.entities.ComplianceRecord.update(existingIdRecord.id, {
+            document_url: idDocKey,
+            verification_status: 'pending_review',
+            notes: `Updated from application: ${selectedApp.id}`,
+            updated_date: new Date().toISOString(),
+          });
+        } else {
+          // Create new ID record
+          await base44.entities.ComplianceRecord.create({
+            performer_id: performer.id,
+            document_type: 'id',
+            document_url: idDocKey,
+            verification_method: 'manual',
+            verification_status: 'pending_review',
+            notes: `Imported from application: ${selectedApp.id}`,
+          });
+        }
+      }
+      
       if (selectedApp.selfie_with_id_r2_key) {
-        await base44.entities.ComplianceRecord.create({
-          performer_id: performer.id,
-          document_type: 'other',
-          document_url: selectedApp.selfie_with_id_r2_key,
-          verification_method: 'manual',
-          verification_status: 'pending_review',
-          notes: `Selfie with ID from application: ${selectedApp.id}`,
-        });
+        if (existingSelfieRecord) {
+          // Update existing selfie record
+          await base44.entities.ComplianceRecord.update(existingSelfieRecord.id, {
+            document_url: selectedApp.selfie_with_id_r2_key,
+            verification_status: 'pending_review',
+            notes: `Updated from application: ${selectedApp.id}`,
+            updated_date: new Date().toISOString(),
+          });
+        } else {
+          // Create new selfie record
+          await base44.entities.ComplianceRecord.create({
+            performer_id: performer.id,
+            document_type: 'other',
+            document_url: selectedApp.selfie_with_id_r2_key,
+            verification_method: 'manual',
+            verification_status: 'pending_review',
+            notes: `Selfie with ID from application: ${selectedApp.id}`,
+          });
+        }
       }
       
       // Update application with performer link and approval

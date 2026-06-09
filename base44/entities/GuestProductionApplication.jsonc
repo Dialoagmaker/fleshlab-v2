@@ -62,6 +62,16 @@
       "title": "Preferred Revenue Model",
       "default": "undecided"
     },
+    "work_type": {
+      "type": "string",
+      "enum": [
+        "solo",
+        "pair",
+        "both"
+      ],
+      "title": "Work Type",
+      "description": "Performer's availability for solo and/or pair productions"
+    },
     "profile_photo_r2_keys": {
       "type": "array",
       "items": {
