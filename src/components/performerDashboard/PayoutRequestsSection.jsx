@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
-const MINIMUM_PAYOUT_USD = 100;
+const MINIMUM_PAYOUT_USD = 50;
 
 export default function PayoutRequestsSection({ onPayoutCreated }) {
   const [payoutRequests, setPayoutRequests] = useState([]);
@@ -89,7 +89,7 @@ export default function PayoutRequestsSection({ onPayoutCreated }) {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Payout requests can be submitted once your available balance reaches at least $100 USD.
+            Payout requests can be submitted once your available balance reaches at least $50 USD.
           </p>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -98,7 +98,7 @@ export default function PayoutRequestsSection({ onPayoutCreated }) {
               <Input
                 id="amount"
                 type="number"
-                min="100"
+                min="50"
                 step="0.01"
                 value={payoutRequestForm.amount}
                 onChange={(e) => {
@@ -106,13 +106,13 @@ export default function PayoutRequestsSection({ onPayoutCreated }) {
                   setPayoutRequestForm({ ...payoutRequestForm, amount: e.target.value });
                 }}
                 onBlur={() => setTouched(true)}
-                placeholder="100.00"
+                placeholder="50.00"
                 className={amountTooLow ? "border-destructive" : ""}
               />
               {amountTooLow ? (
-                <p className="text-destructive text-xs">Minimum payout amount is $100 USD.</p>
+                <p className="text-destructive text-xs">Minimum payout amount is $50 USD.</p>
               ) : (
-                <p className="text-muted-foreground text-xs">Minimum payout: $100 USD</p>
+                <p className="text-muted-foreground text-xs">Minimum payout: $50 USD</p>
               )}
             </div>
 
