@@ -80,19 +80,20 @@ const PPV_LABELS = {
 };
 
 // ── Image card with lock overlay ──────────────────────────────────────────────
-function LockedImageCard({ src, label, className = "", large = false }) {
+function LockedImageCard({ src, label, className = "" }) {
   return (
     <div className={`relative overflow-hidden rounded-xl border border-rose-900/30 ${className}`}>
-      <img src={src} alt={label} className="w-full h-full object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+      <img src={src} alt={label} className="w-full h-full object-cover object-center" style={{ objectPosition: 'center 20%' }} />
+      {/* stronger gradient so label is always readable */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
       {/* lock badge */}
-      <div className="absolute top-3 right-3 flex items-center gap-1 bg-black/60 backdrop-blur-sm border border-rose-600/40 rounded-full px-2 py-1">
+      <div className="absolute top-3 right-3 flex items-center gap-1 bg-black/70 backdrop-blur-sm border border-rose-600/40 rounded-full px-2 py-1">
         <Lock className="w-2.5 h-2.5 text-rose-400" />
         <span className="text-rose-300 text-[10px] font-bold uppercase tracking-wide">Members</span>
       </div>
-      {/* bottom label */}
-      <div className="absolute bottom-0 left-0 right-0 px-3 py-3">
-        <span className="text-white text-xs font-bold tracking-wide">{label}</span>
+      {/* bottom label — stronger background strip */}
+      <div className="absolute bottom-0 left-0 right-0 px-3 py-3" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%)' }}>
+        <span className="text-white text-xs font-bold tracking-wide drop-shadow-sm">{label}</span>
       </div>
     </div>
   );
@@ -513,7 +514,7 @@ export default function Fanclub() {
             <div className="absolute top-0 left-1/4 w-[700px] h-[500px] bg-rose-700/10 rounded-full blur-[140px]" />
           </div>
 
-          <div className="relative max-w-[1400px] mx-auto px-6 py-20 lg:py-28 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div className="relative max-w-[1400px] mx-auto px-6 py-14 lg:py-20 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
             {/* Left — copy */}
             <div>
@@ -549,7 +550,7 @@ export default function Fanclub() {
                   </Button>
                 </Link>
               </div>
-              <p className="text-white/30 text-xs mb-6">From $20.99/month. Cancel anytime.</p>
+              <p className="text-white/40 text-xs mb-6">$20.99/month · $49.99 for 3 months · Cancel anytime.</p>
 
               <div className="flex flex-wrap gap-x-5 gap-y-2 text-white/35 text-sm">
                 <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-rose-500/60 shrink-0" />Verified 18+ performers</span>
@@ -618,7 +619,7 @@ export default function Fanclub() {
         {/* ══════════════════════════════════════════════════════════════════
             2. PUBLIC PREVIEW — EXPLANATION
         ══════════════════════════════════════════════════════════════════ */}
-        <section className="py-16 px-6 border-t border-white/6">
+        <section className="py-10 px-6 border-t border-white/6">
           <div className="max-w-[1280px] mx-auto">
             <h2 className="text-3xl md:text-4xl font-black text-center mb-3">
               THE <span className="text-rose-500">PUBLIC PREVIEW</span>
@@ -633,23 +634,24 @@ export default function Fanclub() {
                 <div className="w-10 h-10 rounded-lg bg-white/8 flex items-center justify-center">
                   <Eye className="w-5 h-5 text-white/45" />
                 </div>
-                <div className="text-xs font-bold tracking-widest text-white/30 uppercase">Free Account</div>
+                <div className="text-xs font-bold tracking-widest text-white/40 uppercase">Free Account</div>
                 <h3 className="text-xl font-black text-white">Browse the public side</h3>
-                <p className="text-white/50 text-base leading-relaxed">
+                <p className="text-white/65 text-base leading-relaxed">
                   Browse performers, watch previews and selected free clips. Perfect if you want to explore FLESHLAB before unlocking more.
                 </p>
               </div>
 
               {/* PPV */}
-              <div className="bg-[#111] border border-white/8 rounded-2xl p-7 flex flex-col gap-3">
+              <div className="bg-[#111] border border-amber-700/20 rounded-2xl p-7 flex flex-col gap-3">
                 <div className="w-10 h-10 rounded-lg bg-amber-600/15 flex items-center justify-center">
                   <Film className="w-5 h-5 text-amber-400" />
                 </div>
-                <div className="text-xs font-bold tracking-widest text-amber-500/60 uppercase">Single Scene</div>
+                <div className="text-xs font-bold tracking-widest text-amber-500/80 uppercase">Single Scene · One-Time</div>
                 <h3 className="text-xl font-black text-white">Only want one scene?</h3>
-                <p className="text-white/50 text-base leading-relaxed">
-                  Unlock a single full scene and keep permanent access. No subscription needed. Pay once, own it forever.
+                <p className="text-white/65 text-base leading-relaxed">
+                  Unlock a single full scene and keep permanent access. No subscription. Pay once, own it forever.
                 </p>
+                <p className="text-amber-400 font-bold text-sm">from $20.99 one-time</p>
               </div>
 
               {/* Fanclub */}
@@ -657,11 +659,12 @@ export default function Fanclub() {
                 <div className="w-10 h-10 rounded-lg bg-rose-600/20 flex items-center justify-center">
                   <Crown className="w-5 h-5 text-rose-400" />
                 </div>
-                <div className="text-xs font-bold tracking-widest text-rose-500/70 uppercase">Fanclub Membership</div>
+                <div className="text-xs font-bold tracking-widest text-rose-400 uppercase">Fanclub Membership</div>
                 <h3 className="text-xl font-black text-white">Want ongoing access?</h3>
-                <p className="text-white/60 text-base leading-relaxed">
-                  Join Fanclub for ongoing member access: exclusive videos, early releases, bonus clips, behind-the-scenes content, performer updates and selected member-only drops. From $20.99/month or $49.99 for 3 months.
+                <p className="text-white/65 text-base leading-relaxed">
+                  Join Fanclub for ongoing member access: exclusive videos, early releases, bonus clips, behind-the-scenes content and selected member-only drops.
                 </p>
+                <p className="text-rose-400 font-bold text-sm">$20.99/month &nbsp;·&nbsp; $49.99 / 3 months</p>
               </div>
             </div>
           </div>
@@ -670,7 +673,7 @@ export default function Fanclub() {
         {/* ══════════════════════════════════════════════════════════════════
             3. FANCLUB BENEFITS — What you unlock
         ══════════════════════════════════════════════════════════════════ */}
-        <section className="py-16 px-6 bg-gradient-to-b from-[#0f0606] to-[#080808]">
+        <section className="py-10 px-6 bg-gradient-to-b from-[#0f0606] to-[#080808]">
           <div className="max-w-[1280px] mx-auto">
             <div className="text-center mb-10">
               <h2 className="text-3xl md:text-4xl font-black mb-3">
@@ -706,7 +709,7 @@ export default function Fanclub() {
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 p-5">
                     <h3 className="font-black text-white text-base mb-2 leading-tight">{title}</h3>
-                    <p className="text-white/55 text-sm leading-relaxed">{desc}</p>
+                    <p className="text-white/70 text-sm leading-relaxed">{desc}</p>
                   </div>
                 </div>
               ))}
@@ -876,8 +879,9 @@ export default function Fanclub() {
                 {/* Price range */}
                 <div className="flex items-baseline gap-2 mb-3">
                   <span className="text-5xl font-black text-white">$20.99</span>
-                  <span className="text-white/45 text-lg">one-time</span>
+                  <span className="text-amber-400/70 text-base font-bold">one-time</span>
                 </div>
+                <p className="text-white/30 text-xs -mt-1 mb-3">No subscription. Permanent access.</p>
 
                 <ul className="space-y-3 mb-8 flex-1">
                   {[
@@ -1064,14 +1068,14 @@ export default function Fanclub() {
         <section className="py-20 px-6">
           <div className="relative max-w-4xl mx-auto">
             <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[200px] bg-rose-700/12 rounded-full blur-[80px]" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[200px] bg-rose-700/15 rounded-full blur-[80px]" />
             </div>
-            <div className="relative bg-gradient-to-br from-[#1a0808] to-[#0d0808] border border-rose-600/25 rounded-3xl px-10 py-16 text-center">
+            <div className="relative bg-gradient-to-br from-[#1a0808] to-[#0d0808] border border-rose-600/35 rounded-3xl px-10 py-16 text-center shadow-[0_0_60px_rgba(220,38,38,0.15)]">
               <h2 className="text-4xl md:text-5xl font-black mb-4">
-                JOIN THE <span className="text-rose-500">FANCLUB</span>
+                Ready to Unlock the <span className="text-rose-500">Full Fanclub?</span>
               </h2>
-              <p className="text-white/55 text-lg mb-10 max-w-2xl mx-auto">
-                Unlock exclusive videos, performer updates, behind-the-scenes content and early access to selected releases. Support independent creators while getting closer to the studio.
+              <p className="text-white/65 text-lg mb-8 max-w-2xl mx-auto">
+                Join the FLESHLAB Fanclub for member updates, selected exclusive releases, early access and direct support for independent performers.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
                 <FanclubCTA planId="fanclub_monthly" label="Join the Fanclub" {...ctaProps}
@@ -1079,12 +1083,12 @@ export default function Fanclub() {
                 <Link to="/videos">
                   <Button size="lg" variant="outline"
                     className="border-white/20 text-white hover:bg-white/8 font-bold px-10 py-4 rounded-xl h-auto min-w-[200px] text-base">
-                    <Film className="w-4 h-4 mr-2" />Browse Videos
+                    <Film className="w-4 h-4 mr-2" />Browse Latest Videos
                   </Button>
                 </Link>
               </div>
-              <p className="text-white/25 text-xs mb-2">From $20.99/month. Cancel anytime.</p>
-              <p className="text-white/15 text-xs">Your Fanclub membership helps support independent performers, new productions and future FLESHLAB releases.</p>
+              <p className="text-white/40 text-sm mb-1">$20.99/month &nbsp;·&nbsp; $49.99 / 3 months &nbsp;·&nbsp; Cancel anytime.</p>
+              <p className="text-white/20 text-xs">Your membership supports independent performers, new productions and future FLESHLAB releases.</p>
             </div>
           </div>
         </section>
