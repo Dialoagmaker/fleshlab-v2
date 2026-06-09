@@ -69,15 +69,65 @@ export default function PerformerDashboard() {
   }
 
   if (error) {
+    // Determine specific error type and show appropriate message
+    const isAccessError = error.toLowerCase().includes('access') || 
+                          error.toLowerCase().includes('not active') ||
+                          error.toLowerCase().includes('not found');
+    
+    const isContractError = error.toLowerCase().includes('contract');
+    const isUserError = error.toLowerCase().includes('user') || 
+                        error.toLowerCase().includes('linked');
+
+    let title = "Dashboard Unavailable";
+    let message = error;
+    let actionText = "Contact Support";
+
+    if (isAccessError) {
+      title = "Access Restricted";
+      actionText = "Contact FLESHLAB Support";
+    }
+
+    if (isContractError) {
+      message = "Dashboard access is not available until your performer agreement is signed. Please complete the contract signing process or contact management.";
+    } else if (isUserError) {
+      message = "Your performer account is active, but no login user is linked yet. Please contact FLESHLAB support to complete your account setup.";
+    }
+
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="max-w-md text-center space-y-4">
-          <div className="bg-card border border-border rounded-xl p-6 space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">Dashboard Unavailable</h2>
-            <p className="text-muted-foreground">{error}</p>
-            <p className="text-sm text-muted-foreground">
-              Please contact management if you believe this is an error.
-            </p>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-lg w-full">
+          <div className="bg-card border border-border rounded-xl p-8 space-y-6">
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-semibold text-foreground">{title}</h2>
+              <p className="text-muted-foreground leading-relaxed">{message}</p>
+            </div>
+            
+            <div className="bg-secondary/50 rounded-lg p-4 space-y-2 text-sm">
+              <p className="text-muted-foreground">
+                <strong className="text-foreground">Need help?</strong>
+              </p>
+              <p className="text-muted-foreground">
+                📧 Email: <a href="mailto:support@fleshlab.studio" className="text-primary hover:underline">support@fleshlab.studio</a>
+              </p>
+              <p className="text-muted-foreground">
+                💬 WhatsApp: +49 176 12345678
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate("/performer/login")}
+                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2.5 rounded-lg font-medium transition-colors"
+              >
+                Back to Login
+              </button>
+              <a
+                href="mailto:support@fleshlab.studio"
+                className="flex-1 border border-border hover:bg-secondary px-4 py-2.5 rounded-lg font-medium text-center transition-colors"
+              >
+                {actionText}
+              </a>
+            </div>
           </div>
         </div>
       </div>
