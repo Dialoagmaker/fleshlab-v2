@@ -166,7 +166,7 @@ export default function GayOnlyfansAlternative() {
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ff2d6f] to-[#ff8a00]">Gay Creators</span>
                 </h1>
                 <p className="text-[18px] text-white/90 mb-10 leading-[1.55] font-medium" style={{ maxWidth: '540px' }}>
-                  FLESHLAB helps gay adult creators grow beyond solo platform management with professional distribution, production support, performer contracts, and revenue-share options.
+                  FLESHLAB is a studio-backed creator network for gay adult creators. We handle distribution, production support, contracts and revenue-share options so you don't have to figure it out alone.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 mb-10">
                   <Button size="lg" className="bg-[#16a34a] hover:bg-[#15803d] text-white shadow-xl px-12 h-[56px] text-lg w-full sm:w-auto font-bold rounded-xl"
@@ -224,7 +224,7 @@ export default function GayOnlyfansAlternative() {
                 Solo platform management is <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-amber-400">hard work</span>
               </h2>
               <p className="text-gray-400 max-w-2xl mx-auto text-base">
-                Promotion, editing, posting schedules, compliance requirements, and monetization strategies take significant time away from creating content.
+                Promotion, editing, compliance requirements and monetization take a lot of time. Time you could spend on content.
               </p>
             </div>
 
@@ -232,13 +232,13 @@ export default function GayOnlyfansAlternative() {
               <div className="bg-[#111] border border-white/8 rounded-xl p-6">
                 <h3 className="text-white font-bold text-lg mb-3">The Solo Creator Challenge</h3>
                 <p className="text-white/50 text-sm leading-relaxed">
-                  Creator platforms can be overwhelming to manage alone. You're not just creating content — you're also the editor, marketer, compliance officer, and customer support.
+                  Running a creator page alone is a lot. You're not just making content. You're also the editor, marketer, compliance officer and support team.
                 </p>
               </div>
               <div className="bg-[#111] border border-white/8 rounded-xl p-6">
                 <h3 className="text-white font-bold text-lg mb-3">Studio/Network Support</h3>
                 <p className="text-white/50 text-sm leading-relaxed">
-                  FLESHLAB offers a studio-backed structure with professional support for distribution, production planning, compliance workflows, and revenue-share options—so you can focus on creating content.
+                  FLESHLAB gives you studio infrastructure: distribution, production planning, compliance support and revenue-share options. You don't have to do all of it yourself.
                 </p>
               </div>
             </div>
@@ -248,7 +248,7 @@ export default function GayOnlyfansAlternative() {
               <div>
                 <p className="text-amber-200/70 text-sm leading-relaxed">
                   <strong className="text-amber-200 block mb-1">Important:</strong>
-                  FLESHLAB does not guarantee income. Results depend on content quality, audience demand, consistency, distribution effectiveness, and performance. We provide support and infrastructure, not income promises.
+                  FLESHLAB does not guarantee income. Results depend on content quality, audience demand, consistency and how well the content performs. We provide support and infrastructure, not income guarantees.
                 </p>
               </div>
             </div>
@@ -272,7 +272,7 @@ export default function GayOnlyfansAlternative() {
                 Choose your <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-amber-400">creator model</span>
               </h2>
               <p className="text-white/50 max-w-lg mx-auto text-base">
-                Different support levels, different splits — both paths built for different starting points.
+                Two models. Two splits. Pick the one that fits where you are right now.
               </p>
             </div>
 
@@ -332,7 +332,7 @@ export default function GayOnlyfansAlternative() {
 
                   {/* Description */}
                   <p className="text-white/70 text-sm leading-relaxed">
-                    Best if you want FLESHLAB to handle setup, publishing, promotion and fanclub management — you focus on creating.
+                    Best if you want full support. FLESHLAB handles setup, publishing, promotion and fanclub management.
                   </p>
 
                   {/* Feature rows */}
@@ -402,7 +402,7 @@ export default function GayOnlyfansAlternative() {
 
                   {/* Description */}
                   <p className="text-white/70 text-sm leading-relaxed">
-                    Best if you already have content, followers, or cam traffic and want FLESHLAB for SEO, distribution and fanclub infrastructure.
+                    Best if you already have content or an audience and mainly want distribution, SEO support and platform tools.
                   </p>
 
                   {/* Feature rows */}
@@ -463,7 +463,7 @@ export default function GayOnlyfansAlternative() {
                   From application<br />to <span className="text-rose-400">first release</span>
                 </h2>
                 <p className="text-gray-400 mb-10 text-base">
-                  We guide the setup, verification, profile, publishing and growth process.
+                  We walk you through setup, verification, profile creation, publishing and growth.
                 </p>
 
                 <div className="relative">
@@ -475,7 +475,7 @@ export default function GayOnlyfansAlternative() {
                       { n: 2, icon: <Shield className="h-4 w-4 text-rose-400" />, title: "Verify 18+", desc: "Upload valid government ID for KYC review", color: [255,45,111] },
                       { n: 3, icon: <Users className="h-4 w-4 text-purple-400" />, title: "Choose Model", desc: "Pick 60/40 or 70/30 based on your experience", color: [168,85,247] },
                       { n: 4, icon: <Film className="h-4 w-4 text-purple-400" />, title: "Set Up Profile", desc: "We build your performer & fanclub page", color: [168,85,247] },
-                      { n: 5, icon: <TrendingUp className="h-4 w-4 text-amber-400" />, title: "Publish & Grow", desc: "Upload content — we handle SEO & promotion, you earn", color: [245,158,11] },
+                      { n: 5, icon: <TrendingUp className="h-4 w-4 text-amber-400" />, title: "Publish & Grow", desc: "Upload content. We handle SEO and promotion.", color: [245,158,11] },
                     ].map(step => (
                       <div key={step.n} className="flex items-start gap-4 relative z-10">
                         <div className="h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0"
@@ -529,7 +529,7 @@ export default function GayOnlyfansAlternative() {
                 Verified 18+ • Legal • Safe
               </h2>
               <p className="text-gray-400 text-base max-w-2xl mx-auto">
-                All creators must complete identity verification and consent documentation before participating.
+                All creators must complete ID verification and consent documentation before any content is created or published.
               </p>
             </div>
 
@@ -578,19 +578,19 @@ export default function GayOnlyfansAlternative() {
               {[
                 {
                   q: "Is FLESHLAB an OnlyFans replacement?",
-                  a: "FLESHLAB is not a direct replacement for every creator. It is a studio-backed creator network for gay adult creators who want support with distribution, production planning, compliance, and revenue-share options."
+                  a: "Not for everyone. FLESHLAB is a studio-backed network for gay adult creators who want support with distribution, production planning, compliance and revenue-share options. It's not a self-serve platform."
                 },
                 {
                   q: "Can I join if I already have an OnlyFans-style page?",
-                  a: "Yes. Existing creators may apply for the network/distribution model if they already have content, a fanbase, or a creator workflow."
+                  a: "Yes. If you already have content, a following or a workflow, apply for the network model. That's what it's designed for."
                 },
                 {
                   q: "Do you guarantee income?",
-                  a: "No. FLESHLAB does not guarantee income. Results depend on content quality, audience demand, consistency, distribution, and performance."
+                  a: "No. Income depends on content quality, audience demand, consistency and performance. We don't make income promises."
                 },
                 {
                   q: "Is ID verification required?",
-                  a: "Yes. All performers must be verified 18+ and complete ID/KYC and consent documentation before participating."
+                  a: "Yes. Government-issued ID required. All creators must be verified 18+ and complete KYC and consent documentation before anything else."
                 },
               ].map((faq, i) => (
                 <div key={i} className="bg-[#111] border border-white/8 rounded-xl p-6">
@@ -616,7 +616,7 @@ export default function GayOnlyfansAlternative() {
                   Join a Studio-Backed Creator Network
                 </h2>
                 <p className="text-gray-400 mb-8 max-w-2xl mx-auto text-base">
-                  Apply today to explore revenue-share options, distribution support, and professional creator infrastructure.
+                  Apply and we'll go through your options together. No obligations, no pressure.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button className="font-bold text-white rounded-xl gap-2 px-10 py-5 h-auto text-lg"
