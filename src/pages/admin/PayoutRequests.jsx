@@ -10,20 +10,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, DollarSign, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Loader2, DollarSign, CheckCircle2, XCircle, Clock, BanknoteIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export default function PayoutRequests() {
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("pending_review");
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [actionDialog, setActionDialog] = useState(null); // 'approve', 'reject', 'paid'
   const [adminMessage, setAdminMessage] = useState("");
   const [adminNote, setAdminNote] = useState("");
 
   const { data: payoutRequests, isLoading } = useQuery({
-    queryKey: ['payout-requests'],
+    queryKey: ['payout-requests', activeTab],
     queryFn: async () => {
-      const res = await base44.functions.invoke("getPayoutRequests", { status: "pending_review" });
+      const filter = activeTab === "all" ? {} : { status: activeTab };
+      const res = await base44.functions.invoke("getPayoutRequests", filter);
       return res.data.payout_requests || [];
     }
   });
@@ -111,14 +114,6 @@ export default function PayoutRequests() {
     );
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div>
@@ -126,8 +121,22 @@ export default function PayoutRequests() {
         <p className="text-muted-foreground">Review and manage performer payout requests</p>
       </div>
 
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="pending_review">Pending</TabsTrigger>
+          <TabsTrigger value="approved">Approved</TabsTrigger>
+          <TabsTrigger value="paid">Paid</TabsTrigger>
+          <TabsTrigger value="rejected">Rejected</TabsTrigger>
+          <TabsTrigger value="all">All</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       <div className="grid gap-4">
-        {payoutRequests && payoutRequests.length > 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : payoutRequests && payoutRequests.length > 0 ? (
           payoutRequests.map((request) => (
             <Card key={request.id}>
               <CardHeader>
@@ -171,36 +180,26 @@ export default function PayoutRequests() {
                 </div>
 
                 <div className="flex gap-2 mt-4">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedRequest(request);
-                      setActionDialog('approve');
-                    }}
-                  >
-                    Approve
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedRequest(request);
-                      setActionDialog('reject');
-                    }}
-                  >
-                    Reject
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedRequest(request);
-                      setActionDialog('paid');
-                    }}
-                  >
-                    Mark as Paid
-                  </Button>
+                  {request.status === 'pending_review' && (
+                    <>
+                      <Button variant="default" size="sm" onClick={() => { setSelectedRequest(request); setActionDialog('approve'); }}>
+                        Approve
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => { setSelectedRequest(request); setActionDialog('reject'); }}>
+                        Reject
+                      </Button>
+                    </>
+                  )}
+                  {request.status === 'approved' && (
+                    <Button variant="outline" size="sm" onClick={() => { setSelectedRequest(request); setActionDialog('paid'); }}>
+                      Mark as Paid
+                    </Button>
+                  )}
+                  {(request.paid_at) && (
+                    <span className="text-xs text-muted-foreground self-center">
+                      Paid: {new Date(request.paid_at).toLocaleDateString()}
+                    </span>
+                  )}
                 </div>
               </CardContent>
             </Card>
