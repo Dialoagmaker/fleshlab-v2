@@ -13,11 +13,52 @@
  * PARAMETERS:
  * - from: Start date (YYYY-MM-DD), defaults to current month start
  * - to: End date (YYYY-MM-DD), defaults to current month end
- * - source_type: Filter by source type (optional)
+ * - source_platform_filter: 'all' or 'fleshlab' (default: 'fleshlab')
  * - include_test_mode: Include test records (default: false)
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+
+// ── TEST MODE DETECTION HELPERS (same as performerDashboardService) ────────
+function isTestLineItem(item) {
+  if (!item) return false;
+  
+  // Check explicit test_mode field
+  if (item.test_mode === true) return true;
+  
+  // Check description JSON for test_mode
+  try {
+    const desc = JSON.parse(item.description || '{}');
+    if (desc.test_mode === true) return true;
+    if (desc.note && desc.note.includes('TEST')) return true;
+    if (desc.note && desc.note.includes('REVENUE_ATTRIBUTION_TEST')) return true;
+  } catch {}
+  
+  // Check notes field
+  if (item.notes && item.notes.includes('TEST')) return true;
+  
+  // Check source_type for test patterns
+  if (item.source_type && item.source_type.includes('test')) return true;
+  
+  return false;
+}
+
+function isTestPayment(payment) {
+  if (!payment) return false;
+  
+  // Check metadata for test_mode
+  try {
+    if (payment.metadata) {
+      const meta = typeof payment.metadata === 'string' ? JSON.parse(payment.metadata) : payment.metadata;
+      if (meta.test_mode === true) return true;
+    }
+  } catch {}
+  
+  // Check provider_session_id for TEST pattern
+  if (payment.provider_session_id && payment.provider_session_id.includes('TEST')) return true;
+  
+  return false;
+}
 
 Deno.serve(async (req) => {
   try {
@@ -30,7 +71,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { from, to, source_type, include_test_mode = false } = body;
+    const { from, to, source_platform_filter = 'all', include_test_mode = false } = body;
 
     // Date range defaults to current month
     const now = new Date();
@@ -45,17 +86,18 @@ Deno.serve(async (req) => {
       from: fromDate.toISOString(),
       to: toDate.toISOString(),
       include_test_mode,
-      source_type: source_type || 'all'
+      source_platform_filter
     });
 
     // ── Fetch all data in parallel ──────────────────────────────────────────
-    const [allPayments, allSubscriptions, allLineItems, allPerformers, allVideos, allPaymentIntents] = await Promise.all([
+    const [allPayments, allSubscriptions, allLineItems, allPerformers, allVideos, allPaymentIntents, allVideoPerformers] = await Promise.all([
       base44.asServiceRole.entities.Payment.filter({}),
       base44.asServiceRole.entities.Subscription.filter({}),
       base44.asServiceRole.entities.PerformerEarningLineItem.filter({}),
       base44.asServiceRole.entities.Performer.list(),
       base44.asServiceRole.entities.Video.list(),
       base44.asServiceRole.entities.PaymentIntent.filter({}),
+      base44.asServiceRole.entities.VideoPerformer.filter({}),
     ]);
 
     // Build performer lookup map
@@ -70,40 +112,67 @@ Deno.serve(async (req) => {
       videoMap[v.id] = v;
     });
 
-    // Filter by date range and test_mode
+    // ── UNIFIED FILTER FUNCTIONS ────────────────────────────────────────────
     const isInDateRange = (record) => {
-      const recordDate = new Date(record.created_date || record.period_month + '-01');
+      let recordDate;
+      if (record.created_date) {
+        recordDate = new Date(record.created_date);
+      } else if (record.period_month) {
+        recordDate = new Date(record.period_month + '-01');
+      } else {
+        recordDate = new Date(0);
+      }
       return recordDate >= fromDate && recordDate <= toDate;
     };
 
     const isNotTest = (record) => {
       if (include_test_mode) return true;
-      // Check test_mode field
+      
+      if (record.amount_usd !== undefined && record.payment_type !== undefined) {
+        // Payment record
+        return !isTestPayment(record);
+      } else if (record.gross_amount_usd !== undefined && record.performer_amount_usd !== undefined) {
+        // PerformerEarningLineItem record
+        return !isTestLineItem(record);
+      }
+      
+      // Fallback: check test_mode field
       if (record.test_mode === true) return false;
-      // Check metadata for test_mode
-      try {
-        if (record.metadata) {
-          const meta = typeof record.metadata === 'string' ? JSON.parse(record.metadata) : record.metadata;
-          if (meta.test_mode === true) return false;
-        }
-      } catch {}
-      // Check description for TEST
-      if (record.description && record.description.includes('TEST')) return false;
-      // Check notes for TEST
-      if (record.notes && record.notes.includes('TEST')) return false;
       return true;
     };
 
-    // Filter payments
-    const payments = allPayments.filter(p => isInDateRange(p) && isNotTest(p));
+    const isFleshlabSource = (record) => {
+      if (source_platform_filter === 'all') return true;
+      if (source_platform_filter === 'fleshlab') {
+        // For Payments: check provider
+        if (record.provider && ['nowpayments', 'ccbill', 'segpay'].includes(record.provider)) return true;
+        // For LineItems: check source_platform
+        if (record.source_platform && record.source_platform === 'fleshlab') return true;
+        // For Subscriptions: check provider
+        if (record.provider && ['nowpayments', 'ccbill', 'segpay'].includes(record.provider)) return true;
+        return false;
+      }
+      return true;
+    };
+
+    // Filter payments - COMPLETED status only, exclude test_mode
+    const payments = allPayments.filter(p => 
+      isInDateRange(p) && 
+      isNotTest(p) &&
+      isFleshlabSource(p)
+    );
     const testPayments = allPayments.filter(p => isInDateRange(p) && !isNotTest(p));
 
-    // Filter subscriptions
-    const subscriptions = allSubscriptions.filter(s => isInDateRange(s) && isNotTest(s));
-
-    // Filter line items
-    const lineItems = allLineItems.filter(li => isInDateRange(li) && isNotTest(li));
+    // Filter line items - exclude test_mode, match date range
+    const lineItems = allLineItems.filter(li => 
+      isInDateRange(li) && 
+      isNotTest(li) &&
+      isFleshlabSource(li)
+    );
     const testLineItems = allLineItems.filter(li => isInDateRange(li) && !isNotTest(li));
+
+    // Filter subscriptions
+    const subscriptions = allSubscriptions.filter(s => isInDateRange(s) && isNotTest(s) && isFleshlabSource(s));
 
     // ── A) GROSS REVENUE ────────────────────────────────────────────────────
     const completedPayments = payments.filter(p => p.status === 'completed');
@@ -241,6 +310,72 @@ Deno.serve(async (req) => {
     // Unattributed = gross revenue from payments minus attributed gross from line items
     const unattributedGross = grossRevenue.total - totalGrossAttributed;
 
+    // ── SANITY CHECKS ──────────────────────────────────────────────────────
+    const sanityWarnings = [];
+    
+    // Check 1: Attributed gross should not exceed payment gross (unless external revenue)
+    if (totalGrossAttributed > grossRevenue.total && totalGrossAttributed > 0) {
+      const excess = totalGrossAttributed - grossRevenue.total;
+      sanityWarnings.push({
+        code: 'ATTRIBUTED_EXCEEDS_PAYMENTS',
+        message: `Attributed gross ($${totalGrossAttributed.toFixed(2)}) exceeds payment gross ($${grossRevenue.total.toFixed(2)}) by $${excess.toFixed(2)}. May include external platform revenue.`,
+        severity: 'warning',
+        data: { attributed: totalGrossAttributed, payments: grossRevenue.total, excess }
+      });
+    }
+    
+    // Check 2: Performer + Studio should equal attributed gross
+    const splitSum = totalPerformerAmount + totalStudioAmount;
+    const splitDiff = Math.abs(splitSum - totalGrossAttributed);
+    if (splitDiff > 0.01) { // Allow 1 cent rounding error
+      sanityWarnings.push({
+        code: 'SPLIT_MISMATCH',
+        message: `Performer ($${totalPerformerAmount.toFixed(2)}) + Studio ($${totalStudioAmount.toFixed(2)}) = $${splitSum.toFixed(2)}, but attributed gross is $${totalGrossAttributed.toFixed(2)}. Difference: $${splitDiff.toFixed(2)}`,
+        severity: 'error',
+        data: { performer: totalPerformerAmount, studio: totalStudioAmount, sum: splitSum, attributed: totalGrossAttributed, difference: splitDiff }
+      });
+    }
+    
+    // Check 3: Line items without matching payment
+    const lineItemsWithoutPayment = lineItems.filter(li => {
+      try {
+        const desc = JSON.parse(li.description || '{}');
+        return desc.payment_intent_id && !completedPayments.some(p => p.id === desc.payment_intent_id);
+      } catch {
+        return false;
+      }
+    }).length;
+    
+    if (lineItemsWithoutPayment > 0) {
+      sanityWarnings.push({
+        code: 'LINE_ITEMS_WITHOUT_PAYMENT',
+        message: `${lineItemsWithoutPayment} line items reference payments not found in completed payments list`,
+        severity: 'warning',
+        data: { count: lineItemsWithoutPayment }
+      });
+    }
+    
+    // Check 4: Payments without line items (unattributed payments)
+    const paymentsWithoutLineItems = completedPayments.filter(p => {
+      return !lineItems.some(li => {
+        try {
+          const desc = JSON.parse(li.description || '{}');
+          return desc.payment_intent_id === p.id;
+        } catch {
+          return false;
+        }
+      });
+    }).length;
+    
+    if (paymentsWithoutLineItems > 0) {
+      sanityWarnings.push({
+        code: 'PAYMENTS_WITHOUT_ATTRIBUTION',
+        message: `${paymentsWithoutLineItems} completed payments have no revenue attribution`,
+        severity: 'warning',
+        data: { count: paymentsWithoutLineItems }
+      });
+    }
+
     const studioShare = {
       total_gross_attributed: totalGrossAttributed,
       total_performer_amount: totalPerformerAmount,
@@ -248,16 +383,12 @@ Deno.serve(async (req) => {
       unattributed_gross: unattributedGross,
       performer_percentage: totalGrossAttributed > 0 ? (totalPerformerAmount / totalGrossAttributed * 100).toFixed(2) : 0,
       studio_percentage: totalGrossAttributed > 0 ? (totalStudioAmount / totalGrossAttributed * 100).toFixed(2) : 0,
+      sanity_warnings: sanityWarnings,
     };
 
     // ── F) DIAGNOSTICS ─────────────────────────────────────────────────────
-    // Completed payments without entitlement (check Payment entity for related data)
-    const paymentsWithoutEntitlement = completedPayments.filter(p => {
-      // Simple heuristic: if no related_entity_id, likely missing entitlement
-      return !p.related_entity_id;
-    }).length;
+    const paymentsWithoutEntitlement = completedPayments.filter(p => !p.related_entity_id).length;
 
-    // PPV payments without revenue attribution
     const ppvWithoutAttribution = ppvPayments.filter(p => {
       return !lineItems.some(li => {
         try {
@@ -269,33 +400,22 @@ Deno.serve(async (req) => {
       });
     }).length;
 
-    // PPV payments missing related_entity_id
     const ppvMissingVideoId = ppvPayments.filter(p => !p.related_entity_id).length;
 
-    // Check for videos without VideoPerformer (need to fetch VideoPerformer entities)
-    const videoPerformers = await base44.asServiceRole.entities.VideoPerformer.filter({});
     const videosWithPpvPayments = [...new Set(ppvPayments.map(p => p.related_entity_id).filter(Boolean))];
     const videosWithoutPerformers = videosWithPpvPayments.filter(vid => {
-      return !videoPerformers.some(vp => vp.video_id === vid);
+      return !allVideoPerformers.some(vp => vp.video_id === vid);
     }).length;
 
-    // Fanclub global/unattributed count
-    const fanclubUnattributedCount = fanclubPayments.filter(p => {
-      // Check if subscription has no performer link
-      return !p.related_entity_id;
-    }).length;
+    const fanclubUnattributedCount = fanclubPayments.filter(p => !p.related_entity_id).length;
 
-    // Test mode records excluded
     const testRecordsExcluded = testPayments.length + testLineItems.length;
 
-    // Duplicate webhook count (if PaymentWebhookEvent exists)
     let duplicateWebhookCount = 0;
     try {
       const webhookEvents = await base44.asServiceRole.entities.PaymentWebhookEvent.filter({});
       duplicateWebhookCount = webhookEvents.filter(e => e.event_type === 'payment.completed' && e.processed === false).length;
-    } catch {
-      // PaymentWebhookEvent entity may not exist
-    }
+    } catch {}
 
     const diagnostics = {
       payments_without_entitlement: paymentsWithoutEntitlement,
@@ -323,6 +443,7 @@ Deno.serve(async (req) => {
         from: fromDate.toISOString(),
         to: toDate.toISOString(),
         include_test_mode,
+        source_platform_filter,
       },
       gross_revenue: grossRevenue,
       ppv_revenue: ppvRevenue,
