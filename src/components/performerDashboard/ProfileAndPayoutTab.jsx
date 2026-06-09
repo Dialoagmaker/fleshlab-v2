@@ -13,8 +13,10 @@ export default function ProfileAndPayoutTab({ performer, performerToken }) {
   const [profileData, setProfileData] = useState(null);
 
   useEffect(() => {
-    loadProfile();
-  }, []);
+    if (performer?.performer?.id && performerToken) {
+      loadProfile();
+    }
+  }, [performer?.performer?.id, performerToken]);
 
   const loadProfile = async () => {
     try {

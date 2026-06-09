@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,25 +19,50 @@ function isOver18(dob) {
 
 export default function PersonalProfileSection({ profile, performer, onProfileUpdated, performerId, performerToken }) {
   const [contactData, setContactData] = useState({
-    phone: profile?.phone || "",
-    preferred_language: profile?.preferred_language || "",
-    timezone: profile?.timezone || "",
-    bio: performer?.bio || "",
+    phone: "",
+    preferred_language: "",
+    timezone: "",
+    bio: "",
   });
 
   const [legalData, setLegalData] = useState({
-    legal_first_name: profile?.legal_first_name || "",
-    legal_last_name: profile?.legal_last_name || "",
-    stage_name: performer?.display_name || "",
-    date_of_birth: performer?.date_of_birth || "",
-    nationality: performer?.nationality || "",
-    address_line_1: profile?.address_line_1 || "",
-    address_line_2: profile?.address_line_2 || "",
-    city: profile?.city || "",
-    region: profile?.region || "",
-    postal_code: profile?.postal_code || "",
-    country: profile?.country || "",
+    legal_first_name: "",
+    legal_last_name: "",
+    stage_name: "",
+    date_of_birth: "",
+    nationality: "",
+    address_line_1: "",
+    address_line_2: "",
+    city: "",
+    region: "",
+    postal_code: "",
+    country: "",
   });
+
+  // Sync form data when profile/performer props arrive (async load)
+  useEffect(() => {
+    if (profile || performer) {
+      setContactData({
+        phone: profile?.phone || "",
+        preferred_language: profile?.preferred_language || "",
+        timezone: profile?.timezone || "",
+        bio: performer?.bio || "",
+      });
+      setLegalData({
+        legal_first_name: profile?.legal_first_name || "",
+        legal_last_name: profile?.legal_last_name || "",
+        stage_name: performer?.display_name || "",
+        date_of_birth: performer?.date_of_birth || "",
+        nationality: performer?.nationality || "",
+        address_line_1: profile?.address_line_1 || "",
+        address_line_2: profile?.address_line_2 || "",
+        city: profile?.city || "",
+        region: profile?.region || "",
+        postal_code: profile?.postal_code || "",
+        country: profile?.country || "",
+      });
+    }
+  }, [profile, performer]);
 
   const [contactLoading, setContactLoading] = useState(false);
   const [legalLoading, setLegalLoading] = useState(false);
