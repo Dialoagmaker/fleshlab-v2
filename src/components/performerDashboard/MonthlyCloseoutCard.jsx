@@ -60,6 +60,8 @@ export default function MonthlyCloseoutCard({ performerId, performerToken }) {
   // Calculate status breakdown from earnings
   const approvedPaidEarnings = (earnings || []).filter(e => ['approved', 'paid'].includes(e.status))
     .reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
+  const paidOutEarnings = (earnings || []).filter(e => e.status === 'paid_out')
+    .reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
   const pendingEstimatedEarnings = (earnings || []).filter(e => ['pending', 'estimated'].includes(e.status))
     .reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
 
@@ -93,6 +95,10 @@ export default function MonthlyCloseoutCard({ performerId, performerToken }) {
           <div>
             <p className="text-xs text-muted-foreground">Approved + Paid</p>
             <p className="text-sm font-medium text-green-500">${approvedPaidEarnings.toFixed(2)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Paid Out (This Period)</p>
+            <p className="text-sm font-medium text-emerald-500">${paidOutEarnings.toFixed(2)}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Pending / Estimated</p>
@@ -140,7 +146,7 @@ export default function MonthlyCloseoutCard({ performerId, performerToken }) {
             {Object.entries(summary.by_status).map(([status, statusData]) => (
               <Badge 
                 key={status} 
-                variant={status === 'paid' ? 'default' : status === 'approved' ? 'secondary' : status === 'estimated' ? 'outline' : 'outline'}
+                variant={status === 'paid' || status === 'paid_out' ? 'default' : status === 'approved' ? 'secondary' : status === 'estimated' ? 'outline' : 'outline'}
                 className="text-xs"
               >
                 {status}: {statusData.count} (${statusData.performer.toFixed(2)})

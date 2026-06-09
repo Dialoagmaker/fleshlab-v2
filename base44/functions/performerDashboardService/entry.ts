@@ -237,6 +237,18 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'period_month required' }, { status: 400 });
       }
 
+      // Fetch paid payouts for reconciliation
+      const allPayoutRequests = await base44.asServiceRole.entities.PayoutRequest.filter({
+        performer_id: myPerformer.id
+      });
+      const paidPayoutsForPeriod = (allPayoutRequests || []).filter(r => 
+        r.status === 'paid' && 
+        r.paid_at && 
+        r.paid_at.startsWith(period_month)
+      );
+      const hasPaidPayout = paidPayoutsForPeriod.length > 0;
+      const totalPaidAmount = paidPayoutsForPeriod.reduce((sum, r) => sum + (r.amount || 0), 0);
+
       // Get VideoPerformer links to find videos this performer is in
       const videoPerformers = await base44.asServiceRole.entities.VideoPerformer.filter({
         performer_id: myPerformer.id
@@ -314,20 +326,37 @@ Deno.serve(async (req) => {
       }));
 
       // Process line items
-      const lineItemsProcessed = (lineItems || []).map(item => ({
-        id: item.id,
-        source_type: item.source_type,
-        source_platform: item.source_platform,
-        description: item.description || `${item.source_type} - ${period_month}`,
-        gross_amount_usd: item.gross_amount_usd || 0,
-        performer_share_percent: item.performer_share_percent || 0,
-        performer_amount_usd: item.performer_amount_usd || 0,
-        studio_amount_usd: item.studio_amount_usd || 0,
-        status: item.status,
-        period_month: item.period_month,
-        notes: item.notes,
-        is_legacy: false
-      }));
+      const lineItemsProcessed = (lineItems || []).map(item => {
+        // Reconciliation: If paid payout exists for this period, mark as "paid_out"
+        let displayStatus = item.status;
+        let paidOutInfo = null;
+        
+        if (hasPaidPayout && ['estimated', 'pending', 'approved'].includes(item.status)) {
+          // Check if this item's amount is covered by paid payout
+          displayStatus = 'paid_out';
+          paidOutInfo = {
+            paid_at: paidPayoutsForPeriod[0]?.paid_at,
+            payout_id: paidPayoutsForPeriod[0]?.id,
+            amount_included: item.performer_amount_usd || 0
+          };
+        }
+        
+        return {
+          id: item.id,
+          source_type: item.source_type,
+          source_platform: item.source_platform,
+          description: item.description || `${item.source_type} - ${period_month}`,
+          gross_amount_usd: item.gross_amount_usd || 0,
+          performer_share_percent: item.performer_share_percent || 0,
+          performer_amount_usd: item.performer_amount_usd || 0,
+          studio_amount_usd: item.studio_amount_usd || 0,
+          status: displayStatus,
+          paid_out_info: paidOutInfo,
+          period_month: item.period_month,
+          notes: item.notes,
+          is_legacy: false
+        };
+      });
 
       // Convert VideoStatSnapshot to earnings line items (estimated status)
       // Only include if NOT already in manual earnings to avoid double counting
@@ -352,6 +381,20 @@ Deno.serve(async (req) => {
           const description = isExternal
             ? (stat.external_title || 'External video revenue')
             : (videoMap[stat.video_id] || 'Video platform revenue');
+          
+          // Reconciliation: If paid payout exists for this period, mark as "paid_out"
+          let displayStatus = 'estimated';
+          let paidOutInfo = null;
+          
+          if (hasPaidPayout && stat.period_month === period_month) {
+            displayStatus = 'paid_out';
+            paidOutInfo = {
+              paid_at: paidPayoutsForPeriod[0]?.paid_at,
+              payout_id: paidPayoutsForPeriod[0]?.id,
+              amount_included: gross * (revenueSharePct / 100)
+            };
+          }
+          
           return {
             id: `stat_${stat.id}`,
             source_type: 'video_platform',
@@ -364,7 +407,8 @@ Deno.serve(async (req) => {
             performer_share_percent: revenueSharePct,
             performer_amount_usd: gross * (revenueSharePct / 100),
             studio_amount_usd: gross * ((100 - revenueSharePct) / 100),
-            status: 'estimated',
+            status: displayStatus,
+            paid_out_info: paidOutInfo,
             period_month: stat.period_month,
             views: stat.views,
             likes: stat.likes,
@@ -1040,6 +1084,7 @@ Deno.serve(async (req) => {
 
     // Action: get_payout_summary
     // Returns available balance = approved/paid earnings minus paid/approved payouts
+    // Also performs period-based reconciliation: marks earnings as "paid_out" when covered by paid payout
     if (action === 'get_payout_summary') {
       const now = new Date();
       const currentMonth = now.toISOString().slice(0, 7);
@@ -1054,6 +1099,20 @@ Deno.serve(async (req) => {
         base44.asServiceRole.entities.PerformerEarningLineItem.filter({ performer_id: myPerformer.id }),
         base44.asServiceRole.entities.VideoPerformer.filter({ performer_id: myPerformer.id })
       ]);
+
+      // ── Reconciliation: Identify paid payouts and their periods ────────────
+      const paidPayoutsList = (allPayoutRequests || []).filter(r => r.status === 'paid' && r.paid_at);
+      
+      // Build map of period → total paid out amount
+      const periodPaidMap = {};
+      paidPayoutsList.forEach(payout => {
+        // Extract period from payout (requested_at or explicit period field)
+        const periodKey = payout.requested_at ? payout.requested_at.slice(0, 7) : currentMonth;
+        if (!periodPaidMap[periodKey]) {
+          periodPaidMap[periodKey] = 0;
+        }
+        periodPaidMap[periodKey] += (payout.amount || 0);
+      });
 
       // ── Payout totals ─────────────────────────────────────────────────────
       const paidPayouts = (allPayoutRequests || []).filter(r => r.status === 'paid');
@@ -1102,6 +1161,10 @@ Deno.serve(async (req) => {
       const snapTotal = 0;
 
       const totalEarned = legacyTotal + lineItemTotal + snapTotal;
+
+      // ── Reconciliation: Calculate "Paid Period Earnings" from paid payouts ──
+      // If paid payouts exist for a period, treat that amount as "paid period earnings"
+      const totalPaidPayouts = paidPayoutsList.reduce((sum, r) => sum + (r.amount || 0), 0);
 
       // ── Current month breakdown (for display only) ────────────────────────
       const currentMonthLineItems = (lineItems || []).filter(e => e.period_month === currentMonth);
@@ -1176,9 +1239,17 @@ Deno.serve(async (req) => {
           total_approved_pending_usd: totalApprovedPending,
           available_balance_usd: availableBalance,
           next_payout_date: nextPayoutFormatted,
-          payout_schedule: 'Payouts are processed on the 5th and 15th of each month.'
+          payout_schedule: 'Payouts are processed on the 5th and 15th of each month.',
+          // Reconciliation fields
+          paid_period_earnings_usd: totalPaidPayouts,
+          has_paid_payouts: paidPayoutsList.length > 0
         },
-        payout_history: sortedPayouts
+        payout_history: sortedPayouts,
+        reconciliation: {
+          paid_payouts_count: paidPayoutsList.length,
+          periods_with_paid_payouts: Object.keys(periodPaidMap),
+          period_paid_map: periodPaidMap
+        }
       });
     }
 

@@ -27,11 +27,20 @@ export default function EarningsBreakdownTable({ earnings, summary }) {
   const getStatusColor = (status) => {
     switch (status) {
       case 'paid': return 'bg-green-500/10 text-green-500 border-green-500/20';
+      case 'paid_out': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
       case 'approved': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
       case 'pending': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
       case 'held': return 'bg-red-500/10 text-red-500 border-red-500/20';
+      case 'estimated': return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
       default: return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
     }
+  };
+
+  const getStatusLabel = (status, paidOutInfo) => {
+    if (status === 'paid_out' && paidOutInfo) {
+      return `Paid Out (${formatDate(paidOutInfo.paid_at)})`;
+    }
+    return status;
   };
 
   return (
@@ -88,8 +97,8 @@ export default function EarningsBreakdownTable({ earnings, summary }) {
                     ${(earning.studio_amount_usd || 0).toFixed(2)}
                   </TableCell>
                   <TableCell className="text-center">
-                    <Badge className={getStatusColor(earning.status)} variant="outline">
-                      {earning.status}
+                    <Badge className={getStatusColor(earning.status)} variant="outline" title={earning.paid_out_info ? `Included in payout ${formatDate(earning.paid_out_info.paid_at)}` : ''}>
+                      {getStatusLabel(earning.status, earning.paid_out_info)}
                     </Badge>
                   </TableCell>
                 </TableRow>
