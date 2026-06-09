@@ -21,7 +21,8 @@
       "enum": [
         "video_platform",
         "livecam",
-        "fanclub",
+        "fanclub_subscription",
+        "ppv_purchase",
         "custom_content",
         "bonus",
         "manual_adjustment",
@@ -39,6 +40,7 @@
         "bongacams",
         "livejasmin",
         "internal",
+        "fleshlab",
         "other"
       ],
       "title": "Source Platform"
@@ -46,7 +48,7 @@
     "source_reference_id": {
       "type": "string",
       "title": "Source Reference ID",
-      "description": "Optional - reference to source record (e.g., VideoStatSnapshot ID)"
+      "description": "Optional - reference to source record (e.g., VideoStatSnapshot ID, Subscription ID, Payment ID)"
     },
     "description": {
       "type": "string",
@@ -98,6 +100,12 @@
       "type": "string",
       "title": "Notes",
       "format": "textarea"
+    },
+    "test_mode": {
+      "type": "boolean",
+      "title": "Test Mode",
+      "default": false,
+      "description": "If true, this is a test record and should be excluded from payouts"
     }
   },
   "required": [

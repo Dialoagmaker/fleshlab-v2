@@ -1,5 +1,41 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
+// ── TEST MODE DETECTION HELPER ──────────────────────────────────────────────
+// Prevents test earnings from appearing in performer dashboard/payouts
+function isTestLineItem(item) {
+  if (!item) return false;
+  
+  // Check explicit test_mode field
+  if (item.test_mode === true) return true;
+  
+  // Check description JSON for test_mode
+  try {
+    const desc = JSON.parse(item.description || '{}');
+    if (desc.test_mode === true) return true;
+    if (desc.note && desc.note.includes('TEST')) return true;
+  } catch {}
+  
+  // Check notes field
+  if (item.notes && item.notes.includes('TEST')) return true;
+  
+  // Check source_type for test patterns
+  if (item.source_type && item.source_type.includes('test')) return true;
+  
+  return false;
+}
+
+function isTestEarning(earning) {
+  if (!earning) return false;
+  
+  // Check explicit test_mode field
+  if (earning.test_mode === true) return true;
+  
+  // Check notes field
+  if (earning.notes && earning.notes.includes('TEST')) return true;
+  
+  return false;
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -73,8 +109,10 @@ Deno.serve(async (req) => {
         else if (e.status === 'approved') summary.approved_total += e.net_amount_usd || 0;
       });
 
-      // Line items
+      // Line items (EXCLUDE test_mode)
       (lineItems || []).forEach(item => {
+        if (isTestLineItem(item)) return; // SKIP test line items
+        
         summary.gross_total += item.gross_amount_usd || 0;
         summary.net_total += item.performer_amount_usd || 0;
         if (item.status === 'pending') summary.pending_total += item.performer_amount_usd || 0;
@@ -335,7 +373,9 @@ Deno.serve(async (req) => {
         new Date(a.created_date).getTime() - new Date(b.created_date).getTime()
       );
       
-      const lineItemsProcessed = sortedLineItems.map(item => {
+      const lineItemsProcessed = sortedLineItems
+        .filter(item => !isTestLineItem(item)) // EXCLUDE test line items from performer view
+        .map(item => {
         let displayStatus = item.status;
         let paidOutInfo = null;
         const performerAmount = item.performer_amount_usd || 0;
@@ -483,8 +523,15 @@ Deno.serve(async (req) => {
           };
         });
 
-      // Combine all earnings sources: legacy + line items + video stats
+      // Combine all earnings sources: legacy + line items + video stats (test items already filtered)
       const allEarnings = [...legacyWithVideos, ...lineItemsProcessed, ...videoStatsAsEarnings];
+      
+      // Add test items separately for admin diagnostics (optional)
+      const testLineItems = sortedLineItems.filter(item => isTestLineItem(item)).map(item => ({
+        ...item,
+        is_test: true,
+        description: `${item.description || ''} [TEST DATA - NOT INCLUDED IN TOTALS]`
+      }));
 
       // Calculate summary
       const summary = {
@@ -1233,12 +1280,12 @@ Deno.serve(async (req) => {
 
       // Legacy earnings: only approved/paid count as "earned"
       const legacyTotal = (legacyEarnings || [])
-        .filter(e => ['approved', 'paid'].includes(e.status))
+        .filter(e => ['approved', 'paid'].includes(e.status) && !isTestEarning(e))
         .reduce((sum, e) => sum + (e.net_amount_usd || 0), 0);
       
-      // Line items: only approved/paid count as "earned"
+      // Line items: only approved/paid count as "earned" (EXCLUDE test_mode)
       const lineItemTotal = (lineItems || [])
-        .filter(e => ['approved', 'paid'].includes(e.status))
+        .filter(e => ['approved', 'paid'].includes(e.status) && !isTestLineItem(e))
         .reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
       
       // Snapshots: treated as "estimated" - do NOT count toward available balance
@@ -1262,8 +1309,8 @@ Deno.serve(async (req) => {
         currentMonthSnaps.reduce((sum, s) => sum + (s.revenue_usd || 0), 0);
 
       const currentMonthEarned =
-        currentMonthLegacy.filter(e => ['approved','paid'].includes(e.status)).reduce((sum, e) => sum + (e.net_amount_usd || 0), 0) +
-        currentMonthLineItems.filter(e => ['approved','paid'].includes(e.status)).reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0) +
+        currentMonthLegacy.filter(e => ['approved','paid'].includes(e.status) && !isTestEarning(e)).reduce((sum, e) => sum + (e.net_amount_usd || 0), 0) +
+        currentMonthLineItems.filter(e => ['approved','paid'].includes(e.status) && !isTestLineItem(e)).reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0) +
         currentMonthSnaps.reduce((sum, s) => sum + (s.revenue_usd || 0), 0) * (revenueSharePct / 100);
 
       // ── Available balance = earned (approved/paid) - committed (paid + approved payouts) ──

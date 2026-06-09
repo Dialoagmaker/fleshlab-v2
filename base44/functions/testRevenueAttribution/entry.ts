@@ -56,6 +56,7 @@ async function createPerformerEarningLineItem(base44, params) {
   
   const performer_amount_usd = gross_amount_usd * performer_share_percent / 100;
   const studio_amount_usd = gross_amount_usd - performer_amount_usd;
+
   
   const lineItem = await base44.asServiceRole.entities.PerformerEarningLineItem.create({
     performer_id,
@@ -68,7 +69,6 @@ async function createPerformerEarningLineItem(base44, params) {
       payment_idempotency_key,
       payment_intent_id,
       provider,
-      test_mode: true,
       ...(description ? { note: description } : {}),
     }),
     gross_amount_usd,
@@ -79,6 +79,7 @@ async function createPerformerEarningLineItem(base44, params) {
     exchange_rate: 1,
     status: 'approved',
     notes: `TEST - Auto-created from ${source_type} payment via revenue attribution test`,
+    test_mode: true, // EXPLICITLY SET test_mode field
   });
   
   console.log('[testRevenueAttribution] PerformerEarningLineItem created:', { 
