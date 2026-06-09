@@ -55,7 +55,7 @@ function getOverallStatus(documents) {
   return "pending_review";
 }
 
-function IdDocumentCard({ docType, existingDoc, onUploaded }) {
+function IdDocumentCard({ docType, existingDoc, onUploaded, performerId, performerToken }) {
   const config = DOC_CONFIG[docType];
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -89,6 +89,8 @@ function IdDocumentCard({ docType, existingDoc, onUploaded }) {
       // Step 1: Get signed upload URL
       const urlRes = await base44.functions.invoke("performerIdVerificationService", {
         action: "create_upload_url",
+        performer_id: performerId,
+        performer_token: performerToken,
         document_type: docType,
         file_name: file.name,
         file_size_bytes: file.size,
@@ -118,6 +120,8 @@ function IdDocumentCard({ docType, existingDoc, onUploaded }) {
       // Step 3: Confirm upload
       const confirmRes = await base44.functions.invoke("performerIdVerificationService", {
         action: "confirm_upload",
+        performer_id: performerId,
+        performer_token: performerToken,
         document_id,
       });
 
@@ -216,15 +220,20 @@ function IdDocumentCard({ docType, existingDoc, onUploaded }) {
   );
 }
 
-export default function IdentityVerificationTab() {
+export default function IdentityVerificationTab({ performerId, performerToken }) {
   const queryClient = useQueryClient();
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["performer-id-documents"],
+    queryKey: ["performer-id-documents", performerId],
     queryFn: async () => {
-      const res = await base44.functions.invoke("performerIdVerificationService", { action: "get_id_documents" });
+      const res = await base44.functions.invoke("performerIdVerificationService", {
+        action: "get_id_documents",
+        performer_id: performerId,
+        performer_token: performerToken,
+      });
       return res.data;
     },
+    enabled: !!performerId && !!performerToken,
   });
 
   const documents = data?.documents || [];
@@ -281,7 +290,9 @@ export default function IdentityVerificationTab() {
                   key={type}
                   docType={type}
                   existingDoc={getDocForType(type)}
-                  onUploaded={() => queryClient.invalidateQueries({ queryKey: ["performer-id-documents"] })}
+                  onUploaded={() => queryClient.invalidateQueries({ queryKey: ["performer-id-documents", performerId] })}
+                  performerId={performerId}
+                  performerToken={performerToken}
                 />
               ))}
             </div>

@@ -63,7 +63,10 @@ export default function ProfileAndPayoutTab({ performer, performerToken }) {
         </TabsContent>
 
         <TabsContent value="identity" className="mt-6">
-          <IdentityVerificationTab />
+          <IdentityVerificationTab
+            performerId={performer?.performer?.id}
+            performerToken={performerToken}
+          />
         </TabsContent>
 
         <TabsContent value="payout-method" className="mt-6">
