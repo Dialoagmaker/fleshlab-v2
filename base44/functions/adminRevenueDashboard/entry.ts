@@ -22,49 +22,56 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 // ── TEST MODE DETECTION HELPERS ────────────────────────────────────────────
 function isTestLineItem(item) {
   if (!item) return false;
+  
+  // Check explicit test_mode field
   if (item.test_mode === true) return true;
+  
+  // Check description JSON for test markers
   try {
     const desc = JSON.parse(item.description || '{}');
     if (desc.test_mode === true) return true;
-    if (desc.note && desc.note.includes('TEST')) return true;
-    if (desc.note && desc.note.includes('REVENUE_ATTRIBUTION_TEST')) return true;
+    if (desc.simulated === true) return true;
+    if (desc.note) {
+      const note = desc.note.toUpperCase();
+      if (note.includes('TEST') || note.includes('SIMULATED') || note.includes('REVENUE_ATTRIBUTION_TEST')) return true;
+    }
   } catch {}
-  if (item.notes && item.notes.includes('TEST')) return true;
-  if (item.source_type && item.source_type.includes('test')) return true;
+  
+  // Check notes field
+  if (item.notes) {
+    const notes = item.notes.toUpperCase();
+    if (notes.includes('TEST') || notes.includes('SIMULATED')) return true;
+  }
+  
   return false;
 }
 
 function isTestPayment(payment) {
   if (!payment) return false;
   
-  // Check stripe_payment_intent_id (used for all providers) for TEST marker
-  if (payment.stripe_payment_intent_id && payment.stripe_payment_intent_id.includes('TEST')) {
-    return true;
+  // Check explicit test_mode field
+  if (payment.test_mode === true) return true;
+  
+  // Check stripe_payment_intent_id (used for all providers) for TEST/SIMULATED markers
+  if (payment.stripe_payment_intent_id) {
+    const sessionId = payment.stripe_payment_intent_id.toUpperCase();
+    if (sessionId.includes('TEST') || sessionId.includes('SIMULATED')) return true;
   }
   
-  // Check metadata for test_mode flag or TEST in provider_session_id
+  // Check metadata for test_mode flag or TEST/SIMULATED in provider_session_id
   try {
     if (payment.metadata) {
-      // Metadata might be string or already parsed object
       const meta = typeof payment.metadata === 'string' ? JSON.parse(payment.metadata) : payment.metadata;
       if (meta && typeof meta === 'object') {
-        if (meta.test_mode === true) {
-          return true;
+        if (meta.test_mode === true) return true;
+        if (meta.provider_session_id) {
+          const providerSession = meta.provider_session_id.toUpperCase();
+          if (providerSession.includes('TEST') || providerSession.includes('SIMULATED')) return true;
         }
-        // Also check provider_session_id in metadata
-        if (meta.provider_session_id && meta.provider_session_id.includes('TEST')) {
-          return true;
-        }
+        if (meta.simulated === true) return true;
       }
     }
-  } catch (err) {
-    console.log('[isTestPayment] Failed to parse metadata:', payment.id, err.message);
-  }
-  
-  // Check explicit test_mode field
-  if (payment.test_mode === true) {
-    return true;
-  }
+  } catch {}
   
   return false;
 }
@@ -178,16 +185,7 @@ Deno.serve(async (req) => {
       
       // Check if it's a payment
       if (record.amount_usd !== undefined && record.payment_type !== undefined) {
-        const isTest = isTestPayment(record);
-        // Debug logging for test detection
-        if (isTest) {
-          console.log('[adminRevenueDashboard] Filtering out test payment:', {
-            id: record.id,
-            provider_session_id: record.provider_session_id,
-            metadata_sample: typeof record.metadata === 'string' ? record.metadata.substring(0, 100) : record.metadata,
-          });
-        }
-        return !isTest;
+        return !isTestPayment(record);
       }
       // Check if it's a line item
       else if (record.gross_amount_usd !== undefined && record.performer_amount_usd !== undefined) {

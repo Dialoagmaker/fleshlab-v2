@@ -16,13 +16,31 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 // ── TEST MODE DETECTION ────────────────────────────────────────────────────
 function isTestPayment(payment) {
   if (!payment) return false;
+  
+  // Check explicit test_mode field
+  if (payment.test_mode === true) return true;
+  
+  // Check stripe_payment_intent_id (used for all providers) for TEST/SIMULATED markers
+  if (payment.stripe_payment_intent_id) {
+    const sessionId = payment.stripe_payment_intent_id.toUpperCase();
+    if (sessionId.includes('TEST') || sessionId.includes('SIMULATED')) return true;
+  }
+  
+  // Check metadata for test_mode or simulated flags
   try {
     if (payment.metadata) {
       const meta = typeof payment.metadata === 'string' ? JSON.parse(payment.metadata) : payment.metadata;
-      if (meta.test_mode === true) return true;
+      if (meta && typeof meta === 'object') {
+        if (meta.test_mode === true) return true;
+        if (meta.simulated === true) return true;
+        if (meta.provider_session_id) {
+          const providerSession = meta.provider_session_id.toUpperCase();
+          if (providerSession.includes('TEST') || providerSession.includes('SIMULATED')) return true;
+        }
+      }
     }
   } catch {}
-  if (payment.provider_session_id && payment.provider_session_id.includes('TEST')) return true;
+  
   return false;
 }
 

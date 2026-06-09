@@ -66,6 +66,7 @@ async function createPerformerEarningLineItem(base44, params) {
     currency: 'usd',
     exchange_rate: 1,
     status: 'approved',
+    test_mode: true,
     notes: `Auto-created from ${source_type} payment via simulatePaymentWebhook (REVENUE_ATTRIBUTION_TEST)`,
   });
   
@@ -94,6 +95,7 @@ async function grantEntitlement(base44, intent) {
         price_tier:          intent.price_tier,
         payment_intent_id:   intent.id,
         simulated: true,
+        test_mode: true,
       }),
     });
     console.log('[simulatePaymentWebhook] PPV entitlement granted:', { userId: intent.user_id, videoId: intent.video_id, paymentId: payment.id });
@@ -130,6 +132,7 @@ async function grantEntitlement(base44, intent) {
         period_month: periodMonth,
         description: `PPV purchase (TEST) - ${performer.display_name}`,
         provider: intent.provider,
+        test_mode: true,
       });
       
       revenueAttributions.push({
@@ -215,6 +218,7 @@ async function grantEntitlement(base44, intent) {
       period_month: periodMonth,
       description: `Fanclub subscription (TEST) - ${fanclub.name} - ${performer.display_name}`,
       provider: intent.provider,
+      test_mode: true,
     });
     
     return {
@@ -253,6 +257,7 @@ async function grantEntitlement(base44, intent) {
           provider_session_id: intent.provider_session_id,
           payment_type:        'guest_production_deposit',
           simulated: true,
+          test_mode: true,
         }),
       });
     }
