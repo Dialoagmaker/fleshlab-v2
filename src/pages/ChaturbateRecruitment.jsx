@@ -66,99 +66,83 @@ export default function ChaturbateRecruitment() {
       <div style={{ background: '#050505' }}>
 
         {/* ── HERO ─────────────────────────────────────────────────────── */}
-        <section className="hero-bg relative px-4 sm:px-6 lg:px-8 overflow-hidden"
+        <section className="hero-bg relative overflow-hidden"
           style={{
-            minHeight: '760px',
+            minHeight: '820px',
             backgroundImage: 'url("https://video.fleshlab.online/banner%20and%20logos/ChatGPT%20Image%209.%20Juni%202026%2C%2022_39_56.png")',
             backgroundSize: 'cover',
-            backgroundPosition: 'center right',
+            backgroundPosition: '70% center',
             backgroundRepeat: 'no-repeat',
           }}>
-          {/* Gradient overlay — left heavy, fades to transparent right */}
+          {/* Asymmetric overlay: left dark for text, right barely touched so creator is visible */}
           <div className="absolute inset-0 pointer-events-none"
-            style={{ background: 'linear-gradient(to right, rgba(5,5,5,0.88) 0%, rgba(5,5,5,0.65) 35%, rgba(5,5,5,0.32) 60%, rgba(5,5,5,0.1) 100%)' }} />
+            style={{ background: 'linear-gradient(to right, rgba(5,5,5,0.82) 0%, rgba(5,5,5,0.55) 30%, rgba(5,5,5,0.22) 58%, rgba(5,5,5,0.06) 100%)' }} />
           {/* Bottom fade into next section */}
-          <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+          <div className="absolute bottom-0 left-0 right-0 h-36 pointer-events-none"
             style={{ background: 'linear-gradient(to bottom, transparent, #080508)' }} />
 
-          <div className="max-w-5xl mx-auto relative z-10" style={{ paddingTop: '120px', paddingBottom: '120px' }}>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Content — full width container, text stays left, image shows right */}
+          <div className="relative z-10 max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center"
+            style={{ minHeight: '820px' }}>
+            <div style={{ maxWidth: '560px', paddingTop: '120px', paddingBottom: '140px' }}>
 
-              {/* Left — copy */}
-              <div>
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-7 text-xs font-black uppercase tracking-widest text-rose-400"
-                  style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.35)' }}>
-                  <Video className="w-3.5 h-3.5" />
-                  For Cam Models
-                </div>
-
-                <h1 className="font-black text-white leading-[1.0] tracking-tight mb-5"
-                  style={{ fontSize: 'clamp(38px, 5vw, 60px)' }}>
-                  Keep Camming.<br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-amber-400">
-                    Add Studio Income.
-                  </span>
-                </h1>
-
-                <p className="text-white/75 text-lg mb-8 leading-relaxed" style={{ maxWidth: '480px' }}>
-                  Add recorded studio content and fanclub income on top of your cam earnings. No exclusivity. Keep all your platforms. 70% revenue share on the network model.
-                </p>
-
-                <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                  <Button size="lg"
-                    className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-8 h-[52px] text-base rounded-xl shadow-lg shadow-rose-900/30"
-                    onClick={handleApplyClick}>
-                    Start Your Application
-                  </Button>
-                  <Button size="lg"
-                    className="border border-white/25 text-white hover:bg-white/8 bg-transparent h-[52px] px-8 text-base font-bold rounded-xl"
-                    onClick={handleWhatsAppClick}>
-                    <MessageCircle className="mr-2 h-5 w-5" />
-                    Talk on WhatsApp
-                  </Button>
-                </div>
-
-                {/* Benefit chips */}
-                <div className="flex flex-wrap gap-3">
-                  {[
-                    { icon: <Shield className="w-3.5 h-3.5 text-rose-400" />, label: "No exclusivity" },
-                    { icon: <Globe className="w-3.5 h-3.5 text-rose-400" />, label: "Keep your platforms" },
-                    { icon: <DollarSign className="w-3.5 h-3.5 text-rose-400" />, label: "70% revenue share" },
-                  ].map(chip => (
-                    <div key={chip.label} className="flex items-center gap-2 px-3 py-1.5 rounded-full text-white/70 text-xs font-semibold"
-                      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      {chip.icon}{chip.label}
-                    </div>
-                  ))}
-                </div>
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-7 text-xs font-black uppercase tracking-widest text-rose-400"
+                style={{ background: 'rgba(244,63,94,0.12)', border: '1px solid rgba(244,63,94,0.4)', boxShadow: '0 0 14px rgba(244,63,94,0.15)' }}>
+                <Video className="w-3.5 h-3.5" />
+                For Cam Models
               </div>
 
-              {/* Right — income comparison */}
-              <div className="relative hidden lg:block">
-                <div className="rounded-2xl overflow-hidden"
-                  style={{ background: 'rgba(5,5,5,0.55)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                  <div className="px-6 py-4 border-b border-white/8">
-                    <p className="text-white/40 text-xs font-black uppercase tracking-widest">Income Comparison</p>
+              <h1 className="font-black text-white leading-[1.0] tracking-tight mb-6"
+                style={{ fontSize: 'clamp(40px, 5.5vw, 66px)' }}>
+                Keep Camming.<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-amber-400">
+                  Add Studio Income.
+                </span>
+              </h1>
+
+              <p className="text-white/80 text-lg mb-9 leading-relaxed" style={{ maxWidth: '460px' }}>
+                Keep your platforms. Add recorded studio content, fanclub income and long-term distribution through FLESHLAB.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4 mb-7">
+                <Button size="lg"
+                  className="bg-rose-600 hover:bg-rose-700 text-white font-black px-9 h-[54px] text-base rounded-xl shadow-xl shadow-rose-900/40"
+                  onClick={handleApplyClick}>
+                  Start Your Application
+                </Button>
+                <Button size="lg"
+                  className="border border-white/30 text-white hover:bg-white/8 bg-transparent h-[54px] px-8 text-base font-bold rounded-xl"
+                  onClick={handleWhatsAppClick}>
+                  <MessageCircle className="mr-2 h-5 w-5" />
+                  Talk on WhatsApp
+                </Button>
+              </div>
+
+              {/* Benefit chips */}
+              <div className="flex flex-wrap gap-2.5 mb-8">
+                {[
+                  { icon: <Shield className="w-3.5 h-3.5 text-rose-400" />, label: "No exclusivity" },
+                  { icon: <Globe className="w-3.5 h-3.5 text-rose-400" />, label: "Keep your platforms" },
+                  { icon: <DollarSign className="w-3.5 h-3.5 text-amber-400" />, label: "70% revenue share" },
+                ].map(chip => (
+                  <div key={chip.label} className="flex items-center gap-2 px-3 py-1.5 rounded-full text-white/75 text-xs font-semibold"
+                    style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.13)' }}>
+                    {chip.icon}{chip.label}
                   </div>
-                  <div className="p-6 grid grid-cols-2 gap-4">
-                    <div className="rounded-xl p-5 text-center"
-                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                      <Clock className="h-6 w-6 text-white/30 mx-auto mb-3" />
-                      <p className="text-white/40 text-xs font-bold uppercase tracking-wide mb-1">Live Cam</p>
-                      <p className="text-white font-black text-lg leading-tight">Active Income</p>
-                      <p className="text-white/30 text-xs mt-2">Stops when you go offline</p>
-                    </div>
-                    <div className="rounded-xl p-5 text-center"
-                      style={{ background: 'rgba(244,63,94,0.12)', border: '1px solid rgba(244,63,94,0.3)' }}>
-                      <TrendingUp className="h-6 w-6 text-rose-400 mx-auto mb-3" />
-                      <p className="text-rose-400 text-xs font-bold uppercase tracking-wide mb-1">Studio Content</p>
-                      <p className="text-white font-black text-lg leading-tight">Passive Income</p>
-                      <p className="text-white/50 text-xs mt-2">Earns while you sleep</p>
-                    </div>
-                  </div>
-                  <div className="px-6 pb-5 text-center">
-                    <p className="text-white/35 text-sm">2 hours filming can generate income for 12+ months</p>
-                  </div>
+                ))}
+              </div>
+
+              {/* Income comparison — flat stat bar, not a floating card */}
+              <div className="flex items-center gap-5 px-5 py-3.5 rounded-xl"
+                style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div className="flex items-center gap-2.5 text-xs text-white/50">
+                  <Clock className="h-4 w-4 text-white/25 flex-shrink-0" />
+                  <span><span className="text-white/65 font-bold">Cam tips</span> stop when you go offline</span>
+                </div>
+                <div className="w-px h-8 bg-white/10 flex-shrink-0" />
+                <div className="flex items-center gap-2.5 text-xs text-white/70">
+                  <TrendingUp className="h-4 w-4 text-rose-400 flex-shrink-0" />
+                  <span><span className="text-rose-300 font-bold">Studio content</span> earns while you sleep</span>
                 </div>
               </div>
             </div>
