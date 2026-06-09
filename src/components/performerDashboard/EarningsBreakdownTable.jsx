@@ -32,13 +32,20 @@ export default function EarningsBreakdownTable({ earnings, summary }) {
       case 'pending': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
       case 'held': return 'bg-red-500/10 text-red-500 border-red-500/20';
       case 'estimated': return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+      case 'estimated_not_included': return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
       default: return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
     }
   };
 
   const getStatusLabel = (status, paidOutInfo) => {
     if (status === 'paid_out' && paidOutInfo) {
+      if (paidOutInfo.allocation_type === 'partial') {
+        return `Partially Paid (${formatDate(paidOutInfo.paid_at)})`;
+      }
       return `Paid Out (${formatDate(paidOutInfo.paid_at)})`;
+    }
+    if (status === 'estimated_not_included') {
+      return 'Estimated (Not in Payout)';
     }
     return status;
   };
@@ -97,7 +104,17 @@ export default function EarningsBreakdownTable({ earnings, summary }) {
                     ${(earning.studio_amount_usd || 0).toFixed(2)}
                   </TableCell>
                   <TableCell className="text-center">
-                    <Badge className={getStatusColor(earning.status)} variant="outline" title={earning.paid_out_info ? `Included in payout ${formatDate(earning.paid_out_info.paid_at)}` : ''}>
+                    <Badge 
+                      className={getStatusColor(earning.status)} 
+                      variant="outline" 
+                      title={
+                        earning.paid_out_info 
+                          ? (earning.status === 'paid_out' 
+                              ? `Included in payout ${formatDate(earning.paid_out_info.paid_at)}${earning.paid_out_info.allocation_type === 'partial' ? ` (${earning.paid_out_info.amount_included.toFixed(2)} of ${earning.performer_amount_usd.toFixed(2)})` : ''}`
+                              : earning.paid_out_info.reason)
+                          : ''
+                      }
+                    >
                       {getStatusLabel(earning.status, earning.paid_out_info)}
                     </Badge>
                   </TableCell>

@@ -62,8 +62,12 @@ export default function MonthlyCloseoutCard({ performerId, performerToken }) {
     .reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
   const paidOutEarnings = (earnings || []).filter(e => e.status === 'paid_out')
     .reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
+  const estimatedNotIncluded = (earnings || []).filter(e => e.status === 'estimated_not_included')
+    .reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
   const pendingEstimatedEarnings = (earnings || []).filter(e => ['pending', 'estimated'].includes(e.status))
     .reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
+  
+  const reconciliation = data?.reconciliation || {};
 
   if (!hasEarnings) {
     return (
@@ -100,6 +104,12 @@ export default function MonthlyCloseoutCard({ performerId, performerToken }) {
             <p className="text-xs text-muted-foreground">Paid Out (This Period)</p>
             <p className="text-sm font-medium text-emerald-500">${paidOutEarnings.toFixed(2)}</p>
           </div>
+          {estimatedNotIncluded > 0 && (
+            <div>
+              <p className="text-xs text-muted-foreground">Est. Not in Payout</p>
+              <p className="text-sm text-orange-400">${estimatedNotIncluded.toFixed(2)}</p>
+            </div>
+          )}
           <div>
             <p className="text-xs text-muted-foreground">Pending / Estimated</p>
             <p className="text-sm text-yellow-400">${pendingEstimatedEarnings.toFixed(2)}</p>
@@ -146,12 +156,23 @@ export default function MonthlyCloseoutCard({ performerId, performerToken }) {
             {Object.entries(summary.by_status).map(([status, statusData]) => (
               <Badge 
                 key={status} 
-                variant={status === 'paid' || status === 'paid_out' ? 'default' : status === 'approved' ? 'secondary' : status === 'estimated' ? 'outline' : 'outline'}
+                variant={status === 'paid' || status === 'paid_out' ? 'default' : status === 'approved' ? 'secondary' : status === 'estimated_not_included' ? 'outline' : status === 'estimated' ? 'outline' : 'outline'}
                 className="text-xs"
               >
-                {status}: {statusData.count} (${statusData.performer.toFixed(2)})
+                {status.replace('_', ' ')}: {statusData.count} (${statusData.performer.toFixed(2)})
               </Badge>
             ))}
+          </div>
+        )}
+        
+        {/* Reconciliation info */}
+        {reconciliation?.has_paid_payout && (
+          <div className="pt-2 border-t text-xs text-muted-foreground space-y-1">
+            <p>
+              <strong>Payout Reconciliation:</strong> ${reconciliation.total_paid_payout_amount.toFixed(2)} paid payout 
+              → ${reconciliation.allocated_to_earnings.toFixed(2)} allocated to earnings
+              {reconciliation.estimated_not_included > 0 && ` | ${reconciliation.estimated_not_included.toFixed(2)} estimated (not included)`}
+            </p>
           </div>
         )}
 

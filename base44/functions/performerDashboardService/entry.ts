@@ -248,6 +248,10 @@ Deno.serve(async (req) => {
       );
       const hasPaidPayout = paidPayoutsForPeriod.length > 0;
       const totalPaidAmount = paidPayoutsForPeriod.reduce((sum, r) => sum + (r.amount || 0), 0);
+      
+      // ── Reconciliation: Allocate payout amount to earnings proportionally ─────
+      // We need to track how much of the payout is already allocated
+      let remainingPayoutAmount = totalPaidAmount;
 
       // Get VideoPerformer links to find videos this performer is in
       const videoPerformers = await base44.asServiceRole.entities.VideoPerformer.filter({
@@ -325,19 +329,52 @@ Deno.serve(async (req) => {
         };
       }));
 
-      // Process line items
-      const lineItemsProcessed = (lineItems || []).map(item => {
-        // Reconciliation: If paid payout exists for this period, mark as "paid_out"
+      // Process line items with payout allocation
+      // Sort by created_date to allocate payout to oldest earnings first
+      const sortedLineItems = (lineItems || []).sort((a, b) => 
+        new Date(a.created_date).getTime() - new Date(b.created_date).getTime()
+      );
+      
+      const lineItemsProcessed = sortedLineItems.map(item => {
         let displayStatus = item.status;
         let paidOutInfo = null;
+        const performerAmount = item.performer_amount_usd || 0;
         
-        if (hasPaidPayout && ['estimated', 'pending', 'approved'].includes(item.status)) {
-          // Check if this item's amount is covered by paid payout
-          displayStatus = 'paid_out';
+        // Reconciliation: Allocate payout amount to earnings until exhausted
+        if (hasPaidPayout && ['estimated', 'pending', 'approved'].includes(item.status) && remainingPayoutAmount > 0) {
+          if (performerAmount <= remainingPayoutAmount) {
+            // Full amount covered by payout
+            displayStatus = 'paid_out';
+            paidOutInfo = {
+              paid_at: paidPayoutsForPeriod[0]?.paid_at,
+              payout_id: paidPayoutsForPeriod[0]?.id,
+              amount_included: performerAmount,
+              allocation_type: 'full'
+            };
+            remainingPayoutAmount -= performerAmount;
+          } else if (remainingPayoutAmount > 0) {
+            // Partial allocation - this earning is partially covered
+            displayStatus = 'paid_out';
+            paidOutInfo = {
+              paid_at: paidPayoutsForPeriod[0]?.paid_at,
+              payout_id: paidPayoutsForPeriod[0]?.id,
+              amount_included: remainingPayoutAmount,
+              amount_not_included: performerAmount - remainingPayoutAmount,
+              allocation_type: 'partial'
+            };
+            remainingPayoutAmount = 0;
+          } else {
+            // Payout exhausted - mark as not included
+            displayStatus = 'estimated_not_included';
+            paidOutInfo = {
+              reason: 'Payout amount exhausted - this earning was not included in the paid payout'
+            };
+          }
+        } else if (hasPaidPayout && remainingPayoutAmount === 0 && ['estimated', 'pending', 'approved'].includes(item.status)) {
+          // Payout already fully allocated
+          displayStatus = 'estimated_not_included';
           paidOutInfo = {
-            paid_at: paidPayoutsForPeriod[0]?.paid_at,
-            payout_id: paidPayoutsForPeriod[0]?.id,
-            amount_included: item.performer_amount_usd || 0
+            reason: 'Not included in paid payout (payout amount exhausted)'
           };
         }
         
@@ -348,7 +385,7 @@ Deno.serve(async (req) => {
           description: item.description || `${item.source_type} - ${period_month}`,
           gross_amount_usd: item.gross_amount_usd || 0,
           performer_share_percent: item.performer_share_percent || 0,
-          performer_amount_usd: item.performer_amount_usd || 0,
+          performer_amount_usd: performerAmount,
           studio_amount_usd: item.studio_amount_usd || 0,
           status: displayStatus,
           paid_out_info: paidOutInfo,
@@ -374,24 +411,52 @@ Deno.serve(async (req) => {
           // External-only stats (no video_id): always include — they can't be in existingVideoIds
           return true;
         })
+        .sort((a, b) => new Date(a.created_date).getTime() - new Date(b.created_date).getTime())
         .map(stat => {
           const revenueSharePct = myPerformer.revenue_split_pct || 40;
           const gross = stat.revenue_usd || 0;
+          const performerAmount = gross * (revenueSharePct / 100);
           const isExternal = !stat.video_id;
           const description = isExternal
             ? (stat.external_title || 'External video revenue')
             : (videoMap[stat.video_id] || 'Video platform revenue');
           
-          // Reconciliation: If paid payout exists for this period, mark as "paid_out"
+          // Reconciliation: Continue allocating remaining payout amount
           let displayStatus = 'estimated';
           let paidOutInfo = null;
           
-          if (hasPaidPayout && stat.period_month === period_month) {
-            displayStatus = 'paid_out';
+          if (hasPaidPayout && stat.period_month === period_month && remainingPayoutAmount > 0) {
+            if (performerAmount <= remainingPayoutAmount) {
+              // Full amount covered
+              displayStatus = 'paid_out';
+              paidOutInfo = {
+                paid_at: paidPayoutsForPeriod[0]?.paid_at,
+                payout_id: paidPayoutsForPeriod[0]?.id,
+                amount_included: performerAmount,
+                allocation_type: 'full'
+              };
+              remainingPayoutAmount -= performerAmount;
+            } else if (remainingPayoutAmount > 0) {
+              // Partial allocation
+              displayStatus = 'paid_out';
+              paidOutInfo = {
+                paid_at: paidPayoutsForPeriod[0]?.paid_at,
+                payout_id: paidPayoutsForPeriod[0]?.id,
+                amount_included: remainingPayoutAmount,
+                amount_not_included: performerAmount - remainingPayoutAmount,
+                allocation_type: 'partial'
+              };
+              remainingPayoutAmount = 0;
+            } else {
+              displayStatus = 'estimated_not_included';
+              paidOutInfo = {
+                reason: 'Payout amount exhausted'
+              };
+            }
+          } else if (hasPaidPayout && remainingPayoutAmount === 0 && stat.period_month === period_month) {
+            displayStatus = 'estimated_not_included';
             paidOutInfo = {
-              paid_at: paidPayoutsForPeriod[0]?.paid_at,
-              payout_id: paidPayoutsForPeriod[0]?.id,
-              amount_included: gross * (revenueSharePct / 100)
+              reason: 'Not included in paid payout (payout amount exhausted)'
             };
           }
           
@@ -405,7 +470,7 @@ Deno.serve(async (req) => {
             is_external_only: isExternal,
             gross_amount_usd: gross,
             performer_share_percent: revenueSharePct,
-            performer_amount_usd: gross * (revenueSharePct / 100),
+            performer_amount_usd: performerAmount,
             studio_amount_usd: gross * ((100 - revenueSharePct) / 100),
             status: displayStatus,
             paid_out_info: paidOutInfo,
@@ -469,13 +534,28 @@ Deno.serve(async (req) => {
         summary.by_status[e.status].performer += e.performer_amount_usd;
       });
 
+      // Calculate reconciliation summary
+      const paidOutTotal = allEarnings
+        .filter(e => e.status === 'paid_out')
+        .reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
+      const estimatedNotIncluded = allEarnings
+        .filter(e => e.status === 'estimated_not_included')
+        .reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
+
       return Response.json({ 
         success: true, 
         earnings: allEarnings,
         summary,
         legacy_count: legacyWithVideos.length,
         line_item_count: lineItemsProcessed.length,
-        video_stats_count: videoStatsAsEarnings.length
+        video_stats_count: videoStatsAsEarnings.length,
+        reconciliation: {
+          has_paid_payout: hasPaidPayout,
+          total_paid_payout_amount: totalPaidAmount,
+          allocated_to_earnings: paidOutTotal,
+          estimated_not_included: estimatedNotIncluded,
+          remaining_unallocated: remainingPayoutAmount
+        }
       });
     }
 
