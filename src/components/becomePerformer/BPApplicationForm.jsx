@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, ChevronRight, ChevronLeft } from "lucide-react";
-import { trackPhilippinesApplicationStart } from "@/lib/analytics";
+import { trackPhilippinesApplicationStart, trackApplicationStart, trackApplicationSubmit, trackApplicationStepComplete } from "@/lib/analytics";
 import { base44 } from "@/api/base44Client";
 import toast from "react-hot-toast";
 import FileUploadField from "@/components/application/FileUploadField";
@@ -85,9 +85,18 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
 
     const submitMutation = useMutation({
     onMutate: () => {
+      // Track application start
+      trackApplicationStart('performer_application', sourcePage);
+      
+      // Track Philippines-specific
       if (sourcePage === "gay-performer-recruitment-philippines") {
         trackPhilippinesApplicationStart({ utmSource, utmMarket, utmCampaign });
       }
+      
+      // Track step completions
+      trackApplicationStepComplete(1, 'performer_application');
+      trackApplicationStepComplete(2, 'performer_application');
+      trackApplicationStepComplete(3, 'performer_application');
     },
     mutationFn: async () => {
       const modelMap = {
@@ -136,6 +145,15 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
       return response.data;
     },
     onSuccess: (data) => {
+      // Track application submit
+      trackApplicationSubmit(
+        'performer_application',
+        sourcePage,
+        mediaKeys.profile_photo_r2_keys.length >= 5,
+        !!(mediaKeys.intro_video_r2_key && mediaKeys.hardcore_video_r2_key),
+        !!p3.id_document_r2_key
+      );
+      
       onSuccess({ first_name: p1.first_name, last_name: p1.last_name, email: p1.email });
     },
     onError: () => {},

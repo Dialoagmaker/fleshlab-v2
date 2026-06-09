@@ -283,6 +283,224 @@ export function trackWhatsappRecruitmentClick(sourcePage) {
 }
 
 /**
+ * Track performer apply CTA click
+ */
+export function trackPerformerApplyClick(ctaLocation, sourcePage) {
+  trackEvent('performer_apply_click', {
+    cta_location: ctaLocation,
+    source_page: sourcePage,
+    landing_page_type: 'recruitment',
+  });
+}
+
+/**
+ * Track fan production request click
+ */
+export function trackFanProductionRequestClick(ctaLocation, sourcePage) {
+  trackEvent('fan_production_request_click', {
+    cta_location: ctaLocation,
+    source_page: sourcePage,
+    landing_page_type: 'fan_production',
+  });
+}
+
+/**
+ * Track fanclub join click
+ */
+export function trackFanclubJoinClick(planId, performerSlug, ctaLocation, sourcePage) {
+  trackEvent('fanclub_join_click', {
+    plan_id: planId,
+    performer_slug: performerSlug || 'general',
+    cta_location: ctaLocation,
+    source_page: sourcePage,
+  });
+}
+
+/**
+ * Track video unlock click
+ */
+export function trackVideoUnlockClick(videoId, priceTier, ctaLocation, sourcePage) {
+  trackEvent('video_unlock_click', {
+    video_id: videoId,
+    price_tier: priceTier,
+    cta_location: ctaLocation,
+    source_page: sourcePage,
+  });
+}
+
+/**
+ * Track application start
+ */
+export function trackApplicationStart(applicationType, sourcePage) {
+  trackEvent('application_start', {
+    application_type: applicationType,
+    source_page: sourcePage,
+  });
+}
+
+/**
+ * Track application step complete
+ */
+export function trackApplicationStepComplete(stepNumber, applicationType) {
+  trackEvent('application_step_complete', {
+    step_number: stepNumber,
+    application_type: applicationType,
+  });
+}
+
+/**
+ * Track application submit
+ */
+export function trackApplicationSubmit(applicationType, sourcePage, hasPhotos, hasVideos, hasId) {
+  trackEvent('application_submit', {
+    application_type: applicationType,
+    source_page: sourcePage,
+    photos_uploaded: hasPhotos,
+    videos_uploaded: hasVideos,
+    id_uploaded: hasId,
+  });
+}
+
+/**
+ * Track upload link opened
+ */
+export function trackUploadLinkOpened(applicationType) {
+  trackEvent('application_upload_link_opened', {
+    application_type: applicationType,
+  });
+}
+
+/**
+ * Track upload complete
+ */
+export function trackUploadComplete(uploadType, photosCount, videosCount, idUploaded, selfieUploaded) {
+  trackEvent('application_upload_complete', {
+    upload_type: uploadType,
+    photos_count: photosCount,
+    videos_count: videosCount,
+    id_uploaded: idUploaded,
+    selfie_uploaded: selfieUploaded,
+    missing_count: (5 - photosCount) + (2 - videosCount) + (idUploaded ? 0 : 1) + (selfieUploaded ? 0 : 1),
+  });
+}
+
+/**
+ * Track application ready for review
+ */
+export function trackApplicationReadyForReview(applicationId, applicationType) {
+  trackEvent('application_ready_for_review', {
+    application_id: applicationId,
+    application_type: applicationType,
+  });
+}
+
+/**
+ * Track fan production request start
+ */
+export function trackFanProductionRequestStart(sourcePage) {
+  trackEvent('fan_production_request_start', {
+    source_page: sourcePage,
+  });
+}
+
+/**
+ * Track fan production request submit
+ */
+export function trackFanProductionRequestSubmit(packageType, sourcePage) {
+  trackEvent('fan_production_request_submit', {
+    package_type: packageType,
+    source_page: sourcePage,
+  });
+}
+
+/**
+ * Track fan production WhatsApp click
+ */
+export function trackFanProductionWhatsappClick(sourcePage) {
+  trackEvent('fan_production_whatsapp_click', {
+    source_page: sourcePage,
+  });
+}
+
+/**
+ * Track package select
+ */
+export function trackPackageSelect(packageType, sourcePage) {
+  trackEvent('package_select', {
+    package_type: packageType,
+    source_page: sourcePage,
+  });
+}
+
+/**
+ * Track plan select
+ */
+export function trackPlanSelect(planId, price, billingPeriod, sourcePage) {
+  trackEvent('plan_select', {
+    plan_id: planId,
+    price: price,
+    billing_period: billingPeriod,
+    source_page: sourcePage,
+  });
+}
+
+/**
+ * Track checkout success
+ */
+export function trackCheckoutSuccess(paymentType, provider, amount, planId) {
+  trackEvent('checkout_success', {
+    payment_type: paymentType,
+    provider: provider,
+    amount_usd: amount,
+    plan_id: planId,
+  });
+}
+
+/**
+ * Track checkout cancel
+ */
+export function trackCheckoutCancel(paymentType, planId, sourcePage) {
+  trackEvent('checkout_cancel', {
+    payment_type: paymentType,
+    plan_id: planId,
+    source_page: sourcePage,
+  });
+}
+
+/**
+ * Track performer dashboard view
+ */
+export function trackPerformerDashboardView() {
+  trackEvent('performer_dashboard_view', {});
+}
+
+/**
+ * Track payout summary view
+ */
+export function trackPayoutSummaryView() {
+  trackEvent('payout_summary_view', {});
+}
+
+/**
+ * Track application review open
+ */
+export function trackApplicationReviewOpen(applicationId) {
+  trackEvent('application_review_open', {
+    application_id: applicationId,
+  });
+}
+
+/**
+ * Track application file preview open
+ */
+export function trackApplicationFilePreviewOpen(fileType, applicationId) {
+  trackEvent('application_file_preview_open', {
+    file_type: fileType,
+    application_id: applicationId,
+  });
+}
+
+/**
  * Track Philippines application start
  */
 export function trackPhilippinesApplicationStart(utmParams = {}) {

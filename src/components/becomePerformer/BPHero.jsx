@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Shield, FileText, Lock, Film } from "lucide-react";
+import { trackEvent } from "@/lib/analytics";
 
 const EARNINGS_STEPS = [0, 50, 200, 500, 1000, 2000];
 // After reaching 2000, display "$2,000+" permanently until loop restarts
@@ -10,6 +11,16 @@ export default function BPHero({ onApplyClick, onEarnClick }) {
   const [earningsIdx, setEarningsIdx] = useState(0);
   const [displayVal, setDisplayVal] = useState(0);
   const [showPlus, setShowPlus] = useState(false);
+
+  // Track apply click
+  const handleApplyClick = () => {
+    trackEvent('performer_apply_click', {
+      cta_label: 'Apply as Performer',
+      cta_location: 'hero',
+      landing_page_type: 'become_performer',
+    });
+    if (onApplyClick) onApplyClick();
+  };
 
   // Animate the earnings counter upward through steps, then loop
   useEffect(() => {
@@ -111,7 +122,7 @@ export default function BPHero({ onApplyClick, onEarnClick }) {
           <div className="flex flex-wrap gap-3 mb-8">
             <Button
               size="lg"
-              onClick={onApplyClick}
+              onClick={handleApplyClick}
               className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black px-10 py-5 rounded-xl h-auto shadow-xl shadow-rose-700/40 text-base uppercase tracking-wide"
             >
               Apply as Performer

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Check, Upload, AlertCircle, Lock, FileText, Image as ImageIcon, Video, User } from "lucide-react";
 import SEOMeta from "@/components/SEOMeta";
+import { trackUploadLinkOpened, trackUploadComplete } from "@/lib/analytics";
 
 export default function ApplicationUpload() {
   const [searchParams] = useSearchParams();
@@ -25,6 +26,9 @@ export default function ApplicationUpload() {
       setLoading(false);
       return;
     }
+
+    // Track upload link opened
+    trackUploadLinkOpened('performer_application');
 
     // Fetch application details using token
     base44.functions.invoke("uploadFileViaToken", {
@@ -97,6 +101,20 @@ export default function ApplicationUpload() {
         }));
       } else {
         setMediaKeys((prev) => ({ ...prev, [`${data.file_type}_r2_key`]: data.r2_key }));
+      }
+      
+      // Track individual upload completion
+      const isComplete = 
+        (data.file_type === 'photo' ? mediaKeys.profile_photo_r2_keys.length + 1 : mediaKeys[`${data.file_type}_r2_key`] ? 1 : 0) >= (data.file_type === 'photo' ? 5 : 1);
+      
+      if (isComplete) {
+        trackUploadComplete(
+          'performer_application',
+          data.file_type === 'photo' ? mediaKeys.profile_photo_r2_keys.length + 1 : mediaKeys.profile_photo_r2_keys.length,
+          (mediaKeys.intro_video_r2_key ? 1 : 0) + (mediaKeys.hardcore_video_r2_key ? 1 : 0) + (data.file_type.includes('video') ? 1 : 0),
+          !!(mediaKeys.id_document_front_r2_key || (data.file_type === 'id_document_front')),
+          !!(mediaKeys.selfie_with_id_r2_key || (data.file_type === 'selfie_with_id'))
+        );
       }
     },
     onError: (err) => {
