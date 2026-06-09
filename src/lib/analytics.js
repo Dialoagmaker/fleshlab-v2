@@ -599,3 +599,5 @@ export function initAnalytics() {
 }
 
 export { getRouteCategory };
+
+// Phase 2 GA4 Conversion Tracking - Privacy-safe event wrappers
