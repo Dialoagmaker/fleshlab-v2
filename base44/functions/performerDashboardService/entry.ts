@@ -541,6 +541,10 @@ Deno.serve(async (req) => {
       const estimatedNotIncluded = allEarnings
         .filter(e => e.status === 'estimated_not_included')
         .reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
+      
+      // Unallocated adjustment = payout amount that exceeds allocated earnings
+      // This can happen when admin includes manual adjustments or missing snapshots
+      const unallocatedAdjustment = Math.max(0, totalPaidAmount - paidOutTotal);
 
       return Response.json({ 
         success: true, 
@@ -554,6 +558,7 @@ Deno.serve(async (req) => {
           total_paid_payout_amount: totalPaidAmount,
           allocated_to_earnings: paidOutTotal,
           estimated_not_included: estimatedNotIncluded,
+          unallocated_adjustment: unallocatedAdjustment,
           remaining_unallocated: remainingPayoutAmount
         }
       });
@@ -1328,7 +1333,10 @@ Deno.serve(async (req) => {
         reconciliation: {
           paid_payouts_count: paidPayoutsList.length,
           periods_with_paid_payouts: Object.keys(periodPaidMap),
-          period_paid_map: periodPaidMap
+          period_paid_map: periodPaidMap,
+          total_paid_amount: totalPaid,
+          allocated_to_earnings: totalPaidPayouts,
+          unallocated_adjustment: Math.max(0, totalPaid - totalPaidPayouts)
         }
       });
     }

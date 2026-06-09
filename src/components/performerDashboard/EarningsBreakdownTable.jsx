@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-export default function EarningsBreakdownTable({ earnings, summary }) {
+export default function EarningsBreakdownTable({ earnings, summary, reconciliation }) {
   if (!earnings || earnings.length === 0) {
     return null;
   }
@@ -143,6 +143,41 @@ export default function EarningsBreakdownTable({ earnings, summary }) {
               <p className="text-xs text-muted-foreground">Items</p>
               <p className="text-lg font-semibold">{earnings.length}</p>
             </div>
+          </div>
+        )}
+        
+        {/* Reconciliation Footer */}
+        {reconciliation?.total_paid_amount && (
+          <div className="mt-4 pt-4 border-t bg-orange-500/5 rounded-lg p-3 space-y-2">
+            <p className="text-xs font-semibold text-orange-400">Payout Reconciliation</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground">Paid This Period</p>
+                <p className="text-base font-semibold text-blue-400">${reconciliation.total_paid_amount.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Matched to Earnings</p>
+                <p className="text-base font-semibold text-emerald-500">${reconciliation.allocated_to_earnings.toFixed(2)}</p>
+              </div>
+              {reconciliation.unallocated_adjustment > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Manual Adjustment</p>
+                  <p className="text-base font-semibold text-orange-400" title="This payout includes amounts not matched to earnings rows (e.g., missing snapshots, rounded values, or manual admin adjustments)">
+                    ${reconciliation.unallocated_adjustment.toFixed(2)}
+                  </p>
+                </div>
+              )}
+              <div>
+                <p className="text-xs text-muted-foreground">Available Balance</p>
+                <p className="text-base font-semibold">$0.00</p>
+              </div>
+            </div>
+            {reconciliation.unallocated_adjustment > 0 && (
+              <p className="text-xs text-muted-foreground pt-1 border-t">
+                <strong>Admin Note:</strong> ${reconciliation.unallocated_adjustment.toFixed(2)} of this payout is not matched to earnings rows. 
+                Review missing snapshots or mark as manual adjustment.
+              </p>
+            )}
           </div>
         )}
       </CardContent>

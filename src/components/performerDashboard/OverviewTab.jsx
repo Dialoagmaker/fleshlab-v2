@@ -100,6 +100,7 @@ export default function OverviewTab({ performer, career_stats, performerToken, i
         <EarningsBreakdownTable
           earnings={earningsData.earnings}
           summary={earningsData.summary}
+          reconciliation={earningsData.reconciliation}
         />
       )}
 

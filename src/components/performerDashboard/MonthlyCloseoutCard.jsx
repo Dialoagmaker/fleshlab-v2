@@ -169,8 +169,16 @@ export default function MonthlyCloseoutCard({ performerId, performerToken }) {
         {reconciliation?.has_paid_payout && (
           <div className="pt-2 border-t text-xs text-muted-foreground space-y-1">
             <p>
-              <strong>Payout Reconciliation:</strong> ${reconciliation.total_paid_payout_amount.toFixed(2)} paid payout 
-              → ${reconciliation.allocated_to_earnings.toFixed(2)} allocated to earnings
+              <strong>Payout Reconciliation:</strong> ${reconciliation.total_paid_payout_amount?.toFixed(2) || reconciliation.total_paid_amount?.toFixed(2)} paid payout 
+              → ${reconciliation.allocated_to_earnings.toFixed(2)} matched to earnings
+              {reconciliation.unallocated_adjustment > 0 && (
+                <span className="block text-orange-400 mt-0.5">
+                  + ${reconciliation.unallocated_adjustment.toFixed(2)} adjustment
+                  <span className="text-muted-foreground block mt-0.5">
+                    Manual adjustment included in payout (missing snapshots or admin adjustment)
+                  </span>
+                </span>
+              )}
               {reconciliation.estimated_not_included > 0 && ` | ${reconciliation.estimated_not_included.toFixed(2)} estimated (not included)`}
             </p>
           </div>

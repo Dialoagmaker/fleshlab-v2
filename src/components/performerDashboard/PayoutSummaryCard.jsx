@@ -49,6 +49,7 @@ export default function PayoutSummaryCard({ performerId, performerToken }) {
 
   const s = data?.summary || {};
   const history = data?.payout_history || [];
+  const reconciliation = data?.reconciliation || {};
   const available = s.available_balance_usd || 0;
   const isZeroBalance = available <= 0.005;
   const totalEarned = s.total_earned_usd || 0;
@@ -56,6 +57,8 @@ export default function PayoutSummaryCard({ performerId, performerToken }) {
   const currentMonthGross = s.current_month_gross_usd || 0;
   const totalPaid = s.total_paid_usd || 0;
   const totalApprovedPending = s.total_approved_pending_usd || 0;
+  const allocatedEarnings = reconciliation?.allocated_to_earnings || 0;
+  const unallocatedAdjustment = reconciliation?.unallocated_adjustment || 0;
 
   return (
     <div className="space-y-4">
@@ -101,8 +104,13 @@ export default function PayoutSummaryCard({ performerId, performerToken }) {
               <p className="text-xs text-muted-foreground">Paid Out</p>
             </div>
             <p className="text-xl font-bold text-blue-400">{fmt(totalPaid)}</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {totalApprovedPending > 0 ? `+ ${fmt(totalApprovedPending)} approved` : 'Lifetime total'}
+            <p className="text-xs text-muted-foreground mt-1 space-y-0.5">
+              {allocatedEarnings > 0 && (
+                <span className="block text-emerald-500">→ {fmt(allocatedEarnings)} matched to earnings</span>
+              )}
+              {unallocatedAdjustment > 0 && (
+                <span className="block text-orange-400">+ {fmt(unallocatedAdjustment)} adjustment</span>
+              )}
             </p>
           </CardContent>
         </Card>
@@ -126,6 +134,17 @@ export default function PayoutSummaryCard({ performerId, performerToken }) {
           <div className="flex items-center gap-1.5">
             <Clock className="w-3 h-3 text-yellow-400 shrink-0" />
             <span className="text-yellow-400">{fmt(totalApprovedPending)} approved — processing</span>
+          </div>
+        )}
+        {unallocatedAdjustment > 0 && (
+          <div className="flex items-start gap-1.5">
+            <DollarSign className="w-3 h-3 text-orange-400 shrink-0 mt-0.5" />
+            <span className="text-orange-400">
+              {fmt(unallocatedAdjustment)} manual adjustment included in payout
+              <span className="block text-muted-foreground mt-0.5">
+                This payout includes amounts not matched to current earnings rows (e.g., missing snapshots, manual adjustments)
+              </span>
+            </span>
           </div>
         )}
         <p>{s.payout_schedule}</p>
