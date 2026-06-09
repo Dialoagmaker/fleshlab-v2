@@ -58,15 +58,30 @@ export default function ChaturbateRecruitment() {
         ogImage="https://fleshlab.online/og-cam-recruitment.jpg"
       />
 
+      <style>{`
+        @media (max-width: 768px) {
+          .hero-bg { background-position: 65% center !important; }
+        }
+      `}</style>
       <div style={{ background: '#050505' }}>
 
         {/* ── HERO ─────────────────────────────────────────────────────── */}
-        <section className="relative px-4 sm:px-6 lg:px-8 overflow-hidden"
-          style={{ paddingTop: '100px', paddingBottom: '100px', background: 'linear-gradient(180deg, #0a0610 0%, #080508 100%)' }}>
+        <section className="hero-bg relative px-4 sm:px-6 lg:px-8 overflow-hidden"
+          style={{
+            minHeight: '760px',
+            backgroundImage: 'url("https://video.fleshlab.online/banner%20and%20logos/ChatGPT%20Image%209.%20Juni%202026%2C%2022_39_56.png")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center right',
+            backgroundRepeat: 'no-repeat',
+          }}>
+          {/* Gradient overlay — left heavy, fades to transparent right */}
           <div className="absolute inset-0 pointer-events-none"
-            style={{ backgroundImage: 'radial-gradient(ellipse 60% 50% at 15% 50%, rgba(244,63,94,0.1) 0%, transparent 65%), radial-gradient(ellipse 50% 40% at 85% 40%, rgba(245,158,11,0.07) 0%, transparent 65%)' }} />
+            style={{ background: 'linear-gradient(to right, rgba(5,5,5,0.88) 0%, rgba(5,5,5,0.65) 35%, rgba(5,5,5,0.32) 60%, rgba(5,5,5,0.1) 100%)' }} />
+          {/* Bottom fade into next section */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+            style={{ background: 'linear-gradient(to bottom, transparent, #080508)' }} />
 
-          <div className="max-w-5xl mx-auto relative z-10">
+          <div className="max-w-5xl mx-auto relative z-10" style={{ paddingTop: '120px', paddingBottom: '120px' }}>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
               {/* Left — copy */}
@@ -119,9 +134,9 @@ export default function ChaturbateRecruitment() {
               </div>
 
               {/* Right — income comparison */}
-              <div className="relative">
+              <div className="relative hidden lg:block">
                 <div className="rounded-2xl overflow-hidden"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  style={{ background: 'rgba(5,5,5,0.55)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.12)' }}>
                   <div className="px-6 py-4 border-b border-white/8">
                     <p className="text-white/40 text-xs font-black uppercase tracking-widest">Income Comparison</p>
                   </div>
