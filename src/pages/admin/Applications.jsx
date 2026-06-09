@@ -59,13 +59,21 @@ export default function Applications() {
   useEffect(() => {
     const handleOpenMoreInfo = () => setIsMoreInfoOpen(true);
     const handleOpenReject = () => setIsRejectModalOpen(true);
+    const handleSyncContract = (event) => {
+      if (event.detail) {
+        setSelectedApp(event.detail);
+        handleSyncContractStatus();
+      }
+    };
     
     window.addEventListener('open-more-info-modal', handleOpenMoreInfo);
     window.addEventListener('open-reject-modal', handleOpenReject);
+    window.addEventListener('sync-contract-status', handleSyncContract);
     
     return () => {
       window.removeEventListener('open-more-info-modal', handleOpenMoreInfo);
       window.removeEventListener('open-reject-modal', handleOpenReject);
+      window.removeEventListener('sync-contract-status', handleSyncContract);
     };
   }, []);
 
@@ -373,6 +381,79 @@ export default function Applications() {
       contract_status: 'signed',
       contract_signed_at: new Date().toISOString(),
     });
+  };
+
+  const handleSyncContractStatus = async () => {
+    if (!selectedApp || !selectedApp.contract_id) return;
+    
+    try {
+      // Fetch contract to check status
+      const contract = await base44.entities.Contract.get(selectedApp.contract_id);
+      
+      if (!contract) {
+        toast.error('Contract not found');
+        return;
+      }
+      
+      if (contract.status !== 'signed') {
+        toast.error(`Cannot sync. Contract status is '${contract.status}', not 'signed'.`);
+        return;
+      }
+      
+      // Check if already synced
+      const alreadySynced = selectedApp.contract_status === 'signed' && 
+                           (selectedApp.status === 'contract_signed' || selectedApp.status === 'performer_active');
+      
+      if (alreadySynced) {
+        toast.info('Application already synced with signed contract');
+        return;
+      }
+      
+      // Sync application
+      const timestamp = new Date().toISOString();
+      const updates = {
+        contract_status: 'signed',
+        status: 'contract_signed',
+        contract_signed_at: timestamp,
+      };
+      
+      const logEntry = {
+        timestamp,
+        action: 'Contract status synced by admin',
+        contract_id: contract.id,
+        contract_status: contract.status,
+      };
+      updates.status_history = [...(selectedApp.status_history || []), JSON.stringify(logEntry)];
+      
+      await base44.entities.GuestProductionApplication.update(selectedApp.id, updates);
+      await queryClient.invalidateQueries({ queryKey: ['applications'] });
+      
+      // Activate performer if exists
+      if (selectedApp.performer_id) {
+        const performer = await base44.entities.Performer.get(selectedApp.performer_id);
+        if (performer && performer.status === 'pending_contract') {
+          await base44.entities.Performer.update(selectedApp.performer_id, {
+            status: 'active',
+            signed_contract_at: timestamp
+          });
+        }
+      }
+      
+      // Audit log
+      await base44.functions.invoke('contractService', {
+        action: 'create_audit_log',
+        contract_id: contract.id,
+        action_type: 'admin_sync_signed_status',
+        notes: `Admin synced contract status for application ${selectedApp.id}`
+      }).catch(() => {}); // Ignore if action doesn't exist
+      
+      toast.success('Contract status synced successfully');
+      setSelectedApp(prev => prev ? { ...prev, ...updates } : prev);
+      
+    } catch (err) {
+      console.error('Sync error:', err);
+      toast.error(`Failed to sync contract status: ${err.message}`);
+    }
   };
 
   const handleCreatePerformer = async () => {

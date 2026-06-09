@@ -236,6 +236,7 @@ Deno.serve(async (req) => {
       const ip = getClientIP(req);
       const userAgent = getUserAgent(req);
 
+      // STEP 1: Update Contract
       await base44.asServiceRole.entities.Contract.update(contract.id, {
         performer_signature_type: 'typed',
         performer_signature_text: signature_text,
@@ -248,17 +249,153 @@ Deno.serve(async (req) => {
         status: 'signed',
       });
 
+      // STEP 2: Update Application (if linked)
+      let applicationUpdated = false;
+      if (contract.application_id) {
+        const application = await base44.asServiceRole.entities.GuestProductionApplication.get(contract.application_id);
+        if (application && application.contract_status !== 'signed') {
+          // Idempotency: Only update if not already signed
+          const statusHistory = [...(application.status_history || [])];
+          statusHistory.push(JSON.stringify({
+            timestamp,
+            action: 'Contract signed - Performer activation completed',
+            contract_id: contract.id,
+            signer_name,
+            signer_email
+          }));
+          
+          await base44.asServiceRole.entities.GuestProductionApplication.update(contract.application_id, {
+            contract_status: 'signed',
+            status: 'contract_signed',
+            contract_signed_at: timestamp,
+            status_history: statusHistory
+          });
+          applicationUpdated = true;
+        }
+      }
+
+      // STEP 3: Activate Performer
+      let performerActivated = false;
+      if (contract.performer_id) {
+        const performer = await base44.asServiceRole.entities.Performer.get(contract.performer_id);
+        if (performer && performer.status !== 'active') {
+          // Idempotency: Only update if not already active
+          await base44.asServiceRole.entities.Performer.update(contract.performer_id, {
+            status: 'active',
+            signed_contract_at: timestamp
+          });
+          performerActivated = true;
+        }
+      }
+
+      // STEP 4: Create AuditLog
       await base44.asServiceRole.entities.AuditLog.create({
         entity_type: 'Contract',
         entity_id: contract.id,
         actor_id: contract.performer_id || 'system',
         actor_role: 'performer',
-        action: 'contract_signed',
-        changes_json: JSON.stringify({ signer_name, signer_email, signature_ip: ip }),
-        notes: `Contract signed by ${signer_name}`,
+        action: 'contract_signed_with_activation',
+        changes_json: JSON.stringify({ 
+          signer_name, 
+          signer_email, 
+          signature_ip: ip,
+          application_updated: applicationUpdated,
+          performer_activated: performerActivated
+        }),
+        notes: `Contract signed by ${signer_name}. Activation: App=${applicationUpdated}, Performer=${performerActivated}`,
       });
 
-      return Response.json({ success: true, message: 'Contract signed successfully' });
+      return Response.json({ 
+        success: true, 
+        message: 'Contract signed successfully',
+        application_updated: applicationUpdated,
+        performer_activated: performerActivated
+      });
+    }
+
+    // ── ADMIN: sync_signed_contract (Manual fallback) ─────────────────
+
+    if (action === 'sync_signed_contract') {
+      const user = await base44.auth.me();
+      if (!user || user.role !== 'admin') {
+        return Response.json({ error: 'Admin access required' }, { status: 403 });
+      }
+
+      if (!contract_id) {
+        return Response.json({ error: 'contract_id required' }, { status: 400 });
+      }
+
+      const contract = await base44.asServiceRole.entities.Contract.get(contract_id);
+      if (!contract) {
+        return Response.json({ error: 'Contract not found' }, { status: 404 });
+      }
+
+      // Safety: Only sync if contract is actually signed
+      if (contract.status !== 'signed' || !contract.performer_signed_at) {
+        return Response.json({ 
+          error: 'Contract not signed yet. Cannot sync unsigned contract.',
+          contract_status: contract.status,
+          performer_signed_at: contract.performer_signed_at
+        }, { status: 400 });
+      }
+
+      let applicationUpdated = false;
+      let performerActivated = false;
+
+      // Update Application (if linked)
+      if (contract.application_id) {
+        const application = await base44.asServiceRole.entities.GuestProductionApplication.get(contract.application_id);
+        if (application && application.contract_status !== 'signed') {
+          const statusHistory = [...(application.status_history || [])];
+          statusHistory.push(JSON.stringify({
+            timestamp: new Date().toISOString(),
+            action: 'Contract status synced by admin (manual sync)',
+            contract_id: contract.id,
+            synced_by: user.email
+          }));
+          
+          await base44.asServiceRole.entities.GuestProductionApplication.update(contract.application_id, {
+            contract_status: 'signed',
+            status: 'contract_signed',
+            contract_signed_at: contract.performer_signed_at,
+            status_history: statusHistory
+          });
+          applicationUpdated = true;
+        }
+      }
+
+      // Activate Performer
+      if (contract.performer_id) {
+        const performer = await base44.asServiceRole.entities.Performer.get(contract.performer_id);
+        if (performer && performer.status !== 'active') {
+          await base44.asServiceRole.entities.Performer.update(contract.performer_id, {
+            status: 'active',
+            signed_contract_at: contract.performer_signed_at
+          });
+          performerActivated = true;
+        }
+      }
+
+      // AuditLog
+      await base44.asServiceRole.entities.AuditLog.create({
+        entity_type: 'Contract',
+        entity_id: contract.id,
+        actor_id: user.id,
+        actor_role: 'admin',
+        action: 'contract_sync_signed_by_admin',
+        changes_json: JSON.stringify({ 
+          application_updated: applicationUpdated,
+          performer_activated: performerActivated
+        }),
+        notes: `Admin manual sync: ${user.email}. App=${applicationUpdated}, Performer=${performerActivated}`,
+      });
+
+      return Response.json({ 
+        success: true, 
+        message: 'Contract status synced',
+        application_updated: applicationUpdated,
+        performer_activated: performerActivated
+      });
     }
 
     // ── ADMIN ACTIONS ────────────────────────────────────────────────
@@ -554,6 +691,7 @@ Deno.serve(async (req) => {
 
       const contract = await base44.asServiceRole.entities.Contract.create({
         performer_id,
+        application_id, // ← Store application_id
         contract_type: template.template_type,
         title,
         status: 'draft',

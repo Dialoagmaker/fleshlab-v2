@@ -16,6 +16,11 @@ export default function ApplicationDetailDialog({ isOpen, onClose, selectedApp, 
   const canApprove = ['reviewing', 'contacted', 'more_info_requested'].includes(selectedApp.status);
   const canRequestMoreInfo = ['reviewing', 'pending', 'media_pending'].includes(selectedApp.status);
   const canReject = !['rejected', 'active', 'contract_signed', 'performer_created', 'user_linked'].includes(selectedApp.status);
+  
+  // Sync button: Only show if contract exists, is signed, but application not synced
+  const showSyncButton = selectedApp.contract_id && 
+                         selectedApp.contract_status !== 'signed' &&
+                         ['contract_pending', 'contract_sent'].includes(selectedApp.status);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -60,6 +65,19 @@ export default function ApplicationDetailDialog({ isOpen, onClose, selectedApp, 
                   }}
                 >
                   Reject
+                </Button>
+              )}
+              {showSyncButton && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const event = new CustomEvent('sync-contract-status', { detail: selectedApp });
+                    window.dispatchEvent(event);
+                  }}
+                  title="Sync application status with signed contract"
+                >
+                  Sync Signed Contract
                 </Button>
               )}
             </div>
