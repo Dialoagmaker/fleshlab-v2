@@ -65,12 +65,16 @@ export default function ProfileAndPayoutTab({ performer, performerToken }) {
           <PayoutMethodSection 
             profile={profileData?.profile}
             onPayoutUpdated={loadProfile}
+            performerId={performer?.performer?.id}
+            performerToken={performerToken}
           />
         </TabsContent>
 
         <TabsContent value="payout-requests" className="mt-6">
           <PayoutRequestsSection 
             onPayoutCreated={loadProfile}
+            performerId={performer?.performer?.id}
+            performerToken={performerToken}
           />
         </TabsContent>
       </Tabs>

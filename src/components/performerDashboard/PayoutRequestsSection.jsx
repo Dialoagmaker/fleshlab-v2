@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 const MINIMUM_PAYOUT_USD = 50;
 
-export default function PayoutRequestsSection({ onPayoutCreated }) {
+export default function PayoutRequestsSection({ onPayoutCreated, performerId, performerToken }) {
   const [payoutRequests, setPayoutRequests] = useState([]);
   const [payoutRequestForm, setPayoutRequestForm] = useState({
     amount: "",
@@ -33,7 +33,11 @@ export default function PayoutRequestsSection({ onPayoutCreated }) {
     setLoading(true);
 
     try {
-      const response = await base44.functions.invoke("createPerformerPayoutRequest", payoutRequestForm);
+      const response = await base44.functions.invoke("createPerformerPayoutRequest", {
+        ...payoutRequestForm,
+        performer_id: performerId,
+        performer_token: performerToken,
+      });
       
       if (response.data.error) {
         toast.error(response.data.error);

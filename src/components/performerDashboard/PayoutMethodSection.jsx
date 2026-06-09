@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
-export default function PayoutMethodSection({ profile, onPayoutUpdated }) {
+export default function PayoutMethodSection({ profile, onPayoutUpdated, performerId, performerToken }) {
   const [payoutForm, setPayoutForm] = useState({
     payout_method: profile?.payout_method || "",
     payout_details: {}
@@ -20,7 +20,11 @@ export default function PayoutMethodSection({ profile, onPayoutUpdated }) {
     setLoading(true);
 
     try {
-      const response = await base44.functions.invoke("updatePerformerPayoutMethod", payoutForm);
+      const response = await base44.functions.invoke("updatePerformerPayoutMethod", {
+        ...payoutForm,
+        performer_id: performerId,
+        performer_token: performerToken,
+      });
       
       if (response.data.error) {
         toast.error(response.data.error);

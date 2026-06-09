@@ -46,7 +46,11 @@ export default function PersonalProfileSection({ profile, performer, onProfileUp
     e.preventDefault();
     setContactLoading(true);
     try {
-      const response = await base44.functions.invoke("updatePerformerContactInfo", contactData);
+      const response = await base44.functions.invoke("updatePerformerContactInfo", {
+        ...contactData,
+        performer_id: performerId,
+        performer_token: performerToken,
+      });
       if (response.data?.error) {
         toast.error(response.data.error);
       } else {
