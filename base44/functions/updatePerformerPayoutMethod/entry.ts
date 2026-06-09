@@ -52,15 +52,16 @@ Deno.serve(async (req) => {
     });
 
     // Create change request for admin review
-    await base44.asServiceRole.entities.ProfileChangeRequest.create({
+    const changeReqData = {
       performer_id: performer.id,
-      requested_by_user_id: performer.user_id || null,
       change_type: 'payout_method',
       requested_fields: JSON.stringify({ payout_method, payout_details }),
       status: 'pending_review',
       performer_note: 'Payout method updated',
       created_date: new Date().toISOString()
-    });
+    };
+    if (performer.user_id) changeReqData.requested_by_user_id = performer.user_id;
+    await base44.asServiceRole.entities.ProfileChangeRequest.create(changeReqData);
 
     return Response.json({ success: true, message: 'Payout method updated and submitted for verification' });
   } catch (error) {

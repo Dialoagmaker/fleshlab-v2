@@ -69,7 +69,6 @@
   },
   "required": [
     "performer_id",
-    "requested_by_user_id",
     "change_type",
     "requested_fields"
   ]
