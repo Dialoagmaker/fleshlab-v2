@@ -36,13 +36,36 @@ function isTestLineItem(item) {
 
 function isTestPayment(payment) {
   if (!payment) return false;
+  
+  // Check stripe_payment_intent_id (used for all providers) for TEST marker
+  if (payment.stripe_payment_intent_id && payment.stripe_payment_intent_id.includes('TEST')) {
+    return true;
+  }
+  
+  // Check metadata for test_mode flag or TEST in provider_session_id
   try {
     if (payment.metadata) {
+      // Metadata might be string or already parsed object
       const meta = typeof payment.metadata === 'string' ? JSON.parse(payment.metadata) : payment.metadata;
-      if (meta.test_mode === true) return true;
+      if (meta && typeof meta === 'object') {
+        if (meta.test_mode === true) {
+          return true;
+        }
+        // Also check provider_session_id in metadata
+        if (meta.provider_session_id && meta.provider_session_id.includes('TEST')) {
+          return true;
+        }
+      }
     }
-  } catch {}
-  if (payment.provider_session_id && payment.provider_session_id.includes('TEST')) return true;
+  } catch (err) {
+    console.log('[isTestPayment] Failed to parse metadata:', payment.id, err.message);
+  }
+  
+  // Check explicit test_mode field
+  if (payment.test_mode === true) {
+    return true;
+  }
+  
   return false;
 }
 
@@ -134,9 +157,6 @@ Deno.serve(async (req) => {
     const videoMap = {};
     allVideos.forEach(v => { videoMap[v.id] = v; });
     
-    // Build set of completed payment IDs for classification
-    const completedPaymentIds = new Set();
-
     // ── FILTER FUNCTIONS ────────────────────────────────────────────────────
     const isInDateRange = (record) => {
       let recordDate;
@@ -152,18 +172,40 @@ Deno.serve(async (req) => {
 
     const isNotTest = (record) => {
       if (include_test_mode) return true;
+      
+      // Check explicit test_mode flag first
+      if (record.test_mode === true) return false;
+      
+      // Check if it's a payment
       if (record.amount_usd !== undefined && record.payment_type !== undefined) {
-        return !isTestPayment(record);
-      } else if (record.gross_amount_usd !== undefined && record.performer_amount_usd !== undefined) {
+        const isTest = isTestPayment(record);
+        // Debug logging for test detection
+        if (isTest) {
+          console.log('[adminRevenueDashboard] Filtering out test payment:', {
+            id: record.id,
+            provider_session_id: record.provider_session_id,
+            metadata_sample: typeof record.metadata === 'string' ? record.metadata.substring(0, 100) : record.metadata,
+          });
+        }
+        return !isTest;
+      }
+      // Check if it's a line item
+      else if (record.gross_amount_usd !== undefined && record.performer_amount_usd !== undefined) {
         return !isTestLineItem(record);
       }
-      if (record.test_mode === true) return false;
+      
       return true;
     };
 
     // Filter payments - COMPLETED status only, exclude test_mode
     const payments = allPayments.filter(p => isInDateRange(p) && isNotTest(p));
     const completedPayments = payments.filter(p => p.status === 'completed');
+    
+    // Build set of completed payment IDs (excluding test payments)
+    const completedPaymentIds = new Set();
+    completedPayments.forEach(p => {
+      completedPaymentIds.add(p.id);
+    });
     
     // Build set of completed payment IDs
     completedPayments.forEach(p => {
