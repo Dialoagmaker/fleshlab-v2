@@ -8,7 +8,6 @@ import LatestVideosCard from "./LatestVideosCard";
 import ComplianceSummaryCard from "./ComplianceSummaryCard";
 import CareerStatisticsCard from "./CareerStatisticsCard";
 import EarningsBreakdownTable from "./EarningsBreakdownTable";
-import CurrentMonthEarningsCard from "./CurrentMonthEarningsCard";
 import PayoutSummaryCard from "./PayoutSummaryCard";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -60,12 +59,6 @@ export default function OverviewTab({ performer, career_stats, performerToken, i
     <div className="space-y-6">
       {/* Payout summary with available balance, paid, next payout */}
       <PayoutSummaryCard
-        performerId={performer.id}
-        performerToken={performerToken}
-      />
-
-      {/* Detailed estimated earnings card */}
-      <CurrentMonthEarningsCard
         performerId={performer.id}
         performerToken={performerToken}
       />
