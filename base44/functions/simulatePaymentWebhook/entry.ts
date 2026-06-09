@@ -18,10 +18,69 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
-// ── Grant entitlements (shared logic - same as paymentWebhook) ─────────
+// ── Revenue Model Resolver (inline) ──────────────────────────────────────────
+function resolvePerformerRevenueModel(performer) {
+  if (!performer) return { model_key: 'studio_managed', model_label: 'Studio Managed', performer_share_percentage: 40, studio_share_percentage: 60, source: 'default' };
+  if (performer.revenue_model === 'established_network') return { model_key: 'established_network', model_label: 'Established/Network', performer_share_percentage: 70, studio_share_percentage: 30, source: 'explicit_contract' };
+  if (performer.revenue_split_pct !== undefined && performer.revenue_split_pct !== null) {
+    const splitPct = parseFloat(performer.revenue_split_pct);
+    if (splitPct === 70) return { model_key: 'established_network', model_label: 'Established/Network', performer_share_percentage: 70, studio_share_percentage: 30, source: 'performer_profile' };
+    return { model_key: 'studio_managed', model_label: 'Studio Managed', performer_share_percentage: splitPct, studio_share_percentage: 100 - splitPct, source: 'performer_profile' };
+  }
+  return { model_key: 'studio_managed', model_label: 'Studio Managed', performer_share_percentage: 40, studio_share_percentage: 60, source: 'default' };
+}
+
+// ── Create PerformerEarningLineItem with idempotency ─────────────────────────
+async function createPerformerEarningLineItem(base44, params) {
+  const { performer_id, gross_amount_usd, performer_share_percent, source_type, source_platform, payment_idempotency_key, video_id, subscription_id, period_month, description, payment_intent_id, provider } = params;
+  
+  // IDEMPOTENCY CHECK
+  const existingItems = await base44.asServiceRole.entities.PerformerEarningLineItem.filter({ performer_id, source_type, period_month });
+  const existingItem = existingItems.find(item => {
+    try {
+      const meta = JSON.parse(item.description || '{}');
+      return meta.payment_idempotency_key === payment_idempotency_key || meta.payment_intent_id === payment_intent_id;
+    } catch { return false; }
+  });
+  
+  if (existingItem) {
+    console.log('[simulatePaymentWebhook] PerformerEarningLineItem already exists — skipping (idempotent)', { performer_id, source_type, existingItemId: existingItem.id });
+    return { duplicate: true, item: existingItem };
+  }
+  
+  const performer_amount_usd = gross_amount_usd * performer_share_percent / 100;
+  const studio_amount_usd = gross_amount_usd - performer_amount_usd;
+  
+  const lineItem = await base44.asServiceRole.entities.PerformerEarningLineItem.create({
+    performer_id,
+    performer_earning_id: null,
+    period_month,
+    source_type,
+    source_platform,
+    source_reference_id: video_id || subscription_id,
+    description: JSON.stringify({ payment_idempotency_key, payment_intent_id, provider, ...(description ? { note: description } : {}), test_mode: true }),
+    gross_amount_usd,
+    performer_share_percent,
+    performer_amount_usd,
+    studio_amount_usd,
+    currency: 'usd',
+    exchange_rate: 1,
+    status: 'approved',
+    notes: `Auto-created from ${source_type} payment via simulatePaymentWebhook (REVENUE_ATTRIBUTION_TEST)`,
+  });
+  
+  console.log('[simulatePaymentWebhook] PerformerEarningLineItem created:', { performer_id, source_type, gross: gross_amount_usd, performer_share: performer_share_percent, performer_amount: performer_amount_usd, studio_amount: studio_amount_usd, lineItemId: lineItem.id });
+  return { duplicate: false, item: lineItem };
+}
+
+// ── Grant entitlements with REVENUE ATTRIBUTION (same as paymentWebhook) ─────────
 async function grantEntitlement(base44, intent) {
+  const providerPaymentKey = `${intent.provider}:${intent.provider_session_id}`;
+  const periodMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  
   if (intent.payment_type === 'ppv') {
-    await base44.asServiceRole.entities.Payment.create({
+    // Create Payment record
+    const payment = await base44.asServiceRole.entities.Payment.create({
       user_id:             intent.user_id,
       amount_usd:          intent.amount,
       currency:            intent.currency || 'usd',
@@ -33,9 +92,63 @@ async function grantEntitlement(base44, intent) {
         provider:            intent.provider,
         provider_session_id: intent.provider_session_id,
         price_tier:          intent.price_tier,
+        payment_intent_id:   intent.id,
+        simulated: true,
       }),
     });
-    console.log('[simulatePaymentWebhook] PPV entitlement granted:', { userId: intent.user_id, videoId: intent.video_id });
+    console.log('[simulatePaymentWebhook] PPV entitlement granted:', { userId: intent.user_id, videoId: intent.video_id, paymentId: payment.id });
+    
+    // REVENUE ATTRIBUTION: Find performers for this video
+    const videoPerformers = await base44.asServiceRole.entities.VideoPerformer.filter({ video_id: intent.video_id });
+    
+    if (videoPerformers.length === 0) {
+      console.warn('[simulatePaymentWebhook] PPV payment has no VideoPerformer records — skipping revenue attribution', { videoId: intent.video_id, paymentId: payment.id });
+      return { ok: true, duplicate: false, entitlement_type: 'ppv', payment_id: payment.id, revenue_attribution: 'no_performers' };
+    }
+    
+    // Create earning line items for each performer
+    const revenueAttributions = [];
+    for (const vp of videoPerformers) {
+      const performer = await base44.asServiceRole.entities.Performer.get(vp.performer_id);
+      if (!performer || performer.status === 'inactive') {
+        console.warn('[simulatePaymentWebhook] Performer not found or inactive — skipping', { performer_id: vp.performer_id, videoId: intent.video_id });
+        continue;
+      }
+      
+      const revenueModel = resolvePerformerRevenueModel(performer);
+      const performerGross = intent.amount / videoPerformers.length;
+      
+      const lineItemResult = await createPerformerEarningLineItem(base44, {
+        performer_id: vp.performer_id,
+        gross_amount_usd: performerGross,
+        performer_share_percent: revenueModel.performer_share_percentage,
+        source_type: 'ppv_purchase',
+        source_platform: 'fleshlab',
+        payment_idempotency_key: providerPaymentKey,
+        payment_intent_id: intent.id,
+        video_id: intent.video_id,
+        period_month: periodMonth,
+        description: `PPV purchase (TEST) - ${performer.display_name}`,
+        provider: intent.provider,
+      });
+      
+      revenueAttributions.push({
+        performer_id: vp.performer_id,
+        performer_name: performer.display_name,
+        gross: performerGross,
+        performer_share_percent: revenueModel.performer_share_percentage,
+        line_item_id: lineItemResult.item?.id,
+        duplicate: lineItemResult.duplicate,
+      });
+    }
+    
+    return {
+      ok: true,
+      duplicate: false,
+      entitlement_type: 'ppv',
+      payment_id: payment.id,
+      revenue_attribution: revenueAttributions,
+    };
 
   } else if (intent.payment_type === 'fanclub') {
     const ACCESS_PERIODS = {
@@ -49,7 +162,7 @@ async function grantEntitlement(base44, intent) {
     const periodEnd = new Date();
     periodEnd.setMonth(periodEnd.getMonth() + months);
 
-    await base44.asServiceRole.entities.Subscription.create({
+    const subscription = await base44.asServiceRole.entities.Subscription.create({
       user_id:                intent.user_id,
       fanclub_id:             intent.plan_id,
       status:                 'active',
@@ -57,8 +170,68 @@ async function grantEntitlement(base44, intent) {
       current_period_end:     periodEnd.toISOString(),
       amount_usd:             intent.amount,
       stripe_subscription_id: `nowpayments_${intent.provider_session_id}`,
+      payment_intent_id:      intent.id,
+      provider:               'nowpayments',
     });
-    console.log('[simulatePaymentWebhook] Fanclub access pass granted:', { userId: intent.user_id, planId: intent.plan_id, months });
+    console.log('[simulatePaymentWebhook] Fanclub access pass granted:', { userId: intent.user_id, planId: intent.plan_id, months, subscriptionId: subscription.id });
+    
+    // REVENUE ATTRIBUTION: Check if fanclub is performer-specific
+    const fanclub = await base44.asServiceRole.entities.Fanclub.get(intent.plan_id);
+    
+    if (!fanclub) {
+      console.warn('[simulatePaymentWebhook] Fanclub not found — skipping revenue attribution', { planId: intent.plan_id, subscriptionId: subscription.id });
+      return { ok: true, duplicate: false, entitlement_type: 'fanclub', subscription_id: subscription.id, revenue_attribution: 'fanclub_not_found' };
+    }
+    
+    if (!fanclub.performer_id) {
+      console.log('[simulatePaymentWebhook] Fanclub is global (no performer_id) — marking as unattributed revenue', { fanclubId: fanclub.id, fanclubName: fanclub.name });
+      return {
+        ok: true,
+        duplicate: false,
+        entitlement_type: 'fanclub',
+        subscription_id: subscription.id,
+        revenue_attribution: 'global_fanclub_unattributed',
+        fanclub_name: fanclub.name,
+      };
+    }
+    
+    const performer = await base44.asServiceRole.entities.Performer.get(fanclub.performer_id);
+    if (!performer || performer.status === 'inactive') {
+      console.warn('[simulatePaymentWebhook] Performer not found or inactive for fanclub — skipping revenue attribution', { performer_id: fanclub.performer_id, fanclubId: fanclub.id });
+      return { ok: true, duplicate: false, entitlement_type: 'fanclub', subscription_id: subscription.id, revenue_attribution: 'performer_not_found' };
+    }
+    
+    const revenueModel = resolvePerformerRevenueModel(performer);
+    
+    const lineItemResult = await createPerformerEarningLineItem(base44, {
+      performer_id: fanclub.performer_id,
+      gross_amount_usd: intent.amount,
+      performer_share_percent: revenueModel.performer_share_percentage,
+      source_type: 'fanclub_subscription',
+      source_platform: 'fleshlab',
+      payment_idempotency_key: providerPaymentKey,
+      payment_intent_id: intent.id,
+      subscription_id: subscription.id,
+      period_month: periodMonth,
+      description: `Fanclub subscription (TEST) - ${fanclub.name} - ${performer.display_name}`,
+      provider: intent.provider,
+    });
+    
+    return {
+      ok: true,
+      duplicate: false,
+      entitlement_type: 'fanclub',
+      subscription_id: subscription.id,
+      revenue_attribution: {
+        performer_id: fanclub.performer_id,
+        performer_name: performer.display_name,
+        fanclub_name: fanclub.name,
+        gross: intent.amount,
+        performer_share_percent: revenueModel.performer_share_percentage,
+        line_item_id: lineItemResult.item?.id,
+        duplicate: lineItemResult.duplicate,
+      },
+    };
 
   } else if (intent.payment_type === 'guest_production_deposit') {
     if (intent.application_id) {
@@ -79,11 +252,14 @@ async function grantEntitlement(base44, intent) {
           provider:            intent.provider,
           provider_session_id: intent.provider_session_id,
           payment_type:        'guest_production_deposit',
+          simulated: true,
         }),
       });
     }
     console.log('[simulatePaymentWebhook] Guest Production deposit marked paid:', { userId: intent.user_id, appId: intent.application_id });
   }
+  
+  return { ok: false, error: 'unknown_payment_type' };
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────
