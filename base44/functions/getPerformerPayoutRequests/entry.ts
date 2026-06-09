@@ -1,38 +1,44 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
-// Performer-side: Get own payout requests
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    
-    // Get authenticated user
-    const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const body = await req.json().catch(() => ({}));
+    const { performer_id, performer_token } = body;
+
+    let performer = null;
+
+    // Auth path 1: Performer session token
+    if (performer_id && performer_token) {
+      const sessions = await base44.asServiceRole.entities.PerformerSession.filter({
+        performer_id, token: performer_token, revoked: false
+      });
+      if (!sessions || sessions.length === 0) {
+        return Response.json({ error: 'Invalid or expired performer session' }, { status: 401 });
+      }
+      if (new Date(sessions[0].expires_at) < new Date()) {
+        return Response.json({ error: 'Performer session expired' }, { status: 401 });
+      }
+      performer = await base44.asServiceRole.entities.Performer.get(performer_id);
+    } else {
+      // Auth path 2: Base44 user auth
+      const user = await base44.auth.me();
+      if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      const performers = await base44.asServiceRole.entities.Performer.filter({ user_id: user.id });
+      if (!performers || performers.length === 0) {
+        return Response.json({ error: 'No performer profile linked to your account' }, { status: 404 });
+      }
+      performer = performers[0];
     }
 
-    // Find performer linked to this user
-    const performers = await base44.asServiceRole.entities.Performer.filter({
-      user_id: user.id
-    });
+    if (!performer) return Response.json({ error: 'Performer not found' }, { status: 404 });
 
-    if (!performers || performers.length === 0) {
-      return Response.json({ error: 'No performer profile linked to your account' }, { status: 404 });
-    }
+    let requests = await base44.asServiceRole.entities.PayoutRequest.filter({ performer_id: performer.id });
 
-    const performer = performers[0];
-
-    // Get payout requests for this performer only
-    let requests = await base44.asServiceRole.entities.PayoutRequest.filter({
-      performer_id: performer.id
-    });
-
-    // Sort by requested_at descending
-    requests = (requests || []).sort((a, b) => 
+    requests = (requests || []).sort((a, b) =>
       new Date(b.requested_at).getTime() - new Date(a.requested_at).getTime()
     );
 
-    // Return only performer-visible fields
     const performerVisible = requests.map(r => ({
       id: r.id,
       amount: r.amount,
@@ -47,12 +53,8 @@ Deno.serve(async (req) => {
       paid_at: r.paid_at
     }));
 
-    return Response.json({
-      success: true,
-      payout_requests: performerVisible
-    });
+    return Response.json({ success: true, requests: performerVisible });
   } catch (error) {
-    console.error('getPerformerPayoutRequests error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ const MINIMUM_PAYOUT_USD = 50;
 
 export default function PayoutRequestsSection({ onPayoutCreated, performerId, performerToken }) {
   const [payoutRequests, setPayoutRequests] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const [payoutRequestForm, setPayoutRequestForm] = useState({
     amount: "",
     currency: "usd",
@@ -21,6 +22,25 @@ export default function PayoutRequestsSection({ onPayoutCreated, performerId, pe
   });
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState(false);
+
+  useEffect(() => {
+    if (performerId && performerToken) loadHistory();
+  }, [performerId, performerToken]);
+
+  const loadHistory = async () => {
+    setLoadingHistory(true);
+    try {
+      const res = await base44.functions.invoke("getPerformerPayoutRequests", {
+        performer_id: performerId,
+        performer_token: performerToken,
+      });
+      if (res.data?.requests) setPayoutRequests(res.data.requests);
+    } catch (e) {
+      // silently fail
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   const parsedAmount = parseFloat(payoutRequestForm.amount);
   const amountValid = !isNaN(parsedAmount) && parsedAmount >= MINIMUM_PAYOUT_USD;
@@ -49,6 +69,7 @@ export default function PayoutRequestsSection({ onPayoutCreated, performerId, pe
           performer_note: "",
           confirm_details: false
         });
+        loadHistory();
         onPayoutCreated();
       }
     } catch (error) {
@@ -176,7 +197,9 @@ export default function PayoutRequestsSection({ onPayoutCreated, performerId, pe
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {payoutRequests.length === 0 ? (
+          {loadingHistory ? (
+            <p className="text-muted-foreground text-sm">Loading...</p>
+          ) : payoutRequests.length === 0 ? (
             <p className="text-muted-foreground text-sm">No payout requests yet</p>
           ) : (
             <div className="space-y-4">

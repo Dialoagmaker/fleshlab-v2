@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,12 @@ export default function PayoutMethodSection({ profile, onPayoutUpdated, performe
     payout_details: {}
   });
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (profile?.payout_method) {
+      setPayoutForm(f => ({ ...f, payout_method: profile.payout_method }));
+    }
+  }, [profile?.payout_method]);
 
   const handleUpdatePayoutMethod = async () => {
     setLoading(true);
