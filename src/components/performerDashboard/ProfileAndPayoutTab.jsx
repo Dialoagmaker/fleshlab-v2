@@ -18,7 +18,10 @@ export default function ProfileAndPayoutTab({ performer, performerToken }) {
 
   const loadProfile = async () => {
     try {
-      const res = await base44.functions.invoke("getPerformerProfilePrivate", {});
+      const res = await base44.functions.invoke("getPerformerProfilePrivate", {
+        performer_id: performer?.performer?.id,
+        performer_token: performerToken,
+      });
       if (res.data.success) {
         setProfileData(res.data);
       }
