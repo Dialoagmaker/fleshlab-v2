@@ -335,7 +335,7 @@ export default function PhilippinesRecruitment() {
                 Choose your <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-amber-400">creator model</span>
               </h2>
               <p className="text-gray-400 max-w-lg mx-auto text-base">
-                Different support levels, different splits — both paths are built for different starting points.
+                Two creator models. Pick the setup that fits your goals.
               </p>
             </div>
 

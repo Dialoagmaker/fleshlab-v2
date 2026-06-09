@@ -59,6 +59,21 @@ export default function TubeFooter() {
                 </a>
               </li>
               <li>
+                <a href="/gay-performer-recruitment-philippines" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  Philippines Recruitment
+                </a>
+              </li>
+              <li>
+                <a href="/chaturbate-model-join-studio" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  Cam Model Studio
+                </a>
+              </li>
+              <li>
+                <a href="/gay-onlyfans-alternative" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  OnlyFans Alternative
+                </a>
+              </li>
+              <li>
                 <a href="/fan-productions" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
                   Fan Productions
                 </a>

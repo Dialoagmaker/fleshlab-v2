@@ -29,7 +29,7 @@ export default function HowItWorks() {
               HOW <span className="text-rose-500">FLESHLAB</span> WORKS
             </h1>
             <p className="text-xl text-white/70 max-w-3xl mx-auto">
-              Your complete guide to accessing FLESHLAB content, becoming a performer, and understanding our studio operations.
+              Browse content, join Fanclub, apply as a performer, or request a guest production. Here's how each path works.
             </p>
           </div>
         </section>

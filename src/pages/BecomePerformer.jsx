@@ -98,50 +98,53 @@ export default function BecomePerformer() {
         <BPHowItWorks onApplyClick={scrollToForm} />
 
         {/* Recruitment Landing Pages Links */}
-        <section className="py-16 px-4 bg-[#0A0A0A]">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-8">Specific Recruitment Programs</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Link to="/gay-performer-recruitment-philippines" className="block">
-                <Card 
-                  className="bg-gradient-to-br from-orange-900/50 to-orange-800/30 border-orange-700 cursor-pointer hover:shadow-lg hover:shadow-orange-900/50 transition-all"
-                >
-                  <CardContent className="pt-6">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Globe className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold mb-2">Philippines Recruitment 🇵🇭</h3>
-                        <p className="text-gray-300 mb-4">Filipino gay men: Earn from home with full training. Start with your phone. PHP/USD payments. WhatsApp application available.</p>
-                        <Button className="bg-orange-600 hover:bg-orange-700">
-                          Learn More
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-              
-              <Card 
-                className="bg-gradient-to-br from-purple-900/50 to-purple-800/30 border-purple-700 cursor-pointer hover:shadow-lg hover:shadow-purple-900/50 transition-all"
-                onClick={() => navigate("/chaturbate-model-join-studio")}
-              >
-                <CardContent className="pt-6">
+        <section className="py-16 px-4" style={{ background: '#080808' }}>
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4 text-xs font-black uppercase tracking-widest text-rose-400"
+                style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.35)' }}>
+                Creator Paths
+              </div>
+              <h2 className="font-black text-white text-2xl mb-2">Specific programs</h2>
+              <p className="text-white/40 text-sm">Depending on where you are and what you already do.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Link to="/gay-performer-recruitment-philippines" className="block group">
+                <div className="rounded-2xl p-6 h-full transition-all duration-200 hover:-translate-y-1"
+                  style={{ background: 'rgba(255,138,0,0.08)', border: '1px solid rgba(255,138,0,0.3)', boxShadow: '0 0 30px rgba(255,138,0,0.06)' }}>
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Video className="h-6 w-6 text-white" />
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
+                      style={{ background: 'rgba(255,138,0,0.15)', border: '1px solid rgba(255,138,0,0.35)' }}>
+                      🇵🇭
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold mb-2">Cam Model Partnership</h3>
-                      <p className="text-gray-300 mb-4">Chaturbate models: Add passive income. Keep camming. 70% revenue share. No exclusivity. Fanclub monetization.</p>
-                      <Button className="bg-purple-600 hover:bg-purple-700">
-                        Learn More
-                      </Button>
+                      <h3 className="text-white font-black text-base mb-1">Philippines Recruitment</h3>
+                      <p className="text-white/50 text-sm leading-relaxed mb-4">Filipino gay creators: start from home, use your phone, get setup support and PHP/USD payouts.</p>
+                      <span className="text-amber-400 text-xs font-bold flex items-center gap-1">
+                        Learn More <Globe className="w-3.5 h-3.5" />
+                      </span>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </Link>
+
+              <div className="rounded-2xl p-6 h-full cursor-pointer transition-all duration-200 hover:-translate-y-1 group"
+                style={{ background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.3)', boxShadow: '0 0 30px rgba(168,85,247,0.06)' }}
+                onClick={() => navigate("/chaturbate-model-join-studio")}>
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.35)' }}>
+                    <Video className="h-5 w-5 text-purple-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-black text-base mb-1">Cam Model Partnership</h3>
+                    <p className="text-white/50 text-sm leading-relaxed mb-4">Already on Chaturbate or similar? Keep camming, add studio content and fanclub income. 70% network split.</p>
+                    <span className="text-purple-400 text-xs font-bold flex items-center gap-1">
+                      Learn More <Video className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
