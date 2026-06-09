@@ -160,6 +160,32 @@ export async function grantEntitlement(base44, intent) {
   const periodMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
   
   if (intent.payment_type === 'ppv') {
+    // ── CRITICAL: Payment Idempotency Check BEFORE create ─────────────────
+    const existingPayments = await base44.asServiceRole.entities.Payment.filter({
+      user_id: intent.user_id,
+      payment_type: 'ppv',
+      status: 'completed',
+    });
+    
+    const existingPayment = existingPayments.find(p => {
+      try {
+        const meta = JSON.parse(p.metadata || '{}');
+        return meta.provider_session_id === intent.provider_session_id ||
+               meta.provider_payment_id === intent.provider_session_id ||
+               meta.payment_intent_id === intent.id;
+      } catch { return false; }
+    });
+    
+    if (existingPayment) {
+      console.log('[grantEntitlement] Payment already exists — skipping (idempotent)', {
+        userId: intent.user_id,
+        videoId: intent.video_id,
+        provider_session_id: intent.provider_session_id,
+        existingPaymentId: existingPayment.id,
+      });
+      return { ok: true, duplicate: true, entitlement_type: 'ppv', payment_id: existingPayment.id };
+    }
+    
     // Create Payment record
     const payment = await base44.asServiceRole.entities.Payment.create({
       user_id:             intent.user_id,
@@ -245,6 +271,27 @@ export async function grantEntitlement(base44, intent) {
     };
 
   } else if (intent.payment_type === 'fanclub') {
+    // ── CRITICAL: Subscription Idempotency Check BEFORE create ────────────
+    const existingSubscriptions = await base44.asServiceRole.entities.Subscription.filter({
+      user_id: intent.user_id,
+      fanclub_id: intent.plan_id,
+      status: 'active',
+    });
+    
+    const existingSubscription = existingSubscriptions.find(s => {
+      return s.stripe_subscription_id === `nowpayments_${intent.provider_session_id}` ||
+             s.payment_intent_id === intent.id;
+    });
+    
+    if (existingSubscription) {
+      console.log('[grantEntitlement] Subscription already exists — skipping (idempotent)', {
+        userId: intent.user_id,
+        planId: intent.plan_id,
+        existingSubscriptionId: existingSubscription.id,
+      });
+      return { ok: true, duplicate: true, entitlement_type: 'fanclub', subscription_id: existingSubscription.id };
+    }
+    
     const ACCESS_PERIODS = {
       fanclub_monthly:  1,
       premium_monthly:  1,
