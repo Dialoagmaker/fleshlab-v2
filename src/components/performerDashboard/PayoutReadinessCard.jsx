@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export default function PayoutReadinessCard({ performer }) {
-  let status = "Eligible";
+  let status = "Approved";
   let statusVariant = "default";
   let reason = null;
 
