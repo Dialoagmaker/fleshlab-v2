@@ -1,47 +1,86 @@
 /**
  * getApplicationFileSignedUrl
- * Admin-only. Returns a 15-minute signed GET URL for a private application media file in R2.
+ * Generates a time-limited signed download URL for application files (ID docs, photos, videos).
+ * Admin-only endpoint - verifies user is admin before generating URL.
+ * Files are stored in private R2, never public CDN.
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
-import { S3Client, GetObjectCommand } from 'npm:@aws-sdk/client-s3';
-import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner';
+import { S3Client, GetObjectCommand } from 'npm:@aws-sdk/client-s3@3.1057.0';
+import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner@3.1057.0';
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
+
+    // Admin-only check
     if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+      return Response.json({ error: 'Admin access required' }, { status: 403 });
     }
 
     const body = await req.json();
-    const { r2_key } = body;
-    if (!r2_key) {
-      return Response.json({ error: 'r2_key is required' }, { status: 400 });
+    const { application_id, r2_key } = body;
+
+    if (!application_id || !r2_key) {
+      return Response.json({ error: 'Missing required fields: application_id, r2_key' }, { status: 400 });
     }
 
-    // Only allow application private files
-    if (!r2_key.startsWith('applications/private/')) {
-      return Response.json({ error: 'Invalid key path' }, { status: 400 });
+    // Verify file belongs to the specified application
+    const application = await base44.asServiceRole.entities.GuestProductionApplication.get(application_id);
+    if (!application) {
+      return Response.json({ error: 'Application not found' }, { status: 404 });
     }
+
+    // Verify the r2_key is actually associated with this application
+    const allAppKeys = [
+      ...(application.profile_photo_r2_keys || []),
+      application.intro_video_r2_key,
+      application.hardcore_video_r2_key,
+      application.id_document_r2_key,
+      application.id_document_front_r2_key,
+      application.id_document_back_r2_key,
+      application.selfie_with_id_r2_key,
+    ].filter(Boolean);
+
+    if (!allAppKeys.includes(r2_key)) {
+      return Response.json({ error: 'File does not belong to this application' }, { status: 403 });
+    }
+
+    // Get R2 credentials
+    const accountId = Deno.env.get('R2_ACCOUNT_ID');
+    const accessKeyId = Deno.env.get('R2_ACCESS_KEY_ID');
+    const secretAccessKey = Deno.env.get('R2_SECRET_ACCESS_KEY');
+    const bucketName = Deno.env.get('R2_BUCKET_NAME');
 
     const s3Client = new S3Client({
       region: 'auto',
-      endpoint: `https://${Deno.env.get('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`,
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
       credentials: {
-        accessKeyId: Deno.env.get('R2_ACCESS_KEY_ID'),
-        secretAccessKey: Deno.env.get('R2_SECRET_ACCESS_KEY'),
-      },
+        accessKeyId,
+        secretAccessKey
+      }
     });
 
-    const command = new GetObjectCommand({
-      Bucket: Deno.env.get('R2_BUCKET_NAME'),
-      Key: r2_key,
+    // Generate signed URL (1 hour expiry)
+    const getCommand = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: r2_key
     });
 
-    const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 }); // 15 min
+    const signedUrl = await getSignedUrl(s3Client, getCommand, { expiresIn: 3600 });
 
-    return Response.json({ success: true, signed_url: signedUrl, expires_in: 900 });
+    // Log the access
+    const ts = new Date().toISOString();
+    const existingLog = application.contact_log || '';
+    await base44.asServiceRole.entities.GuestProductionApplication.update(application.id, {
+      contact_log: `${existingLog}\n\n[${ts}] Admin accessed file: ${r2_key.split('/').pop()}`
+    });
+
+    return Response.json({
+      signed_url: signedUrl,
+      expires_in: 3600,
+      filename: r2_key.split('/').pop(),
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
