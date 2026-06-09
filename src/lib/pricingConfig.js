@@ -54,12 +54,13 @@ export const FANCLUB_PLANS = {
 };
 
 // ── Legacy PRICING export (used in other parts of the app) ───────────────────
+// DEPRECATED: Use FANCLUB_PLANS and PPV_TIERS instead. Kept for backward compatibility.
 export const PRICING = {
   fanclub: {
     monthly: {
       name: 'Fanclub Monthly',
       planId: 'fanclub_monthly',
-      price: FANCLUB_PLANS.fanclub_monthly.price,
+      price: FANCLUB_PLANS.fanclub_monthly.price,  // $20.99 (crypto-safe)
       regularPrice: FANCLUB_PLANS.fanclub_monthly.regularPrice,
       currency: 'USD',
       billing: 'monthly',
@@ -67,7 +68,7 @@ export const PRICING = {
     premium: {
       name: 'Premium Monthly',
       planId: 'premium_monthly',
-      price: FANCLUB_PLANS.premium_monthly.price,
+      price: FANCLUB_PLANS.premium_monthly.price,  // $29.99 (crypto-safe)
       regularPrice: FANCLUB_PLANS.premium_monthly.regularPrice,
       currency: 'USD',
       billing: 'monthly',
@@ -75,7 +76,7 @@ export const PRICING = {
     '3month': {
       name: 'Fanclub 3-Month Access',
       planId: 'fanclub_3mo',
-      price: FANCLUB_PLANS.fanclub_3mo.price,
+      price: FANCLUB_PLANS.fanclub_3mo.price,  // $49.99 (crypto-safe)
       currency: 'USD',
       billing: '3-months',
     },
@@ -96,17 +97,17 @@ export const PRICING = {
   ppv: {
     standard: {
       name: 'Standard Scene',
-      price: 20.99, // NOWPayments LIVE minimum + buffer (2026-06-06)
+      price: 20.99, // Synced with FANCLUB_PLANS (crypto-safe minimum)
       currency: 'USD',
     },
     premium: {
       name: 'Premium Scene',
-      price: 24.99,
+      price: 24.99, // Synced with FANCLUB_PLANS
       currency: 'USD',
     },
     exclusive: {
       name: 'Exclusive / Long Scene',
-      price: 29.99,
+      price: 29.99, // Synced with FANCLUB_PLANS
       currency: 'USD',
     },
   },

@@ -1,76 +1,13 @@
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import { storeAuthIntent, createFanclubIntent, createPPVIntent, createGuestProductionIntent, createFreeWatchIntent } from '@/lib/authRedirect';
+import { PRICING as CENTRAL_PRICING } from '@/lib/pricingConfig';
 
 /**
  * Pricing configuration for FLESHLAB Studios
- * All prices in USD
+ * All prices in USD - sourced from central pricingConfig.js
  */
-export const PRICING = {
-  free: {
-    price: 0,
-    label: 'Free Account',
-    features: [
-      'Public performer profiles',
-      'Free previews/trailers',
-      'Selected short free videos',
-      'Studio updates',
-      'Ability to unlock PPV scenes',
-      'Ability to apply for Guest Production'
-    ]
-  },
-  fanclub: {
-    monthly: {
-      price: 12.99,
-      label: 'Monthly',
-      sublabel: 'Flexible monthly access',
-      period: 'month'
-    },
-    sixMonths: {
-      price: 59.99,
-      label: '6 Months',
-      sublabel: 'Save 23%',
-      period: '6 months',
-      pricePerMonth: 9.99
-    },
-    annual: {
-      price: 99.99,
-      label: '12 Months',
-      sublabel: 'Best Value',
-      period: 'year',
-      pricePerMonth: 8.33,
-      badge: 'BEST VALUE'
-    },
-    features: [
-      'Fanclub videos',
-      'Early releases',
-      'Behind the scenes',
-      'Performer updates',
-      'Member-only posts',
-      'Bonus clips',
-      'Selected exclusive scenes'
-    ]
-  },
-  ppv: {
-    standard: {
-      price: 12.99,
-      label: 'Standard Scene'
-    },
-    premium: {
-      price: 19.99,
-      label: 'Premium Scene'
-    },
-    exclusive: {
-      price: 24.99,
-      label: 'Exclusive / Long Scene'
-    }
-  },
-  guestProduction: {
-    startingPrice: 999,
-    label: 'Guest Production',
-    note: 'Application, 18+ verification, studio approval and performer approval required. Final quote depends on production scope, compliance, filming time, performer compatibility and post-production.'
-  }
-};
+export const PRICING = CENTRAL_PRICING;
 
 /**
  * Access control hook for gating monetized actions behind registration/login

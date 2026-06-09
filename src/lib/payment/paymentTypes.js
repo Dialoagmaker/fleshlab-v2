@@ -1,6 +1,9 @@
 /**
  * Payment Provider Abstraction Layer — Interface & Constants
  * Frontend-safe module (no Deno/process deps)
+ * 
+ * DEPRECATED: Pricing now sourced from lib/pricingConfig.js (central source of truth)
+ * This file kept for PAYMENT_* constants only.
  */
 
 export const PAYMENT_PROVIDERS = {
@@ -34,19 +37,19 @@ export function validateReturnUrl(url) {
 }
 
 /**
- * Server-side authoritative pricing.
- * Client MUST NOT override these values.
+ * DEPRECATED: Use lib/pricingConfig.js instead.
+ * This export kept for backward compatibility only.
  */
 export const SERVER_PRICING = {
   fanclub: {
-    fanclub_monthly: 12.99,
-    fanclub_6mo:     59.99,
-    fanclub_annual:  99.99,
+    fanclub_monthly: 20.99,  // Synced with pricingConfig.js (crypto-safe minimum)
+    fanclub_3mo:     49.99,  // ENABLED - crypto-safe pricing
+    premium_monthly: 29.99,  // ENABLED - crypto-safe pricing
   },
   ppv: {
-    short_solo: 6.99,
-    standard:   12.99,
-    premium:    19.99,
+    standard:  20.99,  // Synced with pricingConfig.js (crypto-safe minimum)
+    premium:   24.99,  // Synced with pricingConfig.js
+    exclusive: 29.99,  // Synced with pricingConfig.js
   },
   guest_production_deposit: 999,
 };

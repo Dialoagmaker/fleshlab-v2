@@ -421,7 +421,7 @@ export default function Fanclub() {
                       </div>
                       {performerCTA}
                       <p className="text-white/15 text-xs text-center mt-4">
-                        $20.99/month unless cancelled. Cancel anytime. Crypto-safe pricing.
+                        $20.99/month unless cancelled. Cancel anytime.
                       </p>
                     </div>
                   </div>
@@ -497,7 +497,7 @@ export default function Fanclub() {
             "name": "FLESHLAB Fanclub Membership",
             "category": "Adult Entertainment",
             "availability": "https://schema.org/InStock",
-            "price": "12.99",
+            "price": "20.99",
             "priceCurrency": "USD",
             "ageRestriction": "18+"
           }
@@ -550,7 +550,7 @@ export default function Fanclub() {
                   </Button>
                 </Link>
               </div>
-              <p className="text-white/40 text-xs mb-6">$20.99/month · $49.99 for 3 months · Cancel anytime.</p>
+              <p className="text-white/40 text-xs mb-6">$20.99/month · $49.99 for 3 months · Crypto-safe pricing · Cancel anytime.</p>
 
               <div className="flex flex-wrap gap-x-5 gap-y-2 text-white/35 text-sm">
                 <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-rose-500/60 shrink-0" />Verified 18+ performers</span>
