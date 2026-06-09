@@ -52,6 +52,7 @@ import AdminUserDetail from './pages/admin/UserDetail';
 import GrowthDashboard from './pages/admin/GrowthDashboard';
 import AdminPayments from './pages/admin/Payments';
 import AdminRevenueDashboard from './pages/admin/RevenueDashboard';
+import MonthlyPayoutSummary from './pages/admin/MonthlyPayoutSummary';
 import ComingSoon from './pages/ComingSoon';
 import PerformerRouteHandler from './components/PerformerRouteHandler';
 import PerformerGuard from './components/PerformerGuard';
@@ -198,6 +199,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/growth" element={<GrowthDashboard />} />
                 <Route path="/admin/payments" element={<AdminPayments />} />
                 <Route path="/admin/revenue" element={<AdminRevenueDashboard />} />
+                <Route path="/admin/monthly-payout-summary" element={<MonthlyPayoutSummary />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
                 <Route path="/admin/users/:id" element={<AdminUserDetail />} />
               </Route>

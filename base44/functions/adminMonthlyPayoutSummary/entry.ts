@@ -355,7 +355,7 @@ Deno.serve(async (req) => {
       summary: {
         total_performer_earnings,
         total_studio_share,
-        total_gross_revenue,
+        total_gross_revenue: total_gross,
         eligible_for_payout_count: eligible_count,
         below_threshold_count,
         on_hold_count,
