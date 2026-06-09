@@ -25,6 +25,19 @@ export default function MonthlyCloseoutCard({ performerId, performerToken }) {
     enabled: !!performerId && !!performerToken
   });
 
+  const { data: payoutData } = useQuery({
+    queryKey: ["performer-payout-summary", performerId],
+    queryFn: async () => {
+      const res = await base44.functions.invoke("performerDashboardService", {
+        action: "get_payout_summary",
+        performer_id: performerId,
+        performer_token: performerToken
+      });
+      return res.data;
+    },
+    enabled: !!performerId && !!performerToken
+  });
+
   if (isLoading) {
     return (
       <Card>
@@ -39,6 +52,8 @@ export default function MonthlyCloseoutCard({ performerId, performerToken }) {
   const summary = data?.summary || {};
   const earnings = data?.earnings || [];
   const hasEarnings = earnings.length > 0 || summary.gross_total > 0;
+  const totalPaid = payoutData?.summary?.total_paid_usd || 0;
+  const totalApprovedPending = payoutData?.summary?.total_approved_pending_usd || 0;
 
   if (!hasEarnings) {
     return (
@@ -68,11 +83,11 @@ export default function MonthlyCloseoutCard({ performerId, performerToken }) {
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Paid</p>
-            <p className="text-sm">${summary.paid_total?.toFixed(2) || '0.00'}</p>
+            <p className="text-sm">${totalPaid.toFixed(2)}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Pending</p>
-            <p className="text-sm text-yellow-400">${summary.pending_total?.toFixed(2) || '0.00'}</p>
+            <p className="text-sm text-yellow-400">${totalApprovedPending.toFixed(2)}</p>
           </div>
         </div>
         
