@@ -1038,6 +1038,133 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Action: get_payout_summary
+    // Returns available balance = total approved/estimated earnings minus paid payouts
+    if (action === 'get_payout_summary') {
+      const now = new Date();
+      const currentMonth = now.toISOString().slice(0, 7);
+      const revenueSharePct = myPerformer.revenue_split_pct !== undefined && myPerformer.revenue_split_pct !== null
+        ? parseFloat(myPerformer.revenue_split_pct)
+        : 40;
+
+      // Fetch all PayoutRequests for this performer
+      const [allPayoutRequests, legacyEarnings, lineItems, videoPerformers] = await Promise.all([
+        base44.asServiceRole.entities.PayoutRequest.filter({ performer_id: myPerformer.id }),
+        base44.asServiceRole.entities.PerformerEarning.filter({ performer_id: myPerformer.id }),
+        base44.asServiceRole.entities.PerformerEarningLineItem.filter({ performer_id: myPerformer.id }),
+        base44.asServiceRole.entities.VideoPerformer.filter({ performer_id: myPerformer.id })
+      ]);
+
+      // Total paid out (paid + approved payouts count as committed)
+      const paidPayouts = (allPayoutRequests || []).filter(r => r.status === 'paid');
+      const approvedPayouts = (allPayoutRequests || []).filter(r => r.status === 'approved');
+      const totalPaid = paidPayouts.reduce((sum, r) => sum + (r.amount || 0), 0);
+      const totalApprovedPending = approvedPayouts.reduce((sum, r) => sum + (r.amount || 0), 0);
+      const totalCommitted = totalPaid + totalApprovedPending;
+
+      // Total lifetime performer earnings from all sources
+      const videoIds = videoPerformers.map(vp => vp.video_id);
+
+      const [internalStatsSets, externalOnlySnapshots] = await Promise.all([
+        Promise.all(
+          videoIds.map(vid =>
+            base44.asServiceRole.entities.VideoStatSnapshot.filter({ video_id: vid }).catch(() => [])
+          )
+        ),
+        base44.asServiceRole.entities.VideoStatSnapshot.filter({
+          performer_id: myPerformer.id,
+          source_type: 'external_manual'
+        }).catch(() => [])
+      ]);
+
+      const allSnapshots = [...internalStatsSets.flat(), ...externalOnlySnapshots];
+
+      // Avoid double-counting
+      const existingVideoIds = new Set(
+        [...(lineItems || []), ...(legacyEarnings || [])]
+          .filter(e => e.source_type === 'video_platform' || e.earning_type === 'video_platform')
+          .map(e => e.video_id).filter(Boolean)
+      );
+
+      const legacyTotal = (legacyEarnings || [])
+        .filter(e => !['draft', 'cancelled', 'held'].includes(e.status))
+        .reduce((sum, e) => sum + (e.net_amount_usd || 0), 0);
+      const lineItemTotal = (lineItems || [])
+        .filter(e => !['draft', 'cancelled', 'held'].includes(e.status))
+        .reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0);
+      const snapTotal = allSnapshots
+        .filter(s => !s.video_id || !existingVideoIds.has(s.video_id))
+        .reduce((sum, s) => sum + (s.revenue_usd || 0), 0) * (revenueSharePct / 100);
+
+      const totalEarned = legacyTotal + lineItemTotal + snapTotal;
+
+      // Current month breakdown
+      const currentMonthLineItems = (lineItems || []).filter(e => e.period_month === currentMonth);
+      const currentMonthLegacy = (legacyEarnings || []).filter(e => e.period_month === currentMonth);
+      const currentMonthSnaps = allSnapshots.filter(s => s.period_month === currentMonth && (!s.video_id || !existingVideoIds.has(s.video_id)));
+
+      const currentMonthGross =
+        currentMonthLegacy.reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0) +
+        currentMonthLineItems.reduce((sum, e) => sum + (e.gross_amount_usd || 0), 0) +
+        currentMonthSnaps.reduce((sum, s) => sum + (s.revenue_usd || 0), 0);
+
+      const currentMonthEarned =
+        currentMonthLegacy.filter(e => !['draft','cancelled','held'].includes(e.status)).reduce((sum, e) => sum + (e.net_amount_usd || 0), 0) +
+        currentMonthLineItems.filter(e => !['draft','cancelled','held'].includes(e.status)).reduce((sum, e) => sum + (e.performer_amount_usd || 0), 0) +
+        currentMonthSnaps.reduce((sum, s) => sum + (s.revenue_usd || 0), 0) * (revenueSharePct / 100);
+
+      // Available balance = total earned - all committed (paid + approved) payouts
+      const availableBalance = Math.max(0, totalEarned - totalCommitted);
+
+      // Next payout date calculation
+      const day = now.getDate();
+      const month = now.getMonth(); // 0-indexed
+      const year = now.getFullYear();
+      let nextPayoutDate;
+      if (day < 5) {
+        nextPayoutDate = new Date(year, month, 5);
+      } else if (day < 15) {
+        nextPayoutDate = new Date(year, month, 15);
+      } else {
+        nextPayoutDate = new Date(year, month + 1, 5);
+      }
+      const nextPayoutFormatted = nextPayoutDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+
+      // Payout history (last 10, sorted newest first)
+      const sortedPayouts = (allPayoutRequests || [])
+        .sort((a, b) => new Date(b.requested_at || b.created_date) - new Date(a.requested_at || a.created_date))
+        .slice(0, 10)
+        .map(r => ({
+          id: r.id,
+          amount: r.amount,
+          currency: r.currency || 'usd',
+          status: r.status,
+          payout_method: r.payout_method,
+          payout_snapshot_masked: r.payout_snapshot_masked,
+          performer_note: r.performer_note,
+          performer_visible_message: r.performer_visible_message,
+          requested_at: r.requested_at,
+          reviewed_at: r.reviewed_at,
+          paid_at: r.paid_at,
+          period: r.period || null
+        }));
+
+      return Response.json({
+        success: true,
+        summary: {
+          total_earned_usd: totalEarned,
+          current_month_gross_usd: currentMonthGross,
+          current_month_earned_usd: currentMonthEarned,
+          total_paid_usd: totalPaid,
+          total_approved_pending_usd: totalApprovedPending,
+          available_balance_usd: availableBalance,
+          next_payout_date: nextPayoutFormatted,
+          payout_schedule: 'Payouts are processed on the 5th and 15th of each month.'
+        },
+        payout_history: sortedPayouts
+      });
+    }
+
     // Action: get_fanclub
     if (action === 'get_fanclub') {
       const fanclubs = await base44.asServiceRole.entities.Fanclub.filter({

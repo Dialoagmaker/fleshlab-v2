@@ -1,19 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 const MINIMUM_PAYOUT_USD = 50;
 
 export default function PayoutRequestsSection({ onPayoutCreated, performerId, performerToken }) {
-  const [payoutRequests, setPayoutRequests] = useState([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
+  const queryClient = useQueryClient();
   const [payoutRequestForm, setPayoutRequestForm] = useState({
     amount: "",
     currency: "usd",
@@ -22,25 +21,6 @@ export default function PayoutRequestsSection({ onPayoutCreated, performerId, pe
   });
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState(false);
-
-  useEffect(() => {
-    if (performerId && performerToken) loadHistory();
-  }, [performerId, performerToken]);
-
-  const loadHistory = async () => {
-    setLoadingHistory(true);
-    try {
-      const res = await base44.functions.invoke("getPerformerPayoutRequests", {
-        performer_id: performerId,
-        performer_token: performerToken,
-      });
-      if (res.data?.requests) setPayoutRequests(res.data.requests);
-    } catch (e) {
-      // silently fail
-    } finally {
-      setLoadingHistory(false);
-    }
-  };
 
   const parsedAmount = parseFloat(payoutRequestForm.amount);
   const amountValid = !isNaN(parsedAmount) && parsedAmount >= MINIMUM_PAYOUT_USD;
@@ -69,7 +49,8 @@ export default function PayoutRequestsSection({ onPayoutCreated, performerId, pe
           performer_note: "",
           confirm_details: false
         });
-        loadHistory();
+        // Invalidate payout summary so the overview cards refresh
+        queryClient.invalidateQueries({ queryKey: ["performer-payout-summary", performerId] });
         onPayoutCreated();
       }
     } catch (error) {
@@ -77,30 +58,6 @@ export default function PayoutRequestsSection({ onPayoutCreated, performerId, pe
     } finally {
       setLoading(false);
     }
-  };
-
-  const getStatusBadge = (status) => {
-    const variants = {
-      pending_review: "secondary",
-      approved: "default",
-      rejected: "destructive",
-      paid: "default",
-      cancelled: "outline"
-    };
-
-    const labels = {
-      pending_review: "Pending Review",
-      approved: "Approved",
-      rejected: "Rejected",
-      paid: "Paid",
-      cancelled: "Cancelled"
-    };
-
-    return (
-      <Badge variant={variants[status] || "outline"}>
-        {labels[status] || status}
-      </Badge>
-    );
   };
 
   return (
@@ -189,59 +146,6 @@ export default function PayoutRequestsSection({ onPayoutCreated, performerId, pe
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Payout History</CardTitle>
-          <CardDescription>
-            Your past payout requests and their status
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loadingHistory ? (
-            <p className="text-muted-foreground text-sm">Loading...</p>
-          ) : payoutRequests.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No payout requests yet</p>
-          ) : (
-            <div className="space-y-4">
-              {payoutRequests.map((request) => (
-                <div
-                  key={request.id}
-                  className="border rounded-lg p-4 space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(request.status)}
-                      <span className="font-semibold">
-                        ${request.amount} {request.currency.toUpperCase()}
-                      </span>
-                    </div>
-                    <span className="text-sm text-muted-foreground">
-                      {new Date(request.requested_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  
-                  <div className="text-sm text-muted-foreground">
-                    <p>Method: {request.payout_method?.replace('_', ' ').toUpperCase()}</p>
-                    {request.payout_snapshot_masked && (
-                      <p>{request.payout_snapshot_masked}</p>
-                    )}
-                  </div>
-
-                  {request.performer_note && (
-                    <p className="text-sm text-muted-foreground">Note: {request.performer_note}</p>
-                  )}
-                  {request.performer_visible_message && (
-                    <div className="bg-muted/50 rounded p-2 text-sm">
-                      <p className="font-medium">{request.status === 'rejected' ? 'Rejection Reason:' : 'Admin Message:'}</p>
-                      <p>{request.performer_visible_message}</p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </>
   );
 }
