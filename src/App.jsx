@@ -444,7 +444,7 @@ const AuthenticatedApp = () => {
       <Route path="/fanclub" element={<PublicPageShell><Fanclub /></PublicPageShell>} />
       <Route path="/gay-performer-recruitment-philippines" element={<PublicPageShell><PhilippinesRecruitment /></PublicPageShell>} />
       <Route path="/chaturbate-model-join-studio" element={<PublicPageShell><ChaturbateRecruitment /></PublicPageShell>} />
-      <Route path="/gay-onlyfans-alternative" element={<GayOnlyfansAlternative />} />
+      <Route path="/gay-onlyfans-alternative" element={<PublicPageShell><GayOnlyfansAlternative /></PublicPageShell>} />
       {/* Public routes */}
       <Route element={<Layout />}>
         <Route path="/brands" element={<PublicBrands />} />

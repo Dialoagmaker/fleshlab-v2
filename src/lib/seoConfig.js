@@ -25,10 +25,12 @@ export function canonicalUrl(urlOrPath) {
   try {
     // Parse: works for both full URLs and bare paths
     const parsed = new URL(urlOrPath, PRODUCTION_DOMAIN);
-    return `${PRODUCTION_DOMAIN}${parsed.pathname}${parsed.search || ''}`;
+    // CRITICAL: strip query params and hash from canonical — never leak ?performer=, ?page=, etc.
+    return `${PRODUCTION_DOMAIN}${parsed.pathname}`;
   } catch {
     const path = urlOrPath.startsWith('/') ? urlOrPath : `/${urlOrPath}`;
-    return `${PRODUCTION_DOMAIN}${path}`;
+    // Strip any query string from bare paths too
+    return `${PRODUCTION_DOMAIN}${path.split('?')[0].split('#')[0]}`;
   }
 }
 

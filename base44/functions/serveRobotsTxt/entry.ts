@@ -28,15 +28,13 @@
  */
 
 const ROBOTS_TXT = `# robots.txt for FLESHLAB Studios
-# Custom override - correct sitemap URL
-# Generated: 2026-06-07
+# Updated: 2026-06-09
 
 User-agent: *
 
-# Block private/admin routes
+# --- Block private/admin/system routes ---
 Disallow: /admin/
-Disallow: /performer/dashboard
-Disallow: /performer/login
+Disallow: /performer/
 Disallow: /account
 Disallow: /client/
 Disallow: /sign-contract
@@ -48,35 +46,36 @@ Disallow: /login
 Disallow: /register
 Disallow: /forgot-password
 Disallow: /reset-password
+Disallow: /performerlogin
 
-# Allow public routes
-Allow: /
-Allow: /videos
+# --- Explicitly allow all public SEO routes ---
+Allow: /$
+Allow: /videos$
 Allow: /videos/
-Allow: /performers
+Allow: /performers$
 Allow: /performers/
-Allow: /news
+Allow: /news$
 Allow: /news/
-Allow: /fanclub
-Allow: /fan-productions
-Allow: /gay-performer-recruitment
-Allow: /guest-production
-Allow: /become-performer
-Allow: /how-it-works
-Allow: /faq
-Allow: /dmca
-Allow: /2257
-Allow: /terms
-Allow: /privacy
-Allow: /imprint
-Allow: /cookie-policy
-Allow: /brands
+Allow: /brands$
 Allow: /brands/
+Allow: /fanclub$
+Allow: /fan-productions$
+Allow: /guest-production$
+Allow: /become-performer$
+Allow: /gay-performer-recruitment-philippines$
+Allow: /chaturbate-model-join-studio$
+Allow: /gay-onlyfans-alternative$
+Allow: /how-it-works$
+Allow: /faq$
+Allow: /terms$
+Allow: /privacy$
+Allow: /dmca$
+Allow: /2257$
+Allow: /imprint$
+Allow: /cookie-policy$
 
-# CORRECT sitemap URL - dynamic endpoint
+# Sitemap
 Sitemap: https://fleshlab.online/api/functions/sitemapXml
-
-Crawl-delay: 1
 `;
 
 Deno.serve(async (req) => {

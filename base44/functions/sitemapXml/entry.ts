@@ -85,31 +85,29 @@ Deno.serve(async (req) => {
     };
 
     // --- Static pages ---
+    // NOTE: Each URL appears EXACTLY ONCE — no duplicates.
+    // noindex pages (login, register, admin, account, checkout, etc.) are excluded.
     const staticPages = [
-      { path: '/',                 changefreq: 'daily',   priority: '1.0' },
-      { path: '/videos',           changefreq: 'daily',   priority: '0.9' },
-      { path: '/performers',       changefreq: 'daily',   priority: '0.9' },
-      { path: '/news',             changefreq: 'weekly',  priority: '0.8' },
-      { path: '/brands',           changefreq: 'weekly',  priority: '0.8' },
-      { path: '/become-performer', changefreq: 'weekly',  priority: '0.9' },
-      { path: '/gay-performer-recruitment-philippines', changefreq: 'weekly',  priority: '0.8' },
-      { path: '/chaturbate-model-join-studio', changefreq: 'weekly',  priority: '0.8' },
-      { path: '/gay-onlyfans-alternative', changefreq: 'weekly',  priority: '0.8' },
-      { path: '/guest-production', changefreq: 'weekly',  priority: '0.8' },
-      { path: '/fan-productions',  changefreq: 'weekly',  priority: '0.7' },
-      { path: '/how-it-works',     changefreq: 'monthly', priority: '0.7' },
-      { path: '/faq',              changefreq: 'monthly', priority: '0.7' },
-      { path: '/terms',            changefreq: 'monthly', priority: '0.5' },
-      { path: '/privacy',          changefreq: 'monthly', priority: '0.5' },
-      { path: '/dmca',             changefreq: 'monthly', priority: '0.5' },
-      { path: '/2257',             changefreq: 'monthly', priority: '0.5' },
-      { path: '/imprint',          changefreq: 'monthly', priority: '0.5' },
-      { path: '/cookie-policy',    changefreq: 'monthly', priority: '0.5' },
-      { path: '/fanclub',          changefreq: 'weekly',  priority: '0.5' },
-      { path: '/terms',            changefreq: 'yearly',  priority: '0.3' },
-      { path: '/privacy',          changefreq: 'yearly',  priority: '0.3' },
-      { path: '/dmca',             changefreq: 'yearly',  priority: '0.3' },
-      { path: '/2257',             changefreq: 'yearly',  priority: '0.3' },
+      { path: '/',                                        changefreq: 'daily',   priority: '1.0' },
+      { path: '/videos',                                  changefreq: 'daily',   priority: '0.9' },
+      { path: '/performers',                              changefreq: 'daily',   priority: '0.9' },
+      { path: '/news',                                    changefreq: 'weekly',  priority: '0.8' },
+      { path: '/fanclub',                                 changefreq: 'weekly',  priority: '0.8' },
+      { path: '/become-performer',                        changefreq: 'weekly',  priority: '0.8' },
+      { path: '/fan-productions',                         changefreq: 'weekly',  priority: '0.8' },
+      { path: '/guest-production',                        changefreq: 'weekly',  priority: '0.8' },
+      { path: '/gay-performer-recruitment-philippines',   changefreq: 'weekly',  priority: '0.8' },
+      { path: '/chaturbate-model-join-studio',            changefreq: 'weekly',  priority: '0.8' },
+      { path: '/gay-onlyfans-alternative',                changefreq: 'weekly',  priority: '0.8' },
+      { path: '/how-it-works',                            changefreq: 'monthly', priority: '0.7' },
+      { path: '/faq',                                     changefreq: 'monthly', priority: '0.7' },
+      { path: '/brands',                                  changefreq: 'weekly',  priority: '0.6' },
+      { path: '/terms',                                   changefreq: 'yearly',  priority: '0.4' },
+      { path: '/privacy',                                 changefreq: 'yearly',  priority: '0.4' },
+      { path: '/dmca',                                    changefreq: 'yearly',  priority: '0.4' },
+      { path: '/2257',                                    changefreq: 'yearly',  priority: '0.4' },
+      { path: '/imprint',                                 changefreq: 'yearly',  priority: '0.3' },
+      { path: '/cookie-policy',                           changefreq: 'yearly',  priority: '0.3' },
     ];
     for (const page of staticPages) {
       urls.push(urlEntry(`${BASE_URL}${page.path}`, today, page.changefreq, page.priority));

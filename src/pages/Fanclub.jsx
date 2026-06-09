@@ -366,7 +366,7 @@ export default function Fanclub() {
         <SEOMeta
           title={`${featuredPerformer.display_name} Fanclub | FLESHLAB`}
           description={`Join ${featuredPerformer.display_name}'s Fanclub on FLESHLAB. Exclusive performer content, updates, selected scenes and member-only drops.`}
-          canonical={`/fanclub?performer=${performerSlug}`}
+          canonical={`/fanclub`}
           ogImage={featuredPerformer.profile_image_url || featuredPerformer.cover_image_url}
         />
         <div className="min-h-screen bg-[#080808] text-white">

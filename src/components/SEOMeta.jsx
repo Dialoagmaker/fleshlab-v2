@@ -46,6 +46,7 @@ export default function SEOMeta({
     }
 
     // Canonical URL — always points to production domain, never staging/Base44
+    // CRITICAL: strip query params — canonicals must never contain ?param=value
     if (canonical) {
       const productionCanonical = canonicalUrl(canonical);
       const linkCanonical = document.querySelector('link[rel="canonical"]');
@@ -76,7 +77,9 @@ export default function SEOMeta({
       'og:title': title,
       'og:description': description,
       'og:type': ogType,
-      'og:url': canonicalUrl(window.location.pathname),
+      // og:url: use explicit canonical prop if provided (already stripped of query params),
+      // otherwise fall back to current pathname (no query params from pathname alone)
+      'og:url': canonical ? canonicalUrl(canonical) : canonicalUrl(window.location.pathname),
     };
     
     if (ogImage) {
