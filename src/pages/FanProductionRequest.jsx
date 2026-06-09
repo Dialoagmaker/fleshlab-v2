@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import SEOMeta from "@/components/SEOMeta";
+import { trackFanProductionRequestStart, trackFanProductionRequestSubmit, trackPackageSelect } from "@/lib/analytics";
 
 // ─── STEPS CONFIG ────────────────────────────────────────────────────────────
 
@@ -247,6 +248,17 @@ export default function FanProductionRequest() {
 
   const next = () => {
     if (!validateStep()) return;
+    
+    // Track step progression (e.g., package select on step 3)
+    if (step === 3 && form.production_package) {
+      trackPackageSelect({
+        package_type: form.production_package,
+        package_price: PACKAGES.find(p => p.id === form.production_package)?.price || null,
+        source_page: 'fan-productions-request',
+        cta_location: 'package_selection',
+      });
+    }
+    
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -260,6 +272,15 @@ export default function FanProductionRequest() {
   const submit = async () => {
     if (!validateStep()) return;
     setSubmitting(true);
+    
+    // Track fan production request submit (Phase 2)
+    trackFanProductionRequestSubmit({
+      package_type: form.production_package,
+      package_price: PACKAGES.find(p => p.id === form.production_package)?.price || null,
+      source_page: 'fan-productions-request',
+      cta_location: 'form_submit',
+    });
+    
     await base44.entities.GuestProductionApplication.create({
       ...form,
       request_type: "fan_production",

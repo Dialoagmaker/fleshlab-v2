@@ -78,6 +78,7 @@ Deno.serve(async (req) => {
                       (updateData.hardcore_video_r2_key || application.hardcore_video_r2_key);
     const hasId = (updateData.id_document_front_r2_key || application.id_document_front_r2_key) ||
                   (updateData.id_document_r2_key || application.id_document_r2_key);
+    const hasSelfie = (updateData.selfie_with_id_r2_key || application.selfie_with_id_r2_key);
     
     updateData.media_upload_status = (hasPhotos && hasVideos) ? 'complete' : 
                                       (newPhotos.length > 0 || updateData.intro_video_r2_key || updateData.hardcore_video_r2_key) ? 'partial' : 'none';
@@ -92,12 +93,16 @@ Deno.serve(async (req) => {
 
     await base44.asServiceRole.entities.GuestProductionApplication.update(application.id, updateData);
 
+    // Check if application is now ready for review
+    const allRequiredComplete = hasPhotos && hasVideos && hasId && hasSelfie;
+
     return Response.json({
       success: true,
       application_id: application.id,
       file_type,
       r2_key,
       message: logMessage,
+      ready_for_review: allRequiredComplete,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

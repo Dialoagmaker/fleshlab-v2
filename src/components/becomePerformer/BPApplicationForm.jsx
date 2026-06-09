@@ -145,14 +145,25 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
       return response.data;
     },
     onSuccess: (data) => {
-      // Track application submit
-      trackApplicationSubmit(
-        'performer_application',
-        sourcePage,
-        mediaKeys.profile_photo_r2_keys.length >= 5,
-        !!(mediaKeys.intro_video_r2_key && mediaKeys.hardcore_video_r2_key),
-        !!p3.id_document_r2_key
-      );
+      // Track application submit (Phase 2)
+      const photosCount = mediaKeys.profile_photo_r2_keys.length;
+      const videosCount = (mediaKeys.intro_video_r2_key ? 1 : 0) + (mediaKeys.hardcore_video_r2_key ? 1 : 0);
+      const idUploaded = !!p3.id_document_r2_key;
+      const selfieUploaded = !!p3.selfie_r2_key;
+      const missingCount = Math.max(0, 5 - photosCount) + Math.max(0, 2 - videosCount) + (idUploaded ? 0 : 1) + (selfieUploaded ? 0 : 1);
+      
+      trackApplicationSubmit({
+        application_type: 'performer_application',
+        source_page: sourcePage,
+        source_country: sourceCountry,
+        landing_page_type: 'recruitment',
+        photos_count: photosCount,
+        videos_count: videosCount,
+        id_uploaded: idUploaded,
+        selfie_uploaded: selfieUploaded,
+        missing_count: missingCount,
+        upload_status: missingCount === 0 ? 'complete' : 'partial',
+      });
       
       onSuccess({ first_name: p1.first_name, last_name: p1.last_name, email: p1.email });
     },

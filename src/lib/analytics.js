@@ -349,67 +349,95 @@ export function trackApplicationStepComplete(stepNumber, applicationType) {
 }
 
 /**
- * Track application submit
+ * Track application submit (Phase 2)
+ * Privacy-safe: no PII, no file names, no r2_keys
  */
-export function trackApplicationSubmit(applicationType, sourcePage, hasPhotos, hasVideos, hasId) {
+export function trackApplicationSubmit(params) {
   trackEvent('application_submit', {
-    application_type: applicationType,
-    source_page: sourcePage,
-    photos_uploaded: hasPhotos,
-    videos_uploaded: hasVideos,
-    id_uploaded: hasId,
+    application_type: params.application_type,
+    source_page: params.source_page,
+    source_country: params.source_country || null,
+    landing_page_type: params.landing_page_type,
+    photos_count: params.photos_count,
+    videos_count: params.videos_count,
+    id_uploaded: params.id_uploaded,
+    selfie_uploaded: params.selfie_uploaded,
+    missing_count: params.missing_count,
+    upload_status: params.upload_status,
   });
 }
 
 /**
- * Track upload link opened
+ * Track upload link opened (Phase 2)
+ * Privacy-safe: no application_id, no token values
  */
-export function trackUploadLinkOpened(applicationType) {
+export function trackApplicationUploadOpened(params) {
   trackEvent('application_upload_link_opened', {
-    application_type: applicationType,
+    upload_status: params.upload_status,
+    photos_count: params.photos_count || 0,
+    videos_count: params.videos_count || 0,
+    id_uploaded: params.id_uploaded || false,
+    selfie_uploaded: params.selfie_uploaded || false,
+    missing_count: params.missing_count,
+    token_valid: params.token_valid,
+    token_expired: params.token_expired,
   });
 }
 
 /**
- * Track upload complete
+ * Track upload complete (Phase 2)
+ * Privacy-safe: no file names, no r2_keys, no signed URLs
  */
-export function trackUploadComplete(uploadType, photosCount, videosCount, idUploaded, selfieUploaded) {
+export function trackUploadComplete(params) {
   trackEvent('application_upload_complete', {
-    upload_type: uploadType,
-    photos_count: photosCount,
-    videos_count: videosCount,
-    id_uploaded: idUploaded,
-    selfie_uploaded: selfieUploaded,
-    missing_count: (5 - photosCount) + (2 - videosCount) + (idUploaded ? 0 : 1) + (selfieUploaded ? 0 : 1),
+    upload_type: params.upload_type,
+    upload_category: params.upload_category,
+    photos_count: params.photos_count,
+    videos_count: params.videos_count,
+    id_uploaded: params.id_uploaded,
+    selfie_uploaded: params.selfie_uploaded,
+    missing_count: params.missing_count,
+    ready_for_review: params.ready_for_review,
   });
 }
 
 /**
- * Track application ready for review
+ * Track application ready for review (Phase 2)
+ * Privacy-safe: no application_id to avoid PII linkage
+ * Should only fire once when status changes from incomplete to ready
  */
-export function trackApplicationReadyForReview(applicationId, applicationType) {
+export function trackApplicationReadyForReview(params) {
   trackEvent('application_ready_for_review', {
-    application_id: applicationId,
-    application_type: applicationType,
+    photos_count: params.photos_count,
+    videos_count: params.videos_count,
+    id_uploaded: params.id_uploaded,
+    selfie_uploaded: params.selfie_uploaded,
+    required_complete: params.required_complete,
+    upload_status: params.upload_status,
   });
 }
 
 /**
- * Track fan production request start
+ * Track fan production request start (Phase 2)
+ * Privacy-safe: no personal fantasies, messages, or sensitive request details
  */
-export function trackFanProductionRequestStart(sourcePage) {
+export function trackFanProductionRequestStart(params) {
   trackEvent('fan_production_request_start', {
-    source_page: sourcePage,
+    source_page: params.source_page,
+    package_type: params.package_type || null,
   });
 }
 
 /**
- * Track fan production request submit
+ * Track fan production request submit (Phase 2)
+ * Privacy-safe: no personal data, no performer names, no fantasies
  */
-export function trackFanProductionRequestSubmit(packageType, sourcePage) {
+export function trackFanProductionRequestSubmit(params) {
   trackEvent('fan_production_request_submit', {
-    package_type: packageType,
-    source_page: sourcePage,
+    package_type: params.package_type,
+    package_price: params.package_price || null,
+    source_page: params.source_page,
+    cta_location: params.cta_location || 'form_submit',
   });
 }
 
@@ -423,12 +451,28 @@ export function trackFanProductionWhatsappClick(sourcePage) {
 }
 
 /**
- * Track package select
+ * Track package select (Phase 2)
+ * Privacy-safe: only package metadata, no user data
  */
-export function trackPackageSelect(packageType, sourcePage) {
+export function trackPackageSelect(params) {
   trackEvent('package_select', {
-    package_type: packageType,
-    source_page: sourcePage,
+    package_type: params.package_type,
+    package_price: params.package_price || null,
+    source_page: params.source_page,
+    cta_location: params.cta_location || 'package_card',
+  });
+}
+
+/**
+ * Track checkout cancel (Phase 2)
+ * Privacy-safe: no user data, only checkout metadata
+ */
+export function trackCheckoutCancel(params) {
+  trackEvent('checkout_cancel', {
+    payment_type: params.payment_type,
+    plan_id: params.plan_id || null,
+    source_page: params.source_page,
+    price_tier: params.price_tier || null,
   });
 }
 
@@ -456,16 +500,7 @@ export function trackCheckoutSuccess(paymentType, provider, amount, planId) {
   });
 }
 
-/**
- * Track checkout cancel
- */
-export function trackCheckoutCancel(paymentType, planId, sourcePage) {
-  trackEvent('checkout_cancel', {
-    payment_type: paymentType,
-    plan_id: planId,
-    source_page: sourcePage,
-  });
-}
+
 
 /**
  * Track performer dashboard view
@@ -512,6 +547,8 @@ export function trackPhilippinesApplicationStart(utmParams = {}) {
     utm_campaign: utmParams.utm_campaign || 'pinoy_recruitment',
   });
 }
+
+
 
 /**
  * Track payment success (server-side event, called from webhook)

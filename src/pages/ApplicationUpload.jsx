@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Check, Upload, AlertCircle, Lock, FileText, Image as ImageIcon, Video, User } from "lucide-react";
 import SEOMeta from "@/components/SEOMeta";
-import { trackUploadLinkOpened, trackUploadComplete } from "@/lib/analytics";
+import { trackApplicationUploadOpened, trackUploadComplete, trackApplicationReadyForReview } from "@/lib/analytics";
 
 export default function ApplicationUpload() {
   const [searchParams] = useSearchParams();
@@ -27,8 +27,17 @@ export default function ApplicationUpload() {
       return;
     }
 
-    // Track upload link opened
-    trackUploadLinkOpened('performer_application');
+    // Track upload link opened (Phase 2)
+    trackApplicationUploadOpened({
+      upload_status: 'unknown',
+      photos_count: 0,
+      videos_count: 0,
+      id_uploaded: false,
+      selfie_uploaded: false,
+      missing_count: 8,
+      token_valid: true,
+      token_expired: false,
+    });
 
     // Fetch application details using token
     base44.functions.invoke("uploadFileViaToken", {
@@ -103,19 +112,24 @@ export default function ApplicationUpload() {
         setMediaKeys((prev) => ({ ...prev, [`${data.file_type}_r2_key`]: data.r2_key }));
       }
       
-      // Track individual upload completion
-      const isComplete = 
-        (data.file_type === 'photo' ? mediaKeys.profile_photo_r2_keys.length + 1 : mediaKeys[`${data.file_type}_r2_key`] ? 1 : 0) >= (data.file_type === 'photo' ? 5 : 1);
+      // Track individual upload completion (Phase 2)
+      const newPhotos = data.file_type === 'photo' ? mediaKeys.profile_photo_r2_keys.length + 1 : mediaKeys.profile_photo_r2_keys.length;
+      const newVideos = (mediaKeys.intro_video_r2_key ? 1 : 0) + (mediaKeys.hardcore_video_r2_key ? 1 : 0) + (data.file_type.includes('video') ? 1 : 0);
+      const idUploaded = !!(mediaKeys.id_document_front_r2_key || (data.file_type === 'id_document_front'));
+      const selfieUploaded = !!(mediaKeys.selfie_with_id_r2_key || (data.file_type === 'selfie_with_id'));
+      const missingCount = Math.max(0, 5 - newPhotos) + Math.max(0, 2 - newVideos) + (idUploaded ? 0 : 1) + (selfieUploaded ? 0 : 1);
+      const readyForReview = newPhotos >= 5 && newVideos >= 2 && idUploaded && selfieUploaded;
       
-      if (isComplete) {
-        trackUploadComplete(
-          'performer_application',
-          data.file_type === 'photo' ? mediaKeys.profile_photo_r2_keys.length + 1 : mediaKeys.profile_photo_r2_keys.length,
-          (mediaKeys.intro_video_r2_key ? 1 : 0) + (mediaKeys.hardcore_video_r2_key ? 1 : 0) + (data.file_type.includes('video') ? 1 : 0),
-          !!(mediaKeys.id_document_front_r2_key || (data.file_type === 'id_document_front')),
-          !!(mediaKeys.selfie_with_id_r2_key || (data.file_type === 'selfie_with_id'))
-        );
-      }
+      trackUploadComplete({
+        upload_type: 'performer_application',
+        upload_category: data.file_type,
+        photos_count: newPhotos,
+        videos_count: newVideos,
+        id_uploaded: idUploaded,
+        selfie_uploaded: selfieUploaded,
+        missing_count: missingCount,
+        ready_for_review: readyForReview,
+      });
     },
     onError: (err) => {
       console.error("Upload error:", err);
