@@ -101,6 +101,7 @@ export default function OverviewTab({ performer, career_stats, performerToken, i
           earnings={earningsData.earnings}
           summary={earningsData.summary}
           reconciliation={earningsData.reconciliation}
+          isAdmin={isAdmin}
         />
       )}
 

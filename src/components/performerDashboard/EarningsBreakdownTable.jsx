@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-export default function EarningsBreakdownTable({ earnings, summary, reconciliation }) {
+export default function EarningsBreakdownTable({ earnings, summary, reconciliation, isAdmin }) {
   if (!earnings || earnings.length === 0) {
     return null;
   }
@@ -172,7 +172,7 @@ export default function EarningsBreakdownTable({ earnings, summary, reconciliati
                 <p className="text-base font-semibold">$0.00</p>
               </div>
             </div>
-            {reconciliation.unallocated_adjustment > 0 && (
+            {reconciliation.unallocated_adjustment > 0 && isAdmin && (
               <p className="text-xs text-muted-foreground pt-1 border-t">
                 <strong>Admin Note:</strong> ${reconciliation.unallocated_adjustment.toFixed(2)} of this payout is not matched to earnings rows. 
                 Review missing snapshots or mark as manual adjustment.
