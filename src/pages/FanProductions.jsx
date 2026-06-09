@@ -198,7 +198,7 @@ export default function FanProductions() {
             }}
             aria-hidden="true"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-[#080808]" aria-hidden="true" />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.65) 30%, rgba(0,0,0,0.45) 65%, rgba(0,0,0,0.35) 100%)' }} aria-hidden="true" />
           <div className="absolute bottom-0 left-0 w-[600px] h-[300px] bg-rose-900/25 blur-[120px] rounded-full pointer-events-none" />
           <div className="absolute top-0 right-0 w-[500px] h-[400px] bg-rose-800/15 blur-[100px] rounded-full pointer-events-none" />
 
@@ -217,10 +217,10 @@ export default function FanProductions() {
               </h1>
 
               <p className="text-white/80 text-lg md:text-xl leading-relaxed mb-4 font-medium">
-                Apply to take part in a verified 18+ adult-content production with performer approval, studio review, consent planning and professional releases.
+                Apply to join a verified 18+ FLESHLAB production with studio review, performer approval, consent planning and signed releases.
               </p>
               <p className="text-white/50 text-sm md:text-base leading-relaxed mb-10 max-w-xl">
-                Choose your preferred performer, production country, package length and scene preferences. Every request undergoes studio review and requires explicit performer approval before confirmation.
+                Choose your preferred performer, production country, package length and scene preferences. Every request is reviewed by the studio and requires performer approval before confirmation.
               </p>
 
               <div className="flex flex-col sm:flex-row items-start gap-4 mb-10">
