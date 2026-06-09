@@ -256,10 +256,10 @@ export default function GayOnlyfansAlternative() {
         </section>
 
         {/* ── CREATOR MODELS ─────────────────────────────────────────── */}
-        <section id="creator-models" className="py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden"
-          style={{ background: 'linear-gradient(180deg, #0a0610 0%, #0d0810 50%, #100713 100%)' }}>
+        <section id="creator-models" className="py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden"
+          style={{ background: 'linear-gradient(180deg, #0f0b15 0%, #0d0a12 50%, #0b0810 100%)' }}>
           <div className="absolute inset-0 pointer-events-none"
-            style={{ backgroundImage: 'radial-gradient(ellipse 70% 50% at 20% 60%, rgba(244,63,94,0.08) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 80% 30%, rgba(245,158,11,0.07) 0%, transparent 60%)' }} />
+            style={{ backgroundImage: 'radial-gradient(ellipse 70% 50% at 20% 60%, rgba(244,63,94,0.12) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 80% 30%, rgba(245,158,11,0.1) 0%, transparent 60%)' }} />
 
           <div className="max-w-5xl mx-auto relative z-10">
             {/* Header */}
@@ -281,23 +281,23 @@ export default function GayOnlyfansAlternative() {
 
               {/* ── LEFT: 60/40 Management ── */}
               <div className="relative rounded-2xl overflow-hidden cursor-pointer group transition-all duration-200 hover:-translate-y-1"
-                style={{ border: '1.5px solid rgba(244,63,94,0.5)', boxShadow: '0 0 40px rgba(244,63,94,0.14)' }}
+                style={{ border: '1.5px solid rgba(244,63,94,0.6)', boxShadow: '0 0 50px rgba(244,63,94,0.2)' }}
                 onClick={() => handleRevenueModelClick("60-40-management")}>
 
-                {/* Background portrait — visible, top-anchored */}
+                {/* Background portrait — highly visible */}
                 <div className="absolute inset-0">
                   <img
                     src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/db389db9b_generated_image.png"
                     alt=""
-                    className="w-full h-full object-cover object-top"
-                    style={{ opacity: 0.55 }}
+                    className="w-full h-full object-cover object-top-right"
+                    style={{ opacity: 0.72 }}
                   />
-                  {/* Left-to-right gradient: content side dark, image side fades */}
+                  {/* Left-to-right gradient: very subtle, content side darker */}
                   <div className="absolute inset-0"
-                    style={{ background: 'linear-gradient(105deg, rgba(18,3,10,0.97) 0%, rgba(18,3,10,0.88) 45%, rgba(18,3,10,0.45) 70%, rgba(18,3,10,0.15) 100%)' }} />
-                  {/* Bottom fade for text readability */}
-                  <div className="absolute bottom-0 left-0 right-0 h-32"
-                    style={{ background: 'linear-gradient(to top, rgba(18,3,10,0.98) 0%, transparent 100%)' }} />
+                    style={{ background: 'linear-gradient(105deg, rgba(18,3,10,0.88) 0%, rgba(18,3,10,0.76) 40%, rgba(18,3,10,0.32) 65%, rgba(18,3,10,0.08) 100%)' }} />
+                  {/* Bottom fade — shorter, more subtle */}
+                  <div className="absolute bottom-0 left-0 right-0 h-20"
+                    style={{ background: 'linear-gradient(to top, rgba(18,3,10,0.95) 0%, transparent 100%)' }} />
                 </div>
 
                 {/* Content */}
@@ -317,21 +317,21 @@ export default function GayOnlyfansAlternative() {
                   </div>
 
                   {/* Revenue split — MOST PROMINENT */}
-                  <div className="rounded-xl px-4 py-3 flex items-center gap-3"
-                    style={{ background: 'rgba(244,63,94,0.12)', border: '1px solid rgba(244,63,94,0.3)' }}>
+                  <div className="rounded-xl px-5 py-4 flex items-center gap-3"
+                    style={{ background: 'rgba(244,63,94,0.25)', border: '1.5px solid rgba(244,63,94,0.55)', boxShadow: '0 0 24px rgba(244,63,94,0.18)' }}>
                     <div className="text-center flex-1">
-                      <div className="text-rose-400 font-black text-3xl leading-none">60%</div>
-                      <div className="text-white/35 text-[10px] font-bold uppercase tracking-widest mt-1">Studio</div>
+                      <div className="text-rose-300 font-black text-4xl leading-none">60%</div>
+                      <div className="text-white/50 text-[11px] font-bold uppercase tracking-widest mt-1.5">Studio</div>
                     </div>
-                    <div className="text-white/20 font-black text-lg">/</div>
+                    <div className="text-white/30 font-black text-xl">/</div>
                     <div className="text-center flex-1">
-                      <div className="text-white font-black text-3xl leading-none">40%</div>
-                      <div className="text-white/35 text-[10px] font-bold uppercase tracking-widest mt-1">You</div>
+                      <div className="text-white font-black text-4xl leading-none">40%</div>
+                      <div className="text-white/50 text-[11px] font-bold uppercase tracking-widest mt-1.5">You</div>
                     </div>
                   </div>
 
                   {/* Description */}
-                  <p className="text-white/60 text-sm leading-relaxed">
+                  <p className="text-white/70 text-sm leading-relaxed">
                     Best if you want FLESHLAB to handle setup, publishing, promotion and fanclub management — you focus on creating.
                   </p>
 
@@ -344,7 +344,7 @@ export default function GayOnlyfansAlternative() {
                     ].map(row => (
                       <div key={row.label} className="flex gap-2.5 items-start">
                         <span className="text-rose-400 font-bold text-[11px] w-20 flex-shrink-0 mt-0.5 uppercase tracking-wide">{row.label}</span>
-                        <span className="text-white/70 text-xs leading-snug">{row.value}</span>
+                        <span className="text-white/75 text-xs leading-snug">{row.value}</span>
                       </div>
                     ))}
                   </div>
@@ -353,21 +353,21 @@ export default function GayOnlyfansAlternative() {
 
               {/* ── RIGHT: 70/30 Network ── */}
               <div className="relative rounded-2xl overflow-hidden cursor-pointer group transition-all duration-200 hover:-translate-y-1"
-                style={{ border: '1.5px solid rgba(245,158,11,0.5)', boxShadow: '0 0 40px rgba(245,158,11,0.12)' }}
+                style={{ border: '1.5px solid rgba(245,158,11,0.6)', boxShadow: '0 0 50px rgba(245,158,11,0.15)' }}
                 onClick={() => handleRevenueModelClick("70-30-network")}>
 
-                {/* Background portrait — visible */}
+                {/* Background portrait — highly visible */}
                 <div className="absolute inset-0">
                   <img
                     src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/107a335d7_generated_image.png"
                     alt=""
-                    className="w-full h-full object-cover object-top"
-                    style={{ opacity: 0.55 }}
+                    className="w-full h-full object-cover object-top-right"
+                    style={{ opacity: 0.72 }}
                   />
                   <div className="absolute inset-0"
-                    style={{ background: 'linear-gradient(105deg, rgba(14,8,2,0.97) 0%, rgba(14,8,2,0.88) 45%, rgba(14,8,2,0.45) 70%, rgba(14,8,2,0.15) 100%)' }} />
-                  <div className="absolute bottom-0 left-0 right-0 h-32"
-                    style={{ background: 'linear-gradient(to top, rgba(14,8,2,0.98) 0%, transparent 100%)' }} />
+                    style={{ background: 'linear-gradient(105deg, rgba(14,8,2,0.88) 0%, rgba(14,8,2,0.76) 40%, rgba(14,8,2,0.32) 65%, rgba(14,8,2,0.08) 100%)' }} />
+                  <div className="absolute bottom-0 left-0 right-0 h-20"
+                    style={{ background: 'linear-gradient(to top, rgba(14,8,2,0.95) 0%, transparent 100%)' }} />
                 </div>
 
                 {/* Content */}
@@ -387,21 +387,21 @@ export default function GayOnlyfansAlternative() {
                   </div>
 
                   {/* Revenue split — MOST PROMINENT */}
-                  <div className="rounded-xl px-4 py-3 flex items-center gap-3"
-                    style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}>
+                  <div className="rounded-xl px-5 py-4 flex items-center gap-3"
+                    style={{ background: 'rgba(245,158,11,0.22)', border: '1.5px solid rgba(245,158,11,0.55)', boxShadow: '0 0 24px rgba(245,158,11,0.15)' }}>
                     <div className="text-center flex-1">
-                      <div className="text-amber-400 font-black text-3xl leading-none">70%</div>
-                      <div className="text-white/35 text-[10px] font-bold uppercase tracking-widest mt-1">You</div>
+                      <div className="text-amber-300 font-black text-4xl leading-none">70%</div>
+                      <div className="text-white/50 text-[11px] font-bold uppercase tracking-widest mt-1.5">You</div>
                     </div>
-                    <div className="text-white/20 font-black text-lg">/</div>
+                    <div className="text-white/30 font-black text-xl">/</div>
                     <div className="text-center flex-1">
-                      <div className="text-white font-black text-3xl leading-none">30%</div>
-                      <div className="text-white/35 text-[10px] font-bold uppercase tracking-widest mt-1">Studio</div>
+                      <div className="text-white font-black text-4xl leading-none">30%</div>
+                      <div className="text-white/50 text-[11px] font-bold uppercase tracking-widest mt-1.5">Studio</div>
                     </div>
                   </div>
 
                   {/* Description */}
-                  <p className="text-white/60 text-sm leading-relaxed">
+                  <p className="text-white/70 text-sm leading-relaxed">
                     Best if you already have content, followers, or cam traffic and want FLESHLAB for SEO, distribution and fanclub infrastructure.
                   </p>
 
@@ -414,7 +414,7 @@ export default function GayOnlyfansAlternative() {
                     ].map(row => (
                       <div key={row.label} className="flex gap-2.5 items-start">
                         <span className="text-amber-400 font-bold text-[11px] w-20 flex-shrink-0 mt-0.5 uppercase tracking-wide">{row.label}</span>
-                        <span className="text-white/70 text-xs leading-snug">{row.value}</span>
+                        <span className="text-white/75 text-xs leading-snug">{row.value}</span>
                       </div>
                     ))}
                   </div>
@@ -424,7 +424,7 @@ export default function GayOnlyfansAlternative() {
 
             {/* CTA row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center px-6 py-5 rounded-2xl"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.14)' }}>
               <div className="sm:col-span-1 flex items-center gap-3">
                 <HelpCircle className="h-5 w-5 text-rose-400 flex-shrink-0" />
                 <div>
