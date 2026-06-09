@@ -6,6 +6,11 @@
       "type": "string",
       "title": "Performer ID"
     },
+    "application_id": {
+      "type": "string",
+      "title": "Application ID",
+      "description": "GuestProductionApplication ID that led to this contract"
+    },
     "contract_type": {
       "type": "string",
       "enum": [
