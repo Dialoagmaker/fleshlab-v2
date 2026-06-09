@@ -99,6 +99,7 @@ Deno.serve(async (req) => {
       { path: '/gay-performer-recruitment-philippines',   changefreq: 'weekly',  priority: '0.8' },
       { path: '/chaturbate-model-join-studio',            changefreq: 'weekly',  priority: '0.8' },
       { path: '/gay-onlyfans-alternative',                changefreq: 'weekly',  priority: '0.8' },
+      { path: '/gay-twink-performer-recruitment',         changefreq: 'weekly',  priority: '0.8' },
       { path: '/how-it-works',                            changefreq: 'monthly', priority: '0.7' },
       { path: '/faq',                                     changefreq: 'monthly', priority: '0.7' },
       { path: '/brands',                                  changefreq: 'weekly',  priority: '0.6' },

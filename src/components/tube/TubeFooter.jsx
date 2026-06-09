@@ -64,6 +64,11 @@ export default function TubeFooter() {
                 </a>
               </li>
               <li>
+                <a href="/gay-twink-performer-recruitment" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
+                  Twink Performer Recruitment
+                </a>
+              </li>
+              <li>
                 <a href="/chaturbate-model-join-studio" className="text-xs md:text-sm text-white/60 hover:text-rose-500 transition-colors">
                   Cam Model Studio
                 </a>
