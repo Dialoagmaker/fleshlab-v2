@@ -8,6 +8,7 @@ import IDTab from "./tabs/IDTab";
 import WorkflowTab from "./tabs/WorkflowTab";
 import NotesTab from "./tabs/NotesTab";
 import ContactTab from "./tabs/ContactTab";
+import ApplicationReadinessSummary from "./ApplicationReadinessSummary";
 
 export default function ApplicationDetailDialog({ isOpen, onClose, selectedApp, updateMutation, handleStatusUpdate }) {
   if (!selectedApp) return null;
@@ -20,7 +21,7 @@ export default function ApplicationDetailDialog({ isOpen, onClose, selectedApp, 
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-2">
             <DialogTitle>Application: {selectedApp.applicant_name}</DialogTitle>
             <div className="flex gap-2">
               {canRequestMoreInfo && (
@@ -64,6 +65,9 @@ export default function ApplicationDetailDialog({ isOpen, onClose, selectedApp, 
             </div>
           </div>
         </DialogHeader>
+        
+        {/* Upload Readiness Summary - Top of Dialog */}
+        <ApplicationReadinessSummary application={selectedApp} />
         
         <Tabs defaultValue="info" className="w-full">
           <TabsList className="w-full justify-start">
