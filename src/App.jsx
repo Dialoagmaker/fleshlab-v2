@@ -50,6 +50,7 @@ import AITextGenerator from './pages/admin/AITextGenerator';
 import AdminUsers from './pages/admin/Users';
 import AdminUserDetail from './pages/admin/UserDetail';
 import GrowthDashboard from './pages/admin/GrowthDashboard';
+import AdminPayments from './pages/admin/Payments';
 import ComingSoon from './pages/ComingSoon';
 import PerformerRouteHandler from './components/PerformerRouteHandler';
 import PerformerGuard from './components/PerformerGuard';
@@ -194,6 +195,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/asset-repair-queue" element={<AssetRepairQueue />} />
                 <Route path="/admin/ai-text-generator" element={<AITextGenerator />} />
                 <Route path="/admin/growth" element={<GrowthDashboard />} />
+                <Route path="/admin/payments" element={<AdminPayments />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
                 <Route path="/admin/users/:id" element={<AdminUserDetail />} />
               </Route>
