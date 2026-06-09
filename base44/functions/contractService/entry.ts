@@ -278,50 +278,105 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'application_id required' }, { status: 400 });
       }
 
+      // STEP 1: Load application
       const application = await base44.asServiceRole.entities.GuestProductionApplication.get(application_id);
       console.log('[CONTRACT] Application loaded:', application ? 'yes' : 'no');
       if (!application) {
         return Response.json({ error: 'Application not found' }, { status: 404 });
       }
 
-      // Extract performer_id
-      let performer_id = data.performer_id;
-      if (!performer_id && application.admin_notes) {
-        const match = application.admin_notes.match(/Performer created:\s*([a-zA-Z0-9]+)/);
-        if (match) performer_id = match[1];
+      // STEP 2: Check for existing contract (duplicate prevention)
+      const existingContracts = await base44.asServiceRole.entities.Contract.filter({ 
+        performer_id: application.performer_id 
+      });
+      if (existingContracts && existingContracts.length > 0) {
+        const existingDraft = existingContracts.find(c => c.status === 'draft');
+        if (existingDraft) {
+          return Response.json({
+            error: 'Contract already exists for this performer',
+            contract_id: existingDraft.id,
+            signing_url: existingDraft.signing_url,
+            status: 'existing_draft',
+          }, { status: 400 });
+        }
       }
-      console.log('[CONTRACT] performer_id:', performer_id);
 
-      // Load template
+      // STEP 3: Validate performer exists
+      let performer_id = application.performer_id;
+      if (!performer_id) {
+        return Response.json({
+          error: 'Cannot generate contract. Performer not created yet. Please approve application first.',
+          missing_fields: ['performer_id'],
+        }, { status: 400 });
+      }
+
+      const performer = await base44.asServiceRole.entities.Performer.get(performer_id);
+      if (!performer) {
+        return Response.json({ error: 'Performer not found' }, { status: 404 });
+      }
+
+      // STEP 4: Load PerformerProfilePrivate
+      const profiles = await base44.asServiceRole.entities.PerformerProfilePrivate.filter({ performer_id });
+      const profile = profiles?.[0] || null;
+      if (!profile) {
+        return Response.json({
+          error: 'Cannot generate contract. PerformerProfilePrivate not found.',
+          missing_fields: ['performer_profile_private'],
+        }, { status: 400 });
+      }
+
+      // STEP 5: Validate revenue_model
+      const revenueModel = application.preferred_revenue_model || performer.revenue_model;
+      if (!revenueModel || revenueModel === 'undecided') {
+        return Response.json({
+          error: 'Cannot generate contract. Revenue model is undecided.',
+          missing_fields: ['revenue_model'],
+        }, { status: 400 });
+      }
+
+      // STEP 6: Validate work_type
+      const workType = application.work_type;
+      if (!workType || !['solo', 'pair', 'both'].includes(workType)) {
+        return Response.json({
+          error: 'Cannot generate contract. Work type is missing or invalid.',
+          missing_fields: ['work_type'],
+        }, { status: 400 });
+      }
+
+      // STEP 7: Validate legal_name and email
+      const legalName = profile.legal_first_name && profile.legal_last_name 
+        ? `${profile.legal_first_name} ${profile.legal_last_name}`.trim()
+        : application.legal_name;
+      
+      if (!legalName || !legalName.trim()) {
+        return Response.json({
+          error: 'Cannot generate contract. Legal name is missing.',
+          missing_fields: ['legal_name'],
+        }, { status: 400 });
+      }
+
+      if (!application.email || !application.email.trim()) {
+        return Response.json({
+          error: 'Cannot generate contract. Email is missing.',
+          missing_fields: ['email'],
+        }, { status: 400 });
+      }
+
+      // STEP 8: Validate full residential address
+      const fullAddress = profile.address_line_1 || profile.address_line_2 || profile.city || profile.country;
+      if (!fullAddress) {
+        return Response.json({
+          error: 'Cannot generate contract. Missing full residential address. Please update performer profile with address details.',
+          missing_fields: ['full_residential_address'],
+        }, { status: 400 });
+      }
+
+      // STEP 9: Load template
       const template_id = data.template_id || '6a21d0c9e52a37dd1042e42a';
       const template = await base44.asServiceRole.entities.ContractTemplate.get(template_id);
       console.log('[CONTRACT] Template loaded:', template ? 'yes' : 'no');
       if (!template) {
         return Response.json({ error: 'Template not found', template_id }, { status: 404 });
-      }
-
-      // Extract legal_name
-      let legalName = data.legal_name || application.legal_name;
-      if (!legalName && application.message) {
-        const match = application.message.match(/Legal Name:\s*([^\n]+)/i);
-        if (match) legalName = match[1].trim();
-      }
-
-      // Validate required fields
-      const missingFields = [];
-      if (!performer_id) missingFields.push('performer_id');
-      if (!legalName) missingFields.push('legal_name');
-      if (!application.email) missingFields.push('email');
-      if (!application.date_of_birth && !data.date_of_birth) missingFields.push('date_of_birth');
-      
-      console.log('[CONTRACT] Required field validation result:', missingFields.length === 0 ? 'passed' : 'failed');
-      console.log('[CONTRACT] missing_fields:', missingFields);
-      
-      if (missingFields.length > 0) {
-        return Response.json({
-          error: `Missing: ${missingFields.join(', ')}`,
-          missing_fields: missingFields,
-        }, { status: 400 });
       }
 
       // Build variables with safe fallbacks
@@ -331,54 +386,79 @@ Deno.serve(async (req) => {
       const preliminaryHash = 'generating...';
 
       // Revenue model mapping - DO NOT HARDCODE 70%
-      let studio_share_percent, performer_share_percent, revenue_model_label;
-      const revenue_model = data.revenue_model || 'standard_studio_60_performer_40';
+      let studio_share_percent, performer_share_percent, revenue_model_label, contract_model_label;
+      const revenue_model = revenueModel; // From application/performer
       
-      if (revenue_model === 'standard_studio_60_performer_40') {
+      if (revenue_model === 'standard_studio_60_performer_40' || revenue_model === 'studio_managed') {
         // DEFAULT: FLESHLAB builds/manages performer from scratch
         studio_share_percent = 60;
         performer_share_percent = 40;
-        revenue_model_label = 'Standard Management 60/40';
-      } else if (revenue_model === 'network_performer_70_studio_30') {
+        revenue_model_label = 'Managed Model (60/40)';
+        contract_model_label = 'FULL MANAGEMENT';
+      } else if (revenue_model === 'network_performer_70_studio_30' || revenue_model === 'established_network') {
         // Performer has fanbase/content, uses FLESHLAB network
         studio_share_percent = 30;
         performer_share_percent = 70;
-        revenue_model_label = 'Network / Distribution 70/30';
-      } else if (revenue_model === 'custom_split') {
-        // Admin-entered custom split - validate sums to 100
-        studio_share_percent = data.studio_share_percent || 0;
-        performer_share_percent = data.performer_share_percent || 0;
-        revenue_model_label = `Custom Split (${performer_share_percent}% Performer / ${studio_share_percent}% Studio)`;
-        
-        if (studio_share_percent + performer_share_percent !== 100) {
-          return Response.json({
-            error: 'Invalid revenue split: Studio share and Performer share must equal 100%',
-            details: `Studio: ${studio_share_percent}%, Performer: ${performer_share_percent}%`,
-          }, { status: 400 });
-        }
+        revenue_model_label = 'Network Model (70/30)';
+        contract_model_label = 'DISTRIBUTION ONLY';
       } else {
         return Response.json({
           error: 'Invalid revenue model selected',
           details: `Unknown revenue_model: ${revenue_model}`,
         }, { status: 400 });
       }
+      
+      // Work type mapping
+      let solo_work_allowed, pair_work_allowed;
+      if (workType === 'solo') {
+        solo_work_allowed = 'Yes';
+        pair_work_allowed = 'No';
+      } else if (workType === 'pair') {
+        solo_work_allowed = 'No';
+        pair_work_allowed = 'Yes, with health compliance';
+      } else if (workType === 'both') {
+        solo_work_allowed = 'Yes';
+        pair_work_allowed = 'Yes, with health compliance';
+      }
+
+      // Build full residential address from PerformerProfilePrivate
+      const addressParts = [
+        profile.address_line_1,
+        profile.address_line_2,
+        profile.city,
+        profile.region,
+        profile.postal_code,
+        profile.country,
+      ].filter(Boolean);
+      
+      const performer_full_residential_address = addressParts.length > 0 
+        ? addressParts.join(', ')
+        : `${profile.city || ''}, ${profile.country || ''}`.trim();
+      
+      if (!performer_full_residential_address) {
+        return Response.json({
+          error: 'Cannot generate contract. Missing full residential address in PerformerProfilePrivate.',
+          missing_fields: ['full_residential_address'],
+        }, { status: 400 });
+      }
 
       const variables = {
-        // Core application data
+        // Core performer data from PerformerProfilePrivate
         performer_legal_name: legalName,
-        performer_stage_name: application.applicant_name,
-        performer_date_of_birth: application.date_of_birth || data.date_of_birth,
+        performer_stage_name: performer.display_name || application.applicant_name,
+        performer_date_of_birth: performer.date_of_birth || '[NOT PROVIDED]',
         performer_email: application.email,
-        performer_nationality: application.nationality || '[NOT PROVIDED]',
-        performer_country: application.country || application.nationality || '[NOT PROVIDED]',
-        performer_phone_or_messenger: application.phone || application.whatsapp_number || '[NOT PROVIDED]',
-        performer_full_residential_address: application.address || `${application.city || ''}, ${application.country || ''}`.trim(),
+        performer_nationality: performer.nationality || application.nationality || '[NOT PROVIDED]',
+        performer_country: profile.country || application.nationality || '[NOT PROVIDED]',
+        performer_phone_or_messenger: profile.phone || application.phone || '[NOT PROVIDED]',
+        performer_full_residential_address: performer_full_residential_address,
+        performer_id_verification_reference: application.id_document_front_r2_key || application.id_document_r2_key || '[NOT PROVIDED]',
 
         // Contract terms
-        effective_date: data.signing_date || today,
-        contract_model_label: (data.contract_model || 'full_management').replace(/_/g, ' ').toUpperCase(),
-        minimum_term_months: data.minimum_term_months || 12,
-        post_termination_usage_years: data.post_termination_usage_years || 5,
+        effective_date: today,
+        contract_model_label: contract_model_label,
+        minimum_term_months: 12,
+        post_termination_usage_years: 5,
         
         // Revenue split - DYNAMIC based on selected model
         revenue_model_label: revenue_model_label,
@@ -400,18 +480,17 @@ Deno.serve(async (req) => {
         id_verification_status: 'Verified',
         id_verification_reference: application.id_document_front_r2_key || application.id_document_r2_key || '[NOT PROVIDED]',
         id_verification_date: application.submitted_at ? application.submitted_at.split('T')[0] : '[NOT PROVIDED]',
-        performer_id_verification_reference: application.id_document_front_r2_key || application.id_document_r2_key || '[NOT PROVIDED]',
         performer_age_verification_status: 'Verified 18+',
         age_verification_status: 'Verified 18+',
         dob_verified: 'Verified',
         consent_status: 'Consent Confirmed',
 
-        // Content & Production placeholders
-        solo_work_allowed: data.work_type === 'solo' ? 'Yes' : 'Subject to contract',
-        pair_work_allowed: data.work_type === 'pair' ? 'Yes, with health compliance' : 'Subject to contract',
-        multi_performer_work_allowed: 'Subject to contract and health compliance',
-        live_cam_allowed: data.contract_model?.includes('live_cam') ? 'Yes' : 'Not applicable',
-        live_cam_shows_per_month: data.live_cam_required ? 2 : 'Not applicable',
+        // Content & Production placeholders - mapped from work_type
+        solo_work_allowed: solo_work_allowed,
+        pair_work_allowed: pair_work_allowed,
+        multi_performer_work_allowed: workType === 'both' || workType === 'pair' ? 'Yes, subject to health compliance' : 'Subject to contract',
+        live_cam_allowed: 'Not applicable',
+        live_cam_shows_per_month: 'Not applicable',
         condom_required: 'Yes',
         bareback_allowed: 'No, unless specific written consent is provided per scene',
         allowed_content_categories: 'General categories as per studio catalog',
@@ -421,17 +500,17 @@ Deno.serve(async (req) => {
 
         // Financials
         minimum_payout_threshold: 'No minimum payout threshold unless separately configured',
-        payout_method: 'As configured in performer profile',
+        payout_method: profile.payout_method || 'As configured in performer profile',
 
-        // Health compliance placeholders (solo contract defaults)
-        health_compliance_required: (data.work_type === 'pair' || data.work_type === 'multi') ? 'Required' : 'Not required for solo work',
-        hiv_test_required: (data.work_type === 'pair' || data.work_type === 'multi') ? 'Required' : 'Not required',
-        hiv_test_status: (data.work_type === 'pair' || data.work_type === 'multi') ? 'Required before filming' : 'N/A',
+        // Health compliance placeholders
+        health_compliance_required: workType === 'pair' || workType === 'both' ? 'Required' : 'Not required for solo work',
+        hiv_test_required: workType === 'pair' || workType === 'both' ? 'Required' : 'Not required',
+        hiv_test_status: workType === 'pair' || workType === 'both' ? 'Required before filming' : 'N/A',
         hiv_test_valid_until: 'N/A',
-        syphilis_test_required: (data.work_type === 'pair' || data.work_type === 'multi') ? 'Required' : 'Not required',
-        syphilis_test_status: (data.work_type === 'pair' || data.work_type === 'multi') ? 'Required before filming' : 'N/A',
+        syphilis_test_required: workType === 'pair' || workType === 'both' ? 'Required' : 'Not required',
+        syphilis_test_status: workType === 'pair' || workType === 'both' ? 'Required before filming' : 'N/A',
         syphilis_test_valid_until: 'N/A',
-        prep_required: (data.work_type === 'pair' || data.work_type === 'multi') ? 'Required for condomless work' : 'N/A',
+        prep_required: workType === 'pair' || workType === 'both' ? 'Required for condomless work' : 'N/A',
         prep_status: 'N/A',
         
         // Release status (for release-type contracts, not applicable here)

@@ -317,29 +317,45 @@ export default function Applications() {
   };
 
   const handleCreateContract = async () => {
-    if (!selectedApp || selectedApp.contract_id) {
-      toast.error("Contract already exists for this application.");
-      return;
-    }
+    if (!selectedApp) return;
+    
     try {
+      // Call contractService backend function
+      const response = await base44.functions.invoke('contractService', {
+        action: 'create_from_application',
+        application_id: selectedApp.id,
+      });
+      
+      if (response.error) {
+        toast.error(response.error);
+        return;
+      }
+      
+      // Update application with contract info
       const updates = {
-        contract_status: 'pending',
+        contract_id: response.contract_id,
+        contract_status: 'draft',
         status: 'contract_pending',
         contract_generated_at: new Date().toISOString(),
       };
+      
       const logEntry = {
         timestamp: new Date().toISOString(),
-        action: `Contract created: pending`,
-        contract_status: 'pending',
+        action: `Contract generated: ${response.contract_id}`,
+        contract_id: response.contract_id,
+        signing_url: response.signing_url,
       };
       updates.status_history = [...(selectedApp.status_history || []), JSON.stringify(logEntry)];
       
       await base44.entities.GuestProductionApplication.update(selectedApp.id, updates);
       await queryClient.invalidateQueries({ queryKey: ['applications'] });
-      toast.success("Contract created - pending review");
+      
+      toast.success(`Contract draft generated for "${selectedApp.applicant_name}"`);
       setSelectedApp(prev => prev ? { ...prev, ...updates } : prev);
+      
     } catch (err) {
-      toast.error(`Failed to create contract: ${err.message}`);
+      console.error('Contract generation error:', err);
+      toast.error(`Failed to generate contract: ${err.message}`);
     }
   };
 
