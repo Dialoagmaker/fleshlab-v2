@@ -54,42 +54,80 @@ export const schemaBuilders = {
   },
   
   // VideoObject (individual video) — CRITICAL: validated public URLs only
-  videoObject: (video) => {
-    // Validate URLs before building schema
-    const safeThumbnail = isPublicImageUrl(video.primary_thumbnail_url) 
-      ? video.primary_thumbnail_url 
-      : null;
-    const safeTrailer = isPublicPreviewUrl(video.trailer_url) 
-      ? video.trailer_url 
-      : null;
-    
-    // If no safe thumbnail, omit schema entirely
+  videoObject: (video, performerName = null) => {
+    // Resolve thumbnail — prefer primary, fallback to cover
+    const thumbnailCandidate = video.primary_thumbnail_url || video.cover_image_url || video.thumbnailUrl || video.poster_url;
+    const safeThumbnail = isPublicImageUrl(thumbnailCandidate) ? thumbnailCandidate : null;
+
+    // If no safe thumbnail, omit schema entirely — thumbnailUrl is mandatory per Google spec
     if (!safeThumbnail) {
-      console.warn('[SEO] Skipping VideoObject - no public thumbnail:', video.slug);
       return null;
     }
-    
-    return {
+
+    // Resolve uploadDate — mandatory per Google spec; skip VideoObject if missing
+    const uploadDateRaw = video.release_date || video.published_at || video.created_date;
+    if (!uploadDateRaw) {
+      return null;
+    }
+    let uploadDate;
+    try {
+      uploadDate = new Date(uploadDateRaw).toISOString().substring(0, 10);
+    } catch {
+      return null;
+    }
+
+    // Resolve description
+    const description = (
+      video.meta_description ||
+      video.seo_description ||
+      video.short_summary ||
+      video.description ||
+      (performerName ? `${video.title} — exclusive scene featuring ${performerName} on FLESHLAB Studios.` : `${video.title} — premium adult scene on FLESHLAB Studios.`)
+    )?.substring(0, 300) || undefined;
+
+    // ISO 8601 duration
+    let duration;
+    if (video.duration_seconds && video.duration_seconds > 0) {
+      const h = Math.floor(video.duration_seconds / 3600);
+      const m = Math.floor((video.duration_seconds % 3600) / 60);
+      const s = video.duration_seconds % 60;
+      duration = `PT${h > 0 ? h + 'H' : ''}${m > 0 ? m + 'M' : ''}${s > 0 ? s + 'S' : ''}` || undefined;
+    }
+
+    // Safe trailer as contentUrl (public preview only — never full source)
+    const safeTrailer = isPublicPreviewUrl(video.trailer_url) ? video.trailer_url : null;
+
+    // Canonical video page URL
+    const videoUrl = video.slug ? `https://fleshlab.online/videos/${video.slug}` : undefined;
+
+    const schema = {
       "@context": "https://schema.org",
       "@type": "VideoObject",
       "name": video.title,
-      "description": video.short_summary?.substring(0, 200),
+      "description": description,
       "thumbnailUrl": safeThumbnail,
-      "uploadDate": video.release_date || video.created_date,
-      "duration": video.duration_seconds ? `PT${video.duration_seconds}S` : undefined,
-      // CRITICAL: Only validated public trailer URL
-      "embedUrl": safeTrailer || undefined,
-      "contentUrl": undefined, // NEVER full video URL
-      "contentRating": "Adult",
-      "actor": video.performers?.map(p => ({
-        "@type": "Person",
-        "name": p.display_name
-      })),
-      "productionCompany": {
+      "uploadDate": uploadDate,
+      "url": videoUrl,
+      "publisher": {
         "@type": "Organization",
-        "name": "FLESHLAB Asia"
-      }
+        "name": "FLESHLAB Studios",
+        "url": "https://fleshlab.online"
+      },
     };
+
+    if (duration) schema.duration = duration;
+    if (safeTrailer) schema.contentUrl = safeTrailer;
+    if (videoUrl) schema.embedUrl = videoUrl; // canonical page as embedUrl fallback
+
+    if (video.performers?.length > 0) {
+      schema.actor = video.performers.map(p => ({
+        "@type": "Person",
+        "name": p.display_name,
+        ...(p.slug && { "url": `https://fleshlab.online/performers/${p.slug}` }),
+      }));
+    }
+
+    return schema;
   },
   
   // Person (performer profile) — public data only

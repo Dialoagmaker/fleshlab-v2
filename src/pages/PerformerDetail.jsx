@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useAccessControl } from "@/lib/useAccessControl";
 import SEOMeta from "@/components/SEOMeta";
 import { generatePerformerTitle, generatePerformerMetaDescription, generatePerformerSEOBio } from "@/lib/performerSeoUtils";
+import { schemaBuilders } from "@/lib/schemaBuilders";
 import { FANCLUB_PLANS } from "@/lib/pricingConfig";
 import { Loader2, ArrowLeft, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -94,11 +95,12 @@ export default function PerformerDetail() {
   const seoDescription = performer?.meta_description || generatePerformerMetaDescription(performer || {});
   const seoIntro = performer ? generatePerformerSEOBio(performer) : '';
 
-  const performerVideoUrls = performerVideos.filter(v => v.slug).slice(0, 10).map(v => ({
-    "@type": "VideoObject",
-    "name": v.title,
-    "url": `https://fleshlab.online/videos/${v.slug}`,
-  }));
+  // Build complete, valid VideoObject schemas — skip any video missing thumbnailUrl or uploadDate
+  const performerVideoSchemas = performerVideos
+    .filter(v => v.slug && v.title)
+    .slice(0, 10)
+    .map(v => schemaBuilders.videoObject(v, performer?.display_name))
+    .filter(Boolean); // removes null entries (missing thumbnail or uploadDate)
 
   const jsonLd = performer ? [
     {
@@ -113,7 +115,7 @@ export default function PerformerDetail() {
       ...((performer.twitter_url || performer.instagram_url || performer.onlyfans_url) && {
         "sameAs": [performer.twitter_url, performer.instagram_url, performer.onlyfans_url].filter(Boolean)
       }),
-      ...(performerVideoUrls.length > 0 && { "subjectOf": performerVideoUrls }),
+      ...(performerVideoSchemas.length > 0 && { "subjectOf": performerVideoSchemas }),
     },
     {
       "@context": "https://schema.org",
@@ -124,6 +126,8 @@ export default function PerformerDetail() {
         { "@type": "ListItem", "position": 3, "name": performer.display_name, "item": canonicalUrl },
       ],
     },
+    // Emit top-level VideoObject items so Google's Video Enhancement parser sees them directly
+    ...performerVideoSchemas,
   ] : undefined;
 
   // Not found

@@ -8,14 +8,16 @@ const PUBLIC_IMAGE_DOMAINS = [
   'pub-5ace3b335273433f8258995325cf09c1.r2.dev',
   'fleshlab.online',
   'cdn.fleshlab.online',
-  'images.fleshlab.online'
+  'images.fleshlab.online',
+  'video.fleshlab.online',   // R2 CDN — performer profile images migrated here
 ];
 
 // Trusted public preview/trailer domains
 const PUBLIC_PREVIEW_DOMAINS = [
   'pub-5ace3b335273433f8258995325cf09c1.r2.dev',
   'cdn.fleshlab.online',
-  'trailers.fleshlab.online'
+  'trailers.fleshlab.online',
+  'video.fleshlab.online',   // R2 CDN — trailers/previews may be served here
 ];
 
 // Patterns that indicate private/signed URLs
