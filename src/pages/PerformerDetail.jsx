@@ -443,16 +443,18 @@ export default function PerformerDetail() {
           </div>
         )}
 
-        {/* The_Fitmaster Summer Special Banner — only shown on his page */}
+        {/* The_Fitmaster Summer Special Banner — contained promo card, only shown on his page */}
         {performer.slug === 'the-fitmaster' && (
-          <div className="max-w-[1400px] mx-auto px-4 pt-6">
-            <a href="#videos" aria-label="The_Fitmaster Summer Special — watch his videos">
-              <img
-                src="https://video.fleshlab.online/banner%20and%20logos/ChatGPT%20Image%2010.%20Juni%202026%2C%2019_11_31.png"
-                alt="The_Fitmaster Summer Special promo banner"
-                loading="lazy"
-                className="w-full rounded-2xl object-cover shadow-xl shadow-rose-900/20 border border-rose-600/20 hover:opacity-95 transition-opacity"
-              />
+          <div className="flex justify-center px-3 sm:px-4 py-5 sm:py-8">
+            <a href="#videos" aria-label="The_Fitmaster Summer Special — watch his videos" className="w-full sm:w-auto max-w-[420px] sm:max-w-[820px]">
+              <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-rose-600/20 shadow-lg shadow-rose-900/15 hover:shadow-xl hover:shadow-rose-900/25 transition-shadow">
+                <img
+                  src="https://video.fleshlab.online/banner%20and%20logos/ChatGPT%20Image%2010.%20Juni%202026%2C%2019_11_31.png"
+                  alt="The_Fitmaster Summer Special promo banner"
+                  loading="lazy"
+                  className="w-full aspect-square sm:aspect-auto object-cover hover:opacity-95 transition-opacity"
+                />
+              </div>
             </a>
           </div>
         )}
