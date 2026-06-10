@@ -1,5 +1,5 @@
 import React from "react";
-import { Play } from "lucide-react";
+import { Play, Flame } from "lucide-react";
 
 /**
  * Performer-specific promo banner section.
@@ -28,51 +28,60 @@ export default function PerformerPromoSection({ slug }) {
 
   return (
     <section className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-10 py-4">
-      {/* Two-column card: text left, image right */}
-      <div className="relative overflow-hidden rounded-[22px] border border-rose-600/25 shadow-2xl shadow-rose-900/25 bg-gradient-to-br from-[#100606] via-[#0d0505] to-[#0a0a0a]">
-        {/* Ambient glow */}
-        <div className="absolute top-0 left-0 w-64 h-full bg-rose-700/12 rounded-full blur-[100px] pointer-events-none" />
+      {/* Campaign label */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/6 to-transparent" />
+        <div className="flex items-center gap-2 bg-[#0f0808] border border-amber-700/30 rounded-full px-4 py-1.5">
+          <Flame className="w-3 h-3 text-amber-500" />
+          <span className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em]">Active Campaign</span>
+        </div>
+        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/6 to-transparent" />
+      </div>
 
-        <div className="relative z-10 grid md:grid-cols-[1fr_1fr] lg:grid-cols-[1fr_1.3fr] items-stretch">
-          {/* LEFT: text + CTA */}
-          <div className="flex flex-col justify-center px-8 sm:px-12 py-10 lg:py-12">
-            {/* Eyebrow */}
-            <p className="text-rose-500 text-[10px] font-bold uppercase tracking-[0.22em] mb-3">
-              {promo.eyebrow}
-            </p>
-            {/* Name + title stacked */}
-            <h2
-              className="text-white font-black uppercase leading-[0.9] mb-1"
-              style={{ fontSize: 'clamp(1.8rem, 3.5vw, 3.2rem)' }}
-            >
+      {/* Campaign card — premium cinematic style */}
+      <div className="relative overflow-hidden rounded-[24px] border border-amber-700/20 bg-[#0a0605] shadow-2xl shadow-amber-950/30">
+        {/* Glows */}
+        <div className="absolute top-0 left-0 w-80 h-full bg-rose-950/60 rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-600/35 to-transparent" />
+
+        <div className="relative z-10 grid md:grid-cols-[1fr_1.2fr] items-stretch">
+          {/* LEFT: copy + CTA */}
+          <div className="flex flex-col justify-center px-8 sm:px-12 py-10 lg:py-14">
+            {/* Campaign eyebrow */}
+            <div className="inline-flex items-center gap-2 bg-amber-950/60 border border-amber-700/35 rounded-full px-3.5 py-1.5 mb-5 self-start">
+              <Flame className="w-3 h-3 text-amber-400" />
+              <span className="text-amber-300 text-[10px] font-black uppercase tracking-[0.18em]">{promo.eyebrow}</span>
+            </div>
+            {/* Name */}
+            <h2 className="text-white font-black uppercase leading-[0.88] mb-1.5" style={{ fontSize: 'clamp(2rem,4vw,3.5rem)' }}>
               {promo.name}
             </h2>
-            <p
-              className="font-extrabold uppercase text-rose-400 leading-tight mb-5"
-              style={{ fontSize: 'clamp(1rem, 2vw, 1.7rem)' }}
-            >
+            {/* Campaign title */}
+            <p className="font-black uppercase text-rose-400 leading-tight mb-6" style={{ fontSize: 'clamp(1.1rem,2.2vw,1.9rem)' }}>
               {promo.promoTitle}
             </p>
-            <div className="w-10 h-0.5 bg-gradient-to-r from-rose-600 to-rose-400 rounded-full mb-5" />
+            <div className="w-12 h-[2px] bg-gradient-to-r from-amber-500 to-rose-600 rounded-full mb-6" />
             {/* CTA */}
             <a href={promo.ctaHref}>
-              <span className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold px-7 py-3.5 rounded-xl shadow-lg shadow-rose-600/40 transition-colors text-base">
+              <span className="inline-flex items-center gap-2.5 bg-gradient-to-r from-amber-600 to-rose-700 hover:from-amber-500 hover:to-rose-600 text-white font-black px-8 py-4 rounded-xl shadow-2xl shadow-rose-900/50 transition-all text-base">
                 <Play className="w-5 h-5 fill-current" />
                 {promo.ctaLabel}
               </span>
             </a>
           </div>
 
-          {/* RIGHT: performer image — object-top so face always shows */}
-          <div className="relative h-[260px] md:h-auto overflow-hidden">
+          {/* RIGHT: performer image */}
+          <div className="relative h-[280px] md:h-auto overflow-hidden">
             <img
               src={promo.imageUrl}
               alt={promo.imageAlt}
               loading="lazy"
-              className={`w-full h-full object-cover ${promo.imageFocal || 'object-top'} transition-transform duration-500 hover:scale-[1.02]`}
+              className={`w-full h-full object-cover ${promo.imageFocal || 'object-top'} transition-transform duration-700 hover:scale-[1.03]`}
             />
-            {/* Feather left edge into card bg */}
-            <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-[#100606] to-transparent hidden md:block" />
+            {/* Left feather */}
+            <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#0a0605] to-transparent hidden md:block" />
+            {/* Bottom feather */}
+            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#0a0605] to-transparent" />
           </div>
         </div>
       </div>

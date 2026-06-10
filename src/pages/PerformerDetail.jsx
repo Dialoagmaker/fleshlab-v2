@@ -7,12 +7,13 @@ import { useAccessControl } from "@/lib/useAccessControl";
 import SEOMeta from "@/components/SEOMeta";
 import { generatePerformerTitle, generatePerformerMetaDescription, generatePerformerSEOBio } from "@/lib/performerSeoUtils";
 import { FANCLUB_PLANS } from "@/lib/pricingConfig";
-import { Loader2, ArrowLeft, Heart, Users, Film, Play, Crown, Lock } from "lucide-react";
+import { Loader2, ArrowLeft, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // New decomposed components
 import PerformerHero from "@/components/public/PerformerHero";
 import PerformerFeaturedScene from "@/components/public/PerformerFeaturedScene";
+import PerformerVIPOffer from "@/components/public/PerformerVIPOffer";
 import PerformerPromoSection from "@/components/public/PerformerPromoSection";
 import PerformerVideoGrid from "@/components/public/PerformerVideoGrid";
 import FanclubSupportBlock from "@/components/public/FanclubSupportBlock";
@@ -184,7 +185,15 @@ export default function PerformerDetail() {
           onJoinFanclub={handleJoinFanclub}
         />
 
-        {/* B. FEATURED SCENE */}
+        {/* B. VIP OFFER — core sales block */}
+        <PerformerVIPOffer
+          performerName={performer.display_name}
+          isAuthenticated={isAuthenticated}
+          onJoinFanclub={handleJoinFanclub}
+          fanclubOrExclusive={fanclubOrExclusive}
+        />
+
+        {/* C. FEATURED SCENE */}
         <PerformerFeaturedScene
           video={featuredVideo}
           performerName={performer.display_name}
@@ -192,55 +201,22 @@ export default function PerformerDetail() {
           onWatch={handleWatchVideos}
         />
 
-        {/* C. PERFORMER-SPECIFIC PROMO BANNER */}
+        {/* D. PERFORMER-SPECIFIC PROMO BANNER (campaign tie-in) */}
         <PerformerPromoSection slug={performer.slug} />
 
-        {/* C2. INLINE SECONDARY CTA — quick conversion anchor after promo, before bio */}
-        {performerVideos.length > 0 && (
-          <div className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-10 pb-2">
-            <div className="flex flex-wrap items-center justify-between gap-4 bg-rose-600/10 border border-rose-600/20 rounded-2xl px-6 py-4">
-              <div>
-                <p className="text-white font-bold text-base leading-none mb-0.5">
-                  Ready to watch {performer.display_name}?
-                </p>
-                <p className="text-white/45 text-sm">
-                  {performerVideos.length} scene{performerVideos.length !== 1 ? 's' : ''} available · free account required
-                </p>
-              </div>
-              <div className="flex gap-3 flex-wrap">
-                <Button
-                  onClick={handleWatchVideos}
-                  className="bg-rose-600 hover:bg-rose-500 text-white h-10 px-6 text-sm font-bold rounded-xl gap-2 shadow-lg shadow-rose-600/25"
-                >
-                  <Play className="w-4 h-4 fill-current" />
-                  {isAuthenticated ? 'Watch Now' : 'Create Free Account'}
-                </Button>
-                {fanclubOrExclusive && (
-                  <Button
-                    onClick={handleJoinFanclub}
-                    variant="outline"
-                    className="border-white/15 text-white/70 hover:text-white hover:bg-white/6 h-10 px-5 text-sm font-semibold rounded-xl gap-2"
-                  >
-                    <Crown className="w-4 h-4" /> Fanclub
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* D. BIOGRAPHY */}
+        {/* E. BIOGRAPHY */}
         {performer.bio && (
-          <section className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-10 py-5">
-            <div className="relative rounded-[20px] border border-white/[0.07] bg-[#0d0d0d] overflow-hidden">
+          <section className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-10 py-4">
+            <div className="relative rounded-[20px] border border-white/[0.06] bg-[#080505] overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
               <div className="relative z-10 px-7 py-6 lg:px-10 lg:py-8">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 bg-rose-600/15 rounded-lg flex items-center justify-center border border-rose-600/20">
+                  <div className="w-8 h-8 bg-rose-900/40 rounded-lg flex items-center justify-center border border-rose-700/25">
                     <Heart className="w-3.5 h-3.5 text-rose-400" />
                   </div>
-                  <h2 className="text-lg sm:text-xl font-bold text-white">About {performer.display_name}</h2>
+                  <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-wider">About {performer.display_name}</h2>
                 </div>
-                <p className="text-white/60 leading-relaxed text-sm sm:text-base max-w-4xl">
+                <p className="text-white/45 leading-relaxed text-sm max-w-4xl">
                   {performer.bio}
                 </p>
               </div>
@@ -248,14 +224,14 @@ export default function PerformerDetail() {
           </section>
         )}
 
-        {/* E. CONTENT GRID */}
+        {/* F. CONTENT GRID */}
         <PerformerVideoGrid
           performer={performer}
           performerVideos={performerVideos}
           brands={brands}
         />
 
-        {/* F. FANCLUB CTA */}
+        {/* G. PREMIUM MEMBERSHIP BENEFITS */}
         <section className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-10 py-5 pb-14">
           <FanclubSupportBlock
             performerName={performer.display_name}
