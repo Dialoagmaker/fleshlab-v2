@@ -301,6 +301,26 @@ export default function VideoEdit() {
     },
   });
 
+  const repairCompletedThumbnailJob = useMutation({
+    mutationFn: () => base44.functions.invoke('repairCompletedThumbnailJob', { video_id: id }),
+    onSuccess: async (res) => {
+      const d = res.data;
+      console.log('🔧 repairCompletedThumbnailJob:', d);
+      if (d?.action === 'thumbnail_url_written') {
+        setCheckStatus({ ok: true, msg: `✓ Thumbnail URL recovered from completed job and written to Video`, details: d.diagnostics });
+        await refetchVideo();
+        queryClient.invalidateQueries({ queryKey: ['video', id] });
+      } else if (d?.action === 'retriggered') {
+        setCheckStatus({ ok: true, msg: `Job had no usable URL — re-triggered thumbnail generation`, details: d });
+        setThumbnailJobId(d.retrigger?.job_id);
+        setThumbnailJobStatus({ status: 'processing', job_id: d.retrigger?.job_id });
+      } else {
+        setCheckStatus({ ok: false, msg: d?.message || 'Repair failed', details: d });
+      }
+    },
+    onError: (err) => setCheckStatus({ ok: false, msg: `Repair failed: ${err.message}` }),
+  });
+
   const repairThumbnailOnly = useMutation({
     mutationFn: () => base44.functions.invoke('repairThumbnailOnly', { video_id: id }),
     onSuccess: (res) => {
@@ -332,7 +352,7 @@ export default function VideoEdit() {
       return;
     }
     
-    if (thumbnailJobStatus?.status === 'complete' || thumbnailJobStatus?.status === 'failed' || thumbnailJobStatus?.status === 'timeout') {
+    if (thumbnailJobStatus?.status === 'completed' || thumbnailJobStatus?.status === 'failed' || thumbnailJobStatus?.status === 'timeout') {
       console.log('[Job Polling] Skipped: job already completed/failed');
       return;
     }
@@ -400,7 +420,7 @@ export default function VideoEdit() {
         
         setThumbnailJobStatus(job);
 
-        if (job.status === 'complete') {
+        if (job.status === 'completed') {
           console.log('✅ Thumbnail job completed:', job);
           setCheckStatus({ 
             ok: true, 
@@ -853,12 +873,12 @@ export default function VideoEdit() {
                 <div className="flex items-center gap-2">
                   <span className="font-semibold">🔄 Processing Job Status:</span>
                   <span className={
-                    thumbnailJobStatus.status === 'complete' ? 'text-green-600' :
+                    thumbnailJobStatus.status === 'completed' ? 'text-green-600' :
                     thumbnailJobStatus.status === 'processing' || thumbnailJobStatus.status === 'queued' ? 'text-yellow-600' :
                     thumbnailJobStatus.status === 'failed' || thumbnailJobStatus.status === 'thumbnail_invalid' ? 'text-destructive' :
                     'text-muted-foreground'
                   }>
-                    {thumbnailJobStatus.status === 'complete' ? '✅ Complete' :
+                    {thumbnailJobStatus.status === 'completed' ? '✅ Complete' :
                      thumbnailJobStatus.status === 'processing' ? `⏳ Processing (${thumbnailJobStatus.elapsed_seconds || 0}s elapsed)` :
                      thumbnailJobStatus.status === 'queued' ? '📋 Queued' :
                      thumbnailJobStatus.status === 'callback_received' ? '📥 Callback Received' :
@@ -905,6 +925,17 @@ export default function VideoEdit() {
                   type="button"
                   variant="outline"
                   size="sm"
+                  onClick={() => { setCheckStatus(null); repairCompletedThumbnailJob.mutate(); }}
+                  disabled={repairCompletedThumbnailJob.isPending}
+                  title="Re-read the completed job result and write the thumbnail URL that was never applied"
+                  className="text-xs h-7 bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/30 text-blue-400"
+                >
+                  {repairCompletedThumbnailJob.isPending ? '⏳ Repairing...' : '🩹 Recover from Completed Job'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => {
                     setCheckStatus(null);
                     setThumbnailJobStatus(null);
@@ -915,7 +946,7 @@ export default function VideoEdit() {
                   className="text-xs h-7 bg-green-500/10 hover:bg-green-500/20 border-green-500/30"
                 >
                   {thumbnailJobStatus?.status === 'processing' ? `⏳ Processing... ${thumbnailJobStatus.elapsed_seconds || 0}s` :
-                   thumbnailJobStatus?.status === 'complete' ? '✅ Complete' :
+                   thumbnailJobStatus?.status === 'completed' ? '✅ Complete' :
                    thumbnailJobStatus?.status === 'failed' ? '❌ Failed' :
                    thumbnailJobStatus?.status === 'thumbnail_invalid' ? '❌ Invalid' :
                    thumbnailJobStatus?.status === 'timeout' ? '⏱️ Timeout' :
