@@ -9,17 +9,15 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
   AlertCircle, 
   CheckCircle2, 
-  DollarSign, 
-  TrendingUp, 
   Users, 
-  Building2, 
   AlertTriangle,
   ChevronDown,
   ChevronUp,
   Eye,
   FileText,
   Clock,
-  XCircle
+  Play,
+  Zap,
 } from "lucide-react";
 import SEOMeta from "@/components/SEOMeta";
 
@@ -31,6 +29,12 @@ export default function AdminMonthlyCloseoutPreview() {
   const [performer_id, setPerformer_id] = useState("all");
   const [include_test_mode, setInclude_test_mode] = useState(false);
   const [expandedPerformer, setExpandedPerformer] = useState(null);
+
+  // Draft generation state
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState(null);
+  const [generateResult, setGenerateResult] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const loadPreview = async () => {
     try {
@@ -57,6 +61,49 @@ export default function AdminMonthlyCloseoutPreview() {
   const handlePreview = () => {
     loadPreview();
   };
+
+  const handleDryRun = async () => {
+    try {
+      setGenerating(true);
+      setGenerateError(null);
+      setGenerateResult(null);
+      const response = await base44.functions.invoke('adminGenerateMonthlyCloseoutDrafts', {
+        month,
+        performer_id: performer_id === "all" ? undefined : performer_id,
+        include_test_mode,
+        dry_run: true,
+      });
+      setGenerateResult({ ...response.data, mode: 'dry_run' });
+    } catch (err) {
+      setGenerateError(err.message);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleGenerateDrafts = async () => {
+    setShowConfirm(false);
+    try {
+      setGenerating(true);
+      setGenerateError(null);
+      setGenerateResult(null);
+      const response = await base44.functions.invoke('adminGenerateMonthlyCloseoutDrafts', {
+        month,
+        performer_id: performer_id === "all" ? undefined : performer_id,
+        include_test_mode,
+        dry_run: false,
+      });
+      setGenerateResult({ ...response.data, mode: 'generate' });
+      // Refresh preview after generation
+      loadPreview();
+    } catch (err) {
+      setGenerateError(err.message);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const eligibleCount = data?.summary?.eligible_count || 0;
 
   const getActionBadgeVariant = (action) => {
     switch (action) {
@@ -184,7 +231,7 @@ export default function AdminMonthlyCloseoutPreview() {
                 </div>
                 
                 <div className="flex items-end">
-                  <Button onClick={handlePreview} className="w-full">
+                  <Button onClick={handlePreview} className="w-full" disabled={loading}>
                     <Eye className="w-4 h-4 mr-2" />
                     Generate Preview
                   </Button>
@@ -192,6 +239,145 @@ export default function AdminMonthlyCloseoutPreview() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Draft Generation Actions — only visible after preview is loaded */}
+          {data && (
+            <Card className="mb-6 border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="w-5 h-5" />
+                  Draft Generation
+                </CardTitle>
+                <CardDescription>
+                  Run dry run first to verify, then generate drafts for eligible performers only.
+                  No approvals, payments, or notifications will be triggered.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-3 items-center">
+                  <Button
+                    variant="outline"
+                    onClick={handleDryRun}
+                    disabled={generating}
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    {generating ? 'Running…' : 'Dry Run Draft Generation'}
+                  </Button>
+
+                  {!showConfirm ? (
+                    <Button
+                      variant="default"
+                      disabled={generating || eligibleCount === 0}
+                      onClick={() => setShowConfirm(true)}
+                      title={eligibleCount === 0 ? 'No eligible performers — nothing to generate' : ''}
+                    >
+                      <Zap className="w-4 h-4 mr-2" />
+                      Generate Drafts
+                      {eligibleCount === 0 && <span className="ml-2 text-xs opacity-70">(none eligible)</span>}
+                    </Button>
+                  ) : (
+                    <div className="flex items-center gap-3 p-3 rounded-lg border border-orange-500/40 bg-orange-500/10">
+                      <p className="text-sm text-orange-700 dark:text-orange-400">
+                        This will create draft closeouts only for eligible performers. It will not approve, pay, or notify anyone.
+                      </p>
+                      <Button size="sm" onClick={handleGenerateDrafts} disabled={generating}>
+                        Confirm
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowConfirm(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+
+                  {eligibleCount === 0 && (
+                    <span className="text-sm text-muted-foreground">
+                      No performers meet the $100 threshold — nothing to generate.
+                    </span>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Generation Results */}
+          {generateResult && (
+            <Card className="mb-6 border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  {generateResult.mode === 'dry_run' ? (
+                    <><Play className="w-5 h-5 text-blue-500" /> Dry Run Results</>
+                  ) : (
+                    <><CheckCircle2 className="w-5 h-5 text-green-500" /> Generation Results</>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  {generateResult.mode === 'dry_run'
+                    ? 'Simulated — no records were written.'
+                    : `Executed at ${generateResult.metadata?.generated_at ? new Date(generateResult.metadata.generated_at).toLocaleString() : ''} by ${generateResult.metadata?.generated_by}`}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* Summary row */}
+                <div className="flex flex-wrap gap-4 mb-4 text-sm">
+                  <span className="text-muted-foreground">Evaluated: <strong>{generateResult.summary?.total_performers_evaluated}</strong></span>
+                  {generateResult.mode === 'dry_run' ? (
+                    <span className="text-blue-600">Would create: <strong>{generateResult.summary?.would_create_count}</strong></span>
+                  ) : (
+                    <span className="text-green-600">Created: <strong>{generateResult.summary?.created_count}</strong></span>
+                  )}
+                  <span className="text-orange-600">Carryover: <strong>{generateResult.summary?.carryover_count}</strong></span>
+                  <span className="text-muted-foreground">Skipped existing: <strong>{generateResult.summary?.skipped_existing_draft_count}</strong></span>
+                  <span className="text-muted-foreground">Paid skipped: <strong>{generateResult.summary?.skipped_paid_count}</strong></span>
+                  <span className="text-muted-foreground">Test excluded: <strong>{generateResult.summary?.test_records_excluded}</strong></span>
+                </div>
+
+                {/* Per-performer results table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-muted/50">
+                      <tr className="border-b">
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Performer</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Amount</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Action</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Status</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Reason</th>
+                        <th className="p-3 text-left text-xs font-medium text-muted-foreground">Draft ID</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {generateResult.results?.map((r) => (
+                        <tr key={r.performer_id} className="border-b hover:bg-muted/20">
+                          <td className="p-3 text-sm font-medium">{r.performer_name}</td>
+                          <td className="p-3 text-sm">${r.performer_share_total?.toFixed(2)}</td>
+                          <td className="p-3 text-sm">
+                            <Badge variant={
+                              r.action_taken === 'draft_created' || r.action_taken === 'would_create_draft' ? 'default' :
+                              r.action_taken === 'carryover' ? 'secondary' : 'outline'
+                            }>
+                              {r.action_taken?.replace(/_/g, ' ')}
+                            </Badge>
+                          </td>
+                          <td className="p-3 text-sm">
+                            <Badge variant="outline">{r.existing_status}</Badge>
+                          </td>
+                          <td className="p-3 text-xs text-muted-foreground">{r.reason}</td>
+                          <td className="p-3 text-xs font-mono text-muted-foreground">{r.draft_id || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {generateError && (
+            <Alert className="mb-6 bg-red-500/10 border-red-500/30">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+              <AlertTitle className="text-red-600">Generation Error</AlertTitle>
+              <AlertDescription className="text-red-600">{generateError}</AlertDescription>
+            </Alert>
+          )}
 
           {error && (
             <Alert className="mb-6 bg-red-500/10 border-red-500/30">
