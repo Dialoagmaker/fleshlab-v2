@@ -443,6 +443,20 @@ export default function PerformerDetail() {
           </div>
         )}
 
+        {/* The_Fitmaster Summer Special Banner — only shown on his page */}
+        {performer.slug === 'the-fitmaster' && (
+          <div className="max-w-[1400px] mx-auto px-4 pt-6">
+            <a href="#videos" aria-label="The_Fitmaster Summer Special — watch his videos">
+              <img
+                src="https://video.fleshlab.online/banner%20and%20logos/ChatGPT%20Image%2010.%20Juni%202026%2C%2019_11_31.png"
+                alt="The_Fitmaster Summer Special promo banner"
+                loading="lazy"
+                className="w-full rounded-2xl object-cover shadow-xl shadow-rose-900/20 border border-rose-600/20 hover:opacity-95 transition-opacity"
+              />
+            </a>
+          </div>
+        )}
+
         {/* Content Sections */}
         <div className="max-w-[1400px] mx-auto px-4 py-8 space-y-10">
           {/* Biography */}
@@ -464,7 +478,7 @@ export default function PerformerDetail() {
 
           {/* Videos Section */}
           {performerVideos.length > 0 ? (
-            <div>
+            <div id="videos">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-3xl lg:text-4xl font-bold text-white mb-1">
