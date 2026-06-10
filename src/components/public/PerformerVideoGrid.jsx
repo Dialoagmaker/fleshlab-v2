@@ -11,7 +11,7 @@ export default function PerformerVideoGrid({
 }) {
   if (performerVideos.length === 0) {
     return (
-      <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <section className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
         <div className="relative rounded-[28px] border border-white/8 bg-gradient-to-br from-card/40 to-[#0a0a0a] overflow-hidden p-12 lg:p-20 text-center">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(225,29,72,0.06)_0%,_transparent_70%)]" />
           <div className="relative z-10">
@@ -59,7 +59,7 @@ export default function PerformerVideoGrid({
     : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
 
   return (
-    <section id="videos" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <section id="videos" className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-10 py-8">
       {/* Section header */}
       <div className="flex items-start justify-between mb-8 gap-4 flex-wrap">
         <div>
@@ -85,7 +85,7 @@ export default function PerformerVideoGrid({
       </div>
 
       {/* Grid */}
-      <div className={`grid gap-5 ${gridClass}`}>
+      <div className={`grid gap-6 ${gridClass}`}>
         {performerVideos.map(video => (
           <VideoCard key={video.id} video={video} brands={brands} />
         ))}

@@ -37,21 +37,21 @@ export default function PerformerHero({
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMTUiPjxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIxIiBoZWlnaHQ9IjYwIi8+PHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjEiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-40" />
       </div>
 
-      <div className="relative z-10 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-12">
+      <div className="relative z-10 max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-10 pt-4 pb-8">
         {/* Back nav */}
         <button
           onClick={() => navigate('/performers')}
-          className="flex items-center gap-2 text-white/40 hover:text-white/80 transition-colors mb-8 text-sm group"
+          className="flex items-center gap-2 text-white/40 hover:text-white/80 transition-colors mb-5 text-sm group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           All Performers
         </button>
 
         {/* Main hero grid */}
-        <div className="grid lg:grid-cols-[1fr_1.15fr] gap-8 xl:gap-16 items-stretch">
+        <div className="grid lg:grid-cols-[1fr_1fr] xl:grid-cols-[1.1fr_0.9fr] gap-6 xl:gap-10 items-stretch">
 
           {/* LEFT — Identity & CTAs */}
-          <div className="flex flex-col justify-center order-2 lg:order-1 space-y-5">
+          <div className="flex flex-col justify-center order-2 lg:order-1 space-y-4">
             {/* Top badges row */}
             <div className="flex flex-wrap gap-2">
               {performer.verified && (
@@ -79,20 +79,20 @@ export default function PerformerHero({
 
             {/* Name */}
             <div>
-              <h1 className="text-[clamp(2.8rem,6vw,5.5rem)] font-black text-white leading-[0.92] tracking-tight mb-2">
+              <h1 className="text-[clamp(2.4rem,5vw,4.5rem)] font-black text-white leading-[0.9] tracking-tight mb-1.5">
                 {performer.display_name}
               </h1>
-              <p className="text-white/45 text-sm sm:text-base font-medium">{identityLine}</p>
+              <p className="text-white/45 text-sm font-medium">{identityLine}</p>
             </div>
 
             {/* Tagline / SEO intro */}
-            <p className="text-white/65 text-base sm:text-lg leading-relaxed max-w-xl line-clamp-3">
+            <p className="text-white/65 text-sm sm:text-base leading-relaxed max-w-lg line-clamp-2">
               {performer.bio ? performer.bio.split('.')[0] + '.' : seoIntro}
             </p>
 
             {/* Quick stats row */}
             {performerVideos.length > 0 && (
-              <div className="flex flex-wrap gap-4 py-1">
+              <div className="flex flex-wrap gap-3 py-0.5 border-y border-white/[0.07] my-1">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 bg-rose-600/20 rounded-lg flex items-center justify-center">
                     <Film className="w-4 h-4 text-rose-400" />
@@ -141,11 +141,11 @@ export default function PerformerHero({
             )}
 
             {/* Primary CTAs */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-1">
+            <div className="flex flex-col sm:flex-row gap-3">
               {performerVideos.length > 0 && (
                 <Button
                   onClick={onWatchVideos}
-                  className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white px-7 h-14 text-base font-bold shadow-xl shadow-rose-700/35 gap-2.5 rounded-xl flex-1 sm:flex-none"
+                  className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white px-6 h-12 text-sm font-bold shadow-lg shadow-rose-700/30 gap-2 rounded-xl"
                 >
                   <Play className="w-5 h-5 fill-current" />
                   {isAuthenticated ? 'Watch Scenes' : 'Create Account to Watch'}
@@ -154,7 +154,7 @@ export default function PerformerHero({
               {fanclubOrExclusive && (
                 <Button
                   onClick={onJoinFanclub}
-                  className="bg-purple-600/20 hover:bg-purple-600/35 text-purple-300 border border-purple-600/40 px-7 h-14 text-base font-bold gap-2.5 rounded-xl flex-1 sm:flex-none"
+                  className="bg-purple-600/20 hover:bg-purple-600/35 text-purple-300 border border-purple-600/40 px-6 h-12 text-sm font-bold gap-2 rounded-xl"
                   variant="outline"
                 >
                   <Crown className="w-5 h-5" />
@@ -189,7 +189,7 @@ export default function PerformerHero({
               <div className="absolute -inset-[2px] rounded-3xl bg-gradient-to-br from-rose-600/50 via-orange-600/20 to-purple-600/20 blur-[1px]" />
               <div className="relative rounded-3xl overflow-hidden bg-[#0a0a0a] shadow-2xl shadow-rose-900/30">
                 {/* Portrait image */}
-                <div className="aspect-[3/4] lg:aspect-[4/5] xl:aspect-[3/4] relative group">
+                <div className="aspect-[3/4] lg:aspect-[3/4] relative group">
                   {performer.profile_image_url ? (
                     <img
                       src={performer.profile_image_url}

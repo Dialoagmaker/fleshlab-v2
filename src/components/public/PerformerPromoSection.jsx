@@ -27,68 +27,55 @@ export default function PerformerPromoSection({ slug }) {
   if (!promo) return null;
 
   return (
-    <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <a
-        href={promo.ctaHref}
-        aria-label={`${promo.name} ${promo.promoTitle} — watch now`}
-        className="block group"
-      >
-        <div
-          className="relative overflow-hidden rounded-[24px] border border-rose-600/20 shadow-2xl shadow-rose-900/20 hover:shadow-rose-900/30 hover:border-rose-600/35 transition-all duration-300"
-          style={{ height: 'clamp(240px, 26vw, 400px)' }}
-        >
-          {/* Background image */}
-          <img
-            src={promo.imageUrl}
-            alt={promo.imageAlt}
-            loading="lazy"
-            className={`absolute inset-0 w-full h-full object-cover ${promo.imageFocal || 'object-center'} group-hover:scale-[1.02] transition-transform duration-500`}
-          />
+    <section className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-10 py-4">
+      {/* Two-column card: text left, image right */}
+      <div className="relative overflow-hidden rounded-[22px] border border-rose-600/25 shadow-2xl shadow-rose-900/25 bg-gradient-to-br from-[#100606] via-[#0d0505] to-[#0a0a0a]">
+        {/* Ambient glow */}
+        <div className="absolute top-0 left-0 w-64 h-full bg-rose-700/12 rounded-full blur-[100px] pointer-events-none" />
 
-          {/* Dark gradient — left to center */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#060606] via-[#0a0a0af0] via-45% to-transparent" />
+        <div className="relative z-10 grid md:grid-cols-[1fr_1fr] lg:grid-cols-[1fr_1.3fr] items-stretch">
+          {/* LEFT: text + CTA */}
+          <div className="flex flex-col justify-center px-8 sm:px-12 py-10 lg:py-12">
+            {/* Eyebrow */}
+            <p className="text-rose-500 text-[10px] font-bold uppercase tracking-[0.22em] mb-3">
+              {promo.eyebrow}
+            </p>
+            {/* Name + title stacked */}
+            <h2
+              className="text-white font-black uppercase leading-[0.9] mb-1"
+              style={{ fontSize: 'clamp(1.8rem, 3.5vw, 3.2rem)' }}
+            >
+              {promo.name}
+            </h2>
+            <p
+              className="font-extrabold uppercase text-rose-400 leading-tight mb-5"
+              style={{ fontSize: 'clamp(1rem, 2vw, 1.7rem)' }}
+            >
+              {promo.promoTitle}
+            </p>
+            <div className="w-10 h-0.5 bg-gradient-to-r from-rose-600 to-rose-400 rounded-full mb-5" />
+            {/* CTA */}
+            <a href={promo.ctaHref}>
+              <span className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold px-7 py-3.5 rounded-xl shadow-lg shadow-rose-600/40 transition-colors text-base">
+                <Play className="w-5 h-5 fill-current" />
+                {promo.ctaLabel}
+              </span>
+            </a>
+          </div>
 
-          {/* Ambient red glow behind text */}
-          <div className="absolute top-1/2 left-0 -translate-y-1/2 w-80 h-64 bg-rose-700/20 rounded-full blur-[90px] pointer-events-none" />
-
-          {/* Text overlay — left aligned */}
-          <div className="absolute inset-0 flex items-center px-8 sm:px-14">
-            <div className="max-w-[52%] sm:max-w-[42%] space-y-2 sm:space-y-3">
-              {/* Eyebrow */}
-              <p className="text-rose-400 text-[10px] sm:text-xs font-bold uppercase tracking-[0.22em]">
-                {promo.eyebrow}
-              </p>
-
-              {/* Performer name */}
-              <h2
-                className="text-white font-black uppercase leading-none"
-                style={{ fontSize: 'clamp(1.4rem, 3.2vw, 2.7rem)' }}
-              >
-                {promo.name}
-              </h2>
-
-              {/* Promo title */}
-              <p
-                className="font-extrabold uppercase leading-tight text-rose-400"
-                style={{ fontSize: 'clamp(1rem, 2.2vw, 1.85rem)' }}
-              >
-                {promo.promoTitle}
-              </p>
-
-              {/* Divider */}
-              <div className="w-10 h-0.5 bg-gradient-to-r from-rose-600 to-rose-400 rounded-full" />
-
-              {/* CTA button */}
-              <div className="pt-1">
-                <span className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white text-sm sm:text-base font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-rose-600/35 transition-colors">
-                  <Play className="w-4 h-4 fill-current" />
-                  {promo.ctaLabel}
-                </span>
-              </div>
-            </div>
+          {/* RIGHT: performer image — object-top so face always shows */}
+          <div className="relative h-[260px] md:h-auto overflow-hidden">
+            <img
+              src={promo.imageUrl}
+              alt={promo.imageAlt}
+              loading="lazy"
+              className={`w-full h-full object-cover ${promo.imageFocal || 'object-top'} transition-transform duration-500 hover:scale-[1.02]`}
+            />
+            {/* Feather left edge into card bg */}
+            <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-[#100606] to-transparent hidden md:block" />
           </div>
         </div>
-      </a>
+      </div>
     </section>
   );
 }

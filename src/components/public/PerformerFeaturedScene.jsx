@@ -17,7 +17,7 @@ export default function PerformerFeaturedScene({
   const isLocked = video.access_tier === 'fanclub' || video.access_tier === 'ppv' || video.is_exclusive;
 
   return (
-    <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <section className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-10 py-6">
       {/* Section header */}
       <div className="flex items-center gap-4 mb-6">
         <div className="h-px flex-1 bg-gradient-to-r from-rose-600/60 to-transparent" />
@@ -34,11 +34,11 @@ export default function PerformerFeaturedScene({
         <div className="absolute top-0 right-0 w-[500px] h-[400px] bg-rose-700/8 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-orange-700/6 rounded-full blur-[100px] pointer-events-none" />
 
-        <div className="relative z-10 grid lg:grid-cols-[1.4fr_1fr] gap-0">
+        <div className="relative z-10 grid lg:grid-cols-[1.6fr_1fr] gap-0">
           {/* Left: large thumbnail */}
           <div className="relative group">
             <Link to={`/videos/${video.slug}`} className="block">
-              <div className="aspect-video lg:aspect-auto lg:h-full min-h-[260px] relative overflow-hidden">
+              <div className="aspect-video lg:aspect-auto lg:h-full min-h-[320px] relative overflow-hidden">
                 {video.primary_thumbnail_url || video.cover_image_url ? (
                   <img
                     src={video.primary_thumbnail_url || video.cover_image_url}
@@ -88,27 +88,24 @@ export default function PerformerFeaturedScene({
           </div>
 
           {/* Right: details & CTA */}
-          <div className="p-7 lg:p-10 flex flex-col justify-center space-y-5">
-            {/* Access badges */}
-            <div className="flex flex-wrap gap-2">
-              {video.access_tier === 'free' && (
-                <Badge className="bg-emerald-600/20 text-emerald-400 border-emerald-600/30 rounded-full">
-                  Free to Watch
-                </Badge>
-              )}
-              {video.access_tier === 'fanclub' && (
-                <Badge className="bg-purple-600/20 text-purple-400 border-purple-600/30 rounded-full">
+          <div className="p-6 lg:p-9 flex flex-col justify-center space-y-4">
+            {/* Single access badge — most relevant one only */}
+            <div>
+              {video.access_tier === 'fanclub' ? (
+                <Badge className="bg-purple-600/20 text-purple-300 border-purple-600/30 rounded-full text-xs">
                   <Crown className="w-3 h-3 mr-1" /> Fanclub Only
                 </Badge>
-              )}
-              {video.access_tier === 'ppv' && (
-                <Badge className="bg-amber-600/20 text-amber-400 border-amber-600/30 rounded-full">
+              ) : video.access_tier === 'ppv' ? (
+                <Badge className="bg-amber-600/20 text-amber-300 border-amber-600/30 rounded-full text-xs">
                   <Star className="w-3 h-3 mr-1" /> Premium Rental
                 </Badge>
-              )}
-              {video.is_exclusive && (
-                <Badge className="bg-rose-600/20 text-rose-400 border-rose-600/30 rounded-full">
+              ) : video.is_exclusive ? (
+                <Badge className="bg-rose-600/20 text-rose-300 border-rose-600/30 rounded-full text-xs">
                   <Zap className="w-3 h-3 mr-1" /> Exclusive
+                </Badge>
+              ) : (
+                <Badge className="bg-emerald-600/20 text-emerald-400 border-emerald-600/30 rounded-full text-xs">
+                  Free to Watch
                 </Badge>
               )}
             </div>
@@ -152,22 +149,22 @@ export default function PerformerFeaturedScene({
             )}
 
             {/* CTA buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row gap-3 pt-1">
               <Button
                 onClick={onWatch}
-                className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white h-12 px-7 text-sm font-bold shadow-lg shadow-rose-700/30 gap-2 rounded-xl flex-1"
+                className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white h-13 px-8 text-base font-black shadow-xl shadow-rose-700/40 gap-2 rounded-xl flex-1 py-3.5"
               >
-                <Play className="w-4 h-4 fill-current" />
+                <Play className="w-5 h-5 fill-current" />
                 {isAuthenticated
-                  ? isLocked ? 'Unlock Scene' : 'Watch Scene'
-                  : 'Create Account to Watch'}
+                  ? isLocked ? 'Unlock This Scene' : 'Watch Now'
+                  : 'Watch Free — Create Account'}
               </Button>
               <Link to={`/videos/${video.slug}`}>
                 <Button
                   variant="outline"
-                  className="border-white/15 text-white/70 hover:bg-white/8 hover:text-white h-12 px-6 text-sm font-semibold gap-2 rounded-xl w-full"
+                  className="border-white/12 text-white/60 hover:bg-white/6 hover:text-white h-13 px-5 text-sm font-semibold rounded-xl w-full py-3.5"
                 >
-                  View Details
+                  Details
                 </Button>
               </Link>
             </div>

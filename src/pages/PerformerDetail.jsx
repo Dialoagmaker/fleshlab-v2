@@ -7,7 +7,7 @@ import { useAccessControl } from "@/lib/useAccessControl";
 import SEOMeta from "@/components/SEOMeta";
 import { generatePerformerTitle, generatePerformerMetaDescription, generatePerformerSEOBio } from "@/lib/performerSeoUtils";
 import { FANCLUB_PLANS } from "@/lib/pricingConfig";
-import { Loader2, ArrowLeft, Heart, Users, Film, Play, Crown } from "lucide-react";
+import { Loader2, ArrowLeft, Heart, Users, Film, Play, Crown, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // New decomposed components
@@ -195,19 +195,52 @@ export default function PerformerDetail() {
         {/* C. PERFORMER-SPECIFIC PROMO BANNER */}
         <PerformerPromoSection slug={performer.slug} />
 
+        {/* C2. INLINE SECONDARY CTA — quick conversion anchor after promo, before bio */}
+        {performerVideos.length > 0 && (
+          <div className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-10 pb-2">
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-rose-600/10 border border-rose-600/20 rounded-2xl px-6 py-4">
+              <div>
+                <p className="text-white font-bold text-base leading-none mb-0.5">
+                  Ready to watch {performer.display_name}?
+                </p>
+                <p className="text-white/45 text-sm">
+                  {performerVideos.length} scene{performerVideos.length !== 1 ? 's' : ''} available · free account required
+                </p>
+              </div>
+              <div className="flex gap-3 flex-wrap">
+                <Button
+                  onClick={handleWatchVideos}
+                  className="bg-rose-600 hover:bg-rose-500 text-white h-10 px-6 text-sm font-bold rounded-xl gap-2 shadow-lg shadow-rose-600/25"
+                >
+                  <Play className="w-4 h-4 fill-current" />
+                  {isAuthenticated ? 'Watch Now' : 'Create Free Account'}
+                </Button>
+                {fanclubOrExclusive && (
+                  <Button
+                    onClick={handleJoinFanclub}
+                    variant="outline"
+                    className="border-white/15 text-white/70 hover:text-white hover:bg-white/6 h-10 px-5 text-sm font-semibold rounded-xl gap-2"
+                  >
+                    <Crown className="w-4 h-4" /> Fanclub
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* D. BIOGRAPHY */}
         {performer.bio && (
-          <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="relative rounded-[24px] border border-white/8 bg-gradient-to-br from-[#0e0e0e] to-[#0a0a0a] overflow-hidden">
-              <div className="absolute top-0 left-0 w-64 h-64 bg-rose-700/5 rounded-full blur-[80px] pointer-events-none" />
-              <div className="relative z-10 p-7 lg:p-12">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-9 h-9 bg-rose-600/15 rounded-xl flex items-center justify-center border border-rose-600/20">
-                    <Heart className="w-4 h-4 text-rose-400" />
+          <section className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-10 py-5">
+            <div className="relative rounded-[20px] border border-white/[0.07] bg-[#0d0d0d] overflow-hidden">
+              <div className="relative z-10 px-7 py-6 lg:px-10 lg:py-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 bg-rose-600/15 rounded-lg flex items-center justify-center border border-rose-600/20">
+                    <Heart className="w-3.5 h-3.5 text-rose-400" />
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-white">About {performer.display_name}</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-white">About {performer.display_name}</h2>
                 </div>
-                <p className="text-white/65 whitespace-pre-wrap leading-relaxed text-base lg:text-lg max-w-4xl">
+                <p className="text-white/60 leading-relaxed text-sm sm:text-base max-w-4xl">
                   {performer.bio}
                 </p>
               </div>
@@ -223,7 +256,7 @@ export default function PerformerDetail() {
         />
 
         {/* F. FANCLUB CTA */}
-        <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-16">
+        <section className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-10 py-5 pb-14">
           <FanclubSupportBlock
             performerName={performer.display_name}
             isAuthenticated={isAuthenticated}
