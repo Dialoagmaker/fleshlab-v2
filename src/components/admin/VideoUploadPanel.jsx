@@ -445,6 +445,10 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
       <div className="grid gap-6">
         <AIMetadataGenerator
           currentTitle={metadata.title}
+          currentDescription={metadata.description}
+          currentTags={metadata.tags}
+          currentCategories={metadata.categories}
+          accessTier={metadata.access_tier}
           onApply={(fields) => setMetadata(prev => ({
             ...prev,
             title: fields.title || prev.title,

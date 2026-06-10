@@ -124,33 +124,35 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Build context for V2
+    // Build the CONTEXT_BLOCK that replaces {{CONTEXT_BLOCK}} in the prompt template
+    // scene_notes is the primary driver — always first and clearly labeled
     const contextLines = [];
-    if (raw_idea?.trim()) contextLines.push(`Raw idea / notes: ${raw_idea.trim()}`);
-    if (current_title?.trim()) contextLines.push(`Current title: ${current_title.trim()}`);
-    if (current_description?.trim()) contextLines.push(`Existing description: ${current_description.trim()}`);
+    contextLines.push(`SCENE NOTES (primary input — use verbatim details to generate): "${raw_idea.trim()}"`);
+    if (current_title?.trim()) contextLines.push(`Current working title (optional reference): "${current_title.trim()}"`);
+    if (current_description?.trim()) contextLines.push(`Existing description (optional reference): "${current_description.trim()}"`);
     if (brand?.trim()) contextLines.push(`Brand / Studio: ${brand.trim()}`);
-    if (categories && categories.length > 0) contextLines.push(`Categories: ${categories.join(', ')}`);
-    if (tags && tags.length > 0) contextLines.push(`Tags: ${tags.join(', ')}`);
     if (performer_info?.trim()) contextLines.push(`Performer info: ${performer_info.trim()}`);
+    if (categories && categories.length > 0) contextLines.push(`Existing categories: ${categories.join(', ')}`);
+    if (tags && tags.length > 0) contextLines.push(`Existing tags: ${tags.join(', ')}`);
     if (access_tier) contextLines.push(`Access tier: ${access_tier}`);
+    // Anti-caching nonce — ensures the LLM doesn't reuse a cached response
+    contextLines.push(`[Generation nonce: ${Date.now()}]`);
 
-    const v2Context = contextLines.filter(Boolean).join('\n');
+    const contextBlock = contextLines.join('\n');
 
-    // Build full prompt with V1 core + V2 context
-    const prompt = `
-${V1_CORE_PROMPT}
+    // Replace {{CONTEXT_BLOCK}} in the V1 prompt template
+    const prompt = V1_CORE_PROMPT.replace('{{CONTEXT_BLOCK}}', contextBlock) + `
 
-ADDITIONAL V2 CONTEXT:
-${v2Context}
-
-IMPORTANT:
-Use the V1 prompt rules above as the source of truth.
-Do not soften the language.
-Do not use generic marketing filler.
-Do not change the scene type.
-Return JSON only.
-`;
+━━━ CRITICAL INSTRUCTIONS ━━━
+1. The SCENE NOTES above are your PRIMARY and MANDATORY input.
+2. Extract EVERY concrete detail from the scene notes: performer type, setting, acts, scenario.
+3. The title and description MUST directly reflect the specific scene described — not a generic variant.
+4. If scene notes mention hotel floor, the output MUST reference hotel floor.
+5. If scene notes mention a stranger, the output MUST reference the stranger encounter.
+6. If scene notes mention muscle twink, the output MUST reference muscular build.
+7. Each generation must be UNIQUE — do not reuse phrasing from any previous generation.
+8. Do NOT invent acts or performers not mentioned in the scene notes.
+9. Return JSON only — no explanation, no preamble.`;
 
     // Call LLM with V1 prompt
     const response = await base44.integrations.Core.InvokeLLM({
@@ -321,6 +323,21 @@ Return JSON only.
       taxonomy_warnings: taxonomyWarnings,
       taxonomy_removed: taxonomyRemoved,
       tag_notes: tagNotes,
+      debug: {
+        input_scene_notes_received: raw_idea?.trim() || '',
+        current_title_received: current_title?.trim() || null,
+        current_description_received: current_description?.trim() || null,
+        performer_info_received: performer_info?.trim() || null,
+        brand_received: brand?.trim() || null,
+        access_tier_received: access_tier || null,
+        tags_received: tags || [],
+        categories_received: categories || [],
+        generated_title: response.title || '',
+        generated_tags: response.tags || [],
+        model_used: 'InvokeLLM (default)',
+        cached_result: false,
+        context_block_built: contextBlock,
+      },
     });
 
   } catch (error) {
