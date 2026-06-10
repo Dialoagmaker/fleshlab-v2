@@ -18,7 +18,10 @@
         cookie_flags: 'SameSite=None;Secure'
       });
     </script>
-    <!-- Static fallback SEO tags — overridden by SEOMeta after React loads -->
+    <!-- Static fallback SEO tags — overridden by SEOMeta after React loads (~200-500ms) -->
+    <!-- CRITICAL: These static tags are NOT hostname-aware. On base44.app/staging, they show index,follow until React hydrates. -->
+    <!-- Solution: SEOMeta component injects noindex,nofollow synchronously on non-production hosts after hydration. -->
+    <!-- For complete pre-hydration protection, a Cloudflare Worker or SSR layer would be required (optional, long-term). -->
     <title>FLESHLAB Studios - Gay Videos, Fanclub &amp; Performer Content</title>
     <meta name="description" content="FLESHLAB Studios features verified gay performers, exclusive fanclub scenes, premium videos, and studio-produced adult content." />
     <link rel="canonical" href="https://fleshlab.online/" />
@@ -33,7 +36,7 @@
     <meta name="twitter:description" content="FLESHLAB Studios features verified gay performers, exclusive fanclub scenes, premium videos, and studio-produced adult content." />
     <meta name="twitter:image" content="https://video.fleshlab.online/performers/the-fitmaster/profile.jpg" />
     <meta name="robots" content="index,follow" />
-    <!-- Meta tags managed dynamically by SEOMeta component (overrides above after React loads) -->
+    <!-- Dynamic SEO management by SEOMeta component (overrides all above tags after React hydration) -->
     <!-- Global structured data: Organization + WebSite (static, always present) -->
     <script type="application/ld+json">
 [

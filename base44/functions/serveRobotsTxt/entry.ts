@@ -27,8 +27,9 @@
  * Thank you!"
  */
 
-const ROBOTS_TXT = `# robots.txt for FLESHLAB Studios
-# Updated: 2026-06-09
+const PRODUCTION_ROBOTS = `# robots.txt for FLESHLAB Studios (PRODUCTION)
+# Updated: 2026-06-10
+# Production domain: fleshlab.online - ALLOW indexing
 
 User-agent: *
 
@@ -78,14 +79,32 @@ Allow: /cookie-policy$
 Sitemap: https://fleshlab.online/api/functions/sitemapXml
 `;
 
+const STAGING_ROBOTS = `# robots.txt for FLESHLAB Studios (STAGING/BASE44.APP)
+# Updated: 2026-06-10
+# CRITICAL: Block ALL indexing on staging/base44.app domains
+
+User-agent: *
+Disallow: /
+
+# No sitemap on staging - production sitemap only
+# Sitemap: https://fleshlab.online/api/functions/sitemapXml
+`;
+
 Deno.serve(async (req) => {
   try {
-    return new Response(ROBOTS_TXT, {
+    // HOSTNAME GUARD: Detect if request is from production or staging
+    const host = req.headers.get('host') || '';
+    const isProduction = host === 'fleshlab.online' || host === 'www.fleshlab.online';
+    
+    const robotsTxt = isProduction ? PRODUCTION_ROBOTS : STAGING_ROBOTS;
+    const xRobotsTag = isProduction ? 'all' : 'noindex,nofollow';
+    
+    return new Response(robotsTxt, {
       status: 200,
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'public, max-age=86400',
-        'X-Robots-Tag': 'all',
+        'X-Robots-Tag': xRobotsTag,
       },
     });
   } catch (error) {

@@ -1,9 +1,12 @@
 import { useEffect } from "react";
-import { canonicalUrl, getRobotsDirective } from "@/lib/seoConfig";
+import { canonicalUrl, getRobotsDirective, isProduction } from "@/lib/seoConfig";
 
 /**
  * SEO Meta Component
  * Dynamically updates document metadata for SEO, Open Graph, Twitter Cards, and JSON-LD
+ * 
+ * HOSTNAME GUARD: Non-production hosts (base44.app, staging, localhost) are automatically noindex,nofollow
+ * while canonical URLs still point to production domain (https://fleshlab.online).
  */
 export default function SEOMeta({
   title,
@@ -18,8 +21,10 @@ export default function SEOMeta({
 }) {
   // CRITICAL: Inject robots meta synchronously BEFORE useEffect to prevent Google from seeing noindex
   // This runs during initial render, ensuring raw HTML has correct robots directive
+  // HOSTNAME GUARD: Non-production hosts are ALWAYS noindex regardless of noIndex prop
   if (typeof document !== 'undefined') {
-    const robotsDirective = noIndex ? 'noindex,nofollow' : 'index,follow';
+    const isProd = isProduction();
+    const robotsDirective = (!isProd || noIndex) ? 'noindex,nofollow' : 'index,follow';
     ['robots', 'googlebot'].forEach(name => {
       let meta = document.querySelector(`meta[name="${name}"]`);
       if (!meta) {
@@ -61,7 +66,9 @@ export default function SEOMeta({
     }
 
     // Robots — re-apply in useEffect for dynamic navigation (already set synchronously above)
-    const robotsDirective = noIndex ? 'noindex,nofollow' : 'index,follow';
+    // HOSTNAME GUARD: Non-production hosts are ALWAYS noindex
+    const isProd = isProduction();
+    const robotsDirective = (!isProd || noIndex) ? 'noindex,nofollow' : 'index,follow';
     ['robots', 'googlebot'].forEach(name => {
       let meta = document.querySelector(`meta[name="${name}"]`);
       if (!meta) {
@@ -73,12 +80,12 @@ export default function SEOMeta({
     });
 
     // Open Graph Tags
+    // HOSTNAME GUARD: og:url always points to production, never base44.app/staging
     const ogTags = {
       'og:title': title,
       'og:description': description,
       'og:type': ogType,
-      // og:url: use explicit canonical prop if provided (already stripped of query params),
-      // otherwise fall back to current pathname (no query params from pathname alone)
+      // og:url: ALWAYS production canonical (canonicalUrl strips current hostname)
       'og:url': canonical ? canonicalUrl(canonical) : canonicalUrl(window.location.pathname),
     };
     
@@ -123,6 +130,7 @@ export default function SEOMeta({
     // JSON-LD Structured Data
     // Supports single object OR array of schema objects (e.g. [Person, BreadcrumbList])
     // Uses a single script tag with an array when multiple schemas are provided.
+    // HOSTNAME GUARD: JSON-LD is still emitted on non-production for testing, but pages are noindex
     if (jsonLd) {
       let script = document.querySelector('script[data-page-jsonld]');
       if (!script) {
@@ -140,6 +148,7 @@ export default function SEOMeta({
       // Metadata persists for SPA navigation
     };
   }, [title, description, canonical, ogImage, ogType, twitterCard, jsonLd]);
+  // Note: isProduction is NOT in dependency array because it's checked synchronously on each render
 
   return null; // This component doesn't render anything visible
 }
