@@ -37,6 +37,10 @@ export default function SEOMeta({
   }
 
   useEffect(() => {
+    // Preserve existing google-site-verification meta tag (don't remove it!)
+    const verificationTag = document.querySelector('meta[name="google-site-verification"]');
+    const verificationContent = verificationTag?.getAttribute('content');
+
     // Document Title
     if (title) {
       document.title = title;
@@ -48,6 +52,14 @@ export default function SEOMeta({
       if (metaDesc) {
         metaDesc.setAttribute('content', description.substring(0, 160));
       }
+    }
+
+    // Restore verification tag if it was removed
+    if (verificationContent && !document.querySelector('meta[name="google-site-verification"]')) {
+      const meta = document.createElement('meta');
+      meta.setAttribute('name', 'google-site-verification');
+      meta.setAttribute('content', verificationContent);
+      document.head.appendChild(meta);
     }
 
     // Canonical URL — always points to production domain, never staging/Base44
