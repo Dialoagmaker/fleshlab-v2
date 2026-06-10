@@ -68,12 +68,35 @@ export default function Performers() {
         description="Meet verified 18+ Asian gay performers, Filipino twink talent, Pinoy performers, bisexual performers, top/bottom/versatile creators, and femboy performers at FLESHLAB Studios. Professional profiles with fanclub access."
         canonical="/performers"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
-        jsonLd={{
-          "@context": "https://schema.org",
-          "@type": "CollectionPage",
-          "name": "FLESHLAB Studios Performers",
-          "description": "Verified 18+ Asian gay performers, Filipino twinks, Pinoy talent and bisexual creators"
-        }}
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "name": "FLESHLAB Studios Performers",
+            "url": "https://fleshlab.online/performers",
+            "description": "Verified 18+ Asian gay performers, Filipino twinks, Pinoy talent and bisexual creators",
+            "breadcrumb": {
+              "@type": "BreadcrumbList",
+              "itemListElement": [
+                { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://fleshlab.online/" },
+                { "@type": "ListItem", "position": 2, "name": "Performers", "item": "https://fleshlab.online/performers" }
+              ]
+            }
+          },
+          ...(performers.length > 0 ? [{
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "name": "FLESHLAB Studios Performer Roster",
+            "url": "https://fleshlab.online/performers",
+            "numberOfItems": performers.length,
+            "itemListElement": performers.filter(p => p.slug).slice(0, 50).map((p, i) => ({
+              "@type": "ListItem",
+              "position": i + 1,
+              "name": p.display_name,
+              "url": `https://fleshlab.online/performers/${p.slug}`
+            }))
+          }] : [])
+        ]}
       />
       <div className="min-h-screen bg-background">
         {/* Cinematic Hero */}

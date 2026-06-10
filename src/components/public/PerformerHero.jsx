@@ -49,13 +49,13 @@ export default function PerformerHero({
 
       {/* Top bar — back nav + studio tag */}
       <div className="relative z-10 max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-10 pt-5 pb-0 flex items-center justify-between">
-        <button
-          onClick={() => navigate('/performers')}
+        <Link
+          to="/performers"
           className="flex items-center gap-2 text-white/30 hover:text-white/70 transition-colors text-xs font-medium group"
         >
           <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
           All Performers
-        </button>
+        </Link>
         <div className="flex items-center gap-2">
           {performer.verified && (
             <span className="flex items-center gap-1.5 bg-emerald-950/80 border border-emerald-700/40 text-emerald-400 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
@@ -206,8 +206,10 @@ export default function PerformerHero({
                   {performer.profile_image_url || performer.cover_image_url ? (
                     <img
                       src={performer.profile_image_url || performer.cover_image_url}
-                      alt={performer.display_name}
+                      alt={`${performer.display_name.replace(/_/g, ' ')} - ${performer.nationality ? performer.nationality.split(',')[0].trim().toLowerCase().replace(/philippines/i, 'Filipino') + ' ' : ''}gay performer - FLESHLAB Studios`}
                       className="w-full h-full object-cover object-top"
+                      loading="eager"
+                      fetchPriority="high"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1a0808] to-[#0a0a0a]">

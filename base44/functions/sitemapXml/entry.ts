@@ -145,9 +145,12 @@ Deno.serve(async (req) => {
     }
 
     // --- Performer pages ---
+    // Exclude compliance-locked performers (cannot be publicly displayed)
+    // Only include active performers with a valid slug
     const seenPerformerSlugs = new Set();
     for (const performer of performers) {
       if (!isValidSlug(performer.slug)) { stats.skipped_performers++; continue; }
+      if (performer.compliance_locked && !performer.compliance_override) { stats.skipped_performers++; continue; }
       if (seenPerformerSlugs.has(performer.slug)) { stats.skipped_performers++; continue; }
       seenPerformerSlugs.add(performer.slug);
       const lastmod = performer.updated_date || today;
