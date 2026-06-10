@@ -443,17 +443,59 @@ export default function PerformerDetail() {
           </div>
         )}
 
-        {/* The_Fitmaster Summer Special Banner — contained promo card, only shown on his page */}
+        {/* The_Fitmaster Summer Special Banner — wide promo card, only shown on his page */}
         {performer.slug === 'the-fitmaster' && (
-          <div className="flex justify-center px-3 sm:px-4 py-5 sm:py-8">
-            <a href="#videos" aria-label="The_Fitmaster Summer Special — watch his videos" className="w-full sm:w-auto max-w-[420px] sm:max-w-[820px]">
-              <div className="overflow-hidden rounded-2xl sm:rounded-3xl border border-rose-600/20 shadow-lg shadow-rose-900/15 hover:shadow-xl hover:shadow-rose-900/25 transition-shadow">
+          <div className="flex justify-center px-4 pt-6 pb-2">
+            <a
+              href="#videos"
+              aria-label="The_Fitmaster Summer Special — watch his videos"
+              className="block w-full max-w-[1100px] group"
+            >
+              <div className="relative overflow-hidden rounded-[20px] border border-rose-600/25 shadow-xl shadow-rose-900/20 hover:shadow-2xl hover:shadow-rose-900/30 transition-shadow" style={{ height: 'clamp(300px, 28vw, 420px)' }}>
+                {/* Background performer image — right side focal point */}
                 <img
                   src="https://video.fleshlab.online/banner%20and%20logos/ChatGPT%20Image%2010.%20Juni%202026%2C%2019_11_31.png"
                   alt="The_Fitmaster Summer Special promo banner"
                   loading="lazy"
-                  className="w-full aspect-square sm:aspect-auto object-cover hover:opacity-95 transition-opacity"
+                  className="absolute inset-0 w-full h-full object-cover object-right-top group-hover:scale-[1.02] transition-transform duration-500"
                 />
+
+                {/* Left dark gradient overlay so text stays readable */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#050505] via-[#0a0a0aee] via-40% to-transparent" />
+
+                {/* Ambient red glow behind text */}
+                <div className="absolute top-1/2 left-0 -translate-y-1/2 w-72 h-72 bg-rose-700/20 rounded-full blur-[80px] pointer-events-none" />
+
+                {/* Text content — left side only */}
+                <div className="absolute inset-0 flex items-center px-8 sm:px-12">
+                  <div className="max-w-[55%] sm:max-w-[45%] space-y-2 sm:space-y-3">
+                    {/* Eyebrow */}
+                    <p className="text-rose-400 text-xs sm:text-sm font-bold uppercase tracking-[0.2em]">
+                      Exclusive · FLESHLAB Studios
+                    </p>
+
+                    {/* Performer name */}
+                    <h2 className="text-white font-black uppercase leading-none" style={{ fontSize: 'clamp(1.5rem, 3.5vw, 2.8rem)' }}>
+                      The_Fitmaster
+                    </h2>
+
+                    {/* Promo title */}
+                    <p className="font-extrabold uppercase leading-tight text-rose-400" style={{ fontSize: 'clamp(1.1rem, 2.5vw, 2rem)' }}>
+                      Summer Special
+                    </p>
+
+                    {/* Divider */}
+                    <div className="w-12 h-0.5 bg-rose-600 rounded-full" />
+
+                    {/* CTA */}
+                    <div className="pt-1">
+                      <span className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white text-sm sm:text-base font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-rose-600/30 transition-colors">
+                        <Play className="w-4 h-4" />
+                        Watch Now
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </a>
           </div>
