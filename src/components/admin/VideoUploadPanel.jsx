@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { base44 } from "@/api/base44Client";
 import toast from "react-hot-toast";
+import AIMetadataGenerator from "@/components/admin/AIMetadataGenerator";
 
 const UPLOAD_STATUS = {
   IDLE: "idle",
@@ -37,6 +38,8 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
     categories: [],
     tags: [],
     access_tier: "free",
+    seo_title: "",
+    seo_description: "",
   });
   const fileInputRef = useRef(null);
   const dragOverRef = useRef(false);
@@ -135,7 +138,7 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
 
   const createUploadMutation = useMutation({
     mutationFn: async (fileData) => {
-      const { id: fileId, file, title, description, brand_id, categories, tags, access_tier, duration_seconds } = fileData;
+      const { id: fileId, file, title, description, brand_id, categories, tags, access_tier, duration_seconds, seo_title, seo_description } = fileData;
       
       updateFileStatus(fileId, { status: UPLOAD_STATUS.PREPARING });
       
@@ -150,6 +153,8 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
         tags,
         access_tier,
         duration_seconds: duration_seconds || undefined,
+        meta_title: seo_title || undefined,
+        meta_description: seo_description || undefined,
       });
 
       return { fileId, file, ...response.data };
@@ -286,6 +291,8 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
         access_tier: metadata.access_tier,
         slug: generateSlug(metadata.title),
         duration_seconds,
+        seo_title: metadata.seo_title || "",
+        seo_description: metadata.seo_description || "",
       };
     }));
 
@@ -436,6 +443,19 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
       </AnimatePresence>
 
       <div className="grid gap-6">
+        <AIMetadataGenerator
+          currentTitle={metadata.title}
+          onApply={(fields) => setMetadata(prev => ({
+            ...prev,
+            title: fields.title || prev.title,
+            description: fields.description || prev.description,
+            tags: fields.tags?.length ? fields.tags : prev.tags,
+            categories: fields.categories?.length ? fields.categories : prev.categories,
+            seo_title: fields.seo_title || prev.seo_title,
+            seo_description: fields.seo_description || prev.seo_description,
+          }))}
+        />
+
         <div className="space-y-2">
           <Label htmlFor="title">Title *</Label>
           <Input
@@ -508,6 +528,19 @@ export default function VideoUploadPanel({ onUploadComplete, existingVideoId }) 
               tags: e.target.value.split(',').map(t => t.trim()).filter(t => t) 
             })}
             placeholder="e.g. solo, asian, twink"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="categories">Categories (Optional, comma-separated)</Label>
+          <Input
+            id="categories"
+            value={metadata.categories.join(', ')}
+            onChange={(e) => setMetadata({
+              ...metadata,
+              categories: e.target.value.split(',').map(c => c.trim()).filter(c => c)
+            })}
+            placeholder="e.g. Solo, Filipino, Blowjob"
           />
         </div>
       </div>
