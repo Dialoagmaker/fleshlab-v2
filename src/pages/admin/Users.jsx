@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Users as UsersIcon, Search, ChevronRight, Crown, Loader2,
-  AlertCircle, DollarSign, ShoppingCart, CheckCircle2, Clock
+  AlertCircle, DollarSign, ShoppingCart, CheckCircle2, Clock, Trash2
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 const FILTERS = [
   { key: "all",               label: "All Users" },
@@ -59,6 +60,9 @@ export default function Users() {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const [deletingId, setDeletingId] = useState(null);
+  const [confirmId, setConfirmId] = useState(null);
+  const queryClient = useQueryClient();
   const LIMIT = 50;
 
   const { data, isLoading, error } = useQuery({
@@ -76,6 +80,14 @@ export default function Users() {
   const users = data?.users || [];
   const total = data?.total || 0;
   const totalPages = Math.ceil(total / LIMIT);
+
+  const handleDelete = async (userId) => {
+    setDeletingId(userId);
+    setConfirmId(null);
+    await base44.entities.User.delete(userId);
+    queryClient.invalidateQueries(["admin-users"]);
+    setDeletingId(null);
+  };
 
   return (
     <>
@@ -202,12 +214,38 @@ export default function Users() {
                         {u.last_payment_date ? new Date(u.last_payment_date).toLocaleDateString() : "—"}
                       </td>
                       <td className="px-4 py-3">
-                        <Link
-                          to={`/admin/users/${u.user_id}`}
-                          className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium"
-                        >
-                          View <ChevronRight className="w-3.5 h-3.5" />
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            to={`/admin/users/${u.user_id}`}
+                            className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium"
+                          >
+                            View <ChevronRight className="w-3.5 h-3.5" />
+                          </Link>
+                          {confirmId === u.user_id ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleDelete(u.user_id)}
+                                className="text-[10px] px-2 py-0.5 bg-red-600 hover:bg-red-500 text-white rounded font-bold"
+                              >
+                                {deletingId === u.user_id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Yes"}
+                              </button>
+                              <button
+                                onClick={() => setConfirmId(null)}
+                                className="text-[10px] px-2 py-0.5 bg-muted hover:bg-muted/80 text-muted-foreground rounded font-bold"
+                              >
+                                No
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmId(u.user_id)}
+                              className="text-muted-foreground hover:text-red-400 transition-colors"
+                              title="Delete user"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
