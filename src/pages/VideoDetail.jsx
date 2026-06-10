@@ -247,11 +247,23 @@ export default function VideoDetail() {
     return `PT${h > 0 ? h + 'H' : ''}${m > 0 ? m + 'M' : ''}${s > 0 ? s + 'S' : ''}` || `PT${secs}S`;
   };
 
-  // Safe ISO upload date — never expose raw datetime object
+  // Safe ISO upload date — full ISO 8601 with +08:00 timezone (required by Google)
   const isoUploadDate = (() => {
     const d = video.release_date || video.created_date;
     if (!d) return undefined;
-    try { return new Date(d).toISOString().substring(0, 10); } catch { return undefined; }
+    try {
+      const parsed = new Date(d);
+      if (isNaN(parsed.getTime())) return undefined;
+      // If source already has time+timezone info, normalize to +08:00
+      if (/[TZ+]/.test(String(d)) && String(d).length > 10) {
+        const offsetMs = 8 * 60 * 60 * 1000;
+        const local = new Date(parsed.getTime() + offsetMs);
+        const pad = n => String(n).padStart(2, '0');
+        return `${local.getUTCFullYear()}-${pad(local.getUTCMonth()+1)}-${pad(local.getUTCDate())}T${pad(local.getUTCHours())}:${pad(local.getUTCMinutes())}:${pad(local.getUTCSeconds())}+08:00`;
+      }
+      // Date-only string — use midnight Taiwan time
+      return `${String(d).substring(0, 10)}T00:00:00+08:00`;
+    } catch { return undefined; }
   })();
 
   // BreadcrumbList for video detail

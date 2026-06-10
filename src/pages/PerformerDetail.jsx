@@ -153,12 +153,25 @@ export default function PerformerDetail() {
     );
   }
 
-  // Loading
+  // Loading — include slug-derived SEOMeta so Googlebot sees a title before data resolves
   if (!performer) {
+    const loadingTitle = slug
+      ? slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') + ' | FLESHLAB Studios Performer'
+      : 'Performer | FLESHLAB Studios';
+    const loadingDesc = slug
+      ? `Watch ${slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} on FLESHLAB Studios. Verified performer profile with exclusive scenes, fanclub access, and premium video updates.`
+      : 'Verified performer profile on FLESHLAB Studios with exclusive scenes and fanclub access.';
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <>
+        <SEOMeta
+          title={loadingTitle}
+          description={loadingDesc}
+          canonical={`https://fleshlab.online/performers/${slug}`}
+        />
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </>
     );
   }
 
