@@ -71,7 +71,20 @@ export const schemaBuilders = {
     }
     let uploadDate;
     try {
-      uploadDate = new Date(uploadDateRaw).toISOString().substring(0, 10);
+      const d = new Date(uploadDateRaw);
+      if (isNaN(d.getTime())) return null;
+      // If source already has time+timezone info (contains 'T' or '+' or 'Z'), normalize to ISO with +08:00
+      // Otherwise treat as midnight Taiwan time (+08:00)
+      if (/[TZ+]/.test(uploadDateRaw) && uploadDateRaw.length > 10) {
+        // Shift to +08:00 representation
+        const offsetMs = 8 * 60 * 60 * 1000;
+        const local = new Date(d.getTime() + offsetMs);
+        const pad = n => String(n).padStart(2, '0');
+        uploadDate = `${local.getUTCFullYear()}-${pad(local.getUTCMonth()+1)}-${pad(local.getUTCDate())}T${pad(local.getUTCHours())}:${pad(local.getUTCMinutes())}:${pad(local.getUTCSeconds())}+08:00`;
+      } else {
+        // Date-only string — use midnight Taiwan time
+        uploadDate = `${uploadDateRaw.substring(0, 10)}T00:00:00+08:00`;
+      }
     } catch {
       return null;
     }
