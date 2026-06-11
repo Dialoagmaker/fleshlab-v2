@@ -1,30 +1,63 @@
 import TubeHeader from "@/components/tube/TubeHeader";
 import TubeFooter from "@/components/tube/TubeFooter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const PRODUCTION_DOMAIN = 'https://fleshlab.online';
 
-// Immediately redirect base44.app traffic to production equivalent
-// This runs synchronously before render — Googlebot executes this as a soft 301
-function redirectIfStaging() {
-  if (typeof window === 'undefined') return false;
-  const host = window.location.hostname;
-  if (host.includes('base44.app')) {
-    // Map path to production: lowercase, strip any hash
-    const path = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
-    const target = PRODUCTION_DOMAIN + path;
-    window.location.replace(target);
-    return true;
-  }
-  return false;
+// Path normalization: lowercase + handle known uppercase legacy routes
+function normalizePath(pathname) {
+  const lower = pathname.toLowerCase().replace(/\/+$/, '') || '/';
+  // Map known uppercase/legacy staging paths to correct production paths
+  const MAP = {
+    '/live': '/fanclub',
+    '/actors': '/performers',
+    '/newscenter': '/news',
+    '/howitworks': '/how-it-works',
+    '/gay-performer-recruitment': '/become-performer',
+    '/remote-adult-content-creator': '/become-performer',
+    '/guest-productions': '/guest-production',
+  };
+  return MAP[lower] || lower;
 }
 
-// Run immediately (module-level, before any React render)
-const IS_STAGING_REDIRECT = redirectIfStaging();
+function isStaging() {
+  return typeof window !== 'undefined' && window.location.hostname.includes('base44.app');
+}
+
+// Inject noindex + canonical into <head> synchronously
+function injectStagingMeta() {
+  if (typeof document === 'undefined') return;
+  const path = normalizePath(window.location.pathname);
+  const canonicalHref = PRODUCTION_DOMAIN + path;
+
+  ['robots', 'googlebot'].forEach(name => {
+    let meta = document.querySelector(`meta[name="${name}"]`);
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', name);
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute('content', 'noindex,nofollow');
+  });
+
+  let canonical = document.querySelector('link[rel="canonical"]');
+  if (!canonical) {
+    canonical = document.createElement('link');
+    canonical.rel = 'canonical';
+    document.head.appendChild(canonical);
+  }
+  canonical.href = canonicalHref;
+}
+
+// Run synchronously at module load for initial page hit
+if (isStaging()) {
+  injectStagingMeta();
+}
 
 export default function PublicPageShell({ children, noIndex }) {
-  // Ensure immediate first paint - children always render (even if loading internally)
-  // CRITICAL: Suppress any unhandled 401 errors from auth checks on public pages
+  const [redirecting, setRedirecting] = useState(false);
+
+  // Suppress unhandled 401 errors on public pages
   useEffect(() => {
     const handleUnauthError = (event) => {
       const msg = String(event?.reason?.message || event?.reason || '');
@@ -34,57 +67,33 @@ export default function PublicPageShell({ children, noIndex }) {
         console.debug('[PublicPageShell] Suppressed 401 on public page');
       }
     };
-    
     window.addEventListener('unhandledrejection', handleUnauthError);
     return () => window.removeEventListener('unhandledrejection', handleUnauthError);
   }, []);
-  
-  // Apply noindex + canonical for staging fallback (if redirect didn't fire yet)
+
+  // STAGING REDIRECT — runs on every render/navigation
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const host = window.location.hostname;
-    if (host.includes('base44.app')) {
-      // Force noindex,nofollow on staging
-      ['robots', 'googlebot'].forEach(name => {
-        let meta = document.querySelector(`meta[name="${name}"]`);
-        if (!meta) { meta = document.createElement('meta'); meta.setAttribute('name', name); document.head.appendChild(meta); }
-        meta.setAttribute('content', 'noindex,nofollow');
-      });
-      // Set canonical to production equivalent
-      const path = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
-      let canonical = document.querySelector('link[rel="canonical"]');
-      if (!canonical) { canonical = document.createElement('link'); canonical.rel = 'canonical'; document.head.appendChild(canonical); }
-      canonical.href = PRODUCTION_DOMAIN + path;
-    }
+    if (!isStaging()) return;
+
+    // Inject meta immediately (covers SPA navigation)
+    injectStagingMeta();
+
+    // Redirect to production equivalent
+    const path = normalizePath(window.location.pathname);
+    const target = PRODUCTION_DOMAIN + path;
+    setRedirecting(true);
+    window.location.replace(target);
   }, []);
 
-  // If staging redirect is in progress, render nothing
-  if (IS_STAGING_REDIRECT) return null;
+  // Block render while redirecting
+  if (redirecting || isStaging()) return null;
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] overflow-x-hidden">
-      {/* SEO robots meta for public pages */}
-      {!noIndex && typeof document !== 'undefined' && (() => {
-        const host = window.location.hostname;
-        const isStaging = host.includes('base44.app');
-        let meta = document.querySelector('meta[name="robots"]');
-        if (!meta) {
-          meta = document.createElement('meta');
-          meta.setAttribute('name', 'robots');
-          document.head.appendChild(meta);
-        }
-        meta.setAttribute('content', isStaging ? 'noindex,nofollow' : 'index,follow');
-      })()}
-      
-      {/* Header - visible on first paint */}
       <TubeHeader />
-      
-      {/* Main content area - always rendered, never blocked */}
       <main className="w-full">
         {children}
       </main>
-      
-      {/* Footer */}
       <TubeFooter />
     </div>
   );
