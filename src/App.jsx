@@ -101,17 +101,6 @@ import Imprint from './pages/Imprint';
 import CookiePolicy from './pages/CookiePolicy';
 import PublicPageShell from './components/PublicPageShell';
 
-// Staging redirect helper — used at top of AuthenticatedApp to catch ALL routes
-const PROD = 'https://fleshlab.online';
-const PATH_MAP = {
-  '/live': '/fanclub',
-  '/actors': '/performers',
-  '/newscenter': '/news',
-  '/howitworks': '/how-it-works',
-  '/gay-performer-recruitment': '/become-performer',
-  '/remote-adult-content-creator': '/become-performer',
-  '/guest-productions': '/guest-production',
-};
 const AuthenticatedApp = () => {
   useAuthRedirect();
   const { authError, isAuthenticated, user } = useAuth();
@@ -157,15 +146,6 @@ const AuthenticatedApp = () => {
   }, [path]);
 
 
-
-  // STAGING REDIRECT — intercepts ALL routes including non-PublicPageShell ones
-  // Runs on every render (path state changes trigger re-render), catches SPA navigation too
-  if (typeof window !== 'undefined' && window.location.hostname.includes('base44.app')) {
-    const lower = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
-    const mapped = PATH_MAP[lower] || lower;
-    window.location.replace(PROD + mapped);
-    return null;
-  }
 
   if (authError?.type === 'user_not_registered') {
     return <UserNotRegisteredError />;
