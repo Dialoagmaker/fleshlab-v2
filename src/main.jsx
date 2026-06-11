@@ -86,6 +86,6 @@ if (!IS_STAGING) {
     </RootErrorBoundary>
   );
 
-  // Initialize analytics on app startup (build: 2026-06-11)
+  // Initialize analytics on app startup
   initAnalytics();
 }
