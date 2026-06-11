@@ -112,13 +112,6 @@ const PATH_MAP = {
   '/remote-adult-content-creator': '/become-performer',
   '/guest-productions': '/guest-production',
 };
-function getStagingRedirectTarget() {
-  if (typeof window === 'undefined') return null;
-  if (!window.location.hostname.includes('base44.app')) return null;
-  const lower = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
-  return PROD + (PATH_MAP[lower] || lower);
-}
-
 const AuthenticatedApp = () => {
   useAuthRedirect();
   const { authError, isAuthenticated, user } = useAuth();
@@ -166,9 +159,11 @@ const AuthenticatedApp = () => {
 
 
   // STAGING REDIRECT — intercepts ALL routes including non-PublicPageShell ones
-  const stagingTarget = getStagingRedirectTarget();
-  if (stagingTarget) {
-    window.location.replace(stagingTarget);
+  // Runs on every render (path state changes trigger re-render), catches SPA navigation too
+  if (typeof window !== 'undefined' && window.location.hostname.includes('base44.app')) {
+    const lower = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+    const mapped = PATH_MAP[lower] || lower;
+    window.location.replace(PROD + mapped);
     return null;
   }
 
