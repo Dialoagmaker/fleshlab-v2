@@ -5,6 +5,27 @@
     <link rel="icon" type="image/x-icon" href="https://fleshlab.online/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="google-site-verification" content="BFPUkqmqDE2-nk-4msMvdcopKIlPWreM4_woWUrQs8E" />
+    <script>
+      (function() {
+        var TOKEN = 'BFPUkqmqDE2-nk-4msMvdcopKIlPWreM4_woWUrQs8E';
+        function fixTag() {
+          var tags = document.querySelectorAll('meta[name="google-site-verification"]');
+          if (tags.length === 0) {
+            var m = document.createElement('meta');
+            m.name = 'google-site-verification';
+            m.content = TOKEN;
+            document.head.appendChild(m);
+          } else {
+            tags.forEach(function(t) { t.content = TOKEN; });
+          }
+        }
+        fixTag();
+        // Watch for platform re-injections
+        var obs = new MutationObserver(fixTag);
+        obs.observe(document.head, { childList: true, subtree: true, attributes: true, attributeFilter: ['content'] });
+        document.addEventListener('DOMContentLoaded', function() { fixTag(); obs.disconnect(); });
+      })();
+    </script>
     <meta name="apple-mobile-web-app-title" content="FLESHLAB Studios" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <link rel="manifest" href="/manifest.json" />
