@@ -2,6 +2,30 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // STAGING REDIRECT — synchronous, runs before ANY resource loads
+      // Prevents base44.app from ever rendering the site
+      (function() {
+        if (!location.hostname.includes('base44.app')) return;
+        var MAP = {
+          '/live': '/fanclub', '/Live': '/fanclub',
+          '/actors': '/performers', '/Actors': '/performers',
+          '/newscenter': '/news', '/NewsCenter': '/news',
+          '/howitworks': '/how-it-works', '/HowItWorks': '/how-it-works',
+          '/gay-performer-recruitment': '/become-performer',
+          '/Gay-Performer-Recruitment': '/become-performer',
+          '/remote-adult-content-creator': '/become-performer',
+          '/Remote-Adult-Content-Creator': '/become-performer',
+          '/guest-productions': '/guest-production',
+          '/Videos': '/videos', '/Home': '/',
+          '/Brands': '/brands', '/Privacy': '/privacy'
+        };
+        var path = location.pathname.replace(/\/+$/, '') || '/';
+        var lower = path.toLowerCase();
+        var mapped = MAP[path] || MAP[lower] || lower;
+        location.replace('https://fleshlab.online' + mapped);
+      })();
+    </script>
     <link rel="icon" type="image/x-icon" href="https://fleshlab.online/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="google-site-verification" content="BFPUkqmqDE2-nk-4msMvdcopKIlPWreM4_woWUrQs8E" />
