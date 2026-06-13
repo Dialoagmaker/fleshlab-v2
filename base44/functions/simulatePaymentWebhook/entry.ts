@@ -385,7 +385,7 @@ Deno.serve(async (req) => {
       const expectedAmount = intent.amount;
       const expectedCurrency = (intent.currency || 'usd').toLowerCase();
       const actuallyPaid = simulatedPayload.actually_paid !== undefined ? simulatedPayload.actually_paid : intent.amount;
-      const paidCurrency = (simulatedPayload.pay_currency || 'usd').toLowerCase();
+      const paidCurrency = (simulatedPayload.price_currency || 'usd').toLowerCase();
 
       // Validate actually_paid
       if (actuallyPaid === undefined || actuallyPaid === null || isNaN(actuallyPaid)) {
@@ -459,23 +459,150 @@ Deno.serve(async (req) => {
         }),
       });
 
-      await grantEntitlement(base44, intent);
+      // ── BRANCH: wallet_topup vs standard entitlement ──────────────────────
+      if (intent.payment_type === 'wallet_topup') {
+        // ── FleshPay Wallet Top‑up Credit (simulated) ───────────────────────
+        const topupOrders = await base44.asServiceRole.entities.FleshPayTopupOrder.filter({
+          user_id: intent.user_id,
+          payment_intent_id: intent.id,
+        });
 
-      return Response.json({
-        success: true,
-        action: 'payment.completed',
-        intentId: paymentIntentId,
-        newStatus: 'completed',
-        entitlementGranted: true,
-        simulatedPayload,
-        verified: {
-          amount: actuallyPaid,
-          currency: paidCurrency,
-          expected_amount: expectedAmount,
-          expected_currency: expectedCurrency,
-        },
-        message: 'Payment marked as completed and entitlements granted (verified)',
-      });
+        if (topupOrders.length === 0) {
+          return Response.json({
+            success: false,
+            error: 'No matching FleshPayTopupOrder found',
+          });
+        }
+
+        const topupOrder = topupOrders[0];
+        const idempotencyKey = `nowpayments_${simulatedPayload.payment_id}_wallet_topup_credit`;
+
+        // IDEMPOTENCY CHECK
+        const existingLedger = await base44.asServiceRole.entities.FleshPayLedger.filter({
+          idempotency_key: idempotencyKey,
+        });
+
+        if (existingLedger.length > 0) {
+          console.log('[simulatePaymentWebhook] wallet_topup already credited — idempotent skip');
+          return Response.json({
+            success: true,
+            duplicate: true,
+            action: 'payment.completed',
+            entitlementGranted: false,
+            message: 'Wallet already credited — idempotent',
+            wallet_topup: { already_credited: true, ledger_entry_id: existingLedger[0].id },
+          });
+        }
+
+        // Get wallet
+        let wallets = await base44.asServiceRole.entities.FleshPayWallet.filter({ user_id: intent.user_id });
+        let wallet;
+        if (wallets.length === 0) {
+          wallet = await base44.asServiceRole.entities.FleshPayWallet.create({
+            user_id: intent.user_id,
+            balance_usd: 0,
+            currency: 'usd',
+            status: 'active',
+            lifetime_topups_usd: 0,
+            lifetime_spends_usd: 0,
+          });
+        } else {
+          wallet = wallets[0];
+        }
+
+        const topupAmount = intent.amount;
+        const balanceBefore = wallet.balance_usd;
+        const balanceAfter = balanceBefore + topupAmount;
+
+        // Create ledger entry
+        const ledgerEntry = await base44.asServiceRole.entities.FleshPayLedger.create({
+          wallet_id: wallet.id,
+          user_id: intent.user_id,
+          entry_type: 'credit',
+          transaction_type: 'credit',
+          amount_usd: topupAmount,
+          balance_before_usd: balanceBefore,
+          balance_after_usd: balanceAfter,
+          source_type: 'topup',
+          reference_type: 'topup',
+          source_id: topupOrder.id,
+          reference_id: topupOrder.id,
+          provider: 'nowpayments',
+          provider_transaction_id: simulatedPayload.payment_id,
+          idempotency_key: idempotencyKey,
+          status: 'completed',
+          description: `Wallet top-up — $${topupAmount} USD (SIMULATED)`,
+          metadata_json: JSON.stringify({
+            provider: 'nowpayments',
+            provider_payment_id: simulatedPayload.payment_id,
+            payment_intent_id: intent.id,
+            topup_order_id: topupOrder.id,
+            simulated: true,
+          }),
+        });
+
+        // Update wallet balance
+        await base44.asServiceRole.entities.FleshPayWallet.update(wallet.id, {
+          balance_usd: balanceAfter,
+          lifetime_topups_usd: wallet.lifetime_topups_usd + topupAmount,
+          lifetime_topup_usd: wallet.lifetime_topup_usd + topupAmount,
+          last_transaction_at: new Date().toISOString(),
+        });
+
+        // Update topup order
+        await base44.asServiceRole.entities.FleshPayTopupOrder.update(topupOrder.id, {
+          status: 'paid',
+          completed_at: new Date().toISOString(),
+          confirmed_at: new Date().toISOString(),
+          provider_payment_id: simulatedPayload.payment_id,
+          actually_paid: simulatedPayload.actually_paid,
+          amount_received_usd: topupAmount,
+          ipn_callback_raw: JSON.stringify(simulatedPayload),
+        });
+
+        return Response.json({
+          success: true,
+          action: 'payment.completed',
+          intentId: paymentIntentId,
+          newStatus: 'completed',
+          entitlementGranted: true,
+          wallet_topup: {
+            topup_order_id: topupOrder.id,
+            wallet_id: wallet.id,
+            amount_usd: topupAmount,
+            balance_before_usd: balanceBefore,
+            balance_after_usd: balanceAfter,
+            ledger_entry_id: ledgerEntry.id,
+          },
+          simulatedPayload,
+          verified: {
+            amount: actuallyPaid,
+            currency: paidCurrency,
+            expected_amount: expectedAmount,
+            expected_currency: expectedCurrency,
+          },
+          message: 'Wallet credited via simulated webhook',
+        });
+      } else {
+        // ── Standard entitlement (PPV / fanclub / guest production) ─────────
+        await grantEntitlement(base44, intent);
+
+        return Response.json({
+          success: true,
+          action: 'payment.completed',
+          intentId: paymentIntentId,
+          newStatus: 'completed',
+          entitlementGranted: true,
+          simulatedPayload,
+          verified: {
+            amount: actuallyPaid,
+            currency: paidCurrency,
+            expected_amount: expectedAmount,
+            expected_currency: expectedCurrency,
+          },
+          message: 'Payment marked as completed and entitlements granted (verified)',
+        });
+      }
 
     } else if (eventType === 'payment.failed') {
       await base44.asServiceRole.entities.PaymentIntent.update(paymentIntentId, {
