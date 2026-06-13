@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import SEOMeta from "@/components/SEOMeta";
 import {
-  Wallet, Search, ArrowUpRight, ArrowDownLeft,
-  ExternalLink, Shield, RefreshCw
+  Wallet, Search, ExternalLink, Shield, RefreshCw, AlertTriangle,
 } from "lucide-react";
 
 export default function AdminWalletList() {
@@ -21,6 +20,9 @@ export default function AdminWalletList() {
   const [selectedLedger, setSelectedLedger] = useState([]);
   const [selectedPurchases, setSelectedPurchases] = useState([]);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [reconData, setReconData] = useState(null);
+  const [reconLoading, setReconLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     loadWallets();
@@ -28,10 +30,14 @@ export default function AdminWalletList() {
 
   const loadWallets = async () => {
     try {
-      const all = await base44.entities.FleshPayWallet.list("-updated_date", 100);
-      setWallets(all);
+      setLoading(true);
+      setError(null);
+      // Server-side admin check — uses adminListWallets function
+      const response = await base44.functions.invoke("adminListWallets", {});
+      setWallets(response.data.wallets || []);
     } catch (err) {
       console.error("Failed to load wallets:", err);
+      setError("Access denied or load failed. Admin access required.");
     }
     setLoading(false);
   };
@@ -40,16 +46,28 @@ export default function AdminWalletList() {
     setSelectedWallet(wallet);
     setDetailLoading(true);
     try {
-      const [ledger, purchases] = await Promise.all([
-        base44.entities.FleshPayLedger.filter({ wallet_id: wallet.id }, "-created_date", 30),
-        base44.entities.FleshPayPurchase.filter({ wallet_id: wallet.id }, "-created_date", 30),
-      ]);
-      setSelectedLedger(ledger);
-      setSelectedPurchases(purchases);
+      const response = await base44.functions.invoke("adminListWallets", {
+        walletId: wallet.id,
+        includeLedger: true,
+        includePurchases: true,
+      });
+      setSelectedLedger(response.data.ledger || []);
+      setSelectedPurchases(response.data.purchases || []);
     } catch (err) {
       console.error("Failed to load wallet details:", err);
     }
     setDetailLoading(false);
+  };
+
+  const runReconciliation = async () => {
+    setReconLoading(true);
+    try {
+      const response = await base44.functions.invoke("adminWalletReconciliation", {});
+      setReconData(response.data);
+    } catch (err) {
+      console.error("Reconciliation failed:", err);
+    }
+    setReconLoading(false);
   };
 
   const filtered = wallets.filter((w) => {
@@ -67,14 +85,96 @@ export default function AdminWalletList() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <SEOMeta title="Admin - Wallets" noIndex={true} />
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Shield className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <p className="text-foreground font-semibold mb-2">{error}</p>
+            <Button variant="outline" onClick={loadWallets} className="gap-1">
+              <RefreshCw className="w-3 h-3" /> Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <>
       <SEOMeta title="Admin - Wallets" noIndex={true} />
       <div className="min-h-screen bg-background">
         <div className="max-w-[1600px] mx-auto px-4 py-8">
-          <h1 className="text-2xl font-bold text-foreground mb-6 flex items-center gap-2">
-            <Shield className="w-6 h-6 text-primary" /> FleshPay Wallets
-          </h1>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <Shield className="w-6 h-6 text-primary" /> FleshPay Wallets
+            </h1>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={runReconciliation}
+              disabled={reconLoading}
+              className="gap-1"
+            >
+              <AlertTriangle className="w-3 h-3" />
+              {reconLoading ? "Running..." : "Reconciliation Check"}
+            </Button>
+          </div>
+
+          {/* Reconciliation Results */}
+          {reconData && (
+            <Card className="mb-6 border-amber-500/30 bg-amber-500/5">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-500" />
+                  Reconciliation Results
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-2 md:grid-cols-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Wallets:</span>{" "}
+                    <span className="font-bold">{reconData.summary.total_wallets}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Balance Errors:</span>{" "}
+                    <span className={`font-bold ${reconData.summary.total_errors > 0 ? "text-red-500" : "text-green-400"}`}>
+                      {reconData.summary.total_errors}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Warnings:</span>{" "}
+                    <span className={`font-bold ${reconData.summary.total_warnings > 0 ? "text-amber-500" : "text-green-400"}`}>
+                      {reconData.summary.total_warnings}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Test Flag Issues:</span>{" "}
+                    <span className={`font-bold ${reconData.summary.test_flag_warnings > 0 ? "text-amber-500" : "text-green-400"}`}>
+                      {reconData.summary.test_flag_warnings}
+                    </span>
+                  </div>
+                </div>
+                {(reconData.global_warnings?.payment_without_earning?.length > 0 ||
+                  reconData.global_warnings?.test_earnings_not_flagged?.length > 0) && (
+                  <div className="mt-4 space-y-2">
+                    {reconData.global_warnings.payment_without_earning.map((w, i) => (
+                      <div key={i} className="text-xs text-amber-400 p-2 bg-amber-500/10 rounded">
+                        {w.message}
+                      </div>
+                    ))}
+                    {reconData.global_warnings.test_earnings_not_flagged.map((w, i) => (
+                      <div key={`t${i}`} className="text-xs text-amber-400 p-2 bg-amber-500/10 rounded">
+                        {w.message}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           <div className="flex items-center gap-4 mb-4">
             <div className="relative flex-1 max-w-sm">
@@ -208,7 +308,9 @@ export default function AdminWalletList() {
                                 </td>
                                 <td className="p-2 text-right font-bold">${p.amount_usd?.toFixed(2)}</td>
                                 <td className="p-2">
-                                  <Badge variant="outline" className="text-xs">{p.status}</Badge>
+                                  <Badge variant={p.status === "completed" ? "default" : p.status === "pending" ? "outline" : "destructive"} className="text-xs">
+                                    {p.status}
+                                  </Badge>
                                 </td>
                               </tr>
                             ))}
