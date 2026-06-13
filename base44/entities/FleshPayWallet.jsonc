@@ -1,0 +1,53 @@
+{
+  "name": "FleshPayWallet",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "title": "User ID",
+      "description": "The user who owns this wallet"
+    },
+    "balance_usd": {
+      "type": "number",
+      "title": "Balance (USD)",
+      "default": 0,
+      "description": "Current available balance in USD"
+    },
+    "lifetime_topup_usd": {
+      "type": "number",
+      "title": "Lifetime Top\u2011up (USD)",
+      "default": 0,
+      "description": "Total USD ever topped up into this wallet"
+    },
+    "lifetime_spent_usd": {
+      "type": "number",
+      "title": "Lifetime Spent (USD)",
+      "default": 0,
+      "description": "Total USD ever spent from this wallet"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "frozen",
+        "closed"
+      ],
+      "title": "Status",
+      "default": "active"
+    },
+    "last_transaction_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last Transaction At"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes",
+      "format": "textarea",
+      "description": "Internal admin notes"
+    }
+  },
+  "required": [
+    "user_id"
+  ]
+}

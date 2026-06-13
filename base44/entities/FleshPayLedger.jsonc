@@ -1,0 +1,70 @@
+{
+  "name": "FleshPayLedger",
+  "type": "object",
+  "properties": {
+    "wallet_id": {
+      "type": "string",
+      "title": "Wallet ID",
+      "description": "Link to the FleshPayWallet record"
+    },
+    "user_id": {
+      "type": "string",
+      "title": "User ID",
+      "description": "Denormalised for convenient querying"
+    },
+    "entry_type": {
+      "type": "string",
+      "enum": [
+        "credit",
+        "debit"
+      ],
+      "title": "Entry Type"
+    },
+    "amount_usd": {
+      "type": "number",
+      "title": "Amount (USD)",
+      "description": "Always positive \u2013 entry_type determines direction"
+    },
+    "balance_before_usd": {
+      "type": "number",
+      "title": "Balance Before (USD)",
+      "description": "Wallet balance snapshot before this entry"
+    },
+    "balance_after_usd": {
+      "type": "number",
+      "title": "Balance After (USD)",
+      "description": "Wallet balance snapshot after this entry"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "topup",
+        "ppv_unlock",
+        "fanclub",
+        "guest_production_deposit",
+        "manual_adjustment",
+        "refund"
+      ],
+      "title": "Source Type"
+    },
+    "source_id": {
+      "type": "string",
+      "title": "Source ID",
+      "description": "Reference to the source record (FleshPayTopupOrder, FleshPayPurchase, etc.)"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "description": "Human\u2011readable description of this ledger entry"
+    }
+  },
+  "required": [
+    "wallet_id",
+    "user_id",
+    "entry_type",
+    "amount_usd",
+    "balance_before_usd",
+    "balance_after_usd",
+    "source_type"
+  ]
+}

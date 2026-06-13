@@ -1,0 +1,76 @@
+{
+  "name": "FleshPayPurchase",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "title": "User ID",
+      "description": "User who made the purchase"
+    },
+    "wallet_id": {
+      "type": "string",
+      "title": "Wallet ID",
+      "description": "Wallet the balance was debited from"
+    },
+    "ledger_entry_id": {
+      "type": "string",
+      "title": "Ledger Entry ID",
+      "description": "Link to the debit FleshPayLedger entry"
+    },
+    "purchase_type": {
+      "type": "string",
+      "enum": [
+        "ppv_unlock",
+        "fanclub",
+        "guest_production_deposit"
+      ],
+      "title": "Purchase Type",
+      "default": "ppv_unlock"
+    },
+    "video_id": {
+      "type": "string",
+      "title": "Video ID",
+      "description": "For PPV unlocks"
+    },
+    "fanclub_id": {
+      "type": "string",
+      "title": "Fanclub ID",
+      "description": "For fanclub subscriptions"
+    },
+    "application_id": {
+      "type": "string",
+      "title": "Application ID",
+      "description": "For guest production deposits"
+    },
+    "amount_usd": {
+      "type": "number",
+      "title": "Amount (USD)",
+      "description": "Amount spent from the wallet"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "completed",
+        "refunded"
+      ],
+      "title": "Status",
+      "default": "completed"
+    },
+    "metadata": {
+      "type": "string",
+      "title": "Metadata (JSON)",
+      "description": "Extra context \u2013 video title, performer name, etc."
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes",
+      "format": "textarea"
+    }
+  },
+  "required": [
+    "user_id",
+    "purchase_type",
+    "amount_usd"
+  ]
+}
