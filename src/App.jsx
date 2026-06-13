@@ -239,8 +239,10 @@ const AuthenticatedApp = () => {
   if (path === "/Videos") return <Navigate to="/videos" replace />;
   if (path === "/Home") return <Navigate to="/" replace />;
   if (path === "/Actors") return <Navigate to="/performers" replace />;
-  if (path === "/Gay-Performer-Recruitment") return <Navigate to="/become-performer" replace />;
+  if (path === "/Gay-Performer-Recruitment") return <Navigate to="/gay-performer-recruitment-philippines" replace />;
+  if (path === "/Gay-Adult-Content-Creator") return <Navigate to="/become-performer" replace />;
   if (path === "/Remote-Adult-Content-Creator") return <Navigate to="/become-performer" replace />;
+  if (path === "/Imprint") return <Navigate to="/imprint" replace />;
   if (path === "/guest-productions") return <Navigate to="/guest-production" replace />;
   if (path === "/NewsCenter") return <Navigate to="/news" replace />;
   if (path === "/Brands") return <Navigate to="/brands" replace />;

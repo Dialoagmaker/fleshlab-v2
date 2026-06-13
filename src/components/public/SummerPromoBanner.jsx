@@ -1,9 +1,14 @@
 import { Link } from "react-router-dom";
 import { useI18n } from "@/i18n/i18n.jsx";
 import { Crown, Play, Shield } from "lucide-react";
+import { trackFanclubCtaClick } from "@/lib/analytics";
 
 export default function SummerPromoBanner() {
   const { t } = useI18n();
+
+  const handleFanclubClick = () => {
+    trackFanclubCtaClick('general', 'general', 'homepage_hero');
+  };
   return (
     <section className="relative w-full overflow-hidden" style={{minHeight: 'clamp(480px, 65vh, 620px)'}}>
       {/* Background Image */}
@@ -80,6 +85,7 @@ export default function SummerPromoBanner() {
           <div className="flex flex-col sm:flex-row items-start gap-3 mb-5">
             <Link
               to="/fanclub"
+              onClick={handleFanclubClick}
               className="w-full sm:w-auto bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black text-sm sm:text-base px-7 sm:px-9 py-3.5 sm:py-4 rounded-xl shadow-xl shadow-rose-600/40 transition-all border-0 leading-none"
             >
               {t('homepage.joinFanclub')}
