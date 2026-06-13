@@ -1,5 +1,7 @@
 # robots.txt for FLESHLAB Studios
-# Updated: 2026-06-09
+# Production domain: fleshlab.online
+# Staging (base44.app): blocked via meta noindex + X-Robots-Tag headers
+# Updated: 2026-06-13
 
 User-agent: *
 
@@ -19,31 +21,31 @@ Disallow: /forgot-password
 Disallow: /reset-password
 Disallow: /performerlogin
 
-# Explicitly allow all public SEO routes
-Allow: /
-Allow: /videos
+# Allow canonical public SEO routes
+Allow: /$
+Allow: /videos$
 Allow: /videos/
-Allow: /performers
+Allow: /performers$
 Allow: /performers/
-Allow: /news
+Allow: /news$
 Allow: /news/
-Allow: /brands
+Allow: /brands$
 Allow: /brands/
-Allow: /fanclub
-Allow: /fan-productions
-Allow: /guest-production
-Allow: /become-performer
-Allow: /gay-performer-recruitment-philippines
-Allow: /chaturbate-model-join-studio
-Allow: /gay-onlyfans-alternative
-Allow: /how-it-works
-Allow: /faq
-Allow: /terms
-Allow: /privacy
-Allow: /dmca
-Allow: /2257
-Allow: /imprint
-Allow: /cookie-policy
+Allow: /fanclub$
+Allow: /fan-productions$
+Allow: /guest-production$
+Allow: /become-performer$
+Allow: /gay-performer-recruitment-philippines$
+Allow: /gay-twink-performer-recruitment$
+Allow: /chaturbate-model-join-studio$
+Allow: /gay-onlyfans-alternative$
+Allow: /how-it-works$
+Allow: /faq$
+Allow: /terms$
+Allow: /privacy$
+Allow: /dmca$
+Allow: /2257$
+Allow: /imprint$
+Allow: /cookie-policy$
 
-# Sitemap
 Sitemap: https://fleshlab.online/api/functions/sitemapXml
