@@ -15,7 +15,7 @@
     "payment_intent_id": {
       "type": "string",
       "title": "Payment Intent ID",
-      "description": "Link to the PaymentIntent record"
+      "description": "Link to the PaymentIntent record. Also serves as provider_session_id \u2013 PaymentIntent.provider_session_id carries the NOWPayments payment_id."
     },
     "amount_usd": {
       "type": "number",
@@ -52,22 +52,15 @@
       "title": "Provider Invoice ID",
       "description": "NOWPayments invoice_id"
     },
-    "status": {
+    "provider_checkout_url": {
       "type": "string",
-      "enum": [
-        "pending",
-        "confirming",
-        "paid",
-        "expired",
-        "failed"
-      ],
-      "title": "Status",
-      "default": "pending"
+      "title": "Provider Checkout URL",
+      "description": "NOWPayments hosted checkout page. Alias for checkout_url \u2013 both fields are written in sync."
     },
     "checkout_url": {
       "type": "string",
       "title": "Checkout URL",
-      "description": "NOWPayments hosted checkout page"
+      "description": "Primary field \u2013 provider_checkout_url is kept in sync automatically"
     },
     "pay_address": {
       "type": "string",
@@ -89,15 +82,34 @@
       "title": "Amount Received (USD)",
       "description": "USD equivalent of what was actually received"
     },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirming",
+        "paid",
+        "expired",
+        "failed"
+      ],
+      "title": "Status",
+      "default": "pending"
+    },
     "expires_at": {
       "type": "string",
       "format": "date-time",
       "title": "Expires At"
     },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Completed At",
+      "description": "Timestamp when payment was fully confirmed and wallet was credited. Replaces confirmed_at for consistency with PaymentIntent naming."
+    },
     "confirmed_at": {
       "type": "string",
       "format": "date-time",
-      "title": "Confirmed At"
+      "title": "Confirmed At [Legacy]",
+      "description": "DEPRECATED \u2013 use completed_at instead. Kept for backwards compat only, written in sync with completed_at."
     },
     "ipn_callback_raw": {
       "type": "string",

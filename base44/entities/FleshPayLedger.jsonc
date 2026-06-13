@@ -12,13 +12,19 @@
       "title": "User ID",
       "description": "Denormalised for convenient querying"
     },
+    "transaction_type": {
+      "type": "string",
+      "title": "Transaction Type",
+      "description": "Alias for entry_type \u2013 both fields are written in sync. Use whichever your code prefers."
+    },
     "entry_type": {
       "type": "string",
       "enum": [
         "credit",
         "debit"
       ],
-      "title": "Entry Type"
+      "title": "Entry Type",
+      "description": "Primary field \u2013 transaction_type is kept in sync automatically"
     },
     "amount_usd": {
       "type": "number",
@@ -35,6 +41,11 @@
       "title": "Balance After (USD)",
       "description": "Wallet balance snapshot after this entry"
     },
+    "reference_type": {
+      "type": "string",
+      "title": "Reference Type",
+      "description": "Alias for source_type \u2013 both fields are written in sync"
+    },
     "source_type": {
       "type": "string",
       "enum": [
@@ -45,17 +56,59 @@
         "manual_adjustment",
         "refund"
       ],
-      "title": "Source Type"
+      "title": "Source Type",
+      "description": "Primary field \u2013 reference_type is kept in sync automatically"
+    },
+    "reference_id": {
+      "type": "string",
+      "title": "Reference ID",
+      "description": "Alias for source_id \u2013 both fields are written in sync"
     },
     "source_id": {
       "type": "string",
       "title": "Source ID",
-      "description": "Reference to the source record (FleshPayTopupOrder, FleshPayPurchase, etc.)"
+      "description": "Primary field \u2013 reference_id is kept in sync automatically. References FleshPayTopupOrder, FleshPayPurchase, etc."
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "nowpayments",
+        "ccbill",
+        "segpay",
+        "internal"
+      ],
+      "title": "Provider",
+      "description": "Payment provider that triggered this ledger entry, or 'internal' for manual/system adjustments"
+    },
+    "provider_transaction_id": {
+      "type": "string",
+      "title": "Provider Transaction ID",
+      "description": "Provider-side transaction identifier (e.g. NOWPayments payment_id)"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "title": "Idempotency Key",
+      "description": "REQUIRED \u2013 unique key to prevent duplicate ledger entries. Format: {provider}_{payment_id}_{event_type}. Base44 does NOT enforce uniqueness at schema level \u2013 backend functions MUST check for existing entries with this key before creating a new ledger entry."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "completed",
+        "reversed"
+      ],
+      "title": "Status",
+      "default": "completed"
     },
     "description": {
       "type": "string",
       "title": "Description",
       "description": "Human\u2011readable description of this ledger entry"
+    },
+    "metadata_json": {
+      "type": "string",
+      "title": "Metadata (JSON)",
+      "description": "Arbitrary JSON payload for extensibility \u2013 raw webhook data, debug info, etc."
     }
   },
   "required": [
@@ -65,6 +118,7 @@
     "amount_usd",
     "balance_before_usd",
     "balance_after_usd",
-    "source_type"
+    "source_type",
+    "idempotency_key"
   ]
 }

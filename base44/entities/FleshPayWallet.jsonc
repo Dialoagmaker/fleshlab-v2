@@ -13,17 +13,35 @@
       "default": 0,
       "description": "Current available balance in USD"
     },
+    "currency": {
+      "type": "string",
+      "title": "Currency",
+      "default": "usd",
+      "description": "ISO currency code for the wallet balance"
+    },
+    "lifetime_topups_usd": {
+      "type": "number",
+      "title": "Lifetime Top\u2011ups (USD)",
+      "default": 0,
+      "description": "Total USD ever topped up into this wallet (plural \u2013 preferred field name for new code)"
+    },
+    "lifetime_spends_usd": {
+      "type": "number",
+      "title": "Lifetime Spends (USD)",
+      "default": 0,
+      "description": "Total USD ever spent from this wallet (plural \u2013 preferred field name for new code)"
+    },
     "lifetime_topup_usd": {
       "type": "number",
-      "title": "Lifetime Top\u2011up (USD)",
+      "title": "Lifetime Top\u2011up (USD) [Legacy]",
       "default": 0,
-      "description": "Total USD ever topped up into this wallet"
+      "description": "DEPRECATED \u2013 use lifetime_topups_usd instead. Kept for backwards compat only."
     },
     "lifetime_spent_usd": {
       "type": "number",
-      "title": "Lifetime Spent (USD)",
+      "title": "Lifetime Spent (USD) [Legacy]",
       "default": 0,
-      "description": "Total USD ever spent from this wallet"
+      "description": "DEPRECATED \u2013 use lifetime_spends_usd instead. Kept for backwards compat only."
     },
     "status": {
       "type": "string",

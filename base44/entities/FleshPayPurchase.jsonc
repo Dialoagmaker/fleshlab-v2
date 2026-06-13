@@ -25,27 +25,53 @@
         "guest_production_deposit"
       ],
       "title": "Purchase Type",
-      "default": "ppv_unlock"
+      "description": "Primary field for product type (alias: product_type is kept in sync automatically)"
+    },
+    "product_type": {
+      "type": "string",
+      "title": "Product Type",
+      "description": "Alias for purchase_type \u2013 both fields are written in sync"
     },
     "video_id": {
       "type": "string",
       "title": "Video ID",
-      "description": "For PPV unlocks"
+      "description": "For PPV unlocks \u2013 also serves as product_id when purchase_type = ppv_unlock"
     },
     "fanclub_id": {
       "type": "string",
       "title": "Fanclub ID",
-      "description": "For fanclub subscriptions"
+      "description": "For fanclub subscriptions \u2013 also serves as product_id when purchase_type = fanclub"
     },
     "application_id": {
       "type": "string",
       "title": "Application ID",
-      "description": "For guest production deposits"
+      "description": "For guest production deposits \u2013 also serves as product_id when purchase_type = guest_production_deposit"
+    },
+    "product_id": {
+      "type": "string",
+      "title": "Product ID",
+      "description": "Generic product reference \u2013 always written in sync with the relevant typed field (video_id, fanclub_id, or application_id) based on purchase_type"
     },
     "amount_usd": {
       "type": "number",
       "title": "Amount (USD)",
       "description": "Amount spent from the wallet"
+    },
+    "currency": {
+      "type": "string",
+      "title": "Currency",
+      "default": "usd"
+    },
+    "access_granted": {
+      "type": "boolean",
+      "title": "Access Granted",
+      "default": false,
+      "description": "Whether the purchased content has been unlocked for the user"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "title": "Idempotency Key",
+      "description": "REQUIRED \u2013 unique key to prevent duplicate purchases. Format: {user_id}_{purchase_type}_{product_id}. Base44 does NOT enforce uniqueness at schema level \u2013 spendFleshPayBalance MUST check for existing purchases with this key before creating a new one."
     },
     "status": {
       "type": "string",
@@ -71,6 +97,7 @@
   "required": [
     "user_id",
     "purchase_type",
-    "amount_usd"
+    "amount_usd",
+    "idempotency_key"
   ]
 }
