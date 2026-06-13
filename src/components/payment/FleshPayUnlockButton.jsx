@@ -69,9 +69,10 @@ export default function FleshPayUnlockButton({
   }
 
   const balance = wallet?.balance_usd || 0;
-  // Price is estimated from standard tier — actual price resolved server-side
-  const estimatedPrice = 20.99;
-  const hasEnough = balance >= estimatedPrice;
+  // Price is resolved server-side — client never controls it.
+  // Show "Unlock with FleshPay" without an estimated price to avoid
+  // misleading the user. The server will confirm the exact price.
+  const hasEnough = balance > 0; // Show unlock button if user has any balance
 
   return (
     <div
@@ -102,14 +103,14 @@ export default function FleshPayUnlockButton({
                 className="w-full bg-primary hover:bg-primary/90 text-sm gap-2"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
-                Unlock with FleshPay Balance — ${estimatedPrice.toFixed(2)}
+                Unlock with FleshPay Balance
               </Button>
               {error && <p className="text-red-400 text-xs text-center">{error}</p>}
             </>
           ) : (
             <>
               <p className="text-xs text-muted-foreground">
-                You need ${(estimatedPrice - balance).toFixed(2)} more.
+                Add funds to unlock this video.
               </p>
               <div className="flex gap-2">
                 <Button

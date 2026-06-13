@@ -69,6 +69,11 @@ Deno.serve(async (req) => {
     }
 
     // ── Resolve price server-side ─────────────────────────────────────────
+    // Valid price sources (checked in order):
+    //   1. video.download_price  — explicit schema field
+    //   2. ai_metadata_draft.ppv_price  — AI-generated metadata
+    // If neither source provides a valid price (> 0), the purchase is REJECTED.
+    // No hardcoded default — every PPV video MUST have a configured price.
     let price = null;
 
     // 1. Explicit download_price field
@@ -76,7 +81,7 @@ Deno.serve(async (req) => {
       price = video.download_price;
     }
 
-    // 2. AI metadata ppv_price (most common for current videos)
+    // 2. AI metadata ppv_price
     if (!price && video.ai_metadata_draft) {
       try {
         const aiMeta = JSON.parse(video.ai_metadata_draft);
@@ -86,9 +91,11 @@ Deno.serve(async (req) => {
       } catch { /* ignore parse errors */ }
     }
 
-    // 3. Default to standard PPV tier
     if (!price) {
-      price = SERVER_PRICING.ppv.standard;
+      return Response.json({
+        error: 'No valid PPV price configured',
+        detail: 'This video has no download_price or ai_metadata_draft.ppv_price set.',
+      }, { status: 400 });
     }
 
     // ── Idempotency check ─────────────────────────────────────────────────
