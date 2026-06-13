@@ -1,6 +1,5 @@
 # robots.txt for FLESHLAB Studios
 # Production domain: fleshlab.online
-# Staging (base44.app): blocked via meta noindex + X-Robots-Tag headers
 # Updated: 2026-06-13
 
 User-agent: *
