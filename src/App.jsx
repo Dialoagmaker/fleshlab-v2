@@ -15,6 +15,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import Wallet from './pages/Wallet';
+import AdminWallets from './pages/admin/Wallets';
 // Add page imports here
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
@@ -206,6 +208,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/payout-closeouts" element={<PayoutCloseouts />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
                 <Route path="/admin/users/:id" element={<AdminUserDetail />} />
+                <Route path="/admin/wallets" element={<AdminWallets />} />
               </Route>
             </Route>
           </Route>
@@ -446,6 +449,10 @@ const AuthenticatedApp = () => {
       <Route path="/brands/:slug" element={<PublicPageShell><BrandDetail /></PublicPageShell>} />
       <Route path="/fan-productions" element={<PublicPageShell><FanProductions /></PublicPageShell>} />
       <Route path="/fan-productions/request" element={<PublicPageShell noIndex={true}><FanProductionRequest /></PublicPageShell>} />
+      {/* FleshPay Wallet — auth required, noindex */}
+      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route path="/wallet" element={<PublicPageShell noIndex={true}><Wallet /></PublicPageShell>} />
+      </Route>
       <Route path="/client/dashboard" element={
         <PublicPageShell noIndex={true}>
           <ClientDashboardGuard>

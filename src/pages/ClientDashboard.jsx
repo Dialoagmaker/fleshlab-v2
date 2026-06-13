@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Plus, LogOut } from "lucide-react";
+import { User, Plus, LogOut, Wallet as WalletIcon, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
@@ -17,6 +17,7 @@ import MessagesTab from "@/components/clientDashboard/MessagesTab";
 import ProfileTab from "@/components/clientDashboard/ProfileTab";
 import VerificationTab from "@/components/clientDashboard/VerificationTab";
 import SecurityTab from "@/components/clientDashboard/SecurityTab";
+import WalletTab from "@/components/clientDashboard/WalletTab";
 
 function getInitialTab() {
   const params = new URLSearchParams(window.location.search);
@@ -191,6 +192,7 @@ export default function ClientDashboard() {
               {activeTab === "profile"          && <ProfileTab user={user} requests={requests} />}
               {activeTab === "verification"     && <VerificationTab requests={requests} />}
               {activeTab === "security"         && <SecurityTab user={user} />}
+              {activeTab === "wallet"          && <WalletTab />}
             </div>
           </div>
         </div>

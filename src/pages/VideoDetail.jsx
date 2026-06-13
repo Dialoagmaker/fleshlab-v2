@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useAccessControl, PRICING } from "@/lib/useAccessControl";
 import { usePaymentProvider } from "@/hooks/usePaymentProvider";
 import CheckoutButton from "@/components/payment/CheckoutButton";
+import FleshPayUnlockButton from "@/components/payment/FleshPayUnlockButton";
 import SEOMeta from "@/components/SEOMeta";
 import VideoRail from "@/components/public/VideoRail";
 import PerformerSection from "@/components/public/PerformerSection";
@@ -567,19 +568,29 @@ export default function VideoDetail() {
                   </p>
                   {unlockError && <p className="text-red-400 text-xs mb-2">{unlockError}</p>}
                   {video.access_tier === 'ppv' ? (
-                    <CheckoutButton
-                      paymentType="ppv"
-                      videoId={video.id}
-                      priceTier="standard"
-                      label={isAuthenticated ? 'Unlock Full Scene' : 'Create Account to Unlock'}
-                      returnUrl={`/videos/${video.slug}`}
-                      cancelUrl={`/videos/${video.slug}`}
-                      isAuthenticated={isAuthenticated}
-                      onRequireAuth={() => requireSignup(window.location.pathname, 'ppv', { videoId: video.id, videoSlug: video.slug, priceTier: 'standard' })}
-                      paymentProvider={paymentProvider}
-                      className="w-full bg-primary hover:bg-primary/90 text-sm"
-                      unavailableLabel="PPV checkout coming soon"
-                    />
+                    <div className="space-y-3">
+                      <CheckoutButton
+                        paymentType="ppv"
+                        videoId={video.id}
+                        priceTier="standard"
+                        label={isAuthenticated ? 'Unlock Full Scene' : 'Create Account to Unlock'}
+                        returnUrl={`/videos/${video.slug}`}
+                        cancelUrl={`/videos/${video.slug}`}
+                        isAuthenticated={isAuthenticated}
+                        onRequireAuth={() => requireSignup(window.location.pathname, 'ppv', { videoId: video.id, videoSlug: video.slug, priceTier: 'standard' })}
+                        paymentProvider={paymentProvider}
+                        className="w-full bg-primary hover:bg-primary/90 text-sm"
+                        unavailableLabel="PPV checkout coming soon"
+                      />
+                      {isAuthenticated && (
+                        <FleshPayUnlockButton
+                          videoId={video.id}
+                          videoTitle={video.title}
+                          isAuthenticated={isAuthenticated}
+                          onRequireAuth={() => requireSignup(window.location.pathname, 'ppv', { videoId: video.id, videoSlug: video.slug, priceTier: 'standard' })}
+                        />
+                      )}
+                    </div>
                   ) : video.access_tier === 'fanclub' ? (
                     <CheckoutButton
                       paymentType="fanclub"
