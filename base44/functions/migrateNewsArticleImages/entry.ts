@@ -9,7 +9,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 const BASE44_PATTERN = /^https:\/\/base44\.app\/api\/apps\/[a-f0-9]+\/files\//;
-const BATCH_SIZE = 3;
+const BATCH_SIZE = 1;
 
 Deno.serve(async (req) => {
   try {
@@ -36,8 +36,8 @@ Deno.serve(async (req) => {
         const downloadResp = await fetch(article.cover_image_url);
         if (!downloadResp.ok) { results.failed++; results.details.push({ slug: article.slug, error: `Download failed: ${downloadResp.status}` }); continue; }
 
-        const bytes = new Uint8Array(await downloadResp.arrayBuffer());
-        const uploadResp = await base44.asServiceRole.integrations.Core.UploadFile({ file: bytes });
+        const blob = await downloadResp.blob();
+        const uploadResp = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
 
         if (!uploadResp.file_url) { results.failed++; results.details.push({ slug: article.slug, error: 'No file_url' }); continue; }
 
