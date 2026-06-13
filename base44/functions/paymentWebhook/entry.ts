@@ -912,64 +912,249 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Grant entitlement — ONLY here, ONLY after verified completed event
-      // grantEntitlement() is now idempotent and will check for existing records
-      const grantResult = await grantEntitlement(base44, { ...intent, id: intent.id });
-      
-      if (!grantResult.ok) {
-        console.error('[paymentWebhook] Entitlement grant failed:', grantResult.error);
+      // ── BRANCH: wallet_topup vs standard entitlement ──────────────────────
+
+      if (intent.payment_type === 'wallet_topup') {
+        // ── FleshPay Wallet Top‑up Credit ──────────────────────────────────
+        const topupOrders = await base44.asServiceRole.entities.FleshPayTopupOrder.filter({
+          user_id: intent.user_id,
+          payment_intent_id: intent.id,
+        });
+
+        if (topupOrders.length === 0) {
+          console.warn('[paymentWebhook] wallet_topup — no matching FleshPayTopupOrder for intent:', intent.id);
+          await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+            payment_intent_id: intent.id,
+            user_id: intent.user_id,
+            product_type: 'wallet_topup',
+            error_message: 'No matching FleshPayTopupOrder found',
+            processed: true,
+            processed_at: new Date().toISOString(),
+          });
+          return Response.json({ success: false, error: 'No matching topup order' });
+        }
+
+        const topupOrder = topupOrders[0];
+        const idempotencyKey = `nowpayments_${event.paymentId}_wallet_topup_credit`;
+
+        // IDEMPOTENCY CHECK: Prevent duplicate wallet credits
+        const existingLedger = await base44.asServiceRole.entities.FleshPayLedger.filter({
+          idempotency_key: idempotencyKey,
+        });
+
+        if (existingLedger.length > 0) {
+          console.log('[paymentWebhook] wallet_topup already credited — idempotent skip:', {
+            topupOrderId: topupOrder.id,
+            existingLedgerId: existingLedger[0].id,
+          });
+          await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+          });
+          await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+            payment_intent_id: intent.id,
+            user_id: intent.user_id,
+            product_type: 'wallet_topup',
+            normalized_status: event.normalizedStatus,
+            verification_details: JSON.stringify(verificationDetails),
+            processed: true,
+            entitlement_granted: false,
+            entitlement_duplicate: true,
+            processed_at: new Date().toISOString(),
+          });
+          return Response.json({
+            success: true,
+            duplicate: true,
+            message: 'Wallet already credited — idempotent',
+          });
+        }
+
+        // Get or create wallet
+        let wallets = await base44.asServiceRole.entities.FleshPayWallet.filter({ user_id: intent.user_id });
+        let wallet;
+
+        if (wallets.length === 0) {
+          wallet = await base44.asServiceRole.entities.FleshPayWallet.create({
+            user_id: intent.user_id,
+            balance_usd: 0,
+            currency: 'usd',
+            status: 'active',
+            lifetime_topups_usd: 0,
+            lifetime_spends_usd: 0,
+          });
+        } else {
+          wallet = wallets[0];
+        }
+
+        if (wallet.status !== 'active') {
+          console.error('[paymentWebhook] wallet_topup — wallet not active:', wallet.id);
+          await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+            payment_intent_id: intent.id,
+            user_id: intent.user_id,
+            product_type: 'wallet_topup',
+            error_message: 'Wallet not active',
+            processed: true,
+            processed_at: new Date().toISOString(),
+          });
+          return Response.json({ success: false, error: 'Wallet not active' });
+        }
+
+        const topupAmount = intent.amount;
+        const balanceBefore = wallet.balance_usd;
+        const balanceAfter = balanceBefore + topupAmount;
+
+        // Create FleshPayLedger credit entry
+        const ledgerEntry = await base44.asServiceRole.entities.FleshPayLedger.create({
+          wallet_id:            wallet.id,
+          user_id:              intent.user_id,
+          entry_type:           'credit',
+          transaction_type:     'credit',
+          amount_usd:           topupAmount,
+          balance_before_usd:   balanceBefore,
+          balance_after_usd:    balanceAfter,
+          source_type:          'topup',
+          reference_type:       'topup',
+          source_id:            topupOrder.id,
+          reference_id:         topupOrder.id,
+          provider:             'nowpayments',
+          provider_transaction_id: event.paymentId,
+          idempotency_key:      idempotencyKey,
+          status:               'completed',
+          description:          `Wallet top-up — $${topupAmount} USD via NOWPayments`,
+          metadata_json:        JSON.stringify({
+            provider: 'nowpayments',
+            provider_payment_id: event.paymentId,
+            webhook_status: event.rawStatus,
+            actually_paid: event.actuallyPaid,
+            payment_intent_id: intent.id,
+            topup_order_id: topupOrder.id,
+          }),
+        });
+
+        // Update wallet balance
+        await base44.asServiceRole.entities.FleshPayWallet.update(wallet.id, {
+          balance_usd: balanceAfter,
+          lifetime_topups_usd: wallet.lifetime_topups_usd + topupAmount,
+          lifetime_topup_usd: wallet.lifetime_topup_usd + topupAmount,
+          last_transaction_at: new Date().toISOString(),
+        });
+
+        // Update FleshPayTopupOrder
+        await base44.asServiceRole.entities.FleshPayTopupOrder.update(topupOrder.id, {
+          status: 'paid',
+          completed_at: new Date().toISOString(),
+          confirmed_at: new Date().toISOString(),
+          provider_payment_id: event.paymentId,
+          actually_paid: event.actuallyPaid,
+          amount_received_usd: topupAmount,
+          ipn_callback_raw: JSON.stringify({
+            payment_id: event.paymentId,
+            payment_status: event.rawStatus,
+            actually_paid: event.actuallyPaid,
+            price_amount: event.amount,
+            price_currency: event.currency,
+          }),
+        });
+
+        // Update PaymentIntent to completed
+        await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          metadata: JSON.stringify({
+            ...JSON.parse(intent.metadata || '{}'),
+            nowpayments_payment_id: event.paymentId,
+            actually_paid: event.actuallyPaid,
+            raw_status: event.rawStatus,
+            verified_amount: true,
+            verified_currency: true,
+            wallet_topup_credited: true,
+            ledger_entry_id: ledgerEntry.id,
+          }),
+        });
+
+        // Update event log
         await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
           payment_intent_id: intent.id,
+          user_id: intent.user_id,
+          product_type: 'wallet_topup',
+          product_id: topupOrder.id,
           normalized_status: event.normalizedStatus,
           verification_details: JSON.stringify(verificationDetails),
-          error_message: `Entitlement grant failed: ${grantResult.error}`,
           processed: true,
-          entitlement_granted: false,
+          entitlement_granted: true,
           processed_at: new Date().toISOString(),
         });
-        return Response.json({ 
-          success: false, 
-          error: grantResult.error,
-          message: 'Entitlement grant failed' 
+
+        console.log('[paymentWebhook] wallet_topup credited:', {
+          userId: intent.user_id,
+          walletId: wallet.id,
+          topupAmount,
+          balanceBefore,
+          balanceAfter,
+          ledgerEntryId: ledgerEntry.id,
         });
-      }
-      
-      // Update PaymentIntent to completed
-      await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
-        status:       'completed',
-        completed_at: new Date().toISOString(),
-        metadata: JSON.stringify({
-          ...JSON.parse(intent.metadata || '{}'),
-          nowpayments_payment_id: event.paymentId,
-          actually_paid: event.actuallyPaid,
-          raw_status: event.rawStatus,
-          verified_amount: true,
-          verified_currency: true,
+
+      } else {
+        // ── Standard entitlement (PPV / fanclub / guest production) ─────────
+        // Grant entitlement — ONLY here, ONLY after verified completed event
+        // grantEntitlement() is now idempotent and will check for existing records
+        const grantResult = await grantEntitlement(base44, { ...intent, id: intent.id });
+        
+        if (!grantResult.ok) {
+          console.error('[paymentWebhook] Entitlement grant failed:', grantResult.error);
+          await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+            payment_intent_id: intent.id,
+            normalized_status: event.normalizedStatus,
+            verification_details: JSON.stringify(verificationDetails),
+            error_message: `Entitlement grant failed: ${grantResult.error}`,
+            processed: true,
+            entitlement_granted: false,
+            processed_at: new Date().toISOString(),
+          });
+          return Response.json({ 
+            success: false, 
+            error: grantResult.error,
+            message: 'Entitlement grant failed' 
+          });
+        }
+        
+        // Update PaymentIntent to completed
+        await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
+          status:       'completed',
+          completed_at: new Date().toISOString(),
+          metadata: JSON.stringify({
+            ...JSON.parse(intent.metadata || '{}'),
+            nowpayments_payment_id: event.paymentId,
+            actually_paid: event.actuallyPaid,
+            raw_status: event.rawStatus,
+            verified_amount: true,
+            verified_currency: true,
+            entitlement_granted: !grantResult.duplicate,
+            entitlement_duplicate: grantResult.duplicate || false,
+          }),
+        });
+        
+        // Update event log with success
+        await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+          payment_intent_id: intent.id,
+          user_id: intent.user_id,
+          product_type: intent.payment_type,
+          product_id: intent.plan_id || intent.video_id || intent.application_id,
+          normalized_status: event.normalizedStatus,
+          verification_details: JSON.stringify(verificationDetails),
+          processed: true,
           entitlement_granted: !grantResult.duplicate,
           entitlement_duplicate: grantResult.duplicate || false,
-        }),
-      });
-      
-      // Update event log with success
-      await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
-        payment_intent_id: intent.id,
-        user_id: intent.user_id,
-        product_type: intent.payment_type,
-        product_id: intent.plan_id || intent.video_id || intent.application_id,
-        normalized_status: event.normalizedStatus,
-        verification_details: JSON.stringify(verificationDetails),
-        processed: true,
-        entitlement_granted: !grantResult.duplicate,
-        entitlement_duplicate: grantResult.duplicate || false,
-        processed_at: new Date().toISOString(),
-      });
-      
-      console.log('[paymentWebhook] Entitlement grant result:', {
-        ok: grantResult.ok,
-        duplicate: grantResult.duplicate,
-        entitlement_type: grantResult.entitlement_type,
-        entitlement_id: grantResult.payment_id || grantResult.subscription_id,
-      });
+          processed_at: new Date().toISOString(),
+        });
+        
+        console.log('[paymentWebhook] Entitlement grant result:', {
+          ok: grantResult.ok,
+          duplicate: grantResult.duplicate,
+          entitlement_type: grantResult.entitlement_type,
+          entitlement_id: grantResult.payment_id || grantResult.subscription_id,
+        });
+      }
 
     } else if (event.eventType === 'payment.failed') {
       await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
