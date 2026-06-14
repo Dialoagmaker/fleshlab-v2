@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, Wallet, Lock } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { useFleshPayBeta } from "@/hooks/useFleshPayBeta";
 
 export default function FleshPayUnlockButton({
   videoId,
@@ -9,6 +10,7 @@ export default function FleshPayUnlockButton({
   isAuthenticated,
   onRequireAuth,
 }) {
+  const { enabled: betaEnabled, loading: betaLoading } = useFleshPayBeta(isAuthenticated);
   const [loading, setLoading] = useState(false);
   const [wallet, setWallet] = useState(null);
   const [walletChecked, setWalletChecked] = useState(false);
@@ -46,6 +48,9 @@ export default function FleshPayUnlockButton({
     }
     setLoading(false);
   };
+
+  // Don't render at all if beta is disabled for this user
+  if (!betaEnabled || betaLoading) return null;
 
   if (!isAuthenticated) {
     return (
@@ -117,7 +122,7 @@ export default function FleshPayUnlockButton({
                   className="flex-1 bg-primary hover:bg-primary/90 text-sm"
                   onClick={() => window.location.href = "/wallet"}
                 >
-                  <Wallet className="w-4 h-4 mr-1" /> Add funds by Card, PayPal or Crypto
+                  <Wallet className="w-4 h-4 mr-1" /> Top up your FleshPay Balance
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground text-center">

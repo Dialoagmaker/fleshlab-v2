@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
+import { useFleshPayBeta } from "@/hooks/useFleshPayBeta";
 import SEOMeta from "@/components/SEOMeta";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ const StatusBadge = ({ status }) => {
 
 export default function WalletPage() {
   const { isAuthenticated, isLoadingAuth, authChecked } = useAuth();
+  const { enabled: betaEnabled, loading: betaLoading } = useFleshPayBeta(isAuthenticated);
   const [wallet, setWallet] = useState(null);
   const [ledger, setLedger] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -89,6 +91,34 @@ export default function WalletPage() {
 
   if (!isAuthenticated) return null;
 
+  if (betaLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Skeleton className="w-96 h-64 rounded-xl" />
+      </div>
+    );
+  }
+
+  if (!betaEnabled) {
+    return (
+      <>
+        <SEOMeta title="FleshPay | FLESHLAB" noIndex={true} />
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Card className="bg-card border-border max-w-md mx-4">
+            <CardContent className="p-8 text-center">
+              <Wallet className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h2 className="text-xl font-bold text-foreground mb-2">FleshPay Beta</h2>
+              <p className="text-muted-foreground text-sm">
+                FleshPay is currently in limited beta and not yet available for your account.
+                Please check back soon.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </>
+    );
+  }
+
   const balance = wallet?.balance_usd || 0;
 
   return (
@@ -103,7 +133,7 @@ export default function WalletPage() {
               Your FleshPay Balance
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              Top up by Card, PayPal or Crypto via FleshPay. Balance is available after payment confirmation.
+              Top up your FleshPay Balance to unlock videos. Payment methods depend on the available provider.
             </p>
           </div>
 
@@ -146,7 +176,7 @@ export default function WalletPage() {
                 ))}
               </div>
               <p className="text-xs text-muted-foreground mt-3">
-                Top up by Card, PayPal or Crypto via FleshPay
+                Crypto top-up via NOWPayments
               </p>
             </CardContent>
           </Card>

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
+import { useFleshPayBeta } from "@/hooks/useFleshPayBeta";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Wallet, ArrowDownLeft, ArrowUpRight, Plus, ExternalLink } from "lucide-react";
 
 export default function WalletTab() {
+  const { isAuthenticated } = useAuth();
+  const { enabled: betaEnabled, loading: betaLoading } = useFleshPayBeta(isAuthenticated);
   const [wallet, setWallet] = useState(null);
   const [ledger, setLedger] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +30,12 @@ export default function WalletTab() {
     }
     setLoading(false);
   };
+
+  if (betaLoading) {
+    return <Skeleton className="w-full h-48 rounded-xl" />;
+  }
+
+  if (!betaEnabled) return null;
 
   if (loading) {
     return <Skeleton className="w-full h-48 rounded-xl" />;

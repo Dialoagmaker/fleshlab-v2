@@ -54,6 +54,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // ── Beta gate ──────────────────────────────────────────────────────
+    const betaEnabled = Deno.env.get('FLESHPAY_BETA_ENABLED');
+    if (betaEnabled !== 'true') {
+      return Response.json({ error: 'FleshPay beta is not currently enabled.' }, { status: 403 });
+    }
+    const allowlistRaw = Deno.env.get('FLESHPAY_BETA_ALLOWLIST') || '';
+    if (allowlistRaw.trim() && user.role !== 'admin') {
+      const allowedIds = allowlistRaw.split(',').map(s => s.trim().toLowerCase());
+      const isAllowed = allowedIds.includes(user.id.toLowerCase()) ||
+                        allowedIds.includes((user.email || '').toLowerCase());
+      if (!isAllowed) {
+        return Response.json({ error: 'FleshPay beta is limited to selected users.' }, { status: 403 });
+      }
+    }
+
     const body = await req.json();
     const { videoId } = body;
 
