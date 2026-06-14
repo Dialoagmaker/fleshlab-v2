@@ -43,23 +43,23 @@ export default function WalletTab() {
     <div className="space-y-4">
       {/* Balance Card */}
       <div className="relative overflow-hidden rounded-3xl bg-[#0d0d0d] border border-white/[0.08]">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] via-transparent to-transparent pointer-events-none" />
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/[0.04] to-transparent rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.05] via-transparent to-transparent pointer-events-none" />
+        <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-primary/[0.05] to-transparent rounded-full blur-2xl pointer-events-none" />
 
         <div className="relative p-5">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-2.5">
-              <img src={FLESHPAY_LOGO} alt="" className="w-8 h-8 rounded-lg opacity-70" />
+              <img src={FLESHPAY_LOGO} alt="" className="w-9 h-9 rounded-lg opacity-75" />
               <div>
-                <p className="text-[10px] text-white/40 uppercase tracking-widest font-semibold">FleshPay</p>
+                <p className="text-[10px] text-white/45 uppercase tracking-widest font-semibold">FleshPay</p>
                 <p className="text-2xl font-black text-white mt-0.5">${balance.toFixed(2)}</p>
               </div>
             </div>
-            <span className="text-[9px] text-primary/60 bg-primary/[0.08] px-2 py-1 rounded-full font-bold uppercase tracking-wider">Beta</span>
+            <span className="text-[9px] text-primary/70 bg-primary/[0.08] px-2 py-1 rounded-full font-bold uppercase tracking-wider">Beta</span>
           </div>
 
           {wallet?.last_transaction_at && (
-            <p className="text-[10px] text-white/25 mb-4">Last activity {new Date(wallet.last_transaction_at).toLocaleDateString()}</p>
+            <p className="text-[10px] text-white/30 mb-4">Last activity {new Date(wallet.last_transaction_at).toLocaleDateString()}</p>
           )}
 
           <div className="flex gap-2">
@@ -67,7 +67,7 @@ export default function WalletTab() {
               <Button className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-10 rounded-xl text-xs gap-1.5"><Plus className="w-3.5 h-3.5" /> Add Funds</Button>
             </Link>
             <Link to="/wallet">
-              <Button variant="outline" size="sm" className="h-10 gap-1 border-white/[0.08] hover:bg-white/[0.04] text-white/40 rounded-xl text-xs"><ExternalLink className="w-3.5 h-3.5" /></Button>
+              <Button variant="outline" size="sm" className="h-10 gap-1 border-white/[0.08] hover:bg-white/[0.04] text-white/45 rounded-xl text-xs"><ExternalLink className="w-3.5 h-3.5" /></Button>
             </Link>
           </div>
         </div>

@@ -124,30 +124,30 @@ export default function WalletPage() {
     <>
       <SEOMeta title="FleshPay Wallet | FLESHLAB" noIndex={true} />
       <div className="min-h-screen bg-[#050505]">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-10 py-10 space-y-8">
 
           {/* ═══════ HERO ═══════ */}
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0f0a0a] via-[#0c0808] to-[#080808] border border-white/[0.08]">
             {/* Glow effects */}
-            <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-primary/[0.04] rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-20 -left-20 w-[400px] h-[400px] bg-rose-500/[0.03] rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -top-40 -right-40 w-[700px] h-[700px] bg-primary/[0.06] rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-20 -left-20 w-[500px] h-[500px] bg-rose-500/[0.04] rounded-full blur-3xl pointer-events-none" />
             {/* Subtle grid */}
             <div className="absolute inset-0 opacity-[0.015] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.2) 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
 
-            <div className="relative p-8 sm:p-10 lg:p-12">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+            <div className="relative p-8 sm:p-10 lg:p-14">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-10">
 
                 {/* Left: balance info */}
                 <div className="flex-1">
                   {/* Brand row */}
-                  <div className="flex items-center gap-3 mb-6">
-                    <img src={FLESHPAY_LOGO} alt="FleshPay" className="w-12 h-12 rounded-2xl ring-1 ring-white/[0.1]" />
+                  <div className="flex items-center gap-4 mb-8">
+                    <img src={FLESHPAY_LOGO} alt="FleshPay" className="w-14 h-14 rounded-2xl ring-1 ring-white/[0.12]" />
                     <div>
-                      <h1 className="text-xl font-bold text-white tracking-tight">FleshPay</h1>
-                      <p className="text-xs text-white/40">Your FLESHLAB digital wallet</p>
+                      <h1 className="text-2xl font-black text-white tracking-tight">FleshPay</h1>
+                      <p className="text-xs text-white/50 mt-0.5">Your FLESHLAB digital wallet</p>
                     </div>
                     <div className="ml-auto flex items-center gap-2">
-                      <span className="text-[10px] uppercase tracking-[0.15em] text-primary/80 bg-primary/[0.08] px-2.5 py-1 rounded-full font-bold">Beta</span>
+                      <span className="text-[10px] uppercase tracking-[0.15em] text-primary/90 bg-primary/[0.1] px-3 py-1 rounded-full font-bold">Beta</span>
                       {wallet?.status === "active" && (
                         <span className="flex items-center gap-1.5 text-[11px] text-emerald-400">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Active
@@ -158,11 +158,10 @@ export default function WalletPage() {
 
                   {/* Balance */}
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-white/40 font-semibold mb-2">Available Balance</p>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-5xl sm:text-6xl lg:text-7xl font-black text-white tracking-tighter">${Math.floor(balance)}</span>
-                      <span className="text-4xl sm:text-5xl lg:text-6xl font-black text-white/25 tracking-tighter">.{(balance % 1).toFixed(2).slice(2)}</span>
-                    </div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-white/50 font-semibold mb-2">Available Balance</p>
+                    <p className="text-5xl sm:text-6xl lg:text-7xl font-black text-white tracking-tighter tabular-nums">
+                      ${balance.toFixed(2)}
+                    </p>
                   </div>
 
                   {/* Stats row */}
@@ -188,23 +187,41 @@ export default function WalletPage() {
                   </div>
                 </div>
 
-                {/* Right: visual card */}
+                {/* Right: benefits panel */}
                 <div className="lg:w-72 shrink-0">
-                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/20 p-6">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
-                    <div className="relative space-y-4">
-                      <div className="flex items-center justify-between">
-                        <img src={FLESHPAY_LOGO} alt="" className="w-8 h-8 rounded-lg opacity-80" />
-                        <span className="text-[9px] font-bold text-primary/60 uppercase tracking-widest bg-black/30 px-2 py-1 rounded-lg">BETA</span>
+                  <div className="rounded-2xl bg-white/[0.02] border border-white/[0.06] p-6 space-y-4">
+                    <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">Why FleshPay</p>
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-5 h-5 rounded-md bg-emerald-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                          <TrendingUp className="w-3 h-3 text-emerald-400" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-white/70">Top up once</p>
+                          <p className="text-[10px] text-white/30 leading-relaxed">Use crypto to add funds in seconds</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">Wallet Balance</p>
-                        <p className="text-2xl font-black text-white">${balance.toFixed(2)}</p>
+                      <div className="flex items-start gap-3">
+                        <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                          <Zap className="w-3 h-3 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-white/70">Unlock instantly</p>
+                          <p className="text-[10px] text-white/30 leading-relaxed">No waiting — access videos immediately</p>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 pt-2 border-t border-white/[0.06]">
-                        <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                        <p className="text-[10px] text-emerald-400/80 font-medium">Top up once. Unlock instantly.</p>
+                      <div className="flex items-start gap-3">
+                        <div className="w-5 h-5 rounded-md bg-amber-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                          <CheckCircle2 className="w-3 h-3 text-amber-400" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-white/70">Ledger-protected</p>
+                          <p className="text-[10px] text-white/30 leading-relaxed">Every transaction is tracked securely</p>
+                        </div>
                       </div>
+                    </div>
+                    <div className="pt-3 border-t border-white/[0.06]">
+                      <span className="text-[10px] text-primary/60 bg-primary/[0.06] px-2 py-1 rounded-full font-bold uppercase tracking-wider">Beta Access</span>
                     </div>
                   </div>
                 </div>
@@ -241,27 +258,26 @@ export default function WalletPage() {
                     const isSimulated = (() => { try { return JSON.parse(entry.metadata_json || "{}")?.test === true; } catch { return false; } })();
 
                     return (
-                      <div key={entry.id} className={`flex items-center gap-4 px-5 sm:px-6 py-4.5 hover:bg-white/[0.02] transition-colors ${idx !== ledger.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
+                      <div key={entry.id} className={`flex items-center gap-4 px-5 sm:px-6 py-5 hover:bg-white/[0.02] transition-colors ${idx !== ledger.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
                         {/* Icon */}
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isCredit ? "bg-emerald-500/10" : "bg-rose-500/10"}`}>
-                          {isCredit ? <ArrowDownLeft className="w-4 h-4 text-emerald-400" /> : <ArrowUpRight className="w-4 h-4 text-rose-400" />}
+                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${isCredit ? "bg-emerald-500/10" : "bg-rose-500/10"}`}>
+                          {isCredit ? <ArrowDownLeft className="w-5 h-5 text-emerald-400" /> : <ArrowUpRight className="w-5 h-5 text-rose-400" />}
                         </div>
                         {/* Info */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-white/80 truncate">{entry.description || sourceLabel(entry)}</p>
+                          <p className="text-sm font-semibold text-white truncate">{entry.description || sourceLabel(entry)}</p>
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <span className="text-xs text-white/35">{fmtShort(entry.created_date)}</span>
+                            <span className="text-xs text-white/35">{fmtTime(entry.created_date)}</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${isCredit ? "text-emerald-400/70 bg-emerald-500/[0.06]" : "text-rose-400/70 bg-rose-500/[0.06]"}`}>
+                              {sourceLabel(entry)}
+                            </span>
                             {isSimulated && <span className="text-[9px] text-amber-300 bg-amber-500/10 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0">SIM</span>}
-                          </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[11px] text-white/30">{fmtShort(entry.created_date)}</span>
-                            <span className="text-[11px] text-white/30">{fmtTime(entry.created_date)}</span>
-                            <span className="w-1 h-1 rounded-full bg-white/[0.1]" />
-                            <span className="text-[11px] text-white/25">{sourceLabel(entry)}</span>
                           </div>
                         </div>
                         {/* Amount */}
-                        <div className="text-right shrink-0">
-                          <p className={`text-sm font-bold ${isCredit ? "text-emerald-400" : "text-rose-400"}`}>
+                        <div className="text-right shrink-0 space-y-1">
+                          <p className={`text-base font-bold ${isCredit ? "text-emerald-400" : "text-rose-400"}`}>
                             {isCredit ? "+" : "−"}${entry.amount_usd?.toFixed(2)}
                           </p>
                           <StatusBadge status={entry.status} />
@@ -293,14 +309,14 @@ export default function WalletPage() {
                         disabled={toppingUp !== null}
                         className={`w-full group relative flex items-center gap-4 p-4 rounded-2xl transition-all duration-200 text-left
                           ${opt.highlight
-                            ? "bg-primary/[0.06] border border-primary/25 hover:bg-primary/[0.1] hover:border-primary/35"
-                            : "bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.1]"
+                            ? "bg-primary/[0.08] border border-primary/30 hover:bg-primary/[0.12] hover:border-primary/40"
+                            : "bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.14]"
                           }
                           disabled:opacity-50 disabled:cursor-not-allowed
                           ${isActive ? "ring-2 ring-primary/40" : ""}`}
                       >
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${opt.highlight ? "bg-primary/15" : "bg-white/[0.04]"}`}>
-                          <Icon className={`w-4 h-4 ${opt.highlight ? "text-primary" : "text-white/30"}`} />
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${opt.highlight ? "bg-primary/15" : "bg-white/[0.06]"}`}>
+                          <Icon className={`w-4 h-4 ${opt.highlight ? "text-primary" : "text-white/40"}`} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-base font-bold text-white">${opt.amount}</p>
