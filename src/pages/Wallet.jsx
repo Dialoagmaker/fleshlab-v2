@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowDownLeft, ArrowUpRight, Loader2, Sparkles, Zap, Flame, Crown,
-  Clock, CheckCircle2, XCircle, TrendingUp, Wallet, Activity,
+  Clock, CheckCircle2, XCircle, Wallet, Activity, Shield, Lock, Eye,
 } from "lucide-react";
 
 const TOPUP_OPTIONS = [
@@ -88,13 +88,16 @@ export default function WalletPage() {
   if (!authChecked || isLoadingAuth || loading || betaLoading) {
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
-        <div className="w-full max-w-[1200px] space-y-6">
-          <Skeleton className="w-full h-80 rounded-3xl" />
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
-            <Skeleton className="h-96 rounded-3xl" />
-            <div className="space-y-6"><Skeleton className="h-72 rounded-3xl" /><Skeleton className="h-48 rounded-3xl" /></div>
-          </div>
+      <div className="w-full max-w-[1200px] space-y-6">
+        <Skeleton className="w-full h-[420px] rounded-[2.5rem]" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Skeleton className="h-20 rounded-2xl" /><Skeleton className="h-20 rounded-2xl" /><Skeleton className="h-20 rounded-2xl" />
         </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-[360px] rounded-[2rem]" />
+          <Skeleton className="lg:col-span-2 h-[360px] rounded-[2rem]" />
+        </div>
+      </div>
       </div>
     );
   }
@@ -124,181 +127,113 @@ export default function WalletPage() {
     <>
       <SEOMeta title="FleshPay Wallet | FLESHLAB" noIndex={true} />
       <div className="min-h-screen bg-[#050505]">
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-10 py-10 space-y-8">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-10 space-y-8">
 
-          {/* ═══════ HERO ═══════ */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0f0a0a] via-[#0c0808] to-[#080808] border border-white/[0.08]">
-            {/* Glow effects */}
-            <div className="absolute -top-40 -right-40 w-[700px] h-[700px] bg-primary/[0.06] rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-20 -left-20 w-[500px] h-[500px] bg-rose-500/[0.04] rounded-full blur-3xl pointer-events-none" />
-            {/* Subtle grid */}
-            <div className="absolute inset-0 opacity-[0.015] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.2) 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
+          {/* ═══════ HERO — Full-width product statement ═══════ */}
+          <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#120a0c] via-[#0d0808] to-[#060404] border border-white/[0.06]">
+            {/* Ambient glow */}
+            <div className="absolute -top-60 -right-60 w-[800px] h-[800px] bg-primary/[0.05] rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute -bottom-40 left-1/4 w-[600px] h-[600px] bg-rose-600/[0.03] rounded-full blur-[120px] pointer-events-none" />
 
-            <div className="relative p-8 sm:p-10 lg:p-14">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-10">
+            <div className="relative p-8 sm:p-12 lg:p-16">
+              <div className="max-w-3xl mx-auto text-center space-y-8">
 
-                {/* Left: balance info */}
-                <div className="flex-1">
-                  {/* Brand row */}
-                  <div className="flex items-center gap-4 mb-8">
-                    <img src={FLESHPAY_LOGO} alt="FleshPay" className="w-14 h-14 rounded-2xl ring-1 ring-white/[0.12]" />
-                    <div>
-                      <h1 className="text-2xl font-black text-white tracking-tight">FleshPay</h1>
-                      <p className="text-xs text-white/50 mt-0.5">Your FLESHLAB digital wallet</p>
-                    </div>
-                    <div className="ml-auto flex items-center gap-2">
-                      <span className="text-[10px] uppercase tracking-[0.15em] text-primary/90 bg-primary/[0.1] px-3 py-1 rounded-full font-bold">Beta</span>
-                      {wallet?.status === "active" && (
-                        <span className="flex items-center gap-1.5 text-[11px] text-emerald-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Active
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Balance */}
+                {/* Logo + wordmark */}
+                <div className="flex flex-col items-center gap-5">
+                  <img src={FLESHPAY_LOGO} alt="FleshPay" className="w-20 h-20 rounded-[1.25rem] ring-1 ring-white/[0.1] shadow-[0_0_60px_rgba(220,38,38,0.08)]" />
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-white/50 font-semibold mb-2">Available Balance</p>
-                    <p className="text-5xl sm:text-6xl lg:text-7xl font-black text-white tracking-tighter tabular-nums">
-                      ${balance.toFixed(2)}
-                    </p>
-                  </div>
-
-                  {/* Stats row */}
-                  <div className="flex flex-wrap items-center gap-6 mt-6 pt-6 border-t border-white/[0.06]">
-                    <div>
-                      <p className="text-[10px] text-white/30 uppercase tracking-wider">Lifetime Top-ups</p>
-                      <p className="text-sm font-bold text-white">${wallet?.lifetime_topups_usd?.toFixed(2) || "0.00"}</p>
-                    </div>
-                    <div className="w-px h-8 bg-white/[0.06]" />
-                    <div>
-                      <p className="text-[10px] text-white/30 uppercase tracking-wider">Total Spent</p>
-                      <p className="text-sm font-bold text-white">${wallet?.lifetime_spends_usd?.toFixed(2) || "0.00"}</p>
-                    </div>
-                    {wallet?.last_transaction_at && (
-                      <>
-                        <div className="w-px h-8 bg-white/[0.06]" />
-                        <div>
-                          <p className="text-[10px] text-white/30 uppercase tracking-wider">Last Activity</p>
-                          <p className="text-sm font-bold text-white/60">{fmtDate(wallet.last_transaction_at)}</p>
-                        </div>
-                      </>
-                    )}
+                    <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">FleshPay</h1>
+                    <p className="text-sm text-white/45 mt-1.5 font-medium">Your FLESHLAB Wallet</p>
                   </div>
                 </div>
 
-                {/* Right: benefits panel */}
-                <div className="lg:w-72 shrink-0">
-                  <div className="rounded-2xl bg-white/[0.02] border border-white/[0.06] p-6 space-y-4">
-                    <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">Why FleshPay</p>
-                    <div className="space-y-3">
-                      <div className="flex items-start gap-3">
-                        <div className="w-5 h-5 rounded-md bg-emerald-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                          <TrendingUp className="w-3 h-3 text-emerald-400" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-white/70">Top up once</p>
-                          <p className="text-[10px] text-white/30 leading-relaxed">Use crypto to add funds in seconds</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                          <Zap className="w-3 h-3 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-white/70">Unlock instantly</p>
-                          <p className="text-[10px] text-white/30 leading-relaxed">No waiting — access videos immediately</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-5 h-5 rounded-md bg-amber-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                          <CheckCircle2 className="w-3 h-3 text-amber-400" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-white/70">Ledger-protected</p>
-                          <p className="text-[10px] text-white/30 leading-relaxed">Every transaction is tracked securely</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="pt-3 border-t border-white/[0.06]">
-                      <span className="text-[10px] text-primary/60 bg-primary/[0.06] px-2 py-1 rounded-full font-bold uppercase tracking-wider">Beta Access</span>
-                    </div>
-                  </div>
+                {/* Subheadline */}
+                <p className="text-white/50 text-sm sm:text-base font-medium max-w-md mx-auto">
+                  Top up once. Unlock videos instantly.
+                </p>
+
+                {/* Balance — single unified number */}
+                <div>
+                  <p className="text-5xl sm:text-6xl md:text-7xl font-black text-white tabular-nums tracking-tight">
+                    ${balance.toFixed(2)}
+                  </p>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-white/35 font-semibold mt-2">Available Balance</p>
+                </div>
+
+                {/* Status badges */}
+                <div className="flex items-center justify-center gap-3">
+                  <span className="text-[10px] uppercase tracking-[0.15em] text-primary/90 bg-primary/[0.08] px-3 py-1.5 rounded-full font-bold">Beta</span>
+                  {wallet?.status === "active" && (
+                    <span className="flex items-center gap-1.5 text-[11px] text-emerald-400 bg-emerald-500/[0.06] px-3 py-1.5 rounded-full font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Active
+                    </span>
+                  )}
+                </div>
+
+                {/* Hero buttons */}
+                <div className="flex items-center justify-center gap-3 pt-2">
+                  <Button
+                    onClick={() => document.getElementById("add-funds-section")?.scrollIntoView({ behavior: "smooth" })}
+                    className="bg-primary hover:bg-primary/90 text-white font-bold h-12 px-8 rounded-2xl text-sm gap-2 shadow-[0_0_30px_rgba(220,38,38,0.15)]"
+                  >
+                    <Wallet className="w-4 h-4" /> Add Funds
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => document.getElementById("activity-section")?.scrollIntoView({ behavior: "smooth" })}
+                    className="h-12 px-8 rounded-2xl text-sm font-medium border-white/[0.1] text-white/60 hover:text-white hover:bg-white/[0.04] gap-2"
+                  >
+                    <Activity className="w-4 h-4" /> View Activity
+                  </Button>
                 </div>
 
               </div>
             </div>
           </div>
 
-          {/* ═══════ 2-COLUMN CONTENT ═══════ */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
-
-            {/* ── LEFT COLUMN: Activity ── */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-white/50" />
-                  <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wider">Recent Activity</h2>
-                </div>
-                {ledger.length > 0 && <span className="text-xs text-white/25">{ledger.length} transactions</span>}
+          {/* ═══════ BENEFIT CARDS — 3-column row ═══════ */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="rounded-2xl bg-[#0a0a0a] border border-white/[0.05] p-5 flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/[0.08] flex items-center justify-center shrink-0">
+                <Shield className="w-4 h-4 text-emerald-400" />
               </div>
-
-              {ledger.length === 0 ? (
-                <div className="rounded-3xl bg-[#0d0d0d] border border-white/[0.06] p-14 text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-white/[0.03] flex items-center justify-center mx-auto mb-4">
-                    <Activity className="w-7 h-7 text-white/10" />
-                  </div>
-                  <p className="text-white/40 font-medium mb-1">No transactions yet</p>
-                  <p className="text-white/20 text-sm">Top up your balance to start unlocking videos.</p>
-                </div>
-              ) : (
-                <div className="rounded-3xl bg-[#0d0d0d] border border-white/[0.06] overflow-hidden">
-                  {ledger.map((entry, idx) => {
-                    const isCredit = entry.entry_type === "credit";
-                    const isSimulated = (() => { try { return JSON.parse(entry.metadata_json || "{}")?.test === true; } catch { return false; } })();
-
-                    return (
-                      <div key={entry.id} className={`flex items-center gap-4 px-5 sm:px-6 py-5 hover:bg-white/[0.02] transition-colors ${idx !== ledger.length - 1 ? "border-b border-white/[0.04]" : ""}`}>
-                        {/* Icon */}
-                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${isCredit ? "bg-emerald-500/10" : "bg-rose-500/10"}`}>
-                          {isCredit ? <ArrowDownLeft className="w-5 h-5 text-emerald-400" /> : <ArrowUpRight className="w-5 h-5 text-rose-400" />}
-                        </div>
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-white truncate">{entry.description || sourceLabel(entry)}</p>
-                          <div className="flex items-center gap-2 mt-1.5">
-                            <span className="text-xs text-white/35">{fmtShort(entry.created_date)}</span>
-                            <span className="text-xs text-white/35">{fmtTime(entry.created_date)}</span>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${isCredit ? "text-emerald-400/70 bg-emerald-500/[0.06]" : "text-rose-400/70 bg-rose-500/[0.06]"}`}>
-                              {sourceLabel(entry)}
-                            </span>
-                            {isSimulated && <span className="text-[9px] text-amber-300 bg-amber-500/10 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0">SIM</span>}
-                          </div>
-                        </div>
-                        {/* Amount */}
-                        <div className="text-right shrink-0 space-y-1">
-                          <p className={`text-base font-bold ${isCredit ? "text-emerald-400" : "text-rose-400"}`}>
-                            {isCredit ? "+" : "−"}${entry.amount_usd?.toFixed(2)}
-                          </p>
-                          <StatusBadge status={entry.status} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              <div>
+                <p className="text-sm font-semibold text-white/80">Ledger protected</p>
+                <p className="text-[11px] text-white/35 leading-relaxed mt-0.5">Every transaction is tracked and auditable</p>
+              </div>
             </div>
+            <div className="rounded-2xl bg-[#0a0a0a] border border-white/[0.05] p-5 flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-primary/[0.08] flex items-center justify-center shrink-0">
+                <Zap className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white/80">Instant unlocks</p>
+                <p className="text-[11px] text-white/35 leading-relaxed mt-0.5">No waiting — access premium videos immediately</p>
+              </div>
+            </div>
+            <div className="rounded-2xl bg-[#0a0a0a] border border-white/[0.05] p-5 flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/[0.08] flex items-center justify-center shrink-0">
+                <Lock className="w-4 h-4 text-amber-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white/80">Beta access</p>
+                <p className="text-[11px] text-white/35 leading-relaxed mt-0.5">Early access — more features coming soon</p>
+              </div>
+            </div>
+          </div>
 
-            {/* ── RIGHT COLUMN: Add Funds + Info ── */}
-            <div className="space-y-6">
-              {/* Add Funds */}
-              <div className="rounded-3xl bg-[#0d0d0d] border border-white/[0.08] p-5">
-                <div className="flex items-center gap-2 mb-4">
+          {/* ═══════ 3-CARD CONTENT GRID ═══════ */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            {/* ── CARD A: Add Funds (2x2 grid) ── */}
+            <div id="add-funds-section" className="lg:col-span-1">
+              <div className="rounded-[2rem] bg-[#0a0a0a] border border-white/[0.05] p-6 h-full">
+                <div className="flex items-center gap-2.5 mb-5">
                   <Wallet className="w-4 h-4 text-primary" />
-                  <h2 className="text-sm font-semibold text-white uppercase tracking-wider">Add Funds</h2>
+                  <h2 className="text-sm font-bold text-white/70 uppercase tracking-wider">Add Funds</h2>
                 </div>
 
-                <div className="space-y-2.5">
+                <div className="grid grid-cols-2 gap-2.5">
                   {TOPUP_OPTIONS.map((opt) => {
                     const Icon = opt.icon;
                     const isActive = toppingUp === opt.amount;
@@ -307,26 +242,26 @@ export default function WalletPage() {
                         key={opt.amount}
                         onClick={() => handleTopup(opt.amount)}
                         disabled={toppingUp !== null}
-                        className={`w-full group relative flex items-center gap-4 p-4 rounded-2xl transition-all duration-200 text-left
+                        className={`relative flex flex-col items-center gap-2.5 p-4 rounded-2xl transition-all duration-200
                           ${opt.highlight
-                            ? "bg-primary/[0.08] border border-primary/30 hover:bg-primary/[0.12] hover:border-primary/40"
-                            : "bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.14]"
+                            ? "bg-primary/[0.06] border border-primary/25 hover:bg-primary/[0.1] hover:border-primary/35"
+                            : "bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.05] hover:border-white/[0.12]"
                           }
-                          disabled:opacity-50 disabled:cursor-not-allowed
+                          disabled:opacity-50 disabled:cursor-not-allowed group
                           ${isActive ? "ring-2 ring-primary/40" : ""}`}
                       >
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${opt.highlight ? "bg-primary/15" : "bg-white/[0.06]"}`}>
-                          <Icon className={`w-4 h-4 ${opt.highlight ? "text-primary" : "text-white/40"}`} />
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${opt.highlight ? "bg-primary/12" : "bg-white/[0.05] group-hover:bg-white/[0.08]"}`}>
+                          <Icon className={`w-4 h-4 ${opt.highlight ? "text-primary" : "text-white/35 group-hover:text-white/50"}`} />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-base font-bold text-white">${opt.amount}</p>
-                          <p className="text-[10px] text-white/35 font-medium uppercase tracking-wider">{opt.label}</p>
+                        <div className="text-center">
+                          <p className="text-lg font-black text-white">${opt.amount}</p>
+                          <p className="text-[10px] text-white/30 font-medium uppercase tracking-wider mt-0.5">{opt.label}</p>
                         </div>
                         {opt.highlight && (
-                          <span className="text-[9px] text-primary font-bold uppercase tracking-widest bg-primary/[0.1] px-2 py-1 rounded-lg">Best</span>
+                          <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] text-primary font-bold uppercase tracking-widest bg-primary/[0.12] px-2 py-0.5 rounded-full">Best Value</span>
                         )}
                         {isActive && (
-                          <div className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center">
+                          <div className="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center">
                             <Loader2 className="w-5 h-5 text-primary animate-spin" />
                           </div>
                         )}
@@ -335,25 +270,92 @@ export default function WalletPage() {
                   })}
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-white/[0.06] space-y-1.5">
-                  <p className="text-[11px] text-white/25 text-center">Crypto top-up via NOWPayments</p>
-                  <p className="text-[10px] text-white/15 text-center">You'll be redirected to complete your top-up.</p>
-                  <p className="text-[10px] text-white/10 text-center">More payment methods may be added later.</p>
+                <div className="mt-5 pt-4 border-t border-white/[0.06] space-y-1.5">
+                  <p className="text-[11px] text-white/30 text-center">Crypto top-up via NOWPayments</p>
+                  <p className="text-[10px] text-white/20 text-center">You'll be redirected to complete your top-up.</p>
+                  <p className="text-[10px] text-white/15 text-center">More payment methods may be added later.</p>
                 </div>
-              </div>
-
-              {/* About */}
-              <div className="rounded-3xl bg-[#0d0d0d] border border-white/[0.06] p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <img src={FLESHPAY_LOGO} alt="" className="w-6 h-6 rounded-lg opacity-60" />
-                  <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">About FleshPay</span>
-                </div>
-                <p className="text-[11px] text-white/25 leading-relaxed">
-                  FleshPay is your FLESHLAB digital wallet. Top up with crypto and use your balance to instantly unlock premium videos. No credit cards. Instant access.
-                </p>
               </div>
             </div>
 
+            {/* ── CARD B: Recent Activity (spans 2 cols) ── */}
+            <div id="activity-section" className="lg:col-span-2">
+              <div className="rounded-[2rem] bg-[#0a0a0a] border border-white/[0.05] overflow-hidden h-full">
+                <div className="px-6 pt-6 pb-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <Activity className="w-4 h-4 text-white/40" />
+                    <h2 className="text-sm font-bold text-white/70 uppercase tracking-wider">Recent Activity</h2>
+                  </div>
+                  {ledger.length > 0 && <span className="text-xs text-white/25 font-medium">{ledger.length} transactions</span>}
+                </div>
+
+                {ledger.length === 0 ? (
+                  <div className="px-6 pb-10 pt-8 text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-white/[0.03] flex items-center justify-center mx-auto mb-4">
+                      <Eye className="w-7 h-7 text-white/10" />
+                    </div>
+                    <p className="text-white/35 font-medium mb-1">No transactions yet</p>
+                    <p className="text-white/20 text-sm">Top up your balance to start unlocking videos.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-white/[0.04]">
+                    {ledger.map((entry, idx) => {
+                      const isCredit = entry.entry_type === "credit";
+                      const isSimulated = (() => { try { return JSON.parse(entry.metadata_json || "{}")?.test === true; } catch { return false; } })();
+
+                      return (
+                        <div key={entry.id} className="flex items-center gap-4 px-6 py-5 hover:bg-white/[0.015] transition-colors">
+                          {/* Icon */}
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${isCredit ? "bg-emerald-500/[0.07]" : "bg-rose-500/[0.07]"}`}>
+                            {isCredit ? <ArrowDownLeft className="w-5 h-5 text-emerald-400" /> : <ArrowUpRight className="w-5 h-5 text-rose-400" />}
+                          </div>
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-bold text-white/80 truncate">{entry.description || sourceLabel(entry)}</p>
+                              {isSimulated && <span className="text-[9px] text-amber-300 bg-amber-500/[0.08] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0">SIM</span>}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1.5">
+                              <span className="text-xs text-white/30">{fmtShort(entry.created_date)}</span>
+                              <span className="text-xs text-white/30">{fmtTime(entry.created_date)}</span>
+                              <span className={`text-[10px] px-2 py-0.5 rounded-md font-semibold ${isCredit ? "text-emerald-400 bg-emerald-500/[0.05]" : "text-rose-400 bg-rose-500/[0.05]"}`}>
+                                {sourceLabel(entry)}
+                              </span>
+                            </div>
+                          </div>
+                          {/* Amount + Status */}
+                          <div className="text-right shrink-0">
+                            <p className={`text-base font-black ${isCredit ? "text-emerald-400" : "text-rose-400"}`}>
+                              {isCredit ? "+" : "−"}${entry.amount_usd?.toFixed(2)}
+                            </p>
+                            <div className="mt-1"><StatusBadge status={entry.status} /></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
+
+          {/* ═══════ ABOUT FLESHPAY ═══════ */}
+          <div className="rounded-[2rem] bg-[#0a0a0a] border border-white/[0.05] p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <img src={FLESHPAY_LOGO} alt="" className="w-10 h-10 rounded-xl opacity-70" />
+                <div>
+                  <h3 className="text-sm font-bold text-white/60 uppercase tracking-wider">About FleshPay</h3>
+                  <p className="text-[11px] text-white/30 mt-0.5">Your crypto-powered wallet for FLESHLAB</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-3 text-[11px] text-white/25">
+                <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-400/50" /> Crypto top-ups</span>
+                <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-400/50" /> Instant unlocks</span>
+                <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-400/50" /> Auditable ledger</span>
+              </div>
+            </div>
           </div>
 
         </div>
