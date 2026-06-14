@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Wallet, Lock } from "lucide-react";
+import { Loader2, Wallet, Lock, ShieldCheck, ArrowRight } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useFleshPayBeta } from "@/hooks/useFleshPayBeta";
 
@@ -17,7 +17,6 @@ export default function FleshPayUnlockButton({
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
 
-  // Lazy-load wallet state only when user hovers or focuses on the FleshPay section
   const checkWallet = async () => {
     if (walletChecked || loading) return;
     setLoading(true);
@@ -38,7 +37,6 @@ export default function FleshPayUnlockButton({
       const res = await base44.functions.invoke("spendFleshPayBalance", { videoId });
       if (res.data?.success) {
         setSuccess(true);
-        // Reload page to show unlocked video
         setTimeout(() => window.location.reload(), 1500);
       } else {
         setError(res.data?.error || "Purchase failed");
@@ -49,89 +47,112 @@ export default function FleshPayUnlockButton({
     setLoading(false);
   };
 
-  // Don't render at all if beta is disabled for this user
   if (!betaEnabled || betaLoading) return null;
 
   if (!isAuthenticated) {
     return (
-      <Button
-        variant="outline"
-        className="w-full border-primary/30 text-primary hover:bg-primary/10 text-sm gap-2"
+      <button
         onClick={onRequireAuth}
+        className="w-full group relative overflow-hidden rounded-xl border border-primary/30 bg-gradient-to-br from-primary/5 to-transparent p-4 text-left transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10"
       >
-        <Wallet className="w-4 h-4" />
-        Use FleshPay Balance
-      </Button>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+            <Wallet className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">Unlock with FleshPay</p>
+            <p className="text-xs text-white/40 mt-0.5">Use your wallet balance — instant access</p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-primary/50 group-hover:translate-x-0.5 transition-transform" />
+        </div>
+      </button>
     );
   }
 
   if (success) {
     return (
-      <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 text-center">
-        <p className="text-green-400 font-semibold text-sm">Video unlocked! Refreshing...</p>
+      <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-5 text-center">
+        <ShieldCheck className="w-6 h-6 text-emerald-400 mx-auto mb-2" />
+        <p className="text-emerald-400 font-semibold text-sm">Video unlocked!</p>
+        <p className="text-emerald-400/50 text-xs mt-1">Refreshing page...</p>
       </div>
     );
   }
 
   const balance = wallet?.balance_usd || 0;
-  // Price is resolved server-side — client never controls it.
-  // Show "Unlock with FleshPay" without an estimated price to avoid
-  // misleading the user. The server will confirm the exact price.
-  const hasEnough = balance > 0; // Show unlock button if user has any balance
+  const hasEnough = balance > 0;
 
   return (
     <div
-      className="bg-primary/5 rounded-xl p-4 border border-primary/20 space-y-3"
+      className="relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-br from-[#1a0a0f] via-[#12080c] to-[#0a0a0a] shadow-xl shadow-primary/5"
       onMouseEnter={checkWallet}
       onFocus={checkWallet}
     >
-      <div className="flex items-center gap-2">
-        <Wallet className="w-4 h-4 text-primary" />
-        <span className="text-sm font-semibold text-foreground">FleshPay Balance</span>
-      </div>
+      {/* Subtle glow */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
 
-      {loading && !walletChecked ? (
-        <div className="flex items-center gap-2 text-muted-foreground text-sm">
-          <Loader2 className="w-3 h-3 animate-spin" /> Checking balance...
-        </div>
-      ) : (
-        <>
-          <p className="text-sm text-muted-foreground">
-            Your FleshPay Balance: <span className="text-foreground font-bold">${balance.toFixed(2)}</span>
-          </p>
-
-          {hasEnough ? (
-            <>
-              <Button
-                onClick={handleSpend}
-                disabled={loading}
-                className="w-full bg-primary hover:bg-primary/90 text-sm gap-2"
-              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
-                Unlock with FleshPay Balance
-              </Button>
-              {error && <p className="text-red-400 text-xs text-center">{error}</p>}
-            </>
-          ) : (
-            <>
-              <p className="text-xs text-muted-foreground">
-                Add funds to unlock this video.
+      <div className="relative p-5 space-y-4">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+            <Wallet className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-white">Unlock with FleshPay</p>
+            {loading && !walletChecked ? (
+              <div className="flex items-center gap-1.5 text-white/30 text-xs mt-0.5">
+                <Loader2 className="w-3 h-3 animate-spin" /> Checking balance...
+              </div>
+            ) : (
+              <p className="text-xs text-white/30 mt-0.5">
+                Balance: <span className="text-white/70 font-semibold">${balance.toFixed(2)}</span>
               </p>
-              <div className="flex gap-2">
+            )}
+          </div>
+        </div>
+
+        {loading && !walletChecked ? null : (
+          <>
+            {hasEnough ? (
+              <div className="space-y-3">
                 <Button
-                  className="flex-1 bg-primary hover:bg-primary/90 text-sm"
+                  onClick={handleSpend}
+                  disabled={loading}
+                  className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-11 rounded-xl text-sm gap-2 shadow-lg shadow-primary/20"
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Lock className="w-4 h-4" />
+                  )}
+                  Unlock with FleshPay Balance
+                </Button>
+                {error && (
+                  <p className="text-red-400 text-xs text-center">{error}</p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 text-center">
+                  <p className="text-xs text-white/40">
+                    Your balance: <span className="text-white/70 font-bold">${balance.toFixed(2)}</span>
+                  </p>
+                  <p className="text-xs text-white/25 mt-1">
+                    Add funds to unlock this video.
+                  </p>
+                </div>
+                <Button
+                  className="w-full bg-primary hover:bg-primary/90 text-white font-bold h-11 rounded-xl text-sm gap-2 shadow-lg shadow-primary/20"
                   onClick={() => window.location.href = "/wallet"}
                 >
-                  <Wallet className="w-4 h-4 mr-1" /> Top up your FleshPay Balance
+                  <Wallet className="w-4 h-4" />
+                  Top up FleshPay Balance
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground text-center">
-                Pay directly instead
-              </p>
-            </>
-          )}
-        </>
-      )}
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
