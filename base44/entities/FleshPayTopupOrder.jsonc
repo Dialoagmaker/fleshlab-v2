@@ -37,10 +37,25 @@
       "enum": [
         "nowpayments",
         "ccbill",
-        "segpay"
+        "segpay",
+        "stripe",
+        "paypal",
+        "asiapay"
       ],
       "title": "Provider",
       "default": "nowpayments"
+    },
+    "provider_type": {
+      "type": "string",
+      "enum": [
+        "crypto",
+        "card",
+        "paypal",
+        "adult_card_processor",
+        "regional_card_processor"
+      ],
+      "title": "Provider Type",
+      "description": "Category of payment provider from the provider registry"
     },
     "provider_payment_id": {
       "type": "string",
@@ -61,6 +76,38 @@
       "type": "string",
       "title": "Checkout URL",
       "description": "Primary field \u2013 provider_checkout_url is kept in sync automatically"
+    },
+    "provider_status": {
+      "type": "string",
+      "title": "Provider Status",
+      "description": "Raw status from the payment provider (e.g. NOWPayments payment_status)"
+    },
+    "provider_mode": {
+      "type": "string",
+      "enum": [
+        "live",
+        "sandbox",
+        "test"
+      ],
+      "title": "Provider Mode",
+      "default": "sandbox",
+      "description": "Which mode the provider is operating in for this transaction"
+    },
+    "public_payment_label": {
+      "type": "string",
+      "title": "Public Payment Label",
+      "description": "User-friendly label shown in public UI for this payment method"
+    },
+    "risk_status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "approval_required",
+        "future",
+        "disabled"
+      ],
+      "title": "Risk Status",
+      "description": "Risk/compliance status of this provider at time of transaction"
     },
     "pay_address": {
       "type": "string",
@@ -116,6 +163,11 @@
       "title": "IPN Callback Raw",
       "format": "textarea",
       "description": "Raw IPN callback data for audit trail"
+    },
+    "metadata_json": {
+      "type": "string",
+      "title": "Metadata JSON",
+      "description": "Arbitrary JSON payload for provider-specific metadata"
     },
     "notes": {
       "type": "string",

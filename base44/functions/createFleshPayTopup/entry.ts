@@ -12,6 +12,16 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 // ── Allowed top-up tiers ──────────────────────────────────────────────────────
 const ALLOWED_AMOUNTS = [10, 25, 50, 100];
 
+// ── Provider Registry (inlined — cannot import across backend functions) ──────
+const PROVIDER_REGISTRY = {
+  nowpayments: { enabled: true,  public_enabled: true,  supports_wallet_topup: true,  provider_type: 'crypto',                 risk_status: 'active',            public_label: 'Crypto top-up via NOWPayments' },
+  stripe:      { enabled: false, public_enabled: false, supports_wallet_topup: true,  provider_type: 'card',                  risk_status: 'approval_required', public_label: 'Card top-up' },
+  paypal:      { enabled: false, public_enabled: false, supports_wallet_topup: true,  provider_type: 'paypal',                risk_status: 'approval_required', public_label: 'PayPal top-up' },
+  ccbill:      { enabled: false, public_enabled: false, supports_wallet_topup: true,  provider_type: 'adult_card_processor',  risk_status: 'future',            public_label: 'CCBill top-up' },
+  segpay:      { enabled: false, public_enabled: false, supports_wallet_topup: true,  provider_type: 'adult_card_processor',  risk_status: 'future',            public_label: 'Segpay top-up' },
+  asiapay:     { enabled: false, public_enabled: false, supports_wallet_topup: true,  provider_type: 'regional_card_processor', risk_status: 'future',         public_label: 'AsiaPay top-up' },
+};
+
 // ── NOWPayments invoice creation ──────────────────────────────────────────────
 async function createNOWPaymentsInvoice({ orderId, priceAmount, description }) {
   const apiKey = Deno.env.get('NOWPAYMENTS_API_KEY');
@@ -75,7 +85,34 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { amount_usd } = body;
+    const { amount_usd, provider } = body;
+
+    // ── Provider selection & validation ──────────────────────────────────
+    const selectedProvider = provider || 'nowpayments';
+    const providerConfig = PROVIDER_REGISTRY[selectedProvider];
+
+    if (!providerConfig) {
+      return Response.json({
+        error: `Unknown payment provider: ${selectedProvider}`,
+      }, { status: 400 });
+    }
+
+    if (!providerConfig.enabled) {
+      return Response.json({
+        error: 'Payment provider is not enabled.',
+      }, { status: 403 });
+    }
+
+    if (!providerConfig.supports_wallet_topup) {
+      return Response.json({
+        error: 'This provider does not support wallet top-ups.',
+      }, { status: 400 });
+    }
+
+    const nowpaymentsMode = Deno.env.get('NOWPAYMENTS_MODE') || 'test';
+    const providerMode = selectedProvider === 'nowpayments'
+      ? (nowpaymentsMode === 'live' ? 'live' : 'sandbox')
+      : 'test';
 
     // Validate amount — only allowed tiers
     if (!amount_usd || !ALLOWED_AMOUNTS.includes(amount_usd)) {
@@ -108,20 +145,24 @@ Deno.serve(async (req) => {
       }, { status: 403 });
     }
 
-    // Create FleshPayTopupOrder
+    // Create FleshPayTopupOrder with provider metadata
     const topupOrder = await base44.entities.FleshPayTopupOrder.create({
       user_id: user.id,
       wallet_id: wallet.id,
       amount_usd,
       currency: 'usd',
-      provider: 'nowpayments',
+      provider: selectedProvider,
+      provider_type: providerConfig.provider_type,
+      provider_mode: providerMode,
+      public_payment_label: providerConfig.public_label,
+      risk_status: providerConfig.risk_status,
       status: 'pending',
     });
 
     // Create PaymentIntent (payment_type = wallet_topup)
     const intent = await base44.entities.PaymentIntent.create({
       user_id:             user.id,
-      provider:            'nowpayments',
+      provider:            selectedProvider,
       payment_type:        'wallet_topup',
       amount:              amount_usd,
       currency:            'usd',

@@ -17,6 +17,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Wallet from './pages/Wallet';
 import AdminWallets from './pages/admin/Wallets';
+import AdminPaymentProviders from './pages/admin/PaymentProviders';
 // Add page imports here
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
@@ -209,6 +210,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/users" element={<AdminUsers />} />
                 <Route path="/admin/users/:id" element={<AdminUserDetail />} />
                 <Route path="/admin/wallets" element={<AdminWallets />} />
+                <Route path="/admin/payment-providers" element={<AdminPaymentProviders />} />
               </Route>
             </Route>
           </Route>
