@@ -139,6 +139,23 @@ export default function TubeFooter() {
           </div>
         </div>
 
+        {/* Business Identity — crawlable HTML for Google Entity Recognition */}
+        <div className="border-t border-white/8 pt-8">
+          <div className="text-center mb-8">
+            <p className="text-sm font-semibold text-white/80 mb-1">FLESHLAB Studios</p>
+            <p className="text-xs text-white/45 mb-4">A division of Dialogmakers International Ltd.</p>
+            <address className="text-xs text-white/40 not-italic leading-relaxed">
+              2F, No. 2-1, Lane 23, Wenhua St.<br />
+              Taoyuan District, Taoyuan City 33071<br />
+              Taiwan
+            </address>
+            <div className="mt-3 text-xs text-white/40 space-y-0.5">
+              <p>Phone: +886 958 679 186</p>
+              <p>Email: studiosupport@fleshlab.online</p>
+            </div>
+          </div>
+        </div>
+
         {/* Compliance */}
         <div className="border-t border-white/8 pt-8">
           <div className="text-center">

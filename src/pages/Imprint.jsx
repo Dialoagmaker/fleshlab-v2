@@ -18,10 +18,37 @@ export default function Imprint() {
 
           <div className="space-y-10 text-sm leading-relaxed">
 
+            <Section title="Business Identity">
+              <p className="text-white/70">
+                FLESHLAB Studios is a division of Dialogmakers International Ltd.
+              </p>
+              <div className="mt-3 space-y-1 text-white/60">
+                <p className="font-medium text-white/75">Registered Address:</p>
+                <p>2F, No. 2-1, Lane 23, Wenhua St.</p>
+                <p>Taoyuan District, Taoyuan City 33071</p>
+                <p>Taiwan</p>
+              </div>
+              <div className="mt-3 space-y-1 text-white/60">
+                <p><span className="font-medium text-white/75">Phone:</span> +886 958 679 186</p>
+                <p>
+                  <span className="font-medium text-white/75">Email:</span>{" "}
+                  <a href="mailto:studiosupport@fleshlab.online" className="text-rose-400 hover:text-rose-300 underline underline-offset-2">
+                    studiosupport@fleshlab.online
+                  </a>
+                </p>
+                <p>
+                  <span className="font-medium text-white/75">Website:</span>{" "}
+                  <a href="https://fleshlab.online" className="text-rose-400 hover:text-rose-300 underline underline-offset-2" target="_blank" rel="noopener noreferrer">
+                    https://fleshlab.online
+                  </a>
+                </p>
+              </div>
+            </Section>
+
             <Section title="Operator of this website">
               <p className="font-semibold text-white">Dialogmakers International Ltd.</p>
               <p className="text-white/60">2F, No. 2-1, Lane 23, Wenhua St.</p>
-              <p className="text-white/60">Taoyuan City, Taoyuan, 324010</p>
+              <p className="text-white/60">Taoyuan District, Taoyuan City 33071</p>
               <p className="text-white/60">Taiwan</p>
             </Section>
 
