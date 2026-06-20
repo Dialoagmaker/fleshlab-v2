@@ -155,6 +155,7 @@ Deno.serve(async (req) => {
     // Text-only generation (default or fallback)
     if (!draft) {
       draft = await base44.integrations.Core.InvokeLLM({
+        model: 'claude_opus_4_8',
         prompt: `FLESHLAB adult SEO copywriter. Context:\n${ctx}\n\nJSON only: {"title":"6-10 words","description":"4-5 sentences explicit","short_teaser":"1 sentence","seo_title":"45-60 chars end | FLESHLAB","seo_description":"120-155 chars","categories":["2-4"],"tags":["8-15"],"ppv_price":6.99}`,
         response_json_schema: { type: 'object', properties: { title: {type:'string'}, description: {type:'string'}, short_teaser: {type:'string'}, seo_title: {type:'string'}, seo_description: {type:'string'}, categories: {type:'array',items:{type:'string'}}, tags: {type:'array',items:{type:'string'}}, ppv_price: {type:'number'} }, required: ['title','description','short_teaser','seo_title','seo_description','categories','tags','ppv_price'] }
       });

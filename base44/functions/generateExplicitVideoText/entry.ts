@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
 
     const response = await base44.integrations.Core.InvokeLLM({
       ...(thumbnail_url ? { file_urls: [thumbnail_url] } : {}),
-      model: thumbnail_url ? 'gemini_3_flash' : undefined,
+      model: thumbnail_url ? 'gemini_3_flash' : 'claude_opus_4_8',
       prompt,
       response_json_schema: {
         type: 'object',

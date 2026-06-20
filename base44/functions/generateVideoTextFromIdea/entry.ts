@@ -154,8 +154,9 @@ Deno.serve(async (req) => {
 8. Do NOT invent acts or performers not mentioned in the scene notes.
 9. Return JSON only — no explanation, no preamble.`;
 
-    // Call LLM with V1 prompt
+    // Call LLM with V1 prompt (claude_opus_4_8 for best creative marketing copy)
     const response = await base44.integrations.Core.InvokeLLM({
+      model: 'claude_opus_4_8',
       prompt,
       response_json_schema: {
         type: 'object',
@@ -334,7 +335,7 @@ Deno.serve(async (req) => {
         categories_received: categories || [],
         generated_title: response.title || '',
         generated_tags: response.tags || [],
-        model_used: 'InvokeLLM (default)',
+        model_used: 'claude_opus_4_8',
         cached_result: false,
         context_block_built: contextBlock,
       },
