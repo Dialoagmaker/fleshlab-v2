@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
+import { UserPlus, Mail, Lock, Loader2, CheckCircle2 } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
@@ -30,6 +30,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const [verified, setVerified] = useState(false); // Success state before redirect
 
   // Read ?next=, ?from_url=, ?checkout= from URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -47,12 +48,20 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      await base44.auth.register({ email, password });
+      // Normalize email: trim whitespace + lowercase to prevent duplicate accounts
+      const normalizedEmail = email.trim().toLowerCase();
+      setEmail(normalizedEmail); // Update UI with normalized version
+      await base44.auth.register({ email: normalizedEmail, password });
       // Track registration started
       trackRegistrationStarted(nextParam || 'direct', checkoutParam);
       setShowOtp(true);
     } catch (err) {
-      setError(err.message || "Registration failed");
+      const msg = err.message || "";
+      if (msg.toLowerCase().includes("already") || msg.toLowerCase().includes("exists") || msg.toLowerCase().includes("duplicate")) {
+        setError("An account with this email already exists. Please log in instead.");
+      } else {
+        setError(msg || "Registration failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -66,35 +75,35 @@ export default function Register() {
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
         
+        // Determine redirect URL BEFORE showing success state
+        let redirectUrl = "/client/dashboard"; // default fallback
+        
         // Priority 1: stored intent (set by CTAs before redirect)
         const storedIntent = getStoredAuthIntent();
         if (storedIntent) {
           console.log("REGISTER_INTENT_FOUND", storedIntent);
-          const redirectUrl = buildRedirectUrl(storedIntent);
-          window.location.href = redirectUrl;
-          return;
+          redirectUrl = buildRedirectUrl(storedIntent);
         }
-        
-        // Priority 2: ?checkout= param (fanclub checkout intent)
-        if (checkoutParam) {
-          // Build fanclub checkout URL with plan
-          const fanclubUrl = `/fanclub?checkout=${checkoutParam}`;
-          console.log("REGISTER_CHECKOUT_INTENT", fanclubUrl);
-          window.location.href = fanclubUrl;
-          return;
+        // Priority 2: ?checkout= param (checkout intent)
+        else if (checkoutParam) {
+          redirectUrl = `/fanclub?checkout=${checkoutParam}`;
+          console.log("REGISTER_CHECKOUT_INTENT", redirectUrl);
         }
-        
         // Priority 3: ?next= or ?from_url= URL param
-        if (nextParam) {
+        else if (nextParam) {
           const validated = validateRedirectUrl(nextParam);
           if (validated && validated !== '/') {
-            window.location.href = validated;
-            return;
+            redirectUrl = validated;
           }
         }
+        
+        // Show success state briefly, then redirect
+        setVerified(true);
+        setTimeout(() => {
+          window.location.href = redirectUrl;
+        }, 1500);
+        return;
       }
-      // Fallback to client dashboard
-      window.location.href = "/client/dashboard";
     } catch (err) {
       setError(err.message || "Invalid verification code");
     } finally {
@@ -139,6 +148,29 @@ export default function Register() {
     // Fallback
     base44.auth.loginWithProvider("google", "/client/dashboard");
   };
+
+  if (verified) {
+    return (
+      <>
+        {noIndexMeta}
+        <AuthLayout
+        icon={CheckCircle2}
+        title="Account created!"
+        subtitle="You're all set. Redirecting you now..."
+      >
+        <div className="flex flex-col items-center gap-4 py-4">
+          <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center">
+            <CheckCircle2 className="w-8 h-8 text-green-400" />
+          </div>
+          <p className="text-sm text-muted-foreground text-center">
+            Your account has been verified. Taking you to the right place...
+          </p>
+          <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </div>
+      </AuthLayout>
+      </>
+    );
+  }
 
   if (showOtp) {
     return (

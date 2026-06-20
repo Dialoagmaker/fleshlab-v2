@@ -9,7 +9,8 @@ import PurchasesTab from "@/components/admin/users/PurchasesTab";
 import GuestProductionsTab from "@/components/admin/users/GuestProductionsTab";
 import {
   ArrowLeft, Loader2, AlertCircle, Crown, Users,
-  DollarSign, ShoppingCart, CreditCard, CheckCircle2, Calendar, FileText
+  DollarSign, ShoppingCart, CreditCard, CheckCircle2, Calendar, FileText,
+  UserPlus, Clock, ShieldCheck, Tag, XCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -120,6 +121,38 @@ export default function UserDetail() {
           </div>
         )}
 
+        {/* Possible duplicate alert */}
+        {user?.possible_duplicates && user.possible_duplicates.length > 0 && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <UserPlus className="w-5 h-5 text-amber-400" />
+              <h3 className="text-sm font-semibold text-amber-400">Possible Duplicate Account</h3>
+            </div>
+            <p className="text-xs text-amber-400/70 mb-3">
+              This user may have multiple accounts. Do not merge automatically — review before taking action.
+            </p>
+            <div className="space-y-2">
+              {user.possible_duplicates.map((dup, i) => (
+                <div key={i} className="flex items-center justify-between bg-amber-500/5 border border-amber-500/15 rounded-lg px-3 py-2">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{dup.full_name || 'No name'}</p>
+                    <p className="text-xs text-muted-foreground">{dup.email}</p>
+                    <p className="text-[10px] text-muted-foreground/50">
+                      Registered {dup.created_date ? new Date(dup.created_date).toLocaleDateString() : '—'}
+                    </p>
+                  </div>
+                  <Link
+                    to={`/admin/users/${dup.user_id}`}
+                    className="text-xs text-primary hover:underline shrink-0"
+                  >
+                    View User →
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* User meta */}
         <div className="bg-card border border-border rounded-xl p-5 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
@@ -138,7 +171,73 @@ export default function UserDetail() {
             <p className="text-xs text-muted-foreground mb-0.5">Registered</p>
             <p className="font-medium text-foreground">{user?.created_date ? new Date(user.created_date).toLocaleString() : '—'}</p>
           </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-0.5">
+              <ShieldCheck className="w-3 h-3 inline mr-1" />
+              Email Verified
+            </p>
+            <p className={`font-medium text-sm ${user?.email_verified ? 'text-green-400' : 'text-amber-400'}`}>
+              {user?.email_verified ? 'Verified' : 'Not Verified'}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-0.5">
+              <Clock className="w-3 h-3 inline mr-1" />
+              Last Login
+            </p>
+            <p className="font-medium text-foreground text-sm">
+              {user?.last_login ? new Date(user.last_login).toLocaleString() : '—'}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-0.5">
+              <Tag className="w-3 h-3 inline mr-1" />
+              Signup Source
+            </p>
+            <p className="font-medium text-foreground text-sm capitalize">
+              {user?.signup_source || '—'}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-0.5">
+              <XCircle className="w-3 h-3 inline mr-1" />
+              Failed Checkouts
+            </p>
+            <p className={`font-medium text-sm ${(user?.failed_checkout_count || 0) > 0 ? 'text-red-400' : 'text-muted-foreground'}`}>
+              {user?.failed_checkout_count || 0}
+            </p>
+          </div>
         </div>
+
+        {/* Last checkout intent */}
+        {user?.last_checkout_intent && (
+          <div className="bg-card border border-border rounded-xl p-5">
+            <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+              <ShoppingCart className="w-4 h-4 text-primary" />
+              Last Checkout Intent
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground">Type</p>
+                <p className="font-medium text-foreground capitalize">{user.last_checkout_intent.payment_type?.replace(/_/g, ' ')}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Amount</p>
+                <p className="font-medium text-foreground">${user.last_checkout_intent.amount}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Status</p>
+                <p className={`font-medium capitalize ${user.last_checkout_intent.status === 'completed' ? 'text-green-400' : 'text-red-400'}`}>
+                  {user.last_checkout_intent.status?.replace(/_/g, ' ')}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Provider</p>
+                <p className="font-medium text-foreground capitalize">{user.last_checkout_intent.provider}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-1 border-b border-border">

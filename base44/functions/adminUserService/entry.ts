@@ -140,6 +140,77 @@ function calculateDedupedLifetimeSpend(userId, paymentIntents, payments) {
   };
 }
 
+// ── Duplicate user detection ──────────────────────────────────────────────────
+function findDuplicateUsers(enrichedUsers) {
+  const groups = [];
+  const seen = new Set();
+
+  for (let i = 0; i < enrichedUsers.length; i++) {
+    if (seen.has(i)) continue;
+    const group = [enrichedUsers[i]];
+    
+    for (let j = i + 1; j < enrichedUsers.length; j++) {
+      if (seen.has(j)) continue;
+      
+      const a = enrichedUsers[i];
+      const b = enrichedUsers[j];
+      
+      // Rule 1: Same email (already blocked at registration, but check anyway)
+      if ((a.email || '').toLowerCase() === (b.email || '').toLowerCase()) {
+        group.push(b);
+        seen.add(j);
+        continue;
+      }
+      
+      // Rule 2: Gmail dots/plus variants (jenny585 vs jenny.585 or jenny+tag)
+      const aLocal = (a.email || '').toLowerCase().split('@')[0] || '';
+      const bLocal = (b.email || '').toLowerCase().split('@')[0] || '';
+      const aDomain = (a.email || '').toLowerCase().split('@')[1] || '';
+      const bDomain = (b.email || '').toLowerCase().split('@')[1] || '';
+      
+      if (aDomain && bDomain && aDomain === bDomain) {
+        // Check if local parts are similar (e.g., "salazarjenny585" and "salazarjenny22")
+        // Remove numbers and compare base name
+        const aBase = aLocal.replace(/[0-9.+]/g, '');
+        const bBase = bLocal.replace(/[0-9.+]/g, '');
+        
+        if (aBase && bBase && aBase === bBase && aBase.length >= 4) {
+          // Same base name — probable duplicate
+          group.push(b);
+          seen.add(j);
+          continue;
+        }
+        
+        // Check if one local part is a prefix of the other (e.g., "jenny" and "jenny585")
+        if ((aLocal.length >= 4 && bLocal.startsWith(aLocal)) || 
+            (bLocal.length >= 4 && aLocal.startsWith(bLocal))) {
+          group.push(b);
+          seen.add(j);
+          continue;
+        }
+      }
+      
+      // Rule 3: Same full_name (if non-empty) + registered within 24 hours
+      if (a.full_name && b.full_name && 
+          a.full_name.toLowerCase().trim() === b.full_name.toLowerCase().trim()) {
+        const aDate = a.created_date ? new Date(a.created_date).getTime() : 0;
+        const bDate = b.created_date ? new Date(b.created_date).getTime() : 0;
+        if (Math.abs(aDate - bDate) <= 24 * 60 * 60 * 1000) {
+          group.push(b);
+          seen.add(j);
+          continue;
+        }
+      }
+    }
+    
+    if (group.length > 1) {
+      groups.push(group);
+    }
+  }
+  
+  return groups;
+}
+
 // ── list_users ────────────────────────────────────────────────────────────────
 async function listUsers(base44, body) {
   const { page = 1, limit = 50, search = '', filters = {} } = body;
@@ -270,6 +341,10 @@ async function listUsers(base44, body) {
   if (date_from) enriched = enriched.filter(u => u.created_date && new Date(u.created_date) >= new Date(date_from));
   if (date_to) enriched = enriched.filter(u => u.created_date && new Date(u.created_date) <= new Date(date_to));
 
+  // ── Duplicate detection ──────────────────────────────────────────────────
+  // Detect suspiciously similar accounts: same username pattern, same recent registration window
+  const duplicateGroups = findDuplicateUsers(enriched);
+
   // Strip internal _flags before returning
   const cleaned = enriched.map(u => {
     const { _has_active_subscription, _has_payments, _has_failed, _has_pending, _has_ppv, _is_linked_performer, ...safe } = u;
@@ -280,7 +355,16 @@ async function listUsers(base44, body) {
   const offset = (page - 1) * limit;
   const paginated = cleaned.slice(offset, offset + limit);
 
-  return { users: paginated, total, page, limit };
+  // Build duplicate lookup: user_id → duplicate group (excludes self)
+  const duplicateMap = {};
+  for (const group of duplicateGroups) {
+    const ids = group.map(u => u.user_id);
+    for (const u of group) {
+      duplicateMap[u.user_id] = ids.filter(id => id !== u.user_id);
+    }
+  }
+
+  return { users: paginated, total, page, limit, duplicate_groups_count: duplicateGroups.length, duplicate_map: duplicateMap };
 }
 
 // ── get_user_detail ────────────────────────────────────────────────────────────
@@ -317,6 +401,48 @@ async function getUserDetail(base44, body) {
     .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
   const lastItem = allDated[0] || null;
 
+  // Find duplicate accounts for this user
+  const allUsers = users.filter(u => u.id !== userId);
+  const enrichedAllUsers = allUsers.map(u => ({
+    user_id: u.id,
+    email: u.email,
+    full_name: u.full_name,
+    role: u.role,
+    created_date: u.created_date,
+  }));
+  const thisUser = {
+    user_id: user.id,
+    email: user.email,
+    full_name: user.full_name,
+    role: user.role,
+    created_date: user.created_date,
+  };
+  const duplicateGroups = findDuplicateUsers([thisUser, ...enrichedAllUsers]);
+  const possibleDuplicates = [];
+  for (const group of duplicateGroups) {
+    if (group.some(u => u.user_id === userId)) {
+      for (const u of group) {
+        if (u.user_id !== userId) {
+          possibleDuplicates.push({
+            user_id: u.user_id,
+            email: u.email,
+            full_name: u.full_name,
+            created_date: u.created_date,
+            similarity: 'suspicious_match',
+          });
+        }
+      }
+    }
+  }
+
+  // Check for failed checkout intents
+  const failedIntents = intents.filter(i => 
+    ['failed', 'underpaid', 'currency_mismatch', 'payment_review', 'cancelled'].includes(i.status)
+  );
+  const lastCheckoutIntent = intents.length > 0 
+    ? intents.sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0]
+    : null;
+
   return {
     user: {
       user_id: user.id,
@@ -324,6 +450,19 @@ async function getUserDetail(base44, body) {
       full_name: user.full_name,
       role: user.role,
       created_date: user.created_date,
+      email_verified: true, // Base44 platform verifies email via OTP
+      last_login: user.last_login || null,
+      signup_source: user.metadata?.source || lastCheckoutIntent?.payment_type || 'direct',
+      last_checkout_intent: lastCheckoutIntent ? {
+        id: lastCheckoutIntent.id,
+        payment_type: lastCheckoutIntent.payment_type,
+        amount: lastCheckoutIntent.amount,
+        status: lastCheckoutIntent.status,
+        provider: lastCheckoutIntent.provider,
+        created_date: lastCheckoutIntent.created_date,
+      } : null,
+      failed_checkout_count: failedIntents.length,
+      possible_duplicates: possibleDuplicates,
     },
     linked_performer: linkedPerformer ? {
       id: linkedPerformer.id,

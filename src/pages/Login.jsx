@@ -81,8 +81,12 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
+      // Normalize email: trim whitespace + lowercase before login
+      const normalizedEmail = email.trim().toLowerCase();
+      setEmail(normalizedEmail);
+      
       // Login and save token
-      await base44.auth.loginViaEmailPassword(email, password);
+      await base44.auth.loginViaEmailPassword(normalizedEmail, password);
       
       // Get user data to determine role
       const user = await base44.auth.me();

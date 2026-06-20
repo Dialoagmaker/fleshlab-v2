@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Users as UsersIcon, Search, ChevronRight, Crown, Loader2,
-  AlertCircle, DollarSign, ShoppingCart, CheckCircle2, Clock, Trash2
+  AlertCircle, DollarSign, ShoppingCart, CheckCircle2, Clock, Trash2,
+  UserPlus
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -79,6 +80,8 @@ export default function Users() {
 
   const users = data?.users || [];
   const total = data?.total || 0;
+  const duplicateMap = data?.duplicate_map || {};
+  const duplicateGroupsCount = data?.duplicate_groups_count || 0;
   const totalPages = Math.ceil(total / LIMIT);
 
   const handleDelete = async (userId) => {
@@ -102,6 +105,12 @@ export default function Users() {
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
               {total > 0 ? `${total} total users` : "Registered user accounts"}
+              {duplicateGroupsCount > 0 && (
+                <span className="ml-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-medium">
+                  <UserPlus className="w-3 h-3" />
+                  {duplicateGroupsCount} possible duplicate{duplicateGroupsCount > 1 ? 's' : ''}
+                </span>
+              )}
             </p>
           </div>
         </div>
@@ -175,6 +184,12 @@ export default function Users() {
                           <p className="font-medium text-foreground">{u.full_name || <span className="text-muted-foreground italic">No name</span>}</p>
                           <p className="text-xs text-muted-foreground">{u.email}</p>
                           <p className="text-[10px] text-muted-foreground/50 font-mono">{u.user_id.slice(0, 12)}…</p>
+                          {duplicateMap[u.user_id] && duplicateMap[u.user_id].length > 0 && (
+                            <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-medium">
+                              <UserPlus className="w-2.5 h-2.5" />
+                              Possible duplicate
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
