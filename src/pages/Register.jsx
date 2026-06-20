@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Mail, Lock, Loader2, CheckCircle2 } from "lucide-react";
+import { UserPlus, Mail, Lock, Loader2, CheckCircle2, Send, HelpCircle, AlertTriangle } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
@@ -31,6 +31,9 @@ export default function Register() {
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [verified, setVerified] = useState(false); // Success state before redirect
+  const [resendMessage, setResendMessage] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const resendTimerRef = useRef(null);
 
   // Read ?next=, ?from_url=, ?checkout= from URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -76,7 +79,7 @@ export default function Register() {
         base44.auth.setToken(result.access_token);
         
         // Determine redirect URL BEFORE showing success state
-        let redirectUrl = "/client/dashboard"; // default fallback
+        let redirectUrl = "/onboarding"; // NEW: send new users to onboarding
         
         // Priority 1: stored intent (set by CTAs before redirect)
         const storedIntent = getStoredAuthIntent();
@@ -105,20 +108,32 @@ export default function Register() {
         return;
       }
     } catch (err) {
-      setError(err.message || "Invalid verification code");
+      setError("The code doesn't seem to match. Please check your email again, check your spam folder, or request a new code below.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleResend = async () => {
+    if (resendCooldown > 0) return;
     setError("");
+    setResendMessage("");
     try {
       await base44.auth.resendOtp(email);
-      toast({
-        title: "Code sent",
-        description: "Check your email for the new code.",
-      });
+      setOtpCode(""); // Reset OTP field
+      setResendMessage("A new code has been sent. Please use the latest code only. Previous codes are no longer valid.");
+      // Start 60-second cooldown
+      setResendCooldown(60);
+      if (resendTimerRef.current) clearInterval(resendTimerRef.current);
+      resendTimerRef.current = setInterval(() => {
+        setResendCooldown(prev => {
+          if (prev <= 1) {
+            clearInterval(resendTimerRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     } catch (err) {
       setError(err.message || "Failed to resend code");
     }
@@ -182,8 +197,15 @@ export default function Register() {
         subtitle={`We sent a code to ${email}`}
       >
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-            {error}
+          <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+        {resendMessage && !error && (
+          <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{resendMessage}</span>
           </div>
         )}
         <div className="flex justify-center mb-6">
@@ -218,12 +240,53 @@ export default function Register() {
             "Verify"
           )}
         </Button>
-        <p className="text-center text-sm text-muted-foreground mt-4">
-          Didn't receive the code?{" "}
-          <button onClick={handleResend} className="text-primary font-medium hover:underline">
-            Resend
-          </button>
-        </p>
+
+        {/* Resend button with cooldown */}
+        <div className="mt-4">
+          <Button
+            variant="outline"
+            className="w-full h-11 font-medium gap-2"
+            onClick={handleResend}
+            disabled={resendCooldown > 0}
+          >
+            {resendCooldown > 0 ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Resend available in {resendCooldown}s
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                Send me a new code
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Recovery help box */}
+        <div className="mt-5 p-4 rounded-xl bg-[#0f0f0f] border border-white/6">
+          <div className="flex items-center gap-2 mb-2">
+            <HelpCircle className="w-4 h-4 text-white/30" />
+            <span className="text-white/40 text-xs font-bold uppercase tracking-wider">Didn't receive the email?</span>
+          </div>
+          <ul className="space-y-1.5">
+            <li className="text-white/30 text-xs flex items-center gap-2">
+              <span className="w-1 h-1 rounded-full bg-white/20 shrink-0" />
+              Wait 30–60 seconds
+            </li>
+            <li className="text-white/30 text-xs flex items-center gap-2">
+              <span className="w-1 h-1 rounded-full bg-white/20 shrink-0" />
+              Check spam folder
+            </li>
+            <li className="text-white/30 text-xs flex items-center gap-2">
+              <span className="w-1 h-1 rounded-full bg-white/20 shrink-0" />
+              Request a new code above
+            </li>
+          </ul>
+          <p className="text-white/20 text-[10px] mt-2.5 leading-relaxed">
+            Please do not create a second account.
+          </p>
+        </div>
       </AuthLayout>
       </>
     );

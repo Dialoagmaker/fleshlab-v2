@@ -52,6 +52,7 @@ import AssetRepairQueue from './pages/admin/AssetRepairQueue';
 import AITextGenerator from './pages/admin/AITextGenerator';
 import AdminUsers from './pages/admin/Users';
 import AdminUserDetail from './pages/admin/UserDetail';
+import FunnelAnalytics from './pages/admin/FunnelAnalytics';
 import GrowthDashboard from './pages/admin/GrowthDashboard';
 import AdminPayments from './pages/admin/Payments';
 import AdminRevenueDashboard from './pages/admin/RevenueDashboard';
@@ -92,6 +93,7 @@ import GuestProduction from './pages/GuestProduction';
 import FanProductions from './pages/FanProductions';
 import FanProductionRequest from './pages/FanProductionRequest';
 import ClientDashboard from './pages/ClientDashboard';
+import Onboarding from './pages/Onboarding';
 import PhilippinesRecruitment from './pages/PhilippinesRecruitment';
 import GayTwinkPerformerRecruitment from './pages/GayTwinkPerformerRecruitment';
 import ChaturbateRecruitment from './pages/ChaturbateRecruitment';
@@ -209,6 +211,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/payout-closeouts" element={<PayoutCloseouts />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
                 <Route path="/admin/users/:id" element={<AdminUserDetail />} />
+                <Route path="/admin/funnel" element={<FunnelAnalytics />} />
                 <Route path="/admin/wallets" element={<AdminWallets />} />
                 <Route path="/admin/payment-providers" element={<AdminPaymentProviders />} />
               </Route>
@@ -464,6 +467,8 @@ const AuthenticatedApp = () => {
       } />
       <Route path="/fanclub/:slug" element={<PublicPageShell><ComingSoon title="Performer Fanclub" /></PublicPageShell>} />
       <Route path="/fanclub" element={<PublicPageShell><Fanclub /></PublicPageShell>} />
+      {/* Onboarding — after registration, before dashboard */}
+      <Route path="/onboarding" element={<PublicPageShell noIndex={true}><Onboarding /></PublicPageShell>} />
       <Route path="/gay-performer-recruitment-philippines" element={<PublicPageShell><PhilippinesRecruitment /></PublicPageShell>} />
       <Route path="/gay-twink-performer-recruitment" element={<PublicPageShell><GayTwinkPerformerRecruitment /></PublicPageShell>} />
       <Route path="/chaturbate-model-join-studio" element={<PublicPageShell><ChaturbateRecruitment /></PublicPageShell>} />

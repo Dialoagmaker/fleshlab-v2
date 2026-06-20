@@ -16,6 +16,7 @@ import FanProductionTeaser from "@/components/public/FanProductionTeaser";
 import FanclubTeaser from "@/components/public/FanclubTeaser";
 import StudioVideosMiniList from "@/components/public/StudioVideosMiniList";
 import { trackVideoDetailView, trackPerformerProfileView } from "@/lib/analytics";
+import SmartContentCta from "@/components/cta/SmartContentCta";
 import {
   Calendar, Clock, Film, ArrowLeft, Loader2, Tag,
   Play, Eye, Crown, Users, Lock
@@ -44,7 +45,7 @@ const safeVideo = (v) => v ? {
 export default function VideoDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { requireSignup, getCTA } = useAccessControl();
   const paymentProvider = usePaymentProvider();
   const [playbackUrl, setPlaybackUrl] = useState(null);
@@ -517,6 +518,7 @@ export default function VideoDetail() {
                 <VideoRail title="Related Videos" videos={relatedVideos} brands={brands} performers={performers} />
               )}
 
+              <SmartContentCta contentType="videos" user={user} hasActiveSub={!!playbackUrl} />
               <div className="pt-8"><PremiumTeaserBlock title="Want Full Access?" /></div>
             </div>
 

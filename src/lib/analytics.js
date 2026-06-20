@@ -600,4 +600,81 @@ export function initAnalytics() {
 
 export { getRouteCategory };
 
+// ========================================================
+// CONVERSION FUNNEL TRACKING (Phase 3)
+// ========================================================
+
+/**
+ * Track registration completed (after OTP verification)
+ */
+export function trackRegistrationCompleted(source) {
+  trackEvent("registration_completed", {
+    source: source || "direct",
+  });
+}
+
+/**
+ * Track OTP verified
+ */
+export function trackOtpVerified(source) {
+  trackEvent("otp_verified", {
+    source: source || "direct",
+  });
+}
+
+/**
+ * Track onboarding viewed
+ */
+export function trackOnboardingViewed() {
+  trackEvent("onboarding_viewed", {});
+}
+
+/**
+ * Track onboarding CTA clicks
+ */
+export function trackOnboardingCtaClick(action) {
+  trackEvent("onboarding_cta_click", {
+    action: action,
+  });
+}
+
+/**
+ * Track dashboard viewed
+ */
+export function trackDashboardViewed(source) {
+  trackEvent("dashboard_viewed", {
+    source: source || "direct",
+  });
+}
+
+/**
+ * Track dashboard CTA clicks
+ */
+export function trackDashboardCtaClick(action, destination) {
+  trackEvent("dashboard_cta_click", {
+    action: action,
+    destination: destination,
+  });
+}
+
+/**
+ * Track payment page reached
+ */
+export function trackPaymentPageReached(provider, paymentType) {
+  trackEvent("payment_page_reached", {
+    provider: provider,
+    payment_type: paymentType,
+  });
+}
+
+/**
+ * Track subscription activated
+ */
+export function trackSubscriptionActivated(planId, provider) {
+  trackEvent("subscription_activated", {
+    plan_id: planId,
+    provider: provider,
+  });
+}
+
 // Phase 2 GA4 Conversion Tracking - Privacy-safe event wrappers

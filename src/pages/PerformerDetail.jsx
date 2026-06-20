@@ -18,11 +18,12 @@ import PerformerVIPOffer from "@/components/public/PerformerVIPOffer";
 import PerformerPromoSection from "@/components/public/PerformerPromoSection";
 import PerformerVideoGrid from "@/components/public/PerformerVideoGrid";
 import FanclubSupportBlock from "@/components/public/FanclubSupportBlock";
+import SmartContentCta from "@/components/cta/SmartContentCta";
 
 export default function PerformerDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { requireSignup } = useAccessControl();
   const [performer, setPerformer] = useState(null);
   const [performerVideos, setPerformerVideos] = useState([]);
@@ -240,6 +241,11 @@ export default function PerformerDetail() {
             </div>
           </section>
         )}
+
+        {/* Smart CTA for non-subscribers */}
+        <section className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-10 py-4">
+          <SmartContentCta contentType="performers" user={user} hasActiveSub={false} />
+        </section>
 
         {/* F. CONTENT GRID */}
         <PerformerVideoGrid

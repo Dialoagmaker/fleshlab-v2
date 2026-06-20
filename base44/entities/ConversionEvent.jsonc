@@ -1,0 +1,27 @@
+{
+  "name": "ConversionEvent",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "title": "User ID"
+    },
+    "event_name": {
+      "type": "string",
+      "title": "Event Name",
+      "description": "e.g., registration_completed, onboarding_viewed, checkout_started"
+    },
+    "source_page": {
+      "type": "string",
+      "title": "Source Page"
+    },
+    "metadata_json": {
+      "type": "string",
+      "title": "Metadata (JSON)"
+    }
+  },
+  "required": [
+    "user_id",
+    "event_name"
+  ]
+}
