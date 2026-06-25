@@ -33,7 +33,7 @@ export default function FleshLabLiveSection() {
   return (
     <section className="py-10 border-t border-white/5 px-4">
       <div className="max-w-[1920px] mx-auto">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
             <div className="w-1.5 h-8 bg-gradient-to-b from-rose-600 to-rose-700 rounded-full shadow-lg shadow-rose-600/40" />
             <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
@@ -46,7 +46,7 @@ export default function FleshLabLiveSection() {
           </Link>
         </div>
 
-        <p className="text-white/40 text-sm mb-6 -mt-2">
+        <p className="text-white/40 text-sm mb-6 ml-[calc(0.375rem+0.75rem)]">
           Watch selected performers live through our official partner network.
         </p>
 
@@ -54,7 +54,7 @@ export default function FleshLabLiveSection() {
           {LIVE_CARDS.map((card) => {
             const Icon = card.icon;
             const inner = (
-              <div className="bg-[#111] border border-white/8 hover:border-rose-600/40 rounded-2xl p-6 flex flex-col gap-3 h-full transition-all group">
+              <div className="bg-[#111] border border-white/8 hover:border-rose-600/40 rounded-2xl p-6 flex flex-col gap-3 h-full transition-all group cursor-pointer">
                 <div className="w-10 h-10 rounded-xl bg-rose-600/15 border border-rose-600/20 flex items-center justify-center">
                   <Icon className="w-5 h-5 text-rose-500" />
                 </div>

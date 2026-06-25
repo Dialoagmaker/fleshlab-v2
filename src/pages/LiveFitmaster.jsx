@@ -32,7 +32,6 @@ export default function LiveFitmaster() {
           {/* Large image placeholder */}
           <div className="aspect-[16/7] bg-gradient-to-br from-rose-950/60 via-[#1a1a1a] to-[#0a0a0a] flex items-center justify-center relative">
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-            {/* Decorative glow */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-64 h-64 bg-rose-600/10 rounded-full blur-3xl" />
             </div>
@@ -45,7 +44,6 @@ export default function LiveFitmaster() {
                 <span className="text-white text-xs font-bold uppercase tracking-widest">Live</span>
               </div>
             </div>
-            {/* Name overlay */}
             <div className="absolute bottom-0 left-0 right-0 p-6">
               <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">FitMaster</h1>
             </div>
@@ -53,7 +51,6 @@ export default function LiveFitmaster() {
 
           {/* Profile info */}
           <div className="p-6 md:p-8">
-            {/* Official badge */}
             <div className="flex flex-wrap items-center gap-3 mb-5">
               <div className="inline-flex items-center gap-1.5 bg-rose-600/15 border border-rose-600/30 rounded-full px-3 py-1">
                 <Star className="w-3 h-3 text-rose-500 fill-current" />
@@ -69,7 +66,6 @@ export default function LiveFitmaster() {
               FitMaster is part of the FleshLab Live performer network. Watch live shows through our official partner access.
             </p>
 
-            {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-3">
               <a
                 href={LIVE_LINKS.fitmaster}
@@ -90,7 +86,6 @@ export default function LiveFitmaster() {
           </div>
         </div>
 
-        {/* 18+ disclaimer */}
         <p className="text-center text-white/25 text-xs">
           By clicking Watch FitMaster Live you confirm you are 18 years of age or older and consent to viewing adult content.
           You will be redirected to our official partner network.
