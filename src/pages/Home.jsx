@@ -8,6 +8,7 @@ import PerformerCarousel from "@/components/tube/PerformerCarousel";
 import FanclubBanner from "@/components/tube/FanclubBanner";
 import StudioJournal from "@/components/tube/StudioJournal";
 import PerformerRecruitmentBanner from "@/components/public/PerformerRecruitmentBanner";
+import FleshLabLiveSection from "@/components/home/FleshLabLiveSection";
 
 export default function Home() {
 
@@ -100,7 +101,10 @@ export default function Home() {
       {/* 3. Verified Performers — real people behind the content */}
       <PerformerCarousel performers={performers} />
 
-      {/* 4. Performer Recruitment Banner — after performers for context */}
+      {/* 4. FleshLab Live Section */}
+      <FleshLabLiveSection />
+
+      {/* 5. Performer Recruitment Banner — after performers for context */}
       <PerformerRecruitmentBanner />
 
       {/* 5. Fanclub / Full Archive CTA — logical after seeing content + performers */}

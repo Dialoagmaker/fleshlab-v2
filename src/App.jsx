@@ -95,6 +95,9 @@ import FanProductionRequest from './pages/FanProductionRequest';
 import ClientDashboard from './pages/ClientDashboard';
 import Onboarding from './pages/Onboarding';
 import PhilippinesRecruitment from './pages/PhilippinesRecruitment';
+import Live from './pages/Live';
+import LiveFitmaster from './pages/LiveFitmaster';
+import GoRedirect from './pages/GoRedirect';
 import GayTwinkPerformerRecruitment from './pages/GayTwinkPerformerRecruitment';
 import ChaturbateRecruitment from './pages/ChaturbateRecruitment';
 import GayOnlyfansAlternative from './pages/GayOnlyfansAlternative';
@@ -470,6 +473,9 @@ const AuthenticatedApp = () => {
       {/* Onboarding — after registration, before dashboard */}
       <Route path="/onboarding" element={<PublicPageShell noIndex={true}><Onboarding /></PublicPageShell>} />
       <Route path="/gay-performer-recruitment-philippines" element={<PublicPageShell><PhilippinesRecruitment /></PublicPageShell>} />
+      <Route path="/live" element={<PublicPageShell><Live /></PublicPageShell>} />
+      <Route path="/live/fitmaster" element={<PublicPageShell><LiveFitmaster /></PublicPageShell>} />
+      <Route path="/go/:slug" element={<GoRedirect />} />
       <Route path="/gay-twink-performer-recruitment" element={<PublicPageShell><GayTwinkPerformerRecruitment /></PublicPageShell>} />
       <Route path="/chaturbate-model-join-studio" element={<PublicPageShell><ChaturbateRecruitment /></PublicPageShell>} />
       <Route path="/gay-onlyfans-alternative" element={<PublicPageShell><GayOnlyfansAlternative /></PublicPageShell>} />

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Search, Menu, X, LogIn, Star, Globe, ChevronDown, Check, Home, Film, Users, Crown, Newspaper, Camera, UserCircle, LogOut } from "lucide-react";
+import { Search, Menu, X, LogIn, Star, Globe, ChevronDown, Check, Home, Film, Users, Crown, Newspaper, Camera, UserCircle, LogOut, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/i18n/i18n.jsx";
@@ -24,6 +24,7 @@ const BASE_NAV_LINKS = [
   { href: "/fan-productions", label: "Fan Productions", icon: Camera },
   { href: "/news", label: "News", icon: Newspaper },
   { href: "/become-performer", label: "Become a Performer", icon: Star },
+  { href: "/live", label: "Live", icon: Radio },
 ];
 
 // Note: AUTHENTICATED_NAV_LINKS uses placeholder href - actual path resolved by getDashboardPath()
@@ -371,6 +372,17 @@ export default function TubeHeader({ onMenuToggle }) {
               }`}
             >
               {t('nav.becomePerformer')}
+            </a>
+            <a
+              href="/live"
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-semibold transition-all ${
+                isActive("/live")
+                  ? "text-rose-500 bg-rose-600/15 border border-rose-600/30 shadow-lg shadow-rose-600/20"
+                  : "text-white/70 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <Radio className="w-3.5 h-3.5" />
+              Live
             </a>
           </nav>
         </div>
