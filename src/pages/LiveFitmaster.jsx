@@ -1,9 +1,135 @@
+import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import SEOMeta from "@/components/SEOMeta";
 import { LIVE_LINKS, AFFILIATE_REL } from "@/lib/liveLinks";
-import { Radio, Star, AlertTriangle, ChevronLeft, Users, Shield } from "lucide-react";
+import { Radio, Star, AlertTriangle, ChevronLeft, Users, Shield, Eye, ExternalLink } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+
+// Chaturbate embed URL — update if the white-label provides its own embed endpoint
+const FITMASTER_EMBED_URL = "https://chaturbate.com/in/?track=fitmaster_page&tour=grq&campaign=fleshlab_live&b=bb";
+
+function trackEvent(name, props = {}) {
+  try { base44.analytics.track({ eventName: name, properties: props }); } catch (_) {}
+}
+
+function LivePreviewSection({ onCtaClick }) {
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [iframeError, setIframeError] = useState(false);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+
+  const handleConfirm = useCallback(() => {
+    setAgeConfirmed(true);
+    trackEvent("fitmaster_preview_impression", { source: "fitmaster_page" });
+  }, []);
+
+  const handleIframeLoad = useCallback(() => {
+    setIframeLoaded(true);
+  }, []);
+
+  // Age gate
+  if (!ageConfirmed) {
+    return (
+      <div className="bg-[#111] border border-white/8 rounded-2xl overflow-hidden mb-6">
+        <div className="aspect-video bg-gradient-to-br from-rose-950/40 via-[#151515] to-[#0d0d0d] flex flex-col items-center justify-center gap-5 p-8 text-center">
+          <div className="w-14 h-14 rounded-full bg-rose-600/15 border border-rose-600/30 flex items-center justify-center">
+            <Eye className="w-7 h-7 text-rose-500" />
+          </div>
+          <div>
+            <p className="text-white font-bold text-lg mb-1">Live Preview</p>
+            <p className="text-white/40 text-sm max-w-xs mx-auto">
+              This section contains adult content. Confirm you are 18+ to load the live preview.
+            </p>
+          </div>
+          <button
+            onClick={handleConfirm}
+            className="inline-flex items-center gap-2 bg-rose-600/20 hover:bg-rose-600/30 border border-rose-600/40 hover:border-rose-600/70 text-rose-300 hover:text-rose-200 font-bold text-sm px-6 py-2.5 rounded-xl transition-all"
+          >
+            I am 18+ — Show Preview
+          </button>
+          <p className="text-white/20 text-xs">
+            Preview only. The main show opens via Watch FitMaster Live below.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback card (shown if iframe errors or is blocked)
+  if (iframeError) {
+    return (
+      <div className="bg-[#111] border border-white/8 rounded-2xl overflow-hidden mb-6">
+        <div className="aspect-video bg-gradient-to-br from-rose-950/40 via-[#151515] to-[#0d0d0d] flex flex-col items-center justify-center gap-5 p-8 text-center">
+          <div className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+            <Radio className="w-7 h-7 text-white/30" />
+          </div>
+          <div>
+            <p className="text-white/70 font-bold text-base mb-1">Live preview unavailable</p>
+            <p className="text-white/40 text-sm">Watch directly on FleshLab Live.</p>
+          </div>
+          <a
+            href={LIVE_LINKS.fitmaster}
+            target="_blank"
+            rel={AFFILIATE_REL}
+            onClick={onCtaClick}
+            className="inline-flex items-center gap-2 bg-rose-600/20 hover:bg-rose-600/30 border border-rose-600/40 hover:border-rose-600/70 text-rose-300 font-bold text-sm px-6 py-2.5 rounded-xl transition-all"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Watch on FleshLab Live
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-[#111] border border-white/8 rounded-2xl overflow-hidden mb-6">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+        <div className="flex items-center gap-2">
+          <Radio className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
+          <span className="text-white/60 text-xs font-semibold uppercase tracking-widest">Live Preview</span>
+        </div>
+        <span className="text-white/25 text-xs">Powered by official partner network</span>
+      </div>
+      <div className="relative aspect-video bg-black">
+        {!iframeLoaded && (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#0d0d0d]">
+            <div className="w-8 h-8 border-2 border-rose-600/40 border-t-rose-500 rounded-full animate-spin" />
+          </div>
+        )}
+        <iframe
+          src={FITMASTER_EMBED_URL}
+          className="w-full h-full border-0"
+          allow="autoplay; fullscreen"
+          scrolling="no"
+          onLoad={handleIframeLoad}
+          onError={() => setIframeError(true)}
+          title="FitMaster Live Preview"
+        />
+      </div>
+      <div className="px-4 py-3 bg-black/30 flex items-center justify-between gap-3">
+        <p className="text-white/30 text-xs">
+          Preview only. Full experience opens in the official partner window.
+        </p>
+        <a
+          href={LIVE_LINKS.fitmaster}
+          target="_blank"
+          rel={AFFILIATE_REL}
+          onClick={onCtaClick}
+          className="shrink-0 inline-flex items-center gap-1.5 text-rose-400 hover:text-rose-300 text-xs font-bold transition-colors"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+          Open full show
+        </a>
+      </div>
+    </div>
+  );
+}
 
 export default function LiveFitmaster() {
+  const handleCtaClick = useCallback(() => {
+    trackEvent("fitmaster_cta_click", { source: "fitmaster_page" });
+  }, []);
+
   return (
     <>
       <SEOMeta
@@ -71,6 +197,7 @@ export default function LiveFitmaster() {
                 href={LIVE_LINKS.fitmaster}
                 target="_blank"
                 rel={AFFILIATE_REL}
+                onClick={handleCtaClick}
                 className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold text-base px-8 py-4 rounded-xl shadow-2xl shadow-rose-600/40 transition-all"
               >
                 <Radio className="w-5 h-5" />
@@ -85,6 +212,9 @@ export default function LiveFitmaster() {
             </div>
           </div>
         </div>
+
+        {/* Live Preview Section */}
+        <LivePreviewSection onCtaClick={handleCtaClick} />
 
         <p className="text-center text-white/25 text-xs">
           By clicking Watch FitMaster Live you confirm you are 18 years of age or older and consent to viewing adult content.
