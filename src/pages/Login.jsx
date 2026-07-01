@@ -119,7 +119,7 @@ export default function Login() {
       window.location.href = redirectUrl;
     } catch (err) {
       console.error("LOGIN_ERROR", err);
-      trackLoginFailed(err.message || "invalid_credentials");
+      trackLoginFailed(err.message || "invalid_credentials", email);
       setError(err.message || "Invalid email or password");
     } finally {
       setLoading(false);
