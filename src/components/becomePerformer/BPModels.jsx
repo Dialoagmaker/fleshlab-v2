@@ -15,13 +15,13 @@ export default function BPModels() {
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
 
           {/* Managed */}
-          <div className="relative bg-gradient-to-br from-[#1e0808] via-[#150505] to-[#0d0505] border-2 border-rose-600/50 rounded-3xl p-8 flex flex-col overflow-hidden">
-            <div className="absolute -top-3.5 left-7">
+          <div className="relative bg-gradient-to-br from-[#1e0808] via-[#150505] to-[#0d0505] border-2 border-rose-600/50 rounded-3xl p-8 flex flex-col">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-rose-600/5 blur-3xl rounded-full overflow-hidden" />
+            <div className="absolute -top-3.5 left-7 z-10">
               <span className="bg-rose-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-rose-700/40">
                 New Performers
               </span>
             </div>
-            <div className="absolute top-0 right-0 w-40 h-40 bg-rose-600/5 blur-3xl rounded-full" />
 
             <div className="mt-4 mb-6">
               <div className="text-xs font-black uppercase tracking-widest text-rose-400/50 mb-2">Managed Performer</div>
@@ -55,13 +55,13 @@ export default function BPModels() {
           </div>
 
           {/* Network */}
-          <div className="relative bg-gradient-to-br from-[#12101e] via-[#0e0e18] to-[#0d0d0d] border-2 border-purple-600/40 rounded-3xl p-8 flex flex-col overflow-hidden">
-            <div className="absolute -top-3.5 left-7">
+          <div className="relative bg-gradient-to-br from-[#12101e] via-[#0e0e18] to-[#0d0d0d] border-2 border-purple-600/40 rounded-3xl p-8 flex flex-col">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-purple-600/5 blur-3xl rounded-full overflow-hidden" />
+            <div className="absolute -top-3.5 left-7 z-10">
               <span className="bg-purple-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-purple-700/40">
                 Established Creators
               </span>
             </div>
-            <div className="absolute top-0 right-0 w-40 h-40 bg-purple-600/5 blur-3xl rounded-full" />
 
             <div className="mt-4 mb-6">
               <div className="text-xs font-black uppercase tracking-widest text-purple-400/50 mb-2">Network Performer</div>
