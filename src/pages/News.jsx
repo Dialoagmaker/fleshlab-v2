@@ -103,7 +103,7 @@ export default function News() {
               <div className="relative max-w-md">
                 <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search news..."
+                  placeholder={t('news.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -157,12 +157,12 @@ export default function News() {
             </div>
           ) : error ? (
             <div className="text-center py-12 text-muted-foreground">
-              <p>Error loading news</p>
+              <p>{t('news.errorLoading')}</p>
             </div>
           ) : articles.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground">
               <Newspaper className="w-16 h-16 mx-auto mb-4 opacity-20" />
-              <h2 className="text-2xl font-semibold mb-2 text-foreground">No articles found</h2>
+              <h2 className="text-2xl font-semibold mb-2 text-foreground">{t('news.noResults')}</h2>
               <p className="text-muted-foreground mb-4">
                 {searchQuery ? 'Try adjusting your search' : 'Check back soon for updates'}
               </p>

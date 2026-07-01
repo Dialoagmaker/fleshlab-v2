@@ -105,8 +105,8 @@ export default function Videos() {
                 <Play className="w-6 h-6 text-rose-500 fill-current" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold text-white">Video Library</h1>
-                <p className="text-white/60 text-sm">Error loading videos</p>
+                <h1 className="text-4xl font-bold text-white">{t('videos.title')}</h1>
+                <p className="text-white/60 text-sm">{t('videos.errorLoading')}</p>
               </div>
             </div>
           </div>
@@ -242,7 +242,7 @@ export default function Videos() {
                     className="px-8 py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-semibold text-sm rounded-lg shadow-lg shadow-rose-600/30 transition-all hover:scale-[1.02]"
                     size="lg"
                   >
-                    Load More Videos
+                    {t('videos.loadMore')}
                     {total - page * VIDEOS_PER_PAGE > 0 && (
                       <span className="ml-2 text-xs opacity-70">
                         ({total - page * VIDEOS_PER_PAGE} left)
@@ -255,7 +255,7 @@ export default function Videos() {
           ) : (
             <div className="text-center py-20 bg-[#121212] rounded-xl border border-white/10">
               <Film className="w-16 h-16 mx-auto mb-4 text-white/40 opacity-50" />
-              <h2 className="text-xl font-semibold mb-2 text-white">No videos found</h2>
+              <h2 className="text-xl font-semibold mb-2 text-white">{t('videos.noResults')}</h2>
               <p className="text-white/60 mb-4">
                 Try another search term or clear filters.
               </p>

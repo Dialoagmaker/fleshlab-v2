@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Users, Search, X, Loader2, Sparkles, CheckCircle2, Star, Film } from "lucide-react";
 import SEOMeta from "@/components/SEOMeta";
+import { useI18n } from "@/i18n/i18n.jsx";
 
 export default function Performers() {
+  const { t } = useI18n();
   const [search, setSearch] = useState("");
 
   const { data: publicData, isLoading } = useQuery({
@@ -169,7 +171,7 @@ export default function Performers() {
           <div className="relative max-w-2xl mx-auto mb-6">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-rose-500 transition-colors" />
             <Input
-              placeholder="Search performers by name or nationality..."
+              placeholder={t('performers.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-[#1a1a1a]/50 backdrop-blur-sm border border-white/8 text-white placeholder:text-white/40 h-12 pl-14 pr-12 rounded-lg focus:outline-none focus:border-rose-600/40 focus:ring-2 focus:ring-rose-600/15 transition-all"
@@ -226,7 +228,7 @@ export default function Performers() {
           ) : (
             <div className="text-center py-20 bg-[#121212] rounded-xl border border-white/10">
               <Users className="w-16 h-16 mx-auto mb-4 text-white/40 opacity-50" />
-              <h2 className="text-xl font-semibold mb-2 text-white">No performers found</h2>
+              <h2 className="text-xl font-semibold mb-2 text-white">{t('performers.noResults')}</h2>
               <p className="text-white/60 mb-4">
                 {search ? 'Try adjusting your search' : 'No performers available'}
               </p>
