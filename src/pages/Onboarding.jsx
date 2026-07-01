@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackOnboardingViewed } from "@/lib/analytics";
 import SEOMeta from "@/components/SEOMeta";
 import { Play, Star, Users, ChevronRight, Sparkles } from "lucide-react";
 
@@ -10,10 +10,15 @@ export default function Onboarding() {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState(null);
 
+  useEffect(() => {
+    trackOnboardingViewed();
+  }, []);
+
   const handleChoice = async (path, eventName) => {
     setSelected(path);
     setLoading(true);
     trackEvent(eventName, { source: 'onboarding' });
+    trackEvent('onboarding_completed', { action: path });
     try {
       await base44.auth.updateMe({ onboarding_completed: true });
     } catch {}

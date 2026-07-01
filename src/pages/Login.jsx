@@ -8,6 +8,7 @@ import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { getStoredAuthIntent, buildRedirectUrl, validateRedirectUrl } from "@/lib/authRedirect";
+import { trackLoginSuccess, trackLoginFailed, setAnalyticsUserId } from "@/lib/analytics";
 
 import SEOMeta from "@/components/SEOMeta";
 
@@ -91,7 +92,18 @@ export default function Login() {
       // Get user data to determine role
       const user = await base44.auth.me();
       console.log("LOGIN_SUCCESS", { role: user?.role, email: user?.email, performer_profile_id: user?.performer_profile_id, performer_id: user?.performer_id });
-      
+
+      // Record login activity (best-effort, never blocks login)
+      try {
+        await base44.auth.updateMe({
+          last_login: new Date().toISOString(),
+          last_activity: new Date().toISOString(),
+          login_count: (user?.login_count || 0) + 1,
+        });
+      } catch (_) {}
+      setAnalyticsUserId(user?.id);
+      trackLoginSuccess(user?.role);
+
       // If non-admin tried to access admin, show error
       if (fromParam && fromParam.startsWith("/admin") && user?.role !== "admin") {
         setError("Access denied: Admin access required");
@@ -107,6 +119,7 @@ export default function Login() {
       window.location.href = redirectUrl;
     } catch (err) {
       console.error("LOGIN_ERROR", err);
+      trackLoginFailed(err.message || "invalid_credentials");
       setError(err.message || "Invalid email or password");
     } finally {
       setLoading(false);

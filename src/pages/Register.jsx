@@ -11,7 +11,7 @@ import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
 import { getStoredAuthIntent, buildRedirectUrl, validateRedirectUrl } from "@/lib/authRedirect";
 import SEOMeta from "@/components/SEOMeta";
-import { trackRegistrationStarted } from "@/lib/analytics";
+import { trackRegistrationStarted, trackOtpVerified, trackRegistrationCompleted, setAnalyticsUserId } from "@/lib/analytics";
 
 export default function Register() {
   // SEO: Prevent indexing of auth pages
@@ -77,7 +77,15 @@ export default function Register() {
       const result = await base44.auth.verifyOtp({ email, otpCode });
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
-        
+
+        // Record verification + registration completion (best-effort)
+        try {
+          const verifiedUser = await base44.auth.me();
+          setAnalyticsUserId(verifiedUser?.id);
+        } catch (_) {}
+        trackOtpVerified(nextParam || 'direct');
+        trackRegistrationCompleted(nextParam || 'direct');
+
         // Determine redirect URL BEFORE showing success state
         let redirectUrl = "/onboarding"; // NEW: send new users to onboarding
         

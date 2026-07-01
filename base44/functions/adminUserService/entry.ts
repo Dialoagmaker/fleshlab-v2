@@ -450,8 +450,10 @@ async function getUserDetail(base44, body) {
       full_name: user.full_name,
       role: user.role,
       created_date: user.created_date,
-      email_verified: true, // Base44 platform verifies email via OTP
+      email_verified: user.is_verified === true,
       last_login: user.last_login || null,
+      last_activity: user.last_activity || null,
+      login_count: user.login_count || 0,
       signup_source: user.metadata?.source || lastCheckoutIntent?.payment_type || 'direct',
       last_checkout_intent: lastCheckoutIntent ? {
         id: lastCheckoutIntent.id,
@@ -679,6 +681,26 @@ async function getUserGuestProductions(base44, body) {
   return { guest_productions: enriched };
 }
 
+// ── get_user_timeline ───────────────────────────────────────────────────────────
+async function getUserTimeline(base44, body) {
+  const { userId } = body;
+  if (!userId) return { error: 'userId required' };
+
+  const events = await base44.asServiceRole.entities.ConversionEvent.filter({ user_id: userId });
+  const sorted = events
+    .slice()
+    .sort((a, b) => new Date(a.created_date) - new Date(b.created_date))
+    .map(e => ({
+      id: e.id,
+      event_name: e.event_name,
+      source_page: e.source_page || null,
+      metadata_json: e.metadata_json || null,
+      created_date: e.created_date,
+    }));
+
+  return { events: sorted };
+}
+
 // ── Main handler ──────────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
   try {
@@ -705,6 +727,8 @@ Deno.serve(async (req) => {
         return Response.json(await getUserPurchases(base44, body));
       case 'get_user_guest_productions':
         return Response.json(await getUserGuestProductions(base44, body));
+      case 'get_user_timeline':
+        return Response.json(await getUserTimeline(base44, body));
       default:
         return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }

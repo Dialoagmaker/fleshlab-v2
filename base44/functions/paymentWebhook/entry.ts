@@ -1181,6 +1181,35 @@ Deno.serve(async (req) => {
       console.log('[paymentWebhook] Pending/confirming status — no action taken:', event.rawStatus);
     }
 
+    // ── Additive analytics logging (non-blocking, never affects payment processing) ──
+    try {
+      if (event.eventType === 'payment.completed' && event.unlocksAccess) {
+        await base44.asServiceRole.entities.ConversionEvent.create({
+          user_id: intent.user_id,
+          event_name: 'payment_success',
+          source_page: 'webhook',
+          metadata_json: JSON.stringify({ payment_type: intent.payment_type, provider: intent.provider, amount: intent.amount }),
+        });
+        if (intent.payment_type === 'fanclub') {
+          await base44.asServiceRole.entities.ConversionEvent.create({
+            user_id: intent.user_id,
+            event_name: 'subscription_activated',
+            source_page: 'webhook',
+            metadata_json: JSON.stringify({ plan_id: intent.plan_id, provider: intent.provider }),
+          });
+        }
+      } else if (event.eventType === 'payment.failed') {
+        await base44.asServiceRole.entities.ConversionEvent.create({
+          user_id: intent.user_id,
+          event_name: 'payment_failed',
+          source_page: 'webhook',
+          metadata_json: JSON.stringify({ payment_type: intent.payment_type, provider: intent.provider, reason: event.errorMessage || event.rawStatus }),
+        });
+      }
+    } catch (logErr) {
+      console.error('[paymentWebhook] analytics logging failed (non-blocking):', logErr.message);
+    }
+
     return Response.json({ success: true });
 
   } catch (err) {

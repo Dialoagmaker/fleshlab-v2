@@ -7,6 +7,7 @@ import PaymentsTab from "@/components/admin/users/PaymentsTab";
 import SubscriptionsTab from "@/components/admin/users/SubscriptionsTab";
 import PurchasesTab from "@/components/admin/users/PurchasesTab";
 import GuestProductionsTab from "@/components/admin/users/GuestProductionsTab";
+import UserTimeline from "@/components/admin/users/UserTimeline";
 import {
   ArrowLeft, Loader2, AlertCircle, Crown, Users,
   DollarSign, ShoppingCart, CreditCard, CheckCircle2, Calendar, FileText,
@@ -16,6 +17,7 @@ import { Button } from "@/components/ui/button";
 
 const TABS = [
   { key: "overview",          label: "Overview" },
+  { key: "timeline",          label: "Timeline" },
   { key: "payments",          label: "Payments" },
   { key: "subscriptions",     label: "Subscriptions" },
   { key: "ppv",               label: "PPV Unlocks" },
@@ -45,6 +47,12 @@ export default function UserDetail() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-user-detail", userId],
     queryFn: () => base44.functions.invoke("adminUserService", { action: "get_user_detail", userId }).then(r => r.data),
+  });
+
+  const { data: timelineData, isLoading: timelineLoading } = useQuery({
+    queryKey: ["admin-user-timeline", userId],
+    queryFn: () => base44.functions.invoke("adminUserService", { action: "get_user_timeline", userId }).then(r => r.data),
+    enabled: activeTab === "timeline",
   });
 
   if (isLoading) return (
@@ -278,6 +286,7 @@ export default function UserDetail() {
               <p className="text-sm text-muted-foreground">Use the tabs above to view detailed payment, subscription, and purchase history.</p>
             </div>
           )}
+          {activeTab === "timeline" && <UserTimeline events={timelineData?.events || []} isLoading={timelineLoading} />}
           {activeTab === "payments" && <PaymentsTab userId={userId} />}
           {activeTab === "subscriptions" && <SubscriptionsTab userId={userId} />}
           {activeTab === "ppv" && <PurchasesTab userId={userId} />}

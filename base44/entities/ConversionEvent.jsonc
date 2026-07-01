@@ -4,12 +4,13 @@
   "properties": {
     "user_id": {
       "type": "string",
-      "title": "User ID"
+      "title": "User ID",
+      "description": "Optional \u2014 not all events have a logged-in user (e.g. registration_start, login_failed)"
     },
     "event_name": {
       "type": "string",
       "title": "Event Name",
-      "description": "e.g., registration_completed, onboarding_viewed, checkout_started"
+      "description": "e.g., registration_completed, onboarding_viewed, checkout_start"
     },
     "source_page": {
       "type": "string",
@@ -21,7 +22,6 @@
     }
   },
   "required": [
-    "user_id",
     "event_name"
   ]
 }

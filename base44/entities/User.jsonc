@@ -11,6 +11,26 @@
         "viewer",
         "user"
       ]
+    },
+    "last_login": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last Login"
+    },
+    "last_activity": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last Activity"
+    },
+    "login_count": {
+      "type": "integer",
+      "title": "Login Count",
+      "default": 0
+    },
+    "onboarding_completed": {
+      "type": "boolean",
+      "title": "Onboarding Completed",
+      "default": false
     }
   },
   "required": [

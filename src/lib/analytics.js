@@ -8,6 +8,52 @@
  *   import { trackPageView, trackEvent, getRouteCategory } from '@/lib/analytics';
  */
 
+import { base44 } from '@/api/base44Client';
+
+// ── Internal DB event logging (parallel to GA4) ─────────────────────────────
+// Current authenticated user id, kept in sync by AuthContext so DB-logged
+// events can be tied to a user_id when available (null for anonymous events).
+let _currentUserId = null;
+
+export function setAnalyticsUserId(userId) {
+  _currentUserId = userId || null;
+}
+
+export function clearAnalyticsUserId() {
+  _currentUserId = null;
+}
+
+// Events also persisted to the ConversionEvent table via the logEvent function.
+// Keep in sync with base44/functions/logEvent/entry.ts ALLOWED_EVENTS.
+const DB_TRACKED_EVENTS = new Set([
+  'registration_start',
+  'registration_completed',
+  'otp_verified',
+  'login_success',
+  'login_failed',
+  'logout',
+  'onboarding_viewed',
+  'onboarding_completed',
+  'performer_profile_view',
+  'video_detail_view',
+  'fanclub_cta_click',
+  'checkout_start',
+  'payment_success',
+  'payment_failed',
+  'subscription_activated',
+]);
+
+function logDbEvent(eventName, params) {
+  try {
+    base44.functions.invoke('logEvent', {
+      event_name: eventName,
+      user_id: _currentUserId,
+      source_page: window.location.pathname,
+      metadata: params,
+    }).catch(() => {}); // best-effort, never block the UI
+  } catch (_) {}
+}
+
 // Public route patterns that should be tracked as normal page views
 const PUBLIC_ROUTE_PATTERNS = [
   /^\/$/,
@@ -146,23 +192,26 @@ export function trackPageView(path) {
  * @param {Object} params - Event parameters
  */
 export function trackEvent(eventName, params = {}) {
-  if (typeof window === 'undefined' || typeof window.gtag === 'undefined') {
-    console.warn('[Analytics] GA4 not initialized');
-    return;
-  }
-
-  // Add page context to all events
   const enrichedParams = {
-    page_path: window.location.pathname,
-    page_title: document.title,
+    page_path: typeof window !== 'undefined' ? window.location.pathname : '',
+    page_title: typeof document !== 'undefined' ? document.title : '',
     ...params,
   };
 
-  window.gtag('event', eventName, enrichedParams);
+  if (typeof window === 'undefined' || typeof window.gtag === 'undefined') {
+    console.warn('[Analytics] GA4 not initialized');
+  } else {
+    window.gtag('event', eventName, enrichedParams);
+  }
 
   // Log for debugging in development
   if (import.meta.env.DEV) {
     console.log('[Analytics] event:', eventName, enrichedParams);
+  }
+
+  // Persist a subset of events to our own DB (in parallel to GA4)
+  if (DB_TRACKED_EVENTS.has(eventName)) {
+    logDbEvent(eventName, params);
   }
 }
 
@@ -675,6 +724,27 @@ export function trackSubscriptionActivated(planId, provider) {
     plan_id: planId,
     provider: provider,
   });
+}
+
+/**
+ * Track successful login
+ */
+export function trackLoginSuccess(role) {
+  trackEvent("login_success", { role: role || null });
+}
+
+/**
+ * Track failed login attempt
+ */
+export function trackLoginFailed(reason) {
+  trackEvent("login_failed", { reason: reason || "invalid_credentials" });
+}
+
+/**
+ * Track logout
+ */
+export function trackLogout() {
+  trackEvent("logout", {});
 }
 
 // Phase 2 GA4 Conversion Tracking - Privacy-safe event wrappers

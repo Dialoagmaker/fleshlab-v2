@@ -53,46 +53,60 @@ export default function FunnelAnalytics() {
       const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
 
       // Fetch all relevant data
-      const [users, intents, payments, subs] = await Promise.all([
+      const [users, intents, payments, subs, events] = await Promise.all([
         base44.asServiceRole.entities.User.list('-created_date', 500),
         base44.asServiceRole.entities.PaymentIntent.list('-created_date', 1000),
         base44.asServiceRole.entities.Payment.list('-created_date', 1000),
         base44.asServiceRole.entities.Subscription.list('-created_date', 1000),
+        base44.asServiceRole.entities.ConversionEvent.list('-created_date', 5000),
       ]);
 
       const recent = users.filter(u => u.created_date >= cutoff);
 
-      let funnel = { registered: 0, verified: 0, onboardingViewed: 0, fanclubClicked: 0, checkoutStarted: 0, paymentPageReached: 0, paymentCompleted: 0, activeSubscribers: 0 };
+      // Group persisted events by user_id for quick lookup (real tracked activity)
+      const eventsByUser = {};
+      for (const e of events) {
+        if (!e.user_id) continue;
+        if (!eventsByUser[e.user_id]) eventsByUser[e.user_id] = new Set();
+        eventsByUser[e.user_id].add(e.event_name);
+      }
+
+      let funnel = { registered: 0, verified: 0, loggedIn: 0, onboardingViewed: 0, fanclubClicked: 0, checkoutStarted: 0, paymentPageReached: 0, paymentCompleted: 0, activeSubscribers: 0 };
 
       for (const u of recent) {
         funnel.registered++;
         if (!u.is_verified) continue;
         funnel.verified++;
 
-        // Check onboarding
-        if (u.onboarding_completed) funnel.onboardingViewed++;
+        const userEvents = eventsByUser[u.id] || new Set();
+
+        // Logged in at least once (real login_success event)
+        if (userEvents.has('login_success')) funnel.loggedIn++;
+
+        // Onboarding viewed — prefer real "viewed" event, fall back to completed flag
+        if (userEvents.has('onboarding_viewed') || u.onboarding_completed) funnel.onboardingViewed++;
 
         const ui = intents.filter(i => i.user_id === u.id);
         const up = payments.filter(p => p.user_id === u.id);
         const us = subs.filter(s => s.user_id === u.id);
 
-        // Checkout started
+        // Fanclub clicked — real event, fall back to intent presence
         const fanclubIntents = ui.filter(i => i.payment_type === 'fanclub' || i.payment_type === 'ppv');
-        if (fanclubIntents.length > 0 || up.length > 0) {
-          funnel.checkoutStarted++;
+        if (userEvents.has('fanclub_cta_click') || fanclubIntents.length > 0) funnel.fanclubClicked++;
 
-          // Fanclub clicked
-          if (fanclubIntents.length > 0) funnel.fanclubClicked++;
+        // Checkout started — real event, fall back to intent/payment existence
+        if (userEvents.has('checkout_start') || fanclubIntents.length > 0 || up.length > 0) {
+          funnel.checkoutStarted++;
 
           // Payment page reached
           if (ui.some(i => i.checkout_url)) funnel.paymentPageReached++;
 
-          // Payment completed
+          // Payment completed — real event, fall back to record status
           const completed = ui.filter(i => i.status === 'completed').length + up.filter(p => p.status === 'completed').length;
-          if (completed > 0) funnel.paymentCompleted++;
+          if (userEvents.has('payment_success') || completed > 0) funnel.paymentCompleted++;
         }
 
-        // Active subscription
+        // Active subscription (ground-truth entitlement record)
         const now2 = new Date();
         const activeSubs = us.filter(s => s.status === 'active' && s.current_period_end && new Date(s.current_period_end) > now2);
         if (activeSubs.length > 0) funnel.activeSubscribers++;
@@ -101,6 +115,7 @@ export default function FunnelAnalytics() {
       const stages = [
         { key: "registered", label: "Registered", count: funnel.registered },
         { key: "verified", label: "Verified", count: funnel.verified },
+        { key: "loggedIn", label: "Logged In", count: funnel.loggedIn },
         { key: "onboardingViewed", label: "Onboarding Viewed", count: funnel.onboardingViewed },
         { key: "fanclubClicked", label: "Fanclub Clicked", count: funnel.fanclubClicked },
         { key: "checkoutStarted", label: "Checkout Started", count: funnel.checkoutStarted },

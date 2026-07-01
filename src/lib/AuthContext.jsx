@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
+import { setAnalyticsUserId, clearAnalyticsUserId, trackLogout } from '@/lib/analytics';
 
 const AuthContext = createContext();
 
@@ -27,6 +28,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setIsAuthenticated(false);
       setAuthChecked(true);
+      clearAnalyticsUserId();
       return;
     }
 
@@ -45,6 +47,7 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(false);
         localStorage.removeItem('base44_access_token');
         setAuthChecked(true);
+        clearAnalyticsUserId();
         return;
       }
 
@@ -54,6 +57,7 @@ export const AuthProvider = ({ children }) => {
       setUser(currentUser);
       setIsAuthenticated(true);
       setAuthChecked(true);
+      setAnalyticsUserId(currentUser.id);
       console.log('AUTH_CHECK_SUCCESS', { role: currentUser.role, email: currentUser.email });
     } catch (error) {
       console.log('AUTH_CHECK_ERROR_ANONYMOUS', error?.message || error);
@@ -61,10 +65,13 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
       localStorage.removeItem('base44_access_token');
       setAuthChecked(true);
+      clearAnalyticsUserId();
     }
   };
 
   const logout = (shouldRedirect = true) => {
+    trackLogout();
+    clearAnalyticsUserId();
     setUser(null);
     setIsAuthenticated(false);
     
