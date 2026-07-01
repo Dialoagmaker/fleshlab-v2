@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { callPublicFunction } from "@/lib/publicApi";
+import { useI18n } from "@/i18n/i18n.jsx";
 import SEOMeta from "@/components/SEOMeta";
 import SummerPromoBanner from "@/components/public/SummerPromoBanner";
 import TubeVideoCard from "@/components/tube/TubeVideoCard";
@@ -11,6 +12,7 @@ import PerformerRecruitmentBanner from "@/components/public/PerformerRecruitment
 import FleshLabLiveSection from "@/components/home/FleshLabLiveSection";
 
 export default function Home() {
+  const { t } = useI18n();
 
   // Fetch videos
   const { data: videosData, isLoading: videosLoading, error: videosError } = useQuery({
@@ -64,13 +66,13 @@ export default function Home() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="w-1.5 h-8 bg-gradient-to-b from-rose-600 to-rose-700 rounded-full shadow-lg shadow-rose-600/40" />
-              <h2 className="text-xl font-black text-white tracking-tight">
-                <span className="text-rose-500">LATEST</span> VIDEOS
+              <h2 className="text-xl font-black text-white tracking-tight uppercase">
+                {t('homepage.latestVideos')}
               </h2>
               <div className="h-px w-32 bg-gradient-to-r from-rose-600/50 to-transparent" />
             </div>
             <a href="/videos" className="text-xs text-rose-500 hover:text-rose-400 font-semibold flex items-center gap-1.5 uppercase tracking-wide">
-              View All <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              {t('homepage.viewAll')} <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </a>
           </div>
 
@@ -82,7 +84,7 @@ export default function Home() {
             </div>
           ) : videosError ? (
             <div className="text-center py-8 text-white/60">
-              <p>Error loading videos</p>
+              <p>{t('homepage.errorLoading')}</p>
             </div>
           ) : videos.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
@@ -92,7 +94,7 @@ export default function Home() {
             </div>
           ) : (
             <div className="text-center py-8 text-white/60">
-              <p>No videos available</p>
+              <p>{t('homepage.noVideos')}</p>
             </div>
           )}
         </div>
