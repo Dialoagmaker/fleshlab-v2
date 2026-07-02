@@ -192,7 +192,7 @@ export default function ClientDashboard() {
               {activeTab === "profile"          && <ProfileTab user={user} requests={requests} />}
               {activeTab === "verification"     && <VerificationTab requests={requests} />}
               {activeTab === "security"         && <SecurityTab user={user} />}
-              {activeTab === "wallet"          && <WalletTab />}
+              {activeTab === "wallet"          && <WalletTab setActiveTab={setActiveTab} />}
             </div>
           </div>
         </div>

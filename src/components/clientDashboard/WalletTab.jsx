@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useFleshPayBeta } from "@/hooks/useFleshPayBeta";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowDownLeft, ArrowUpRight, Plus, ExternalLink } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Plus, ExternalLink, Lock } from "lucide-react";
 
 const FLESHPAY_LOGO = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/ec86d07a5_generated_image.png";
 
@@ -15,7 +15,7 @@ const sourceLabel = (entry) => {
   return m[t] || t || "Transaction";
 };
 
-export default function WalletTab() {
+export default function WalletTab({ setActiveTab }) {
   const { isAuthenticated } = useAuth();
   const { enabled: betaEnabled, loading: betaLoading } = useFleshPayBeta(isAuthenticated);
   const [wallet, setWallet] = useState(null);
@@ -34,7 +34,32 @@ export default function WalletTab() {
   };
 
   if (betaLoading) return <Skeleton className="w-full h-48 rounded-3xl" />;
-  if (!betaEnabled) return null;
+
+  if (!betaEnabled) {
+    return (
+      <div className="rounded-3xl bg-[#0d0d0d] border border-white/[0.08] p-8 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
+          <Lock className="w-6 h-6 text-primary" />
+        </div>
+        <h3 className="text-lg font-bold text-white mb-2">FleshPay Wallet is currently in private beta.</h3>
+        <p className="text-white/45 text-sm mb-1">Your account is not enabled yet.</p>
+        <p className="text-white/45 text-sm mb-6">You can continue using regular crypto checkout.</p>
+        <div className="flex items-center justify-center gap-3">
+          <Button
+            variant="outline"
+            className="border-white/[0.12] text-white/70 hover:bg-white/[0.06]"
+            onClick={() => setActiveTab?.("payments")}
+          >
+            Back to Payments
+          </Button>
+          <Link to="/fanclub">
+            <Button className="bg-primary hover:bg-primary/90 text-white font-bold">Browse Fanclub</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) return <Skeleton className="w-full h-48 rounded-3xl" />;
 
   const balance = wallet?.balance_usd || 0;
