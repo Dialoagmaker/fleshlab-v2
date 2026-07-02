@@ -37,14 +37,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid or missing event_name' }, { status: 400 });
     }
 
-    await base44.asServiceRole.entities.ConversionEvent.create({
+    const created = await base44.asServiceRole.entities.ConversionEvent.create({
       user_id: user_id || undefined,
       event_name,
       source_page: source_page || null,
       metadata_json: metadata ? JSON.stringify(metadata) : null,
     });
 
-    return Response.json({ success: true });
+    return Response.json({ success: true, id: created.id });
   } catch (error) {
     // Never let logging errors surface loudly — this is best-effort telemetry
     console.error('[logEvent]', error.message);

@@ -18,6 +18,7 @@ import ResetPassword from './pages/ResetPassword';
 import Wallet from './pages/Wallet';
 import AdminWallets from './pages/admin/Wallets';
 import AdminPaymentProviders from './pages/admin/PaymentProviders';
+import TrackingTest from './pages/admin/TrackingTest';
 // Add page imports here
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
@@ -218,6 +219,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/funnel" element={<FunnelAnalytics />} />
                 <Route path="/admin/wallets" element={<AdminWallets />} />
                 <Route path="/admin/payment-providers" element={<AdminPaymentProviders />} />
+                <Route path="/admin/tracking-test" element={<TrackingTest />} />
               </Route>
             </Route>
           </Route>

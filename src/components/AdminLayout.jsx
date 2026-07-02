@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Video, Upload, Users, Tag, Newspaper,
   Link2, Database, Menu, Play, ChevronRight, Globe, FileText, ClipboardList,
   AlertCircle, Settings, UserX, DollarSign, MessageSquare, LogOut, Sparkles,
-  TrendingUp, CalendarCheck, Eye, ListChecks
+  TrendingUp, CalendarCheck, Eye, ListChecks, FlaskConical
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
@@ -62,6 +62,7 @@ const NAV_GROUPS = [
     items: [
        { href: "/admin/growth",     label: "SEO",       icon: Settings },
        { href: "/admin/migration", label: "Migration", icon: Database },
+       { href: "/admin/tracking-test", label: "Tracking Test", icon: FlaskConical },
      ],
   },
 ];
