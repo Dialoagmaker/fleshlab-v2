@@ -56,6 +56,7 @@ import AdminUsers from './pages/admin/Users';
 import AdminUserDetail from './pages/admin/UserDetail';
 import FunnelAnalytics from './pages/admin/FunnelAnalytics';
 import GrowthDashboard from './pages/admin/GrowthDashboard';
+import ExecutiveDashboard from './pages/admin/ExecutiveDashboard';
 import AdminPayments from './pages/admin/Payments';
 import AdminRevenueDashboard from './pages/admin/RevenueDashboard';
 import MonthlyPayoutSummary from './pages/admin/MonthlyPayoutSummary';
@@ -210,6 +211,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/asset-repair-queue" element={<AssetRepairQueue />} />
                 <Route path="/admin/ai-text-generator" element={<AITextGenerator />} />
                 <Route path="/admin/growth" element={<GrowthDashboard />} />
+                <Route path="/admin/executive-dashboard" element={<ExecutiveDashboard />} />
                 <Route path="/admin/payments" element={<AdminPayments />} />
                 <Route path="/admin/revenue" element={<AdminRevenueDashboard />} />
                 <Route path="/admin/monthly-payout-summary" element={<MonthlyPayoutSummary />} />

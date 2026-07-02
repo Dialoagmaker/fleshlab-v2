@@ -13,6 +13,7 @@ const NAV_GROUPS = [
     label: "Overview",
     items: [
       { href: "/admin",              label: "Dashboard",  icon: LayoutDashboard, exact: true },
+      { href: "/admin/executive-dashboard", label: "Executive Dashboard", icon: TrendingUp },
       { href: "/admin/live-activity", label: "Live Activity", icon: Activity },
     ],
   },
