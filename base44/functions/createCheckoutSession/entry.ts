@@ -325,7 +325,7 @@ Deno.serve(async (req) => {
         success: false,
         providerConfigured: false,
         stage: 'provider_detection',
-        message: 'Secure crypto/card checkout is being configured. Please check back soon.',
+        message: 'Secure crypto checkout is being configured. Please check back soon.',
       }, { status: 503 });
     }
 
@@ -473,7 +473,7 @@ Deno.serve(async (req) => {
         provider: 'nowpayments',
         paymentIntentId: intent.id,
         checkoutUrl: invoiceData.invoice_url,
-        message: 'Crypto / card-to-crypto checkout created. Card availability depends on provider approval and region.',
+        message: 'Crypto checkout created. Pay securely with crypto via NOWPayments.',
       });
     }
 

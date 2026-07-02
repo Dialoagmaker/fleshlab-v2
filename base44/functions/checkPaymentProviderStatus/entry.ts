@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       },
       // Friendly label for UI copy
       checkoutLabel: nowConfigured
-        ? 'Crypto / card-to-crypto checkout'
+        ? 'Secure crypto checkout'
         : 'Secure checkout',
       message: primary
         ? `Payment provider (${primary}) configured in ${mode} mode`
