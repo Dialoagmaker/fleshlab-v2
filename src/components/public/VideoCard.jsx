@@ -47,33 +47,34 @@ export default function VideoCard({ video, brands = [], performers = [] }) {
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
           )}
 
-          {/* Top-left badges - enhanced hierarchy */}
-          <div className="absolute top-2 left-2 flex flex-col gap-1.5">
-            {video.featured && (
+          {/* Top-left badge - single status badge max (exclusive takes priority over featured) */}
+          <div className="absolute top-2 left-2">
+            {video.is_exclusive ? (
+              <span className="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-lg shadow-purple-600/30">
+                <Zap className="w-3 h-3" /> EXCLUSIVE
+              </span>
+            ) : video.featured && (
               <span className="flex items-center gap-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-lg shadow-amber-600/30">
                 <Crown className="w-3 h-3" /> FEATURED
               </span>
             )}
-            {video.is_exclusive && (
-              <span className="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-lg shadow-purple-600/30">
-                <Zap className="w-3 h-3" /> EXCLUSIVE
-              </span>
-            )}
           </div>
 
-          {/* Access tier — top right - enhanced */}
-          {video.access_tier && video.access_tier !== 'free' && (
-            <div className={cn(
-              "absolute top-2 right-2 text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-lg backdrop-blur-sm",
-              video.access_tier === 'fanclub' ? 'bg-purple-600/90 text-white shadow-purple-600/30' : 'bg-red-600/90 text-white shadow-red-600/30'
-            )}>
-              {video.access_tier === 'fanclub' ? (
-                <span className="flex items-center gap-1"><Crown className="w-2.5 h-2.5" /> FANCLUB</span>
-              ) : (
-                <span className="flex items-center gap-1"><Star className="w-2.5 h-2.5" /> PPV</span>
-              )}
-            </div>
-          )}
+          {/* Access tier — top right - always clear: Preview / PPV / Fanclub */}
+          <div className={cn(
+            "absolute top-2 right-2 text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-lg backdrop-blur-sm",
+            video.access_tier === 'fanclub' ? 'bg-purple-600/90 text-white shadow-purple-600/30'
+              : video.access_tier === 'ppv' ? 'bg-red-600/90 text-white shadow-red-600/30'
+              : 'bg-green-600/90 text-white shadow-green-600/30'
+          )}>
+            {video.access_tier === 'fanclub' ? (
+              <span className="flex items-center gap-1"><Crown className="w-2.5 h-2.5" /> FANCLUB</span>
+            ) : video.access_tier === 'ppv' ? (
+              <span className="flex items-center gap-1"><Star className="w-2.5 h-2.5" /> PPV</span>
+            ) : (
+              <span>PREVIEW</span>
+            )}
+          </div>
 
           {/* Duration — bottom right - enhanced visibility */}
           {hasValidDuration && (

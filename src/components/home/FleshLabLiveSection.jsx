@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Radio, Users, Star } from "lucide-react";
+import { Radio, Users } from "lucide-react";
 import { LIVE_LINKS, AFFILIATE_REL } from "@/lib/liveLinks";
 
 const LIVE_CARDS = [
@@ -18,14 +18,6 @@ const LIVE_CARDS = [
     href: LIVE_LINKS.liveHome,
     external: true,
     icon: Radio,
-  },
-  {
-    title: "Become a Performer",
-    text: "Broadcast with FleshLab",
-    buttonLabel: "Apply Now",
-    href: LIVE_LINKS.performerSignup,
-    external: true,
-    icon: Star,
   },
 ];
 
@@ -50,7 +42,7 @@ export default function FleshLabLiveSection() {
           Watch selected performers live through our official partner network.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
           {LIVE_CARDS.map((card) => {
             const Icon = card.icon;
             const inner = (

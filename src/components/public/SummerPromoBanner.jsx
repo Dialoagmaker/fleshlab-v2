@@ -82,22 +82,27 @@ export default function SummerPromoBanner() {
           </div>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-start gap-3 mb-5">
+          <div className="flex flex-col sm:flex-row items-start gap-3 mb-2">
             <Link
               to="/fanclub"
               onClick={handleFanclubClick}
-              className="w-full sm:w-auto bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black text-sm sm:text-base px-7 sm:px-9 py-3.5 sm:py-4 rounded-xl shadow-xl shadow-rose-600/40 transition-all border-0 leading-none"
+              className="w-full sm:w-auto bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black text-base sm:text-lg px-8 sm:px-10 py-4 sm:py-5 rounded-xl shadow-xl shadow-rose-600/40 transition-all border-0 leading-none"
             >
               {t('homepage.joinFanclub')}
             </Link>
             <Link
               to="/videos"
-              className="w-full sm:w-auto bg-white/10 hover:bg-white/15 text-white font-bold text-sm sm:text-base px-7 sm:px-9 py-3.5 sm:py-4 rounded-xl border border-white/20 hover:border-white/30 transition-all leading-none flex items-center justify-center gap-2"
+              className="w-full sm:w-auto bg-white/5 hover:bg-white/10 text-white/80 font-medium text-sm px-6 sm:px-7 py-3 sm:py-3.5 rounded-xl border border-white/10 hover:border-white/20 transition-all leading-none flex items-center justify-center gap-2"
             >
-              <Play className="w-4 h-4" />
+              <Play className="w-3.5 h-3.5" />
               {t('homepage.browsePreviews')}
             </Link>
           </div>
+
+          {/* Price anchor */}
+          <p className="text-white/50 text-xs sm:text-sm font-semibold mb-5">
+            Fanclub from $20.99/month · Cancel anytime
+          </p>
 
           {/* Trust Row */}
           <div className="flex items-center gap-4 text-xs text-white/50 font-medium flex-wrap">

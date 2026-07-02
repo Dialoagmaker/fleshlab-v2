@@ -768,12 +768,6 @@ export default function Fanclub() {
                   ))}
                 </ul>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <FanclubCTA
-                    planId="fanclub_monthly"
-                    label="Join Fanclub — $20.99/month"
-                    {...ctaProps}
-                    className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 py-4 rounded-xl h-auto shadow-lg shadow-rose-600/30 text-base"
-                  />
                   <Link to="/performers">
                     <Button variant="outline" className="border-white/20 text-white hover:bg-white/8 px-6 py-4 rounded-xl h-auto font-semibold text-base">
                       <Users className="w-4 h-4 mr-2" />Browse Performers

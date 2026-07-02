@@ -4,13 +4,18 @@ import { CheckCircle2, MapPin, Film, ArrowRight, Star } from "lucide-react";
 export default function PerformerCard({ performer, brands = [], videoCount = 0, featured = false }) {
   // date_of_birth is not included in the public API response (PII)
   const age = null;
+  const isComingSoon = videoCount === 0;
 
   // Find performer's primary brand/studio
   const brand = performer.brand_id ? brands.find(b => b.id === performer.brand_id) : null;
 
   return (
-    <a href={`/performers/${performer.slug}`} className="group block">
-      <div className={`rounded-xl overflow-hidden bg-[#111] border transition-all duration-300 hover:-translate-y-1 ${
+    <a
+      href={`/performers/${performer.slug}`}
+      onClick={isComingSoon ? (e) => e.preventDefault() : undefined}
+      className={`group block ${isComingSoon ? 'cursor-default' : ''}`}
+    >
+      <div className={`rounded-xl overflow-hidden bg-[#111] border transition-all duration-300 ${isComingSoon ? 'opacity-50 grayscale' : 'hover:-translate-y-1'} ${
         featured 
           ? 'border-white/[0.15] hover:border-primary/50 hover:shadow-[0_16px_50px_rgba(180,30,50,0.3)]' 
           : 'border-white/[0.07] hover:border-primary/40 hover:shadow-[0_12px_40px_rgba(180,30,50,0.2)]'
@@ -33,6 +38,15 @@ export default function PerformerCard({ performer, brands = [], videoCount = 0, 
 
           {/* Stronger gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+
+          {/* Coming Soon overlay - visually distinguishes inactive profiles */}
+          {isComingSoon && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="bg-black/80 border border-white/20 text-white/80 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full">
+                Coming Soon
+              </span>
+            </div>
+          )}
 
           {/* Fanclub badge - larger for featured */}
           {performer.fanclub_enabled && (

@@ -106,9 +106,6 @@ export default function Home() {
       {/* 4. FleshLab Live Section */}
       <FleshLabLiveSection />
 
-      {/* 5. Performer Recruitment Banner — after performers for context */}
-      <PerformerRecruitmentBanner />
-
       {/* 5. Fanclub / Full Archive CTA — logical after seeing content + performers */}
       <FanclubBanner />
 
@@ -128,6 +125,9 @@ export default function Home() {
 
       {/* 7. Studio Journal / News — SEO trust and content depth */}
       <StudioJournal articles={articles} />
+
+      {/* 8. Performer Recruitment — moved out of subscriber conversion path, placed near footer */}
+      <PerformerRecruitmentBanner />
     </>
   );
 }
