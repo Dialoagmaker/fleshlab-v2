@@ -39,7 +39,7 @@ export function usePaymentProvider() {
           primary: null,
           mode: 'not_configured',
           checkoutLabel: 'Secure checkout',
-          message: 'Secure crypto/card checkout is being configured.',
+          message: 'Secure crypto checkout is being configured.',
         });
       });
   }, []);

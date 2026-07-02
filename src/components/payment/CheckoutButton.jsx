@@ -68,7 +68,7 @@ export default function CheckoutButton({
   if (!paymentProvider.configured) {
     return (
       <PaymentUnavailableBadge
-        label={unavailableLabel || 'Secure crypto/card checkout coming soon'}
+        label={unavailableLabel || 'Secure crypto checkout coming soon'}
         className={className}
       />
     );
@@ -155,7 +155,7 @@ export default function CheckoutButton({
       )}
       {paymentProvider.primary === 'nowpayments' && (
         <p className="text-white/40 text-xs mt-1.5 text-center">
-          Crypto / card-to-crypto checkout · Card availability depends on provider approval and region
+          Secure crypto checkout
         </p>
       )}
     </div>
