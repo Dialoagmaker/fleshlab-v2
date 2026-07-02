@@ -21,8 +21,9 @@ export default function OnboardingFanclubBenefits() {
             <span className="text-rose-300 text-[10px] font-bold uppercase tracking-widest">Fanclub</span>
           </div>
           <h3 className="text-xl md:text-2xl font-black text-white mb-3">
-            Want the full FLESHLAB experience?
+            Unlock 80+ exclusive scenes
           </h3>
+          <p className="text-white/50 text-sm mb-3">Watch everything without limits — early releases and creator updates included.</p>
           <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5">
             {BENEFITS.map((b) => (
               <li key={b} className="flex items-center gap-2 text-white/60 text-sm">

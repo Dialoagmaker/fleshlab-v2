@@ -8,7 +8,8 @@ import SEOMeta from "@/components/SEOMeta";
 import VideoCard from "@/components/public/VideoCard";
 import PerformerCard from "@/components/public/PerformerCard";
 import OnboardingFanclubBenefits from "@/components/onboarding/OnboardingFanclubBenefits";
-import { Play, Users, Sparkles } from "lucide-react";
+import VideoRowSection from "@/components/onboarding/VideoRowSection";
+import { Play, Users } from "lucide-react";
 
 export default function Onboarding() {
   const { user } = useAuth();
@@ -51,56 +52,65 @@ export default function Onboarding() {
       <div className="min-h-screen bg-[#080808] px-4 py-10 md:py-14">
         <div className="max-w-[1200px] mx-auto">
 
-          {/* ── Welcome Hero ─────────────────────────────────────────── */}
-          <div className="flex flex-col items-center text-center mb-10">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-rose-700 flex items-center justify-center shadow-lg shadow-rose-600/20 mb-4">
-              <Sparkles className="w-7 h-7 text-white" />
-            </div>
-            <h1 className="text-3xl md:text-4xl font-black text-white mb-2">
-              Welcome to FLESHLAB{firstName ? `, ${firstName}` : ""}
+          {/* ── Welcome Hero — compact ───────────────────────────────── */}
+          <div className="flex flex-col items-center text-center mb-6">
+            <h1 className="text-2xl md:text-3xl font-black text-white mb-1.5">
+              Welcome back{firstName ? `, ${firstName}` : ""}
             </h1>
-            <p className="text-white/45 text-base max-w-md mb-7">
-              You're in. Start exploring free previews right away — no payment needed to look around.
+            <p className="text-white/45 text-sm max-w-md mb-4">
+              Start exploring today's newest scenes.
             </p>
 
             {/* Primary / Secondary CTAs */}
             <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
               <button
                 onClick={() => handleNav("/videos", "onboarding_videos_clicked")}
-                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-6 py-3.5 rounded-xl text-base shadow-lg shadow-rose-600/25 transition-all"
+                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-6 py-3 rounded-xl text-sm shadow-lg shadow-rose-600/25 transition-all"
               >
                 <Play className="w-4 h-4" /> Browse Videos
               </button>
               <button
                 onClick={() => handleNav("/performers", "onboarding_performers_clicked")}
-                className="flex-1 flex items-center justify-center gap-2 bg-[#111] hover:bg-[#1a1a1a] border border-white/10 hover:border-white/20 text-white font-semibold px-6 py-3.5 rounded-xl text-base transition-all"
+                className="flex-1 flex items-center justify-center gap-2 bg-[#111] hover:bg-[#1a1a1a] border border-white/10 hover:border-white/20 text-white font-semibold px-6 py-3 rounded-xl text-sm transition-all"
               >
                 <Users className="w-4 h-4" /> Explore Performers
               </button>
             </div>
           </div>
 
-          {/* ── Recommended Videos ───────────────────────────────────── */}
-          <section className="mb-10">
-            <h2 className="text-lg font-black text-white mb-3 uppercase tracking-tight">Recommended Videos</h2>
+          {/* ── Recommended Videos — fewer, larger cards ─────────────── */}
+          <section className="mb-8">
+            <h2 className="text-lg font-black text-white mb-3 uppercase tracking-tight">Recommended For You</h2>
             {videosLoading ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {[...Array(4)].map((_, i) => (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[...Array(3)].map((_, i) => (
                   <div key={i} className="aspect-video bg-[#121212] rounded-2xl animate-pulse border border-white/5" />
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {videos.slice(0, 4).map(video => (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {videos.slice(0, 3).map(video => (
                   <VideoCard key={video.id} video={video} brands={brands} performers={performers} />
                 ))}
               </div>
             )}
           </section>
 
+          {/* ── Newest Releases ──────────────────────────────────────── */}
+          <VideoRowSection title="Newest Releases" videos={videos.slice(3, 9)} brands={brands} performers={performers} loading={videosLoading} />
+
+          {/* ── Trending ─────────────────────────────────────────────── */}
+          <VideoRowSection
+            title="Trending"
+            videos={(videos.filter(v => v.featured || v.is_exclusive).length ? videos.filter(v => v.featured || v.is_exclusive) : videos.slice(9, 15)).slice(0, 6)}
+            brands={brands}
+            performers={performers}
+            loading={videosLoading}
+          />
+
           {/* ── Featured Performers ──────────────────────────────────── */}
-          <section className="mb-10">
-            <h2 className="text-lg font-black text-white mb-3 uppercase tracking-tight">Featured Performers</h2>
+          <section className="mb-8">
+            <h2 className="text-lg font-black text-white mb-3 uppercase tracking-tight">Popular Performers</h2>
             {performersLoading ? (
               <div className="grid grid-cols-3 gap-3">
                 {[...Array(3)].map((_, i) => (
@@ -117,7 +127,12 @@ export default function Onboarding() {
           </section>
 
           {/* ── Fanclub Benefits (secondary, below discovery) ───────── */}
-          <OnboardingFanclubBenefits />
+          <div className="mb-8">
+            <OnboardingFanclubBenefits />
+          </div>
+
+          {/* ── Recently Added — delays reaching the footer ──────────── */}
+          <VideoRowSection title="Recently Added" videos={videos.slice(15, 21)} brands={brands} performers={performers} loading={videosLoading} />
 
         </div>
       </div>
