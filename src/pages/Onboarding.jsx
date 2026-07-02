@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
@@ -34,6 +34,29 @@ export default function Onboarding() {
     staleTime: 30000,
   });
   const performers = performersData?.performers || [];
+
+  // Dedupe videos across sections — earlier sections win, priority order below.
+  const { recommended, newestReleases, trending, recentlyAdded } = useMemo(() => {
+    const renderedVideoIds = new Set();
+    const uniqueVideos = (list, count) => {
+      const result = [];
+      for (const v of list) {
+        if (renderedVideoIds.has(v.id)) continue;
+        renderedVideoIds.add(v.id);
+        result.push(v);
+        if (count && result.length >= count) break;
+      }
+      return result;
+    };
+
+    const recommended = uniqueVideos(videos, 3);
+    const newestReleases = uniqueVideos(videos, 6);
+    const trendingCandidates = videos.filter(v => v.featured || v.is_exclusive);
+    const trending = uniqueVideos(trendingCandidates.length ? trendingCandidates : videos, 6);
+    const recentlyAdded = uniqueVideos(videos, 6);
+
+    return { recommended, newestReleases, trending, recentlyAdded };
+  }, [videos]);
 
   const handleNav = (path, eventName) => {
     trackEvent(eventName, { source: 'onboarding' });
@@ -89,7 +112,7 @@ export default function Onboarding() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {videos.slice(0, 3).map(video => (
+                {recommended.map(video => (
                   <VideoCard key={video.id} video={video} brands={brands} performers={performers} />
                 ))}
               </div>
@@ -97,16 +120,10 @@ export default function Onboarding() {
           </section>
 
           {/* ── Newest Releases ──────────────────────────────────────── */}
-          <VideoRowSection title="Newest Releases" videos={videos.slice(3, 9)} brands={brands} performers={performers} loading={videosLoading} />
+          <VideoRowSection title="Newest Releases" videos={newestReleases} brands={brands} performers={performers} loading={videosLoading} />
 
           {/* ── Trending ─────────────────────────────────────────────── */}
-          <VideoRowSection
-            title="Trending"
-            videos={(videos.filter(v => v.featured || v.is_exclusive).length ? videos.filter(v => v.featured || v.is_exclusive) : videos.slice(9, 15)).slice(0, 6)}
-            brands={brands}
-            performers={performers}
-            loading={videosLoading}
-          />
+          <VideoRowSection title="Trending" videos={trending} brands={brands} performers={performers} loading={videosLoading} />
 
           {/* ── Featured Performers ──────────────────────────────────── */}
           <section className="mb-8">
@@ -132,7 +149,7 @@ export default function Onboarding() {
           </div>
 
           {/* ── Recently Added — delays reaching the footer ──────────── */}
-          <VideoRowSection title="Recently Added" videos={videos.slice(15, 21)} brands={brands} performers={performers} loading={videosLoading} />
+          <VideoRowSection title="Recently Added" videos={recentlyAdded} brands={brands} performers={performers} loading={videosLoading} />
 
         </div>
       </div>
