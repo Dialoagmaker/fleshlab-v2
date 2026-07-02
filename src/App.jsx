@@ -19,6 +19,7 @@ import Wallet from './pages/Wallet';
 import AdminWallets from './pages/admin/Wallets';
 import AdminPaymentProviders from './pages/admin/PaymentProviders';
 import TrackingTest from './pages/admin/TrackingTest';
+import LiveActivity from './pages/admin/LiveActivity';
 // Add page imports here
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
@@ -220,6 +221,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/wallets" element={<AdminWallets />} />
                 <Route path="/admin/payment-providers" element={<AdminPaymentProviders />} />
                 <Route path="/admin/tracking-test" element={<TrackingTest />} />
+                <Route path="/admin/live-activity" element={<LiveActivity />} />
               </Route>
             </Route>
           </Route>

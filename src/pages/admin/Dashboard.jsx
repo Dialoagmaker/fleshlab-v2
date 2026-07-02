@@ -5,7 +5,7 @@ import { useState } from "react";
 import SEOMeta from "@/components/SEOMeta";
 import {
   Video, Users, Tag, Newspaper, Link2, ArrowRight, Globe,
-  Plus, Database, AlertCircle, RefreshCw, CheckCircle2, CreditCard, TrendingUp
+  Plus, Database, AlertCircle, RefreshCw, CheckCircle2, CreditCard, TrendingUp, Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -78,6 +78,7 @@ function AssignmentStatCard({ stat, isLoading }) {
 // ── Quick Actions ─────────────────────────────────────────────────────────────
 
 const QUICK_ACTIONS = [
+  { label: "Live Activity",                  href: "/admin/live-activity",                   icon: Activity },
   { label: "Growth Dashboard",               href: "/admin/growth",                          icon: TrendingUp },
   { label: "Users & Customers",              href: "/admin/users",                         icon: CreditCard },
   { label: "Upload Video",                   href: "/admin/video-upload",                  icon: Plus },

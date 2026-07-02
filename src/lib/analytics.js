@@ -43,13 +43,31 @@ const DB_TRACKED_EVENTS = new Set([
   'subscription_activated',
 ]);
 
+// Best-effort client-side enrichment — never overwrites explicit event params.
+function buildClientEnrichment() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    return {
+      screen_resolution: `${window.screen?.width || ''}x${window.screen?.height || ''}`,
+      language: navigator.language || null,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
+      utm_source: urlParams.get('utm_source') || null,
+      utm_medium: urlParams.get('utm_medium') || null,
+      utm_campaign: urlParams.get('utm_campaign') || null,
+      referrer: document.referrer || null,
+    };
+  } catch (_) {
+    return {};
+  }
+}
+
 function logDbEvent(eventName, params) {
   try {
     base44.functions.invoke('logEvent', {
       event_name: eventName,
       user_id: _currentUserId,
       source_page: window.location.pathname,
-      metadata: params,
+      metadata: { ...buildClientEnrichment(), ...params },
     }).catch(() => {}); // best-effort, never block the UI
   } catch (_) {}
 }

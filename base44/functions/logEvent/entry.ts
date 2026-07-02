@@ -27,6 +27,32 @@ const ALLOWED_EVENTS = new Set([
   'subscription_activated',
 ]);
 
+// Lightweight User-Agent parser — best-effort browser/OS/device detection.
+// Never throws; falls back to 'unknown' fields on parse failure.
+function parseUserAgent(ua) {
+  if (!ua) return { browser: null, browser_version: null, operating_system: null, device_type: null };
+  const browserMatch =
+    ua.match(/Edg\/([\d.]+)/) ? ['Edge', RegExp.$1] :
+    ua.match(/OPR\/([\d.]+)/) ? ['Opera', RegExp.$1] :
+    ua.match(/Chrome\/([\d.]+)/) ? ['Chrome', RegExp.$1] :
+    ua.match(/Firefox\/([\d.]+)/) ? ['Firefox', RegExp.$1] :
+    ua.match(/Version\/([\d.]+).*Safari/) ? ['Safari', RegExp.$1] :
+    [null, null];
+
+  const os =
+    /Windows/.test(ua) ? 'Windows' :
+    /Mac OS X/.test(ua) ? 'macOS' :
+    /Android/.test(ua) ? 'Android' :
+    /iPhone|iPad|iOS/.test(ua) ? 'iOS' :
+    /Linux/.test(ua) ? 'Linux' : null;
+
+  const device_type =
+    /iPad|Tablet/.test(ua) ? 'tablet' :
+    /Mobi|Android(?!.*Tablet)|iPhone/.test(ua) ? 'mobile' : 'desktop';
+
+  return { browser: browserMatch[0], browser_version: browserMatch[1], operating_system: os, device_type };
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -37,11 +63,27 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid or missing event_name' }, { status: 400 });
     }
 
+    // Server-side enrichment — never overwrites fields already present in metadata
+    const ua = req.headers.get('user-agent') || '';
+    const uaInfo = parseUserAgent(ua);
+    const country = req.headers.get('cf-ipcountry') || null;
+    const referrer = req.headers.get('referer') || null;
+
+    const enrichedMetadata = {
+      browser: uaInfo.browser,
+      browser_version: uaInfo.browser_version,
+      operating_system: uaInfo.operating_system,
+      device_type: uaInfo.device_type,
+      country,
+      referrer,
+      ...(metadata || {}),
+    };
+
     const created = await base44.asServiceRole.entities.ConversionEvent.create({
       user_id: user_id || undefined,
       event_name,
       source_page: source_page || null,
-      metadata_json: metadata ? JSON.stringify(metadata) : null,
+      metadata_json: JSON.stringify(enrichedMetadata),
     });
 
     return Response.json({ success: true, id: created.id });
