@@ -15,6 +15,11 @@ function inRange(dateStr, start, end) {
   return t >= start.getTime() && t < end.getTime();
 }
 
+function isSimulatedIntent(pi) {
+  const meta = parseMeta(pi.metadata);
+  return meta.simulated === true || meta.test_mode === true;
+}
+
 function topN(map, n = 5) {
   return Array.from(map.entries())
     .sort((a, b) => b[1].value - a[1].value)
@@ -35,7 +40,7 @@ Deno.serve(async (req) => {
       await Promise.all([
         svc.entities.ConversionEvent.list('-created_date', 5000),
         svc.entities.User.list('-created_date', 5000),
-        svc.entities.PaymentIntent.list('-created_date', 3000),
+        svc.entities.PaymentIntent.list('-created_date', 3000).then(rows => rows.filter(pi => !isSimulatedIntent(pi))),
         svc.entities.Subscription.list('-created_date', 2000),
         svc.entities.FleshPayPurchase.list('-created_date', 2000),
         svc.entities.PageView.list('-created_date', 5000).catch(() => []),
