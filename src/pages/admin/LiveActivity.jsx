@@ -17,28 +17,27 @@ export default function LiveActivity() {
   const [limit, setLimit] = useState(DEFAULT_LIMIT);
 
   // Today's events — powers stats, top lists, and recent errors regardless of feed filter.
-  const { data: todayEvents = [] } = useQuery({
+  // NOTE: created_date is a built-in field and does not support $gte/$lte query operators in
+  // this SDK (confirmed via testing — such a query silently returns 0 rows), so we fetch the
+  // latest capped window sorted newest-first and filter by date client-side instead.
+  const { data: todayEventsRaw = [] } = useQuery({
     queryKey: ["live-activity-today"],
-    queryFn: () => base44.entities.ConversionEvent.filter(
-      { created_date: { $gte: startOfToday().toISOString() } }, "-created_date", 1000
-    ),
+    queryFn: () => base44.entities.ConversionEvent.list("-created_date", 1000),
     refetchInterval: REFRESH_MS,
   });
+  const todayEvents = useMemo(
+    () => todayEventsRaw.filter(e => new Date(e.created_date) >= startOfToday()),
+    [todayEventsRaw]
+  );
 
-  // Feed events — respects the selected time range + server-side filters, capped and paginated.
+  // Feed events — only equality filters (event_name, user_id) are pushed server-side;
+  // time range is applied client-side below for the same reason as above.
   const feedQuery = useMemo(() => {
-    let start;
-    if (filters.range === "custom" && filters.customFrom) {
-      start = new Date(filters.customFrom);
-    } else {
-      start = rangeStart(filters.range);
-    }
-    const query = { created_date: { $gte: start.toISOString() } };
-    if (filters.customTo) query.created_date.$lte = new Date(filters.customTo).toISOString();
+    const query = {};
     if (filters.eventName) query.event_name = filters.eventName;
     if (filters.userId) query.user_id = filters.userId;
     return query;
-  }, [filters]);
+  }, [filters.eventName, filters.userId]);
 
   const { data: feedEventsRaw = [] } = useQuery({
     queryKey: ["live-activity-feed", feedQuery, limit],
@@ -86,16 +85,27 @@ export default function LiveActivity() {
   const todayWrapped = useMemo(() => todayEvents.map(e => ({ id: e.id, created_date: e.created_date, data: e })), [todayEvents]);
   const feedWrapped = useMemo(() => feedEventsRaw.map(e => ({ id: e.id, created_date: e.created_date, data: e })), [feedEventsRaw]);
 
-  // Client-side filters that can't be expressed server-side (stored inside metadata_json).
+  // Client-side filters that can't be expressed server-side: time range + metadata fields.
   const filteredFeed = useMemo(() => {
+    let start;
+    if (filters.range === "custom" && filters.customFrom) {
+      start = new Date(filters.customFrom);
+    } else {
+      start = rangeStart(filters.range);
+    }
+    const end = (filters.range === "custom" && filters.customTo) ? new Date(filters.customTo) : null;
+
     return feedWrapped.filter(ev => {
+      const createdAt = new Date(ev.created_date);
+      if (createdAt < start) return false;
+      if (end && createdAt > end) return false;
       const meta = parseMetadata(ev.data.metadata_json);
       if (filters.browser && meta.browser !== filters.browser) return false;
       if (filters.device && meta.device_type !== filters.device) return false;
       if (filters.country && meta.country !== filters.country) return false;
       return true;
     });
-  }, [feedWrapped, filters.browser, filters.device, filters.country]);
+  }, [feedWrapped, filters.range, filters.customFrom, filters.customTo, filters.browser, filters.device, filters.country]);
 
   const browserOptions = useMemo(() => {
     const set = new Set();
