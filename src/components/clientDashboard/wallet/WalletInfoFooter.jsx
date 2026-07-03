@@ -2,9 +2,9 @@ import { DollarSign, Zap, CreditCard, Headphones } from "lucide-react";
 
 const INFO = [
   { icon: DollarSign, label: "Currency", value: "USD" },
-  { icon: Zap, label: "Processing", value: "Instant" },
-  { icon: CreditCard, label: "Payment Methods", value: "Stripe & PayPal via FlashPay" },
-  { icon: Headphones, label: "Support", value: "24/7" },
+  { icon: Zap, label: "Processing Time", value: "Instant" },
+  { icon: CreditCard, label: "Accepted Payments", value: "Stripe, PayPal" },
+  { icon: Headphones, label: "Support", value: "24/7 Available" },
 ];
 
 export default function WalletInfoFooter() {

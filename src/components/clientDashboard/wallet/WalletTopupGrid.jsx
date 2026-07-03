@@ -4,7 +4,7 @@ const TOPUP_AMOUNTS = [10, 25, 50, 100];
 
 export default function WalletTopupGrid({ toppingUp, onTopup }) {
   return (
-    <div className="rounded-3xl bg-[#0d0d0d] border border-white/[0.08] p-5 space-y-3.5">
+    <div className="pt-6 border-t border-white/[0.08] space-y-3.5">
       <h3 className="text-[10px] font-bold text-white/45 uppercase tracking-widest">Add Funds to Your Wallet</h3>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {TOPUP_AMOUNTS.map((amount) => (

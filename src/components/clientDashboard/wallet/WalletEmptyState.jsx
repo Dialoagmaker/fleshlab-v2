@@ -1,4 +1,4 @@
-import { WalletCards, ShieldCheck } from "lucide-react";
+import { WalletCards, ShieldCheck, ArrowRight } from "lucide-react";
 
 export default function WalletEmptyState({ onAddFunds }) {
   return (
@@ -7,16 +7,17 @@ export default function WalletEmptyState({ onAddFunds }) {
         <WalletCards className="w-9 h-9 text-primary" />
       </div>
       <div className="flex-1 text-center sm:text-left">
-        <h3 className="text-base font-bold text-white">No FlashPay Wallet Yet</h3>
+        <h3 className="text-base font-bold text-white">No FlashPay wallet yet</h3>
         <p className="text-xs text-white/40 mt-1.5 leading-relaxed max-w-sm">
-          Create your wallet by adding funds. Once created, you'll be able to use your balance for supported purchases.
+          Add funds to create your FlashPay wallet. Once created, you can use your balance for eligible purchases across FleshLab.
         </p>
         <div className="mt-4 flex flex-col sm:flex-row items-center gap-3">
           <button
             onClick={onAddFunds}
-            className="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors"
           >
             Add Funds Now
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
           <p className="flex items-center gap-1.5 text-[10px] text-white/30">
             <ShieldCheck className="w-3.5 h-3.5 text-primary/60" />

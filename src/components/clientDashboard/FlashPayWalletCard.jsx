@@ -1,58 +1,15 @@
-import { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
-import { Skeleton } from "@/components/ui/skeleton";
 import WalletHero from "@/components/clientDashboard/wallet/WalletHero";
 import WalletTopupGrid from "@/components/clientDashboard/wallet/WalletTopupGrid";
-import WalletEmptyState from "@/components/clientDashboard/wallet/WalletEmptyState";
 
-export default function FlashPayWalletCard() {
-  const [balance, setBalance] = useState(null);
-  const [status, setStatus] = useState(null);
-  const [walletExists, setWalletExists] = useState(true);
-  const [configured, setConfigured] = useState(true);
-  const [loading, setLoading] = useState(true);
-  const [toppingUp, setToppingUp] = useState(null);
-
-  useEffect(() => { loadBalance(); }, []);
-
-  const loadBalance = async () => {
-    try {
-      const res = await base44.functions.invoke("getFlashPayWalletBalance", {});
-      setConfigured(res.data?.configured !== false);
-      setBalance(res.data?.balance_usd ?? 0);
-      setStatus(res.data?.status || null);
-      setWalletExists(res.data?.wallet_exists !== false);
-    } catch {
-      setConfigured(false);
-    }
-    setLoading(false);
-  };
-
-  const handleTopup = async (amount) => {
-    setToppingUp(amount);
-    try {
-      const res = await base44.functions.invoke("createFlashPayTopupSession", { amount_usd: amount });
-      if (res.data?.checkoutUrl) window.location.href = res.data.checkoutUrl;
-    } catch (e) {
-      console.error("FlashPay top-up failed:", e);
-    }
-    setToppingUp(null);
-  };
-
-  if (loading) return <Skeleton className="w-full h-48 rounded-3xl" />;
-
+export default function FlashPayWalletCard({ configured, balance, status, toppingUp, onTopup }) {
   return (
-    <div className="space-y-4">
+    <div className="rounded-3xl bg-gradient-to-br from-[#140508] via-[#0d0d0d] to-black border border-primary/20 p-6 shadow-[0_0_40px_-12px_rgba(225,29,72,0.25)]">
       <WalletHero configured={configured} balance={balance} status={status} />
 
-      {!configured ? (
-        <p className="text-xs text-white/40 px-1">FlashPay is not fully configured yet.</p>
+      {configured ? (
+        <WalletTopupGrid toppingUp={toppingUp} onTopup={onTopup} />
       ) : (
-        <WalletTopupGrid toppingUp={toppingUp} onTopup={handleTopup} />
-      )}
-
-      {configured && !walletExists && (
-        <WalletEmptyState onAddFunds={() => handleTopup(10)} />
+        <p className="text-xs text-white/40 px-1 pt-6 border-t border-white/[0.08] mt-6">FlashPay is not fully configured yet.</p>
       )}
     </div>
   );

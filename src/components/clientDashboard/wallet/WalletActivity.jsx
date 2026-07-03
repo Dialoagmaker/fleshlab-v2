@@ -11,6 +11,7 @@ export default function WalletActivity({ ledger }) {
     <div className="rounded-3xl bg-[#0d0d0d] border border-white/[0.08] overflow-hidden">
       <div className="px-5 py-4 flex items-center justify-between">
         <h3 className="text-[10px] font-bold text-primary uppercase tracking-widest">Recent Activity</h3>
+        <button className="text-[10px] font-bold text-primary hover:text-primary/80 transition-colors">View All</button>
       </div>
 
       {ledger.length === 0 ? (
