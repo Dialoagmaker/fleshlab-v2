@@ -27,26 +27,51 @@ Deno.serve(async (req) => {
       }, { status: 503 });
     }
 
-    const res = await fetch(`${baseUrl.replace(/\/$/, '')}/getPlatformWallet`, {
-      method: 'POST',
-      headers: {
-        'x-platform-key': platformKey,
-        'x-api-key': apiKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email: user.email }),
+    const fullUrl = `${baseUrl.replace(/\/$/, '')}/getPlatformWallet`;
+    const requestBody = { user_email: user.email };
+    console.log('[getFlashPayWalletBalance] DEBUG request:', {
+      url: fullUrl,
+      headers: { 'x-platform-key': platformKey, 'x-api-key': apiKey ? `${apiKey.slice(0, 4)}...(${apiKey.length} chars)` : null },
+      body: requestBody,
+    });
+
+    let res;
+    try {
+      res = await fetch(fullUrl, {
+        method: 'POST',
+        headers: {
+          'x-platform-key': platformKey,
+          'x-api-key': apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+    } catch (networkErr) {
+      console.error('[getFlashPayWalletBalance] DEBUG network/DNS error:', networkErr.message);
+      return Response.json({
+        configured: true,
+        debug: { url: fullUrl, networkError: networkErr.message },
+        error: 'Network/DNS error reaching FlashPay.',
+      }, { status: 502 });
+    }
+
+    const rawText = await res.text();
+    console.log('[getFlashPayWalletBalance] DEBUG response:', {
+      url: fullUrl,
+      status: res.status,
+      statusText: res.statusText,
+      body: rawText,
     });
 
     if (!res.ok) {
-      const errText = await res.text();
-      console.error('[getFlashPayWalletBalance] FlashPay API error:', res.status, errText);
       return Response.json({
         configured: true,
+        debug: { url: fullUrl, status: res.status, statusText: res.statusText, body: rawText },
         error: 'Could not reach FlashPay wallet service.',
       }, { status: 502 });
     }
 
-    const data = await res.json();
+    const data = JSON.parse(rawText);
 
     return Response.json({
       configured: true,
