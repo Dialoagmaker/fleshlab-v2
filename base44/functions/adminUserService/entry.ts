@@ -713,9 +713,22 @@ async function getUserFinancials(base44, body) {
     base44.asServiceRole.entities.FleshPayLedger.filter({ user_id: userId }),
   ]);
 
-  const completedPayments = payments.filter(p => p.status === 'completed');
-  const completedIntents = intents.filter(i => i.status === 'completed');
-  const refunded = [...payments.filter(p => p.status === 'refunded'), ...intents.filter(i => i.status === 'refunded')];
+  // Exclude simulated/test records (tagged by simulatePaymentWebhook) from revenue reporting
+  const isSimulated = (record) => {
+    try {
+      const meta = JSON.parse(record.metadata || '{}');
+      return meta.simulated === true || meta.test_mode === true;
+    } catch (_) {
+      return false;
+    }
+  };
+
+  const realPayments = payments.filter(p => !isSimulated(p));
+  const realIntents = intents.filter(i => !isSimulated(i));
+
+  const completedPayments = realPayments.filter(p => p.status === 'completed');
+  const completedIntents = realIntents.filter(i => i.status === 'completed');
+  const refunded = [...realPayments.filter(p => p.status === 'refunded'), ...realIntents.filter(i => i.status === 'refunded')];
 
   const ppvRevenue = completedPayments.filter(p => p.payment_type === 'ppv').reduce((s, p) => s + (p.amount_usd || 0), 0);
   const fanclubRevenue =
