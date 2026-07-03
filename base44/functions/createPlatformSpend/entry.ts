@@ -92,14 +92,28 @@ Deno.serve(async (req) => {
       amount = GUEST_PRODUCTION_DEPOSIT_PRICE;
     }
 
-    const idempotencyKey = idempotency_key || `${user.id}_wallet_${item_type}_${item_id}`;
+    // Fanclub keys include a period marker so renewals aren't blocked forever by a past purchase,
+    // while still protecting a single in-flight purchase from double-click/duplicate submission.
+    const periodMarker = item_type === 'fanclub' ? new Date().toISOString().slice(0, 7) : null;
+    const idempotencyKey = idempotency_key || (periodMarker
+      ? `${user.id}_wallet_${item_type}_${item_id}_${periodMarker}`
+      : `${user.id}_wallet_${item_type}_${item_id}`);
     const purchaseType = PURCHASE_TYPE_MAP[item_type];
     const productId = videoId || planId || applicationId;
 
-    // ── Idempotency: existing purchase ─────────────────────────────────────
+    // ── Idempotency: existing purchase for this exact key ──────────────────
     const existingPurchases = await base44.entities.FleshPayPurchase.filter({ user_id: user.id, idempotency_key: idempotencyKey });
     if (existingPurchases.length > 0 && existingPurchases[0].status === 'completed' && existingPurchases[0].access_granted === true) {
       return Response.json({ success: true, duplicate: true, already_purchased: true, purchase: existingPurchases[0] });
+    }
+    // Another request for this exact key is already in flight (pending) — reject immediately, do not debit again.
+    const inFlightPurchase = existingPurchases.find(p => p.status === 'pending') || null;
+    if (inFlightPurchase) {
+      return Response.json({
+        error: 'A purchase for this item is already in progress. Please wait.',
+        pending: true,
+        purchase_id: inFlightPurchase.id,
+      }, { status: 409 });
     }
 
     // ── Wallet validation ───────────────────────────────────────────────────
@@ -108,20 +122,10 @@ Deno.serve(async (req) => {
     const wallet = wallets[0];
     if (wallet.status !== 'active') return Response.json({ error: 'Wallet is not active. Please contact support.' }, { status: 403 });
 
-    const pendingPurchase = existingPurchases.find(p => p.status === 'pending') || null;
-    let purchase = pendingPurchase;
-    const isRecovery = !!pendingPurchase;
-
-    let ledgerEntry = null;
-    if (isRecovery) {
-      const existingLedger = await base44.entities.FleshPayLedger.filter({ wallet_id: wallet.id, idempotency_key: idempotencyKey });
-      if (existingLedger.length > 0) ledgerEntry = existingLedger[0];
-    }
-
     const balanceBefore = wallet.balance_usd;
     const balanceAfter = Math.round((balanceBefore - amount) * 100) / 100;
 
-    if (!isRecovery && balanceBefore < amount) {
+    if (balanceBefore < amount) {
       return Response.json({
         error: 'Insufficient balance',
         balance_usd: balanceBefore,
@@ -130,8 +134,11 @@ Deno.serve(async (req) => {
       }, { status: 402 });
     }
 
-    // ── Create Purchase in PENDING state (if not recovering) ───────────────
-    if (!purchase) {
+    // ── Create Purchase in PENDING state FIRST — this is the lock. ─────────
+    // Any concurrent request with the same idempotency_key will hit the
+    // in-flight check above and be rejected with 409 before it can debit.
+    let purchase;
+    try {
       purchase = await base44.entities.FleshPayPurchase.create({
         user_id: user.id,
         wallet_id: wallet.id,
@@ -148,10 +155,23 @@ Deno.serve(async (req) => {
         idempotency_key: idempotencyKey,
         metadata: JSON.stringify({ item_type, video_title: video?.title || null }),
       });
+    } catch (createErr) {
+      // Race: another request created the pending/completed record microseconds earlier — re-check and bail out safely.
+      const recheck = await base44.entities.FleshPayPurchase.filter({ user_id: user.id, idempotency_key: idempotencyKey });
+      if (recheck.length > 0) {
+        return Response.json({
+          error: 'A purchase for this item is already in progress or completed.',
+          pending: recheck[0].status === 'pending',
+          duplicate: recheck[0].status === 'completed',
+          purchase: recheck[0],
+        }, { status: 409 });
+      }
+      throw createErr;
     }
 
-    // ── Ledger debit (if not already done) ─────────────────────────────────
-    if (!ledgerEntry) {
+    let ledgerEntry = null;
+    // ── Ledger debit ─────────────────────────────────────────────────────────
+    {
       ledgerEntry = await base44.entities.FleshPayLedger.create({
         wallet_id: wallet.id,
         user_id: user.id,
@@ -181,10 +201,10 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Wallet is now debited; record the ledger link on the purchase but do NOT
+    // claim access_granted/completed until entitlement is confirmed granted.
     await base44.entities.FleshPayPurchase.update(purchase.id, {
       ledger_entry_id: ledgerEntry.id,
-      access_granted: true,
-      status: 'completed',
     });
 
     // ── Grant entitlement via the existing shared pipeline (no duplication) ──
@@ -202,17 +222,41 @@ Deno.serve(async (req) => {
     };
 
     let entitlementResult;
+    let entitlementOk = false;
     try {
       const res = await base44.functions.invoke('shared/grantEntitlement', { intent: entitlementIntent });
       entitlementResult = res.data;
+      entitlementOk = !!entitlementResult?.ok;
     } catch (entErr) {
       console.error('[createPlatformSpend] Entitlement grant error:', entErr.message);
       entitlementResult = { ok: false, error: entErr.message };
     }
 
+    if (!entitlementOk) {
+      // Money was debited but entitlement was NOT confirmed — do not claim access_granted.
+      // Flag for manual admin resolution instead of silently losing the charge.
+      await base44.entities.FleshPayPurchase.update(purchase.id, {
+        status: 'failed_entitlement',
+        access_granted: false,
+        notes: `ADMIN ALERT: wallet debited (ledger ${ledgerEntry.id}) but entitlement grant failed: ${entitlementResult?.error || 'unknown error'}. Requires manual review.`,
+      });
+      console.error('[createPlatformSpend] ADMIN ALERT — debited but entitlement failed', {
+        userId: user.id, purchaseId: purchase.id, ledgerId: ledgerEntry.id, item_type, itemId: item_id,
+      });
+      return Response.json({
+        success: false,
+        error: 'Your wallet was charged, but we could not confirm access. Our team has been notified — please contact support with this reference: ' + purchase.id,
+        purchase_id: purchase.id,
+      }, { status: 502 });
+    }
+
+    await base44.entities.FleshPayPurchase.update(purchase.id, {
+      access_granted: true,
+      status: 'completed',
+    });
+
     return Response.json({
       success: true,
-      recovered: isRecovery,
       purchase: {
         id: purchase.id,
         item_type,

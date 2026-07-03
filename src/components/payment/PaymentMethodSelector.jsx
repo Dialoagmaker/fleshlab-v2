@@ -97,11 +97,11 @@ export default function PaymentMethodSelector({
       } else {
         const reason = res.data?.error || "Payment failed";
         trackWalletPurchaseFailed(paymentType, itemId, reason);
-        setError(`Payment failed. No funds have been deducted.`);
+        setError(res.data?.error || "We could not confirm the wallet payment. Please check your wallet activity or contact support.");
       }
     } catch (err) {
       trackWalletPurchaseFailed(paymentType, itemId, err.message);
-      setError("Payment failed. No funds have been deducted.");
+      setError("We could not confirm the wallet payment. Please check your wallet activity or contact support.");
     }
     setSpending(false);
   };
