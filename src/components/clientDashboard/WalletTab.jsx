@@ -6,6 +6,7 @@ import { useFleshPayBeta } from "@/hooks/useFleshPayBeta";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowDownLeft, ArrowUpRight, Plus, ExternalLink, Lock } from "lucide-react";
+import FlashPayWalletCard from "@/components/clientDashboard/FlashPayWalletCard";
 
 const FLESHPAY_LOGO = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/ec86d07a5_generated_image.png";
 
@@ -66,6 +67,9 @@ export default function WalletTab({ setActiveTab }) {
 
   return (
     <div className="space-y-4">
+      {/* FlashPay Wallet (external, Phase 1: balance + top-up only) */}
+      <FlashPayWalletCard />
+
       {/* Balance Card */}
       <div className="relative overflow-hidden rounded-3xl bg-[#0d0d0d] border border-white/[0.08]">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.05] via-transparent to-transparent pointer-events-none" />
