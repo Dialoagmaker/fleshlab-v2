@@ -25,6 +25,14 @@ const ALLOWED_EVENTS = new Set([
   'payment_success',
   'payment_failed',
   'subscription_activated',
+  'wallet_selected',
+  'wallet_spend_started',
+  'wallet_spend_completed',
+  'wallet_spend_failed',
+  'wallet_purchase_completed',
+  'wallet_purchase_failed',
+  'wallet_abandoned',
+  'topup_before_purchase',
 ]);
 
 // Lightweight User-Agent parser — best-effort browser/OS/device detection.

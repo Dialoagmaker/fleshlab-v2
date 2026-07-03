@@ -41,6 +41,14 @@ const DB_TRACKED_EVENTS = new Set([
   'payment_success',
   'payment_failed',
   'subscription_activated',
+  'wallet_selected',
+  'wallet_spend_started',
+  'wallet_spend_completed',
+  'wallet_spend_failed',
+  'wallet_purchase_completed',
+  'wallet_purchase_failed',
+  'wallet_abandoned',
+  'topup_before_purchase',
 ]);
 
 // Best-effort client-side enrichment — never overwrites explicit event params.
@@ -763,6 +771,54 @@ export function trackLoginFailed(reason, email) {
  */
 export function trackLogout() {
   trackEvent("logout", {});
+}
+
+// ========================================================
+// FLASHPAY WALLET PAYMENT TRACKING (Phase 2)
+// ========================================================
+
+/**
+ * Track FlashPay Wallet selected as payment method
+ */
+export function trackWalletSelected(itemType, itemId) {
+  trackEvent("wallet_selected", { item_type: itemType, item_id: itemId || null });
+}
+
+/**
+ * Track wallet spend started (confirmed by user)
+ */
+export function trackWalletSpendStarted(itemType, itemId, amountUsd) {
+  trackEvent("wallet_spend_started", { item_type: itemType, item_id: itemId || null, amount_usd: amountUsd ?? null });
+}
+
+/**
+ * Track wallet spend / purchase completed successfully
+ */
+export function trackWalletPurchaseCompleted(itemType, itemId, amountUsd) {
+  trackEvent("wallet_spend_completed", { item_type: itemType, item_id: itemId || null, amount_usd: amountUsd ?? null });
+  trackEvent("wallet_purchase_completed", { item_type: itemType, item_id: itemId || null, amount_usd: amountUsd ?? null });
+}
+
+/**
+ * Track wallet spend / purchase failure (including insufficient balance)
+ */
+export function trackWalletPurchaseFailed(itemType, itemId, reason) {
+  trackEvent("wallet_spend_failed", { item_type: itemType, item_id: itemId || null, reason: reason || "unknown" });
+  trackEvent("wallet_purchase_failed", { item_type: itemType, item_id: itemId || null, reason: reason || "unknown" });
+}
+
+/**
+ * Track wallet checkout abandoned (selector shown, no purchase made)
+ */
+export function trackWalletAbandoned(itemType, itemId) {
+  trackEvent("wallet_abandoned", { item_type: itemType, item_id: itemId || null });
+}
+
+/**
+ * Track user directed to top up before completing a purchase
+ */
+export function trackTopupBeforePurchase(itemType, itemId, needed) {
+  trackEvent("topup_before_purchase", { item_type: itemType, item_id: itemId || null, needed_usd: needed ?? null });
 }
 
 // Phase 2 GA4 Conversion Tracking - Privacy-safe event wrappers

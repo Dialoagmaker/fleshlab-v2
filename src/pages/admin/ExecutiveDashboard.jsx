@@ -10,6 +10,7 @@ import AlertsBanner from "@/components/admin/executiveDashboard/AlertsBanner";
 import TopPerformersPanel from "@/components/admin/executiveDashboard/TopPerformersPanel";
 import TopVideosPanel from "@/components/admin/executiveDashboard/TopVideosPanel";
 import TrafficPanel from "@/components/admin/executiveDashboard/TrafficPanel";
+import WalletKpiPanel from "@/components/admin/executiveDashboard/WalletKpiPanel";
 
 export default function ExecutiveDashboard() {
   const [period, setPeriod] = useState("today");
@@ -44,6 +45,7 @@ export default function ExecutiveDashboard() {
         ) : (
           <>
             <AlertsBanner alerts={data?.alerts} />
+            <WalletKpiPanel data={data?.wallet_kpis} />
 
             <Tabs value={period} onValueChange={setPeriod}>
               <TabsList className="grid w-full grid-cols-4 max-w-md">

@@ -3,7 +3,10 @@
  *
  * Grants user entitlements after verified payment completion.
  * Creates PerformerEarningLineItem records for revenue attribution.
- * Imported by paymentWebhook.js and simulatePaymentWebhook.js
+ * Also exposed as an HTTP endpoint (see Deno.serve below) so other backend
+ * functions (e.g. createPlatformSpend) can reuse this exact pipeline via
+ * base44.functions.invoke('shared/grantEntitlement', { intent }) instead of
+ * duplicating entitlement logic.
  *
  * SECURITY:
  *   - ONLY called after payment.completed status confirmed
@@ -11,6 +14,8 @@
  *   - Creates audit trail in Payment/Subscription/PerformerEarningLineItem records
  *   - Idempotent: safe to call multiple times with same intent
  */
+
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 /**
  * resolvePerformerRevenueModel - Inline Helper
@@ -430,3 +435,24 @@ export async function grantEntitlement(base44, intent) {
   
   return { ok: false, error: 'unknown_payment_type' };
 }
+
+// ── HTTP entrypoint — lets other functions reuse this pipeline without duplicating it ──
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const body = await req.json();
+    const { intent } = body;
+    if (!intent || !intent.user_id || !intent.payment_type) {
+      return Response.json({ error: 'intent (with user_id, payment_type) required' }, { status: 400 });
+    }
+
+    const result = await grantEntitlement(base44, intent);
+    return Response.json(result);
+  } catch (err) {
+    console.error('[grantEntitlement:http]', err);
+    return Response.json({ error: err.message }, { status: 500 });
+  }
+});

@@ -748,6 +748,17 @@ async function getUserFinancials(base44, body) {
   const lastTopup = topups.slice().sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0] || null;
   const lastSpend = spends.slice().sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0] || null;
 
+  // Wallet purchase stats + preferred payment method (CRM Phase 2 — FlashPay integration)
+  const spendAmounts = spends.map(l => l.amount_usd || 0);
+  const largestWalletPurchase = spendAmounts.length ? Math.max(...spendAmounts) : 0;
+  const averageWalletPurchase = spendAmounts.length ? spendAmounts.reduce((a, b) => a + b, 0) / spendAmounts.length : 0;
+  const cryptoPaymentCount = realPayments.length + realIntents.filter(i => i.provider === 'nowpayments' && i.status === 'completed').length;
+  const walletPaymentCount = spends.length;
+  const preferredPaymentMethod = walletPaymentCount === 0 && cryptoPaymentCount === 0
+    ? 'none'
+    : walletPaymentCount >= cryptoPaymentCount ? 'flashpay_wallet' : 'crypto_nowpayments';
+  const lastWalletActivity = [lastTopup?.created_date, lastSpend?.created_date].filter(Boolean).sort((a, b) => new Date(b) - new Date(a))[0] || null;
+
   return {
     revenue: {
       total_revenue: Math.round(totalRevenue * 100) / 100,
@@ -769,6 +780,10 @@ async function getUserFinancials(base44, body) {
       last_topup_at: lastTopup?.created_date || null,
       last_spend_at: lastSpend?.created_date || null,
       wallet_created_at: w?.created_date || null,
+      largest_wallet_purchase_usd: Math.round(largestWalletPurchase * 100) / 100,
+      average_wallet_purchase_usd: Math.round(averageWalletPurchase * 100) / 100,
+      preferred_payment_method: preferredPaymentMethod,
+      last_wallet_activity: lastWalletActivity,
     },
   };
 }

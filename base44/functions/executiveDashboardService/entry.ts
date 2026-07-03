@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     }
 
     const svc = base44.asServiceRole;
-    const [events, users, paymentIntents, subscriptions, purchases, pageViews, performers, videos, videoPerformers, earnings, fanclubs] =
+    const [events, users, paymentIntents, subscriptions, purchases, pageViews, performers, videos, videoPerformers, earnings, fanclubs, walletLedger, wallets] =
       await Promise.all([
         svc.entities.ConversionEvent.list('-created_date', 5000),
         svc.entities.User.list('-created_date', 5000),
@@ -49,6 +49,8 @@ Deno.serve(async (req) => {
         svc.entities.VideoPerformer.filter({ lead_performer: true }),
         svc.entities.PerformerEarningLineItem.list('-created_date', 2000),
         svc.entities.Fanclub.list(),
+        svc.entities.FleshPayLedger.list('-created_date', 3000).catch(() => []),
+        svc.entities.FleshPayWallet.list('-created_date', 2000).catch(() => []),
       ]);
 
     const now = new Date();
@@ -285,6 +287,28 @@ Deno.serve(async (req) => {
       alerts.push({ level: 'warning', message: 'No events have been recorded yet.' });
     }
 
+    // ── Wallet KPIs (FlashPay Phase 2) ────────────────────────────────────
+    const todayTopups = walletLedger.filter(l => l.entry_type === 'credit' && inRange(l.created_date, todayStart, now));
+    const todaySpends = walletLedger.filter(l => l.entry_type === 'debit' && inRange(l.created_date, todayStart, now));
+    const last30Topups = walletLedger.filter(l => l.entry_type === 'credit' && inRange(l.created_date, last30Start, now));
+    const last30Spends = walletLedger.filter(l => l.entry_type === 'debit' && inRange(l.created_date, last30Start, now));
+    const last30CryptoPayments = paymentIntents.filter(p => p.provider === 'nowpayments' && p.status === 'completed' && inRange(p.created_date, last30Start, now));
+
+    const walletsWithTopup = new Set(last30Topups.map(l => l.wallet_id));
+    const walletsWithSpend = new Set(last30Spends.map(l => l.wallet_id));
+
+    const walletKpis = {
+      today_wallet_topups_usd: Math.round(todayTopups.reduce((s, l) => s + (l.amount_usd || 0), 0) * 100) / 100,
+      today_wallet_revenue_usd: Math.round(todaySpends.reduce((s, l) => s + (l.amount_usd || 0), 0) * 100) / 100,
+      today_wallet_spend_count: todaySpends.length,
+      average_wallet_balance_usd: wallets.length ? Math.round((wallets.reduce((s, w) => s + (w.balance_usd || 0), 0) / wallets.length) * 100) / 100 : 0,
+      wallet_conversion_rate: pct(walletsWithSpend.size, walletsWithTopup.size),
+      wallet_vs_crypto_split: {
+        wallet_purchases: last30Spends.length,
+        crypto_purchases: last30CryptoPayments.length,
+      },
+    };
+
     return Response.json({
       success: true,
       generated_at: now.toISOString(),
@@ -293,6 +317,7 @@ Deno.serve(async (req) => {
       top_videos: topVideos,
       traffic,
       alerts,
+      wallet_kpis: walletKpis,
     });
   } catch (error) {
     return Response.json({ success: false, error: error.message }, { status: 500 });
