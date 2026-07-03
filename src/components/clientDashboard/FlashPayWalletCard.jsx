@@ -9,6 +9,7 @@ const TOPUP_AMOUNTS = [10, 25, 50, 100];
 export default function FlashPayWalletCard() {
   const [balance, setBalance] = useState(null);
   const [status, setStatus] = useState(null);
+  const [walletExists, setWalletExists] = useState(true);
   const [configured, setConfigured] = useState(true);
   const [loading, setLoading] = useState(true);
   const [toppingUp, setToppingUp] = useState(null);
@@ -21,6 +22,7 @@ export default function FlashPayWalletCard() {
       setConfigured(res.data?.configured !== false);
       setBalance(res.data?.balance_usd ?? 0);
       setStatus(res.data?.status || null);
+      setWalletExists(res.data?.wallet_exists !== false);
     } catch {
       setConfigured(false);
     }
@@ -63,6 +65,9 @@ export default function FlashPayWalletCard() {
         <p className="text-xs text-white/40">FlashPay is not fully configured yet.</p>
       ) : (
         <>
+          {!walletExists && (
+            <p className="text-xs text-white/40">No FlashPay wallet yet. Add funds to create your wallet.</p>
+          )}
           <div className="grid grid-cols-4 gap-2">
             {TOPUP_AMOUNTS.map((amount) => (
               <button

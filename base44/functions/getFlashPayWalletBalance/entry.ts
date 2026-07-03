@@ -29,11 +29,6 @@ Deno.serve(async (req) => {
 
     const fullUrl = `${baseUrl.replace(/\/$/, '')}/getPlatformWallet`;
     const requestBody = { user_email: user.email };
-    console.log('[getFlashPayWalletBalance] DEBUG request:', {
-      url: fullUrl,
-      headers: { 'x-platform-key': platformKey, 'x-api-key': apiKey ? `${apiKey.slice(0, 4)}...(${apiKey.length} chars)` : null },
-      body: requestBody,
-    });
 
     let res;
     try {
@@ -47,26 +42,19 @@ Deno.serve(async (req) => {
         body: JSON.stringify(requestBody),
       });
     } catch (networkErr) {
-      console.error('[getFlashPayWalletBalance] DEBUG network/DNS error:', networkErr.message);
+      console.error('[getFlashPayWalletBalance] network error:', networkErr.message);
       return Response.json({
         configured: true,
-        debug: { url: fullUrl, networkError: networkErr.message },
-        error: 'Network/DNS error reaching FlashPay.',
+        error: 'Could not reach FlashPay wallet service.',
       }, { status: 502 });
     }
 
     const rawText = await res.text();
-    console.log('[getFlashPayWalletBalance] DEBUG response:', {
-      url: fullUrl,
-      status: res.status,
-      statusText: res.statusText,
-      body: rawText,
-    });
 
     if (!res.ok) {
+      console.error('[getFlashPayWalletBalance] FlashPay API error:', res.status, rawText);
       return Response.json({
         configured: true,
-        debug: { url: fullUrl, status: res.status, statusText: res.statusText, body: rawText },
         error: 'Could not reach FlashPay wallet service.',
       }, { status: 502 });
     }
@@ -75,8 +63,9 @@ Deno.serve(async (req) => {
 
     return Response.json({
       configured: true,
+      wallet_exists: data.wallet_exists !== false,
       balance_usd: data.balance_usd ?? data.balance ?? 0,
-      status: data.status || 'unknown',
+      status: data.wallet_status || data.status || 'unknown',
       currency: data.currency || 'usd',
     });
   } catch (err) {
