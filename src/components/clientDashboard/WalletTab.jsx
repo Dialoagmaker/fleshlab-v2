@@ -55,7 +55,7 @@ export default function WalletTab({ setActiveTab }) {
 
   if (loading) return <Skeleton className="w-full h-96 rounded-3xl" />;
 
-  const showEmptyState = configured && !walletExists;
+  const showEmptyState = configured && (!walletExists || balance === 0);
 
   return (
     <div className="space-y-4">
