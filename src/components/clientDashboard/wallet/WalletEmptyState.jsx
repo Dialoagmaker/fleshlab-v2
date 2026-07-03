@@ -5,7 +5,7 @@ export default function WalletEmptyState({ onAddFunds }) {
     <div className="rounded-3xl bg-[#0d0d0d] border border-white/[0.08] p-6 flex flex-col sm:flex-row items-center gap-6">
       <div className="w-24 h-24 shrink-0 flex items-center justify-center">
         <img
-          src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/6b6665b64_generated_image.png"
+          src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/74377da25_generated_image.png"
           alt="FlashPay Wallet"
           className="w-full h-full object-contain"
         />
@@ -18,7 +18,7 @@ export default function WalletEmptyState({ onAddFunds }) {
         <div className="mt-4 flex flex-col sm:flex-row items-center gap-3">
           <button
             onClick={onAddFunds}
-            className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors whitespace-nowrap"
           >
             Add Funds Now
             <ArrowRight className="w-3.5 h-3.5" />
