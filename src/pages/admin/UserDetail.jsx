@@ -286,7 +286,7 @@ export default function UserDetail() {
               <p className="text-sm text-muted-foreground">Use the tabs above to view detailed payment, subscription, and purchase history.</p>
             </div>
           )}
-          {activeTab === "timeline" && <UserTimeline events={timelineData?.events || []} isLoading={timelineLoading} />}
+          {activeTab === "timeline" && <UserTimeline events={timelineData?.events || []} isLoading={timelineLoading} user={user} summary={summary} />}
           {activeTab === "payments" && <PaymentsTab userId={userId} />}
           {activeTab === "subscriptions" && <SubscriptionsTab userId={userId} />}
           {activeTab === "ppv" && <PurchasesTab userId={userId} />}
