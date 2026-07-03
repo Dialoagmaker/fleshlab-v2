@@ -1,0 +1,29 @@
+import { WalletCards, ShieldCheck } from "lucide-react";
+
+export default function WalletEmptyState({ onAddFunds }) {
+  return (
+    <div className="rounded-3xl bg-[#0d0d0d] border border-white/[0.08] p-6 flex flex-col sm:flex-row items-center gap-6">
+      <div className="w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+        <WalletCards className="w-9 h-9 text-primary" />
+      </div>
+      <div className="flex-1 text-center sm:text-left">
+        <h3 className="text-base font-bold text-white">No FlashPay Wallet Yet</h3>
+        <p className="text-xs text-white/40 mt-1.5 leading-relaxed max-w-sm">
+          Create your wallet by adding funds. Once created, you'll be able to use your balance for supported purchases.
+        </p>
+        <div className="mt-4 flex flex-col sm:flex-row items-center gap-3">
+          <button
+            onClick={onAddFunds}
+            className="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors"
+          >
+            Add Funds Now
+          </button>
+          <p className="flex items-center gap-1.5 text-[10px] text-white/30">
+            <ShieldCheck className="w-3.5 h-3.5 text-primary/60" />
+            Secure payment powered by FlashPay
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
