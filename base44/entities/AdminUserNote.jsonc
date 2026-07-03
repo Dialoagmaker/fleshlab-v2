@@ -1,0 +1,23 @@
+{
+  "name": "AdminUserNote",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "title": "User ID"
+    },
+    "note": {
+      "type": "string",
+      "title": "Note",
+      "format": "textarea"
+    },
+    "created_by_name": {
+      "type": "string",
+      "title": "Created By"
+    }
+  },
+  "required": [
+    "user_id",
+    "note"
+  ]
+}

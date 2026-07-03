@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SEOMeta from "@/components/SEOMeta";
 import PaymentsTab from "@/components/admin/users/PaymentsTab";
@@ -8,6 +8,7 @@ import SubscriptionsTab from "@/components/admin/users/SubscriptionsTab";
 import PurchasesTab from "@/components/admin/users/PurchasesTab";
 import GuestProductionsTab from "@/components/admin/users/GuestProductionsTab";
 import UserTimeline from "@/components/admin/users/UserTimeline";
+import CrmDashboard from "@/components/admin/users/crm/CrmDashboard";
 import {
   ArrowLeft, Loader2, AlertCircle, Crown, Users,
   DollarSign, ShoppingCart, CreditCard, CheckCircle2, Calendar, FileText,
@@ -49,11 +50,42 @@ export default function UserDetail() {
     queryFn: () => base44.functions.invoke("adminUserService", { action: "get_user_detail", userId }).then(r => r.data),
   });
 
+  const queryClient = useQueryClient();
+
   const { data: timelineData, isLoading: timelineLoading } = useQuery({
     queryKey: ["admin-user-timeline", userId],
     queryFn: () => base44.functions.invoke("adminUserService", { action: "get_user_timeline", userId }).then(r => r.data),
-    enabled: activeTab === "timeline",
+    enabled: activeTab === "timeline" || activeTab === "overview",
   });
+
+  const { data: financials } = useQuery({
+    queryKey: ["admin-user-financials", userId],
+    queryFn: () => base44.functions.invoke("adminUserService", { action: "get_user_financials", userId }).then(r => r.data),
+    enabled: activeTab === "overview",
+  });
+
+  const { data: notesData } = useQuery({
+    queryKey: ["admin-user-notes", userId],
+    queryFn: () => base44.functions.invoke("adminUserService", { action: "get_user_notes", userId }).then(r => r.data),
+    enabled: activeTab === "overview",
+  });
+
+  const [isSavingNote, setIsSavingNote] = useState(false);
+
+  const handleAddNote = async (note) => {
+    setIsSavingNote(true);
+    try {
+      await base44.functions.invoke("adminUserService", { action: "add_user_note", userId, note });
+      queryClient.invalidateQueries({ queryKey: ["admin-user-notes", userId] });
+    } finally {
+      setIsSavingNote(false);
+    }
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    await base44.functions.invoke("adminUserService", { action: "delete_user_note", noteId });
+    queryClient.invalidateQueries({ queryKey: ["admin-user-notes", userId] });
+  };
 
   if (isLoading) return (
     <div className="flex items-center justify-center py-24">
@@ -267,24 +299,16 @@ export default function UserDetail() {
         {/* Tab content */}
         <div>
           {activeTab === "overview" && (
-            <div className="space-y-4">
-              {summary?.last_payment_status && (
-                <div className="bg-card border border-border rounded-xl p-5">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">Last Payment</h3>
-                  <div className="flex items-center gap-3 text-sm">
-                    <span className="text-muted-foreground">Status:</span>
-                    <span className="font-medium text-foreground capitalize">{summary.last_payment_status?.replace(/_/g, ' ')}</span>
-                    {summary.last_payment_date && (
-                      <>
-                        <span className="text-muted-foreground">·</span>
-                        <span className="text-muted-foreground">{new Date(summary.last_payment_date).toLocaleString()}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-              <p className="text-sm text-muted-foreground">Use the tabs above to view detailed payment, subscription, and purchase history.</p>
-            </div>
+            <CrmDashboard
+              events={timelineData?.events || []}
+              summary={summary}
+              user={user}
+              financials={financials}
+              notes={notesData?.notes || []}
+              onAddNote={handleAddNote}
+              onDeleteNote={handleDeleteNote}
+              isSavingNote={isSavingNote}
+            />
           )}
           {activeTab === "timeline" && <UserTimeline events={timelineData?.events || []} isLoading={timelineLoading} user={user} summary={summary} />}
           {activeTab === "payments" && <PaymentsTab userId={userId} />}

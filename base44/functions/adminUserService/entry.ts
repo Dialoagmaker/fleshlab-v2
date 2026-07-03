@@ -701,6 +701,91 @@ async function getUserTimeline(base44, body) {
   return { events: sorted };
 }
 
+// ── get_user_financials — revenue breakdown + FlashPay summary ────────────────
+async function getUserFinancials(base44, body) {
+  const { userId } = body;
+  if (!userId) return { error: 'userId required' };
+
+  const [payments, intents, wallet, ledger] = await Promise.all([
+    base44.asServiceRole.entities.Payment.filter({ user_id: userId }),
+    base44.asServiceRole.entities.PaymentIntent.filter({ user_id: userId }),
+    base44.asServiceRole.entities.FleshPayWallet.filter({ user_id: userId }),
+    base44.asServiceRole.entities.FleshPayLedger.filter({ user_id: userId }),
+  ]);
+
+  const completedPayments = payments.filter(p => p.status === 'completed');
+  const completedIntents = intents.filter(i => i.status === 'completed');
+  const refunded = [...payments.filter(p => p.status === 'refunded'), ...intents.filter(i => i.status === 'refunded')];
+
+  const ppvRevenue = completedPayments.filter(p => p.payment_type === 'ppv').reduce((s, p) => s + (p.amount_usd || 0), 0);
+  const fanclubRevenue =
+    completedPayments.filter(p => p.payment_type === 'subscription').reduce((s, p) => s + (p.amount_usd || 0), 0) +
+    completedIntents.filter(i => i.payment_type === 'fanclub').reduce((s, i) => s + (i.amount || 0), 0);
+
+  const allAmounts = [...completedPayments.map(p => p.amount_usd || 0), ...completedIntents.map(i => i.amount || 0)];
+  const totalRevenue = allAmounts.reduce((a, b) => a + b, 0);
+  const totalPurchases = completedPayments.length + completedIntents.length;
+  const largestPurchase = allAmounts.length ? Math.max(...allAmounts) : 0;
+  const averageOrderValue = totalPurchases ? totalRevenue / totalPurchases : 0;
+  const refundTotal = refunded.reduce((s, r) => s + (r.amount_usd || r.amount || 0), 0);
+
+  const w = wallet[0] || null;
+  const topups = ledger.filter(l => l.entry_type === 'credit');
+  const spends = ledger.filter(l => l.entry_type === 'debit');
+  const lastTopup = topups.slice().sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0] || null;
+  const lastSpend = spends.slice().sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0] || null;
+
+  return {
+    revenue: {
+      total_revenue: Math.round(totalRevenue * 100) / 100,
+      ppv_revenue: Math.round(ppvRevenue * 100) / 100,
+      fanclub_revenue: Math.round(fanclubRevenue * 100) / 100,
+      refunds: Math.round(refundTotal * 100) / 100,
+      average_order_value: Math.round(averageOrderValue * 100) / 100,
+      largest_purchase: Math.round(largestPurchase * 100) / 100,
+      total_purchases: totalPurchases,
+    },
+    flashpay: {
+      wallet_exists: !!w,
+      status: w?.status || null,
+      balance_usd: w?.balance_usd ?? 0,
+      total_topups_usd: w?.lifetime_topups_usd ?? topups.reduce((s, l) => s + (l.amount_usd || 0), 0),
+      total_spend_usd: w?.lifetime_spends_usd ?? spends.reduce((s, l) => s + (l.amount_usd || 0), 0),
+      topup_count: topups.length,
+      spend_count: spends.length,
+      last_topup_at: lastTopup?.created_date || null,
+      last_spend_at: lastSpend?.created_date || null,
+      wallet_created_at: w?.created_date || null,
+    },
+  };
+}
+
+// ── Admin private notes ────────────────────────────────────────────────────────
+async function getUserNotes(base44, body) {
+  const { userId } = body;
+  if (!userId) return { error: 'userId required' };
+  const notes = await base44.asServiceRole.entities.AdminUserNote.filter({ user_id: userId }, '-created_date');
+  return { notes };
+}
+
+async function addUserNote(base44, body, actingUser) {
+  const { userId, note } = body;
+  if (!userId || !note) return { error: 'userId and note required' };
+  const created = await base44.asServiceRole.entities.AdminUserNote.create({
+    user_id: userId,
+    note,
+    created_by_name: actingUser.full_name || actingUser.email,
+  });
+  return { note: created };
+}
+
+async function deleteUserNote(base44, body) {
+  const { noteId } = body;
+  if (!noteId) return { error: 'noteId required' };
+  await base44.asServiceRole.entities.AdminUserNote.delete(noteId);
+  return { success: true };
+}
+
 // ── Main handler ──────────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
   try {
@@ -729,6 +814,14 @@ Deno.serve(async (req) => {
         return Response.json(await getUserGuestProductions(base44, body));
       case 'get_user_timeline':
         return Response.json(await getUserTimeline(base44, body));
+      case 'get_user_financials':
+        return Response.json(await getUserFinancials(base44, body));
+      case 'get_user_notes':
+        return Response.json(await getUserNotes(base44, body));
+      case 'add_user_note':
+        return Response.json(await addUserNote(base44, body, user));
+      case 'delete_user_note':
+        return Response.json(await deleteUserNote(base44, body));
       default:
         return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }
