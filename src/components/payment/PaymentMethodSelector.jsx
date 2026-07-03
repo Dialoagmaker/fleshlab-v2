@@ -19,6 +19,10 @@ import {
   trackWalletPurchaseFailed, trackTopupBeforePurchase,
 } from "@/lib/analytics";
 
+// Wallet spend only supports these fanclub plans (must match FANCLUB_PRICING in createPlatformSpend).
+// Any other plan (e.g. fanclub_6mo) falls back to crypto-only — never enable an unsupported purchase type.
+const WALLET_SUPPORTED_FANCLUB_PLANS = ["fanclub_monthly", "premium_monthly", "fanclub_3mo"];
+
 export default function PaymentMethodSelector({
   paymentType,      // 'ppv' | 'fanclub' | 'guest_production_deposit'
   itemId,           // videoId | planId | applicationId
@@ -48,8 +52,10 @@ export default function PaymentMethodSelector({
     setWalletLoading(false);
   };
 
+  const isUnsupportedPlan = paymentType === "fanclub" && !WALLET_SUPPORTED_FANCLUB_PLANS.includes(planId);
+
   // Not eligible for wallet payments — behave exactly as before (crypto only)
-  if (!isAuthenticated || betaLoading || !betaEnabled) {
+  if (!isAuthenticated || betaLoading || !betaEnabled || isUnsupportedPlan) {
     return (
       <CheckoutButton
         paymentType={paymentType} label={label} planId={planId} videoId={videoId}

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { usePaymentProvider } from "@/hooks/usePaymentProvider";
 import CheckoutButton from "@/components/payment/CheckoutButton";
+import PaymentMethodSelector from "@/components/payment/PaymentMethodSelector";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { trackFanclubCtaClick } from "@/lib/analytics";
@@ -24,6 +25,9 @@ function usePerformerParam() {
   return params.get('performer') || null;
 }
 
+// Wallet spend prices — must match FANCLUB_PRICING in createPlatformSpend/entry.ts
+const PLAN_PRICES_USD = { fanclub_monthly: 20.99, premium_monthly: 29.99, fanclub_3mo: 49.99 };
+
 // ── Checkout helpers with auth guard + intent preservation ────────────────────
 function FanclubCTA({ planId, className, label, isAuthenticated, paymentProvider, returnUrl, ctaLocation = 'default' }) {
   const navigate = useNavigate();
@@ -36,15 +40,15 @@ function FanclubCTA({ planId, className, label, isAuthenticated, paymentProvider
   };
 
   return (
-    <CheckoutButton
-      paymentType="fanclub" planId={planId}
+    <PaymentMethodSelector
+      paymentType="fanclub" planId={planId} itemId={planId}
+      itemLabel={label || 'Fanclub Access'} priceUsd={PLAN_PRICES_USD[planId] || 20.99}
       label={label || 'Enter Fanclub'}
       returnUrl={fanclubReturn} cancelUrl="/fanclub"
       isAuthenticated={isAuthenticated}
       onRequireAuth={() => { handleClick(); navigate(registerUrl); }}
       paymentProvider={paymentProvider}
       className={className}
-      unavailableLabel="Secure crypto checkout coming soon"
     />
   );
 }
