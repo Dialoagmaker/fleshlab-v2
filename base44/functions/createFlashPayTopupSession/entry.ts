@@ -37,6 +37,18 @@ Deno.serve(async (req) => {
       }, { status: 503 });
     }
 
+    const appBaseUrl = Deno.env.get('APP_BASE_URL') || '';
+    const requestBody = {
+      user_email: user.email,
+      external_user_id: user.id,
+      amount_usd: amount,
+      return_url: `${appBaseUrl}/client/dashboard?tab=wallet&flashpay=success`,
+      cancel_url: `${appBaseUrl}/client/dashboard?tab=wallet&flashpay=cancelled`,
+    };
+
+    console.log('[createFlashPayTopupSession] URL:', `${baseUrl.replace(/\/$/, '')}/createPlatformTopup`);
+    console.log('[createFlashPayTopupSession] Request body:', JSON.stringify(requestBody));
+
     const res = await fetch(`${baseUrl.replace(/\/$/, '')}/createPlatformTopup`, {
       method: 'POST',
       headers: {
@@ -44,19 +56,22 @@ Deno.serve(async (req) => {
         'x-api-key': apiKey,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email: user.email, amount_usd: amount }),
+      body: JSON.stringify(requestBody),
     });
 
+    const rawText = await res.text();
+    console.log('[createFlashPayTopupSession] FlashPay response status:', res.status);
+    console.log('[createFlashPayTopupSession] FlashPay response body:', rawText);
+
     if (!res.ok) {
-      const errText = await res.text();
-      console.error('[createFlashPayTopupSession] FlashPay API error:', res.status, errText);
+      console.error('[createFlashPayTopupSession] FlashPay API error:', res.status, rawText);
       return Response.json({
         configured: true,
         error: 'Could not create FlashPay top-up session.',
       }, { status: 502 });
     }
 
-    const data = await res.json();
+    const data = JSON.parse(rawText);
 
     if (!data.checkout_url) {
       return Response.json({ error: 'FlashPay did not return a checkout URL.' }, { status: 502 });
