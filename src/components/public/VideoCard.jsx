@@ -71,7 +71,7 @@ export default function VideoCard({ video, brands = [], performers = [] }) {
             {video.access_tier === 'fanclub' ? (
               <span className="flex items-center gap-1"><Crown className="w-2.5 h-2.5" /> FANCLUB</span>
             ) : video.access_tier === 'ppv' ? (
-              <span className="flex items-center gap-1"><Star className="w-2.5 h-2.5" /> ${PRICING.ppv.standard.price}</span>
+              <span className="flex items-center gap-1"><Star className="w-2.5 h-2.5" /> ${video.download_price || PRICING.ppv.standard.price}</span>
             ) : (
               <span>PREVIEW</span>
             )}
@@ -96,7 +96,7 @@ export default function VideoCard({ video, brands = [], performers = [] }) {
             {video.access_tier === 'fanclub' ? (
               <span className="text-purple-400">Included with Fanclub · ${PRICING.fanclub.monthly.price}/mo</span>
             ) : video.access_tier === 'ppv' ? (
-              <span className="text-rose-400">${PRICING.ppv.standard.price} · Lifetime Access</span>
+              <span className="text-rose-400">${video.download_price || PRICING.ppv.standard.price} · Lifetime Access</span>
             ) : (
               <span className="text-emerald-400">Free Preview</span>
             )}

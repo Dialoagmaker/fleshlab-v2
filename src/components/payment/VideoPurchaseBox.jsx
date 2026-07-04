@@ -27,7 +27,7 @@ function formatRuntime(secs) {
 // Wallet + Crypto checkout are both handled by the existing PaymentMethodSelector —
 // this component only changes presentation, never pricing or entitlement logic.
 export default function VideoPurchaseBox({
-  video, priceUsd, isAuthenticated, isUnlocking, unlockError, cta,
+  video, priceUsd, priceTier = "standard", isAuthenticated, isUnlocking, unlockError, cta,
   handleUnlock, requireSignup, paymentProvider,
 }) {
   const runtime = formatRuntime(video.duration_seconds);
@@ -82,7 +82,7 @@ export default function VideoPurchaseBox({
       {isPPV ? (
         <PaymentMethodSelector
           paymentType="ppv"
-          videoId={video.id} itemId={video.id} priceTier="standard"
+          videoId={video.id} itemId={video.id} priceTier={priceTier}
           itemLabel={video.title} priceUsd={priceUsd}
           label={isAuthenticated ? buttonLabel : "Create Account to Unlock"}
           returnUrl={`/videos/${video.slug}`}

@@ -11,7 +11,6 @@
 import { useState, useEffect } from "react";
 import { Wallet, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { useFleshPayBeta } from "@/hooks/useFleshPayBeta";
 import CheckoutButton from "@/components/payment/CheckoutButton";
 import WalletSpendConfirm from "@/components/payment/WalletSpendConfirm";
 import {
@@ -32,7 +31,6 @@ export default function PaymentMethodSelector({
   label, returnUrl, cancelUrl, isAuthenticated, onRequireAuth, paymentProvider,
   className, size = "lg",
 }) {
-  const { enabled: betaEnabled, loading: betaLoading } = useFleshPayBeta(isAuthenticated);
   const [wallet, setWallet] = useState(null);
   const [walletLoading, setWalletLoading] = useState(false);
   const [walletChecked, setWalletChecked] = useState(false);
@@ -53,7 +51,7 @@ export default function PaymentMethodSelector({
   };
 
   const isUnsupportedPlan = paymentType === "fanclub" && !WALLET_SUPPORTED_FANCLUB_PLANS.includes(planId);
-  const walletEligible = isAuthenticated && !betaLoading && betaEnabled && !isUnsupportedPlan;
+  const walletEligible = isAuthenticated && !isUnsupportedPlan;
 
   useEffect(() => {
     if (walletEligible) trackWalletOptionShown(paymentType, itemId);

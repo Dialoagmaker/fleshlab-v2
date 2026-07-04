@@ -247,7 +247,10 @@ export default function VideoDetail() {
 
   const tierInfo = ACCESS_TIER[video.access_tier] || { label: video.access_tier, color: 'bg-muted text-muted-foreground' };
   const isPaidTier = video.access_tier === 'ppv' || video.access_tier === 'fanclub';
-  const priceUsd = video.access_tier === 'ppv' ? PRICING.ppv.standard.price : video.access_tier === 'fanclub' ? 49.99 : 0;
+  // Solo per-video pricing: use the video's own price if the admin set one, otherwise fall back to standard PPV tier
+  const ppvPriceTierMap = { 20.99: 'standard', 24.99: 'premium', 29.99: 'exclusive' };
+  const ppvPriceTier = ppvPriceTierMap[video.download_price] || 'standard';
+  const priceUsd = video.access_tier === 'ppv' ? (video.download_price || PRICING.ppv.standard.price) : video.access_tier === 'fanclub' ? 49.99 : 0;
   const scrollToPurchaseBox = () => document.getElementById('purchase-box')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   const primaryPerformer = performers[0] || null;
   const canonicalUrl = `https://fleshlab.online/videos/${video.slug}`;
@@ -590,6 +593,7 @@ export default function VideoDetail() {
                   <VideoPurchaseBox
                     video={video}
                     priceUsd={priceUsd}
+                    priceTier={ppvPriceTier}
                     isAuthenticated={isAuthenticated}
                     isUnlocking={isUnlocking}
                     unlockError={unlockError}
