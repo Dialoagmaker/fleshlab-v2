@@ -1,22 +1,14 @@
-import { Zap, Lock, CreditCard } from "lucide-react";
-
 const FEATURES = [
-  { icon: Zap, title: "Instant Top-Up", desc: "Top up your wallet in seconds." },
-  { icon: Lock, title: "Secure Payments", desc: "Protected by FlashPay." },
-  { icon: CreditCard, title: "Ready for Purchases", desc: "Spend your balance across eligible FleshLab content." },
+  { img: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/40f80a326_feature_instant_topup.png", alt: "Instant Top-up" },
+  { img: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/6008744fc_feature_ready_to_use.png", alt: "Ready to Use" },
+  { img: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/07aa60f1f_feature_secure_safe.png", alt: "Secure & Safe" },
 ];
 
 export default function WalletFeaturesCard() {
   return (
-    <div className="rounded-3xl bg-[#0d0d0d] border border-white/[0.08] p-6 flex flex-col sm:flex-row items-start sm:items-center justify-around gap-5">
-      {FEATURES.map(({ icon: Icon, title, desc }) => (
-        <div key={title} className="flex flex-col items-center text-center gap-2 max-w-[150px]">
-          <div className="w-10 h-10 rounded-full bg-white/[0.05] border border-white/[0.08] flex items-center justify-center">
-            <Icon className="w-4 h-4 text-primary" />
-          </div>
-          <p className="text-xs font-bold text-white">{title}</p>
-          <p className="text-[11px] text-white/35 leading-snug">{desc}</p>
-        </div>
+    <div className="rounded-3xl bg-[#0d0d0d] border border-white/[0.08] p-6 flex items-center justify-around gap-4">
+      {FEATURES.map((f) => (
+        <img key={f.alt} src={f.img} alt={f.alt} className="w-20 h-20 sm:w-24 sm:h-24 object-contain" />
       ))}
     </div>
   );

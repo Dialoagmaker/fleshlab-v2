@@ -1,11 +1,13 @@
 import { ShieldCheck, ArrowRight } from "lucide-react";
 
+const ADD_FUNDS_ILLUSTRATION = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/134adb011_wallet_add_funds_illustration_transparent.png";
+
 export default function WalletEmptyState({ onAddFunds }) {
   return (
     <div className="rounded-3xl bg-[#0d0d0d] border border-white/[0.08] p-6 flex flex-col sm:flex-row items-center gap-6">
       <div className="w-24 h-24 shrink-0 flex items-center justify-center">
         <img
-          src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/74377da25_generated_image.png"
+          src={ADD_FUNDS_ILLUSTRATION}
           alt="FlashPay Wallet"
           className="w-full h-full object-contain"
         />

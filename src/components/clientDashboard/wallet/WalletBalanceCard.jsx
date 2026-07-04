@@ -1,13 +1,9 @@
-import { Wallet as WalletIcon } from "lucide-react";
+const WALLET_ILLUSTRATION = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a41b36b9a_wallet_hero_large_transparent.png";
 
 export default function WalletBalanceCard({ configured, balance, status }) {
   return (
-    <div className="rounded-3xl bg-gradient-to-br from-[#180509] via-[#100507] to-black border border-primary/25 p-6 shadow-[0_0_40px_-12px_rgba(225,29,72,0.25)] flex items-center gap-5">
-      <div className="relative w-20 h-20 shrink-0 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-        <WalletIcon className="w-9 h-9 text-primary" />
-        <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary flex items-center justify-center text-[10px] font-black text-white">F</span>
-        <span className="absolute -bottom-1 -left-2 w-5 h-5 rounded-full bg-primary/70 flex items-center justify-center text-[9px] font-black text-white">F</span>
-      </div>
+    <div className="rounded-3xl bg-gradient-to-br from-[#180509] via-[#100507] to-black border border-primary/25 p-6 flex items-center gap-5 shadow-[0_0_40px_-12px_rgba(225,29,72,0.25)]">
+      <img src={WALLET_ILLUSTRATION} alt="FlashPay Wallet" className="w-24 h-24 shrink-0 object-contain" />
       <div className="min-w-0">
         <p className="text-[10px] font-bold text-primary uppercase tracking-widest">FlashPay Wallet</p>
         <p className="text-xs text-white/40 mt-1">Available Balance</p>

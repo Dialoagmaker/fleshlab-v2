@@ -1,5 +1,6 @@
-import { Wallet, Loader2, ArrowRight } from "lucide-react";
+import { Loader2, ArrowRight } from "lucide-react";
 
+const WALLET_ICON = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/97901355a_icon_wallet.png";
 const TOPUP_AMOUNTS = [10, 25, 50, 100];
 
 export default function WalletTopupGrid({ toppingUp, onTopup }) {
@@ -10,9 +11,7 @@ export default function WalletTopupGrid({ toppingUp, onTopup }) {
           key={amount}
           className="relative rounded-2xl bg-[#0d0d0d] border border-white/[0.08] p-4 flex flex-col gap-3"
         >
-          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Wallet className="w-4 h-4 text-primary" />
-          </div>
+          <img src={WALLET_ICON} alt="" className="w-9 h-9 object-contain" />
           <div>
             <p className="text-2xl font-black text-white">${amount}</p>
             <p className="text-[11px] text-white/35 mt-0.5">Add ${amount} to your wallet</p>
