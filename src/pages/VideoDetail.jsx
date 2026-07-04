@@ -246,6 +246,9 @@ export default function VideoDetail() {
   }
 
   const tierInfo = ACCESS_TIER[video.access_tier] || { label: video.access_tier, color: 'bg-muted text-muted-foreground' };
+  const isPaidTier = video.access_tier === 'ppv' || video.access_tier === 'fanclub';
+  const priceUsd = video.access_tier === 'ppv' ? PRICING.ppv.standard.price : video.access_tier === 'fanclub' ? 49.99 : 0;
+  const scrollToPurchaseBox = () => document.getElementById('purchase-box')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   const primaryPerformer = performers[0] || null;
   const canonicalUrl = `https://fleshlab.online/videos/${video.slug}`;
   
@@ -407,10 +410,17 @@ export default function VideoDetail() {
                       </div>
                       {unlockError && <p className="text-red-400 text-sm">{unlockError}</p>}
                       <div className="flex flex-wrap gap-3 justify-center">
-                        <Button onClick={handleUnlock} disabled={isUnlocking} className="bg-primary hover:bg-primary/90 gap-2">
-                          {isUnlocking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
-                          {cta.primaryText}
-                        </Button>
+                        {isPaidTier ? (
+                          <Button onClick={scrollToPurchaseBox} className="bg-primary hover:bg-primary/90 gap-2">
+                            <Play className="w-4 h-4 fill-current" />
+                            {video.access_tier === 'fanclub' ? 'Join Fanclub' : `Unlock Instantly — $${priceUsd}`}
+                          </Button>
+                        ) : (
+                          <Button onClick={handleUnlock} disabled={isUnlocking} className="bg-primary hover:bg-primary/90 gap-2">
+                            {isUnlocking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
+                            {cta.primaryText}
+                          </Button>
+                        )}
                         {!isAuthenticated && (
                           <Button variant="outline" onClick={() => navigate('/register')} className="border-white/30 text-white hover:bg-white/10">
                             Create Free Account
@@ -430,9 +440,14 @@ export default function VideoDetail() {
                 <Badge variant="outline" className="text-xs gap-1">
                   <Play className="w-3 h-3" /> Trailer Preview
                 </Badge>
-                <Button size="sm" onClick={handleUnlock} disabled={isUnlocking} className="bg-primary hover:bg-primary/90 gap-1.5 text-xs h-7">
-                  {isUnlocking ? <Loader2 className="w-3 h-3 animate-spin" /> : <Lock className="w-3 h-3" />}
-                  Watch Full Video
+                <Button
+                  size="sm"
+                  onClick={isPaidTier ? scrollToPurchaseBox : handleUnlock}
+                  disabled={!isPaidTier && isUnlocking}
+                  className="bg-primary hover:bg-primary/90 gap-1.5 text-xs h-7"
+                >
+                  {!isPaidTier && isUnlocking ? <Loader2 className="w-3 h-3 animate-spin" /> : <Lock className="w-3 h-3" />}
+                  {isPaidTier ? `Unlock — $${priceUsd}` : 'Watch Full Video'}
                 </Button>
               </div>
             )}
@@ -571,17 +586,19 @@ export default function VideoDetail() {
 
               {/* Purchase box */}
               {!playbackUrl && (
-                <VideoPurchaseBox
-                  video={video}
-                  priceUsd={video.access_tier === 'ppv' ? PRICING.ppv.standard.price : video.access_tier === 'fanclub' ? 49.99 : 0}
-                  isAuthenticated={isAuthenticated}
-                  isUnlocking={isUnlocking}
-                  unlockError={unlockError}
-                  cta={cta}
-                  handleUnlock={handleUnlock}
-                  requireSignup={requireSignup}
-                  paymentProvider={paymentProvider}
-                />
+                <div id="purchase-box">
+                  <VideoPurchaseBox
+                    video={video}
+                    priceUsd={priceUsd}
+                    isAuthenticated={isAuthenticated}
+                    isUnlocking={isUnlocking}
+                    unlockError={unlockError}
+                    cta={cta}
+                    handleUnlock={handleUnlock}
+                    requireSignup={requireSignup}
+                    paymentProvider={paymentProvider}
+                  />
+                </div>
               )}
 
               {/* Access level */}

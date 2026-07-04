@@ -3,6 +3,7 @@ import { Play, Clock, Crown, Star, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import VideoAssetImage from "@/components/video/VideoAssetImage";
 import VideoPreviewPlayer from "@/components/video/VideoPreviewPlayer";
+import { PRICING } from "@/lib/useAccessControl";
 
 export default function VideoCard({ video, brands = [], performers = [] }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -70,7 +71,7 @@ export default function VideoCard({ video, brands = [], performers = [] }) {
             {video.access_tier === 'fanclub' ? (
               <span className="flex items-center gap-1"><Crown className="w-2.5 h-2.5" /> FANCLUB</span>
             ) : video.access_tier === 'ppv' ? (
-              <span className="flex items-center gap-1"><Star className="w-2.5 h-2.5" /> PPV</span>
+              <span className="flex items-center gap-1"><Star className="w-2.5 h-2.5" /> ${PRICING.ppv.standard.price}</span>
             ) : (
               <span>PREVIEW</span>
             )}
