@@ -40,7 +40,7 @@ const safeVideo = (v) => v ? {
   cover_image_url: v.cover_image_url, trailer_url: v.trailer_url,
   preview_gif_url: v.preview_gif_url, view_count: v.view_count, featured: v.featured,
   is_exclusive: v.is_exclusive, ppv_enabled: v.ppv_enabled, created_date: v.created_date,
-  meta_title: v.meta_title, meta_description: v.meta_description,
+  meta_title: v.meta_title, meta_description: v.meta_description, download_price: v.download_price,
 } : null;
 
 export default function VideoDetail() {
