@@ -10,7 +10,7 @@ export default function WalletHero({ configured, balance, status }) {
   return (
     <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-10">
       <div className="shrink-0">
-        <p className="text-[10px] font-bold text-primary uppercase tracking-widest">FleshPay Wallet</p>
+        <p className="text-[10px] font-bold text-primary uppercase tracking-widest">FlashPay Wallet</p>
         <p className="text-xs text-white/40 mt-1">Available Balance</p>
         <p className="text-5xl font-black text-white mt-1 tracking-tight">
           {configured ? `$${Number(balance || 0).toFixed(2)}` : "—"}

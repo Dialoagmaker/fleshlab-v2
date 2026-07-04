@@ -9,7 +9,7 @@ export default function FlashPayWalletCard({ configured, balance, status, toppin
       {configured ? (
         <WalletTopupGrid toppingUp={toppingUp} onTopup={onTopup} />
       ) : (
-        <p className="text-xs text-white/40 px-1 pt-6 border-t border-white/[0.08] mt-6">FleshPay is not fully configured yet.</p>
+        <p className="text-xs text-white/40 px-1 pt-6 border-t border-white/[0.08] mt-6">FlashPay is not fully configured yet.</p>
       )}
     </div>
   );

@@ -26,7 +26,7 @@ export default function WalletTopupGrid({ toppingUp, onTopup }) {
         ))}
       </div>
       <p className="text-[11px] text-white/25 text-center leading-relaxed pt-1">
-        FleshPay balance can be used for eligible FleshLab purchases once wallet payments are enabled.
+        FlashPay balance can be used for eligible FleshLab purchases once wallet payments are enabled.
       </p>
     </div>
   );

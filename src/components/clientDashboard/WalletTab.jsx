@@ -48,7 +48,7 @@ export default function WalletTab({ setActiveTab }) {
       const res = await base44.functions.invoke("createFlashPayTopupSession", { amount_usd: amount });
       if (res.data?.checkoutUrl) window.location.href = res.data.checkoutUrl;
     } catch (e) {
-      console.error("FleshPay top-up failed:", e);
+      console.error("FlashPay top-up failed:", e);
     }
     setToppingUp(null);
   };
