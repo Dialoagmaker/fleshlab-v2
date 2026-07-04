@@ -119,6 +119,7 @@ Deno.serve(async (req) => {
       featured: v.featured,
       is_exclusive: v.is_exclusive,
       ppv_enabled: v.ppv_enabled,
+      download_price: v.download_price,
       created_date: v.created_date,
       updated_date: v.updated_date, // For cache-busting
       meta_title: v.meta_title,
