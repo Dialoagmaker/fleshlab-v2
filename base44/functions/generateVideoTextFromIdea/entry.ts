@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'KIMI_API_KEY is not configured' }, { status: 500 });
     }
 
-    const kimiRes = await fetch('https://api.moonshot.ai/v1/chat/completions', {
+    const kimiRes = await fetch('https://api.moonshot.cn/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${kimiApiKey}`,
