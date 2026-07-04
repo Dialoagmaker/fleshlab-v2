@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Plus, LogOut, Wallet as WalletIcon, ArrowUpRight } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
@@ -142,45 +142,41 @@ export default function ClientDashboard() {
   return (
     <>
       <SEOMeta title="Client Dashboard | FLESHLAB" noIndex={true} />
-      <div className="min-h-screen bg-[#080808] text-white">
+      <div className="min-h-screen bg-[#080808] text-white bg-kinetic-grid">
 
         {/* ── HEADER ──────────────────────────────────────────────── */}
-        <div className="border-b border-white/6 bg-[#0a0505]">
-          <div className="max-w-5xl mx-auto px-4 py-6">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div className="w-7 h-7 rounded-lg bg-rose-600/20 border border-rose-600/30 flex items-center justify-center">
-                    <User className="w-3.5 h-3.5 text-rose-400" />
-                  </div>
-                  <span className="text-rose-400 text-xs font-black uppercase tracking-widest">FLESHLAB Account</span>
-                </div>
-                <h1 className="text-2xl md:text-3xl font-black text-white leading-tight">Client Dashboard</h1>
-                <p className="text-white/35 text-sm mt-1">
-                  {displayName ? `Welcome back, ${displayName}. ` : "Welcome back. "}
-                  Manage your Fan Production requests, video purchases, Fanclub access, payments and account details.
-                </p>
-              </div>
-              <div className="shrink-0">
-              <Button
-                onClick={() => window.location.href = "/fan-productions/request"}
-                className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold gap-2 rounded-xl h-auto py-2.5 px-5 text-sm shadow-lg shadow-rose-700/20"
-              >
-                <Plus className="w-4 h-4" />
-                New Fan Production Request
-              </Button>
+        <div className="max-w-5xl mx-auto px-4 pt-6">
+          <div className="border border-white/12 px-6 py-10 text-center">
+            <div className="flex items-center justify-center gap-2 mb-8">
+              <svg viewBox="0 0 24 24" className="w-5 h-5 text-rose-500 fill-current"><path d="M12 2C9 2 7 4 7 7c0 2 1 3 1 5-2 0-3 1-3 3 0 3 3 5 7 5s7-2 7-5c0-2-1-3-3-3 0-2 1-3 1-5 0-3-2-5-5-5z"/></svg>
+              <div className="text-left leading-none">
+                <div className="text-white font-black text-sm tracking-wide">FLESHLAB</div>
+                <div className="text-white/40 text-[10px] tracking-widest uppercase">Account</div>
               </div>
             </div>
+            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight uppercase">Client Dashboard</h1>
+            <p className="text-white/40 text-xs md:text-sm mt-3 uppercase tracking-wider">
+              {displayName ? `Welcome back, ${displayName}. ` : "Welcome back. "}
+              Choose your experience or manage your presence.
+            </p>
+            <Button
+              onClick={() => window.location.href = "/fan-productions/request"}
+              variant="outline"
+              className="mt-6 border border-rose-600/50 text-rose-400 hover:bg-rose-600/10 font-bold gap-2 rounded-none h-auto py-2.5 px-5 text-xs uppercase tracking-wider bg-transparent"
+            >
+              <Plus className="w-4 h-4" />
+              New Fan Production Request
+            </Button>
           </div>
+        </div>
+
+        {/* ── NAV ─────────────────────────────────────────────────── */}
+        <div className="max-w-5xl mx-auto px-4">
+          <DashboardNav activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
         </div>
 
         {/* ── BODY ────────────────────────────────────────────────── */}
         <div className="max-w-5xl mx-auto px-4 py-6">
-          <div className="flex flex-col lg:flex-row gap-6">
-
-            {/* Nav */}
-            <DashboardNav activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
-
             {/* Tab content */}
             <div className="flex-1 min-w-0">
               {activeTab === "overview"         && <OverviewTab {...tabProps} />}
@@ -194,7 +190,6 @@ export default function ClientDashboard() {
               {activeTab === "security"         && <SecurityTab user={user} />}
               {activeTab === "wallet"          && <WalletTab setActiveTab={setActiveTab} />}
             </div>
-          </div>
         </div>
 
       </div>

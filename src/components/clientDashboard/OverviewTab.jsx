@@ -16,13 +16,16 @@ function SummaryCard({ icon: Icon, label, value, valueColor = "text-white", onCl
   return (
     <button
       onClick={onClick}
-      className={`bg-[#0f0f0f] border rounded-xl p-4 text-left transition-colors ${active ? "border-rose-600/40" : "border-white/8 hover:border-white/15"} ${onClick ? "cursor-pointer" : "cursor-default"}`}
+      className={`border p-4 text-left transition-colors ${active ? "border-rose-600/40" : "border-white/12 hover:border-white/25"} ${onClick ? "cursor-pointer" : "cursor-default"}`}
     >
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-3">
         <Icon className="w-3.5 h-3.5 text-rose-400/70" />
-        <span className="text-white/30 text-xs font-bold uppercase tracking-wider">{label}</span>
+        <span className="text-white/40 text-[11px] font-bold uppercase tracking-wider">{label}</span>
       </div>
-      <div className={`font-black text-lg leading-tight ${valueColor}`}>{value}</div>
+      <div className={`font-black text-3xl leading-tight ${valueColor}`}>{value}</div>
+      <div className="h-1 bg-white/8 mt-3">
+        <div className="h-full bg-rose-600" style={{ width: active ? "70%" : "20%" }} />
+      </div>
     </button>
   );
 }
@@ -235,11 +238,12 @@ export default function OverviewTab({ requests, subscriptions, payments, user, l
 
   return (
     <div className="space-y-6">
+      <h2 className="text-white font-black text-lg uppercase tracking-wider border-b border-white/12 pb-2">Overview</h2>
+
       {/* ── ABOVE THE FOLD — Primary Conversion ── */}
       
       {/* Welcome */}
       <div>
-        <h2 className="text-white font-black text-xl md:text-2xl mb-1">Welcome to FLESHLAB</h2>
         <p className="text-white/35 text-sm">
           {user?.full_name && user.full_name !== user.email ? `Hey ${user.full_name.split(' ')[0]} — ` : ""}
           Your hub for exclusive content, fan productions, and more.

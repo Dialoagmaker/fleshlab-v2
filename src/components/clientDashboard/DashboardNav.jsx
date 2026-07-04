@@ -47,33 +47,29 @@ export default function DashboardNav({ activeTab, setActiveTab, onLogout }) {
         </div>
       </div>
 
-      {/* Desktop sidebar */}
-      <nav className="hidden lg:flex flex-col gap-0.5 w-48 shrink-0">
+      {/* Desktop underlined tab row */}
+      <nav className="hidden lg:flex items-center gap-6 border-b border-white/12 overflow-x-auto">
         {TABS.map((tab) => {
-          const Icon = tab.icon;
           const isActive = tab.id === activeTab;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-colors text-left ${
+              className={`shrink-0 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 -mb-px ${
                 isActive
-                  ? "bg-rose-600/15 text-white font-bold border border-rose-600/20"
-                  : "text-white/45 hover:text-white hover:bg-white/5"
+                  ? "text-rose-500 border-rose-500"
+                  : "text-white/40 border-transparent hover:text-white/70"
               }`}
             >
-              <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-rose-400" : "text-white/30"}`} />
               {tab.label}
             </button>
           );
         })}
-        {/* Logout button - desktop */}
         <button
           onClick={() => onLogout?.()}
-          className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-white/45 hover:text-red-400 hover:bg-red-500/10 transition-colors text-left mt-2 border-t border-white/5 pt-3"
+          className="shrink-0 pb-3 pt-1 text-xs font-bold uppercase tracking-wider text-white/40 border-b-2 border-transparent hover:text-red-400 ml-auto"
         >
-          <LogOut className="w-4 h-4 shrink-0 text-white/30" />
-          Log Out
+          Logout
         </button>
       </nav>
     </>
