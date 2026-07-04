@@ -154,24 +154,42 @@ Deno.serve(async (req) => {
 8. Do NOT invent acts or performers not mentioned in the scene notes.
 9. Return JSON only — no explanation, no preamble.`;
 
-    // Call LLM with V1 prompt (claude_opus_4_8 for best creative marketing copy)
-    const response = await base44.integrations.Core.InvokeLLM({
-      model: 'claude_opus_4_8',
-      prompt,
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          title: { type: 'string', description: '6-10 word punchy title' },
-          description: { type: 'string', description: '4-5 sentence explicit description' },
-          seo_title: { type: 'string', description: 'SEO title under 60 chars' },
-          seo_description: { type: 'string', description: 'Meta description 120-158 chars' },
-          tags: { type: 'array', items: { type: 'string' }, description: '6-10 searchable tags' },
-          suggested_categories: { type: 'array', items: { type: 'string' }, description: '2-4 broad categories' },
-          suggested_keywords: { type: 'array', items: { type: 'string' }, description: '8-12 long-tail keywords' }
-        },
-        required: ['title', 'description', 'seo_title', 'seo_description', 'tags', 'suggested_categories', 'suggested_keywords']
-      }
+    // Call Kimi / Moonshot directly for adult-video marketing copy
+    const kimiApiKey = Deno.env.get('KIMI_API_KEY');
+    const kimiModel = Deno.env.get('KIMI_MODEL') || 'kimi-k2-0711-preview';
+    if (!kimiApiKey) {
+      return Response.json({ error: 'KIMI_API_KEY is not configured' }, { status: 500 });
+    }
+
+    const kimiRes = await fetch('https://api.moonshot.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${kimiApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: kimiModel,
+        temperature: 0.9,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: 'You write explicit, accurate, commercial gay adult video metadata for verified 18+ performers. Return valid JSON only.'
+          },
+          { role: 'user', content: prompt }
+        ]
+      })
     });
+
+    if (!kimiRes.ok) {
+      const errorText = await kimiRes.text();
+      return Response.json({ error: `Kimi generation failed: ${kimiRes.status} ${errorText}` }, { status: 502 });
+    }
+
+    const kimiData = await kimiRes.json();
+    const rawContent = kimiData?.choices?.[0]?.message?.content || '';
+    const jsonText = rawContent.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
+    const response = JSON.parse(jsonText);
 
     // Validate response
     const warnings = [];
@@ -335,7 +353,8 @@ Deno.serve(async (req) => {
         categories_received: categories || [],
         generated_title: response.title || '',
         generated_tags: response.tags || [],
-        model_used: 'claude_opus_4_8',
+        model_used: kimiModel,
+        provider_used: 'kimi_moonshot',
         cached_result: false,
         context_block_built: contextBlock,
       },
