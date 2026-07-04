@@ -8,7 +8,7 @@
  * If FlashPay beta is not enabled for this user, only crypto is shown —
  * identical behavior to before this feature existed.
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Wallet, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useFleshPayBeta } from "@/hooks/useFleshPayBeta";
@@ -16,7 +16,7 @@ import CheckoutButton from "@/components/payment/CheckoutButton";
 import WalletSpendConfirm from "@/components/payment/WalletSpendConfirm";
 import {
   trackWalletSelected, trackWalletSpendStarted, trackWalletPurchaseCompleted,
-  trackWalletPurchaseFailed, trackTopupBeforePurchase,
+  trackWalletPurchaseFailed, trackTopupBeforePurchase, trackWalletOptionShown, trackCryptoSelected,
 } from "@/lib/analytics";
 
 // Wallet spend only supports these fanclub plans (must match FANCLUB_PRICING in createPlatformSpend).
@@ -53,9 +53,14 @@ export default function PaymentMethodSelector({
   };
 
   const isUnsupportedPlan = paymentType === "fanclub" && !WALLET_SUPPORTED_FANCLUB_PLANS.includes(planId);
+  const walletEligible = isAuthenticated && !betaLoading && betaEnabled && !isUnsupportedPlan;
+
+  useEffect(() => {
+    if (walletEligible) trackWalletOptionShown(paymentType, itemId);
+  }, [walletEligible, paymentType, itemId]);
 
   // Not eligible for wallet payments — behave exactly as before (crypto only)
-  if (!isAuthenticated || betaLoading || !betaEnabled || isUnsupportedPlan) {
+  if (!walletEligible) {
     return (
       <CheckoutButton
         paymentType={paymentType} label={label} planId={planId} videoId={videoId}
@@ -153,12 +158,14 @@ export default function PaymentMethodSelector({
 
       <div className="text-center text-[11px] text-muted-foreground">or</div>
 
-      <CheckoutButton
-        paymentType={paymentType} label={`${label} with Crypto`} planId={planId} videoId={videoId}
-        applicationId={applicationId} priceTier={priceTier} returnUrl={returnUrl} cancelUrl={cancelUrl}
-        isAuthenticated={isAuthenticated} onRequireAuth={onRequireAuth} paymentProvider={paymentProvider}
-        className={className} size={size}
-      />
+      <div onClickCapture={() => trackCryptoSelected(paymentType, itemId)}>
+        <CheckoutButton
+          paymentType={paymentType} label={`${label} with Crypto`} planId={planId} videoId={videoId}
+          applicationId={applicationId} priceTier={priceTier} returnUrl={returnUrl} cancelUrl={cancelUrl}
+          isAuthenticated={isAuthenticated} onRequireAuth={onRequireAuth} paymentProvider={paymentProvider}
+          className={className} size={size}
+        />
+      </div>
     </div>
   );
 }

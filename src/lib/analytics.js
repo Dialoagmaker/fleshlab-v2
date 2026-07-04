@@ -821,4 +821,18 @@ export function trackTopupBeforePurchase(itemType, itemId, needed) {
   trackEvent("topup_before_purchase", { item_type: itemType, item_id: itemId || null, needed_usd: needed ?? null });
 }
 
+/**
+ * Track FlashPay Wallet option shown on a checkout surface
+ */
+export function trackWalletOptionShown(itemType, itemId) {
+  trackEvent("wallet_option_shown", { item_type: itemType, item_id: itemId || null });
+}
+
+/**
+ * Track crypto payment method selected (as opposed to FlashPay Wallet)
+ */
+export function trackCryptoSelected(itemType, itemId) {
+  trackEvent("crypto_selected", { item_type: itemType, item_id: itemId || null });
+}
+
 // Phase 2 GA4 Conversion Tracking - Privacy-safe event wrappers
