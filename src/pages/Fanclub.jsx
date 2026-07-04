@@ -8,7 +8,6 @@ import SEOMeta from "@/components/SEOMeta";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { usePaymentProvider } from "@/hooks/usePaymentProvider";
-import CheckoutButton from "@/components/payment/CheckoutButton";
 import PaymentMethodSelector from "@/components/payment/PaymentMethodSelector";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -54,15 +53,15 @@ function FanclubCTA({ planId, className, label, isAuthenticated, paymentProvider
 }
 function PPVUnlockCTA({ priceTier, className, label, isAuthenticated, requireSignup, paymentProvider }) {
   return (
-    <CheckoutButton
-      paymentType="ppv" priceTier={priceTier}
+    <PaymentMethodSelector
+      paymentType="ppv" priceTier={priceTier} itemId={priceTier}
+      itemLabel={PRICING.ppv[priceTier]?.label || 'Scene'} priceUsd={PRICING.ppv[priceTier]?.price}
       label={label || (isAuthenticated ? 'Unlock Scene' : 'Create Account to Unlock')}
       returnUrl="/videos" cancelUrl="/fanclub"
       isAuthenticated={isAuthenticated}
       onRequireAuth={() => requireSignup('/videos', 'ppv', { priceTier })}
       paymentProvider={paymentProvider}
       className={className || "w-full"}
-      unavailableLabel="PPV unlock coming soon"
     />
   );
 }

@@ -68,6 +68,15 @@ export default function VideoPurchaseBox({
         ))}
       </ul>
 
+      {isFanclub && (
+        <div className="rounded-xl bg-purple-500/10 border border-purple-500/30 p-3 mb-4">
+          <p className="text-xs font-bold text-purple-400 uppercase tracking-wide mb-1">Included with Fanclub</p>
+          <p className="text-sm text-foreground font-semibold">Only ${priceUsd}/month</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Unlimited access to all Fanclub content</p>
+          <a href="/fanclub" className="text-xs font-semibold text-purple-400 mt-1.5 inline-block">View Membership →</a>
+        </div>
+      )}
+
       {unlockError && <p className="text-red-400 text-xs mb-3">{unlockError}</p>}
 
       {isPPV ? (

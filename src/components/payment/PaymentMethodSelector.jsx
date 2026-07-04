@@ -138,7 +138,7 @@ export default function PaymentMethodSelector({
           <Wallet className="w-4 h-4 text-primary shrink-0" />
           <div>
             <p className="text-sm font-semibold text-foreground">
-              FlashPay Wallet {hasEnough && <span className="text-primary text-xs font-medium">(Recommended)</span>}
+              ⚡ FlashPay Wallet {hasEnough && <span className="text-primary text-xs font-medium">(Recommended)</span>}
             </p>
             {walletLoading ? (
               <p className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Checking balance...</p>
@@ -160,7 +160,7 @@ export default function PaymentMethodSelector({
 
       <div onClickCapture={() => trackCryptoSelected(paymentType, itemId)}>
         <CheckoutButton
-          paymentType={paymentType} label={`${label} with Crypto`} planId={planId} videoId={videoId}
+          paymentType={paymentType} label={`₿ Pay with Crypto`} planId={planId} videoId={videoId}
           applicationId={applicationId} priceTier={priceTier} returnUrl={returnUrl} cancelUrl={cancelUrl}
           isAuthenticated={isAuthenticated} onRequireAuth={onRequireAuth} paymentProvider={paymentProvider}
           className={className} size={size}

@@ -91,6 +91,18 @@ export default function VideoCard({ video, brands = [], performers = [] }) {
             {video.title}
           </h3>
 
+          {/* Purchase type — always clear at a glance */}
+          <p className="text-[11px] font-semibold">
+            {video.access_tier === 'fanclub' ? (
+              <span className="text-purple-400">Included with Fanclub · ${PRICING.fanclub.monthly}/mo</span>
+            ) : video.access_tier === 'ppv' ? (
+              <span className="text-rose-400">${PRICING.ppv.standard.price} · Lifetime Access</span>
+            ) : (
+              <span className="text-emerald-400">Free Preview</span>
+            )}
+            {video.is_exclusive && <span className="text-purple-300"> · Exclusive to FleshLab</span>}
+          </p>
+
           <div className="flex items-center justify-between gap-2 text-[11px] text-white/40">
             {brand ? (
               <span className="bg-white/[0.08] text-white/60 font-semibold px-2.5 py-1 rounded-md border border-white/10">
