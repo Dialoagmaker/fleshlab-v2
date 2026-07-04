@@ -1,5 +1,6 @@
 import TubeHeader from "@/components/tube/TubeHeader";
 import TubeFooter from "@/components/tube/TubeFooter";
+import MobileBottomNav from "@/components/mobile/MobileBottomNav";
 import { useEffect } from "react";
 
 export default function PublicPageShell({ children, noIndex }) {
@@ -19,10 +20,11 @@ export default function PublicPageShell({ children, noIndex }) {
   return (
     <div className="min-h-screen bg-[#0a0a0a] overflow-x-hidden">
       <TubeHeader />
-      <main className="w-full">
+      <main className="w-full pb-16 md:pb-0">
         {children}
       </main>
       <TubeFooter />
+      <MobileBottomNav />
     </div>
   );
 }

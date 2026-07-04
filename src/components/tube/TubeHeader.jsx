@@ -37,6 +37,7 @@ export default function TubeHeader({ onMenuToggle }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [langOpen, setLangOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const location = useLocation();
@@ -287,14 +288,15 @@ export default function TubeHeader({ onMenuToggle }) {
                 {t('nav.fanclub')}
               </Button>
             </a>
-            <button
-              className="md:hidden text-white/80 hover:text-white h-12 w-12 flex items-center justify-center rounded-lg hover:bg-white/10 active:bg-white/20 transition-colors"
-              onClick={() => setMobileOpen(prev => !prev)}
-              aria-label={mobileOpen ? "Close menu" : "Open menu"}
-              aria-expanded={mobileOpen}
-            >
-              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+            {!isVideosPage && (
+              <button
+                className="md:hidden text-white/80 hover:text-white h-11 w-11 flex items-center justify-center rounded-lg hover:bg-white/10 active:bg-white/20 transition-colors"
+                onClick={() => setMobileSearchOpen(prev => !prev)}
+                aria-label={mobileSearchOpen ? "Close search" : "Open search"}
+              >
+                {mobileSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -389,17 +391,18 @@ export default function TubeHeader({ onMenuToggle }) {
         </div>
       </div>
 
-      {/* Mobile Search (hidden on /videos page) */}
-      {!isVideosPage && (
-        <div className="md:hidden px-3 py-1.5 border-t border-rose-600/10">
+      {/* Mobile Search Overlay (toggled via search icon) */}
+      {mobileSearchOpen && !isVideosPage && (
+        <div className="md:hidden px-3 py-2 border-t border-rose-600/10">
           <div className="relative">
             <Input
+              autoFocus
               type="text"
               placeholder={t('nav.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleSearchKeyDown}
-              className="w-full bg-[#121212] border border-rose-600/20 text-white placeholder:text-white/40 h-10 pl-4 pr-12 rounded-lg text-sm focus:outline-none focus:border-rose-600/50"
+              className="w-full bg-[#121212] border border-rose-600/20 text-white placeholder:text-white/40 h-11 pl-4 pr-12 rounded-lg text-sm focus:outline-none focus:border-rose-600/50"
             />
             <button 
               onClick={handleSearchSubmit}
@@ -409,74 +412,6 @@ export default function TubeHeader({ onMenuToggle }) {
             </button>
           </div>
         </div>
-      )}
-
-      {/* Mobile Navigation Drawer */}
-      {mobileOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40 bg-black/80 md:hidden"
-            onClick={() => setMobileOpen(false)}
-            aria-hidden="true"
-          />
-          {/* Drawer */}
-          <div className="fixed top-0 right-0 z-50 h-full w-[280px] max-w-[85vw] bg-[#0f0a0a] border-l border-rose-600/25 shadow-2xl shadow-rose-900/30 flex flex-col md:hidden">
-            {/* Drawer header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-rose-600/15">
-              <span className="text-white font-black text-lg tracking-tight">
-                FLESH<span className="bg-rose-600 px-2 rounded-md ml-0.5">LAB</span>
-              </span>
-              <button
-                onClick={() => setMobileOpen(false)}
-                className="text-white/60 hover:text-white h-9 w-9 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
-                aria-label="Close menu"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Nav links */}
-            <nav className="flex-1 overflow-y-auto py-3 px-3">
-              {(isAuthenticated ? AUTHENTICATED_NAV_LINKS : BASE_NAV_LINKS).map(({ href, label, icon: Icon, resolvePath }) => (
-                <a
-                  key={href}
-                  href={resolvePath ? getDashboardPath(user) : href}
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3.5 rounded-xl mb-1 text-base font-semibold transition-colors min-h-[48px] ${
-                    isActive(resolvePath ? getDashboardPath(user) : href)
-                      ? 'bg-rose-600/20 text-rose-400 border border-rose-600/30'
-                      : 'text-white/75 hover:text-white hover:bg-white/8'
-                  }`}
-                >
-                  <Icon className="w-5 h-5 shrink-0" />
-                  {label}
-                </a>
-              ))}
-            </nav>
-
-            {/* Bottom auth actions - Mobile */}
-            {isAuthenticated ? (
-              <div className="px-4 py-4 border-t border-white/8 space-y-2">
-                <Link to={getDashboardPath(user)} onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 w-full h-11 rounded-xl border border-white/15 text-white font-semibold text-sm hover:bg-white/8 transition-colors">
-                  <UserCircle className="w-4 h-4" /> Dashboard
-                </Link>
-                <button onClick={() => { handleLogout(); setMobileOpen(false); }} className="flex items-center justify-center gap-2 w-full h-11 rounded-xl bg-red-600/20 border border-red-600/30 text-red-400 font-semibold text-sm hover:bg-red-600/30 transition-colors">
-                  <LogOut className="w-4 h-4" /> Log Out
-                </button>
-              </div>
-            ) : (
-              <div className="px-4 py-4 border-t border-white/8 space-y-2">
-                <a href="/login" className="flex items-center justify-center gap-2 w-full h-11 rounded-xl border border-white/15 text-white/80 font-semibold text-sm hover:bg-white/8 transition-colors" onClick={() => setMobileOpen(false)}>
-                  <LogIn className="w-4 h-4" /> Log In
-                </a>
-                <a href="/register" className="flex items-center justify-center gap-2 w-full h-11 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 text-white font-bold text-sm shadow-lg shadow-rose-700/30 hover:from-rose-500 hover:to-rose-600 transition-all" onClick={() => setMobileOpen(false)}>
-                  Sign Up
-                </a>
-              </div>
-            )}
-          </div>
-        </>
       )}
     </header>
   );
