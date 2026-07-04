@@ -6,7 +6,7 @@ export const TABS = [
   { id: "videos",         label: "My Videos",         icon: Video },
   { id: "fanclub",        label: "Fanclub",           icon: Star },
   { id: "payments",       label: "Payments",          icon: CreditCard },
-  { id: "wallet",         label: "FleshPay Wallet",  icon: Wallet },
+  { id: "wallet",         label: "FlashPay Wallet",  icon: Wallet },
   { id: "messages",       label: "Messages",          icon: MessageCircle },
   { id: "profile",        label: "Profile",           icon: User },
   { id: "verification",   label: "Verification",      icon: Shield },
