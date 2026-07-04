@@ -154,23 +154,25 @@ Deno.serve(async (req) => {
 8. Do NOT invent acts or performers not mentioned in the scene notes.
 9. Return JSON only — no explanation, no preamble.`;
 
-    // Call Kimi / Moonshot directly for adult-video marketing copy
-    const kimiApiKey = Deno.env.get('KIMI_API_KEY');
-    const kimiModel = Deno.env.get('KIMI_MODEL') || 'kimi-k2-0711-preview';
-    if (!kimiApiKey) {
+    // Call Kimi via OpenRouter for adult-video marketing copy
+    const openRouterApiKey = Deno.env.get('KIMI_API_KEY');
+    const configuredModel = Deno.env.get('KIMI_MODEL') || 'moonshotai/kimi-k2';
+    const openRouterModel = configuredModel.includes('/') ? configuredModel : 'moonshotai/kimi-k2';
+    if (!openRouterApiKey) {
       return Response.json({ error: 'KIMI_API_KEY is not configured' }, { status: 500 });
     }
 
-    const kimiRes = await fetch('https://api.moonshot.cn/v1/chat/completions', {
+    const kimiRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${kimiApiKey}`,
-        'Content-Type': 'application/json'
+        'Authorization': `Bearer ${openRouterApiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': Deno.env.get('APP_BASE_URL') || 'https://fleshlab.online',
+        'X-Title': 'FLESHLAB Studios'
       },
       body: JSON.stringify({
-        model: kimiModel,
+        model: openRouterModel,
         temperature: 0.9,
-        response_format: { type: 'json_object' },
         messages: [
           {
             role: 'system',
@@ -353,8 +355,8 @@ Deno.serve(async (req) => {
         categories_received: categories || [],
         generated_title: response.title || '',
         generated_tags: response.tags || [],
-        model_used: kimiModel,
-        provider_used: 'kimi_moonshot',
+        model_used: openRouterModel,
+        provider_used: 'openrouter_kimi',
         cached_result: false,
         context_block_built: contextBlock,
       },
