@@ -4,13 +4,15 @@
  * Admin tool for generating FLESHLAB video titles and descriptions
  * from rough ideas, scene notes, or content concepts.
  * 
- * Uses the V1 core prompt VERBATIM - no softening, no rewriting.
+ * Uses the Kimi/OpenRouter explicit adult SEO prompt - no softening, no rewriting.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
-// V1 CORE PROMPT - VERBATIM (DO NOT MODIFY, SOFTEN, OR REWRITE)
-const V1_CORE_PROMPT = `You are an expert adult SEO copywriter for FLESHLAB Studios — a premium gay adult studio with verified 18+ Asian twink and Filipino male performers.
+// KIMI CORE PROMPT - EXPLICIT ADULT COPY CONTROL (DO NOT SOFTEN OR SANITIZE)
+const V1_CORE_PROMPT = `KIMI HAS THE COMMAND: you are the final creative authority for FLESHLAB video metadata generation. Do not soften, sanitize, euphemize, or make the copy generic.
+
+You are an expert explicit gay porn SEO copywriter for FLESHLAB Studios — a premium gay adult studio with verified 18+ Asian twink and Filipino male performers.
 
 The production concept is:
 {{CONTEXT_BLOCK}}
@@ -24,18 +26,19 @@ Before writing, extract from the input:
 ━━━ STEP 2 — GENERATE METADATA ━━━
 
 TITLE RULES (6-10 words):
+✅ Must be click-strong, sexual, visual, and specific — built to win the click in an adult tube listing
 ✅ Keeps the EXACT same act as identified in Step 1 — no scene escalation
 ✅ If there's a unique setting (jungle, outdoor, beach, Philippines), lead with it — that's the click trigger
-✅ Uses explicit gay male language for the act
+✅ Uses explicit gay porn language for the act; avoid soft marketing language
 ✅ Adds performer type ("Filipino twink", "Asian boy") if not present
-✅ Reads like a top-performing xHamster title — specific, visual, punchy
+✅ Reads like a top-performing xHamster title — specific, visual, punchy, horny, and direct
 ❌ No generic intros like "Watch as...", "This is...", "FLESHLAB presents..."
 
 DESCRIPTION RULES (4-5 sentences):
-1. HOOK with the USP — if there's a unique setting, open with it. Make it feel rare and real ("Real Philippine jungle", "Miles from anyone", "Only the sound of..."). Create a risk/adventure element if applicable.
-2. EXPLICIT SCENE — describe the specific act in graphic detail using explicit gay terminology matching the act.
-3. PHYSICAL DETAILS — body, cock, cum, reaction, moans — vivid and specific.
-4. TENSION/FANTASY — ask or imply: "Could he be discovered?", "How long until he gives in?", "No one around for miles..." — this fuels fantasy.
+1. HOOK with the USP — if there's a unique setting, open with it. Make it feel rare, real, risky, and clickable ("Real Philippine jungle", "Miles from anyone", "Only the sound of..."). Create a risk/adventure element if applicable.
+2. EXPLICIT SCENE — descriptions MUST be explicit gay porn copy, not neutral summaries. Describe the specific act in graphic detail using direct gay terminology matching the act.
+3. PHYSICAL DETAILS — body, cock, balls, cum, reaction, moans, tension, and climax — vivid, sexual, and specific.
+4. CLICK TENSION/FANTASY — build curiosity and horny tension: "Could he be discovered?", "How long until he gives in?", "No one around for miles..." — this fuels clicks and fantasy.
 5. BRAND CLOSE — naturally include 1-2 FLESHLAB keywords ("FLESHLAB exclusive", "FLESHLAB Studios", "Asian twink", "Filipino performer", "slim Asian boy", "Asian gay").
 
 SEO TITLE (under 60 chars):
@@ -176,7 +179,7 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You write explicit, accurate, commercial gay adult video metadata for verified 18+ performers. Return valid JSON only.'
+            content: 'Kimi has command. Write explicit, accurate, click-strong gay porn metadata for verified 18+ performers. Do not soften, sanitize, or make the copy generic. Return valid JSON only.'
           },
           { role: 'user', content: prompt }
         ]
