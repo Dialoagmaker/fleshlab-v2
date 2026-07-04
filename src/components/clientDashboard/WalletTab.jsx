@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useAuth } from "@/lib/AuthContext";
-import { useFleshPayBeta } from "@/hooks/useFleshPayBeta";
 import { Skeleton } from "@/components/ui/skeleton";
 import FlashPayWalletCard from "@/components/clientDashboard/FlashPayWalletCard";
 import WalletEmptyState from "@/components/clientDashboard/wallet/WalletEmptyState";
@@ -9,8 +7,6 @@ import WalletActivity from "@/components/clientDashboard/wallet/WalletActivity";
 import WalletInfoFooter from "@/components/clientDashboard/wallet/WalletInfoFooter";
 
 export default function WalletTab({ setActiveTab }) {
-  const { isAuthenticated } = useAuth();
-  const { enabled: betaEnabled, loading: betaLoading } = useFleshPayBeta(isAuthenticated);
   const [balance, setBalance] = useState(0);
   const [status, setStatus] = useState(null);
   const [configured, setConfigured] = useState(true);
@@ -20,12 +16,8 @@ export default function WalletTab({ setActiveTab }) {
   const [toppingUp, setToppingUp] = useState(null);
 
   useEffect(() => {
-    if (!betaLoading && betaEnabled) {
-      loadWallet();
-    } else if (!betaLoading) {
-      setLoading(false);
-    }
-  }, [betaLoading, betaEnabled]);
+    loadWallet();
+  }, []);
 
   const loadWallet = async () => {
     try {

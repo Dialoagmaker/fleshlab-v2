@@ -15,7 +15,6 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
-import Wallet from './pages/Wallet';
 import AdminWallets from './pages/admin/Wallets';
 import AdminPaymentProviders from './pages/admin/PaymentProviders';
 import TrackingTest from './pages/admin/TrackingTest';
@@ -464,10 +463,8 @@ const AuthenticatedApp = () => {
       <Route path="/brands/:slug" element={<PublicPageShell><BrandDetail /></PublicPageShell>} />
       <Route path="/fan-productions" element={<PublicPageShell><FanProductions /></PublicPageShell>} />
       <Route path="/fan-productions/request" element={<PublicPageShell noIndex={true}><FanProductionRequest /></PublicPageShell>} />
-      {/* FleshPay Wallet — auth required, noindex */}
-      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
-        <Route path="/wallet" element={<PublicPageShell noIndex={true}><Wallet /></PublicPageShell>} />
-      </Route>
+      {/* FleshPay Wallet — redirect to the single client dashboard wallet tab */}
+      <Route path="/wallet" element={<Navigate to="/client/dashboard?tab=wallet" replace />} />
       <Route path="/client/dashboard" element={
         <PublicPageShell noIndex={true}>
           <ClientDashboardGuard>
