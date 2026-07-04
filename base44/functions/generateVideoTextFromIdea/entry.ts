@@ -25,21 +25,40 @@ Before writing, extract from the input:
 
 ━━━ STEP 2 — GENERATE METADATA ━━━
 
-TITLE RULES (6-10 words):
-✅ Must be click-strong, sexual, visual, and specific — built to win the click in an adult tube listing
+CLICKSTRENGTH FRAMEWORK — apply before writing:
+A click-strong title/description is NOT just explicit. It combines:
+1. SPECIFICITY — exact performer type + exact act + exact setting from the notes.
+2. STAKES — risk, secrecy, urgency, taboo location, getting caught, first-time/raw amateur energy when supported by notes.
+3. VISUAL IMAGE — the reader must instantly picture the scene in one glance.
+4. ACTIVE VERBS — jerks off, strokes, pumps, exposes, unloads, shoots, rides, sucks; never flat wording.
+5. CURIOSITY GAP — hint at what happens next without sounding fake.
+6. SEARCH TERMS — include the strongest searchable words naturally: Pinoy, Filipino, twink, car, outdoor, solo, cum, etc.
+
+TITLE RULES (7-12 words):
+✅ Formula: [Performer hook] + [explicit act] + [setting/stakes] + [click trigger]
+✅ Must feel like a high-CTR adult tube headline, not a database label
+✅ Must be sexual, visual, specific, and instantly understandable in under 2 seconds
 ✅ Keeps the EXACT same act as identified in Step 1 — no scene escalation
-✅ If there's a unique setting (jungle, outdoor, beach, Philippines), lead with it — that's the click trigger
+✅ If there's a unique setting (car, jungle, outdoor, beach, hotel floor, Philippines), make it part of the hook
 ✅ Uses explicit gay porn language for the act; avoid soft marketing language
-✅ Adds performer type ("Filipino twink", "Asian boy") if not present
-✅ Reads like a top-performing xHamster title — specific, visual, punchy, horny, and direct
+✅ Adds performer type ("Filipino twink", "Asian boy", "Pinoy boy") if not present
+✅ Prefer punchy patterns like: "Pinoy Twink Jerks Off in Parked Car After Midnight" or "Filipino Twink Risks Getting Caught Stroking in His Car"
+❌ Avoid weak flat titles like "Filipino Twink Wanks His Dick in Car" or generic location endings like "on Dark Streets" unless the street risk is the actual hook
 ❌ No generic intros like "Watch as...", "This is...", "FLESHLAB presents..."
 
 DESCRIPTION RULES (4-5 sentences):
-1. HOOK with the USP — if there's a unique setting, open with it. Make it feel rare, real, risky, and clickable ("Real Philippine jungle", "Miles from anyone", "Only the sound of..."). Create a risk/adventure element if applicable.
+1. FIRST SENTENCE MUST SELL THE CLICK — open with the strongest USP from the notes: performer + setting + risk/fantasy. Do not start generic. Example structure: "After midnight in a parked car, this slim Pinoy twink..."
 2. EXPLICIT SCENE — descriptions MUST be explicit gay porn copy, not neutral summaries. Describe the specific act in graphic detail using direct gay terminology matching the act.
-3. PHYSICAL DETAILS — body, cock, balls, cum, reaction, moans, tension, and climax — vivid, sexual, and specific.
-4. CLICK TENSION/FANTASY — build curiosity and horny tension: "Could he be discovered?", "How long until he gives in?", "No one around for miles..." — this fuels clicks and fantasy.
-5. BRAND CLOSE — naturally include 1-2 FLESHLAB keywords ("FLESHLAB exclusive", "FLESHLAB Studios", "Asian twink", "Filipino performer", "slim Asian boy", "Asian gay").
+3. ESCALATION — each sentence should move forward: setup → action → tension/risk → climax/payoff → FLESHLAB close. No repetitive filler.
+4. PHYSICAL DETAILS — body, cock, balls, cum, reaction, moans, tension, and climax — vivid, sexual, and specific.
+5. CLICK TENSION/FANTASY — build curiosity and horny tension: "Could he be discovered?", "How long until he gives in?", "No one around for miles..." — this fuels clicks and fantasy.
+6. BRAND CLOSE — naturally include 1-2 FLESHLAB keywords ("FLESHLAB exclusive", "FLESHLAB Studios", "Asian twink", "Filipino performer", "slim Asian boy", "Asian gay").
+
+QUALITY GATE BEFORE FINAL JSON:
+- Would the title make a horny user click over 10 similar videos? If not, rewrite it stronger.
+- Does the first description sentence contain the hook? If not, rewrite it.
+- Is every sentence specific to the notes? If not, remove generic filler.
+- Are act, performer, setting, risk, and payoff all present? If not, add the missing element without inventing new acts.
 
 SEO TITLE (under 60 chars):
 - Include performer name or key act
@@ -89,8 +108,8 @@ SUGGESTED KEYWORDS (8-12 keywords):
 
 Reply ONLY in this exact JSON format:
 {
-  "title": "The punchy xHamster-optimized title",
-  "description": "The USP-led, graphic, curiosity-driven description (4-5 sentences)",
+  "title": "The high-CTR adult tube title built from the clickstrength framework",
+  "description": "The hook-first, explicit, escalating, curiosity-driven description (4-5 sentences)",
   "seo_title": "SEO page title under 60 characters",
   "seo_description": "Meta description 120-158 characters with soft CTA",
   "tags": ["tag1", "tag2", "tag3", ...],
@@ -155,7 +174,8 @@ Deno.serve(async (req) => {
 6. If scene notes mention muscle twink, the output MUST reference muscular build.
 7. Each generation must be UNIQUE — do not reuse phrasing from any previous generation.
 8. Do NOT invent acts or performers not mentioned in the scene notes.
-9. Return JSON only — no explanation, no preamble.`;
+9. Before returning, silently score the title for clickstrength: specificity + stakes + visual image + active verb + search terms. If any part is weak, rewrite once.
+10. Return JSON only — no explanation, no preamble.`;
 
     // Call Kimi via OpenRouter for adult-video marketing copy
     const openRouterApiKey = Deno.env.get('KIMI_API_KEY');
@@ -179,7 +199,7 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Kimi has command. Write explicit, accurate, click-strong gay porn metadata for verified 18+ performers. Do not soften, sanitize, or make the copy generic. Return valid JSON only.'
+            content: 'Kimi has command. Write explicit, accurate, high-CTR gay porn metadata for verified 18+ performers. A click-strong output must combine specificity, stakes, visual imagery, active verbs, curiosity, and search terms. Do not soften, sanitize, or make the copy generic. Return valid JSON only.'
           },
           { role: 'user', content: prompt }
         ]
