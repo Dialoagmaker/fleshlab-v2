@@ -136,7 +136,7 @@ export default function TubeHeader({ onMenuToggle }) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setLangOpen(!langOpen)}
-                className="gap-2 bg-transparent border-white/20 hover:bg-white/10 hover:border-rose-600/60 text-white h-9 px-3"
+                className="gap-2 bg-transparent border-white/20 hover:bg-white/10 hover:border-rose-600/60 text-white h-11 w-11 sm:h-9 sm:w-auto px-3"
               >
                 <Globe className="w-4 h-4" />
                 <span className="hidden lg:inline text-sm">{currentLang.native}</span>
@@ -288,7 +288,7 @@ export default function TubeHeader({ onMenuToggle }) {
               </Button>
             </a>
             <button
-              className="md:hidden text-white/80 hover:text-white h-10 w-10 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
+              className="md:hidden text-white/80 hover:text-white h-12 w-12 flex items-center justify-center rounded-lg hover:bg-white/10 active:bg-white/20 transition-colors"
               onClick={() => setMobileOpen(prev => !prev)}
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileOpen}
@@ -403,7 +403,7 @@ export default function TubeHeader({ onMenuToggle }) {
             />
             <button 
               onClick={handleSearchSubmit}
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 bg-gradient-to-r from-rose-600 to-rose-700 rounded-md flex items-center justify-center text-white"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 bg-gradient-to-r from-rose-600 to-rose-700 rounded-md flex items-center justify-center text-white"
             >
               <Search className="w-4 h-4" />
             </button>
