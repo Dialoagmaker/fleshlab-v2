@@ -94,7 +94,7 @@ export default function VideoCard({ video, brands = [], performers = [] }) {
           {/* Purchase type — always clear at a glance */}
           <p className="text-[11px] font-semibold">
             {video.access_tier === 'fanclub' ? (
-              <span className="text-purple-400">Included with Fanclub · ${PRICING.fanclub.monthly}/mo</span>
+              <span className="text-purple-400">Included with Fanclub · ${PRICING.fanclub.monthly.price}/mo</span>
             ) : video.access_tier === 'ppv' ? (
               <span className="text-rose-400">${PRICING.ppv.standard.price} · Lifetime Access</span>
             ) : (
