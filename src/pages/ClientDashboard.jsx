@@ -8,6 +8,7 @@ import { getDashboardPath } from "@/lib/roleResolver";
 import SEOMeta from "@/components/SEOMeta";
 
 import DashboardNav from "@/components/clientDashboard/DashboardNav";
+import ClientDashboardSidebar from "@/components/clientDashboard/ClientDashboardSidebar";
 import OverviewTab from "@/components/clientDashboard/OverviewTab";
 import FanProductionsTab from "@/components/clientDashboard/FanProductionsTab";
 import VideosTab from "@/components/clientDashboard/VideosTab";
@@ -142,42 +143,35 @@ export default function ClientDashboard() {
   return (
     <>
       <SEOMeta title="Client Dashboard | FLESHLAB" noIndex={true} />
-      <div className="min-h-screen bg-[#080808] text-white bg-kinetic-grid">
+      <div className="min-h-screen bg-[#080808] text-white flex">
 
-        {/* ── HEADER ──────────────────────────────────────────────── */}
-        <div className="max-w-5xl mx-auto px-4 pt-6">
-          <div className="border border-white/12 px-6 py-10 text-center">
-            <div className="flex items-center justify-center gap-2 mb-8">
-              <svg viewBox="0 0 24 24" className="w-5 h-5 text-rose-500 fill-current"><path d="M12 2C9 2 7 4 7 7c0 2 1 3 1 5-2 0-3 1-3 3 0 3 3 5 7 5s7-2 7-5c0-2-1-3-3-3 0-2 1-3 1-5 0-3-2-5-5-5z"/></svg>
-              <div className="text-left leading-none">
-                <div className="text-white font-black text-sm tracking-wide">FLESHLAB</div>
-                <div className="text-white/40 text-[10px] tracking-widest uppercase">Account</div>
-              </div>
+        <ClientDashboardSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
+
+        <div className="flex-1 min-w-0">
+          {/* ── TOP BAR ─────────────────────────────────────────────── */}
+          <div className="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur border-b border-white/10 px-4 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h1 className="text-lg lg:text-xl font-black text-white tracking-tight uppercase">Client Dashboard</h1>
+              <p className="text-white/40 text-[11px] mt-0.5">
+                {displayName ? `Welcome back, ${displayName}` : "Welcome back"}
+              </p>
             </div>
-            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight uppercase">Client Dashboard</h1>
-            <p className="text-white/40 text-xs md:text-sm mt-3 uppercase tracking-wider">
-              {displayName ? `Welcome back, ${displayName}. ` : "Welcome back. "}
-              Choose your experience or manage your presence.
-            </p>
             <Button
               onClick={() => window.location.href = "/fan-productions/request"}
-              variant="outline"
-              className="mt-6 border border-rose-600/50 text-rose-400 hover:bg-rose-600/10 font-bold gap-2 rounded-none h-auto py-2.5 px-5 text-xs uppercase tracking-wider bg-transparent"
+              className="bg-rose-600 hover:bg-rose-600/90 text-white font-bold gap-2 rounded-lg h-auto py-2.5 px-4 text-xs uppercase tracking-wider shrink-0"
             >
               <Plus className="w-4 h-4" />
               New Fan Production Request
             </Button>
           </div>
-        </div>
 
-        {/* ── NAV ─────────────────────────────────────────────────── */}
-        <div className="max-w-5xl mx-auto px-4">
-          <DashboardNav activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
-        </div>
+          {/* ── MOBILE NAV ──────────────────────────────────────────── */}
+          <div className="px-4 pt-4 lg:hidden">
+            <DashboardNav activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
+          </div>
 
-        {/* ── BODY ────────────────────────────────────────────────── */}
-        <div className="max-w-5xl mx-auto px-4 py-6">
-            {/* Tab content */}
+          {/* ── BODY ────────────────────────────────────────────────── */}
+          <div className="px-4 lg:px-8 py-6">
             <div className="flex-1 min-w-0">
               {activeTab === "overview"         && <OverviewTab {...tabProps} />}
               {activeTab === "fan-productions"  && <FanProductionsTab requests={requests} loading={loadingRequests} />}
@@ -190,8 +184,8 @@ export default function ClientDashboard() {
               {activeTab === "security"         && <SecurityTab user={user} />}
               {activeTab === "wallet"          && <WalletTab setActiveTab={setActiveTab} />}
             </div>
+          </div>
         </div>
-
       </div>
     </>
   );
