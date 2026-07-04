@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { useFleshPayBeta } from "@/hooks/useFleshPayBeta";
 import SEOMeta from "@/components/SEOMeta";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -55,7 +54,6 @@ const StatusBadge = ({ status }) => {
 
 export default function WalletPage() {
   const { isAuthenticated, isLoadingAuth, authChecked } = useAuth();
-  const { enabled: betaEnabled, loading: betaLoading } = useFleshPayBeta(isAuthenticated);
   const [wallet, setWallet] = useState(null);
   const [ledger, setLedger] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,7 +83,7 @@ export default function WalletPage() {
     setToppingUp(null);
   };
 
-  if (!authChecked || isLoadingAuth || loading || betaLoading) {
+  if (!authChecked || isLoadingAuth || loading) {
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
       <div className="w-full max-w-[1280px] space-y-6">
@@ -103,23 +101,6 @@ export default function WalletPage() {
   }
 
   if (!isAuthenticated) return null;
-
-  if (!betaEnabled) {
-    return (
-      <>
-        <SEOMeta title="FleshPay | FLESHLAB" noIndex={true} />
-        <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
-          <div className="bg-[#0d0d0d] border border-white/[0.08] max-w-md w-full rounded-3xl p-10 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
-              <Wallet className="w-8 h-8 text-primary" />
-            </div>
-            <h2 className="text-xl font-bold text-white mb-2">FleshPay Beta</h2>
-            <p className="text-white/40 text-sm">FleshPay is in limited beta and not yet available for your account.</p>
-          </div>
-        </div>
-      </>
-    );
-  }
 
   const balance = wallet?.balance_usd || 0;
 
@@ -163,7 +144,6 @@ export default function WalletPage() {
 
                 {/* Status badges */}
                 <div className="flex items-center justify-center gap-3">
-                  <span className="text-sm uppercase tracking-[0.15em] text-primary bg-primary/[0.14] px-5 py-2 rounded-full font-bold">Beta</span>
                   {wallet?.status === "active" && (
                     <span className="flex items-center gap-1.5 text-sm text-emerald-400 bg-emerald-500/[0.1] px-5 py-2 rounded-full font-semibold">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Active
@@ -217,8 +197,8 @@ export default function WalletPage() {
                 <Lock className="w-6 h-6 text-amber-400" />
               </div>
               <div>
-                <p className="text-base font-bold text-white">Beta access</p>
-                <p className="text-[13px] text-white/50 leading-relaxed mt-1.5">Early access — more features coming soon</p>
+                <p className="text-base font-bold text-white">Secure wallet</p>
+                <p className="text-[13px] text-white/50 leading-relaxed mt-1.5">Your balance is protected and always available</p>
               </div>
             </div>
           </div>
