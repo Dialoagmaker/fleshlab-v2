@@ -127,7 +127,7 @@ export default function Dashboard() {
         noIndex={true}
       />
       <div className="space-y-8 max-w-5xl">
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground text-sm mt-1">FLESHLAB V2 — Admin Console</p>
@@ -140,7 +140,7 @@ export default function Dashboard() {
           size="sm"
           onClick={handleRefresh}
           disabled={refreshing}
-          className="gap-2 shrink-0"
+          className="gap-2 shrink-0 w-full sm:w-auto"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
           {refreshing ? "Refreshing…" : "Refresh Stats"}
