@@ -8,6 +8,8 @@ import { usePaymentProvider } from "@/hooks/usePaymentProvider";
 import PaymentMethodSelector from "@/components/payment/PaymentMethodSelector";
 import SEOMeta from "@/components/SEOMeta";
 import VideoRail from "@/components/public/VideoRail";
+import LargeVideoRail from "@/components/public/LargeVideoRail";
+import VideoPurchaseBox from "@/components/payment/VideoPurchaseBox";
 import PerformerSection from "@/components/public/PerformerSection";
 import FeaturedPerformerBlock from "@/components/public/FeaturedPerformerBlock";
 import PremiumTeaserBlock from "@/components/public/PremiumTeaserBlock";
@@ -137,7 +139,18 @@ export default function VideoDetail() {
   // Related video sets
   const otherVideos = allVideos.filter(v => v.slug !== slug);
   const studioVideos = video ? otherVideos.filter(v => v.brand_id === video.brand_id).slice(0, 6).map(safeVideo) : [];
-  const similarVideos = video ? otherVideos.filter(v => v.tags?.some(t => video.tags?.includes(t))).slice(0, 4).map(safeVideo) : [];
+
+  // "More from Performer" — videos featuring the primary performer, excluding the current video
+  const primaryPerformerForRail = performers[0] || null;
+  const morePerformerVideoIds = (video && primaryPerformerForRail)
+    ? allVideoPerformers.filter(vp => vp.performer_id === primaryPerformerForRail.id && vp.video_id !== video.id).map(vp => vp.video_id)
+    : [];
+  const morePerformerVideos = video ? otherVideos.filter(v => morePerformerVideoIds.includes(v.id)).slice(0, 6).map(safeVideo) : [];
+
+  // Exclusion set — a video must not appear in both "More from Performer" and "Similar Videos"; earlier section wins
+  const excludedVideoIds = new Set([video?.id, ...morePerformerVideos.map(v => v.id)]);
+  const similarVideos = video ? otherVideos.filter(v => !excludedVideoIds.has(v.id) && v.tags?.some(t => video.tags?.includes(t))).slice(0, 6).map(safeVideo) : [];
+
   const relatedVideos = video ? otherVideos.filter(v => v.brand_id === video.brand_id || v.tags?.some(t => video.tags?.includes(t))).slice(0, 6).map(safeVideo) : [];
   const brands = allBrands.map(b => ({ id: b.id, name: b.name, slug: b.slug, logo_url: b.logo_url }));
 
@@ -480,17 +493,17 @@ export default function VideoDetail() {
                 <PerformerSection performer={primaryPerformer} videoCount={1} />
               ) : null}
 
-              {studioVideos.length > 0 && safeBrand && (
-                <VideoRail
-                  title={`More from ${safeBrand.name}`}
-                  subtitle={`${studioVideos.length} videos available`}
-                  videos={studioVideos} brands={brands} performers={performers}
-                  viewAllLink={`/brands/${safeBrand.slug}`} viewAllText="View Studio"
+              {morePerformerVideos.length > 0 && primaryPerformerForRail && (
+                <LargeVideoRail
+                  title={`More from ${primaryPerformerForRail.display_name}`}
+                  subtitle={`${morePerformerVideos.length} videos available`}
+                  videos={morePerformerVideos} brands={brands} performers={performers}
+                  viewAllLink={`/performers/${primaryPerformerForRail.slug}`} viewAllText="View Performer"
                 />
               )}
 
               {similarVideos.length > 0 && (
-                <VideoRail title="Similar Videos" subtitle="Based on tags" videos={similarVideos} brands={brands} performers={performers} />
+                <LargeVideoRail title="Similar Videos" subtitle="Based on tags" videos={similarVideos} brands={brands} performers={performers} />
               )}
 
               <FanProductionTeaser />
@@ -556,54 +569,19 @@ export default function VideoDetail() {
                 </div>
               )}
 
-              {/* Unlock CTA */}
+              {/* Purchase box */}
               {!playbackUrl && (
-                <div className="bg-primary/5 rounded-xl p-5 border border-primary/30">
-                  <h3 className="font-semibold mb-2 text-xs uppercase tracking-wide text-primary flex items-center gap-2">
-                    <Lock className="w-4 h-4" /> Full Video Access
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    {video.access_tier === 'fanclub' ? 'Join the fanclub to watch all fanclub-exclusive scenes.'
-                      : video.access_tier === 'ppv'     ? 'Purchase this video for permanent access.'
-                      : 'Create a free account or subscribe to watch the full video.'}
-                  </p>
-                  {unlockError && <p className="text-red-400 text-xs mb-2">{unlockError}</p>}
-                  {video.access_tier === 'ppv' ? (
-                    <PaymentMethodSelector
-                      paymentType="ppv"
-                      videoId={video.id} itemId={video.id} priceTier="standard"
-                      itemLabel={video.title} priceUsd={PRICING.ppv.standard.price}
-                      label={isAuthenticated ? 'Unlock Full Scene' : 'Create Account to Unlock'}
-                      returnUrl={`/videos/${video.slug}`}
-                      cancelUrl={`/videos/${video.slug}`}
-                      isAuthenticated={isAuthenticated}
-                      onRequireAuth={() => requireSignup(window.location.pathname, 'ppv', { videoId: video.id, videoSlug: video.slug, priceTier: 'standard' })}
-                      paymentProvider={paymentProvider}
-                      className="w-full bg-primary hover:bg-primary/90 text-sm"
-                    />
-                  ) : video.access_tier === 'fanclub' ? (
-                    <PaymentMethodSelector
-                      paymentType="fanclub"
-                      planId="fanclub_6mo" itemId="fanclub_6mo"
-                      itemLabel="Fanclub Access" priceUsd={49.99}
-                      label={isAuthenticated ? 'Join Fanclub' : 'Create Account to Join'}
-                      returnUrl="/fanclub"
-                      cancelUrl={`/videos/${video.slug}`}
-                      isAuthenticated={isAuthenticated}
-                      onRequireAuth={() => requireSignup('/fanclub', 'fanclub', { planId: 'fanclub_6mo' })}
-                      paymentProvider={paymentProvider}
-                      className="w-full bg-primary hover:bg-primary/90 text-sm"
-                    />
-                  ) : (
-                    <Button onClick={cta.action} disabled={isUnlocking} className="w-full bg-primary hover:bg-primary/90 text-sm gap-2">
-                      {isUnlocking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
-                      {cta.primaryText}
-                    </Button>
-                  )}
-                  {!isAuthenticated && (
-                    <p className="text-xs text-muted-foreground mt-2 text-center">{cta.secondaryText}</p>
-                  )}
-                </div>
+                <VideoPurchaseBox
+                  video={video}
+                  priceUsd={video.access_tier === 'ppv' ? PRICING.ppv.standard.price : video.access_tier === 'fanclub' ? 49.99 : 0}
+                  isAuthenticated={isAuthenticated}
+                  isUnlocking={isUnlocking}
+                  unlockError={unlockError}
+                  cta={cta}
+                  handleUnlock={handleUnlock}
+                  requireSignup={requireSignup}
+                  paymentProvider={paymentProvider}
+                />
               )}
 
               {/* Access level */}
