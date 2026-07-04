@@ -5,7 +5,6 @@ import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { useAccessControl, PRICING } from "@/lib/useAccessControl";
 import { usePaymentProvider } from "@/hooks/usePaymentProvider";
-import PaymentMethodSelector from "@/components/payment/PaymentMethodSelector";
 import SEOMeta from "@/components/SEOMeta";
 import VideoRail from "@/components/public/VideoRail";
 import LargeVideoRail from "@/components/public/LargeVideoRail";
@@ -31,17 +30,10 @@ const ACCESS_TIER = {
   ppv:     { label: 'Premium PPV',        color: 'bg-primary/10 text-primary' },
 };
 
-// Sanitize a video record — only safe public fields (v2)
-const safeVideo = (v) => v ? {
-  id: v.id, slug: v.slug, title: v.title, description: v.description,
-  short_summary: v.short_summary, brand_id: v.brand_id, categories: v.categories,
-  tags: v.tags, access_tier: v.access_tier, release_date: v.release_date,
-  duration_seconds: v.duration_seconds, primary_thumbnail_url: v.primary_thumbnail_url,
-  cover_image_url: v.cover_image_url, trailer_url: v.trailer_url,
-  preview_gif_url: v.preview_gif_url, view_count: v.view_count, featured: v.featured,
-  is_exclusive: v.is_exclusive, ppv_enabled: v.ppv_enabled, created_date: v.created_date,
-  meta_title: v.meta_title, meta_description: v.meta_description, download_price: v.download_price,
-} : null;
+async function fetchVideoDetail(slug) {
+  const res = await base44.functions.invoke('getPublicVideoDetail', { slug });
+  return res.data;
+}
 
 export default function VideoDetail() {
   const { slug } = useParams();
@@ -53,121 +45,46 @@ export default function VideoDetail() {
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [unlockError, setUnlockError] = useState(null);
 
-  // Fetch directly via entity SDK — same as PerformerDetail, works headless/Googlebot
-  const { data: allVideos = [], isLoading: videosLoading } = useQuery({
-    queryKey: ['public-all-videos'],
-    queryFn: () => base44.entities.Video.filter({ status: 'published' }, '-release_date', 100),
-    staleTime: 5 * 60 * 1000,
-    retry: 2,
+  // Single public endpoint call — returns title/description/schema-critical data
+  // in one response instead of chaining multiple client-side entity queries.
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['public-video-detail', slug],
+    queryFn: () => fetchVideoDetail(slug),
+    enabled: !!slug,
+    staleTime: 60 * 1000,
+    retry: 1,
   });
 
-  const { data: allBrands = [] } = useQuery({
-    queryKey: ['public-all-brands'],
-    queryFn: () => base44.entities.Brand.filter({ status: 'active' }),
-    staleTime: 5 * 60 * 1000,
-  });
+  const video = data?.video || null;
+  const brand = data?.brand || null;
+  const performers = data?.performers || [];
+  const studioVideos = data?.studioVideos || [];
+  const morePerformerVideos = data?.morePerformerVideos || [];
+  const similarVideos = data?.similarVideos || [];
+  const relatedVideos = data?.relatedVideos || [];
+  const brands = data?.brands || [];
+  const notFound = isError || (data && data.error);
 
-  const { data: allPerformers = [] } = useQuery({
-    queryKey: ['public-all-performers'],
-    queryFn: () => base44.entities.Performer.filter({ status: 'active' }),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: allVideoPerformers = [] } = useQuery({
-    queryKey: ['public-all-video-performers'],
-    queryFn: () => base44.entities.VideoPerformer.list(),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const isLoading = videosLoading;
-
-  // Resolve video from slug — with legacy slug fallback
-  let videoRaw = allVideos.find(v => v.slug === slug) || null;
-  let foundViaLegacy = false;
-  
-  // If not found by current slug, check legacy_slugs array
-  if (!videoRaw && slug) {
-    videoRaw = allVideos.find(v => v.legacy_slugs?.includes(slug)) || null;
-    foundViaLegacy = !!videoRaw;
-  }
-  
-  // If found via legacy slug, redirect to canonical new URL
-  if (foundViaLegacy && videoRaw) {
-    const canonicalSlug = videoRaw.slug;
-    const canonicalPath = `/videos/${canonicalSlug}`;
-    // Replace state to avoid back button loop, preserve canonical URL
-    window.history.replaceState(null, '', canonicalPath);
-  }
-  
-  // Phase 2D P0: Check if video is complete enough to display publicly
-  // Even if status is 'published', hide if critical fields are missing
-  if (videoRaw) {
-    const hasRequiredFields = 
-      videoRaw.source_video_url &&
-      videoRaw.primary_thumbnail_url &&
-      (videoRaw.trailer_url || videoRaw.source_video_url) &&
-      videoRaw.duration_seconds &&
-      videoRaw.duration_seconds > 0 &&
-      videoRaw.access_tier &&
-      ['free', 'fanclub', 'ppv'].includes(videoRaw.access_tier) &&
-      videoRaw.title &&
-      videoRaw.title.trim().length >= 3;
-    
-    // Check performer relations
-    const videoPerformerIds = allVideoPerformers
-      .filter(vp => vp.video_id === videoRaw.id)
-      .map(vp => vp.performer_id);
-    
-    if (!hasRequiredFields || videoPerformerIds.length === 0) {
-      // Video is incomplete - treat as not found
-      videoRaw = null;
+  // Legacy slug resolved server-side — swap the URL to the canonical slug without
+  // ever showing a canonical tag pointing at the old slug.
+  useEffect(() => {
+    if (data?.redirected_from_legacy && video?.slug && video.slug !== slug) {
+      window.history.replaceState(null, '', `/videos/${video.slug}`);
     }
-  }
-  
-  const video = safeVideo(videoRaw);
-
-  // Resolve brand
-  const brand = video ? (allBrands.find(b => b.id === video.brand_id) || null) : null;
-  const safeBrand = brand ? { id: brand.id, name: brand.name, slug: brand.slug, logo_url: brand.logo_url, cover_image_url: brand.cover_image_url, description: brand.description } : null;
-
-  // Resolve performers for this video
-  const performerIds = video ? allVideoPerformers.filter(vp => vp.video_id === video.id).map(vp => vp.performer_id) : [];
-  const performers = allPerformers
-    .filter(p => performerIds.includes(p.id))
-    .map(p => ({ id: p.id, display_name: p.display_name, slug: p.slug, profile_image_url: p.profile_image_url, nationality: p.nationality, verified: p.verified, fanclub_enabled: p.fanclub_enabled }));
-
-  // Related video sets
-  const otherVideos = allVideos.filter(v => v.slug !== slug);
-  const studioVideos = video ? otherVideos.filter(v => v.brand_id === video.brand_id).slice(0, 6).map(safeVideo) : [];
-
-  // "More from Performer" — videos featuring the primary performer, excluding the current video
-  const primaryPerformerForRail = performers[0] || null;
-  const morePerformerVideoIds = (video && primaryPerformerForRail)
-    ? allVideoPerformers.filter(vp => vp.performer_id === primaryPerformerForRail.id && vp.video_id !== video.id).map(vp => vp.video_id)
-    : [];
-  const morePerformerVideos = video ? otherVideos.filter(v => morePerformerVideoIds.includes(v.id)).slice(0, 6).map(safeVideo) : [];
-
-  // Exclusion set — a video must not appear in both "More from Performer" and "Similar Videos"; earlier section wins
-  const excludedVideoIds = new Set([video?.id, ...morePerformerVideos.map(v => v.id)]);
-  const similarVideos = video ? otherVideos.filter(v => !excludedVideoIds.has(v.id) && v.tags?.some(t => video.tags?.includes(t))).slice(0, 6).map(safeVideo) : [];
-
-  const relatedVideos = video ? otherVideos.filter(v => v.brand_id === video.brand_id || v.tags?.some(t => video.tags?.includes(t))).slice(0, 6).map(safeVideo) : [];
-  const brands = allBrands.map(b => ({ id: b.id, name: b.name, slug: b.slug, logo_url: b.logo_url }));
+  }, [data, video, slug]);
 
   const handleUnlock = async () => {
     setUnlockError(null);
-    
-    // Check auth using access control
+
     const cta = getCTA(video.access_tier === 'fanclub' ? 'fanclub' : 'ppv', {
       price: video.access_tier === 'ppv' ? PRICING.ppv.standard.price : undefined
     });
-    
+
     if (cta.requiresAuth) {
       cta.action();
       return;
     }
-    
-    // User is authenticated, proceed with unlock
+
     setIsUnlocking(true);
     try {
       const res = await base44.functions.invoke('getVideoPlaybackUrl', { videoId: video.id });
@@ -182,14 +99,12 @@ export default function VideoDetail() {
     setIsUnlocking(false);
   };
 
-  // Track video detail view
   useEffect(() => {
     if (video?.slug) {
       trackVideoDetailView(video.slug);
     }
   }, [video?.slug]);
 
-  // Track performer profile views
   useEffect(() => {
     performers.forEach(p => {
       if (p?.slug) {
@@ -198,7 +113,8 @@ export default function VideoDetail() {
     });
   }, [performers]);
 
-  // Loading state — render slug-derived content so Googlebot sees real H1 immediately
+  // Loading state — render slug-derived content so crawlers see a real H1 immediately.
+  // No JSON-LD / canonical claims are made until real server data is available.
   if (isLoading) {
     const titleFromSlug = slug
       ? slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
@@ -230,7 +146,7 @@ export default function VideoDetail() {
     );
   }
 
-  if (!video) {
+  if (notFound || !video) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -247,15 +163,14 @@ export default function VideoDetail() {
 
   const tierInfo = ACCESS_TIER[video.access_tier] || { label: video.access_tier, color: 'bg-muted text-muted-foreground' };
   const isPaidTier = video.access_tier === 'ppv' || video.access_tier === 'fanclub';
-  // Solo per-video pricing: use the video's own price if the admin set one, otherwise fall back to standard PPV tier
+  const priceUsd = video.access_tier === 'ppv' ? (video.download_price || PRICING.ppv.standard.price) : video.access_tier === 'fanclub' ? 49.99 : 0;
   const ppvPriceTierMap = { 20.99: 'standard', 24.99: 'premium', 29.99: 'exclusive' };
   const ppvPriceTier = ppvPriceTierMap[video.download_price] || 'standard';
-  const priceUsd = video.access_tier === 'ppv' ? (video.download_price || PRICING.ppv.standard.price) : video.access_tier === 'fanclub' ? 49.99 : 0;
   const scrollToPurchaseBox = () => document.getElementById('purchase-box')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   const primaryPerformer = performers[0] || null;
   const canonicalUrl = `https://fleshlab.online/videos/${video.slug}`;
-  
-  // Get CTA based on auth state and access tier
+  const hasPublicPreview = !!video.trailer_url;
+
   const cta = getCTA(video.access_tier === 'fanclub' ? 'fanclub' : video.access_tier === 'ppv' ? 'ppv' : 'full-video');
 
   // ISO 8601 duration: PT2H3M45S
@@ -267,26 +182,22 @@ export default function VideoDetail() {
     return `PT${h > 0 ? h + 'H' : ''}${m > 0 ? m + 'M' : ''}${s > 0 ? s + 'S' : ''}` || `PT${secs}S`;
   };
 
-  // Safe ISO upload date — full ISO 8601 with +08:00 timezone (required by Google)
   const isoUploadDate = (() => {
     const d = video.release_date || video.created_date;
     if (!d) return undefined;
     try {
       const parsed = new Date(d);
       if (isNaN(parsed.getTime())) return undefined;
-      // If source already has time+timezone info, normalize to +08:00
       if (/[TZ+]/.test(String(d)) && String(d).length > 10) {
         const offsetMs = 8 * 60 * 60 * 1000;
         const local = new Date(parsed.getTime() + offsetMs);
         const pad = n => String(n).padStart(2, '0');
         return `${local.getUTCFullYear()}-${pad(local.getUTCMonth()+1)}-${pad(local.getUTCDate())}T${pad(local.getUTCHours())}:${pad(local.getUTCMinutes())}:${pad(local.getUTCSeconds())}+08:00`;
       }
-      // Date-only string — use midnight Taiwan time
       return `${String(d).substring(0, 10)}T00:00:00+08:00`;
     } catch { return undefined; }
   })();
 
-  // BreadcrumbList for video detail
   const breadcrumb = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -297,10 +208,9 @@ export default function VideoDetail() {
     ]
   };
 
-  // JSON-LD: VideoObject — never include source/private video URL
-  // contentUrl omitted: trailer_url is a preview, not the full video
-  // embedUrl = canonical page URL (no dedicated embed player exists)
-  const videoSchema = {
+  // VideoObject schema — ONLY emitted when a public trailer/preview actually exists.
+  // contentUrl/embedUrl NEVER reference source_video_url — only the public trailer file.
+  const videoSchema = hasPublicPreview ? {
     "@context": "https://schema.org",
     "@type": "VideoObject",
     "name": video.title,
@@ -309,8 +219,8 @@ export default function VideoDetail() {
     "uploadDate": isoUploadDate,
     "datePublished": isoUploadDate,
     "duration": isoDuration(video.duration_seconds),
+    "contentUrl": video.trailer_url,
     "embedUrl": canonicalUrl,
-    "url": canonicalUrl,
     "isFamilyFriendly": false,
     "inLanguage": "en",
     "contentRating": "adult",
@@ -335,12 +245,10 @@ export default function VideoDetail() {
         "userInteractionCount": video.view_count
       }
     }),
-    ...((video.access_tier === 'fanclub' || video.access_tier === 'ppv') && {
-      "requiresSubscription": true
-    })
-  };
+    ...(isPaidTier && { "requiresSubscription": true })
+  } : null;
 
-  const jsonLd = [videoSchema, breadcrumb];
+  const jsonLd = videoSchema ? [videoSchema, breadcrumb] : [breadcrumb];
 
   const unlockLabel =
     video.access_tier === 'fanclub' ? 'Join Fanclub' :
@@ -371,7 +279,7 @@ export default function VideoDetail() {
           {/* ── Video Player ── */}
           <div className="mb-8">
             <div className="bg-black rounded-2xl overflow-hidden shadow-2xl shadow-primary/10">
-              <div className="aspect-video">
+              <div className="aspect-video relative">
 
                 {/* UNLOCKED: authenticated + entitled → show full video */}
                 {playbackUrl ? (
@@ -379,18 +287,20 @@ export default function VideoDetail() {
                     <source src={playbackUrl} />
                   </video>
 
-                ) : video.trailer_url ? (
-                  /* PUBLIC TRAILER: free for all visitors */
-                  <iframe
-                    src={video.trailer_url}
-                    title={video.title}
+                ) : hasPublicPreview ? (
+                  /* PUBLIC TRAILER: a real, crawlable <video> element — always present in the DOM,
+                     never gated behind a click/login, so Google can see an actual watch page. */
+                  <video
+                    controls
+                    preload="metadata"
+                    poster={video.primary_thumbnail_url}
                     className="w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
+                  >
+                    <source src={video.trailer_url} />
+                  </video>
 
                 ) : (
-                  /* LOCKED: no trailer → thumbnail + CTA overlay */
+                  /* LOCKED, no public trailer: not advertised as a watch page — thumbnail + CTA only */
                   <div className="relative w-full h-full">
                     {video.primary_thumbnail_url ? (
                       <img src={video.primary_thumbnail_url} alt={video.title} className="w-full h-full object-cover opacity-40" />
@@ -438,7 +348,7 @@ export default function VideoDetail() {
             </div>
 
             {/* Trailer bar — shown when trailer is playing */}
-            {video.trailer_url && !playbackUrl && (
+            {hasPublicPreview && !playbackUrl && (
               <div className="flex items-center justify-between mt-3">
                 <Badge variant="outline" className="text-xs gap-1">
                   <Play className="w-3 h-3" /> Trailer Preview
@@ -511,12 +421,12 @@ export default function VideoDetail() {
                 <PerformerSection performer={primaryPerformer} videoCount={1} />
               ) : null}
 
-              {morePerformerVideos.length > 0 && primaryPerformerForRail && (
+              {morePerformerVideos.length > 0 && primaryPerformer && (
                 <LargeVideoRail
-                  title={`More from ${primaryPerformerForRail.display_name}`}
+                  title={`More from ${primaryPerformer.display_name}`}
                   subtitle={`${morePerformerVideos.length} videos available`}
                   videos={morePerformerVideos} brands={brands} performers={performers}
-                  viewAllLink={`/performers/${primaryPerformerForRail.slug}`} viewAllText="View Performer"
+                  viewAllLink={`/performers/${primaryPerformer.slug}`} viewAllText="View Performer"
                 />
               )}
 
@@ -630,8 +540,8 @@ export default function VideoDetail() {
                 <Link to="/fanclub"><Button className="w-full bg-primary hover:bg-primary/90 text-sm">Join Fanclub</Button></Link>
               </div>
 
-              {studioVideos.length > 0 && safeBrand && (
-                <StudioVideosMiniList brand={safeBrand} videos={studioVideos} performers={performers} />
+              {studioVideos.length > 0 && brand && (
+                <StudioVideosMiniList brand={brand} videos={studioVideos} performers={performers} />
               )}
             </div>
           </div>

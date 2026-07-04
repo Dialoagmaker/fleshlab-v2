@@ -20,7 +20,16 @@ Deno.serve(async (req) => {
       1
     );
 
-    const video = videos[0];
+    let video = videos[0];
+    let redirectedFromLegacy = false;
+
+    // Legacy slug fallback — resolve old slugs to their current canonical video server-side,
+    // so the client always renders/canonicalizes on the true current slug (no client-side flip).
+    if (!video) {
+      const allPublished = await base44.asServiceRole.entities.Video.filter({ status: 'published' }, '-release_date', 500);
+      video = allPublished.find(v => v.legacy_slugs?.includes(slug));
+      redirectedFromLegacy = !!video;
+    }
 
     if (!video) {
       return Response.json({ error: 'not_found' }, { status: 404 });
@@ -150,8 +159,21 @@ Deno.serve(async (req) => {
       .slice(0, 6)
       .map(safeVideo);
 
+    // "More from performer" — videos featuring the primary (first) performer of this video
+    const primaryPerformerId = performers[0]?.id || null;
+    const morePerformerVideoIds = primaryPerformerId
+      ? new Set(allVideoPerformerRecords.filter(vp => vp.performer_id === primaryPerformerId).map(vp => vp.video_id))
+      : new Set();
+    const morePerformerVideos = otherVideos
+      .filter(v => morePerformerVideoIds.has(v.id))
+      .slice(0, 6)
+      .map(safeVideo);
+
+    // Exclusion set — a video must not appear in both "More from Performer" and "Similar Videos"
+    const excludedIds = new Set(morePerformerVideos.map(v => v.id));
+
     const similarVideos = otherVideos
-      .filter(v => v.tags?.some(t => video.tags?.includes(t)))
+      .filter(v => !excludedIds.has(v.id) && v.tags?.some(t => video.tags?.includes(t)))
       .slice(0, 4)
       .map(safeVideo);
 
@@ -172,9 +194,11 @@ Deno.serve(async (req) => {
       brand: safeBrand,
       performers,
       studioVideos,
+      morePerformerVideos,
       similarVideos,
       relatedVideos,
       brands: safeBrands,
+      redirected_from_legacy: redirectedFromLegacy,
     });
   } catch (error) {
     console.error('getPublicVideoDetail error:', error);

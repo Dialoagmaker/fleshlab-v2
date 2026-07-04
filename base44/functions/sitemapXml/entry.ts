@@ -146,29 +146,39 @@ Deno.serve(async (req) => {
       }
       
       const lastmod = video.updated_date || video.published_at || today;
-      
-      // Build video sitemap extension for rich results
-      const videoExt = [];
-      videoExt.push(`    <video:video>`);
-      if (video.title) videoExt.push(`      <video:title>${escapeXml(video.title)}</video:title>`);
-      if (video.description || video.short_summary) {
-        const desc = (video.short_summary || video.description || '').substring(0, 2048);
-        videoExt.push(`      <video:description>${escapeXml(desc)}</video:description>`);
+
+      // Video sitemap extension: PRIVACY RULE — never reference source_video_url.
+      // Only advertise a <video:video> block when a public trailer exists;
+      // otherwise the page still gets a normal <url> entry (below) but is not
+      // advertised as a video result, since Google would have nothing playable to see.
+      const publicVideoUrl = video.trailer_url || null;
+
+      let videoExt = '';
+      if (publicVideoUrl) {
+        const videoExtParts = [];
+        videoExtParts.push(`    <video:video>`);
+        if (video.title) videoExtParts.push(`      <video:title>${escapeXml(video.title)}</video:title>`);
+        if (video.description || video.short_summary) {
+          const desc = (video.short_summary || video.description || '').substring(0, 2048);
+          videoExtParts.push(`      <video:description>${escapeXml(desc)}</video:description>`);
+        }
+        if (video.primary_thumbnail_url) videoExtParts.push(`      <video:thumbnail_loc>${escapeXml(video.primary_thumbnail_url)}</video:thumbnail_loc>`);
+        videoExtParts.push(`      <video:content_loc>${escapeXml(publicVideoUrl)}</video:content_loc>`);
+        if (video.duration_seconds && video.duration_seconds > 0) {
+          videoExtParts.push(`      <video:duration>${video.duration_seconds}</video:duration>`);
+        }
+        const pubDate = video.published_at || video.updated_date || today;
+        videoExtParts.push(`      <video:publication_date>${pubDate.substring(0, 10)}</video:publication_date>`);
+        videoExtParts.push(`      <video:family_friendly>no</video:family_friendly>`);
+        videoExtParts.push(`      <video:requires_subscription>${video.access_tier === 'fanclub' || video.access_tier === 'ppv' ? 'yes' : 'no'}</video:requires_subscription>`);
+        videoExtParts.push(`    </video:video>`);
+        videoExt = `\n${videoExtParts.join('\n')}`;
       }
-      if (video.primary_thumbnail_url) videoExt.push(`      <video:thumbnail_loc>${escapeXml(video.primary_thumbnail_url)}</video:thumbnail_loc>`);
-      if (video.source_video_url) videoExt.push(`      <video:content_loc>${escapeXml(video.source_video_url)}</video:content_loc>`);
-      if (video.duration_seconds && video.duration_seconds > 0) {
-        videoExt.push(`      <video:duration>${video.duration_seconds}</video:duration>`);
-      }
-      const pubDate = video.published_at || video.updated_date || today;
-      videoExt.push(`      <video:publication_date>${pubDate.substring(0, 10)}</video:publication_date>`);
-      videoExt.push(`      <video:family_friendly>no</video:family_friendly>`);
-      videoExt.push(`      <video:requires_subscription>${video.access_tier === 'fanclub' || video.access_tier === 'ppv' ? 'yes' : 'no'}</video:requires_subscription>`);
-      videoExt.push(`    </video:video>`);
-      
-      const entry = `  <url>\n    <loc>${escapeXml(`${BASE_URL}/videos/${video.slug}`)}</loc>\n    <lastmod>${lastmod.substring(0, 10)}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n${videoExt.join('\n')}\n  </url>`;
+
+      const entry = `  <url>\n    <loc>${escapeXml(`${BASE_URL}/videos/${video.slug}`)}</loc>\n    <lastmod>${lastmod.substring(0, 10)}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>${videoExt}\n  </url>`;
       urls.push(entry);
       stats.videos++;
+      if (publicVideoUrl) stats.videos_with_video_block = (stats.videos_with_video_block || 0) + 1;
     }
 
     // --- Performer pages ---
