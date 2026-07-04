@@ -45,6 +45,24 @@ function isValidSlug(slug) {
   return true;
 }
 
+function normalizePublicUrl(url) {
+  if (!url || typeof url !== 'string') return '';
+  return url.split('#')[0].split('?')[0].replace(/\/+$/, '');
+}
+
+function getPublicTrailerDuration(video, videoAssets) {
+  if (!video?.trailer_url) return null;
+  const trailerUrl = normalizePublicUrl(video.trailer_url);
+  const trailerAsset = videoAssets.find(asset =>
+    asset.video_id === video.id &&
+    ['trailer', 'preview'].includes(asset.asset_type) &&
+    asset.cdn_url &&
+    normalizePublicUrl(asset.cdn_url) === trailerUrl &&
+    Number(asset.duration_seconds) > 0
+  );
+  return trailerAsset ? Number(trailerAsset.duration_seconds) : null;
+}
+
 function urlEntry(loc, lastmod, changefreq, priority) {
   const parts = [`  <url>\n    <loc>${escapeXml(loc)}</loc>`];
   if (lastmod) {
@@ -63,12 +81,13 @@ Deno.serve(async (req) => {
     const today = new Date().toISOString().substring(0, 10);
 
     // Fetch all public data using service role (no user auth required for sitemap)
-    const [videos, performers, articles, brands, allVideoPerformers] = await Promise.all([
+    const [videos, performers, articles, brands, allVideoPerformers, allVideoAssets] = await Promise.all([
       base44.asServiceRole.entities.Video.filter({ status: 'published' }, '-updated_date', 1000),
       base44.asServiceRole.entities.Performer.filter({ status: 'active' }, '-updated_date', 500),
       base44.asServiceRole.entities.NewsArticle.filter({ status: 'published' }, '-published_at', 200),
       base44.asServiceRole.entities.Brand.filter({ status: 'active' }, 'name', 100),
       base44.asServiceRole.entities.VideoPerformer.filter({}),
+      base44.asServiceRole.entities.VideoAsset.filter({}, '-updated_date', 5000),
     ]);
 
     const urls = [];
@@ -164,8 +183,9 @@ Deno.serve(async (req) => {
         }
         if (video.primary_thumbnail_url) videoExtParts.push(`      <video:thumbnail_loc>${escapeXml(video.primary_thumbnail_url)}</video:thumbnail_loc>`);
         videoExtParts.push(`      <video:content_loc>${escapeXml(publicVideoUrl)}</video:content_loc>`);
-        if (video.duration_seconds && video.duration_seconds > 0) {
-          videoExtParts.push(`      <video:duration>${video.duration_seconds}</video:duration>`);
+        const publicTrailerDuration = getPublicTrailerDuration(video, allVideoAssets);
+        if (publicTrailerDuration) {
+          videoExtParts.push(`      <video:duration>${publicTrailerDuration}</video:duration>`);
         }
         const pubDate = video.published_at || video.updated_date || today;
         videoExtParts.push(`      <video:publication_date>${pubDate.substring(0, 10)}</video:publication_date>`);

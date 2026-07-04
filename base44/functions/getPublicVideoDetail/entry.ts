@@ -57,10 +57,11 @@ Deno.serve(async (req) => {
     }
 
     // Fetch supporting data in parallel
-    const [brands, allVideos, allVideoPerformerRecords] = await Promise.all([
+    const [brands, allVideos, allVideoPerformerRecords, allVideoAssets] = await Promise.all([
       base44.asServiceRole.entities.Brand.filter({ status: 'active' }),
       base44.asServiceRole.entities.Video.filter({ status: 'published' }, '-release_date', 100),
       base44.asServiceRole.entities.VideoPerformer.filter({}, '-created_date', 1000),
+      base44.asServiceRole.entities.VideoAsset.filter({}, '-updated_date', 5000),
     ]);
 
     const hasPerformerRelation = (videoId) =>
@@ -107,6 +108,24 @@ Deno.serve(async (req) => {
         }));
     }
 
+    const normalizePublicUrl = (url) => {
+      if (!url || typeof url !== 'string') return '';
+      return url.split('#')[0].split('?')[0].replace(/\/+$/, '');
+    };
+
+    const getPublicTrailerDuration = (v) => {
+      if (!v?.trailer_url) return null;
+      const trailerUrl = normalizePublicUrl(v.trailer_url);
+      const trailerAsset = allVideoAssets.find(asset =>
+        asset.video_id === v.id &&
+        ['trailer', 'preview'].includes(asset.asset_type) &&
+        asset.cdn_url &&
+        normalizePublicUrl(asset.cdn_url) === trailerUrl &&
+        Number(asset.duration_seconds) > 0
+      );
+      return trailerAsset ? Number(trailerAsset.duration_seconds) : null;
+    };
+
     // Sanitize a video record — STRICT: no storage/source/private fields
     const safeVideo = (v) => ({
       id: v.id,
@@ -120,6 +139,7 @@ Deno.serve(async (req) => {
       access_tier: v.access_tier,
       release_date: v.release_date,
       duration_seconds: v.duration_seconds,
+      trailer_duration_seconds: getPublicTrailerDuration(v),
       primary_thumbnail_url: v.primary_thumbnail_url,
       cover_image_url: v.cover_image_url,
       trailer_url: v.trailer_url,

@@ -182,6 +182,8 @@ export default function VideoDetail() {
     return `PT${h > 0 ? h + 'H' : ''}${m > 0 ? m + 'M' : ''}${s > 0 ? s + 'S' : ''}` || `PT${secs}S`;
   };
 
+  const trailerSchemaDuration = isoDuration(video.trailer_duration_seconds);
+
   const isoUploadDate = (() => {
     const d = video.release_date || video.created_date;
     if (!d) return undefined;
@@ -218,7 +220,7 @@ export default function VideoDetail() {
     "thumbnailUrl": video.primary_thumbnail_url,
     "uploadDate": isoUploadDate,
     "datePublished": isoUploadDate,
-    "duration": isoDuration(video.duration_seconds),
+    ...(trailerSchemaDuration && { "duration": trailerSchemaDuration }),
     "contentUrl": video.trailer_url,
     "embedUrl": canonicalUrl,
     "isFamilyFriendly": false,
