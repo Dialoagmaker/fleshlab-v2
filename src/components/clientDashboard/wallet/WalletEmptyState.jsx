@@ -6,14 +6,14 @@ export default function WalletEmptyState({ onAddFunds }) {
       <div className="w-24 h-24 shrink-0 flex items-center justify-center">
         <img
           src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/74377da25_generated_image.png"
-          alt="FlashPay Wallet"
+          alt="FleshPay Wallet"
           className="w-full h-full object-contain"
         />
       </div>
       <div className="flex-1 text-center sm:text-left">
-        <h3 className="text-base font-bold text-white">No FlashPay wallet yet</h3>
+        <h3 className="text-base font-bold text-white">No FleshPay wallet yet</h3>
         <p className="text-xs text-white/40 mt-1.5 leading-relaxed max-w-sm">
-          Add funds to create your FlashPay wallet. Once created, you can use your balance for eligible purchases across FleshLab.
+          Add funds to create your FleshPay wallet. Once created, you can use your balance for eligible purchases across FleshLab.
         </p>
         <div className="mt-4 flex flex-col sm:flex-row items-center gap-3">
           <button
@@ -25,7 +25,7 @@ export default function WalletEmptyState({ onAddFunds }) {
           </button>
           <p className="flex items-center gap-1.5 text-[10px] text-white/30">
             <ShieldCheck className="w-3.5 h-3.5 text-primary/60" />
-            Secure payment powered by FlashPay
+            Secure payment powered by FleshPay
           </p>
         </div>
       </div>

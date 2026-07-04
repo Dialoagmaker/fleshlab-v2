@@ -15,7 +15,7 @@ export default function FlashPaySummaryCard({ financials }) {
     { label: "Wallet Created", value: fp.wallet_created_at ? new Date(fp.wallet_created_at).toLocaleDateString() : "—" },
     { label: "Largest Wallet Purchase", value: `$${(fp.largest_wallet_purchase_usd ?? 0).toFixed(2)}` },
     { label: "Average Wallet Purchase", value: `$${(fp.average_wallet_purchase_usd ?? 0).toFixed(2)}` },
-    { label: "Preferred Payment Method", value: fp.preferred_payment_method === 'flashpay_wallet' ? 'FlashPay Wallet' : fp.preferred_payment_method === 'crypto_nowpayments' ? 'Crypto (NOWPayments)' : '—' },
+    { label: "Preferred Payment Method", value: fp.preferred_payment_method === 'flashpay_wallet' ? 'FleshPay Wallet' : fp.preferred_payment_method === 'crypto_nowpayments' ? 'Crypto (NOWPayments)' : '—' },
     { label: "Last Wallet Activity", value: fp.last_wallet_activity ? new Date(fp.last_wallet_activity).toLocaleDateString() : "—" },
     { label: "Daily Limit", value: "—" },
     { label: "Monthly Limit", value: "—" },
@@ -24,7 +24,7 @@ export default function FlashPaySummaryCard({ financials }) {
   return (
     <div className="bg-card border border-border rounded-xl p-5">
       <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-        <Wallet className="w-4 h-4 text-primary" /> FlashPay Summary
+        <Wallet className="w-4 h-4 text-primary" /> FleshPay Summary
       </h3>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {rows.map(r => (
