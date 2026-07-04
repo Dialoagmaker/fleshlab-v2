@@ -1,6 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
-
-const DOCUMENT_ICON = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/6efbc6209_icon_document.png";
+import { ArrowDownLeft, ArrowUpRight, FileText } from "lucide-react";
 
 const sourceLabel = (entry) => {
   const t = entry.source_type || entry.reference_type || "";
@@ -18,7 +16,9 @@ export default function WalletActivity({ ledger }) {
 
       {ledger.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 px-6 py-10 text-center">
-          <img src={DOCUMENT_ICON} alt="" className="w-12 h-12 object-contain" />
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+            <FileText className="w-6 h-6 text-primary" />
+          </div>
           <p className="text-sm font-semibold text-white/70">No transactions yet</p>
           <p className="text-xs text-white/30 max-w-xs">
             When you top up your wallet your transaction history will appear here.
