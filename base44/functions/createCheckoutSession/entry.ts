@@ -132,7 +132,8 @@ function resolvePayCurrency({ paymentType, planId, priceAmount }) {
 // ── NOWPayments minimum amount check ──────────────────────────────────────────
 async function checkNOWPaymentsMinimum({ priceAmount, payCurrency }) {
   const apiKey = Deno.env.get('NOWPAYMENTS_API_KEY');
-  const mode = Deno.env.get('NOWPAYMENTS_MODE') || 'test';
+  const modeRaw = Deno.env.get('NOWPAYMENTS_MODE') || 'test';
+  const mode = modeRaw.toLowerCase().includes('live') ? 'live' : 'test';
   const baseUrl = mode === 'live'
     ? 'https://api.nowpayments.io/v1'
     : 'https://api-sandbox.nowpayments.io/v1';
@@ -166,7 +167,8 @@ async function checkNOWPaymentsMinimum({ priceAmount, payCurrency }) {
 // ── NOWPayments invoice creation ──────────────────────────────────────────────
 async function createNOWPaymentsInvoice({ orderId, priceAmount, description, successUrl, cancelUrl }) {
   const apiKey = Deno.env.get('NOWPAYMENTS_API_KEY');
-  const mode = Deno.env.get('NOWPAYMENTS_MODE') || 'test';
+  const modeRaw = Deno.env.get('NOWPAYMENTS_MODE') || 'test';
+  const mode = modeRaw.toLowerCase().includes('live') ? 'live' : 'test';
   const baseUrl = mode === 'live'
     ? 'https://api.nowpayments.io/v1'
     : 'https://api-sandbox.nowpayments.io/v1';

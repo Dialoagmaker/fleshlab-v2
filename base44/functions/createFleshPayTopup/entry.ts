@@ -25,7 +25,8 @@ const PROVIDER_REGISTRY = {
 // ── NOWPayments invoice creation ──────────────────────────────────────────────
 async function createNOWPaymentsInvoice({ orderId, priceAmount, description }) {
   const apiKey = Deno.env.get('NOWPAYMENTS_API_KEY');
-  const mode = Deno.env.get('NOWPAYMENTS_MODE') || 'test';
+  const modeRaw = Deno.env.get('NOWPAYMENTS_MODE') || 'test';
+  const mode = modeRaw.toLowerCase().includes('live') ? 'live' : 'test';
   const baseUrl = mode === 'live'
     ? 'https://api.nowpayments.io/v1'
     : 'https://api-sandbox.nowpayments.io/v1';
@@ -108,9 +109,10 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    const nowpaymentsMode = Deno.env.get('NOWPAYMENTS_MODE') || 'test';
+    const nowpaymentsModeRaw = Deno.env.get('NOWPAYMENTS_MODE') || 'test';
+    const nowpaymentsMode = nowpaymentsModeRaw.toLowerCase().includes('live') ? 'live' : 'sandbox';
     const providerMode = selectedProvider === 'nowpayments'
-      ? (nowpaymentsMode === 'live' ? 'live' : 'sandbox')
+      ? nowpaymentsMode
       : 'test';
 
     // Validate amount — only allowed tiers

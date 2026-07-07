@@ -39,7 +39,8 @@ Deno.serve(async (req) => {
     }
 
     const apiKey = Deno.env.get('NOWPAYMENTS_API_KEY');
-    const mode = Deno.env.get('NOWPAYMENTS_MODE') || 'test';
+    const modeRaw = Deno.env.get('NOWPAYMENTS_MODE') || 'test';
+    const mode = modeRaw.toLowerCase().includes('live') ? 'live' : 'test';
     const baseUrl = mode === 'live'
       ? 'https://api.nowpayments.io/v1'
       : 'https://api-sandbox.nowpayments.io/v1';
