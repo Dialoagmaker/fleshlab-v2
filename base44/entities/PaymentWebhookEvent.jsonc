@@ -14,17 +14,32 @@
     "provider_event_id": {
       "type": "string",
       "title": "Provider Event ID",
-      "description": "Unique event ID from provider (e.g., NOWPayments payment_id)"
+      "description": "Provider event/payment identifier, usually NOWPayments payment_id"
     },
     "provider_invoice_id": {
       "type": "string",
       "title": "Provider Invoice ID",
-      "description": "Invoice/payment ID from provider"
+      "description": "NOWPayments invoice_id when supplied, otherwise payment_id fallback"
+    },
+    "provider_payment_id": {
+      "type": "string",
+      "title": "Provider Payment ID",
+      "description": "NOWPayments payment_id"
+    },
+    "provider_order_id": {
+      "type": "string",
+      "title": "Provider Order ID",
+      "description": "Merchant order_id received from provider"
     },
     "payment_intent_id": {
       "type": "string",
       "title": "Payment Intent ID",
       "description": "Internal PaymentIntent record ID"
+    },
+    "event_type": {
+      "type": "string",
+      "title": "Normalized Event Type",
+      "description": "Internal event name such as payment.completed or payment.pending"
     },
     "raw_status": {
       "type": "string",
@@ -66,14 +81,16 @@
       "enum": [
         "fanclub",
         "ppv",
-        "guest_production_deposit"
+        "guest_production_deposit",
+        "guest_production",
+        "wallet_topup"
       ],
       "title": "Product Type"
     },
     "product_id": {
       "type": "string",
       "title": "Product ID",
-      "description": "plan_id, video_id, or application_id"
+      "description": "plan_id, video_id, application_id, or wallet top-up order ID"
     },
     "idempotency_key": {
       "type": "string",
@@ -111,10 +128,25 @@
       "default": false,
       "description": "True if entitlement was already granted by another webhook"
     },
+    "entitlement_type": {
+      "type": "string",
+      "title": "Entitlement Type",
+      "description": "Created access type, e.g. ppv, fanclub, guest_production, wallet_topup"
+    },
+    "entitlement_id": {
+      "type": "string",
+      "title": "Entitlement ID",
+      "description": "Created Payment, Subscription, ledger, or related entitlement record ID"
+    },
     "verification_details": {
       "type": "string",
       "title": "Verification Details (JSON)",
       "description": "JSON with amount/currency verification results"
+    },
+    "audit_details_json": {
+      "type": "string",
+      "title": "Audit Details (JSON)",
+      "description": "Non-sensitive audit snapshot for live IPN troubleshooting. Never stores API keys or full signatures."
     },
     "error_message": {
       "type": "string",

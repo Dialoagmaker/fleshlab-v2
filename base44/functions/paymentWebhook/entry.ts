@@ -448,7 +448,7 @@ async function verifySignature(provider, rawBody, headers) {
 
 // ── NOWPayments event normalization ──────────────────────────────────────────
 function normalizeNOWPaymentsEvent(payload) {
-  const { payment_id, order_id, payment_status, price_amount, price_currency, actually_paid } = payload;
+  const { invoice_id, payment_id, order_id, payment_status, price_amount, price_currency, actually_paid } = payload;
 
   let eventType;
   let normalizedStatus;
@@ -491,7 +491,8 @@ function normalizeNOWPaymentsEvent(payload) {
 
   return {
     eventType,
-    paymentId: String(payment_id),
+    invoiceId: invoice_id ? String(invoice_id) : null,
+    paymentId: payment_id ? String(payment_id) : null,
     orderId: order_id || null,
     amount: price_amount,
     currency: price_currency,
@@ -545,8 +546,10 @@ Deno.serve(async (req) => {
     try {
       eventId = await base44.asServiceRole.entities.PaymentWebhookEvent.create({
         provider,
-        provider_event_id: payload.payment_id || payload.order_id || 'unknown',
-        provider_invoice_id: String(payload.payment_id || ''),
+        provider_event_id: payload.payment_id || payload.invoice_id || payload.order_id || 'unknown',
+        provider_invoice_id: String(payload.invoice_id || payload.payment_id || ''),
+        provider_payment_id: String(payload.payment_id || ''),
+        provider_order_id: payload.order_id || null,
         payment_intent_id: null,
         raw_status: payload.payment_status || 'unknown',
         normalized_status: 'unknown',
@@ -561,8 +564,20 @@ Deno.serve(async (req) => {
         processed: false,
         duplicate: false,
         error_message: signatureValid ? null : 'Invalid signature',
+        audit_details_json: JSON.stringify({
+          received_at: receivedAt,
+          provider,
+          invoice_id: payload.invoice_id || payload.payment_id || null,
+          payment_id: payload.payment_id || null,
+          order_id: payload.order_id || null,
+          raw_status: payload.payment_status || 'unknown',
+          signature_valid: signatureValid,
+          signature_present: !!headers['x-nowpayments-sig'],
+          error_reason: signatureValid ? null : 'Invalid signature',
+        }),
         received_at: receivedAt,
       });
+      if (eventId && typeof eventId === 'object') eventId = eventId.id;
     } catch (logErr) {
       console.error('[paymentWebhook] Failed to create event log:', logErr.message);
     }
@@ -583,6 +598,26 @@ Deno.serve(async (req) => {
     }
 
     console.log(`[paymentWebhook] ${provider} event:`, event.eventType, 'paymentId:', event.paymentId, 'status:', event.rawStatus);
+
+    await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+      event_type: event.eventType,
+      provider_invoice_id: event.invoiceId || event.paymentId || '',
+      provider_payment_id: event.paymentId || '',
+      provider_order_id: event.orderId || null,
+      normalized_status: event.normalizedStatus,
+      audit_details_json: JSON.stringify({
+        received_at: receivedAt,
+        provider,
+        invoice_id: event.invoiceId || event.paymentId || null,
+        payment_id: event.paymentId || null,
+        order_id: event.orderId || null,
+        raw_status: event.rawStatus,
+        normalized_status: event.normalizedStatus,
+        event_type: event.eventType,
+        signature_valid: true,
+        signature_present: true,
+      }),
+    });
 
     // Look up PaymentIntent by provider_session_id
     if (!event.paymentId && !event.orderId) {
@@ -641,9 +676,15 @@ Deno.serve(async (req) => {
       console.log('[paymentWebhook] Duplicate successful payment detected — entitlement already granted', event.paymentId);
       await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
         payment_intent_id: intent.id,
+        user_id: intent.user_id,
+        product_type: intent.payment_type,
+        product_id: intent.plan_id || intent.video_id || intent.application_id,
         duplicate: true,
         processed: true,
         entitlement_granted: false,  // This one didn't grant it
+        entitlement_duplicate: true,
+        entitlement_type: existingPaymentEvents[0].entitlement_type || intent.payment_type,
+        entitlement_id: existingPaymentEvents[0].entitlement_id || null,
         processed_at: new Date().toISOString(),
       });
       return Response.json({ 
@@ -1082,6 +1123,8 @@ Deno.serve(async (req) => {
           verification_details: JSON.stringify(verificationDetails),
           processed: true,
           entitlement_granted: true,
+          entitlement_type: 'wallet_topup',
+          entitlement_id: ledgerEntry.id,
           processed_at: new Date().toISOString(),
         });
 
@@ -1145,6 +1188,8 @@ Deno.serve(async (req) => {
           processed: true,
           entitlement_granted: !grantResult.duplicate,
           entitlement_duplicate: grantResult.duplicate || false,
+          entitlement_type: grantResult.entitlement_type,
+          entitlement_id: grantResult.payment_id || grantResult.subscription_id || null,
           processed_at: new Date().toISOString(),
         });
         
@@ -1162,6 +1207,17 @@ Deno.serve(async (req) => {
         failed_at:     new Date().toISOString(),
         error_message: event.errorMessage || `Payment failed (${event.rawStatus})`,
       });
+      await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+        payment_intent_id: intent.id,
+        user_id: intent.user_id,
+        product_type: intent.payment_type,
+        product_id: intent.plan_id || intent.video_id || intent.application_id,
+        normalized_status: event.normalizedStatus,
+        processed: true,
+        entitlement_granted: false,
+        error_message: event.errorMessage || `Payment failed (${event.rawStatus})`,
+        processed_at: new Date().toISOString(),
+      });
 
     } else if (event.eventType === 'payment.cancelled') {
       await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
@@ -1169,16 +1225,48 @@ Deno.serve(async (req) => {
         cancelled_at: new Date().toISOString(),
         error_message: 'Payment expired or cancelled',
       });
+      await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+        payment_intent_id: intent.id,
+        user_id: intent.user_id,
+        product_type: intent.payment_type,
+        product_id: intent.plan_id || intent.video_id || intent.application_id,
+        normalized_status: event.normalizedStatus,
+        processed: true,
+        entitlement_granted: false,
+        error_message: 'Payment expired or cancelled',
+        processed_at: new Date().toISOString(),
+      });
 
     } else if (event.eventType === 'payment.refunded') {
       await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
         status:        'refunded',
         error_message: 'Payment refunded',
       });
+      await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+        payment_intent_id: intent.id,
+        user_id: intent.user_id,
+        product_type: intent.payment_type,
+        product_id: intent.plan_id || intent.video_id || intent.application_id,
+        normalized_status: event.normalizedStatus,
+        processed: true,
+        entitlement_granted: false,
+        error_message: 'Payment refunded',
+        processed_at: new Date().toISOString(),
+      });
 
     } else {
       // payment.pending / confirming — log only, no DB update, no entitlement
       console.log('[paymentWebhook] Pending/confirming status — no action taken:', event.rawStatus);
+      await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+        payment_intent_id: intent.id,
+        user_id: intent.user_id,
+        product_type: intent.payment_type,
+        product_id: intent.plan_id || intent.video_id || intent.application_id,
+        normalized_status: event.normalizedStatus,
+        processed: true,
+        entitlement_granted: false,
+        processed_at: new Date().toISOString(),
+      });
     }
 
     // ── Additive analytics logging (non-blocking, never affects payment processing) ──
