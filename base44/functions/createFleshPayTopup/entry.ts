@@ -31,8 +31,7 @@ async function createNOWPaymentsInvoice({ orderId, priceAmount, description }) {
     : 'https://api-sandbox.nowpayments.io/v1';
 
   const appBase = (Deno.env.get('APP_BASE_URL') || 'https://fleshlab.online').replace(/\/$/, '');
-  const webhookUrl = Deno.env.get('PROCESSOR_WEBHOOK_URL') ||
-    `${appBase}/api/functions/paymentWebhook`;
+  const webhookUrl = `${appBase}/api/functions/paymentWebhook`;
 
   const body = {
     price_amount:      priceAmount,

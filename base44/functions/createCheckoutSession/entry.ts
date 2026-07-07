@@ -178,9 +178,7 @@ async function createNOWPaymentsInvoice({ orderId, priceAmount, description, suc
   // AUDIT FIX: Force USDT TRC20 for low-ticket products
   const payCurrency = resolvePayCurrency({ paymentType: 'unknown', planId: null, priceAmount: priceAmount });
 
-  // Use PROCESSOR_WEBHOOK_URL env var, or derive from APP_BASE_URL
-  const webhookUrl = Deno.env.get('PROCESSOR_WEBHOOK_URL') || 
-    `${appBase}/api/functions/paymentWebhook`;
+  const webhookUrl = `${appBase}/api/functions/paymentWebhook`;
   
   console.log('[createNOWPaymentsInvoice] Using webhook URL:', webhookUrl);
   
@@ -372,7 +370,7 @@ Deno.serve(async (req) => {
             pay_currency: payCurrency,
             order_id: orderId,
             order_description: description,
-            ipn_callback_url: 'https://api.base44.com/api/apps/68326eff4b3b5d60a8b4f285/functions/paymentWebhook',
+            ipn_callback_url: `${appBase}/api/functions/paymentWebhook`,
             success_url: absSuccessUrl,
             cancel_url: absCancelUrl,
           },
