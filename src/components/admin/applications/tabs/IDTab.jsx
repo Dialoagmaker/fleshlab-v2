@@ -26,8 +26,9 @@ export default function IDTab({ application }) {
         r2_key
       });
       
-      if (res.signed_url) {
-        setPreviewUrl(res.signed_url);
+      const data = res.data || res;
+      if (data.signed_url) {
+        setPreviewUrl(data.signed_url);
         setPreviewType(fileType);
       } else {
         setPreviewError("Failed to generate preview URL");
@@ -49,8 +50,9 @@ export default function IDTab({ application }) {
         r2_key
       });
       
-      if (res.signed_url) {
-        window.open(res.signed_url, '_blank');
+      const data = res.data || res;
+      if (data.signed_url) {
+        window.open(data.signed_url, '_blank');
       }
     } catch (err) {
       console.error("Failed to get signed URL:", err);
@@ -131,7 +133,7 @@ export default function IDTab({ application }) {
       </Alert>
 
       <div className="grid gap-4">
-        {renderDocumentCard("ID Document (Front)", application.id_document_front_r2_key, 'id_front', FileText)}
+        {renderDocumentCard("ID Document (Front)", application.id_document_front_r2_key || application.id_document_r2_key, 'id_front', FileText)}
         {renderDocumentCard("ID Document (Back)", application.id_document_back_r2_key, 'id_back', FileText)}
         {renderDocumentCard("Selfie with ID", application.selfie_with_id_r2_key, 'selfie', User)}
       </div>

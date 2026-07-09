@@ -54,6 +54,16 @@ export default function InfoTab({ application }) {
       </div>
 
       <div>
+        <label className="text-sm text-muted-foreground">Interests</label>
+        <p className="text-sm mt-1">{application.interests?.length ? application.interests.join(', ') : "—"}</p>
+      </div>
+
+      <div>
+        <label className="text-sm text-muted-foreground">Application Details</label>
+        <p className="text-sm mt-1 whitespace-pre-wrap">{application.message || "—"}</p>
+      </div>
+
+      <div>
         <label className="text-sm text-muted-foreground">Package Interest</label>
         <p className="text-sm mt-1">{application.package_interest || "—"}</p>
       </div>
@@ -86,11 +96,27 @@ export default function InfoTab({ application }) {
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm text-muted-foreground">Source Page</label>
+          <p className="text-sm mt-1">{application.source_page || "—"}</p>
+        </div>
+        <div>
+          <label className="text-sm text-muted-foreground">Source Country</label>
+          <p className="text-sm mt-1">{application.source_country || application.nationality || "—"}</p>
+        </div>
+      </div>
+
       <div>
         <label className="text-sm text-muted-foreground">Submitted At</label>
         <p className="text-sm mt-1">
           {application.submitted_at ? format(new Date(application.submitted_at), 'PPP p') : "—"}
         </p>
+      </div>
+
+      <div>
+        <label className="text-sm text-muted-foreground">Admin Notes</label>
+        <p className="text-sm mt-1 whitespace-pre-wrap">{application.admin_notes || "—"}</p>
       </div>
     </div>
   );

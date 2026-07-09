@@ -28,8 +28,9 @@ export default function MediaTab({ application }) {
         r2_key
       });
       
-      if (res.signed_url) {
-        setPreviewUrl(res.signed_url);
+      const data = res.data || res;
+      if (data.signed_url) {
+        setPreviewUrl(data.signed_url);
         setPreviewType(mediaType === 'video' ? 'video' : 'image');
       } else {
         setPreviewError("Failed to generate preview URL");
@@ -51,8 +52,9 @@ export default function MediaTab({ application }) {
         r2_key
       });
       
-      if (res.signed_url) {
-        window.open(res.signed_url, '_blank');
+      const data = res.data || res;
+      if (data.signed_url) {
+        window.open(data.signed_url, '_blank');
       }
     } catch (err) {
       console.error("Failed to get signed URL:", err);
