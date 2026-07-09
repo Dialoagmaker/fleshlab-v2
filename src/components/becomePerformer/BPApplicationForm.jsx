@@ -126,6 +126,9 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
         intro_video_r2_key: mediaKeys.intro_video_r2_key,
         hardcore_video_r2_key: mediaKeys.hardcore_video_r2_key,
         id_document_r2_key,
+        id_document_back_r2_key: p3.id_back_r2_key,
+        selfie_with_id_r2_key: p3.selfie_r2_key,
+        request_type: "performer_application",
         message: [
           p1.sexual_identity ? `Sexual identity: ${p1.sexual_identity}` : "",
           p1.role ? `Role: ${p1.role}` : "",
