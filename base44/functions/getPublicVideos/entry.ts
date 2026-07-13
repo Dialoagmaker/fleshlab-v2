@@ -40,6 +40,7 @@ Deno.serve(async (req) => {
       '-release_date',
       500 // Fetch up to 500 for filtering
     );
+    const published_total = allVideos.length;
     
     // Fetch brands and performer relationships for search matching
     const allBrands = await base44.asServiceRole.entities.Brand.list('-created_date', 100);
@@ -195,6 +196,7 @@ Deno.serve(async (req) => {
       videos: safeVideos,
       brands: safeBrands,
       total,
+      published_total,
       page,
       limit,
       hasMore
@@ -209,6 +211,7 @@ Deno.serve(async (req) => {
       videos: [], 
       brands: [], 
       total: 0, 
+      published_total: 0,
       page: 1, 
       limit: 24, 
       hasMore: false,

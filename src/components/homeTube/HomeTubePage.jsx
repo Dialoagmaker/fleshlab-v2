@@ -62,14 +62,14 @@ function CommunitySmall({ article, video, label }) {
   );
 }
 
-export default function HomeTubePage({ videos = [], performers = [], articles = [] }) {
+export default function HomeTubePage({ videos = [], totalVideoCount, performers = [], articles = [] }) {
   const featured = videos.find((video) => video.featured) || videos[0];
   const featuredVideos = videos.slice(0, 5);
   const trendingModels = performers.slice(0, 4);
 
   return (
     <div className="bg-[#050505] text-white">
-      <HomeTubeHero video={featured} videoCount={videos.length} performerCount={performers.length} />
+      <HomeTubeHero video={featured} videoCount={totalVideoCount || videos.length} performerCount={performers.length} />
 
       <Section eyebrow="Curated Releases" title="Featured Videos" href="/videos">
         <div className="grid grid-flow-col auto-cols-[82%] gap-5 overflow-x-auto pb-4 [scrollbar-width:none] sm:auto-cols-[45%] lg:grid-flow-row lg:grid-cols-5 lg:overflow-visible">

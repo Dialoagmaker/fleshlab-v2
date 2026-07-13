@@ -26,6 +26,7 @@ export default function Home() {
   });
 
   const videos = videosData?.videos || [];
+  const totalVideoCount = videosData?.published_total || videosData?.total || videos.length;
   const performers = performersData?.performers || [];
   const articles = newsData?.articles || newsData?.news || [];
 
@@ -44,7 +45,7 @@ export default function Home() {
           "description": "Real Asian amateur videos, performers and FLESHLAB studio updates."
         }}
       />
-      <HomeTubePage videos={videos} performers={performers} articles={articles} />
+      <HomeTubePage videos={videos} totalVideoCount={totalVideoCount} performers={performers} articles={articles} />
     </>
   );
 }
