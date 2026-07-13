@@ -1,4 +1,4 @@
-import { Camera, Play, ShieldCheck, Star, UserRound, Video } from "lucide-react";
+import { Play, UserRound, Video } from "lucide-react";
 import { getVideoPreviewUrl, getVideoSourceUrl, getVideoThumbnailUrl } from "@/lib/videoAssetResolver";
 
 export default function HomeTubeHero({ video, videoCount, performerCount }) {
@@ -6,11 +6,9 @@ export default function HomeTubeHero({ video, videoCount, performerCount }) {
   const backgroundVideo = getVideoPreviewUrl(video) || getVideoSourceUrl(video);
   const href = video?.slug ? `/videos/${video.slug}` : "/videos";
   const stats = [
-    { icon: Video, value: `${Math.max(videoCount || 0, 300)}+`, label: "Videos" },
-    { icon: UserRound, value: `${Math.max(performerCount || 0, 150)}+`, label: "Models" },
-    { icon: Camera, value: "1000+", label: "Photos" },
-    { icon: ShieldCheck, value: "Amateur", label: "Only" },
-  ];
+    videoCount > 0 ? { icon: Video, value: String(videoCount), label: videoCount === 1 ? "Published Video" : "Published Videos" } : null,
+    performerCount > 0 ? { icon: UserRound, value: String(performerCount), label: performerCount === 1 ? "Verified Performer" : "Verified Performers" } : null,
+  ].filter(Boolean);
 
   return (
     <section className="relative isolate min-h-[680px] overflow-hidden bg-[#050505]">
@@ -22,7 +20,7 @@ export default function HomeTubeHero({ video, videoCount, performerCount }) {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_58%_30%,rgba(229,29,42,0.18),transparent_32%),linear-gradient(90deg,#050505_0%,rgba(5,5,5,0.84)_37%,rgba(5,5,5,0.42)_63%,#050505_100%)]" />
       <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#050505] to-transparent" />
 
-      <div className="relative mx-auto grid min-h-[680px] max-w-[1440px] items-center gap-10 px-5 pb-16 pt-20 md:grid-cols-[1fr_380px] md:px-10 lg:px-14">
+      <div className={`relative mx-auto grid min-h-[680px] max-w-[1440px] items-center gap-10 px-5 pb-16 pt-20 md:px-10 lg:px-14 ${stats.length ? "md:grid-cols-[1fr_380px]" : ""}`}>
         <div className="max-w-[720px]">
           <p className="mb-5 inline-flex rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-[11px] font-black uppercase tracking-[0.32em] text-[#E51D2A] backdrop-blur">FLESHLAB Amateur Studio</p>
           <h1 className="text-[54px] font-black uppercase leading-[0.84] tracking-[-0.07em] text-white sm:text-[72px] lg:text-[96px]">
@@ -35,7 +33,7 @@ export default function HomeTubeHero({ video, videoCount, performerCount }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-1">
+        {stats.length > 0 && <div className="grid grid-cols-2 gap-4 md:grid-cols-1">
           {stats.map((item) => (
             <div key={item.label} className="group rounded-[28px] border border-white/10 bg-[#111]/58 p-5 shadow-2xl shadow-black/30 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-[#E51D2A]/40 hover:bg-[#181818]/70">
               <div className="flex items-center gap-4">
@@ -47,7 +45,7 @@ export default function HomeTubeHero({ video, videoCount, performerCount }) {
               </div>
             </div>
           ))}
-        </div>
+        </div>}
       </div>
 
       <a href={href} className="absolute left-1/2 top-[47%] z-10 hidden -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3 text-white lg:flex">

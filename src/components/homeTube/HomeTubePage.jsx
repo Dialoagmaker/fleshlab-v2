@@ -7,6 +7,15 @@ import { getVideoThumbnailUrl } from "@/lib/videoAssetResolver";
 import MediaImage from "@/components/homeTube/MediaImage";
 
 const collectionNames = ["Asian Twinks", "Massage Series", "First Time", "Real Couples", "Fan Favorites"];
+
+function getCollectionVideos(name, videos) {
+  const words = name.toLowerCase().split(/\s+/).filter(Boolean);
+  return videos.filter((video) => {
+    const text = [video?.title, video?.description, video?.short_summary, ...(video?.categories || []), ...(video?.tags || [])].filter(Boolean).join(" ").toLowerCase();
+    return words.some((word) => text.includes(word));
+  });
+}
+
 const performerFeatures = [
   { icon: ShieldCheck, title: "Safe Studio", text: "Clear boundaries, verified production and respectful sets." },
   { icon: CreditCard, title: "Weekly Payments", text: "Transparent payout process and creator-first growth." },
@@ -76,7 +85,10 @@ export default function HomeTubePage({ videos = [], performers = [], articles = 
 
       <Section eyebrow="Cinematic Worlds" title="Collections" href="/videos">
         <div className="grid grid-flow-col auto-cols-[86%] gap-5 overflow-x-auto pb-4 [scrollbar-width:none] md:auto-cols-[44%] lg:grid-flow-row lg:grid-cols-3 lg:overflow-visible">
-          {collectionNames.map((name, index) => <CollectionCard key={name} title={name} count={(index + 4) * 18 + 5} video={videos[index % Math.max(videos.length, 1)]} />)}
+          {collectionNames.map((name, index) => {
+            const matchingVideos = getCollectionVideos(name, videos);
+            return <CollectionCard key={name} title={name} count={matchingVideos.length} video={matchingVideos[0] || videos[index % Math.max(videos.length, 1)]} />;
+          })}
         </div>
       </Section>
 
