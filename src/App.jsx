@@ -111,6 +111,7 @@ import Compliance2257 from './pages/Compliance2257';
 import Imprint from './pages/Imprint';
 import CookiePolicy from './pages/CookiePolicy';
 import PublicPageShell from './components/PublicPageShell';
+import BrandLoadingScreen from './components/BrandLoadingScreen';
 
 const AuthenticatedApp = () => {
   useAuthRedirect();
@@ -514,6 +515,12 @@ const AuthenticatedApp = () => {
 
 
 function App() {
+  const [showBrandLoader, setShowBrandLoader] = useState(true);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShowBrandLoader(false), 650);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   return (
     <AuthProvider>
@@ -525,6 +532,7 @@ function App() {
           </GlobalErrorBoundary>
         </Router>
         <Toaster />
+        <BrandLoadingScreen visible={showBrandLoader} />
       </QueryClientProvider>
     </AuthProvider>
   )

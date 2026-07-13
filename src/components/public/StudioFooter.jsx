@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Instagram, Twitter, Mail } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 
 /**
  * StudioFooter - Minimal footer for public pages
@@ -13,15 +14,12 @@ export default function StudioFooter() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div className="md:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-rose-600 to-rose-800 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">F</span>
-              </div>
-              <span className="text-white font-bold text-xl">FLESHLAB</span>
+            <div className="mb-5">
+              <BrandLogo className="h-[78px] w-[304px]" />
             </div>
+            <p className="mb-3 text-xs font-black uppercase tracking-[0.28em] text-rose-500">AMATEUR WINS.</p>
             <p className="text-sm text-[#F5F5F5]/60 max-w-md mb-4">
-              Premium Asian gay studio featuring verified 18+ performers and exclusive productions.
-              Public trailers available. Full scenes require fanclub membership or subscription.
+              An amateur studio built around real people, real chemistry and premium Asian creator productions.
             </p>
             <div className="flex items-center gap-4">
               <a

@@ -12,8 +12,9 @@ export default function TubeFooter() {
       <div className="mx-auto max-w-[1440px]">
         <div className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
-            <a href="/" aria-label="FLESHLAB home"><BrandLogo className="h-[74px] w-[280px]" /></a>
-            <p className="mt-6 max-w-lg text-lg leading-relaxed text-white/58">An amateur studio built around real people, real chemistry and premium Asian creator productions.</p>
+            <a href="/" aria-label="FLESHLAB home" className="inline-flex py-2"><BrandLogo className="h-[84px] w-[318px]" /></a>
+            <p className="mt-7 text-sm font-black uppercase tracking-[0.32em] text-[#E51D2A]">AMATEUR WINS.</p>
+            <p className="mt-5 max-w-lg text-lg leading-relaxed text-white/58">An amateur studio built around real people, real chemistry and premium Asian creator productions.</p>
           </div>
           <div className="grid grid-cols-2 gap-8 md:grid-cols-3">
             {columns.map((column) => <div key={column.title}><h4 className="mb-5 text-xs font-black uppercase tracking-[0.24em] text-white">{column.title}</h4>{column.links.map((link) => <a key={link.label} href={link.href} className="block py-1.5 text-sm text-white/50 transition-colors hover:text-white">{link.label}</a>)}</div>)}

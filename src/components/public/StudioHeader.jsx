@@ -1,6 +1,8 @@
-import { useState, Link, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Menu, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import BrandLogo from "@/components/BrandLogo";
 
 /**
  * StudioHeader - Sticky header with scroll-based transparency
@@ -20,13 +22,8 @@ export default function StudioHeader({ scrolled }) {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-rose-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">F</span>
-            </div>
-            <span className="text-white font-bold text-xl hidden sm:block">
-              FLESHLAB
-            </span>
+          <Link to="/" className="flex items-center py-2" aria-label="FLESHLAB home">
+            <BrandLogo className="h-[48px] w-[198px]" />
           </Link>
           
           {/* Desktop Navigation */}

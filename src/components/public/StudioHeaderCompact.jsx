@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Menu, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import BrandLogo from "@/components/BrandLogo";
 
 /**
  * StudioHeaderCompact - Minimal compact header (after gate entry)
@@ -17,14 +18,9 @@ export default function StudioHeaderCompact({ scrolled, onMenuToggle }) {
     >
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo (F monogram) */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-rose-600 to-rose-800 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">F</span>
-            </div>
-            <span className="text-white font-bold text-lg hidden sm:block group-hover:text-rose-500 transition-colors">
-              FLESHLAB
-            </span>
+          {/* Logo */}
+          <Link to="/" className="flex items-center py-2" aria-label="FLESHLAB home">
+            <BrandLogo className="h-[48px] w-[198px]" />
           </Link>
 
           {/* Actions */}
