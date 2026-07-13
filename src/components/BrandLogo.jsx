@@ -6,7 +6,7 @@ export default function BrandLogo({ className = "", imageClassName = "" }) {
       <img
         src={LOGO_URL}
         alt="FLESHLAB Amateur Wins"
-        className={`absolute left-1/2 top-1/2 max-w-none -translate-x-1/2 -translate-y-1/2 w-[145%] h-auto ${imageClassName}`}
+        className={`absolute left-1/2 top-1/2 max-w-none -translate-x-1/2 -translate-y-1/2 w-[160%] h-auto ${imageClassName}`}
       />
     </span>
   );

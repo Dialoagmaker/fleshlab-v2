@@ -90,7 +90,7 @@ export default function TubeHeader() {
       <div className="max-w-[1600px] mx-auto px-6 md:px-10 lg:px-16">
         <div className="h-16 md:h-[72px] flex items-center justify-between gap-5">
           <a href="/" className="shrink-0 inline-flex items-center" aria-label="FLESHLAB home">
-            <BrandLogo className="w-[132px] h-[44px] md:w-[154px] md:h-[50px]" />
+            <BrandLogo className="w-[158px] h-[54px] md:w-[190px] md:h-[60px]" />
           </a>
 
           <nav className="hidden lg:flex items-center justify-center gap-8">

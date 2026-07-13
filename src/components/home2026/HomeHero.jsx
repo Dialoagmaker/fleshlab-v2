@@ -7,7 +7,7 @@ function FeaturedFallback() {
   return (
     <div className="w-full h-full bg-[#151515] flex items-center justify-center">
       <div className="text-center">
-        <BrandLogo className="w-[210px] h-[76px]" />
+        <BrandLogo className="w-[260px] h-[92px]" />
         <div className="text-[#828282] text-xs uppercase tracking-[0.35em] mt-3">Featured Production</div>
       </div>
     </div>
