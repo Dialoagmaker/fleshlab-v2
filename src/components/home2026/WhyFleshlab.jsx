@@ -1,24 +1,24 @@
-import { Camera, ShieldCheck, Users, CalendarDays } from "lucide-react";
+import { CalendarDays, Camera, ShieldCheck, Users } from "lucide-react";
 import SectionHeader from "./SectionHeader";
 
 const items = [
-  { title: "100% Amateur", text: "Real people, verified 18+, shot with a clean studio standard.", Icon: Users },
-  { title: "Real Homemade", text: "Candid, intimate productions with authentic amateur energy.", Icon: Camera },
-  { title: "Safe Studio", text: "Consent, privacy and compliance are handled with care.", Icon: ShieldCheck },
-  { title: "Weekly Updates", text: "Fresh releases and performer-led moments added regularly.", Icon: CalendarDays },
+  { title: "100% AMATEUR", text: "Real people and verified performers, produced with a cleaner studio standard.", Icon: Users },
+  { title: "REAL HOMEMADE", text: "Authentic scenes that keep the direct feeling of amateur production.", Icon: Camera },
+  { title: "SAFE STUDIO", text: "Consent, privacy and agreements are handled with care.", Icon: ShieldCheck },
+  { title: "REGULAR RELEASES", text: "New productions and performer updates continue to arrive.", Icon: CalendarDays },
 ];
 
 export default function WhyFleshlab() {
   return (
-    <section className="bg-[#070707] px-6 md:px-10 lg:px-16 py-24 md:py-32">
-      <div className="max-w-[1600px] mx-auto">
-        <SectionHeader eyebrow="Why" title="Why FLESHLAB" text="Premium production values without losing the feeling of real homemade content." />
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
+    <section className="bg-[#050505] px-5 md:px-8 lg:px-12 py-12 md:py-16 lg:py-20">
+      <div className="max-w-[1440px] mx-auto">
+        <SectionHeader title="WHY FLESHLAB" text="Premium production values without losing the feeling of real homemade content." />
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {items.map(({ title, text, Icon }) => (
-            <div key={title} className="rounded-[22px] bg-[#121212] border border-white/[0.08] p-7 md:p-8 transition-all duration-300 hover:bg-[#1A1A1A] hover:-translate-y-1">
-              <Icon className="w-8 h-8 text-[#D81F26] mb-8" strokeWidth={1.8} />
-              <h3 className="text-white text-[22px] font-black uppercase tracking-tight mb-4">{title}</h3>
-              <p className="text-[#B0B0B0] text-base leading-relaxed">{text}</p>
+            <div key={title} className="min-h-[190px] rounded-[18px] bg-[#151515] border border-white/10 p-7 transition-colors duration-200 hover:bg-[#1B1B1B]">
+              <Icon className="w-8 h-8 text-[#E51D2A] mb-7" strokeWidth={1.8} />
+              <h3 className="text-white text-xl font-extrabold uppercase tracking-tight mb-3">{title}</h3>
+              <p className="text-[#B7B7B7] text-sm md:text-base leading-relaxed">{text}</p>
             </div>
           ))}
         </div>

@@ -29,7 +29,7 @@ function NavLink({ href, label, active, onClick }) {
     <a
       href={href}
       onClick={onClick}
-      className={`relative py-2 text-sm font-black uppercase tracking-[0.08em] transition-colors duration-150 after:absolute after:left-0 after:-bottom-0.5 after:h-px after:bg-[#D81F26] after:transition-all after:duration-150 ${
+      className={`relative py-2 text-sm font-black uppercase tracking-[0.08em] transition-colors duration-150 after:absolute after:left-0 after:-bottom-0.5 after:h-px after:bg-[#E51D2A] after:transition-all after:duration-150 ${
         active ? "text-white after:w-full" : "text-white/70 hover:text-white after:w-0 hover:after:w-full"
       }`}
     >
@@ -85,10 +85,10 @@ export default function TubeHeader() {
   };
 
   return (
-    <header className={`sticky top-0 z-50 transition-colors duration-200 ${scrolled ? "bg-[#070707] border-b border-white/[0.08]" : "bg-transparent"}`}>
+    <header className={`sticky top-0 z-[100] bg-[#050505] transition-colors duration-200 ${scrolled ? "border-b border-white/10" : "border-b border-transparent"}`}>
       <div className="max-w-[1600px] mx-auto px-6 md:px-10 lg:px-16">
-        <div className="h-20 flex items-center justify-between gap-5">
-          <a href="/" className="text-white text-xl md:text-2xl font-black tracking-[-0.04em] uppercase hover:text-[#D81F26] transition-colors duration-150">
+        <div className="h-16 md:h-[72px] flex items-center justify-between gap-5">
+          <a href="/" className="text-white text-xl md:text-2xl font-black tracking-[-0.04em] uppercase hover:text-[#E51D2A] transition-colors duration-150">
             FLESHLAB
           </a>
 
@@ -132,7 +132,7 @@ export default function TubeHeader() {
                     {languages.map((lang) => (
                       <button key={lang.code} onClick={() => { setLocale(lang.code); setLangOpen(false); }} className="w-full px-4 py-3 text-left hover:bg-white/10 transition-colors flex items-center justify-between">
                         <span className="text-sm font-black text-white">{lang.native}</span>
-                        {locale === lang.code && <Check className="w-4 h-4 text-[#D81F26]" />}
+                        {locale === lang.code && <Check className="w-4 h-4 text-[#E51D2A]" />}
                       </button>
                     ))}
                   </div>
@@ -167,7 +167,7 @@ export default function TubeHeader() {
                 <a href="/login" className="hidden sm:inline-flex h-11 px-4 rounded-[14px] text-white/80 hover:text-white hover:bg-white/10 transition-colors duration-150 items-center gap-2 text-sm font-black uppercase tracking-wide">
                   <LogIn className="w-4 h-4" /> Login
                 </a>
-                <a href="/register" className="hidden sm:inline-flex h-11 px-5 rounded-[14px] bg-[#D81F26] hover:bg-[#b91b21] text-white transition-colors duration-150 items-center text-sm font-black uppercase tracking-wide">
+                <a href="/register" className="hidden sm:inline-flex h-11 px-5 rounded-[14px] bg-[#E51D2A] hover:bg-[#b91b21] text-white transition-colors duration-150 items-center text-sm font-black uppercase tracking-wide">
                   Join
                 </a>
               </>
@@ -181,7 +181,7 @@ export default function TubeHeader() {
       </div>
 
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 top-20 z-40 bg-[#070707] border-t border-white/[0.08] px-6 py-8">
+        <div className="lg:hidden fixed inset-0 top-16 z-40 bg-[#050505] border-t border-white/10 px-5 py-7">
           <div className="relative mb-8">
             <Input
               value={searchQuery}
@@ -190,14 +190,14 @@ export default function TubeHeader() {
               placeholder={t("nav.search")}
               className="h-12 rounded-[14px] bg-[#121212] border-white/[0.08] text-white placeholder:text-[#B0B0B0] pr-12"
             />
-            <button onClick={submitSearch} className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg bg-[#D81F26] flex items-center justify-center text-white">
+            <button onClick={submitSearch} className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg bg-[#E51D2A] flex items-center justify-center text-white">
               <Search className="w-4 h-4" />
             </button>
           </div>
           <nav className="flex flex-col gap-5">
             {navLinks.map((link) => <NavLink key={link.label} {...link} active={isActive(link.href)} onClick={() => setMobileOpen(false)} />)}
             <a href="/login" className="pt-6 text-white text-lg font-black uppercase tracking-wide">Login</a>
-            <a href="/register" className="h-[52px] px-6 rounded-[14px] bg-[#D81F26] text-white text-lg font-black inline-flex items-center justify-center w-full max-w-xs">Join</a>
+            <a href="/register" className="h-[52px] px-6 rounded-[14px] bg-[#E51D2A] text-white text-lg font-black inline-flex items-center justify-center w-full max-w-xs">Join</a>
           </nav>
         </div>
       )}

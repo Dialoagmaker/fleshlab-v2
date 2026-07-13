@@ -23,12 +23,13 @@ export default function Home() {
     .sort((a, b) => new Date(b.published_at || b.release_date || b.created_date || 0) - new Date(a.published_at || a.release_date || a.created_date || 0))
     .slice(0, 12);
 
-  useQuery({
+  const { data: performersData } = useQuery({
     queryKey: ["public-performers-fn"],
     queryFn: () => callPublicFunction("getPublicPerformers"),
     retry: 0,
     staleTime: 30000,
   });
+  const performers = performersData?.performers || [];
 
   useQuery({
     queryKey: ["public-news-fn-home"],
@@ -53,28 +54,28 @@ export default function Home() {
         }}
       />
 
-      <div className="bg-[#070707] text-white">
+      <div className="bg-[#050505] text-white">
         <HomeHero video={featuredVideo} />
-        <FeatureCards />
+        <FeatureCards videos={videos} performers={performers} />
         <VideoRail
           eyebrow="Trending"
-          title="Amateur Wins"
-          text="Large-screen releases with a homemade pulse and real performer presence."
+          title="TRENDING"
+          text="Current FLESHLAB productions selected from the real video library."
           videos={trendingVideos}
           brands={brands}
           loading={videosLoading}
         />
         <VideoRail
-          eyebrow="New This Week"
-          title="Fresh Drops"
-          text="The newest FLESHLAB productions, ready to watch."
+          eyebrow="New Releases"
+          title="NEW RELEASES"
+          text="Latest published productions from the existing FLESHLAB catalog."
           videos={newVideos}
           brands={brands}
           loading={videosLoading}
         />
-        <CategoryGrid />
+        <CategoryGrid videos={videos} />
         <WhyFleshlab />
-        <PerformerCTA />
+        <PerformerCTA performer={performers[0]} video={featuredVideo} />
       </div>
     </>
   );

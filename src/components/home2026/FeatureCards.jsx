@@ -1,43 +1,70 @@
 import { Link } from "react-router-dom";
 import { Film, Search, Star } from "lucide-react";
+import VideoAssetImage from "@/components/video/VideoAssetImage";
 
-const cards = [
+const cardMeta = [
   {
-    title: "Watch Videos",
-    text: "Browse cinematic amateur productions from verified real people.",
+    title: "WATCH VIDEOS",
+    text: "Browse real FLESHLAB productions and new releases.",
     href: "/videos",
-    image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1200&q=80",
     Icon: Film,
+    type: "video",
   },
   {
-    title: "Become Performer",
-    text: "Create authentic homemade productions and earn with the studio.",
+    title: "BECOME PERFORMER",
+    text: "Apply to create authentic amateur productions with the studio.",
     href: "/become-performer",
-    image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=1200&q=80",
     Icon: Star,
+    type: "performer",
   },
   {
-    title: "Explore Categories",
-    text: "Find solo, couples, massage, homemade and behind-the-scenes releases.",
-    href: "/videos",
-    image: "https://images.unsplash.com/photo-1535016120720-40c646be5580?auto=format&fit=crop&w=1200&q=80",
+    title: "EXPLORE CATEGORIES",
+    text: "Find solo, couples, homemade and behind-the-scenes scenes.",
+    href: "/videos?category=all",
     Icon: Search,
+    type: "category",
   },
 ];
 
-export default function FeatureCards() {
+function BrandedPlaceholder({ title }) {
   return (
-    <section className="bg-[#070707] px-6 md:px-10 lg:px-16 py-24 md:py-32">
-      <div className="max-w-[1600px] mx-auto grid md:grid-cols-3 gap-6">
-        {cards.map(({ title, text, href, image, Icon }) => (
-          <Link key={title} to={href} className="group block rounded-[24px] overflow-hidden bg-[#1A1A1A] border border-white/[0.08] transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/60">
-            <div className="aspect-[4/3] overflow-hidden bg-[#121212]">
-              <img src={image} alt={title} loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+    <div className="w-full h-full bg-[#0B0B0B] flex items-center justify-center px-6">
+      <div className="text-center">
+        <div className="text-white text-2xl font-black tracking-[-0.04em]">FLESHLAB</div>
+        <div className="text-[#828282] text-xs uppercase tracking-[0.25em] mt-2">{title}</div>
+      </div>
+    </div>
+  );
+}
+
+function CardMedia({ card, video, performer }) {
+  if (card.type === "performer" && performer?.profile_image_url) {
+    return <img src={performer.profile_image_url} alt={performer.display_name} loading="lazy" className="w-full h-full object-cover object-center transition-transform duration-200 group-hover:scale-[1.03]" />;
+  }
+
+  if (video) {
+    return <VideoAssetImage video={video} alt={video.title} className="w-full h-full object-cover object-center transition-transform duration-200 group-hover:scale-[1.03]" showLegacyBadge={false} />;
+  }
+
+  return <BrandedPlaceholder title={card.title} />;
+}
+
+export default function FeatureCards({ videos = [], performers = [] }) {
+  const mediaVideos = [videos[0], videos[1] || videos[0], videos.find((video) => video.categories?.length) || videos[2] || videos[0]];
+  const performer = performers[0];
+
+  return (
+    <section className="bg-[#050505] px-5 md:px-8 lg:px-12 py-12 md:py-16 lg:py-20">
+      <div className="max-w-[1440px] mx-auto grid md:grid-cols-3 gap-5">
+        {cardMeta.map((card, index) => (
+          <Link key={card.title} to={card.href} className="group block h-auto md:h-[320px] rounded-[20px] overflow-hidden bg-[#151515] border border-white/10 transition-all duration-200 hover:-translate-y-1">
+            <div className="h-[198px] md:h-[62%] overflow-hidden bg-[#0B0B0B]">
+              <CardMedia card={card} video={mediaVideos[index]} performer={performer} />
             </div>
-            <div className="p-6 md:p-8">
-              <Icon className="w-7 h-7 text-[#D81F26] mb-5" />
-              <h3 className="text-white text-[22px] font-black uppercase tracking-tight mb-3">{title}</h3>
-              <p className="text-[#B0B0B0] text-base leading-relaxed">{text}</p>
+            <div className="h-auto md:h-[38%] p-5 md:p-6 flex flex-col justify-center">
+              <card.Icon className="w-5 h-5 text-[#E51D2A] mb-3" strokeWidth={2} />
+              <h3 className="text-white text-[22px] font-black uppercase tracking-tight leading-none mb-2">{card.title}</h3>
+              <p className="text-[#B7B7B7] text-sm md:text-base leading-snug line-clamp-2">{card.text}</p>
             </div>
           </Link>
         ))}

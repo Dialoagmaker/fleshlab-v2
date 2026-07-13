@@ -1,28 +1,62 @@
 import { Link } from "react-router-dom";
+import VideoAssetImage from "@/components/video/VideoAssetImage";
 import SectionHeader from "./SectionHeader";
 
-const categories = [
-  { title: "Asian Twinks", count: "24+ videos", image: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=900&q=80" },
-  { title: "Solo", count: "18+ videos", image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80" },
-  { title: "Couples", count: "12+ videos", image: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=900&q=80" },
-  { title: "Massage", count: "9+ videos", image: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=900&q=80" },
-  { title: "Homemade", count: "30+ videos", image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=900&q=80" },
-  { title: "Behind the Scenes", count: "8+ videos", image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=900&q=80" },
-];
+const categoryNames = ["ASIAN TWINKS", "SOLO", "COUPLES", "MASSAGE", "HOMEMADE", "BEHIND THE SCENES"];
 
-export default function CategoryGrid() {
+const matchers = {
+  "ASIAN TWINKS": ["asian", "twink", "filipino", "pinoy"],
+  "SOLO": ["solo"],
+  "COUPLES": ["couple", "couples", "pair", "duo"],
+  "MASSAGE": ["massage"],
+  "HOMEMADE": ["homemade", "amateur", "home"],
+  "BEHIND THE SCENES": ["behind", "bts", "backstage", "studio"],
+};
+
+function textPool(video) {
+  return [video.title, video.description, video.short_summary, ...(video.categories || []), ...(video.tags || [])].filter(Boolean).join(" ").toLowerCase();
+}
+
+function getCategoryData(videos, name) {
+  const terms = matchers[name] || [];
+  const matches = videos.filter((video) => terms.some((term) => textPool(video).includes(term)));
+  return {
+    name,
+    count: matches.length,
+    video: matches[0] || null,
+  };
+}
+
+function BrandedPlaceholder({ name }) {
   return (
-    <section className="bg-[#070707] px-6 md:px-10 lg:px-16 py-24 md:py-32">
-      <div className="max-w-[1600px] mx-auto">
-        <SectionHeader eyebrow="Explore" title="Categories" text="A cleaner way to discover authentic homemade productions." link="/videos" linkLabel="Browse All" />
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+    <div className="w-full h-full bg-[#0B0B0B] flex items-center justify-center px-5">
+      <div className="text-center">
+        <div className="text-white text-3xl font-black tracking-[-0.04em]">FLESHLAB</div>
+        <div className="text-[#828282] text-xs uppercase tracking-[0.25em] mt-2">{name}</div>
+      </div>
+    </div>
+  );
+}
+
+export default function CategoryGrid({ videos = [] }) {
+  const categories = categoryNames.map((name) => getCategoryData(videos, name));
+
+  return (
+    <section className="bg-[#050505] px-5 md:px-8 lg:px-12 py-12 md:py-16 lg:py-20">
+      <div className="max-w-[1440px] mx-auto">
+        <SectionHeader eyebrow="Explore" title="Categories" text="Browse FLESHLAB productions by real viewing mood and production style." link="/videos" linkLabel="View All" />
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
           {categories.map((category) => (
-            <Link key={category.title} to={`/videos?category=${encodeURIComponent(category.title)}`} className="group relative aspect-[4/3] rounded-[22px] overflow-hidden bg-[#1A1A1A] border border-white/[0.08] transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-2xl hover:shadow-black/60">
-              <img src={category.image} alt={category.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-              <div className="absolute inset-0 bg-black/45" />
+            <Link key={category.name} to={`/videos?category=${encodeURIComponent(category.name)}`} className="group relative aspect-[16/10] rounded-[18px] overflow-hidden bg-[#151515] border border-white/10 transition-all duration-200 hover:-translate-y-1">
+              {category.video ? (
+                <VideoAssetImage video={category.video} alt={category.name} className="w-full h-full object-cover object-center transition-transform duration-200 group-hover:scale-[1.03]" showLegacyBadge={false} />
+              ) : (
+                <BrandedPlaceholder name={category.name} />
+              )}
+              <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/95 via-black/45 to-transparent" />
               <div className="absolute left-5 right-5 bottom-5">
-                <h3 className="text-white text-xl md:text-[22px] font-black uppercase tracking-tight">{category.title}</h3>
-                <p className="text-[#B0B0B0] text-sm md:text-base mt-1">{category.count}</p>
+                <h3 className="text-white text-xl md:text-[22px] font-black uppercase tracking-tight leading-tight">{category.name}</h3>
+                <p className="text-[#B7B7B7] text-sm md:text-base mt-1">{category.count} videos</p>
               </div>
             </Link>
           ))}
