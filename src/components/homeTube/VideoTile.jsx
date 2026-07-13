@@ -9,19 +9,20 @@ function formatDuration(seconds) {
   return `${minutes}:${rest}`;
 }
 
-export default function VideoTile({ video, label = "NEW" }) {
+export default function VideoTile({ video, label = "Featured" }) {
   const href = video?.slug ? `/videos/${video.slug}` : "/videos";
   return (
-    <a href={href} className="group block min-w-[168px] overflow-hidden rounded border border-white/10 bg-[#111] hover:border-[#E51D2A]/70 transition-colors">
-      <div className="relative h-[94px] overflow-hidden">
-        <MediaImage src={getVideoThumbnailUrl(video)} alt={video?.title} className="w-full h-full group-hover:scale-105 transition-transform duration-300" />
-        <span className="absolute left-2 top-2 bg-[#E51D2A] px-1.5 py-0.5 text-[9px] font-black uppercase text-white">{label}</span>
-        <span className="absolute bottom-1.5 left-1.5 flex h-5 w-5 items-center justify-center rounded-sm bg-black/75 text-white"><Play className="w-3 h-3 fill-white" /></span>
-        <span className="absolute bottom-1.5 right-1.5 rounded-sm bg-black/80 px-1.5 py-0.5 text-[9px] font-bold text-white">{formatDuration(video?.duration_seconds)}</span>
-      </div>
-      <div className="px-2 py-2">
-        <h3 className="line-clamp-2 text-[11px] font-black leading-tight text-white">{video?.title || "FLESHLAB Production"}</h3>
-        <p className="mt-1 text-[9px] text-white/50">Asia · Amateur</p>
+    <a href={href} className="group block overflow-hidden rounded-[26px] bg-[#101010] shadow-xl shadow-black/25 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(0,0,0,0.72)]">
+      <div className="relative aspect-[16/10] overflow-hidden">
+        <MediaImage src={getVideoThumbnailUrl(video)} alt={video?.title} className="h-full w-full transition-transform duration-500 group-hover:scale-[1.06]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent opacity-85" />
+        <span className="absolute left-4 top-4 rounded-full bg-[#E51D2A] px-3 py-1 text-[10px] font-black uppercase tracking-wide text-white">{label}</span>
+        <span className="absolute right-4 top-4 rounded-full bg-black/60 px-3 py-1 text-[10px] font-bold text-white backdrop-blur">{formatDuration(video?.duration_seconds)}</span>
+        <span className="absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/14 text-white opacity-0 backdrop-blur transition-all duration-300 group-hover:scale-105 group-hover:opacity-100"><Play className="ml-1 h-5 w-5 fill-white" /></span>
+        <div className="absolute inset-x-0 bottom-0 p-5 transition-transform duration-300 group-hover:-translate-y-1">
+          <h3 className="line-clamp-2 text-lg font-black leading-tight text-white">{video?.title || "FLESHLAB Production"}</h3>
+          <p className="mt-2 text-xs font-bold uppercase tracking-[0.14em] text-white/50">Asia · Amateur Studio</p>
+        </div>
       </div>
     </a>
   );

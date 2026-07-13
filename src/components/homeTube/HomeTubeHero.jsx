@@ -1,41 +1,59 @@
-import { Camera, Play, Star, UserRound, Video } from "lucide-react";
-import { getVideoThumbnailUrl } from "@/lib/videoAssetResolver";
+import { Camera, Play, ShieldCheck, Star, UserRound, Video } from "lucide-react";
+import { getVideoPreviewUrl, getVideoSourceUrl, getVideoThumbnailUrl } from "@/lib/videoAssetResolver";
 
 export default function HomeTubeHero({ video, videoCount, performerCount }) {
   const image = getVideoThumbnailUrl(video);
+  const backgroundVideo = getVideoPreviewUrl(video) || getVideoSourceUrl(video);
   const href = video?.slug ? `/videos/${video.slug}` : "/videos";
   const stats = [
     { icon: Video, value: `${Math.max(videoCount || 0, 300)}+`, label: "Videos" },
     { icon: UserRound, value: `${Math.max(performerCount || 0, 150)}+`, label: "Models" },
     { icon: Camera, value: "1000+", label: "Photos" },
-    { icon: Star, value: "Amateur Only", label: "No fake. No actors." },
+    { icon: ShieldCheck, value: "Amateur", label: "Only" },
   ];
 
   return (
-    <section className="relative border-b border-white/10 bg-[#050505]">
-      <div className="absolute inset-0 bg-cover bg-center opacity-45" style={{ backgroundImage: image ? `url(${image})` : undefined }} />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#050505] via-[#050505]/70 to-[#050505]/95" />
-      <a href={href} className="absolute left-[52%] top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2 text-white md:flex">
-        <span className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-white bg-black/35 transition-colors hover:bg-[#E51D2A]"><Play className="ml-1 h-7 w-7 fill-white" /></span>
-        <span className="text-[10px] font-black uppercase tracking-wide">Play Trailer</span>
-      </a>
-      <div className="relative mx-auto grid max-w-[1440px] gap-6 px-5 py-8 md:grid-cols-[1fr_270px] md:px-10 lg:px-14">
-        <div className="min-h-[210px] flex items-center">
-          <div>
-            <h1 className="max-w-[520px] text-[38px] font-black uppercase leading-[0.9] tracking-[-0.04em] text-white md:text-[48px]">
-              Real Sex.<br />Real People.<br /><span className="text-[#E51D2A]">Amateur Wins.</span>
-            </h1>
-            <p className="mt-4 max-w-[430px] text-sm font-bold leading-snug text-white/85">Authentic. Raw. Unfiltered.<br />The hottest amateur content from Asia.</p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <a href={href} className="inline-flex h-10 items-center gap-2 rounded-sm bg-[#E51D2A] px-8 text-[11px] font-black uppercase text-white hover:bg-[#c91822]"><Play className="w-3 h-3 fill-white" /> Watch Now</a>
-              <a href="/register" className="inline-flex h-10 items-center rounded-sm border border-white/40 px-10 text-[11px] font-black uppercase text-white hover:bg-white/10">Join Now</a>
-            </div>
+    <section className="relative isolate min-h-[680px] overflow-hidden bg-[#050505]">
+      {backgroundVideo ? (
+        <video className="absolute inset-0 h-full w-full object-cover opacity-55" src={backgroundVideo} poster={image || undefined} autoPlay muted loop playsInline />
+      ) : (
+        <div className="absolute inset-0 bg-cover bg-center opacity-55" style={{ backgroundImage: image ? `url(${image})` : undefined }} />
+      )}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_58%_30%,rgba(229,29,42,0.18),transparent_32%),linear-gradient(90deg,#050505_0%,rgba(5,5,5,0.84)_37%,rgba(5,5,5,0.42)_63%,#050505_100%)]" />
+      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#050505] to-transparent" />
+
+      <div className="relative mx-auto grid min-h-[680px] max-w-[1440px] items-center gap-10 px-5 pb-16 pt-20 md:grid-cols-[1fr_380px] md:px-10 lg:px-14">
+        <div className="max-w-[720px]">
+          <p className="mb-5 inline-flex rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-[11px] font-black uppercase tracking-[0.32em] text-[#E51D2A] backdrop-blur">FLESHLAB Amateur Studio</p>
+          <h1 className="text-[54px] font-black uppercase leading-[0.84] tracking-[-0.07em] text-white sm:text-[72px] lg:text-[96px]">
+            Amateur<br /><span className="text-[#E51D2A]">Wins.</span>
+          </h1>
+          <p className="mt-7 max-w-[560px] text-lg leading-relaxed text-white/78 md:text-xl">Real people. Real chemistry. Premium productions. No fake stories.</p>
+          <div className="mt-9 flex flex-wrap gap-4">
+            <a href={href} className="group inline-flex h-14 items-center gap-3 rounded-full bg-[#E51D2A] px-8 text-sm font-black uppercase tracking-wide text-white shadow-[0_18px_44px_rgba(229,29,42,0.28)] transition-all duration-300 hover:-translate-y-1 hover:bg-[#c91822]"><Play className="h-4 w-4 fill-white" /> Watch Now</a>
+            <a href="/become-performer" className="inline-flex h-14 items-center rounded-full border border-white/20 bg-white/[0.06] px-8 text-sm font-black uppercase tracking-wide text-white backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:bg-white/12">Become Performer</a>
           </div>
         </div>
-        <aside className="hidden border-l border-white/30 pl-8 md:flex md:flex-col md:justify-center md:gap-5">
-          {stats.map((item) => <div key={item.label} className="flex items-center gap-4"><item.icon className="w-8 h-8 text-[#E51D2A]" /><div><p className="text-2xl font-black uppercase leading-none text-white">{item.value}</p><p className="mt-1 text-[10px] font-black uppercase text-white/70">{item.label}</p></div></div>)}
-        </aside>
+
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-1">
+          {stats.map((item) => (
+            <div key={item.label} className="group rounded-[28px] border border-white/10 bg-[#111]/58 p-5 shadow-2xl shadow-black/30 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-[#E51D2A]/40 hover:bg-[#181818]/70">
+              <div className="flex items-center gap-4">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E51D2A]/12 text-[#E51D2A]"><item.icon className="h-6 w-6" /></span>
+                <div>
+                  <p className="text-[22px] font-black uppercase leading-none text-white sm:text-3xl">{item.value}</p>
+                  <p className="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-white/50 sm:text-[11px]">{item.label}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
+
+      <a href={href} className="absolute left-1/2 top-[47%] z-10 hidden -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3 text-white lg:flex">
+        <span className="flex h-20 w-20 items-center justify-center rounded-full border border-white/40 bg-black/30 shadow-2xl backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-[#E51D2A]"><Play className="ml-1 h-8 w-8 fill-white" /></span>
+        <span className="text-[11px] font-black uppercase tracking-[0.24em]">Play Trailer</span>
+      </a>
     </section>
   );
 }
