@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Search, Menu, X, LogIn, Globe, ChevronDown, Check, UserCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import BrandLogo from "@/components/BrandLogo";
 import { useI18n } from "@/i18n/i18n.jsx";
 import { useAuth } from "@/lib/AuthContext";
 import { getDashboardPath } from "@/lib/roleResolver";
@@ -88,8 +89,8 @@ export default function TubeHeader() {
     <header className={`sticky top-0 z-[100] bg-[#050505] transition-colors duration-200 ${scrolled ? "border-b border-white/10" : "border-b border-transparent"}`}>
       <div className="max-w-[1600px] mx-auto px-6 md:px-10 lg:px-16">
         <div className="h-16 md:h-[72px] flex items-center justify-between gap-5">
-          <a href="/" className="text-white text-xl md:text-2xl font-black tracking-[-0.04em] uppercase hover:text-[#E51D2A] transition-colors duration-150">
-            FLESHLAB
+          <a href="/" className="shrink-0 inline-flex items-center" aria-label="FLESHLAB home">
+            <BrandLogo className="w-[132px] h-[44px] md:w-[154px] md:h-[50px]" />
           </a>
 
           <nav className="hidden lg:flex items-center justify-center gap-8">

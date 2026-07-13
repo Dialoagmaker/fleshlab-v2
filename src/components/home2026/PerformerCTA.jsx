@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import VideoAssetImage from "@/components/video/VideoAssetImage";
+import BrandLogo from "@/components/BrandLogo";
 
 function Media({ performer, video }) {
   if (performer?.profile_image_url) {
@@ -11,7 +12,7 @@ function Media({ performer, video }) {
   }
   return (
     <div className="w-full h-full bg-[#0B0B0B] flex items-center justify-center">
-      <div className="text-white text-3xl font-black tracking-[-0.04em]">FLESHLAB</div>
+      <BrandLogo className="w-[210px] h-[76px]" />
     </div>
   );
 }

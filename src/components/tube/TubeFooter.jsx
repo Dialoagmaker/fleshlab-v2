@@ -1,3 +1,5 @@
+import BrandLogo from "@/components/BrandLogo";
+
 const columns = [
   {
     title: "COMPANY",
@@ -37,7 +39,9 @@ export default function TubeFooter() {
       <div className="max-w-[1440px] mx-auto py-12 md:py-16">
         <div className="grid md:grid-cols-4 gap-9">
           <div>
-            <a href="/" className="inline-block text-white text-2xl font-black uppercase tracking-[-0.04em] mb-4 hover:text-[#E51D2A] transition-colors duration-150">FLESHLAB</a>
+            <a href="/" className="inline-flex items-center mb-4" aria-label="FLESHLAB home">
+              <BrandLogo className="w-[168px] h-[56px]" />
+            </a>
             <p className="text-[#B7B7B7] text-sm leading-relaxed max-w-sm">
               Authentic amateur productions with verified real people and a clean studio standard.
             </p>

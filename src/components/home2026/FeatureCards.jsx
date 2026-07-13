@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Film, Search, Star } from "lucide-react";
 import VideoAssetImage from "@/components/video/VideoAssetImage";
+import BrandLogo from "@/components/BrandLogo";
 
 const cardMeta = [
   {
@@ -30,7 +31,7 @@ function BrandedPlaceholder({ title }) {
   return (
     <div className="w-full h-full bg-[#0B0B0B] flex items-center justify-center px-6">
       <div className="text-center">
-        <div className="text-white text-2xl font-black tracking-[-0.04em]">FLESHLAB</div>
+        <BrandLogo className="w-[180px] h-[64px]" />
         <div className="text-[#828282] text-xs uppercase tracking-[0.25em] mt-2">{title}</div>
       </div>
     </div>

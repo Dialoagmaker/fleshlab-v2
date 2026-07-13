@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import VideoAssetImage from "@/components/video/VideoAssetImage";
 import SectionHeader from "./SectionHeader";
+import BrandLogo from "@/components/BrandLogo";
 
 const categoryNames = ["ASIAN TWINKS", "SOLO", "COUPLES", "MASSAGE", "HOMEMADE", "BEHIND THE SCENES"];
 
@@ -31,7 +32,7 @@ function BrandedPlaceholder({ name }) {
   return (
     <div className="w-full h-full bg-[#0B0B0B] flex items-center justify-center px-5">
       <div className="text-center">
-        <div className="text-white text-3xl font-black tracking-[-0.04em]">FLESHLAB</div>
+        <BrandLogo className="w-[210px] h-[76px]" />
         <div className="text-[#828282] text-xs uppercase tracking-[0.25em] mt-2">{name}</div>
       </div>
     </div>

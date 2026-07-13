@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import VideoAssetImage from "@/components/video/VideoAssetImage";
+import BrandLogo from "@/components/BrandLogo";
 
 function FeaturedFallback() {
   return (
     <div className="w-full h-full bg-[#151515] flex items-center justify-center">
       <div className="text-center">
-        <div className="text-white text-3xl md:text-5xl font-black tracking-[-0.04em]">FLESHLAB</div>
+        <BrandLogo className="w-[210px] h-[76px]" />
         <div className="text-[#828282] text-xs uppercase tracking-[0.35em] mt-3">Featured Production</div>
       </div>
     </div>
