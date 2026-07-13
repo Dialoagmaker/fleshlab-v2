@@ -88,9 +88,9 @@ export default function TubeHeader() {
   return (
     <header className={`sticky top-0 z-[100] bg-[#050505] transition-colors duration-200 ${scrolled ? "border-b border-white/10" : "border-b border-transparent"}`}>
       <div className="max-w-[1600px] mx-auto px-6 md:px-10 lg:px-16">
-        <div className="h-16 md:h-[72px] flex items-center justify-between gap-5">
+        <div className="h-[94px] md:h-[132px] flex items-center justify-between gap-5">
           <a href="/" className="shrink-0 inline-flex items-center" aria-label="FLESHLAB home">
-            <BrandLogo className="w-[158px] h-[54px] md:w-[190px] md:h-[60px]" />
+            <BrandLogo className="w-[220px] h-[82px] md:w-[330px] md:h-[118px]" />
           </a>
 
           <nav className="hidden lg:flex items-center justify-center gap-8">
@@ -182,7 +182,7 @@ export default function TubeHeader() {
       </div>
 
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 top-16 z-40 bg-[#050505] border-t border-white/10 px-5 py-7">
+        <div className="lg:hidden fixed inset-0 top-[94px] z-40 bg-[#050505] border-t border-white/10 px-5 py-7">
           <div className="relative mb-8">
             <Input
               value={searchQuery}

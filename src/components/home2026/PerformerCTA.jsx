@@ -12,7 +12,7 @@ function Media({ performer, video }) {
   }
   return (
     <div className="w-full h-full bg-[#0B0B0B] flex items-center justify-center">
-      <BrandLogo className="w-[260px] h-[92px]" />
+      <BrandLogo className="w-[300px] h-[110px]" />
     </div>
   );
 }

@@ -31,7 +31,7 @@ function BrandedPlaceholder({ title }) {
   return (
     <div className="w-full h-full bg-[#0B0B0B] flex items-center justify-center px-6">
       <div className="text-center">
-        <BrandLogo className="w-[230px] h-[82px]" />
+        <BrandLogo className="w-[280px] h-[102px]" />
         <div className="text-[#828282] text-xs uppercase tracking-[0.25em] mt-2">{title}</div>
       </div>
     </div>

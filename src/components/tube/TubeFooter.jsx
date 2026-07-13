@@ -40,7 +40,7 @@ export default function TubeFooter() {
         <div className="grid md:grid-cols-4 gap-9">
           <div>
             <a href="/" className="inline-flex items-center mb-4" aria-label="FLESHLAB home">
-              <BrandLogo className="w-[220px] h-[74px]" />
+              <BrandLogo className="w-[260px] h-[92px]" />
             </a>
             <p className="text-[#B7B7B7] text-sm leading-relaxed max-w-sm">
               Authentic amateur productions with verified real people and a clean studio standard.
