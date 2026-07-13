@@ -16,11 +16,11 @@ export default function StudioHeaderCompact({ scrolled, onMenuToggle }) {
           : "bg-transparent"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+      <div className="max-w-7xl mx-auto px-8">
+        <div className="flex items-center justify-between h-24 py-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center py-2" aria-label="FLESHLAB home">
-            <BrandLogo className="h-[48px] w-[198px]" />
+          <Link to="/" className="flex items-center py-4" aria-label="FLESHLAB home">
+            <BrandLogo className="h-[78px] w-[258px]" />
           </Link>
 
           {/* Actions */}

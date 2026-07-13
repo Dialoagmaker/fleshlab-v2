@@ -50,9 +50,9 @@ export default function TubeHeader() {
 
   return (
     <header className={`sticky top-0 z-[100] border-b transition-all duration-300 ${scrolled ? "border-white/10 bg-[#050505]/82 shadow-2xl shadow-black/40 backdrop-blur-xl" : "border-white/[0.06] bg-[#050505]/58 backdrop-blur-md"}`}>
-      <div className="mx-auto flex h-[84px] max-w-[1440px] items-center gap-8 px-5 md:px-10 lg:px-14">
-        <a href="/" className="flex shrink-0 items-center py-3" aria-label="FLESHLAB home">
-          <BrandLogo className="h-[48px] w-[198px] md:h-[56px] md:w-[232px]" />
+      <div className="mx-auto flex h-[120px] max-w-[1440px] items-center gap-10 px-8 py-5 md:px-12 lg:px-16">
+        <a href="/" className="flex shrink-0 items-center py-5" aria-label="FLESHLAB home">
+          <BrandLogo className="h-[82px] w-[248px] md:h-[94px] md:w-[288px]" />
         </a>
         <nav className="hidden flex-1 items-center justify-center gap-7 lg:flex">{navLinks.map((link) => <NavItem key={link.label} {...link} active={isActive(link.href)} />)}</nav>
         <div className="ml-auto flex items-center gap-3">
@@ -64,7 +64,7 @@ export default function TubeHeader() {
           <button onClick={() => setMobileOpen(!mobileOpen)} className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white lg:hidden">{mobileOpen ? <X /> : <Menu />}</button>
         </div>
       </div>
-      {mobileOpen && <div className="fixed inset-x-0 top-[84px] z-50 border-t border-white/10 bg-[#050505]/96 px-5 py-6 backdrop-blur-xl lg:hidden"><div className="mb-5 flex items-center gap-2 rounded-full border border-white/15 bg-[#111] px-4"><Search className="h-4 w-4 text-white/60" /><input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") submitSearch(); }} placeholder="Search" className="h-12 flex-1 bg-transparent text-sm text-white outline-none" /></div><nav className="flex flex-col gap-1">{navLinks.map((link) => <NavItem key={link.label} {...link} active={isActive(link.href)} onClick={() => setMobileOpen(false)} />)}<a href="/login" className="mt-5 h-12 rounded-full border border-white/20 px-4 text-center text-xs font-black uppercase leading-12 text-white">Login</a><a href="/register" className="h-12 rounded-full bg-[#E51D2A] px-4 text-center text-xs font-black uppercase leading-12 text-white">Join Now</a></nav></div>}
+      {mobileOpen && <div className="fixed inset-x-0 top-[120px] z-50 border-t border-white/10 bg-[#050505]/96 px-8 py-7 backdrop-blur-xl lg:hidden"><div className="mb-5 flex items-center gap-2 rounded-full border border-white/15 bg-[#111] px-4"><Search className="h-4 w-4 text-white/60" /><input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") submitSearch(); }} placeholder="Search" className="h-12 flex-1 bg-transparent text-sm text-white outline-none" /></div><nav className="flex flex-col gap-1">{navLinks.map((link) => <NavItem key={link.label} {...link} active={isActive(link.href)} onClick={() => setMobileOpen(false)} />)}<a href="/login" className="mt-5 h-12 rounded-full border border-white/20 px-4 text-center text-xs font-black uppercase leading-12 text-white">Login</a><a href="/register" className="h-12 rounded-full bg-[#E51D2A] px-4 text-center text-xs font-black uppercase leading-12 text-white">Join Now</a></nav></div>}
     </header>
   );
 }

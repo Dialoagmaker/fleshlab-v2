@@ -2,11 +2,15 @@ export const OFFICIAL_FLESHLAB_LOGO_URL = "https://media.base44.com/images/publi
 
 export default function BrandLogo({ className = "", imageClassName = "" }) {
   return (
-    <span className={`inline-block overflow-hidden align-middle ${className}`} aria-label="FLESHLAB">
+    <span className={`inline-flex items-center justify-center overflow-hidden align-middle ${className}`} aria-label="FLESHLAB">
       <img
         src={OFFICIAL_FLESHLAB_LOGO_URL}
         alt="FLESHLAB Amateur Wins"
-        className={`h-full w-full scale-[3.05] object-contain ${imageClassName}`}
+        width="1024"
+        height="683"
+        decoding="async"
+        draggable="false"
+        className={`block h-auto w-full max-w-none shrink-0 select-none ${imageClassName}`}
       />
     </span>
   );
