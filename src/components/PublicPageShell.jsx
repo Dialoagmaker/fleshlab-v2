@@ -18,7 +18,7 @@ export default function PublicPageShell({ children, noIndex }) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] overflow-x-hidden">
+    <div className="min-h-screen bg-[#070707] overflow-x-hidden">
       <TubeHeader />
       <main className="w-full pb-16 md:pb-0">
         {children}
