@@ -70,6 +70,8 @@ import PerformerLogin from './pages/performer/PerformerLogin';
 
 import Account from './pages/Account';
 import ClientDashboardGuard from './components/ClientDashboardGuard';
+import StaffGuard from './components/StaffGuard';
+import StaffToolLayout from './components/StaffToolLayout';
 // Public pages
 import PublicVideos from './pages/Videos';
 import VideoDetail from './pages/VideoDetail';
@@ -492,8 +494,13 @@ const AuthenticatedApp = () => {
         {/* V1 root performer slugs — MUST be last so static paths above win */}
         <Route path="/:slug" element={<LegacyPerformerSlug />} />
       </Route>
-      {/* Protected routes for non-admin roles — noindex */}
+      {/* Protected routes for staff and non-admin roles — noindex */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route element={<StaffGuard />}>
+          <Route element={<StaffToolLayout />}>
+            <Route path="/tools/ai-text-generator" element={<><SEOMeta title="AI Text Generator" description="FLESHLAB staff AI text generator" canonical="/tools/ai-text-generator" noIndex={true} /><AITextGenerator /></>} />
+          </Route>
+        </Route>
         <Route path="/account" element={<><SEOMeta title="Account Settings" description="Manage your account settings" canonical="/account" noIndex={true} /><Account /></>} />
       </Route>
       

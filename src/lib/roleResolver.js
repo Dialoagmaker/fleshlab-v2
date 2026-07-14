@@ -27,13 +27,19 @@ export function getDashboardPath(user) {
     return '/admin/dashboard';
   }
 
-  // Priority 2: Performer-linked users
+  // Priority 2: Staff users without admin access
+  if (['manager', 'staff', 'employee'].includes(user.role)) {
+    console.log('[RoleResolver] Staff detected → /tools/ai-text-generator');
+    return '/tools/ai-text-generator';
+  }
+
+  // Priority 3: Performer-linked users
   if (user.role === 'performer' || user.performer_profile_id || user.performer_id) {
     console.log('[RoleResolver] Performer detected → /performer/dashboard');
     return '/performer/dashboard';
   }
 
-  // Priority 3: Client/Customer users (if you have client entity tracking)
+  // Priority 4: Client/Customer users (if you have client entity tracking)
   // For now, fallback to client dashboard for any authenticated user
   console.log('[RoleResolver] Client/Fallback → /client/dashboard');
   return '/client/dashboard';
@@ -65,6 +71,7 @@ export function isPerformer(user) {
 export function getUserRoleLabel(user) {
   if (!user) return 'guest';
   if (isAdmin(user)) return 'admin';
+  if (['manager', 'staff', 'employee'].includes(user.role)) return 'staff';
   if (isPerformer(user)) return 'performer';
   return 'client';
 }

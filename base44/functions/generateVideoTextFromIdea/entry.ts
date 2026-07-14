@@ -121,10 +121,11 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    // Admin only
+    // Staff tool access: admins and managers only
     const user = await base44.auth.me();
-    if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Unauthorized: Admin access required' }, { status: 403 });
+    const allowedRoles = ['admin', 'super_admin', 'manager', 'staff', 'employee'];
+    if (!user || !allowedRoles.includes(user.role)) {
+      return Response.json({ error: 'Unauthorized: Staff access required' }, { status: 403 });
     }
 
     const { 
