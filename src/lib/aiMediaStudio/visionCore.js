@@ -67,6 +67,10 @@ function deriveTorsoBox(subjectBox, faceBox) {
   return roundBox({ x: subjectBox.x + subjectBox.w * 0.16, y: subjectBox.y + subjectBox.h * 0.18, w: subjectBox.w * 0.68, h: subjectBox.h * 0.5 });
 }
 
+function selectiveCurve(value) {
+  return clamp((value - 0.25) / 0.56);
+}
+
 export function analyzeVisionFromImageData(imageData, options = {}) {
   const cols = options.cols || 12;
   const rows = options.rows || 8;
@@ -142,20 +146,32 @@ export function analyzeVisionFromImageData(imageData, options = {}) {
   const backgroundComplexity = clamp(cells.reduce((sum, cell) => sum + cell.clutterScore, 0) / cells.length);
   const dominance = clamp(bodyBox.w * bodyBox.h * 1.45);
   const edgeInset = Math.min(bodyBox.x, bodyBox.y, 1 - (bodyBox.x + bodyBox.w), 1 - (bodyBox.y + bodyBox.h));
-  const cropRisk = clamp((0.045 - edgeInset) / 0.045);
+  const edgeTension = clamp((0.11 - edgeInset) / 0.11);
+  const destructiveCropRisk = clamp((0.12 - dominance) / 0.12) * clamp((0.02 - edgeInset) / 0.02);
   const lightingScore = clamp(1 - Math.abs(brightness - 126) / 126);
   const focusStrength = clamp(cells.reduce((sum, cell) => sum + cell.focusScore, 0) / cells.length);
-  const separationScore = clamp((1 - backgroundComplexity) * 0.34 + safeTypographyZone.score * 0.32 + dominance * 0.34);
-  const visibilityScore = clamp(dominance * 0.52 + (1 - cropRisk) * 0.28 + (faceBox ? 0.2 : 0.06));
-  const thumbnailImpact = clamp(dominance * 0.22 + safeTypographyZone.score * 0.22 + separationScore * 0.22 + lightingScore * 0.16 + focusStrength * 0.18);
-  const storyScore = clamp((faceBox ? 0.22 : 0.08) + visibilityScore * 0.26 + separationScore * 0.2 + safeTypographyZone.score * 0.14 + thumbnailImpact * 0.18);
+  const averageSaturation = clamp(cells.reduce((sum, cell) => sum + cell.saturation, 0) / cells.length);
+  const closeUpStrength = clamp((dominance - 0.2) / 0.42);
+  const asymmetry = clamp(Math.abs(center.x - 0.5) * 1.9 + Math.abs(center.y - 0.48) * 0.9);
+  const separationScore = clamp((1 - backgroundComplexity) * 0.26 + safeTypographyZone.score * 0.24 + dominance * 0.26 + focusStrength * 0.24);
+  const sceneReadability = clamp(dominance * 0.24 + separationScore * 0.28 + lightingScore * 0.16 + focusStrength * 0.18 + (faceBox ? 0.14 : 0.05) - destructiveCropRisk * 0.42);
+  const visualCuriosity = clamp(edgeTension * 0.18 + closeUpStrength * 0.2 + focusStrength * 0.22 + asymmetry * 0.14 + averageSaturation * 0.1 + safeTypographyZone.score * 0.08 + dominance * 0.08);
+  const intimacy = clamp(closeUpStrength * 0.38 + (faceBox ? 0.24 : 0.08) + dominance * 0.22 + lightingScore * 0.16);
+  const interactionStrength = clamp(focusStrength * 0.34 + edgeTension * 0.22 + asymmetry * 0.18 + separationScore * 0.18 + averageSaturation * 0.08);
+  const bodyLanguage = clamp(dominance * 0.24 + edgeTension * 0.22 + asymmetry * 0.2 + focusStrength * 0.2 + separationScore * 0.14);
+  const emotionalPresence = clamp((faceBox ? 0.36 : 0.12) + intimacy * 0.28 + lightingScore * 0.16 + focusStrength * 0.2);
+  const storyContinuation = clamp(edgeTension * 0.28 + asymmetry * 0.26 + interactionStrength * 0.24 + visualCuriosity * 0.22);
+  const thumbnailImpact = clamp(visualCuriosity * 0.24 + sceneReadability * 0.22 + bodyLanguage * 0.18 + intimacy * 0.14 + interactionStrength * 0.14 + storyContinuation * 0.08);
+  const clickPotentialRaw = clamp(visualCuriosity * 0.23 + sceneReadability * 0.2 + interactionStrength * 0.16 + bodyLanguage * 0.14 + emotionalPresence * 0.12 + thumbnailImpact * 0.1 + storyContinuation * 0.05 - destructiveCropRisk * 0.24);
+  const storyScore = clamp(Math.pow(selectiveCurve(clickPotentialRaw), 0.72));
+  const imageQualityScore = clamp(lightingScore * 0.24 + focusStrength * 0.24 + sceneReadability * 0.22 + separationScore * 0.18 + (1 - destructiveCropRisk) * 0.12);
 
   return {
     source: options.source || "heuristic",
     dimensions: { width, height },
     capabilities: { faceDetection: Boolean(options.faceDetectionSupported) },
     subjectCount: saliencyWeight ? 1 : 0,
-    primarySubject: { box: bodyBox, visualFocus: center, side, dominance, visibilityScore, cropRisk, separationScore, faceVisible: Boolean(faceBox) },
+    primarySubject: { box: bodyBox, visualFocus: center, side, dominance, visibilityScore: sceneReadability, cropRisk: destructiveCropRisk, edgeTension, separationScore, faceVisible: Boolean(faceBox) },
     faceBox: faceBox || undefined,
     bodyBox,
     torsoBox: deriveTorsoBox(bodyBox, faceBox),
@@ -167,8 +183,15 @@ export function analyzeVisionFromImageData(imageData, options = {}) {
     cells,
     brightness: Number(brightness.toFixed(2)),
     backgroundComplexity: Number(backgroundComplexity.toFixed(2)),
+    visualCuriosity: Number(visualCuriosity.toFixed(2)),
+    sceneReadability: Number(sceneReadability.toFixed(2)),
+    interactionStrength: Number(interactionStrength.toFixed(2)),
+    bodyLanguage: Number(bodyLanguage.toFixed(2)),
+    emotionalPresence: Number(emotionalPresence.toFixed(2)),
+    storyContinuation: Number(storyContinuation.toFixed(2)),
+    clickPotential: Number(clickPotentialRaw.toFixed(2)),
     thumbnailImpact: Number(thumbnailImpact.toFixed(2)),
     storyScore: Number(storyScore.toFixed(2)),
-    imageQualityScore: Number(clamp(lightingScore * 0.26 + focusStrength * 0.16 + (1 - cropRisk) * 0.18 + safeTypographyZone.score * 0.2 + separationScore * 0.2).toFixed(2)),
+    imageQualityScore: Number(imageQualityScore.toFixed(2)),
   };
 }

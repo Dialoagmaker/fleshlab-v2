@@ -33,6 +33,13 @@ export async function analyzePosterImage(image, targetWidth = 360) {
     subjectVisibility: Number((vision.primarySubject?.visibilityScore || 0).toFixed(2)),
     subjectSeparation: Number((vision.primarySubject?.separationScore || 0).toFixed(2)),
     subjectCropRisk: Number((vision.primarySubject?.cropRisk || 0).toFixed(2)),
+    visualCuriosity: vision.visualCuriosity,
+    sceneReadability: vision.sceneReadability,
+    interactionStrength: vision.interactionStrength,
+    bodyLanguage: vision.bodyLanguage,
+    emotionalPresence: vision.emotionalPresence,
+    storyContinuation: vision.storyContinuation,
+    clickPotential: vision.clickPotential,
     thumbnailImpact: vision.thumbnailImpact,
     storyScore: vision.storyScore,
     imageQualityScore: vision.imageQualityScore,
@@ -48,20 +55,19 @@ export async function analyzePosterImage(image, targetWidth = 360) {
 export function scorePosterCandidate({ analysis, typographyScore = 0.7, brandScore = 0.82, layoutScore = 0.7 }) {
   const faceScore = analysis.detections?.face ? 1 : analysis.vision?.capabilities?.faceDetection ? 0.18 : 0.45;
   const typographySafety = clamp(analysis.negativeSpace.score * 0.66 + typographyScore * 0.34);
-  const story = clamp((analysis.storyScore || 0) * 0.52 + faceScore * 0.14 + (analysis.subjectVisibility || 0) * 0.18 + (analysis.subjectSeparation || 0) * 0.16);
-  const imageQuality = clamp((analysis.imageQualityScore || 0) * 0.38 + (analysis.thumbnailImpact || 0) * 0.24 + (1 - (analysis.backgroundComplexity || 0)) * 0.14 + typographySafety * 0.24);
-  const hierarchy = clamp(story * 0.36 + typographySafety * 0.32 + layoutScore * 0.2 + brandScore * 0.12);
-  const composition = clamp(layoutScore * 0.34 + typographySafety * 0.28 + (analysis.subjectSeparation || 0) * 0.22 + (1 - (analysis.subjectCropRisk || 0)) * 0.16);
-  const marketing = clamp((analysis.thumbnailImpact || 0) * 0.34 + story * 0.3 + imageQuality * 0.22 + brandScore * 0.14);
-  const total = clamp(story * 0.3 + composition * 0.24 + imageQuality * 0.22 + hierarchy * 0.14 + marketing * 0.1);
+  const story = clamp((analysis.storyScore || 0) * 0.46 + (analysis.clickPotential || 0) * 0.18 + (analysis.visualCuriosity || 0) * 0.12 + (analysis.sceneReadability || 0) * 0.12 + faceScore * 0.06 + (analysis.interactionStrength || 0) * 0.06);
+  const imageQuality = clamp((analysis.imageQualityScore || 0) * 0.42 + (analysis.sceneReadability || 0) * 0.24 + (analysis.thumbnailImpact || 0) * 0.18 + typographySafety * 0.16);
+  const hierarchy = clamp(story * 0.38 + typographySafety * 0.28 + layoutScore * 0.18 + (analysis.thumbnailImpact || 0) * 0.16);
+  const composition = clamp(layoutScore * 0.28 + typographySafety * 0.22 + (analysis.sceneReadability || 0) * 0.22 + (analysis.bodyLanguage || 0) * 0.16 + (analysis.subjectSeparation || 0) * 0.12);
+  const marketing = clamp((analysis.clickPotential || 0) * 0.34 + story * 0.28 + (analysis.visualCuriosity || 0) * 0.16 + imageQuality * 0.12 + brandScore * 0.1);
+  const total = clamp(story * 0.34 + marketing * 0.22 + imageQuality * 0.2 + composition * 0.14 + hierarchy * 0.1);
   const qualityFailures = [];
-  if (analysis.subjectDominance < 0.16) qualityFailures.push("performer too small");
-  if (analysis.subjectVisibility < 0.32) qualityFailures.push("performer not readable");
-  if (analysis.subjectCropRisk > 0.72) qualityFailures.push("body cropped awkwardly");
-  if (analysis.backgroundComplexity > 0.78) qualityFailures.push("background clutter dominates");
-  if (analysis.negativeSpace.score < 0.32) qualityFailures.push("no safe typography space");
+  if (analysis.subjectDominance < 0.18) qualityFailures.push("performer too small");
+  if (analysis.sceneReadability < 0.3) qualityFailures.push("subject cannot be recognised");
+  if (analysis.subjectCropRisk > 0.72) qualityFailures.push("crop destroys visual understanding");
+  if (analysis.backgroundComplexity > 0.86 && analysis.subjectSeparation < 0.34) qualityFailures.push("unreadable silhouette");
   if (analysis.thumbnailImpact < 0.34) qualityFailures.push("weak thumbnail impact");
-  if (analysis.vision?.capabilities?.faceDetection && !analysis.detections?.face) qualityFailures.push("face not visible enough");
+  if (analysis.vision?.capabilities?.faceDetection && !analysis.detections?.face && analysis.sceneReadability < 0.42) qualityFailures.push("face and subject not readable enough");
   if (total < 0.55) qualityFailures.push("weak story score");
 
   return {

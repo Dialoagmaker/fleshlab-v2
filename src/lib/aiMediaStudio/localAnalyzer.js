@@ -66,12 +66,17 @@ function calculateHeroMetrics(imageData, metrics) {
   const lighting = clamp(1 - Math.abs(metrics.brightness - 126) / 126 - metrics.overexposure * 0.018 - metrics.underexposure * 0.018, 0, 1);
   const sharpnessScore = clamp(metrics.sharpness / 10, 0, 1);
   const transitionPenalty = metrics.visualDifference > 30 ? clamp((metrics.visualDifference - 30) / 28, 0, 0.32) : 0;
+  const motionEnergy = clamp(metrics.visualDifference / 24, 0, 1);
+  const blurPenalty = sharpnessScore < 0.25 ? (0.25 - sharpnessScore) * 120 : 0;
   const storyScore = clamp(
-    Number(vision.storyScore || 0) * 72 +
-    Number(vision.thumbnailImpact || 0) * 14 +
-    lighting * 8 +
-    sharpnessScore * 6 -
-    transitionPenalty * 100,
+    Number(vision.storyScore || 0) * 68 +
+    Number(vision.clickPotential || 0) * 18 +
+    Number(vision.visualCuriosity || 0) * 8 +
+    Number(vision.interactionStrength || 0) * 6 +
+    motionEnergy * 5 +
+    lighting * 4 -
+    transitionPenalty * 80 -
+    blurPenalty,
     0,
     100
   );
@@ -83,6 +88,13 @@ function calculateHeroMetrics(imageData, metrics) {
     subjectDominance: Number((subject.dominance || 0).toFixed(2)),
     negativeSpaceScore: Number((vision.safeTypographyZone?.score || 0).toFixed(2)),
     compositionScore: Number((subject.separationScore || 0).toFixed(2)),
+    visualCuriosity: Number((vision.visualCuriosity || 0).toFixed(2)),
+    sceneReadability: Number((vision.sceneReadability || 0).toFixed(2)),
+    interactionStrength: Number((vision.interactionStrength || 0).toFixed(2)),
+    bodyLanguage: Number((vision.bodyLanguage || 0).toFixed(2)),
+    emotionalPresence: Number((vision.emotionalPresence || 0).toFixed(2)),
+    storyContinuation: Number((vision.storyContinuation || 0).toFixed(2)),
+    clickPotential: Number((vision.clickPotential || 0).toFixed(2)),
     thumbnailImpact: Number((vision.thumbnailImpact || 0).toFixed(2)),
     centroidX: Number((subject.visualFocus?.x || 0.5).toFixed(2)),
     centroidY: Number((subject.visualFocus?.y || 0.46).toFixed(2)),
@@ -94,7 +106,7 @@ function calculateHeroMetrics(imageData, metrics) {
     rightHeroRatio: Number(((subject.visualFocus?.x || 0.5) > 0.5 ? 1 : 0.45).toFixed(2)),
     centerInterestRatio: Number((subject.separationScore || 0).toFixed(2)),
     faceZoneRatio: subject.faceVisible ? 1 : 0,
-    suitable: storyScore >= 58 && Number(subject.dominance || 0) >= 0.16 && Number(vision.safeTypographyZone?.score || 0) >= 0.2 && sharpnessScore >= 0.25,
+    suitable: storyScore >= 58 && Number(subject.dominance || 0) >= 0.18 && Number(vision.sceneReadability || 0) >= 0.3 && sharpnessScore >= 0.25,
   };
 }
 
@@ -258,14 +270,14 @@ export function rankHeroFrames(frames, limit = 12, minimumScore = 58) {
       const hero = frame.hero || {};
       return hero.suitable &&
         Number(hero.posterScore || hero.score || 0) >= minimumScore &&
-        Number(hero.subjectDominance || 0) >= 0.16 &&
-        Number(hero.negativeSpaceScore || 0) >= 0.2;
+        Number(hero.subjectDominance || 0) >= 0.18 &&
+        Number(hero.sceneReadability || 0) >= 0.3;
     })
     .sort((a, b) => {
       const aHero = a.hero || {};
       const bHero = b.hero || {};
-      const aPremium = Number(aHero.storyScore || aHero.posterScore || aHero.score || 0) + Number(aHero.thumbnailImpact || 0) * 34 + Number(aHero.compositionScore || 0) * 22 + Number(aHero.negativeSpaceScore || 0) * 16 + Number(aHero.subjectDominance || 0) * 12 + (aHero.faceVisible ? 10 : 0) - Number(aHero.cropRisk || 0) * 20;
-      const bPremium = Number(bHero.storyScore || bHero.posterScore || bHero.score || 0) + Number(bHero.thumbnailImpact || 0) * 34 + Number(bHero.compositionScore || 0) * 22 + Number(bHero.negativeSpaceScore || 0) * 16 + Number(bHero.subjectDominance || 0) * 12 + (bHero.faceVisible ? 10 : 0) - Number(bHero.cropRisk || 0) * 20;
+      const aPremium = Number(aHero.storyScore || aHero.posterScore || aHero.score || 0) + Number(aHero.clickPotential || 0) * 32 + Number(aHero.visualCuriosity || 0) * 22 + Number(aHero.interactionStrength || 0) * 18 + Number(aHero.sceneReadability || 0) * 18 + Number(aHero.thumbnailImpact || 0) * 16 + (aHero.faceVisible ? 6 : 0) - Number(aHero.cropRisk || 0) * 28;
+      const bPremium = Number(bHero.storyScore || bHero.posterScore || bHero.score || 0) + Number(bHero.clickPotential || 0) * 32 + Number(bHero.visualCuriosity || 0) * 22 + Number(bHero.interactionStrength || 0) * 18 + Number(bHero.sceneReadability || 0) * 18 + Number(bHero.thumbnailImpact || 0) * 16 + (bHero.faceVisible ? 6 : 0) - Number(bHero.cropRisk || 0) * 28;
       return bPremium - aPremium;
     })
     .slice(0, limit);
