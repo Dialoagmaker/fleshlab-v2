@@ -51,6 +51,7 @@ import DuplicateVideos from './pages/admin/DuplicateVideos';
 import LegacyAssetInventory from './pages/admin/LegacyAssetInventory';
 import AssetRepairQueue from './pages/admin/AssetRepairQueue';
 import AITextGenerator from './pages/admin/AITextGenerator';
+import AIMediaStudio from './pages/admin/AIMediaStudio';
 import AdminUsers from './pages/admin/Users';
 import AdminUserDetail from './pages/admin/UserDetail';
 import FunnelAnalytics from './pages/admin/FunnelAnalytics';
@@ -212,6 +213,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/asset-repair-queue" element={<AssetRepairQueue />} />
                 <Route path="/admin/asset-repair-queue" element={<AssetRepairQueue />} />
                 <Route path="/admin/ai-text-generator" element={<AITextGenerator />} />
+                <Route path="/admin/ai-media-studio" element={<AIMediaStudio />} />
                 <Route path="/admin/growth" element={<GrowthDashboard />} />
                 <Route path="/admin/executive-dashboard" element={<ExecutiveDashboard />} />
                 <Route path="/admin/payments" element={<AdminPayments />} />

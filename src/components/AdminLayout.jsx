@@ -46,6 +46,7 @@ const NAV_GROUPS = [
       { href: "/admin/monthly-closeout",              label: "Monthly Closeout", icon: DollarSign },
       { href: "/admin/performer-support",             label: "Performer Support", icon: MessageSquare },
       { href: "/admin/ai-text-generator",             label: "AI Text Generator", icon: Sparkles },
+      { href: "/admin/ai-media-studio",               label: "AI Media Studio", icon: Sparkles },
     ],
   },
   {
