@@ -16,7 +16,7 @@ export default function CoverV3Mode({ frame, metadata, settings, itemFileName })
           <Badge variant="outline">Poster Engine v3</Badge>
         </div>
         <p className="text-xs text-muted-foreground">
-          Art-directed pipeline: hero-frame analysis, key-art treatment, protected performer zones, dynamic typography, and Poster Impact Score gating.
+          Art-directed pipeline: hero-frame analysis, key-art treatment, protected performer zones, dynamic typography, multi-candidate generation, and winner selection.
         </p>
       </CardHeader>
       <CardContent className="p-4 pt-0">

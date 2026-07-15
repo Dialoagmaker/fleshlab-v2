@@ -5,8 +5,20 @@ import { Button } from '@/components/ui/button';
 import { blobToCanvasImage } from '@/lib/aiMediaStudio/coverRenderer';
 import { canvasToBlob, generateKeyArtPlan, getCoverDimensions, renderKeyArtToCanvas } from '@/lib/aiMediaStudio/posterKeyArtRenderer';
 
+function MetricRow({ candidate }) {
+  return (
+    <div className="mt-2 grid grid-cols-4 gap-1 text-[10px] text-muted-foreground">
+      <span>Impact <b className="text-foreground">{candidate.impact_score}</b></span>
+      <span>Hero <b className="text-foreground">{candidate.hero_score}</b></span>
+      <span>Thumb <b className="text-foreground">{candidate.thumbnail_score}</b></span>
+      <span>Comm. <b className="text-foreground">{candidate.commercial_score}</b></span>
+    </div>
+  );
+}
+
 export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSuffix = 'key-art-v3' }) {
-  const canvasRef = useRef(null);
+  const winnerCanvasRef = useRef(null);
+  const candidateRefs = useRef([]);
   const imageRef = useRef(null);
   const rafRef = useRef(null);
   const [plan, setPlan] = useState(null);
@@ -29,7 +41,7 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
         const nextPlan = await generateKeyArtPlan(image, metadata, settings, dims.width, dims.height);
         if (active) setPlan(nextPlan);
       } catch (err) {
-        if (active) setError(err.message || 'v3 art direction failed');
+        if (active) setError(err.message || 'v3 candidate generation failed');
       }
     })();
     return () => {
@@ -40,16 +52,22 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
   }, [key]);
 
   useEffect(() => {
-    if (!plan || !imageRef.current || !canvasRef.current) return;
+    if (!plan || !imageRef.current || !winnerCanvasRef.current) return;
     window.cancelAnimationFrame(rafRef.current);
     setRendered(false);
     const frameId = window.requestAnimationFrame(async () => {
       try {
-        await renderKeyArtToCanvas(canvasRef.current, imageRef.current, plan, metadata, settings, dims.width, dims.height);
+        const visibleCandidates = plan.variants.slice(0, 4);
+        await Promise.all(visibleCandidates.map((candidate, index) => {
+          const canvas = candidateRefs.current[index];
+          if (!canvas) return Promise.resolve();
+          return renderKeyArtToCanvas(canvas, imageRef.current, plan, metadata, settings, dims.width, dims.height, candidate);
+        }));
+        await renderKeyArtToCanvas(winnerCanvasRef.current, imageRef.current, plan, metadata, settings, dims.width, dims.height, plan.selected);
         setRendered(true);
         setError('');
       } catch (err) {
-        setError(err.message || 'v3 render rejected');
+        setError(err.message || 'v3 candidate render failed');
       }
     });
     rafRef.current = frameId;
@@ -57,40 +75,65 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
   }, [plan, settings, metadata, dims.width, dims.height]);
 
   const download = async (type) => {
-    if (!rendered || !canvasRef.current) return;
+    if (!rendered || !winnerCanvasRef.current) return;
     const ext = type === 'image/png' ? 'png' : 'jpg';
-    const blob = await canvasToBlob(canvasRef.current, type, 0.92);
+    const blob = await canvasToBlob(winnerCanvasRef.current, type, 0.92);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `fleshlab_${fileSuffix}_${dims.width}x${dims.height}.${ext}`;
+    a.download = `fleshlab_${fileSuffix}_winner_${dims.width}x${dims.height}.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
+  const visibleCandidates = plan?.variants?.slice(0, 4) || [];
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 className="font-bold text-foreground">Automatic Key Art Generator</h3>
+          <h3 className="font-bold text-foreground">Automatic Commercial Key Art Generator</h3>
           <p className="text-xs text-muted-foreground">
-            {plan ? `${plan.artDirection.emotional_goal} · Impact ${plan.selected.impact_score}/100` : `Exact output size: ${dims.width} × ${dims.height}px`}
+            {plan ? `Generated ${plan.variants.length} poster candidates · Winner Impact ${plan.selected.impact_score}/100` : `Exact output size: ${dims.width} × ${dims.height}px`}
           </p>
         </div>
-        <Badge variant={rendered ? 'outline' : 'secondary'}>{rendered ? 'v3 key art' : 'Art directing'}</Badge>
+        <Badge variant={rendered ? 'outline' : 'secondary'}>{rendered ? 'Candidates ready' : 'Generating candidates'}</Badge>
       </div>
+
       {error && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
-      {plan?.artDirection?.design_review && (
+
+      {plan?.selected && (
         <div className="rounded-lg border border-border bg-secondary/30 p-3 text-xs text-muted-foreground">
-          Dominant element: <span className="text-foreground">{plan.artDirection.visual_priority.dominant_element}</span> · Eye path: {plan.artDirection.eye_path.join(' → ')}
+          Winner: <span className="text-foreground">{plan.selected.variant}</span> · {plan.winner_reason}
+          <MetricRow candidate={plan.selected} />
         </div>
       )}
+
       <div className="relative overflow-auto rounded-xl border border-border bg-black p-3">
-        <canvas ref={canvasRef} className="mx-auto h-auto max-h-[72vh] max-w-full rounded-lg" />
+        <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Winning Candidate</p>
+        <canvas ref={winnerCanvasRef} className="mx-auto h-auto max-h-[72vh] max-w-full rounded-lg" />
       </div>
+
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {visibleCandidates.map((candidate, index) => (
+          <div key={candidate.variant} className={`rounded-xl border p-2 ${candidate.variant === plan.selected.variant ? 'border-primary bg-primary/10' : 'border-border bg-secondary/20'}`}>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-xs font-bold text-foreground">Candidate {index + 1}</span>
+              {candidate.variant === plan.selected.variant && <Badge variant="outline">Winner</Badge>}
+            </div>
+            <canvas ref={(node) => { candidateRefs.current[index] = node; }} className="h-auto w-full rounded-lg bg-black" />
+            <p className="mt-2 text-xs text-muted-foreground">{candidate.variant}</p>
+            <MetricRow candidate={candidate} />
+            {!!candidate.rejection_reasons?.length && (
+              <p className="mt-2 text-[10px] text-muted-foreground">Needs work: {candidate.rejection_reasons.join(', ')}</p>
+            )}
+          </div>
+        ))}
+      </div>
+
       <div className="grid gap-2 sm:grid-cols-2">
-        <Button disabled={!rendered} onClick={() => download('image/png')} className="gap-2"><Download className="h-4 w-4" />Download PNG</Button>
-        <Button disabled={!rendered} onClick={() => download('image/jpeg')} variant="outline" className="gap-2"><Download className="h-4 w-4" />Download JPG</Button>
+        <Button disabled={!rendered} onClick={() => download('image/png')} className="gap-2"><Download className="h-4 w-4" />Download Winner PNG</Button>
+        <Button disabled={!rendered} onClick={() => download('image/jpeg')} variant="outline" className="gap-2"><Download className="h-4 w-4" />Download Winner JPG</Button>
       </div>
     </div>
   );

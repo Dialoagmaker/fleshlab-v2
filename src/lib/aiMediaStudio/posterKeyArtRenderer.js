@@ -22,13 +22,15 @@ function font(size, family = 'Bebas Neue', weight = 900) {
   return `${weight} ${size}px "${family}", Impact, Arial, sans-serif`;
 }
 
-function cropCover(image, width, height, subjectBox = {}, mode = 'hero') {
+function cropCover(image, width, height, subjectBox = {}, mode = 'hero', zoom = 1) {
   const outputAspect = width / height;
   const sourceAspect = image.width / image.height;
   let sw = image.width;
   let sh = image.height;
   if (sourceAspect > outputAspect) sw = image.height * outputAspect;
   else sh = image.width / outputAspect;
+  sw = Math.max(1, sw / zoom);
+  sh = Math.max(1, sh / zoom);
 
   const cx = ((subjectBox.x || 0.35) + (subjectBox.w || 0.3) / 2) * image.width;
   const cy = ((subjectBox.y || 0.22) + (subjectBox.h || 0.56) / 2) * image.height;
@@ -55,27 +57,39 @@ function buildLayout(analysis, artDirection, variant, width, height) {
   const textW = leftOpen ? 0.42 : 0.38;
   let textZone = { x: textX, y: dominant === 'main_title' ? 0.34 : 0.47, w: textW, h: 0.36, align: 'left' };
 
+  if (variant === 'close_hero') textZone = { x: leftOpen ? 0.055 : 0.6, y: subject.y > 0.42 ? 0.08 : 0.6, w: leftOpen ? 0.4 : 0.34, h: 0.28, align: 'left' };
   if (variant === 'floating') textZone = { x: leftOpen ? 0.08 : 0.52, y: 0.18, w: 0.4, h: 0.32, align: 'left' };
   if (variant === 'lower') textZone = { x: 0.07, y: 0.62, w: 0.55, h: 0.26, align: 'left' };
+  if (variant === 'brand_hero') textZone = { x: leftOpen ? 0.06 : 0.58, y: 0.42, w: leftOpen ? 0.42 : 0.35, h: 0.34, align: 'left' };
   if (overlaps(textZone, subject)) textZone = { x: leftOpen ? 0.055 : 0.58, y: subject.y > 0.38 ? 0.08 : 0.62, w: leftOpen ? 0.42 : 0.36, h: 0.3, align: 'left' };
+
+  const cropZoom = variant === 'close_hero' ? 1.16 : variant === 'brand_hero' ? 1.08 : variant === 'floating' ? 1.04 : 1;
+  const logoWidth = variant === 'brand_hero' ? 0.15 : clamp(width > height ? 0.13 : 0.145, 0.12, 0.15);
 
   return {
     cropMode: dominant === 'environment' ? 'environment' : dominant === 'main_title' ? 'title' : 'hero',
+    cropZoom,
     subjectBox: subject,
     textZone,
-    logo: { x: textZone.x, y: Math.max(0.045, textZone.y - 0.13), w: clamp(width > height ? 0.13 : 0.145, 0.12, 0.15) },
+    logo: { x: textZone.x, y: Math.max(0.045, textZone.y - 0.13), w: logoWidth },
     footer: { x: textZone.x, y: 0.94, w: 0.72 },
     protectedZones: ['eyes', 'face', 'head', 'chest', 'torso', 'tattoos', 'hands', 'body silhouette'],
   };
 }
 
 function scoreCandidate(layout, artDirection, analysis) {
-  let score = 96;
-  if (overlaps(layout.textZone, layout.subjectBox)) score -= 18;
-  if ((analysis.backgroundComplexity || 0.5) > 0.72) score -= 4;
-  if (!artDirection.design_review?.export_ready) score -= 3;
-  if (layout.logo.w < 0.12 || layout.logo.w > 0.15) score -= 5;
-  return clamp(Math.round(score), 0, 100);
+  const subjectArea = (layout.subjectBox.w || 0.3) * (layout.subjectBox.h || 0.55);
+  const collision = overlaps(layout.textZone, layout.subjectBox);
+  const hero_score = clamp(Math.round(68 + subjectArea * 70 + (layout.cropZoom - 1) * 58 - (analysis.backgroundComplexity || 0.5) * 8 - (collision ? 18 : 0)), 0, 100);
+  const thumbnail_score = clamp(Math.round(72 + layout.logo.w * 90 - (collision ? 22 : 0) - (layout.textZone.y > 0.66 ? 4 : 0)), 0, 100);
+  const commercial_score = clamp(Math.round(70 + (artDirection.design_review?.export_ready ? 10 : 4) + (layout.cropZoom - 1) * 30 - (analysis.backgroundComplexity || 0.5) * 5), 0, 100);
+  const impact_score = clamp(Math.round(hero_score * 0.42 + thumbnail_score * 0.26 + commercial_score * 0.32), 0, 100);
+  const rejection_reasons = [];
+  if (hero_score < 82) rejection_reasons.push('Hero score below target');
+  if (thumbnail_score < 82) rejection_reasons.push('Thumbnail recognition below target');
+  if (commercial_score < 82) rejection_reasons.push('Commercial curiosity below target');
+  if (collision) rejection_reasons.push('Typography overlaps protected hero geometry');
+  return { impact_score, hero_score, thumbnail_score, commercial_score, rejection_reasons };
 }
 
 function splitTitle(metadata = {}) {
@@ -250,27 +264,34 @@ export async function generateKeyArtPlan(image, metadata, settings, width, heigh
   const analysis = await analyzePosterImage(image);
   const family = choosePosterFamily(analysis, metadata);
   const artDirection = createPosterArtDirectionPlan({ visionAnalysis: analysis, storyAnalysis: {}, heroPerformer: metadata?.performerName, posterFamily: family, metadata });
-  const variants = ['anchor', 'floating', 'lower'].map(variant => {
+  const variants = ['anchor', 'close_hero', 'floating', 'lower', 'brand_hero'].map((variant, index) => {
     const layout = buildLayout(analysis, artDirection, variant, width, height);
-    const impact_score = scoreCandidate(layout, artDirection, analysis);
-    return { variant, layout, impact_score };
-  }).sort((a, b) => b.impact_score - a.impact_score);
-  return { analysis, family, artDirection, variants, selected: variants.find(item => item.impact_score >= 90) || variants[0] };
+    const scores = scoreCandidate(layout, artDirection, analysis);
+    return { candidate_number: index + 1, variant, layout, ...scores };
+  });
+  const selected = [...variants].sort((a, b) => b.impact_score - a.impact_score)[0];
+  return {
+    analysis,
+    family,
+    artDirection,
+    variants,
+    selected,
+    winner_reason: `${selected.variant} won because it produced the strongest combined Poster Impact, Hero, Thumbnail and Commercial scores.`,
+  };
 }
 
-export async function renderKeyArtToCanvas(canvas, image, plan, metadata, settings, width, height) {
-  if (plan.selected.impact_score < 90) throw new Error(`Poster Impact Score ${plan.selected.impact_score}/100. v3 rejected this composition before export.`);
+export async function renderKeyArtToCanvas(canvas, image, plan, metadata, settings, width, height, candidate = plan.selected) {
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
-  const crop = cropCover(image, width, height, plan.selected.layout.subjectBox, plan.selected.layout.cropMode);
-  drawKeyArtImage(ctx, image, crop, plan.selected.layout, width, height);
-  drawAtmosphericPanel(ctx, plan.selected.layout, width, height);
+  const crop = cropCover(image, width, height, candidate.layout.subjectBox, candidate.layout.cropMode, candidate.layout.cropZoom);
+  drawKeyArtImage(ctx, image, crop, candidate.layout, width, height);
+  drawAtmosphericPanel(ctx, candidate.layout, width, height);
   drawGrain(ctx, width, height);
-  await drawLogo(ctx, plan.selected.layout, width, height);
-  drawTypography(ctx, plan.selected.layout, metadata, plan.artDirection, width, height);
-  canvas.__fleshlabPosterPlan = plan;
-  return plan;
+  await drawLogo(ctx, candidate.layout, width, height);
+  drawTypography(ctx, candidate.layout, metadata, plan.artDirection, width, height);
+  canvas.__fleshlabPosterPlan = { ...plan, renderedCandidate: candidate };
+  return { ...plan, renderedCandidate: candidate };
 }
 
 export async function renderKeyArtCoverToCanvas(canvas, frameBlob, metadata, settings) {
