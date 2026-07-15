@@ -152,15 +152,6 @@ async function drawLogoAndClaim(ctx, width, height, preset) {
   ctx.shadowBlur = width * 0.012;
   ctx.drawImage(logo, x, y, logoW, logoH);
   ctx.restore();
-
-  const claimY = y + logoH + height * 0.028;
-  ctx.save();
-  ctx.font = fontBebas(width * 0.026, 400);
-  ctx.fillStyle = "rgba(255,255,255,0.86)";
-  ctx.fillText("AMATEUR", x + width * 0.03, claimY);
-  ctx.fillStyle = preset.red;
-  ctx.fillText("WINS.", x + width * 0.155, claimY);
-  ctx.restore();
 }
 
 function resolvePosterText(metadata) {
