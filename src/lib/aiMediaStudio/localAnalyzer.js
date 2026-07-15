@@ -62,7 +62,7 @@ function calculateHeroMetrics(imageData, metrics) {
   const data = imageData.data;
   const width = imageData.width;
   const height = imageData.height;
-  let sampled = 0, skin = 0, upperSkin = 0, rightSkin = 0, centerSkin = 0, cx = 0, cy = 0;
+  let sampled = 0, skin = 0, upperSkin = 0, rightSkin = 0, centerSkin = 0, faceZoneSkin = 0, cx = 0, cy = 0;
   for (let y = 0; y < height; y += 2) {
     for (let x = 0; x < width; x += 2) {
       const i = (y * width + x) * 4;
@@ -75,9 +75,10 @@ function calculateHeroMetrics(imageData, metrics) {
         skin += 1;
         cx += x;
         cy += y;
-        if (y < height * 0.62) upperSkin += 1;
-        if (x > width * 0.42) rightSkin += 1;
-        if (x > width * 0.28 && x < width * 0.86 && y < height * 0.78) centerSkin += 1;
+        if (y < height * 0.6) upperSkin += 1;
+        if (x > width * 0.4) rightSkin += 1;
+        if (x > width * 0.36 && x < width * 0.82 && y < height * 0.74) centerSkin += 1;
+        if (x > width * 0.48 && x < width * 0.82 && y > height * 0.12 && y < height * 0.5) faceZoneSkin += 1;
       }
     }
   }
@@ -85,29 +86,35 @@ function calculateHeroMetrics(imageData, metrics) {
   const upperRatio = skin ? upperSkin / skin : 0;
   const rightRatio = skin ? rightSkin / skin : 0;
   const centerRatio = skin ? centerSkin / skin : 0;
+  const faceZoneRatio = skin ? faceZoneSkin / skin : 0;
   const centroidX = skin ? cx / skin / width : 0;
   const centroidY = skin ? cy / skin / height : 0;
-  const presence = clamp(skinRatio * 5.2, 0, 38);
-  const heroPlacement = skin ? clamp((1 - Math.abs(centroidX - 0.66) / 0.54) * 14, 0, 14) + clamp((1 - Math.abs(centroidY - 0.43) / 0.5) * 8, 0, 8) : 0;
-  const upperBody = clamp(upperRatio * 18, 0, 18);
-  const rightHero = clamp(rightRatio * 13, 0, 13);
-  const centerInterest = clamp(centerRatio * 8, 0, 8);
-  const lighting = clamp(16 - Math.abs(metrics.brightness - 126) * 0.09 - metrics.overexposure * 1.7 - metrics.underexposure * 1.15, 0, 16);
-  const cinematicContrast = clamp(metrics.contrast * 0.36, 0, 11);
+  const presence = clamp(skinRatio * 6.2, 0, 44);
+  const heroPlacement = skin ? clamp((1 - Math.abs(centroidX - 0.66) / 0.34) * 16, 0, 16) + clamp((1 - Math.abs(centroidY - 0.42) / 0.34) * 10, 0, 10) : 0;
+  const upperBody = clamp(upperRatio * 24, 0, 24);
+  const rightHero = clamp(rightRatio * 12, 0, 12);
+  const centerInterest = clamp(centerRatio * 10, 0, 10);
+  const faceFocus = clamp(faceZoneRatio * 12, 0, 12);
+  const lighting = clamp(14 - Math.abs(metrics.brightness - 126) * 0.08 - metrics.overexposure * 1.6 - metrics.underexposure * 1.1, 0, 14);
+  const cinematicContrast = clamp(metrics.contrast * 0.32, 0, 10);
   const transitionPenalty = metrics.visualDifference > 28 ? (metrics.visualDifference - 28) * 1.25 : 0;
   const blurPenalty = metrics.sharpness < 5.5 ? (5.5 - metrics.sharpness) * 4 : 0;
-  const emptyPenalty = skinRatio < 1 ? 32 : skinRatio < 2.2 ? 16 : 0;
-  const hiddenPenalty = skin && upperRatio < 0.28 ? 12 : 0;
-  const score = clamp(presence + heroPlacement + upperBody + rightHero + centerInterest + lighting + cinematicContrast - transitionPenalty - blurPenalty - emptyPenalty - hiddenPenalty);
+  const emptyPenalty = skinRatio < 1.8 ? 40 : skinRatio < 3.4 ? 22 : 0;
+  const wallPenalty = skinRatio < 4 && metrics.contrast < 34 ? 18 : 0;
+  const hiddenPenalty = skin && upperRatio < 0.34 ? 16 : 0;
+  const edgePenalty = skin && (centroidX > 0.86 || centroidX < 0.38) ? 18 : 0;
+  const lowBodyPenalty = skin && centroidY > 0.68 ? 14 : 0;
+  const score = clamp(presence + heroPlacement + upperBody + rightHero + centerInterest + faceFocus + lighting + cinematicContrast - transitionPenalty - blurPenalty - emptyPenalty - wallPenalty - hiddenPenalty - edgePenalty - lowBodyPenalty);
   return {
     score: Number(score.toFixed(2)),
     skinRatio: Number(skinRatio.toFixed(2)),
     upperBodyRatio: Number(upperRatio.toFixed(2)),
     rightHeroRatio: Number(rightRatio.toFixed(2)),
     centerInterestRatio: Number(centerRatio.toFixed(2)),
+    faceZoneRatio: Number(faceZoneRatio.toFixed(2)),
     centroidX: Number(centroidX.toFixed(2)),
     centroidY: Number(centroidY.toFixed(2)),
-    suitable: score >= 48 && skinRatio >= 2.2,
+    suitable: score >= 58 && skinRatio >= 3.4 && upperRatio >= 0.34 && centroidX >= 0.38 && centroidX <= 0.86 && centroidY <= 0.68,
   };
 }
 
@@ -264,10 +271,25 @@ export function rankScreenshots(frames, limit = 10) {
   return [...frames].sort((a, b) => b.metrics.technicalScore - a.metrics.technicalScore).slice(0, limit);
 }
 
-export function rankHeroFrames(frames, limit = 12, minimumScore = 48) {
+export function rankHeroFrames(frames, limit = 12, minimumScore = 58) {
   return [...frames]
-    .filter(frame => frame.hero?.suitable && Number(frame.hero?.score || 0) >= minimumScore)
-    .sort((a, b) => Number(b.hero?.score || 0) - Number(a.hero?.score || 0))
+    .filter(frame => {
+      const hero = frame.hero || {};
+      return hero.suitable &&
+        Number(hero.score || 0) >= minimumScore &&
+        Number(hero.skinRatio || 0) >= 3.4 &&
+        Number(hero.upperBodyRatio || 0) >= 0.34 &&
+        Number(hero.centroidX || 0) >= 0.38 &&
+        Number(hero.centroidX || 0) <= 0.84 &&
+        Number(hero.centroidY || 0) <= 0.66;
+    })
+    .sort((a, b) => {
+      const aHero = a.hero || {};
+      const bHero = b.hero || {};
+      const aPremium = Number(aHero.score || 0) + Number(aHero.skinRatio || 0) * 2 + Number(aHero.faceZoneRatio || 0) * 8 + Number(aHero.upperBodyRatio || 0) * 8 - Math.max(0, Number(aHero.centroidX || 0) - 0.78) * 30;
+      const bPremium = Number(bHero.score || 0) + Number(bHero.skinRatio || 0) * 2 + Number(bHero.faceZoneRatio || 0) * 8 + Number(bHero.upperBodyRatio || 0) * 8 - Math.max(0, Number(bHero.centroidX || 0) - 0.78) * 30;
+      return bPremium - aPremium;
+    })
     .slice(0, limit);
 }
 

@@ -19,7 +19,7 @@ export const DEFAULT_COVER_SETTINGS = {
   customWidth: 1600,
   customHeight: 900,
   presetId: "cinematic",
-  zoom: 1.2,
+  zoom: 1.34,
   x: 0,
   y: 0,
   brightness: 102,
@@ -27,7 +27,7 @@ export const DEFAULT_COVER_SETTINGS = {
   saturation: 106,
   titleSize: 190,
   subtitleSize: 130,
-  titleY: 52,
+  titleY: 57,
   gradientStrength: 90,
   logoPosition: "top-left",
   borderTexture: 42,
@@ -86,11 +86,11 @@ function drawPerformerPhoto(ctx, image, width, height, settings) {
 
   const iw = image.width;
   const ih = image.height;
-  const scale = Math.max(width / iw, height / ih) * Number(settings.zoom || 1.2);
+  const scale = Math.max(width / iw, height / ih) * Number(settings.zoom || 1.34);
   const sw = width / scale;
   const sh = height / scale;
-  const focusX = 0.62 - Number(settings.x || 0) * 0.004;
-  const focusY = 0.48 - Number(settings.y || 0) * 0.004;
+  const focusX = 0.57 - Number(settings.x || 0) * 0.004;
+  const focusY = 0.36 - Number(settings.y || 0) * 0.004;
   const sx = Math.max(0, Math.min(iw - sw, (iw - sw) * focusX));
   const sy = Math.max(0, Math.min(ih - sh, (ih - sh) * focusY));
 
@@ -142,7 +142,7 @@ function drawSubtleBrushLayer(ctx, width, height, preset, settings) {
 
 async function drawLogoAndClaim(ctx, width, height, preset) {
   const logo = await loadCanvasImage(OFFICIAL_LOGO_URL);
-  const logoW = width * 0.29;
+  const logoW = width * 0.235;
   const logoH = logoW * (logo.height / logo.width);
   const x = width * 0.075;
   const y = height * 0.065;
@@ -221,8 +221,8 @@ function drawTitleBlock(ctx, width, height, metadata, preset, settings) {
   ctx.restore();
 
   if (subtitle) {
-    const subtitleSize = fitFont(ctx, subtitle, maxWidth, width * 0.128, width * 0.06, size => fontBrush(size));
-    const subY = titleY + subtitleSize * 0.78;
+    const subtitleSize = fitFont(ctx, subtitle, maxWidth, width * 0.122, width * 0.056, size => fontBrush(size));
+    const subY = titleY + Math.max(height * 0.105, subtitleSize * 1.04);
     ctx.save();
     ctx.translate(x, subY);
     ctx.rotate(-3.5 * Math.PI / 180);
@@ -259,19 +259,19 @@ function drawFooter(ctx, width, height, preset, settings) {
     ctx.lineWidth = width * 0.0018;
 
     if (index === 0) {
-      ctx.strokeRect(x - width * 0.013, baseY - height * 0.024, width * 0.026, height * 0.024);
-      ctx.beginPath(); ctx.arc(x, baseY - height * 0.012, width * 0.005, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeRect(x - width * 0.014, baseY - height * 0.026, width * 0.028, height * 0.026);
+      ctx.beginPath(); ctx.arc(x, baseY - height * 0.013, width * 0.0055, 0, Math.PI * 2); ctx.stroke();
     } else if (index === 1) {
-      ctx.strokeRect(x - width * 0.019, baseY - height * 0.024, width * 0.038, height * 0.026);
-      ctx.font = `900 ${width * 0.014}px Arial, sans-serif`;
-      ctx.fillText("HD", x - width * 0.012, baseY - height * 0.006);
+      ctx.strokeRect(x - width * 0.021, baseY - height * 0.026, width * 0.042, height * 0.028);
+      ctx.font = `900 ${width * 0.015}px Arial, sans-serif`;
+      ctx.fillText("HD", x - width * 0.013, baseY - height * 0.006);
     } else {
-      ctx.strokeRect(x - width * 0.012, baseY - height * 0.016, width * 0.024, height * 0.022);
-      ctx.beginPath(); ctx.arc(x, baseY - height * 0.018, width * 0.01, Math.PI, 0); ctx.stroke();
+      ctx.strokeRect(x - width * 0.013, baseY - height * 0.018, width * 0.026, height * 0.024);
+      ctx.beginPath(); ctx.arc(x, baseY - height * 0.02, width * 0.011, Math.PI, 0); ctx.stroke();
     }
 
     ctx.fillStyle = "rgba(255,255,255,0.9)";
-    ctx.font = fontBebas(width * 0.015, 400);
+    ctx.font = fontBebas(width * 0.017, 400);
     const words = label.toUpperCase().split(" ");
     const first = words.slice(0, Math.ceil(words.length / 2)).join(" ");
     const second = words.slice(Math.ceil(words.length / 2)).join(" ");

@@ -4,7 +4,7 @@ import CoverPreviewEditor from "./CoverPreviewEditor";
 
 const MASTER_SETTINGS = {
   presetId: "cinematic",
-  zoom: 1.22,
+  zoom: 1.34,
   x: 0,
   y: 0,
   brightness: 102,
@@ -12,7 +12,7 @@ const MASTER_SETTINGS = {
   saturation: 106,
   titleSize: 190,
   subtitleSize: 130,
-  titleY: 52,
+  titleY: 57,
   gradientStrength: 90,
   borderTexture: 42,
   showSafeMargins: false,
