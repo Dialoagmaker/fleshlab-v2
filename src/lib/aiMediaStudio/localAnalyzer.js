@@ -204,6 +204,22 @@ export function rankScreenshots(frames, limit = 10) {
   return [...frames].sort((a, b) => b.metrics.technicalScore - a.metrics.technicalScore).slice(0, limit);
 }
 
+export function selectDiverseFrames(frames, limit = 10, initialMinGapSeconds = 8) {
+  const ranked = rankScreenshots(frames, frames.length);
+  let minGap = initialMinGapSeconds;
+  let selected = [];
+  while (selected.length < limit && minGap >= 1) {
+    selected = [];
+    ranked.forEach(frame => {
+      if (selected.length >= limit) return;
+      const farEnough = selected.every(chosen => Math.abs(chosen.time - frame.time) >= minGap);
+      if (farEnough) selected.push(frame);
+    });
+    minGap /= 2;
+  }
+  return selected.length ? selected : ranked.slice(0, limit);
+}
+
 async function blobToImage(blob) {
   if (window.createImageBitmap) return createImageBitmap(blob);
   return new Promise((resolve, reject) => {
@@ -247,8 +263,8 @@ function outputFile(filename, blob, url, previewUrl = null, status = "ready") {
 
 export async function createOutputs({ file, frames, scenes, log }) {
   const baseName = file.name.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_");
-  const screenshots = rankScreenshots(frames, 10);
-  log?.("screenshots ranked");
+  const screenshots = selectDiverseFrames(frames, 10, 8);
+  log?.("diverse screenshots selected");
   const outputs = screenshots.map((frame, index) => outputFile(
     `${baseName}_top_${String(index + 1).padStart(2, "0")}.jpg`,
     frame.blob,
@@ -257,7 +273,7 @@ export async function createOutputs({ file, frames, scenes, log }) {
     "ready"
   ));
 
-  outputs.push(await createContactSheet(rankScreenshots(frames, 25), baseName));
+  outputs.push(await createContactSheet(selectDiverseFrames(frames, 25, 4), baseName));
 
   const sceneData = scenes.map(scene => ({ ...scene, representativeThumbnailUrl: undefined }));
   const jsonBlob = new Blob([JSON.stringify(sceneData, null, 2)], { type: "application/json" });
@@ -283,7 +299,10 @@ function withTimeout(promise, ms, message) {
   ]);
 }
 
-async function createTeaserWithFFmpeg({ file, scenes, log, onProgress }) {
+async function createTeasersWithFFmpeg({ file, frames, log, onProgress }) {
+  const candidates = selectDiverseFrames(frames, 3, 12);
+  if (!candidates.length) throw new Error("No frames available for teaser generation");
+
   log?.("FFmpeg WASM loading started; first MP4 run can take up to 60 seconds");
   let FFmpeg;
   let fetchFile;
@@ -293,103 +312,73 @@ async function createTeaserWithFFmpeg({ file, scenes, log, onProgress }) {
   } catch (error) {
     throw new Error(`FFmpeg failed to load: ${error.message}`);
   }
+
   const ffmpeg = new FFmpeg();
-  ffmpeg.on("progress", ({ progress }) => onProgress?.(75 + Math.round((progress || 0) * 20)));
   try {
     await withTimeout(ffmpeg.load(), 60000, "FFmpeg load timed out after 60 seconds");
   } catch (error) {
     throw new Error(`FFmpeg failed to load: ${error.message}`);
   }
-  const bestScene = scenes.slice().sort((a, b) => b.scores.technicalScore - a.scores.technicalScore)[0];
-  const start = Math.max(0, bestScene?.start || 0);
+
   await ffmpeg.writeFile("input_video", await fetchFile(file));
-  const outputName = "teaser.mp4";
+  const baseName = file.name.replace(/\.[^/.]+$/, "");
   const ext = file.name.split(".").pop()?.toLowerCase();
   const canStreamCopyToMp4 = ["mp4", "m4v", "mov"].includes(ext);
-  const fastCopyArgs = ["-y", "-ss", String(start), "-t", "10", "-i", "input_video", "-an", "-c:v", "copy", "-movflags", "+faststart", outputName];
-  const transcodeArgs = [
-    "-y",
-    "-ss", String(start),
-    "-t", "10",
-    "-i", "input_video",
-    "-an",
-    "-vf", "fps=30,scale=min(720\\,iw):-2:flags=bicubic,format=yuv420p",
-    "-r", "30",
-    "-fps_mode", "cfr",
-    "-c:v", "libx264",
-    "-preset", "veryfast",
-    "-crf", "25",
-    "-movflags", "+faststart",
-    outputName
-  ];
-  try {
-    if (canStreamCopyToMp4) {
-      try {
-        log?.("fast MP4 teaser cut started");
-        await withTimeout(ffmpeg.exec(fastCopyArgs), 20000, "Fast MP4 cut timed out");
-      } catch (copyError) {
-        log?.(`fast MP4 cut failed: ${copyError.message}; transcoding MP4 preview`);
+  const teasers = [];
+
+  for (let index = 0; index < candidates.length; index += 1) {
+    const frame = candidates[index];
+    const start = Math.max(0, frame.time - 1);
+    const outputName = `teaser_${index + 1}.mp4`;
+    ffmpeg.on("progress", ({ progress }) => onProgress?.(75 + Math.round(((index + (progress || 0)) / candidates.length) * 20)));
+
+    const fastCopyArgs = ["-y", "-ss", String(start), "-t", "10", "-i", "input_video", "-an", "-c:v", "copy", "-movflags", "+faststart", outputName];
+    const transcodeArgs = [
+      "-y",
+      "-ss", String(start),
+      "-t", "10",
+      "-i", "input_video",
+      "-an",
+      "-vf", "fps=30,scale=min(720\\,iw):-2:flags=bicubic,format=yuv420p",
+      "-r", "30",
+      "-fps_mode", "cfr",
+      "-c:v", "libx264",
+      "-preset", "veryfast",
+      "-crf", "25",
+      "-movflags", "+faststart",
+      outputName
+    ];
+
+    try {
+      if (canStreamCopyToMp4) {
+        try {
+          log?.(`fast MP4 teaser ${index + 1}/${candidates.length} cut started at ${formatTime(start)}`);
+          await withTimeout(ffmpeg.exec(fastCopyArgs), 20000, "Fast MP4 cut timed out");
+        } catch (copyError) {
+          log?.(`fast MP4 cut failed: ${copyError.message}; transcoding teaser ${index + 1}`);
+          await withTimeout(ffmpeg.exec(transcodeArgs), 90000, "FFmpeg teaser encode timed out");
+        }
+      } else {
         await withTimeout(ffmpeg.exec(transcodeArgs), 90000, "FFmpeg teaser encode timed out");
       }
-    } else {
-      await withTimeout(ffmpeg.exec(transcodeArgs), 90000, "FFmpeg teaser encode timed out");
+
+      const data = await ffmpeg.readFile(outputName);
+      const blob = new Blob([data.buffer], { type: "video/mp4" });
+      if (!blob.size) throw new Error("FFmpeg produced an empty teaser");
+      teasers.push(outputFile(`${baseName}_10s_teaser_${String(index + 1).padStart(2, "0")}.mp4`, blob, URL.createObjectURL(blob), URL.createObjectURL(blob), "ready"));
+    } catch (error) {
+      throw new Error(`teaser ${index + 1} generation failed: ${error.message}`);
     }
-    const data = await ffmpeg.readFile(outputName);
-    const blob = new Blob([data.buffer], { type: "video/mp4" });
-    if (!blob.size) throw new Error("FFmpeg produced an empty teaser");
-    log?.("MP4 teaser generated at 30 FPS with fast-start loading");
-    return outputFile(`${file.name.replace(/\.[^/.]+$/, "")}_10s_teaser.mp4`, blob, URL.createObjectURL(blob), URL.createObjectURL(blob), "ready");
-  } catch (error) {
-    throw new Error(`teaser generation failed: ${error.message}`);
   }
+
+  log?.(`${teasers.length} diverse MP4 teaser candidates generated`);
+  return teasers;
 }
 
-async function createTeaserWithMediaRecorder({ file, frames, log, onProgress }) {
-  if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) throw new Error("Teaser generation failed: MediaRecorder or canvas captureStream is unavailable in this browser");
-  const selected = rankScreenshots(frames, 10).slice(0, 10);
-  if (!selected.length) throw new Error("Teaser generation failed: no analyzed frames available");
-  const firstImage = await blobToImage(selected[0].blob);
-  const canvas = document.createElement("canvas");
-  canvas.width = firstImage.width || 960;
-  canvas.height = firstImage.height || 540;
-  const ctx = canvas.getContext("2d");
-  const targetFps = 30;
-  const frameCount = targetFps * 10;
-  const frameDurationMs = 1000 / targetFps;
-  const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm";
-  const recorder = new MediaRecorder(canvas.captureStream(targetFps), { mimeType: mime, videoBitsPerSecond: 3_000_000 });
-  const chunks = [];
-  recorder.ondataavailable = event => event.data?.size && chunks.push(event.data);
-  const stopped = new Promise(resolve => recorder.onstop = resolve);
-  recorder.start();
-  log?.(`browser fallback encoder target: ${targetFps} FPS, ${frameCount} frames`);
-  const startedAt = performance.now();
-  for (let tick = 0; tick < frameCount; tick += 1) {
-    const frame = selected[Math.min(selected.length - 1, Math.floor(tick / targetFps))];
-    const image = await blobToImage(frame.blob);
-    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "rgba(0,0,0,0.58)";
-    ctx.fillRect(0, canvas.height - 40, 150, 40);
-    ctx.fillStyle = "#fff";
-    ctx.font = "18px sans-serif";
-    ctx.fillText(formatTime(frame.time), 14, canvas.height - 14);
-    onProgress?.(75 + Math.round((tick / frameCount) * 20));
-    const nextFrameAt = startedAt + (tick + 1) * frameDurationMs;
-    await wait(Math.max(0, nextFrameAt - performance.now()));
-  }
-  log?.(`browser fallback encoder completed: ${frameCount} frames requested at ${targetFps} FPS`);
-  recorder.stop();
-  await stopped;
-  const blob = new Blob(chunks, { type: "video/webm" });
-  if (!blob.size) throw new Error("Teaser generation failed: browser produced an empty video blob");
-  log?.("teaser generated");
-  return outputFile(`${file.name.replace(/\.[^/.]+$/, "")}_10s_teaser.webm`, blob, URL.createObjectURL(blob), URL.createObjectURL(blob), "ready");
-}
-
-export async function createTeaserFromFrames({ file, frames, scenes, log, onProgress }) {
-  log?.("MP4 teaser generation started");
+export async function createTeaserFromFrames({ file, frames, log, onProgress }) {
+  log?.("diverse MP4 teaser generation started");
   try {
-    return await createTeaserWithFFmpeg({ file, scenes, log, onProgress });
+    return await createTeasersWithFFmpeg({ file, frames, log, onProgress });
   } catch (error) {
     log?.(`${error.message}; MP4 teaser generation stopped because browser WebM fallback was disabled`);
     throw new Error(`MP4 teaser generation failed: ${error.message}`);

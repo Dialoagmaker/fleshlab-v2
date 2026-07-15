@@ -45,8 +45,8 @@ export default function AIMediaStudio() {
     const frames = await sampleVideoFrames({ file, previewUrl: metadata.previewUrl, metadata, onProgress: setProgress, log, pausedRef, signal: abortRef.current.signal });
     const scenes = detectScenes(frames, metadata.duration, log);
     const outputs = await createOutputs({ file, frames, scenes, log });
-    const teaser = await createTeaserFromFrames({ file, frames, scenes, log, onProgress: setProgress });
-    updateItem(id, { status: "analyzed", statusLabel: "Analyzed", analysis: true, frames, scenes, outputs, teaser });
+    const teasers = await createTeaserFromFrames({ file, frames, scenes, log, onProgress: setProgress });
+    updateItem(id, { status: "analyzed", statusLabel: "Analyzed", analysis: true, frames, scenes, outputs, teasers, teaser: teasers[0] });
     setProgress(100);
   };
 
@@ -87,7 +87,7 @@ export default function AIMediaStudio() {
     log("processing cancelled");
   };
 
-  const outputCount = (selected?.outputs?.length || 0) + (selected?.teaser ? 1 : 0);
+  const outputCount = (selected?.outputs?.length || 0) + (selected?.teasers?.length || (selected?.teaser ? 1 : 0));
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -108,7 +108,7 @@ export default function AIMediaStudio() {
           <Card><CardHeader><CardTitle className="text-sm">Local Queue</CardTitle></CardHeader><CardContent><AnalysisQueue items={items} selectedId={selectedId} onSelect={setSelectedId} /></CardContent></Card>
           <SmartReviewPanel item={selected} />
         </TabsContent>
-        <TabsContent value="outputs"><OutputFilesPanel outputs={selected?.outputs || []} teaser={selected?.teaser} /></TabsContent>
+        <TabsContent value="outputs"><OutputFilesPanel outputs={selected?.outputs || []} teasers={selected?.teasers || (selected?.teaser ? [selected.teaser] : [])} /></TabsContent>
         <TabsContent value="log"><ProcessingLog entries={logs} /></TabsContent>
       </Tabs>
     </div>

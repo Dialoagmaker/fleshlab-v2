@@ -3,8 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Download } from "lucide-react";
 import { formatBytes } from "@/lib/aiMediaStudio/localAnalyzer";
 
-export default function OutputFilesPanel({ outputs, teaser }) {
-  const files = teaser ? [teaser, ...outputs] : outputs;
+export default function OutputFilesPanel({ outputs, teasers = [] }) {
+  const files = [...teasers, ...outputs];
   if (!files.length) {
     return <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">Not analyzed yet. Output files appear only after real local files are generated.</div>;
   }
