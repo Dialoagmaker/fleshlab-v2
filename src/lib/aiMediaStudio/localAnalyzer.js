@@ -306,8 +306,8 @@ async function createTeaserWithFFmpeg({ file, scenes, log, onProgress }) {
   const extension = file.name.toLowerCase().endsWith(".webm") ? "webm" : "mp4";
   const outputName = `teaser.${extension}`;
   const args = extension === "webm"
-    ? ["-ss", String(start), "-t", "10", "-i", "input_video", "-an", "-c:v", "libvpx-vp9", "-b:v", "2M", outputName]
-    : ["-ss", String(start), "-t", "10", "-i", "input_video", "-an", "-c:v", "libx264", "-preset", "veryfast", "-movflags", "faststart", outputName];
+    ? ["-ss", String(start), "-t", "10", "-i", "input_video", "-an", "-r", "30", "-fps_mode", "cfr", "-c:v", "libvpx-vp9", "-b:v", "3M", outputName]
+    : ["-ss", String(start), "-t", "10", "-i", "input_video", "-an", "-r", "30", "-fps_mode", "cfr", "-c:v", "libx264", "-preset", "veryfast", "-movflags", "faststart", outputName];
   try {
     await withTimeout(ffmpeg.exec(args), 30000, "FFmpeg teaser encode timed out");
     const data = await ffmpeg.readFile(outputName);
@@ -329,14 +329,19 @@ async function createTeaserWithMediaRecorder({ file, frames, log, onProgress }) 
   canvas.width = firstImage.width || 960;
   canvas.height = firstImage.height || 540;
   const ctx = canvas.getContext("2d");
+  const targetFps = 30;
+  const frameCount = targetFps * 10;
+  const frameDurationMs = 1000 / targetFps;
   const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm";
-  const recorder = new MediaRecorder(canvas.captureStream(10), { mimeType: mime });
+  const recorder = new MediaRecorder(canvas.captureStream(targetFps), { mimeType: mime, videoBitsPerSecond: 3_000_000 });
   const chunks = [];
   recorder.ondataavailable = event => event.data?.size && chunks.push(event.data);
   const stopped = new Promise(resolve => recorder.onstop = resolve);
   recorder.start();
-  for (let tick = 0; tick < 100; tick += 1) {
-    const frame = selected[Math.min(selected.length - 1, Math.floor(tick / 10))];
+  log?.(`browser fallback encoder target: ${targetFps} FPS, ${frameCount} frames`);
+  const startedAt = performance.now();
+  for (let tick = 0; tick < frameCount; tick += 1) {
+    const frame = selected[Math.min(selected.length - 1, Math.floor(tick / targetFps))];
     const image = await blobToImage(frame.blob);
     ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "rgba(0,0,0,0.58)";
@@ -344,9 +349,11 @@ async function createTeaserWithMediaRecorder({ file, frames, log, onProgress }) 
     ctx.fillStyle = "#fff";
     ctx.font = "18px sans-serif";
     ctx.fillText(formatTime(frame.time), 14, canvas.height - 14);
-    onProgress?.(75 + Math.round((tick / 100) * 20));
-    await wait(100);
+    onProgress?.(75 + Math.round((tick / frameCount) * 20));
+    const nextFrameAt = startedAt + (tick + 1) * frameDurationMs;
+    await wait(Math.max(0, nextFrameAt - performance.now()));
   }
+  log?.(`browser fallback encoder completed: ${frameCount} frames requested at ${targetFps} FPS`);
   recorder.stop();
   await stopped;
   const blob = new Blob(chunks, { type: "video/webm" });
