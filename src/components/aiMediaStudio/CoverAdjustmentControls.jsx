@@ -5,7 +5,7 @@ import { Switch } from "@/components/ui/switch";
 const sliders = [
   ["zoom", "Zoom", 0.7, 2.2, 0.01], ["x", "Horizontal position", -100, 100, 1], ["y", "Vertical position", -100, 100, 1],
   ["brightness", "Brightness", 60, 150, 1], ["contrast", "Contrast", 60, 170, 1], ["saturation", "Saturation", 0, 180, 1],
-  ["titleSize", "Title font size", 50, 260, 1], ["subtitleSize", "Subtitle font size", 28, 180, 1], ["titleY", "Title vertical position", 18, 78, 1],
+  ["titleSize", "Title font size", 50, 260, 1], ["subtitleSize", "Subtitle font size", 28, 180, 1], ["performerSize", "Performer font size", 24, 140, 1], ["titleY", "Title vertical position", 18, 78, 1],
   ["gradientStrength", "Gradient strength", 20, 95, 1], ["borderTexture", "Border texture", 0, 100, 1], ["safeMargin", "Platform-safe margin", 3, 14, 1],
 ];
 

@@ -29,7 +29,8 @@ export const DEFAULT_COVER_SETTINGS = {
   contrast: 114,
   saturation: 106,
   titleSize: 190,
-  subtitleSize: 130,
+  subtitleSize: 92,
+  performerSize: 68,
   titleY: 57,
   gradientStrength: 90,
   logoPosition: "adaptive",
@@ -64,7 +65,7 @@ export async function renderCoverToCanvas(canvas, frameBlob, metadata, settings)
     await Promise.all([
       document.fonts.load("900 210px Bebas Neue"),
       document.fonts.load("900 132px Permanent Marker"),
-      document.fonts.load("900 42px Inter"),
+      document.fonts.load("900 72px Inter"),
     ]);
   }
   return await renderPosterToCanvas(canvas, image, metadata, settings, width, height);

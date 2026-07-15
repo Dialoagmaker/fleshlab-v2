@@ -74,9 +74,10 @@ export function calculateTextArea(analysis, variant = "balanced", settings = {})
 export function calculateLogoArea(textArea, variant = "balanced", settings = {}) {
   const margin = safeMargin(settings);
   let logoArea;
-  if (variant === "title") logoArea = { x: textArea.x, y: 0.07, w: 0.115 };
-  else if (variant === "performer") logoArea = { x: 0.055, y: 0.065, w: 0.102 };
-  else logoArea = { x: textArea.x, y: Math.max(0.055, textArea.y - 0.22), w: 0.108 };
+  if (variant === "title") logoArea = { x: textArea.x, y: 0.06, w: 0.155 };
+  else if (variant === "performer") logoArea = { x: 0.055, y: 0.06, w: 0.14 };
+  else logoArea = { x: textArea.x, y: Math.max(0.05, textArea.y - 0.25), w: 0.148 };
+  logoArea.w = clamp(logoArea.w, 0.12, Math.min(0.18, 1 - margin * 2));
   logoArea.x = clamp(logoArea.x, margin, 1 - margin - logoArea.w);
   logoArea.y = clamp(logoArea.y, margin, 1 - margin - logoArea.w * 0.35);
   return logoArea;

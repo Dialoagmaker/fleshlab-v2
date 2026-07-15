@@ -104,7 +104,9 @@ function font(size, family = "Bebas Neue", weight = 900) {
 function drawTitle(ctx, typography, composition, width, height, family) {
   const box = composition.textArea;
   const x = width * box.x;
-  let y = height * box.y;
+  const footerLimit = height * (composition.footerY || 0.895) - height * 0.04;
+  let y = Math.min(height * box.y, Math.max(height * 0.08, footerLimit - typography.totalHeight));
+
   ctx.save();
   ctx.shadowColor = "rgba(0,0,0,0.92)";
   ctx.shadowBlur = width * 0.011;
@@ -117,13 +119,34 @@ function drawTitle(ctx, typography, composition, width, height, family) {
     ctx.fillText(line, x, y);
     y += typography.lineHeight;
   });
-  if (typography.subtitle) {
-    ctx.translate(x, y + typography.subtitleSize * 0.15);
-    ctx.rotate(-2.3 * Math.PI / 180);
+
+  if (typography.subtitleLines?.length) {
+    y += typography.subtitleSize * 0.18;
     ctx.font = font(typography.subtitleSize, family.typography.accentFont);
     ctx.fillStyle = "#d00012";
-    ctx.fillText(typography.subtitle, 0, 0);
+    ctx.strokeStyle = "rgba(0,0,0,0.72)";
+    ctx.lineWidth = Math.max(2, typography.subtitleSize * 0.018);
+    typography.subtitleLines.forEach(line => {
+      ctx.strokeText(line, x, y);
+      ctx.fillText(line, x, y);
+      y += typography.subtitleLineHeight;
+    });
   }
+
+  if (typography.performerLines?.length) {
+    y += typography.performerSize * 0.36;
+    ctx.font = font(typography.performerSize, "Inter", 900);
+    ctx.letterSpacing = `${Math.max(1, width * 0.0018)}px`;
+    ctx.fillStyle = "rgba(244,244,244,0.92)";
+    ctx.strokeStyle = "rgba(0,0,0,0.76)";
+    ctx.lineWidth = Math.max(2, typography.performerSize * 0.012);
+    typography.performerLines.forEach(line => {
+      ctx.strokeText(line, x, y);
+      ctx.fillText(line, x, y);
+      y += typography.performerLineHeight;
+    });
+  }
+
   ctx.restore();
 }
 
