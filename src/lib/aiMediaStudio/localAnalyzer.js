@@ -34,15 +34,23 @@ function canvasToBlob(canvas, type = "image/jpeg", quality = 0.86) {
 function seekVideo(video, time, signal) {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) return reject(new DOMException("Processing cancelled", "AbortError"));
+    const target = Math.min(Math.max(time, 0), Math.max(video.duration - 0.05, 0));
+    if (Math.abs(video.currentTime - target) < 0.03 && video.readyState >= 2) {
+      requestAnimationFrame(resolve);
+      return;
+    }
+    let timeoutId;
     const cleanup = () => {
+      window.clearTimeout(timeoutId);
       video.removeEventListener("seeked", onSeeked);
       video.removeEventListener("error", onError);
     };
     const onSeeked = () => { cleanup(); resolve(); };
     const onError = () => { cleanup(); reject(new Error("Unsupported codec or frame decode failed")); };
+    timeoutId = window.setTimeout(() => { cleanup(); reject(new Error("Frame decode timed out")); }, 12000);
     video.addEventListener("seeked", onSeeked, { once: true });
     video.addEventListener("error", onError, { once: true });
-    video.currentTime = Math.min(Math.max(time, 0), Math.max(video.duration - 0.05, 0));
+    video.currentTime = target;
   });
 }
 
@@ -268,6 +276,13 @@ export async function createOutputs({ file, frames, scenes, log }) {
   return outputs;
 }
 
+function withTimeout(promise, ms, message) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => window.setTimeout(() => reject(new Error(message)), ms))
+  ]);
+}
+
 async function createTeaserWithFFmpeg({ file, scenes, log, onProgress }) {
   log?.("FFmpeg WASM loading started");
   let FFmpeg;
@@ -281,7 +296,7 @@ async function createTeaserWithFFmpeg({ file, scenes, log, onProgress }) {
   const ffmpeg = new FFmpeg();
   ffmpeg.on("progress", ({ progress }) => onProgress?.(75 + Math.round((progress || 0) * 20)));
   try {
-    await ffmpeg.load();
+    await withTimeout(ffmpeg.load(), 15000, "FFmpeg load timed out");
   } catch (error) {
     throw new Error(`FFmpeg failed to load: ${error.message}`);
   }
@@ -294,7 +309,7 @@ async function createTeaserWithFFmpeg({ file, scenes, log, onProgress }) {
     ? ["-ss", String(start), "-t", "10", "-i", "input_video", "-an", "-c:v", "libvpx-vp9", "-b:v", "2M", outputName]
     : ["-ss", String(start), "-t", "10", "-i", "input_video", "-an", "-c:v", "libx264", "-preset", "veryfast", "-movflags", "faststart", outputName];
   try {
-    await ffmpeg.exec(args);
+    await withTimeout(ffmpeg.exec(args), 30000, "FFmpeg teaser encode timed out");
     const data = await ffmpeg.readFile(outputName);
     const blob = new Blob([data.buffer], { type: extension === "webm" ? "video/webm" : "video/mp4" });
     if (!blob.size) throw new Error("FFmpeg produced an empty teaser");
