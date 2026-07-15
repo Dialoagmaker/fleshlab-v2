@@ -1,6 +1,7 @@
 import { analyzePosterImage } from "./posterAnalysis";
 import { inferGraphicLanguage } from "./graphicLanguage";
 import { paintCommercialVisualSystem } from "./commercialVisualSystems";
+import { createCommercialCampaign } from "./commercialCreativeDirector";
 
 const ENGINE_NAME = "Commercial Key Art Engine";
 const TARGET_POSTER_IMPACT = 84;
@@ -191,7 +192,7 @@ function measureLines(ctx, text, maxWidth, startSize, minSize, family, maxLines 
   return { lines: [text], size: minSize, lineHeight: minSize * 0.78 };
 }
 
-function buildAttemptPlan(image, metadata, settings, width, height, analysis, baseLanguage, philosophy, attemptIndex) {
+function buildAttemptPlan(image, metadata, settings, width, height, analysis, baseLanguage, campaign, philosophy, attemptIndex) {
   const graphicLanguage = buildDirectedLanguage(baseLanguage, philosophy, attemptIndex);
   const crop = cropForHero(image, analysis, graphicLanguage, width, height, settings);
   const score = buildPlanScore(analysis, graphicLanguage, philosophy, attemptIndex);
@@ -214,6 +215,7 @@ function buildAttemptPlan(image, metadata, settings, width, height, analysis, ba
   return {
     engine: ENGINE_NAME,
     metadata,
+    campaign,
     analysis,
     graphicLanguage,
     philosophy,
@@ -231,8 +233,9 @@ function buildAttemptPlan(image, metadata, settings, width, height, analysis, ba
 export async function generateCommercialKeyArtPlan(image, metadata = {}, settings = {}, width = 1920, height = 1080) {
   const analysis = await analyzePosterImage(image);
   const baseLanguage = inferGraphicLanguage(metadata, analysis);
+  const campaign = createCommercialCampaign({ analysis, metadata });
   const strategies = orderedPhilosophies(metadata, analysis);
-  const planned = strategies.map((philosophy, index) => buildAttemptPlan(image, metadata, settings, width, height, analysis, baseLanguage, philosophy, index));
+  const planned = strategies.map((philosophy, index) => buildAttemptPlan(image, metadata, settings, width, height, analysis, baseLanguage, campaign, philosophy, index));
   const selectedPlan = planned.find(plan => plan.selected.score.passesQualityGate && plan.selected.score.total >= TARGET_POSTER_IMPACT) || planned[planned.length - 1];
   return {
     ...selectedPlan,

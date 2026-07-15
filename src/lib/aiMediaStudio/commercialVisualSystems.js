@@ -103,7 +103,7 @@ function heroBox(image, analysis, crop, width, height) {
 
 async function netflixDrama(canvas, image, plan, settings, width, height) {
   const ctx = canvas.getContext("2d");
-  const { title, subtitle } = splitTitle(plan.metadata);
+  const { title, subtitle } = splitTitle(plan.campaign || plan.metadata);
   const hero = heroBox(image, plan.analysis, plan.selected.crop, width, height);
   ctx.fillStyle = "#050406";
   ctx.fillRect(0, 0, width, height);
@@ -145,7 +145,7 @@ async function netflixDrama(canvas, image, plan, settings, width, height) {
 
 async function aaaGameCover(canvas, image, plan, settings, width, height) {
   const ctx = canvas.getContext("2d");
-  const { title, subtitle } = splitTitle(plan.metadata);
+  const { title, subtitle } = splitTitle(plan.campaign || plan.metadata);
   const crop = plan.selected.crop;
   ctx.fillStyle = "#020000";
   ctx.fillRect(0, 0, width, height);
@@ -195,7 +195,7 @@ async function aaaGameCover(canvas, image, plan, settings, width, height) {
 
 async function luxuryMagazine(canvas, image, plan, settings, width, height) {
   const ctx = canvas.getContext("2d");
-  const { title, subtitle } = splitTitle(plan.metadata);
+  const { title, subtitle } = splitTitle(plan.campaign || plan.metadata);
   ctx.fillStyle = "#e8dfd2";
   ctx.fillRect(0, 0, width, height);
   ctx.fillStyle = "#0b0908";
@@ -233,7 +233,7 @@ async function luxuryMagazine(canvas, image, plan, settings, width, height) {
 
 async function commercialAdvertising(canvas, image, plan, settings, width, height) {
   const ctx = canvas.getContext("2d");
-  const { title, subtitle } = splitTitle(plan.metadata);
+  const { title, subtitle } = splitTitle(plan.campaign || plan.metadata);
   ctx.fillStyle = "#f6f4ef";
   ctx.fillRect(0, 0, width, height);
   ctx.fillStyle = "#0a0a0a";
@@ -276,7 +276,7 @@ async function commercialAdvertising(canvas, image, plan, settings, width, heigh
 
 async function cinemaPoster(canvas, image, plan, settings, width, height) {
   const ctx = canvas.getContext("2d");
-  const { title, subtitle } = splitTitle(plan.metadata);
+  const { title, subtitle } = splitTitle(plan.campaign || plan.metadata);
   ctx.fillStyle = "#030303";
   ctx.fillRect(0, 0, width, height);
   ctx.save();
