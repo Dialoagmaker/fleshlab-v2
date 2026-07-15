@@ -34,9 +34,9 @@ function seedFromPlan(plan) {
   return ((base % 997) / 997 + (analysis.visualCuriosity || 0.51) * 0.37 + (analysis.subjectSeparation || 0.57) * 0.21) % 1;
 }
 
-function artDirection(plan) {
+function artDirection(plan, attempt = 0) {
   const campaign = plan.campaign || {};
-  const seed = seedFromPlan(plan);
+  const seed = (seedFromPlan(plan) + attempt * 0.193) % 1;
   const fantasy = campaign.fantasy || "Private";
   const product = campaign.product || "Feature Release";
   const category = campaign.category || "Streaming Cover";
@@ -56,10 +56,10 @@ function artDirection(plan) {
   };
 }
 
-function compositionMap(plan, image, width, height) {
+function compositionMap(plan, image, width, height, attempt = 0) {
   const crop = plan.selected.crop;
   const hero = heroBox(image, plan.analysis, crop, width, height);
-  const seed = seedFromPlan(plan);
+  const seed = (seedFromPlan(plan) + attempt * 0.231) % 1;
   const heroCx = clamp((hero.x + hero.w * 0.5) / width, 0.12, 0.88);
   const heroCy = clamp((hero.y + hero.h * 0.45) / height, 0.14, 0.82);
   const negativeSide = heroCx > 0.52 ? "left" : "right";
@@ -348,23 +348,129 @@ function finalGrade(ctx, width, height, direction) {
   ctx.strokeRect(width * 0.018, width * 0.018, width - width * 0.036, height - width * 0.036);
 }
 
+function paintCommercialColorGrade(ctx, width, height, direction) {
+  ctx.save();
+  ctx.globalCompositeOperation = "multiply";
+  const coolShadows = ctx.createLinearGradient(0, 0, width, height);
+  coolShadows.addColorStop(0, "rgba(10,18,34,0.48)");
+  coolShadows.addColorStop(0.55, "rgba(0,0,0,0.08)");
+  coolShadows.addColorStop(1, "rgba(0,0,0,0.58)");
+  ctx.fillStyle = coolShadows;
+  ctx.fillRect(0, 0, width, height);
+  ctx.globalCompositeOperation = "screen";
+  const warmSkin = ctx.createRadialGradient(width * 0.54, height * 0.36, 0, width * 0.54, height * 0.36, width * 0.56);
+  warmSkin.addColorStop(0, `rgba(255,190,128,${0.08 + direction.warmth * 0.12})`);
+  warmSkin.addColorStop(0.42, `rgba(${direction.accent},0.07)`);
+  warmSkin.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = warmSkin;
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
+}
+
+function paintBackgroundSuppression(ctx, image, map, width, height, direction) {
+  ctx.save();
+  ctx.globalAlpha = 0.58;
+  ctx.filter = `blur(${Math.round(width * 0.018)}px) brightness(48%) contrast(118%) saturate(74%)`;
+  coverImage(ctx, image, map.crop, 0, 0, width, height);
+  ctx.restore();
+  ctx.save();
+  const clearHero = ctx.createRadialGradient(map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.42, map.hero.w * 0.26, map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.42, map.hero.h * 0.74);
+  clearHero.addColorStop(0, "rgba(0,0,0,0)");
+  clearHero.addColorStop(0.52, "rgba(0,0,0,0.14)");
+  clearHero.addColorStop(1, "rgba(0,0,0,0.78)");
+  ctx.fillStyle = clearHero;
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
+}
+
+function paintLocalHeroContrast(ctx, image, map, width, height, direction) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.43, Math.max(42, map.hero.w * 0.72), Math.max(70, map.hero.h * 0.64), 0, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.filter = `brightness(108%) contrast(${Math.round(132 + direction.density * 24)}%) saturate(${Math.round(106 + direction.warmth * 22)}%)`;
+  coverImage(ctx, image, map.crop, 0, 0, width, height);
+  ctx.restore();
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  const rim = ctx.createRadialGradient(map.hero.x + map.hero.w * 0.54, map.hero.y + map.hero.h * 0.28, map.hero.w * 0.18, map.hero.x + map.hero.w * 0.54, map.hero.y + map.hero.h * 0.28, map.hero.h * 0.58);
+  rim.addColorStop(0, "rgba(255,255,255,0.12)");
+  rim.addColorStop(0.46, `rgba(${direction.accent},0.12)`);
+  rim.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = rim;
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
+}
+
+function paintPremiumMaterials(ctx, width, height, direction) {
+  ctx.save();
+  ctx.globalCompositeOperation = "overlay";
+  for (let i = 0; i < 260; i += 1) {
+    const x = width * (((i * 29 + Math.round(direction.seed * 91)) % 100) / 100);
+    const y = height * (((i * 47 + Math.round(direction.seed * 67)) % 100) / 100);
+    const alpha = i % 2 ? 0.035 : 0.02;
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.fillRect(x, y, Math.max(1, width * 0.001), Math.max(1, width * 0.001));
+  }
+  ctx.globalCompositeOperation = "screen";
+  ctx.globalAlpha = 0.16;
+  ctx.strokeStyle = `rgba(${direction.secondary},1)`;
+  ctx.lineWidth = Math.max(1, width * 0.0008);
+  for (let i = 0; i < 14; i += 1) {
+    const x = width * (((i * 53) % 100) / 100);
+    ctx.beginPath();
+    ctx.moveTo(x, height * 0.08);
+    ctx.lineTo(x + width * (0.018 + (i % 4) * 0.01), height * 0.88);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function scorePremiumArtwork(plan, map, direction) {
+  const analysis = plan.analysis || {};
+  const separation = clamp(analysis.subjectSeparation || 0.58);
+  const curiosity = clamp(analysis.visualCuriosity || 0.58);
+  const depth = clamp(direction.density * 0.7 + separation * 0.3);
+  const balance = 1 - Math.abs(map.heroCx - 0.5) * 0.55;
+  const premium = 0.3 + depth * 0.24 + curiosity * 0.18 + separation * 0.18 + balance * 0.1;
+  return Math.round(clamp(premium, 0, 1) * 100);
+}
+
+function selectValidatedArtwork(plan, image, width, height) {
+  const attempts = [0, 1, 2, 3, 4].map(attempt => {
+    const direction = artDirection(plan, attempt);
+    const map = compositionMap(plan, image, width, height, attempt);
+    const score = scorePremiumArtwork(plan, map, direction);
+    return { attempt, direction, map, score };
+  }).sort((a, b) => b.score - a.score);
+  return attempts.find(item => item.score >= 84) || attempts[0];
+}
+
+function paintPremiumArtworkOnly(ctx, image, map, width, height, direction) {
+  paintBackgroundLayer(ctx, image, map, width, height, direction);
+  paintCommercialColorGrade(ctx, width, height, direction);
+  paintBackgroundSuppression(ctx, image, map, width, height, direction);
+  paintLightShaping(ctx, map, width, height, direction);
+  paintDepthLayer(ctx, map, width, height, direction);
+  paintHeroEnhancement(ctx, image, map, width, height, direction);
+  paintLocalHeroContrast(ctx, image, map, width, height, direction);
+  paintAtmosphere(ctx, map, width, height, direction);
+  paintPremiumMaterials(ctx, width, height, direction);
+  paintBrandAccents(ctx, map, width, height, direction);
+  finalGrade(ctx, width, height, direction);
+}
+
 export async function paintCommercialVisualSystem(canvas, image, plan, settings, width, height) {
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d");
-  const direction = artDirection(plan);
-  const map = compositionMap(plan, image, width, height);
-  paintBackgroundLayer(ctx, image, map, width, height, direction);
-  paintLightShaping(ctx, map, width, height, direction);
-  paintDepthLayer(ctx, map, width, height, direction);
-  paintHeroEnhancement(ctx, image, map, width, height, direction);
-  paintAtmosphere(ctx, map, width, height, direction);
-  paintBrandAccents(ctx, map, width, height, direction);
+  const artwork = selectValidatedArtwork(plan, image, width, height);
+  const { direction, map, score } = artwork;
+  paintPremiumArtworkOnly(ctx, image, map, width, height, direction);
   await paintLogo(ctx, map, width, direction);
   paintTitleBlock(ctx, map, width, height, plan, direction);
   paintPerformerBlock(ctx, map, width, height, plan, direction);
   paintCTA(ctx, map, width, height, plan, direction);
   paintFooter(ctx, width, height, plan, settings, direction);
-  finalGrade(ctx, width, height, direction);
-  return { logoHeight: width * 0.06, compositionMode: map.tension };
+  return { logoHeight: width * 0.06, compositionMode: map.tension, artworkOnlyScore: score, artworkValidation: score >= 84 ? "passed" : "best_available" };
 }
