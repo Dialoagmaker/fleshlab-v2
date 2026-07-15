@@ -303,18 +303,42 @@ async function createTeaserWithFFmpeg({ file, scenes, log, onProgress }) {
   const bestScene = scenes.slice().sort((a, b) => b.scores.technicalScore - a.scores.technicalScore)[0];
   const start = Math.max(0, bestScene?.start || 0);
   await ffmpeg.writeFile("input_video", await fetchFile(file));
-  const extension = file.name.toLowerCase().endsWith(".webm") ? "webm" : "mp4";
-  const outputName = `teaser.${extension}`;
-  const args = extension === "webm"
-    ? ["-ss", String(start), "-t", "10", "-i", "input_video", "-an", "-r", "30", "-fps_mode", "cfr", "-c:v", "libvpx-vp9", "-b:v", "3M", outputName]
-    : ["-ss", String(start), "-t", "10", "-i", "input_video", "-an", "-r", "30", "-fps_mode", "cfr", "-c:v", "libx264", "-preset", "veryfast", "-movflags", "faststart", outputName];
+  const outputName = "teaser.mp4";
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  const canStreamCopyToMp4 = ["mp4", "m4v", "mov"].includes(ext);
+  const fastCopyArgs = ["-y", "-ss", String(start), "-t", "10", "-i", "input_video", "-an", "-c:v", "copy", "-movflags", "+faststart", outputName];
+  const transcodeArgs = [
+    "-y",
+    "-ss", String(start),
+    "-t", "10",
+    "-i", "input_video",
+    "-an",
+    "-vf", "fps=30,scale=min(720\\,iw):-2:flags=bicubic,format=yuv420p",
+    "-r", "30",
+    "-fps_mode", "cfr",
+    "-c:v", "libx264",
+    "-preset", "veryfast",
+    "-crf", "25",
+    "-movflags", "+faststart",
+    outputName
+  ];
   try {
-    await withTimeout(ffmpeg.exec(args), 30000, "FFmpeg teaser encode timed out");
+    if (canStreamCopyToMp4) {
+      try {
+        log?.("fast MP4 teaser cut started");
+        await withTimeout(ffmpeg.exec(fastCopyArgs), 12000, "Fast MP4 cut timed out");
+      } catch (copyError) {
+        log?.(`fast MP4 cut failed: ${copyError.message}; transcoding MP4 preview`);
+        await withTimeout(ffmpeg.exec(transcodeArgs), 30000, "FFmpeg teaser encode timed out");
+      }
+    } else {
+      await withTimeout(ffmpeg.exec(transcodeArgs), 30000, "FFmpeg teaser encode timed out");
+    }
     const data = await ffmpeg.readFile(outputName);
-    const blob = new Blob([data.buffer], { type: extension === "webm" ? "video/webm" : "video/mp4" });
+    const blob = new Blob([data.buffer], { type: "video/mp4" });
     if (!blob.size) throw new Error("FFmpeg produced an empty teaser");
-    log?.("teaser generated");
-    return outputFile(`${file.name.replace(/\.[^/.]+$/, "")}_10s_teaser.${extension}`, blob, URL.createObjectURL(blob), URL.createObjectURL(blob), "ready");
+    log?.("MP4 teaser generated at 30 FPS with fast-start loading");
+    return outputFile(`${file.name.replace(/\.[^/.]+$/, "")}_10s_teaser.mp4`, blob, URL.createObjectURL(blob), URL.createObjectURL(blob), "ready");
   } catch (error) {
     throw new Error(`teaser generation failed: ${error.message}`);
   }
@@ -363,11 +387,11 @@ async function createTeaserWithMediaRecorder({ file, frames, log, onProgress }) 
 }
 
 export async function createTeaserFromFrames({ file, frames, scenes, log, onProgress }) {
-  log?.("teaser generation started");
+  log?.("MP4 teaser generation started");
   try {
     return await createTeaserWithFFmpeg({ file, scenes, log, onProgress });
   } catch (error) {
-    log?.(`${error.message}; using browser MediaRecorder fallback`);
-    return createTeaserWithMediaRecorder({ file, frames, log, onProgress });
+    log?.(`${error.message}; MP4 teaser generation stopped because browser WebM fallback was disabled`);
+    throw new Error(`MP4 teaser generation failed: ${error.message}`);
   }
 }
