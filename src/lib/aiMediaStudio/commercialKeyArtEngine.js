@@ -129,6 +129,7 @@ function buildPlanScore(analysis, language, philosophy, attemptIndex) {
   if (heroDominance < 0.7) failures.push("Squint test failed: hero does not dominate");
   if (screenshotRisk > 0.46) failures.push("Screenshot test failed: still reads as a video frame");
   if (philosophy.graphicRatio < 0.68) failures.push("No-text test failed: insufficient commercial artwork transformation");
+  if (thumbnailReadability < 0.72) failures.push("Typography hierarchy too weak");
   if (total * 100 < TARGET_COMMERCIAL_AD_SCORE) failures.push("Commercial Advertising Score threshold not met");
   return {
     total: Math.round(total * 100),
@@ -164,6 +165,52 @@ function orderedPhilosophies(metadata = {}, analysis = {}) {
     .map(id => COMMERCIAL_PHILOSOPHIES.find(item => item.id === id))
     .filter(Boolean)
     .filter(item => (seen.has(item.id) ? false : (seen.add(item.id), true)));
+}
+
+function tuneCommercialConcept(concept, failures = [], score = {}, iteration = 1) {
+  const reason = failures.join(" ").toLowerCase();
+  const baseId = concept.baseId || concept.id;
+  const next = { ...concept, baseId, id: `${baseId}-optimized-${iteration + 1}`, optimizationDirectives: [] };
+  const push = (label) => next.optimizationDirectives.push(label);
+
+  if (/hero|squint/.test(reason) || score.hero < 78) {
+    next.heroBias += 0.075;
+    next.depth += 0.035;
+    push("increase hero dominance");
+  }
+  if (/screenshot|no-text|video frame|artwork/.test(reason) || score.screenshotRisk > 38) {
+    next.graphicRatio += 0.09;
+    next.depth += 0.045;
+    next.believability += 0.035;
+    push("reduce screenshot feeling and increase artwork transformation");
+  }
+  if (/scroll|desire|commercial|premium|expensive|emotional/.test(reason) || score.scrollStopPower < 82 || score.premiumFeel < 80) {
+    next.graphicRatio += 0.045;
+    next.depth += 0.045;
+    next.believability += 0.05;
+    next.brand += 0.025;
+    push("increase commercial atmosphere and premium desire");
+  }
+  if (/typography|hierarchy|thumbnail|title/.test(reason) || score.thumbnailReadability < 78) {
+    next.titleDominance += 0.08;
+    next.titleScale += 0.06;
+    push("increase typography hierarchy without changing template");
+  }
+  if (!next.optimizationDirectives.length) {
+    next.graphicRatio += 0.025;
+    next.depth += 0.025;
+    next.believability += 0.025;
+    push("general commercial refinement");
+  }
+
+  next.heroBias = clamp(next.heroBias, 0.38, 0.72);
+  next.graphicRatio = clamp(next.graphicRatio, 0.58, 0.96);
+  next.depth = clamp(next.depth, 0.68, 0.98);
+  next.titleDominance = clamp(next.titleDominance, 0.52, 0.96);
+  next.titleScale = clamp(next.titleScale, 0.78, 1.34);
+  next.brand = clamp(next.brand, 0.68, 0.98);
+  next.believability = clamp(next.believability, 0.72, 0.98);
+  return next;
 }
 
 function cropForHero(image, analysis, language, width, height, settings = {}) {
@@ -229,6 +276,7 @@ function buildAttemptPlan(image, metadata, settings, width, height, analysis, ba
     commercial_score: score.polish,
     rejection_reasons: score.qualityFailures,
     design_actions: score.designActions,
+    optimization_directives: philosophy.optimizationDirectives || [],
     score,
     crop,
   };
@@ -254,15 +302,24 @@ export async function generateCommercialKeyArtPlan(image, metadata = {}, setting
   const analysis = await analyzePosterImage(image);
   const baseLanguage = inferGraphicLanguage(metadata, analysis);
   const campaign = createCommercialCampaign({ analysis, metadata });
-  const strategies = orderedPhilosophies(metadata, analysis);
-  const planned = strategies.map((philosophy, index) => buildAttemptPlan(image, metadata, settings, width, height, analysis, baseLanguage, campaign, philosophy, index));
-  const selectedPlan = planned.find(plan => plan.selected.score.passesQualityGate && plan.selected.score.total >= TARGET_COMMERCIAL_AD_SCORE) || planned[planned.length - 1];
+  const seed = { ...orderedPhilosophies(metadata, analysis)[0], baseId: orderedPhilosophies(metadata, analysis)[0].id, id: `${orderedPhilosophies(metadata, analysis)[0].id}-optimized-1`, optimizationDirectives: ["initial commercial concept"] };
+  const planned = [];
+  let concept = seed;
+
+  for (let index = 0; index < 8; index += 1) {
+    const plan = buildAttemptPlan(image, metadata, settings, width, height, analysis, baseLanguage, campaign, concept, index);
+    planned.push(plan);
+    if (plan.selected.score.passesQualityGate && plan.selected.score.total >= TARGET_COMMERCIAL_AD_SCORE) break;
+    concept = tuneCommercialConcept(concept, plan.selected.score.qualityFailures, plan.selected.score, index + 1);
+  }
+
+  const selectedPlan = planned.find(plan => plan.selected.score.passesQualityGate && plan.selected.score.total >= TARGET_COMMERCIAL_AD_SCORE) || planned.reduce((best, plan) => plan.selected.score.total > best.selected.score.total ? plan : best, planned[0]);
   return {
     ...selectedPlan,
     preparedIterations: planned,
     variants: planned.map(plan => plan.selected),
-    attempts: planned.map(plan => ({ philosophy: plan.philosophy.label, score: plan.selected.score, accepted: plan.selected.score.passesQualityGate && plan.selected.score.total >= TARGET_COMMERCIAL_AD_SCORE, designActions: plan.selected.design_actions })),
-    winner_reason: selectedPlan.selected.score.passesQualityGate ? `${selectedPlan.philosophy.label} is the first commercially believable concept.` : "No planned concept passed before render; render loop will keep iterating concepts.",
+    attempts: planned.map(plan => ({ philosophy: plan.philosophy.label, score: plan.selected.score, accepted: plan.selected.score.passesQualityGate && plan.selected.score.total >= TARGET_COMMERCIAL_AD_SCORE, designActions: plan.selected.design_actions, optimizationDirectives: plan.selected.optimization_directives })),
+    winner_reason: selectedPlan.selected.score.passesQualityGate ? `${selectedPlan.philosophy.label} optimized to Commercial Advertising Score ${selectedPlan.selected.score.total}.` : "Optimization did not reach the acceptance gate; the best learned iteration is shown.",
   };
 }
 
@@ -546,6 +603,7 @@ export async function renderCommercialKeyArtToCanvas(canvas, image, metadata = {
       accepted,
       rejectedBecause: renderedPlan.selected.score.qualityFailures,
       designActions: renderedPlan.selected.design_actions,
+      optimizationDirectives: renderedPlan.selected.optimization_directives,
     };
     attempts.push(attempt);
 
@@ -563,8 +621,8 @@ export async function renderCommercialKeyArtToCanvas(canvas, image, metadata = {
 
   if (bestCanvas) copyCanvas(bestCanvas, canvas);
   const finalFailures = bestPlan?.selected?.score?.qualityFailures || ["Commercial poster impact threshold not met"];
-  canvas.__fleshlabPosterPlan = { ...bestPlan, attempts, winner_reason: `Rejected after ${attempts.length} commercial philosophies: ${finalFailures.join(", ")}.` };
-  throw new Error(`Commercial Key Art rejected after ${attempts.length} art-direction iterations: ${finalFailures.join(", ")}`);
+  canvas.__fleshlabPosterPlan = { ...bestPlan, attempts, winner_reason: `Rejected after ${attempts.length} optimization iterations: ${finalFailures.join(", ")}.` };
+  throw new Error(`Commercial Key Art rejected after ${attempts.length} optimization iterations: ${finalFailures.join(", ")}`);
 }
 
 export async function renderPosterToCanvas(canvas, image, metadata, settings, width, height) {
