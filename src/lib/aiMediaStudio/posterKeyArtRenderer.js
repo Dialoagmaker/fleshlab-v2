@@ -20,6 +20,7 @@ function scoreCommercialCandidate({ analysis, typography, composition, posterFam
   if (hero_score < 82) rejection_reasons.push('Hero score below target');
   if (thumbnail_score < 82) rejection_reasons.push('Thumbnail recognition below target');
   if (commercial_score < 82) rejection_reasons.push('Commercial curiosity below target');
+  if (impact_score < 78) rejection_reasons.push('Not strong enough for commercial key art');
   return {
     score: { ...base, total: impact_score, heroScore: hero_score, readabilityScore: thumbnail_score, commercialScore: commercial_score, qualityFailures: rejection_reasons, passesQualityGate: rejection_reasons.length === 0 },
     impact_score,
@@ -62,7 +63,8 @@ export async function generateKeyArtPlan(image, metadata, settings, width, heigh
     };
   });
 
-  const selected = [...variants].sort((a, b) => b.impact_score - a.impact_score)[0];
+  const sorted = [...variants].sort((a, b) => b.impact_score - a.impact_score);
+  const selected = sorted.find(candidate => !candidate.rejection_reasons?.length) || sorted[0];
   return {
     analysis,
     family: selected.family,

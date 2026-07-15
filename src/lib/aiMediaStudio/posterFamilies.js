@@ -30,7 +30,7 @@ export const POSTER_FAMILIES = [
     cropZoom: 1.12,
     treatment: 'high-click',
     scoreBias: { hero: 5, thumbnail: 12, commercial: 7 },
-    typography: { titleFont: 'Bebas Neue', accentFont: 'Permanent Marker', titleScale: 0.108, accentScale: 0.48 },
+    typography: { titleFont: 'Bebas Neue', accentFont: 'Permanent Marker', titleScale: 0.135, accentScale: 0.48 },
   },
   {
     id: 'story-poster',

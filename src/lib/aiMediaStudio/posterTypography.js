@@ -50,8 +50,8 @@ export function calculateTypography(ctx, box, width, family, metadata, settings 
   const performerCredit = performer ? `STARRING ${performer}` : "";
   const maxWidth = width * box.w;
 
-  const titleStart = isManual(settings, "titleSize") ? Number(settings.titleSize) || width * family.typography.titleScale : width * family.typography.titleScale;
-  const titleMin = isManual(settings, "titleSize") ? titleStart : width * 0.052;
+  const titleStart = isManual(settings, "titleSize") ? Number(settings.titleSize) || width * family.typography.titleScale : width * family.typography.titleScale * 1.18;
+  const titleMin = isManual(settings, "titleSize") ? titleStart : width * 0.07;
   const titleBlock = buildTitleLines(ctx, title, maxWidth, titleStart, titleMin, family.typography.titleFont, 3);
 
   const autoSubtitleSize = Math.max(width * 0.026, Math.min(width * 0.054, maxWidth / Math.max(7, subtitle.length || 9)));

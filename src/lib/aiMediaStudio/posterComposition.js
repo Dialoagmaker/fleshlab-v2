@@ -51,9 +51,9 @@ export function calculateTextArea(analysis, variant = "balanced", settings = {})
   let area;
 
   if (variant === "title" || variant === "brand_hero") {
-    area = leftOpen ? { x: 0.055, y: 0.34, w: 0.4, h: 0.38, align: "left" } : { x: 0.57, y: 0.34, w: 0.36, h: 0.38, align: "left" };
+    area = leftOpen ? { x: 0.055, y: 0.15, w: 0.48, h: 0.74, align: "left" } : { x: 0.49, y: 0.15, w: 0.45, h: 0.74, align: "left" };
   } else if (variant === "performer" || variant === "close_hero") {
-    area = subject.y > 0.3 ? { x: 0.07, y: 0.08, w: 0.46, h: 0.26, align: "left" } : { x: 0.07, y: 0.66, w: 0.52, h: 0.25, align: "left" };
+    area = leftOpen ? { x: 0.055, y: 0.14, w: 0.48, h: 0.74, align: "left" } : { x: 0.49, y: 0.14, w: 0.45, h: 0.74, align: "left" };
   } else if (variant === "floating") {
     area = leftOpen ? { x: 0.08, y: 0.18, w: 0.4, h: 0.32, align: "left" } : { x: 0.52, y: 0.18, w: 0.4, h: 0.32, align: "left" };
   } else if (variant === "minimal") {
@@ -86,10 +86,10 @@ export function calculateTextArea(analysis, variant = "balanced", settings = {})
 export function calculateLogoArea(textArea, variant = "balanced", settings = {}, family = {}) {
   const margin = safeMargin(settings);
   let logoArea;
-  if (variant === "title" || variant === "brand_hero" || family.id === "commercial-thumbnail") logoArea = { x: textArea.x, y: 0.06, w: 0.22 };
-  else if (variant === "performer" || variant === "close_hero") logoArea = { x: 0.055, y: 0.06, w: 0.19 };
-  else if (variant === "minimal" || family.id === "minimal-poster") logoArea = { x: textArea.x, y: Math.max(0.055, textArea.y - 0.18), w: 0.16 };
-  else logoArea = { x: textArea.x, y: Math.max(0.05, textArea.y - 0.25), w: 0.2 };
+  if (variant === "title" || variant === "brand_hero" || family.id === "commercial-thumbnail") logoArea = { x: textArea.x, y: textArea.y, w: 0.34 };
+  else if (variant === "performer" || variant === "close_hero") logoArea = { x: textArea.x, y: textArea.y, w: 0.3 };
+  else if (variant === "minimal" || family.id === "minimal-poster") logoArea = { x: textArea.x, y: textArea.y, w: 0.24 };
+  else logoArea = { x: textArea.x, y: textArea.y, w: 0.3 };
 
   if (isManual(settings, "logoScale")) logoArea.w *= clamp((Number(settings.logoScale) || 100) / 100, 0.4, 3.2);
   logoArea.w = clamp(logoArea.w, 0.08, Math.min(0.42, 1 - margin * 2));
@@ -108,6 +108,10 @@ export function shouldShowFooter(analysis, variant = "balanced", family = {}) {
 export function calculateComposition(image, analysis, family, width, height, variant = "balanced", settings = {}) {
   const crop = calculateCrop(image, analysis, width, height, variant, settings, family);
   const textArea = calculateTextArea(analysis, variant, settings);
+  if (family?.id && family.id !== "minimal-poster" && textArea.x > 0.12) {
+    textArea.x = safeMargin(settings);
+    textArea.w = Math.max(textArea.w, 0.46);
+  }
   const logoArea = calculateLogoArea(textArea, variant, settings, family);
   const footerVisible = shouldShowFooter(analysis, variant, family);
   const layoutScore = Math.min(1, 0.5 + analysis.negativeSpace.score * 0.32 + analysis.subjectDominance * 0.18 + (family?.id === "commercial-thumbnail" ? 0.06 : 0));

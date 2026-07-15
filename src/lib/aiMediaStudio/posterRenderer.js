@@ -95,33 +95,38 @@ function alpha(base, settings) {
 function drawAdaptiveAtmosphere(ctx, width, height, composition, family, settings) {
   const { textArea } = composition;
   const treatment = family?.treatment || family?.gradient || "warm-hero";
-  const x = width * textArea.x;
-  const y = height * Math.max(0, textArea.y - 0.18);
-  const w = width * Math.min(0.62, textArea.w + 0.16);
-  const h = height * Math.min(0.76, textArea.h + 0.34);
-  const gradient = ctx.createLinearGradient(x, 0, x + w, 0);
-  const leftHeavy = textArea.x < 0.5;
-  const panelAlpha = treatment === "minimal-premium" ? 0.5 : treatment === "high-click" ? 0.96 : 0.9;
-  gradient.addColorStop(0, leftHeavy ? `rgba(0,0,0,${alpha(panelAlpha, settings)})` : `rgba(0,0,0,${alpha(0.18, settings)})`);
-  gradient.addColorStop(0.55, treatment === "high-click" ? `rgba(92,0,14,${alpha(0.58, settings)})` : `rgba(0,0,0,${alpha(0.58, settings)})`);
-  gradient.addColorStop(1, leftHeavy ? "rgba(0,0,0,0)" : `rgba(0,0,0,${alpha(0.88, settings)})`);
-  ctx.fillStyle = gradient;
-  ctx.fillRect(Math.max(0, x - width * 0.05), 0, Math.min(width, w + width * 0.1), height);
+  const cx = width * (textArea.x + textArea.w * 0.34);
+  const cy = height * (textArea.y + textArea.h * 0.42);
+  const redTone = treatment === "premium-gold" ? "214,173,91" : treatment === "cinema-noir" ? "80,108,155" : "208,0,18";
 
-  const vignette = ctx.createRadialGradient(width * 0.62, height * 0.44, height * 0.1, width * 0.62, height * 0.44, width * 0.72);
-  vignette.addColorStop(0, "rgba(0,0,0,0)");
-  vignette.addColorStop(1, `rgba(0,0,0,${alpha(treatment === "minimal-premium" ? 0.36 : 0.52, settings)})`);
-  ctx.fillStyle = vignette;
+  const darkShape = ctx.createLinearGradient(0, 0, width, 0);
+  darkShape.addColorStop(0, `rgba(0,0,0,${alpha(0.92, settings)})`);
+  darkShape.addColorStop(0.34, `rgba(0,0,0,${alpha(0.7, settings)})`);
+  darkShape.addColorStop(0.64, `rgba(0,0,0,${alpha(0.24, settings)})`);
+  darkShape.addColorStop(1, `rgba(0,0,0,${alpha(0.5, settings)})`);
+  ctx.fillStyle = darkShape;
   ctx.fillRect(0, 0, width, height);
 
   if (treatment !== "minimal-premium") {
-    const glowColor = treatment === "premium-gold" ? "214,173,91" : treatment === "cinema-noir" ? "50,90,140" : "208,0,18";
-    const red = ctx.createRadialGradient(x + w * 0.25, y + h * 0.5, 0, x + w * 0.25, y + h * 0.5, w * 0.8);
-    red.addColorStop(0, `rgba(${glowColor},${alpha(treatment === "high-click" ? 0.22 : 0.15, settings)})`);
-    red.addColorStop(1, `rgba(${glowColor},0)`);
-    ctx.fillStyle = red;
+    const heroGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, width * 0.54);
+    heroGlow.addColorStop(0, `rgba(${redTone},${alpha(treatment === "high-click" ? 0.44 : 0.3, settings)})`);
+    heroGlow.addColorStop(0.42, `rgba(${redTone},${alpha(0.18, settings)})`);
+    heroGlow.addColorStop(1, `rgba(${redTone},0)`);
+    ctx.fillStyle = heroGlow;
+    ctx.fillRect(0, 0, width, height);
+
+    const rimGlow = ctx.createRadialGradient(width * 0.02, height * 0.72, 0, width * 0.02, height * 0.72, width * 0.42);
+    rimGlow.addColorStop(0, `rgba(${redTone},${alpha(0.24, settings)})`);
+    rimGlow.addColorStop(1, `rgba(${redTone},0)`);
+    ctx.fillStyle = rimGlow;
     ctx.fillRect(0, 0, width, height);
   }
+
+  const vignette = ctx.createRadialGradient(width * 0.58, height * 0.44, height * 0.1, width * 0.58, height * 0.44, width * 0.76);
+  vignette.addColorStop(0, "rgba(0,0,0,0)");
+  vignette.addColorStop(1, `rgba(0,0,0,${alpha(0.58, settings)})`);
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, width, height);
 }
 
 function drawBorderTexture(ctx, width, height, settings) {
@@ -237,6 +242,104 @@ function drawFooter(ctx, composition, width, height, settings) {
   ctx.restore();
 }
 
+function fittedTitleSize(ctx, lines, maxWidth, desiredSize, family) {
+  let size = desiredSize;
+  while (size > desiredSize * 0.82) {
+    ctx.font = font(size, family, 900);
+    if (lines.every(line => ctx.measureText(line).width <= maxWidth)) return size;
+    size -= 4;
+  }
+  return size;
+}
+
+async function drawKeyArtComposition(ctx, renderPlan, width, height, settings) {
+  const { composition, typography, family } = renderPlan;
+  const box = composition.textArea;
+  const x = width * box.x;
+  const maxWidth = width * box.w;
+  let y = height * box.y;
+
+  ctx.save();
+  const logo = await getLogo();
+  const source = getLogoCrop(logo);
+  let logoW = Math.min(width * composition.logoArea.w, maxWidth * 0.78);
+  let logoH = logoW * (source.sh / source.sw);
+  if (logoH > height * 0.15) {
+    logoH = height * 0.15;
+    logoW = logoH * (source.sw / source.sh);
+  }
+  ctx.globalAlpha = 0.95;
+  ctx.shadowColor = "rgba(0,0,0,0.86)";
+  ctx.shadowBlur = width * 0.009;
+  ctx.drawImage(logo, source.sx, source.sy, source.sw, source.sh, x, y, logoW, logoH);
+  y += logoH + height * 0.034;
+
+  const titleSize = fittedTitleSize(ctx, typography.lines, maxWidth, typography.size * 1.18, family.typography.titleFont);
+  const titleLineHeight = titleSize * 0.78;
+  ctx.globalAlpha = 1;
+  ctx.shadowColor = "rgba(0,0,0,0.94)";
+  ctx.shadowBlur = width * 0.014;
+  ctx.lineWidth = Math.max(3, titleSize * 0.018);
+  ctx.strokeStyle = "rgba(0,0,0,0.64)";
+  ctx.fillStyle = "#f6f2ee";
+  ctx.font = font(titleSize, family.typography.titleFont, 900);
+  typography.lines.forEach(line => {
+    ctx.strokeText(line, x, y + titleSize);
+    ctx.fillText(line, x, y + titleSize);
+    y += titleLineHeight;
+  });
+
+  if (typography.subtitleLines?.length) {
+    y += titleSize * 0.1;
+    const subtitleSize = Math.max(width * 0.026, typography.subtitleSize * 0.68);
+    const subtitleLineHeight = subtitleSize * 1.04;
+    ctx.shadowBlur = width * 0.007;
+    ctx.lineWidth = Math.max(2, subtitleSize * 0.018);
+    ctx.strokeStyle = "rgba(0,0,0,0.7)";
+    ctx.fillStyle = "rgba(246,242,238,0.94)";
+    ctx.font = font(subtitleSize, "Inter", 900);
+    typography.subtitleLines.forEach(line => {
+      ctx.strokeText(line, x, y + subtitleSize);
+      ctx.fillText(line, x, y + subtitleSize);
+      y += subtitleLineHeight;
+    });
+  }
+
+  if (typography.performerLines?.length) {
+    y += height * 0.018;
+    const creditSize = Math.max(width * 0.018, typography.performerSize * 0.54);
+    ctx.shadowBlur = width * 0.005;
+    ctx.lineWidth = Math.max(1, creditSize * 0.012);
+    ctx.strokeStyle = "rgba(0,0,0,0.72)";
+    ctx.fillStyle = "rgba(255,255,255,0.76)";
+    ctx.font = font(creditSize, "Inter", 900);
+    typography.performerLines.forEach(line => {
+      ctx.strokeText(line, x, y + creditSize);
+      ctx.fillText(line, x, y + creditSize);
+      y += creditSize * 1.16;
+    });
+  }
+
+  const points = sellingPoints(settings);
+  if (points.length) {
+    y += height * 0.02;
+    ctx.shadowBlur = width * 0.004;
+    ctx.fillStyle = "rgba(255,255,255,0.62)";
+    ctx.font = font(width * 0.0135, "Bebas Neue", 400);
+    let pointX = x;
+    points.forEach((text, index) => {
+      ctx.fillText(text, pointX, y);
+      pointX += ctx.measureText(text).width + width * 0.022;
+      if (index < points.length - 1) {
+        ctx.fillStyle = "rgba(208,0,18,0.8)";
+        ctx.fillRect(pointX - width * 0.012, y - width * 0.011, 1, width * 0.017);
+        ctx.fillStyle = "rgba(255,255,255,0.62)";
+      }
+    });
+  }
+  ctx.restore();
+}
+
 export async function generatePosterPlan(image, metadata, settings, width, height) {
   const analysis = await analyzePosterImage(image);
   const family = choosePosterFamily(analysis, metadata);
@@ -272,9 +375,7 @@ export async function renderPosterVariantToCanvas(canvas, image, plan, variantPl
   drawImageCover(ctx, image, renderPlan.composition.crop, width, height, settings);
   drawAdaptiveAtmosphere(ctx, width, height, renderPlan.composition, renderPlan.family, settings);
   drawBorderTexture(ctx, width, height, settings);
-  drawTitle(ctx, renderPlan.typography, renderPlan.composition, width, height, renderPlan.family);
-  await drawLogo(ctx, renderPlan.composition, width, height);
-  drawFooter(ctx, renderPlan.composition, width, height, settings);
+  await drawKeyArtComposition(ctx, renderPlan, width, height, settings);
   canvas.__fleshlabPosterPlan = { ...plan, selected: renderPlan };
   return canvas.__fleshlabPosterPlan;
 }
