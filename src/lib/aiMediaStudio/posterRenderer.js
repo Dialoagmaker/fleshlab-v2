@@ -134,20 +134,24 @@ export async function generatePosterPlan(image, metadata, settings, width, heigh
   return { analysis, family, variants, best: variants[0] };
 }
 
-export async function renderPosterToCanvas(canvas, image, metadata, settings, width, height) {
-  const plan = await generatePosterPlan(image, metadata, settings, width, height);
-  const chosen = plan.best;
-  if (!chosen.score.passesQualityGate) throw new Error(`No poster composition met the semantic quality threshold: ${chosen.score.qualityFailures.join(", ")}.`);
+export async function renderPosterVariantToCanvas(canvas, image, plan, variantPlan, settings, width, height) {
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d");
   ctx.fillStyle = "#030303";
   ctx.fillRect(0, 0, width, height);
-  drawImageCover(ctx, image, chosen.composition.crop, width, height, settings);
-  drawAdaptiveAtmosphere(ctx, width, height, chosen.composition, chosen.family);
-  drawTitle(ctx, chosen.typography, chosen.composition, width, height, chosen.family);
-  await drawLogo(ctx, chosen.composition, width, height);
-  drawFooter(ctx, chosen.composition, width, height);
+  drawImageCover(ctx, image, variantPlan.composition.crop, width, height, settings);
+  drawAdaptiveAtmosphere(ctx, width, height, variantPlan.composition, variantPlan.family);
+  drawTitle(ctx, variantPlan.typography, variantPlan.composition, width, height, variantPlan.family);
+  await drawLogo(ctx, variantPlan.composition, width, height);
+  drawFooter(ctx, variantPlan.composition, width, height);
   canvas.__fleshlabPosterPlan = plan;
   return plan;
+}
+
+export async function renderPosterToCanvas(canvas, image, metadata, settings, width, height) {
+  const plan = await generatePosterPlan(image, metadata, settings, width, height);
+  const chosen = plan.best;
+  if (!chosen.score.passesQualityGate) throw new Error(`No poster composition met the semantic quality threshold: ${chosen.score.qualityFailures.join(", ")}.`);
+  return await renderPosterVariantToCanvas(canvas, image, plan, chosen, settings, width, height);
 }

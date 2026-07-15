@@ -111,7 +111,7 @@ export default function AIMediaStudio() {
       <PrivacyVerification outputCount={outputCount} />
 
       <Tabs defaultValue="review" className="space-y-4">
-        <TabsList className="grid h-auto w-full grid-cols-5 md:w-[820px]"><TabsTrigger value="review">Review</TabsTrigger><TabsTrigger value="outputs">Outputs</TabsTrigger><TabsTrigger value="covers">Covers</TabsTrigger><TabsTrigger value="proof">10-Cover Proof</TabsTrigger><TabsTrigger value="log">Log</TabsTrigger></TabsList>
+        <TabsList className="grid h-auto w-full grid-cols-5 md:w-[820px]"><TabsTrigger value="review">Review</TabsTrigger><TabsTrigger value="outputs">Outputs</TabsTrigger><TabsTrigger value="covers">Covers</TabsTrigger><TabsTrigger value="proof">Proof Gallery</TabsTrigger><TabsTrigger value="log">Log</TabsTrigger></TabsList>
         <TabsContent value="review" className="grid gap-4 lg:grid-cols-[360px_1fr]">
           <Card><CardHeader><CardTitle className="text-sm">Local Queue</CardTitle></CardHeader><CardContent><AnalysisQueue items={items} selectedId={selectedId} onSelect={setSelectedId} /></CardContent></Card>
           <SmartReviewPanel item={selected} />
