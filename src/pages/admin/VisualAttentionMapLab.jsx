@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { buildVisualAttentionMap } from '@/lib/aiMediaStudio/visualAttentionMap';
+import { buildOptimizationTrace } from '@/lib/aiMediaStudio/keyArtOptimizationPlanner';
 
 function ScoreCard({ label, value }) {
   return (
@@ -47,6 +48,7 @@ export default function VisualAttentionMapLab() {
   const imageRef = useRef(null);
   const [imageUrl, setImageUrl] = useState('');
   const [map, setMap] = useState(null);
+  const [optimizationTrace, setOptimizationTrace] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -59,13 +61,16 @@ export default function VisualAttentionMapLab() {
     if (!file) return;
     setError('');
     setMap(null);
+    setOptimizationTrace(null);
     if (imageUrl) URL.revokeObjectURL(imageUrl);
     const url = URL.createObjectURL(file);
     setImageUrl(url);
     const image = new Image();
     image.onload = () => {
       imageRef.current = image;
-      setMap(buildVisualAttentionMap(image));
+      const nextMap = buildVisualAttentionMap(image);
+      setMap(nextMap);
+      setOptimizationTrace(buildOptimizationTrace(nextMap));
     };
     image.onerror = () => setError('Image could not be loaded for visual attention diagnostics.');
     image.src = url;
@@ -125,6 +130,23 @@ export default function VisualAttentionMapLab() {
               </Card>
 
               <Card>
+                <CardHeader><CardTitle className="text-sm">Optimization Actions</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  {optimizationTrace?.actions.map(action => (
+                    <div key={`${action.iteration_step}-${action.constraint}`} className="rounded-lg border border-border bg-secondary/30 p-3 text-xs">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-bold text-foreground">Step {action.iteration_step}: {action.constraint}</span>
+                        <Badge variant="outline">No render</Badge>
+                      </div>
+                      <p className="mt-2 text-muted-foreground">{action.failure}</p>
+                      <p className="mt-2 text-foreground">{action.action}</p>
+                      <p className="mt-2 text-muted-foreground">Expected: {action.expected_effect}</p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              <Card>
                 <CardHeader><CardTitle className="text-sm">Top Attention Zones</CardTitle></CardHeader>
                 <CardContent className="space-y-2">
                   {map.top_zones.slice(0, 6).map((zone, index) => (
@@ -141,7 +163,7 @@ export default function VisualAttentionMapLab() {
           <Card>
             <CardHeader><CardTitle className="text-sm">Debug Output</CardTitle></CardHeader>
             <CardContent>
-              <pre className="max-h-80 overflow-auto rounded-lg bg-black p-4 text-xs text-muted-foreground">{JSON.stringify({ scores: map.scores, hero_candidate: map.hero_candidate, debug: map.debug, rejection_reasons: map.rejection_reasons }, null, 2)}</pre>
+              <pre className="max-h-80 overflow-auto rounded-lg bg-black p-4 text-xs text-muted-foreground">{JSON.stringify({ scores: map.scores, hero_candidate: map.hero_candidate, debug: map.debug, rejection_reasons: map.rejection_reasons, optimization_trace: optimizationTrace }, null, 2)}</pre>
             </CardContent>
           </Card>
         </>
