@@ -28,6 +28,7 @@ export function inferEmotionalGoal({ visionAnalysis = {}, storyAnalysis = {}, me
 export function chooseDominantElement({ visionAnalysis = {}, storyAnalysis = {}, posterFamily = {} }) {
   const face = getSignalValue(visionAnalysis, ['faceScore', 'hero.faceScore', 'subject.faceScore'], 0.5);
   const body = getSignalValue(visionAnalysis, ['bodyPresence', 'hero.bodyPresence', 'subjectPresence'], 0.5);
+  if (posterFamily?.dominantElement) return posterFamily.dominantElement;
   const environment = getSignalValue(visionAnalysis, ['environmentScore', 'scene.environmentScore', 'negativeSpace'], 0.42);
   const titleConcept = storyAnalysis?.titleStrength === 'high' ? 0.8 : 0.48;
   const familyBias = posterFamily?.id === 'v2-title' ? 0.15 : posterFamily?.id === 'v2-performer' ? -0.15 : 0;

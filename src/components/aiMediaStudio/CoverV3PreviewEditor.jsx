@@ -94,7 +94,7 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
         <div>
           <h3 className="font-bold text-foreground">Automatic Commercial Key Art Generator</h3>
           <p className="text-xs text-muted-foreground">
-            {plan ? `Generated ${plan.variants.length} poster candidates · Winner Impact ${plan.selected.impact_score}/100` : `Exact output size: ${dims.width} × ${dims.height}px`}
+            {plan ? `Global family search · ${plan.variants.length} poster philosophies · Winner Impact ${plan.selected.impact_score}/100` : `Exact output size: ${dims.width} × ${dims.height}px`}
           </p>
         </div>
         <Badge variant={rendered ? 'outline' : 'secondary'}>{rendered ? 'Candidates ready' : 'Generating candidates'}</Badge>
@@ -104,7 +104,7 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
 
       {plan?.selected && (
         <div className="rounded-lg border border-border bg-secondary/30 p-3 text-xs text-muted-foreground">
-          Winner: <span className="text-foreground">{plan.selected.variant}</span> · {plan.winner_reason}
+          Winner: <span className="text-foreground">{plan.selected.poster_family_label}</span> · {plan.winner_reason}
           <MetricRow candidate={plan.selected} />
         </div>
       )}
@@ -116,13 +116,14 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {visibleCandidates.map((candidate, index) => (
-          <div key={candidate.variant} className={`rounded-xl border p-2 ${candidate.variant === plan.selected.variant ? 'border-primary bg-primary/10' : 'border-border bg-secondary/20'}`}>
+          <div key={candidate.poster_family_id} className={`rounded-xl border p-2 ${candidate.poster_family_id === plan.selected.poster_family_id ? 'border-primary bg-primary/10' : 'border-border bg-secondary/20'}`}>
             <div className="mb-2 flex items-center justify-between gap-2">
               <span className="text-xs font-bold text-foreground">Candidate {index + 1}</span>
-              {candidate.variant === plan.selected.variant && <Badge variant="outline">Winner</Badge>}
+              {candidate.poster_family_id === plan.selected.poster_family_id && <Badge variant="outline">Winner</Badge>}
             </div>
             <canvas ref={(node) => { candidateRefs.current[index] = node; }} className="h-auto w-full rounded-lg bg-black" />
-            <p className="mt-2 text-xs text-muted-foreground">{candidate.variant}</p>
+            <p className="mt-2 text-xs font-semibold text-foreground">{candidate.poster_family_label}</p>
+            <p className="mt-1 text-[10px] text-muted-foreground">{candidate.philosophy}</p>
             <MetricRow candidate={candidate} />
             {!!candidate.rejection_reasons?.length && (
               <p className="mt-2 text-[10px] text-muted-foreground">Needs work: {candidate.rejection_reasons.join(', ')}</p>

@@ -1,6 +1,6 @@
 import { blobToCanvasImage, canvasToBlob, getCoverDimensions } from './coverRenderer';
 import { analyzePosterImage } from './posterAnalysis';
-import { choosePosterFamily } from './posterFamilies';
+import { getPosterFamilySearchSpace } from './posterFamilies';
 import createPosterArtDirectionPlan from './posterArtDirector';
 
 const LOGO_URL = 'https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a1f9333f9_ChatGPTImageJul14202612_16_43AM.png';
@@ -31,10 +31,9 @@ function cropCover(image, width, height, subjectBox = {}, mode = 'hero', zoom = 
   else sh = image.width / outputAspect;
   sw = Math.max(1, sw / zoom);
   sh = Math.max(1, sh / zoom);
-
   const cx = ((subjectBox.x || 0.35) + (subjectBox.w || 0.3) / 2) * image.width;
   const cy = ((subjectBox.y || 0.22) + (subjectBox.h || 0.56) / 2) * image.height;
-  const bias = mode === 'title' ? 0.08 : mode === 'environment' ? -0.04 : 0;
+  const bias = mode === 'title' ? 0.08 : mode === 'environment' ? -0.08 : 0;
   return {
     sx: clamp(cx - sw * (0.48 + bias), 0, Math.max(0, image.width - sw)),
     sy: clamp(cy - sh * 0.48, 0, Math.max(0, image.height - sh)),
@@ -48,42 +47,57 @@ function overlaps(a, b) {
   return !(a.x + a.w < b.x || b.x + b.w < a.x || a.y + a.h < b.y || b.y + b.h < a.y);
 }
 
-function buildLayout(analysis, artDirection, variant, width, height) {
-  const subject = analysis.subjectBox || { x: 0.34, y: 0.18, w: 0.32, h: 0.64 };
+function compositionZone(composition, subject, dominant) {
   const subjectCenter = subject.x + subject.w / 2;
-  const dominant = artDirection.visual_priority?.dominant_element || 'hero_performer';
   const leftOpen = subjectCenter > 0.5;
-  const textX = leftOpen ? 0.055 : 0.57;
-  const textW = leftOpen ? 0.42 : 0.38;
-  let textZone = { x: textX, y: dominant === 'main_title' ? 0.34 : 0.47, w: textW, h: 0.36, align: 'left' };
+  const baseX = leftOpen ? 0.055 : 0.57;
+  const baseW = leftOpen ? 0.42 : 0.38;
+  const zones = {
+    anchor: { x: baseX, y: dominant === 'main_title' ? 0.34 : 0.47, w: baseW, h: 0.36, align: 'left' },
+    close_hero: { x: leftOpen ? 0.055 : 0.6, y: subject.y > 0.42 ? 0.08 : 0.6, w: leftOpen ? 0.4 : 0.34, h: 0.28, align: 'left' },
+    floating: { x: leftOpen ? 0.08 : 0.52, y: 0.18, w: 0.4, h: 0.32, align: 'left' },
+    lower: { x: 0.07, y: 0.62, w: 0.55, h: 0.26, align: 'left' },
+    brand_hero: { x: leftOpen ? 0.06 : 0.58, y: 0.42, w: leftOpen ? 0.42 : 0.35, h: 0.34, align: 'left' },
+    minimal: { x: 0.08, y: 0.72, w: 0.44, h: 0.18, align: 'left' },
+    editorial: { x: 0.055, y: 0.1, w: 0.48, h: 0.48, align: 'left' },
+    premium: { x: leftOpen ? 0.07 : 0.56, y: 0.52, w: 0.38, h: 0.24, align: 'left' },
+    action: { x: leftOpen ? 0.06 : 0.55, y: 0.31, w: 0.45, h: 0.38, align: 'left' },
+    emotional: { x: leftOpen ? 0.07 : 0.55, y: 0.58, w: 0.38, h: 0.24, align: 'left' },
+  };
+  return zones[composition] || zones.anchor;
+}
 
-  if (variant === 'close_hero') textZone = { x: leftOpen ? 0.055 : 0.6, y: subject.y > 0.42 ? 0.08 : 0.6, w: leftOpen ? 0.4 : 0.34, h: 0.28, align: 'left' };
-  if (variant === 'floating') textZone = { x: leftOpen ? 0.08 : 0.52, y: 0.18, w: 0.4, h: 0.32, align: 'left' };
-  if (variant === 'lower') textZone = { x: 0.07, y: 0.62, w: 0.55, h: 0.26, align: 'left' };
-  if (variant === 'brand_hero') textZone = { x: leftOpen ? 0.06 : 0.58, y: 0.42, w: leftOpen ? 0.42 : 0.35, h: 0.34, align: 'left' };
-  if (overlaps(textZone, subject)) textZone = { x: leftOpen ? 0.055 : 0.58, y: subject.y > 0.38 ? 0.08 : 0.62, w: leftOpen ? 0.42 : 0.36, h: 0.3, align: 'left' };
-
-  const cropZoom = variant === 'close_hero' ? 1.16 : variant === 'brand_hero' ? 1.08 : variant === 'floating' ? 1.04 : 1;
-  const logoWidth = variant === 'brand_hero' ? 0.15 : clamp(width > height ? 0.13 : 0.145, 0.12, 0.15);
-
+function buildLayout(analysis, artDirection, composition, width, height, posterFamily = {}) {
+  const subject = analysis.subjectBox || { x: 0.34, y: 0.18, w: 0.32, h: 0.64 };
+  const dominant = artDirection.visual_priority?.dominant_element || posterFamily.dominantElement || 'hero_performer';
+  let textZone = compositionZone(composition, subject, dominant);
+  if (overlaps(textZone, subject) && !['commercial-thumbnail', 'editorial-poster'].includes(posterFamily.id)) {
+    textZone = compositionZone(subject.y > 0.38 ? 'floating' : 'lower', subject, dominant);
+  }
+  const familyZoom = posterFamily.cropZoom || 1;
+  const compositionZoom = composition === 'close_hero' ? 1.08 : composition === 'brand_hero' ? 1.04 : composition === 'minimal' ? 0.96 : 1;
+  const logoWidth = posterFamily.id === 'commercial-thumbnail' ? 0.16 : posterFamily.id === 'minimal-poster' ? 0.105 : clamp(width > height ? 0.13 : 0.145, 0.11, 0.16);
   return {
     cropMode: dominant === 'environment' ? 'environment' : dominant === 'main_title' ? 'title' : 'hero',
-    cropZoom,
+    cropZoom: familyZoom * compositionZoom,
     subjectBox: subject,
     textZone,
     logo: { x: textZone.x, y: Math.max(0.045, textZone.y - 0.13), w: logoWidth },
     footer: { x: textZone.x, y: 0.94, w: 0.72 },
+    visualConcept: posterFamily,
+    composition,
     protectedZones: ['eyes', 'face', 'head', 'chest', 'torso', 'tattoos', 'hands', 'body silhouette'],
   };
 }
 
-function scoreCandidate(layout, artDirection, analysis) {
+function scoreCandidate(layout, artDirection, analysis, posterFamily = {}) {
   const subjectArea = (layout.subjectBox.w || 0.3) * (layout.subjectBox.h || 0.55);
   const collision = overlaps(layout.textZone, layout.subjectBox);
-  const hero_score = clamp(Math.round(68 + subjectArea * 70 + (layout.cropZoom - 1) * 58 - (analysis.backgroundComplexity || 0.5) * 8 - (collision ? 18 : 0)), 0, 100);
-  const thumbnail_score = clamp(Math.round(72 + layout.logo.w * 90 - (collision ? 22 : 0) - (layout.textZone.y > 0.66 ? 4 : 0)), 0, 100);
-  const commercial_score = clamp(Math.round(70 + (artDirection.design_review?.export_ready ? 10 : 4) + (layout.cropZoom - 1) * 30 - (analysis.backgroundComplexity || 0.5) * 5), 0, 100);
-  const impact_score = clamp(Math.round(hero_score * 0.42 + thumbnail_score * 0.26 + commercial_score * 0.32), 0, 100);
+  const bias = posterFamily.scoreBias || {};
+  const hero_score = clamp(Math.round(64 + subjectArea * 70 + (layout.cropZoom - 1) * 44 - (analysis.backgroundComplexity || 0.5) * 8 - (collision ? 14 : 0) + (bias.hero || 0)), 0, 100);
+  const thumbnail_score = clamp(Math.round(68 + layout.logo.w * 92 - (collision ? 18 : 0) - (layout.textZone.y > 0.66 ? 3 : 0) + (bias.thumbnail || 0)), 0, 100);
+  const commercial_score = clamp(Math.round(68 + (artDirection.design_review?.export_ready ? 8 : 4) + (layout.cropZoom - 1) * 22 - (analysis.backgroundComplexity || 0.5) * 4 + (bias.commercial || 0)), 0, 100);
+  const impact_score = clamp(Math.round(hero_score * 0.38 + thumbnail_score * 0.27 + commercial_score * 0.35), 0, 100);
   const rejection_reasons = [];
   if (hero_score < 82) rejection_reasons.push('Hero score below target');
   if (thumbnail_score < 82) rejection_reasons.push('Thumbnail recognition below target');
@@ -114,9 +128,63 @@ function wrap(ctx, text, maxWidth, size, family, maxLines = 3) {
   return lines.slice(0, maxLines);
 }
 
+function drawConceptOverlay(ctx, layout, width, height, heroX, heroY) {
+  const concept = layout.visualConcept?.treatment || 'warm-hero';
+  const base = ctx.createLinearGradient(0, 0, width, height);
+  if (concept === 'high-click') {
+    base.addColorStop(0, 'rgba(80,0,10,0.52)'); base.addColorStop(0.55, 'rgba(0,0,0,0.1)'); base.addColorStop(1, 'rgba(0,0,0,0.7)');
+  } else if (concept === 'cinema-noir') {
+    base.addColorStop(0, 'rgba(0,12,28,0.64)'); base.addColorStop(0.58, 'rgba(0,0,0,0.18)'); base.addColorStop(1, 'rgba(0,0,0,0.82)');
+  } else if (concept === 'minimal-premium') {
+    base.addColorStop(0, 'rgba(0,0,0,0.28)'); base.addColorStop(0.6, 'rgba(0,0,0,0.04)'); base.addColorStop(1, 'rgba(0,0,0,0.58)');
+  } else if (concept === 'premium-gold') {
+    base.addColorStop(0, 'rgba(58,36,0,0.42)'); base.addColorStop(0.48, 'rgba(0,0,0,0.08)'); base.addColorStop(1, 'rgba(0,0,0,0.66)');
+  } else if (concept === 'dark-red') {
+    base.addColorStop(0, 'rgba(12,0,10,0.76)'); base.addColorStop(0.48, 'rgba(0,0,0,0.2)'); base.addColorStop(1, 'rgba(60,0,12,0.78)');
+  } else if (concept === 'editorial-red' || concept === 'action-red') {
+    base.addColorStop(0, 'rgba(120,0,18,0.42)'); base.addColorStop(0.5, 'rgba(0,0,0,0.06)'); base.addColorStop(1, 'rgba(0,0,0,0.72)');
+  } else if (concept === 'soft-emotional') {
+    base.addColorStop(0, 'rgba(40,12,20,0.34)'); base.addColorStop(0.55, 'rgba(0,0,0,0.06)'); base.addColorStop(1, 'rgba(0,0,0,0.62)');
+  } else {
+    base.addColorStop(0, 'rgba(0,10,22,0.46)'); base.addColorStop(0.52, 'rgba(0,0,0,0.08)'); base.addColorStop(1, 'rgba(6,0,8,0.62)');
+  }
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, width, height);
+
+  const vignette = ctx.createRadialGradient(heroX, heroY, width * 0.12, heroX, heroY, width * 0.76);
+  vignette.addColorStop(0, 'rgba(0,0,0,0)');
+  vignette.addColorStop(1, concept === 'minimal-premium' ? 'rgba(0,0,0,0.48)' : 'rgba(0,0,0,0.74)');
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, width, height);
+
+  if (concept === 'action-red') {
+    ctx.save();
+    ctx.globalAlpha = 0.25;
+    ctx.strokeStyle = '#d00012';
+    ctx.lineWidth = width * 0.012;
+    ctx.beginPath();
+    ctx.moveTo(width * 0.06, height * 0.86);
+    ctx.lineTo(width * 0.86, height * 0.12);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
 function drawKeyArtImage(ctx, image, crop, layout, width, height) {
+  const concept = layout.visualConcept?.treatment || 'warm-hero';
+  const filterMap = {
+    'high-click': 'brightness(110%) contrast(132%) saturate(122%)',
+    'cinema-noir': 'brightness(92%) contrast(128%) saturate(86%)',
+    documentary: 'brightness(101%) contrast(108%) saturate(82%)',
+    'minimal-premium': 'brightness(98%) contrast(112%) saturate(78%)',
+    'editorial-red': 'brightness(104%) contrast(126%) saturate(112%)',
+    'premium-gold': 'brightness(106%) contrast(118%) saturate(104%)',
+    'dark-red': 'brightness(86%) contrast(135%) saturate(96%)',
+    'action-red': 'brightness(107%) contrast(138%) saturate(116%)',
+    'soft-emotional': 'brightness(106%) contrast(106%) saturate(92%)',
+  };
   ctx.save();
-  ctx.filter = 'brightness(104%) contrast(121%) saturate(108%)';
+  ctx.filter = filterMap[concept] || 'brightness(104%) contrast(121%) saturate(108%)';
   ctx.drawImage(image, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, width, height);
   ctx.restore();
 
@@ -124,47 +192,37 @@ function drawKeyArtImage(ctx, image, crop, layout, width, height) {
   const heroX = width * (subject.x + subject.w / 2);
   const heroY = height * (subject.y + subject.h * 0.42);
   const heroGlow = ctx.createRadialGradient(heroX, heroY, 0, heroX, heroY, width * 0.36);
-  heroGlow.addColorStop(0, 'rgba(255,190,145,0.18)');
+  heroGlow.addColorStop(0, concept === 'premium-gold' ? 'rgba(255,214,135,0.2)' : 'rgba(255,190,145,0.18)');
   heroGlow.addColorStop(0.5, 'rgba(255,190,145,0.04)');
   heroGlow.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = heroGlow;
   ctx.fillRect(0, 0, width, height);
 
   ctx.save();
-  ctx.filter = 'blur(10px) brightness(58%) saturate(55%)';
-  ctx.globalAlpha = 0.42;
+  ctx.filter = concept === 'minimal-premium' ? 'blur(14px) brightness(48%) saturate(45%)' : 'blur(10px) brightness(58%) saturate(55%)';
+  ctx.globalAlpha = concept === 'high-click' ? 0.28 : 0.42;
   ctx.drawImage(image, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, width, height);
   ctx.restore();
-
-  const cool = ctx.createLinearGradient(0, 0, width, height);
-  cool.addColorStop(0, 'rgba(0,10,22,0.46)');
-  cool.addColorStop(0.52, 'rgba(0,0,0,0.08)');
-  cool.addColorStop(1, 'rgba(6,0,8,0.62)');
-  ctx.fillStyle = cool;
-  ctx.fillRect(0, 0, width, height);
-
-  const vignette = ctx.createRadialGradient(heroX, heroY, width * 0.12, heroX, heroY, width * 0.76);
-  vignette.addColorStop(0, 'rgba(0,0,0,0)');
-  vignette.addColorStop(1, 'rgba(0,0,0,0.74)');
-  ctx.fillStyle = vignette;
-  ctx.fillRect(0, 0, width, height);
+  drawConceptOverlay(ctx, layout, width, height, heroX, heroY);
 }
 
 function drawAtmosphericPanel(ctx, layout, width, height) {
   const zone = layout.textZone;
+  const concept = layout.visualConcept?.treatment || 'warm-hero';
   const x = width * Math.max(0, zone.x - 0.055);
   const y = height * Math.max(0, zone.y - 0.16);
-  const w = width * Math.min(0.58, zone.w + 0.16);
+  const w = width * Math.min(0.62, zone.w + 0.18);
   const h = height * Math.min(0.72, zone.h + 0.34);
   const gradient = ctx.createLinearGradient(x, 0, x + w, 0);
-  gradient.addColorStop(0, 'rgba(0,0,0,0.88)');
-  gradient.addColorStop(0.64, 'rgba(0,0,0,0.46)');
+  gradient.addColorStop(0, concept === 'minimal-premium' ? 'rgba(0,0,0,0.48)' : 'rgba(0,0,0,0.88)');
+  gradient.addColorStop(0.64, concept === 'high-click' ? 'rgba(120,0,14,0.42)' : 'rgba(0,0,0,0.46)');
   gradient.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = gradient;
   ctx.fillRect(x, y, w, h);
 
+  if (concept === 'minimal-premium' || concept === 'soft-emotional') return;
   ctx.save();
-  ctx.globalAlpha = 0.4;
+  ctx.globalAlpha = concept === 'editorial-red' ? 0.55 : 0.4;
   for (let i = 0; i < 36; i += 1) {
     const py = y + ((i * 67) % Math.max(1, h));
     ctx.strokeStyle = i % 3 === 0 ? 'rgba(208,0,18,0.34)' : 'rgba(255,255,255,0.055)';
@@ -194,7 +252,7 @@ async function drawLogo(ctx, layout, width, height) {
   const w = width * layout.logo.w;
   const h = w * (logo.height / logo.width);
   ctx.save();
-  ctx.globalAlpha = 0.92;
+  ctx.globalAlpha = layout.visualConcept?.id === 'minimal-poster' ? 0.74 : 0.92;
   ctx.shadowColor = 'rgba(0,0,0,0.85)';
   ctx.shadowBlur = width * 0.008;
   ctx.drawImage(logo, width * layout.logo.x, height * layout.logo.y, w, h);
@@ -203,36 +261,38 @@ async function drawLogo(ctx, layout, width, height) {
 
 function drawTypography(ctx, layout, metadata, artDirection, width, height) {
   const { title, brush, subtitle, performer } = splitTitle(metadata);
+  const family = layout.visualConcept || {};
+  const type = family.typography || {};
   const zone = layout.textZone;
   const maxWidth = width * zone.w;
   let y = height * zone.y;
   const x = width * zone.x;
-  const titleSize = clamp(width * (artDirection.visual_priority.dominant_element === 'main_title' ? 0.094 : 0.072), 64, 188);
-  const brushSize = clamp(titleSize * 0.54, 38, 102);
-  const subtitleSize = clamp(titleSize * 0.25, 22, 48);
-  const performerSize = clamp(titleSize * 0.22, 20, 42);
-  const titleLines = wrap(ctx, title, maxWidth, titleSize, 'Bebas Neue', 3);
+  const titleSize = clamp(width * (type.titleScale || (artDirection.visual_priority.dominant_element === 'main_title' ? 0.094 : 0.072)), 52, 205);
+  const brushSize = clamp(titleSize * (type.accentScale || 0.54), 28, 110);
+  const subtitleSize = clamp(titleSize * 0.25, 20, 52);
+  const performerSize = clamp(titleSize * 0.22, 18, 44);
+  const titleLines = wrap(ctx, title, maxWidth, titleSize, type.titleFont || 'Bebas Neue', family.id === 'commercial-thumbnail' ? 2 : 3);
 
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.94)';
   ctx.shadowBlur = width * 0.012;
-  ctx.fillStyle = '#f4f1ed';
-  ctx.strokeStyle = 'rgba(0,0,0,0.62)';
+  ctx.fillStyle = family.id === 'premium-poster' ? '#f6e8c8' : '#f4f1ed';
+  ctx.strokeStyle = family.id === 'editorial-poster' ? 'rgba(208,0,18,0.72)' : 'rgba(0,0,0,0.62)';
   ctx.lineWidth = Math.max(2, titleSize * 0.018);
-  ctx.font = font(titleSize, 'Bebas Neue');
+  ctx.font = font(titleSize, type.titleFont || 'Bebas Neue');
   titleLines.forEach(line => {
     ctx.strokeText(line, x, y);
     ctx.fillText(line, x, y);
     y += titleSize * 0.78;
   });
 
-  if (brush) {
+  if (brush && family.id !== 'minimal-poster') {
     y += brushSize * 0.12;
     ctx.save();
     ctx.translate(x, y);
-    ctx.rotate(-2.5 * Math.PI / 180);
-    ctx.font = font(brushSize, 'Permanent Marker');
-    ctx.fillStyle = '#d00012';
+    ctx.rotate(family.id === 'action-poster' ? -6 * Math.PI / 180 : -2.5 * Math.PI / 180);
+    ctx.font = font(brushSize, type.accentFont || 'Permanent Marker');
+    ctx.fillStyle = family.id === 'premium-poster' ? '#d6ad5b' : '#d00012';
     ctx.fillText(brush, 0, 0);
     ctx.restore();
     y += brushSize * 0.72;
@@ -254,29 +314,50 @@ function drawTypography(ctx, layout, metadata, artDirection, width, height) {
     ctx.fillText(`STARRING ${performer}`, x, y);
   }
 
-  ctx.font = font(width * 0.014, 'Bebas Neue', 400);
-  ctx.fillStyle = 'rgba(255,255,255,0.58)';
-  ctx.fillText('RAW CHEMISTRY   •   REAL MOMENTS   •   FLESHLAB ORIGINAL', width * layout.footer.x, height * layout.footer.y);
+  if (family.id !== 'minimal-poster') {
+    ctx.font = font(width * 0.014, 'Bebas Neue', 400);
+    ctx.fillStyle = 'rgba(255,255,255,0.58)';
+    ctx.fillText('RAW CHEMISTRY   •   REAL MOMENTS   •   FLESHLAB ORIGINAL', width * layout.footer.x, height * layout.footer.y);
+  }
   ctx.restore();
+}
+
+function optimizeInsideFamily(analysis, artDirection, posterFamily, width, height) {
+  const options = (posterFamily.compositions || ['anchor']).map(composition => {
+    const layout = buildLayout(analysis, artDirection, composition, width, height, posterFamily);
+    const scores = scoreCandidate(layout, artDirection, analysis, posterFamily);
+    return { composition, layout, ...scores };
+  });
+  return [...options].sort((a, b) => b.impact_score - a.impact_score)[0];
 }
 
 export async function generateKeyArtPlan(image, metadata, settings, width, height) {
   const analysis = await analyzePosterImage(image);
-  const family = choosePosterFamily(analysis, metadata);
-  const artDirection = createPosterArtDirectionPlan({ visionAnalysis: analysis, storyAnalysis: {}, heroPerformer: metadata?.performerName, posterFamily: family, metadata });
-  const variants = ['anchor', 'close_hero', 'floating', 'lower', 'brand_hero'].map((variant, index) => {
-    const layout = buildLayout(analysis, artDirection, variant, width, height);
-    const scores = scoreCandidate(layout, artDirection, analysis);
-    return { candidate_number: index + 1, variant, layout, ...scores };
+  const families = getPosterFamilySearchSpace(analysis, metadata).slice(0, 8);
+  const variants = families.map((posterFamily, index) => {
+    const artDirection = createPosterArtDirectionPlan({ visionAnalysis: analysis, storyAnalysis: {}, heroPerformer: metadata?.performerName, posterFamily, metadata });
+    const optimized = optimizeInsideFamily(analysis, artDirection, posterFamily, width, height);
+    return {
+      candidate_number: index + 1,
+      poster_family_id: posterFamily.id,
+      poster_family_label: posterFamily.label,
+      poster_family: posterFamily,
+      philosophy: posterFamily.philosophy,
+      variant: optimized.composition,
+      layout: optimized.layout,
+      artDirection,
+      optimization_path: ['Poster Family', 'Composition', 'Crop', 'Typography', 'Branding', 'Micro Adjustments'],
+      ...optimized,
+    };
   });
   const selected = [...variants].sort((a, b) => b.impact_score - a.impact_score)[0];
   return {
     analysis,
-    family,
-    artDirection,
+    family: selected.poster_family,
+    artDirection: selected.artDirection,
     variants,
     selected,
-    winner_reason: `${selected.variant} won because it produced the strongest combined Poster Impact, Hero, Thumbnail and Commercial scores.`,
+    winner_reason: `${selected.poster_family_label} won because that poster philosophy produced the strongest combined commercial impact before micro-layout tuning.`,
   };
 }
 
@@ -289,7 +370,7 @@ export async function renderKeyArtToCanvas(canvas, image, plan, metadata, settin
   drawAtmosphericPanel(ctx, candidate.layout, width, height);
   drawGrain(ctx, width, height);
   await drawLogo(ctx, candidate.layout, width, height);
-  drawTypography(ctx, candidate.layout, metadata, plan.artDirection, width, height);
+  drawTypography(ctx, candidate.layout, metadata, candidate.artDirection || plan.artDirection, width, height);
   canvas.__fleshlabPosterPlan = { ...plan, renderedCandidate: candidate };
   return { ...plan, renderedCandidate: candidate };
 }
