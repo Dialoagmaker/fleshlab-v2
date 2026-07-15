@@ -3,7 +3,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { buildVisualAttentionMap } from '@/lib/aiMediaStudio/visualAttentionMap';
-import { buildOptimizationTrace } from '@/lib/aiMediaStudio/keyArtOptimizationPlanner';
+import { DEFAULT_CANDIDATE_PARAMS, posterImpactProxy, runOneOptimizationIteration } from '@/lib/aiMediaStudio/keyArtOptimizationPlanner';
+
+const HISTORY_KEY = 'fleshlab_cover_engine_optimization_history';
 
 function ScoreCard({ label, value }) {
   return (
@@ -43,54 +45,125 @@ function drawOverlay(canvas, image, map) {
   }
 }
 
+function ActionTable({ results }) {
+  if (!results?.length) return null;
+  return (
+    <div className="overflow-auto rounded-lg border border-border">
+      <table className="w-full min-w-[720px] text-xs">
+        <thead className="bg-secondary/60 text-muted-foreground">
+          <tr>
+            <th className="px-3 py-2 text-left">Reason</th>
+            <th className="px-3 py-2 text-left">Parameter</th>
+            <th className="px-3 py-2 text-right">Old</th>
+            <th className="px-3 py-2 text-right">New</th>
+            <th className="px-3 py-2 text-right">Expected</th>
+            <th className="px-3 py-2 text-right">Actual</th>
+            <th className="px-3 py-2 text-left">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {results.map((result, index) => (
+            <tr key={`${result.parameter}-${index}`} className="border-t border-border">
+              <td className="px-3 py-2 text-foreground">{result.reason}</td>
+              <td className="px-3 py-2 text-muted-foreground">{result.parameter}</td>
+              <td className="px-3 py-2 text-right">{result.old_value}</td>
+              <td className="px-3 py-2 text-right">{result.new_value}</td>
+              <td className="px-3 py-2 text-right">+{result.expected_improvement}</td>
+              <td className={`px-3 py-2 text-right ${result.actual_improvement > 0 ? 'text-green-400' : 'text-destructive'}`}>{result.actual_improvement > 0 ? '+' : ''}{result.actual_improvement}</td>
+              <td className="px-3 py-2"><Badge variant="outline">{result.status}</Badge></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function VisualAttentionMapLab() {
   const canvasRef = useRef(null);
+  const candidateCanvasRef = useRef(null);
   const imageRef = useRef(null);
   const [imageUrl, setImageUrl] = useState('');
   const [map, setMap] = useState(null);
-  const [optimizationTrace, setOptimizationTrace] = useState(null);
+  const [candidateMap, setCandidateMap] = useState(null);
+  const [candidateParams, setCandidateParams] = useState(DEFAULT_CANDIDATE_PARAMS);
+  const [iterationResult, setIterationResult] = useState(null);
+  const [history, setHistory] = useState([]);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const saved = localStorage.getItem(HISTORY_KEY);
+    if (saved) setHistory(JSON.parse(saved).slice(-50));
+  }, []);
 
   useEffect(() => {
     if (!map || !imageRef.current) return;
     drawOverlay(canvasRef.current, imageRef.current, map);
   }, [map]);
 
+  useEffect(() => {
+    if (!candidateMap || !iterationResult?.rendered_candidate) return;
+    drawOverlay(candidateCanvasRef.current, iterationResult.rendered_candidate, candidateMap);
+  }, [candidateMap, iterationResult]);
+
   const handleFile = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
     setError('');
     setMap(null);
-    setOptimizationTrace(null);
+    setCandidateMap(null);
+    setIterationResult(null);
+    setCandidateParams(DEFAULT_CANDIDATE_PARAMS);
     if (imageUrl) URL.revokeObjectURL(imageUrl);
     const url = URL.createObjectURL(file);
     setImageUrl(url);
     const image = new Image();
     image.onload = () => {
       imageRef.current = image;
-      const nextMap = buildVisualAttentionMap(image);
-      setMap(nextMap);
-      setOptimizationTrace(buildOptimizationTrace(nextMap));
+      setMap(buildVisualAttentionMap(image));
     };
-    image.onerror = () => setError('Image could not be loaded for visual attention diagnostics.');
+    image.onerror = () => setError('Image could not be loaded for optimization.');
     image.src = url;
   };
+
+  const runIteration = () => {
+    if (!imageRef.current || !map) return;
+    const sourceMap = candidateMap || map;
+    const result = runOneOptimizationIteration(imageRef.current, sourceMap, candidateParams);
+    setIterationResult(result);
+    setCandidateMap(result.final_map);
+    setCandidateParams(result.final_params);
+    const savedRows = result.action_results.map(row => ({ ...row, at: result.started_at, delta: result.total_delta }));
+    const nextHistory = [...history, ...savedRows].slice(-50);
+    setHistory(nextHistory);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(nextHistory));
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+    localStorage.removeItem(HISTORY_KEY);
+  };
+
+  const currentMap = candidateMap || map;
+  const baseScore = currentMap ? posterImpactProxy(currentMap) : 0;
+  const nextScore = iterationResult ? posterImpactProxy(iterationResult.final_map) : null;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-black tracking-tight text-foreground">Cover Engine Phase 1</h1>
-            <Badge variant="outline">Diagnostics only</Badge>
+            <h1 className="text-2xl font-black tracking-tight text-foreground">Cover Engine Optimizer Lab</h1>
+            <Badge variant="outline">Executable iteration</Badge>
           </div>
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-            Visual Attention Map validation page. This phase measures saliency and visual energy only; it does not alter Poster Engine v2 or any rendering output.
+            Candidate actions now change measurable parameters, generate a second candidate, measure actual score delta, then accept or revert each action. Poster Engine v2 remains untouched.
           </p>
         </div>
-        <div>
+        <div className="flex gap-2">
           <input id="attention-file" type="file" accept="image/*" onChange={handleFile} className="hidden" />
           <Button asChild><label htmlFor="attention-file">Upload frame or cover</label></Button>
+          <Button variant="outline" onClick={runIteration} disabled={!map}>Run iteration</Button>
         </div>
       </div>
 
@@ -99,78 +172,55 @@ export default function VisualAttentionMapLab() {
       {map ? (
         <>
           <div className="grid gap-3 md:grid-cols-5">
-            <ScoreCard label="Visual Attention" value={map.scores.visual_attention} />
-            <ScoreCard label="Face / Eye Proxy" value={map.scores.face_eye_priority} />
-            <ScoreCard label="Body Silhouette" value={map.scores.body_silhouette_priority} />
-            <ScoreCard label="Background Noise" value={map.scores.background_noise} />
-            <ScoreCard label="Hero Proxy" value={map.scores.hero_dominance_proxy} />
+            <ScoreCard label="Candidate 1 Impact" value={baseScore} />
+            <ScoreCard label="Candidate 2 Impact" value={nextScore ?? '—'} />
+            <ScoreCard label="Delta" value={iterationResult ? `${iterationResult.total_delta > 0 ? '+' : ''}${iterationResult.total_delta}` : '—'} />
+            <ScoreCard label="Accepted Actions" value={iterationResult?.action_results.filter(row => row.status === 'accepted').length ?? '—'} />
+            <ScoreCard label="History Rows" value={history.length} />
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-[1.5fr_1fr]">
+          <div className="grid gap-4 xl:grid-cols-2">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Visual Energy Overlay</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="text-sm">Candidate 1 Overlay</CardTitle></CardHeader>
               <CardContent>
                 <canvas ref={canvasRef} className="h-auto w-full rounded-lg border border-border bg-black" />
-                <p className="mt-3 text-xs text-muted-foreground">White dashed box = current hero candidate cluster. Red/blue heat = visual attention intensity.</p>
               </CardContent>
             </Card>
-
-            <div className="space-y-4">
-              <Card>
-                <CardHeader><CardTitle className="text-sm">Rejection Reasons</CardTitle></CardHeader>
-                <CardContent>
-                  {map.rejection_reasons.length ? (
-                    <ul className="space-y-2 text-sm text-destructive">
-                      {map.rejection_reasons.map(reason => <li key={reason}>• {reason}</li>)}
-                    </ul>
-                  ) : <p className="text-sm text-green-400">No Phase-1 diagnostic rejection reasons.</p>}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader><CardTitle className="text-sm">Optimization Actions</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
-                  {optimizationTrace?.actions.map(action => (
-                    <div key={`${action.iteration_step}-${action.constraint}`} className="rounded-lg border border-border bg-secondary/30 p-3 text-xs">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="font-bold text-foreground">Step {action.iteration_step}: {action.constraint}</span>
-                        <Badge variant="outline">No render</Badge>
-                      </div>
-                      <p className="mt-2 text-muted-foreground">{action.failure}</p>
-                      <p className="mt-2 text-foreground">{action.action}</p>
-                      <p className="mt-2 text-muted-foreground">Expected: {action.expected_effect}</p>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader><CardTitle className="text-sm">Top Attention Zones</CardTitle></CardHeader>
-                <CardContent className="space-y-2">
-                  {map.top_zones.slice(0, 6).map((zone, index) => (
-                    <div key={`${zone.x}-${zone.y}`} className="flex items-center justify-between rounded-lg bg-secondary/40 px-3 py-2 text-xs">
-                      <span>#{index + 1} · cell {zone.x},{zone.y}</span>
-                      <span className="font-bold text-foreground">{Math.round(zone.energy * 100)}</span>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
+            <Card>
+              <CardHeader><CardTitle className="text-sm">Candidate 2 Overlay</CardTitle></CardHeader>
+              <CardContent>
+                {candidateMap ? <canvas ref={candidateCanvasRef} className="h-auto w-full rounded-lg border border-border bg-black" /> : <div className="rounded-lg border border-border bg-secondary/30 p-8 text-center text-sm text-muted-foreground">Run one iteration to generate Candidate 2.</div>}
+              </CardContent>
+            </Card>
           </div>
 
           <Card>
-            <CardHeader><CardTitle className="text-sm">Debug Output</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-sm">Executable Optimization Results</CardTitle></CardHeader>
             <CardContent>
-              <pre className="max-h-80 overflow-auto rounded-lg bg-black p-4 text-xs text-muted-foreground">{JSON.stringify({ scores: map.scores, hero_candidate: map.hero_candidate, debug: map.debug, rejection_reasons: map.rejection_reasons, optimization_trace: optimizationTrace }, null, 2)}</pre>
+              <ActionTable results={iterationResult?.action_results} />
+              {!iterationResult && <p className="text-sm text-muted-foreground">Run an iteration to see reason, parameter changed, old value, new value, expected improvement, actual improvement and accept/revert status.</p>}
             </CardContent>
           </Card>
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            <Card>
+              <CardHeader><CardTitle className="text-sm">Current Candidate Parameters</CardTitle></CardHeader>
+              <CardContent>
+                <pre className="max-h-72 overflow-auto rounded-lg bg-black p-4 text-xs text-muted-foreground">{JSON.stringify(candidateParams, null, 2)}</pre>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between"><CardTitle className="text-sm">Optimization History</CardTitle><Button variant="outline" size="sm" onClick={clearHistory}>Clear</Button></CardHeader>
+              <CardContent>
+                <pre className="max-h-72 overflow-auto rounded-lg bg-black p-4 text-xs text-muted-foreground">{JSON.stringify(history.slice(-12), null, 2)}</pre>
+              </CardContent>
+            </Card>
+          </div>
         </>
       ) : (
         <Card>
           <CardContent className="p-8 text-center text-sm text-muted-foreground">
-            Upload a poster frame or existing cover to inspect its visual attention map.
+            Upload a poster frame or existing cover to run a measurable optimization iteration.
           </CardContent>
         </Card>
       )}
