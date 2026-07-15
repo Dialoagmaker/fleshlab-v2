@@ -268,12 +268,47 @@ export async function createOutputs({ file, frames, scenes, log }) {
   return outputs;
 }
 
-export async function createTeaserFromFrames({ file, frames, log, onProgress }) {
-  if (!window.MediaRecorder) throw new Error("Teaser generation failed: MediaRecorder is unavailable in this browser");
+async function createTeaserWithFFmpeg({ file, scenes, log, onProgress }) {
+  log?.("FFmpeg WASM loading started");
+  let FFmpeg;
+  let fetchFile;
+  try {
+    ({ FFmpeg } = await import("@ffmpeg/ffmpeg"));
+    ({ fetchFile } = await import("@ffmpeg/util"));
+  } catch (error) {
+    throw new Error(`FFmpeg failed to load: ${error.message}`);
+  }
+  const ffmpeg = new FFmpeg();
+  ffmpeg.on("progress", ({ progress }) => onProgress?.(75 + Math.round((progress || 0) * 20)));
+  try {
+    await ffmpeg.load();
+  } catch (error) {
+    throw new Error(`FFmpeg failed to load: ${error.message}`);
+  }
+  const bestScene = scenes.slice().sort((a, b) => b.scores.technicalScore - a.scores.technicalScore)[0];
+  const start = Math.max(0, bestScene?.start || 0);
+  await ffmpeg.writeFile("input_video", await fetchFile(file));
+  const extension = file.name.toLowerCase().endsWith(".webm") ? "webm" : "mp4";
+  const outputName = `teaser.${extension}`;
+  const args = extension === "webm"
+    ? ["-ss", String(start), "-t", "10", "-i", "input_video", "-an", "-c:v", "libvpx-vp9", "-b:v", "2M", outputName]
+    : ["-ss", String(start), "-t", "10", "-i", "input_video", "-an", "-c:v", "libx264", "-preset", "veryfast", "-movflags", "faststart", outputName];
+  try {
+    await ffmpeg.exec(args);
+    const data = await ffmpeg.readFile(outputName);
+    const blob = new Blob([data.buffer], { type: extension === "webm" ? "video/webm" : "video/mp4" });
+    if (!blob.size) throw new Error("FFmpeg produced an empty teaser");
+    log?.("teaser generated");
+    return outputFile(`${file.name.replace(/\.[^/.]+$/, "")}_10s_teaser.${extension}`, blob, URL.createObjectURL(blob), URL.createObjectURL(blob), "ready");
+  } catch (error) {
+    throw new Error(`teaser generation failed: ${error.message}`);
+  }
+}
+
+async function createTeaserWithMediaRecorder({ file, frames, log, onProgress }) {
+  if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) throw new Error("Teaser generation failed: MediaRecorder or canvas captureStream is unavailable in this browser");
   const selected = rankScreenshots(frames, 10).slice(0, 10);
   if (!selected.length) throw new Error("Teaser generation failed: no analyzed frames available");
-  log?.("teaser generation started");
-  onProgress?.(75);
   const firstImage = await blobToImage(selected[0].blob);
   const canvas = document.createElement("canvas");
   canvas.width = firstImage.width || 960;
@@ -303,4 +338,14 @@ export async function createTeaserFromFrames({ file, frames, log, onProgress }) 
   if (!blob.size) throw new Error("Teaser generation failed: browser produced an empty video blob");
   log?.("teaser generated");
   return outputFile(`${file.name.replace(/\.[^/.]+$/, "")}_10s_teaser.webm`, blob, URL.createObjectURL(blob), URL.createObjectURL(blob), "ready");
+}
+
+export async function createTeaserFromFrames({ file, frames, scenes, log, onProgress }) {
+  log?.("teaser generation started");
+  try {
+    return await createTeaserWithFFmpeg({ file, scenes, log, onProgress });
+  } catch (error) {
+    log?.(`${error.message}; using browser MediaRecorder fallback`);
+    return createTeaserWithMediaRecorder({ file, frames, log, onProgress });
+  }
 }

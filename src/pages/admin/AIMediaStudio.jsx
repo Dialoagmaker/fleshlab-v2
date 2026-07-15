@@ -10,6 +10,7 @@ import ProcessingLog from "@/components/aiMediaStudio/ProcessingLog";
 import PrivacyVerification from "@/components/aiMediaStudio/PrivacyVerification";
 import { createOutputs, createTeaserFromFrames, detectScenes, isSupportedVideoFile, loadVideoMetadata, sampleVideoFrames } from "@/lib/aiMediaStudio/localAnalyzer";
 import { installLocalMediaPrivacyGuard } from "@/lib/aiMediaStudio/privacyGuard";
+import { base44 } from "@/api/base44Client";
 
 export default function AIMediaStudio() {
   const [items, setItems] = useState([]);
@@ -26,7 +27,8 @@ export default function AIMediaStudio() {
   const selected = items.find(item => item.id === selectedId);
 
   useEffect(() => {
-    installLocalMediaPrivacyGuard(log);
+    installLocalMediaPrivacyGuard(log, base44);
+    if (!window.VideoDecoder) log("WebCodecs unavailable; using HTMLVideoElement and Canvas fallback");
     return () => abortRef.current?.abort();
   }, []);
 
@@ -43,7 +45,7 @@ export default function AIMediaStudio() {
     const frames = await sampleVideoFrames({ file, previewUrl: metadata.previewUrl, metadata, onProgress: setProgress, log, pausedRef, signal: abortRef.current.signal });
     const scenes = detectScenes(frames, metadata.duration, log);
     const outputs = await createOutputs({ file, frames, scenes, log });
-    const teaser = await createTeaserFromFrames({ file, frames, log, onProgress: setProgress });
+    const teaser = await createTeaserFromFrames({ file, frames, scenes, log, onProgress: setProgress });
     updateItem(id, { status: "analyzed", statusLabel: "Analyzed", analysis: true, frames, scenes, outputs, teaser });
     setProgress(100);
   };
@@ -51,6 +53,7 @@ export default function AIMediaStudio() {
   const handlePickFiles = async (files) => {
     const file = files[0];
     if (!file) return;
+    const currentId = `${file.name}-${file.size}-${file.lastModified}`;
     setError("");
     setLogs([]);
     setProgress(0);
@@ -64,7 +67,7 @@ export default function AIMediaStudio() {
       const message = err.name === "AbortError" ? "processing cancelled" : err.message;
       setError(message);
       log(`failed or cancelled: ${message}`);
-      setItems(prev => prev.map(item => selectedId === item.id ? { ...item, status: "failed", statusLabel: "Failed" } : item));
+      setItems(prev => prev.map(item => item.id === currentId ? { ...item, status: "failed", statusLabel: "Failed" } : item));
     } finally {
       setProcessing(false);
       setPaused(false);
