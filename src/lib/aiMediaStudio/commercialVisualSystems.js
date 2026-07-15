@@ -76,12 +76,15 @@ function sellingPoints(settings) {
     .slice(0, 3);
 }
 
-function drawFooter(ctx, width, height, settings, color = "rgba(255,255,255,0.62)") {
+function drawFooter(ctx, width, height, settings, color = "rgba(255,255,255,0.62)", campaign = null) {
   let x = width * 0.055;
   const y = height * 0.925;
+  const points = campaign
+    ? [campaign.footerCategory, campaign.cta, ...sellingPoints(settings)].filter(Boolean).slice(0, 3)
+    : sellingPoints(settings);
   ctx.save();
   ctx.font = font(width * 0.014, "Bebas Neue", 400);
-  sellingPoints(settings).forEach(text => {
+  points.forEach(text => {
     ctx.fillStyle = "rgba(208,0,18,0.9)";
     ctx.fillRect(x, y - width * 0.011, width * 0.008, width * 0.008);
     ctx.fillStyle = color;
@@ -139,7 +142,7 @@ async function netflixDrama(canvas, image, plan, settings, width, height) {
     ctx.fillStyle = "rgba(255,255,255,0.56)";
     ctx.fillText(subtitle, width * 0.058, y + height * 0.018);
   }
-  drawFooter(ctx, width, height, settings, "rgba(255,255,255,0.46)");
+  drawFooter(ctx, width, height, settings, "rgba(255,255,255,0.46)", plan.campaign);
   return { logoHeight: width * 0.05 };
 }
 
@@ -189,7 +192,7 @@ async function aaaGameCover(canvas, image, plan, settings, width, height) {
     ctx.fillStyle = "#d00012";
     ctx.fillText(subtitle, width * 0.08, y + height * 0.02);
   }
-  drawFooter(ctx, width, height, settings, "rgba(255,255,255,0.7)");
+  drawFooter(ctx, width, height, settings, "rgba(255,255,255,0.7)", plan.campaign);
   return { logoHeight: width * 0.06 };
 }
 
@@ -227,7 +230,7 @@ async function luxuryMagazine(canvas, image, plan, settings, width, height) {
   ctx.fillRect(width * 0.66, height * 0.77, width * 0.12, 2);
   ctx.font = font(width * 0.014, "Inter", 800);
   ctx.fillStyle = "rgba(23,17,13,0.62)";
-  sellingPoints(settings).forEach((point, index) => ctx.fillText(point, width * 0.66, height * (0.82 + index * 0.032)));
+  [plan.campaign?.footerCategory, plan.campaign?.cta, ...sellingPoints(settings)].filter(Boolean).slice(0, 3).forEach((point, index) => ctx.fillText(point, width * 0.66, height * (0.82 + index * 0.032)));
   return { logoHeight: width * 0.055 };
 }
 
@@ -265,12 +268,13 @@ async function commercialAdvertising(canvas, image, plan, settings, width, heigh
   ctx.beginPath();
   ctx.roundRect(width * 0.06, height * 0.72, width * 0.22, height * 0.058, height * 0.029);
   ctx.fill();
+  const ctaText = upper(plan.campaign?.cta || "WATCH NOW").slice(0, 18);
   ctx.font = font(width * 0.019, "Inter", 900);
   ctx.fillStyle = "#fff";
-  ctx.fillText("WATCH NOW", width * 0.088, height * 0.758);
+  ctx.fillText(ctaText, width * 0.088, height * 0.758);
   ctx.font = font(width * 0.014, "Inter", 800);
   ctx.fillStyle = "rgba(10,10,10,0.68)";
-  sellingPoints(settings).forEach((point, index) => ctx.fillText(point, width * 0.47 + index * width * 0.15, height * 0.82));
+  [plan.campaign?.footerCategory, ...sellingPoints(settings)].filter(Boolean).slice(0, 3).forEach((point, index) => ctx.fillText(point, width * 0.47 + index * width * 0.15, height * 0.82));
   return { logoHeight: width * 0.07 };
 }
 
@@ -304,7 +308,7 @@ async function cinemaPoster(canvas, image, plan, settings, width, height) {
     ctx.fillText(subtitle, width * 0.5, y + height * 0.02);
   }
   ctx.textAlign = "left";
-  drawFooter(ctx, width, height, settings, "rgba(255,255,255,0.5)");
+  drawFooter(ctx, width, height, settings, "rgba(255,255,255,0.5)", plan.campaign);
   return { logoHeight: width * 0.06 };
 }
 

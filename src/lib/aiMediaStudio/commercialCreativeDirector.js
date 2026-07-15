@@ -1,92 +1,163 @@
+import { FLESHLAB_FRANCHISE_LIBRARY } from "./fleshlabBrandBible";
+
 function clamp(value, min = 0, max = 1) {
   return Math.max(min, Math.min(max, value));
 }
 
-function pick(list, seed) {
-  return list[Math.abs(Math.round(seed * 1000)) % list.length];
+function cleanWords(metadata = {}) {
+  const safeFields = [
+    metadata.description,
+    metadata.short_summary,
+    metadata.summary,
+    metadata.tags?.join?.(" "),
+    metadata.categories?.join?.(" "),
+    metadata.performerName,
+    metadata.brandName,
+    metadata.sceneNotes,
+    metadata.aiDescription,
+  ];
+  return safeFields.filter(Boolean).join(" ").toLowerCase();
 }
 
-function looksLikeFilename(value = "") {
-  const text = String(value).trim();
-  if (!text) return false;
-  if (/\.(mp4|mov|m4v|webm|avi)$/i.test(text)) return true;
-  if (/^[A-Z]{1,4}[_-]?\d[_-]?\d{8,}$/i.test(text)) return true;
-  if (/^[a-f0-9-]{16,}$/i.test(text)) return true;
-  if (/^[A-Z0-9_-]{8,}$/i.test(text) && /\d{5,}/.test(text)) return true;
-  if ((text.match(/[_-]/g) || []).length >= 2 && /\d/.test(text)) return true;
-  return false;
+function contains(text, words) {
+  return words.some(word => text.includes(word));
 }
 
-function narrativeFromAnalysis(analysis = {}) {
+function deterministicIndex(seed, length) {
+  return Math.abs(Math.round(seed * 1000)) % length;
+}
+
+function narrativeFromAnalysis(analysis = {}, metadata = {}) {
+  const text = cleanWords(metadata);
   const brightness = clamp(analysis.averageBrightness ?? analysis.brightness ?? analysis.sceneBrightness ?? 0.42);
   const curiosity = clamp(analysis.visualCuriosity ?? analysis.clickPotential ?? 0.58);
   const interaction = clamp(analysis.interactionStrength ?? analysis.emotionalPresence ?? 0.56);
   const background = clamp(analysis.backgroundComplexity ?? 0.44);
   const subject = clamp(analysis.subjectSeparation ?? analysis.subjectVisibility ?? 0.58);
-  const privateRoom = background < 0.58;
-  const night = brightness < 0.48;
-  const secret = curiosity > 0.54 || night;
-  const closeEncounter = interaction > 0.52;
+  const night = brightness < 0.48 || contains(text, ["night", "midnight", "after dark", "late"]);
+  const privateRoom = background < 0.58 || contains(text, ["room", "bedroom", "hotel", "motel", "suite", "apartment"]);
+  const outdoor = contains(text, ["outdoor", "forest", "nature", "trail", "park", "outside", "public"]);
+  const water = contains(text, ["beach", "pool", "sea", "ocean", "water", "shore", "island"]);
+  const hotel = contains(text, ["hotel", "motel", "suite", "check in", "room service"]);
+  const closeEncounter = interaction > 0.52 || contains(text, ["couple", "duo", "two", "pair", "encounter"]);
   const premium = subject > 0.56 && curiosity > 0.5;
-  const location = privateRoom ? (night ? "hidden hotel room" : "private room") : "undisclosed location";
-  const emotionalHook = secret && closeEncounter ? "secret encounter" : closeEncounter ? "intimate encounter" : secret ? "forbidden late-night meeting" : "private invitation";
-  const atmosphere = night ? "after-hours tension" : premium ? "polished intimacy" : "raw curiosity";
-  return { brightness, curiosity, interaction, background, subject, location, emotionalHook, atmosphere, privateRoom, night, secret, closeEncounter, premium };
+  return { text, brightness, curiosity, interaction, background, subject, night, privateRoom, outdoor, water, hotel, closeEncounter, premium };
 }
 
-function conceptPool(narrative) {
-  if (narrative.privateRoom && narrative.night) {
-    return {
-      titles: ["ROOM 204", "CHECK IN", "AFTER HOURS", "LOCKED DOOR", "HOTEL SINS", "MIDNIGHT GUEST", "PRIVATE ENTRY", "ONE NIGHT ONLY", "NO VACANCY", "THE LAST ROOM"],
-      subtitles: ["Episode 1: The Check In", "A Secret Encounter", "No One Must Know", "Behind Closed Doors", "Late Night Arrival", "The Door Stays Locked"],
-      hooks: ["A hidden room. A late arrival. A secret that changes the night.", "Behind one locked door, the night stops being ordinary.", "What happens after check-in was never meant to be seen."],
-    };
-  }
-  if (narrative.secret) {
-    return {
-      titles: ["BEHIND CLOSED DOORS", "PRIVATE ENTRY", "NO ONE MUST KNOW", "THE SECRET ROOM", "AFTER DARK", "OFF THE RECORD", "HIDDEN HEAT", "THE INVITATION"],
-      subtitles: ["A Secret Encounter", "No One Must Know", "Behind Closed Doors", "Late Night Arrival", "Private Access Only", "The Risk Is the Point"],
-      hooks: ["Every secret needs a door. This one just opened.", "A private moment turns into a dangerous invitation.", "The less anyone knows, the harder it is to look away."],
-    };
-  }
-  if (narrative.premium) {
-    return {
-      titles: ["PRIVATE EDITION", "THE INVITATION", "SELECT ROOM", "CLOSE RANGE", "THE ENCOUNTER", "ONE NIGHT ONLY", "OPEN DOOR", "FIRST LOOK"],
-      subtitles: ["A Premium Original", "Private Access", "The New Encounter", "A Night in Focus", "An Intimate Original", "Watch What Happens Next"],
-      hooks: ["A polished private encounter built for the spotlight.", "Premium intimacy, framed like a campaign.", "One night. One room. One reason to click."],
-    };
-  }
-  return {
-    titles: ["AFTER HOURS", "PRIVATE ENTRY", "THE ENCOUNTER", "LOCKED DOOR", "ONE NIGHT ONLY", "MIDNIGHT GUEST", "CHECK IN", "THE INVITATION"],
-    subtitles: ["A Secret Encounter", "Behind Closed Doors", "Late Night Arrival", "Private Access", "Episode 1", "No One Must Know"],
-    hooks: ["A private story with a commercial hook.", "One frame becomes a campaign built for clicks.", "The encounter is only the beginning."],
-  };
+function classifyProduct(narrative) {
+  const t = narrative.text;
+  if (contains(t, ["trailer", "teaser", "preview"])) return "Trailer";
+  if (contains(t, ["behind the scenes", "bts", "backstage", "making of"])) return "Behind The Scenes";
+  if (contains(t, ["massage", "spa", "service"])) return "Massage";
+  if (narrative.hotel) return "Hotel Session";
+  if (narrative.water || contains(t, ["vacation", "holiday", "resort", "escape"])) return "Vacation";
+  if (narrative.outdoor) return "Outdoor";
+  if (contains(t, ["twink", "young", "boyish"])) return "Twink";
+  if (contains(t, ["pov", "point of view"])) return "POV";
+  if (contains(t, ["solo", "alone"])) return "Solo";
+  if (narrative.closeEncounter) return "Couple";
+  return "Feature Release";
+}
+
+function classifyFantasy(narrative, product) {
+  const t = narrative.text;
+  if (contains(t, ["danger", "risk", "public", "caught"])) return narrative.outdoor ? "Public Risk" : "Danger";
+  if (contains(t, ["forbidden", "secret", "hidden", "private", "locked"])) return "Secret";
+  if (contains(t, ["romantic", "soft", "tender"])) return "Romantic";
+  if (contains(t, ["wild", "rough", "raw"])) return "Raw";
+  if (contains(t, ["dominance", "dom", "control"])) return "Dominance";
+  if (contains(t, ["submission", "submissive", "obedient"])) return "Submission";
+  if (product === "Vacation") return "Vacation";
+  if (product === "Outdoor") return narrative.privateRoom ? "Adventure" : "Wild";
+  if (narrative.night && narrative.privateRoom) return "Forbidden";
+  if (narrative.curiosity > 0.62) return "Curiosity";
+  return narrative.closeEncounter ? "Private" : "Curiosity";
+}
+
+function classifyVisualElement(narrative) {
+  if (narrative.water) return "Water";
+  if (narrative.outdoor) return "Nature";
+  if (narrative.hotel) return "Hotel";
+  if (narrative.privateRoom) return narrative.closeEncounter ? "Interaction" : "Room";
+  if (narrative.subject > 0.66) return "Face";
+  if (narrative.background > 0.62) return "Landscape";
+  return narrative.closeEncounter ? "Interaction" : "Body";
+}
+
+function classifyCommercialCategory(product, fantasy, visualElement) {
+  if (product === "Vacation" || visualElement === "Water") return "Luxury Magazine";
+  if (product === "Outdoor") return fantasy === "Public Risk" ? "Documentary Style" : "Cinematic Movie Poster";
+  if (product === "Behind The Scenes") return "Reality TV";
+  if (product === "Trailer") return "YouTube Hero";
+  if (product === "Hotel Session" && ["Forbidden", "Secret", "Danger"].includes(fantasy)) return "Netflix Poster";
+  if (["Face", "Interaction", "Body"].includes(visualElement)) return "Premium Thumbnail";
+  return "Streaming Cover";
+}
+
+function scoreFranchise(franchise, brief) {
+  let score = 0;
+  if (franchise.products.includes(brief.product)) score += 4;
+  if (franchise.fantasies.includes(brief.fantasy)) score += 3;
+  if (franchise.visuals.includes(brief.visualElement)) score += 2;
+  if (franchise.categories.includes(brief.category)) score += 1.5;
+  return score;
+}
+
+function selectFranchise(brief) {
+  return [...FLESHLAB_FRANCHISE_LIBRARY]
+    .sort((a, b) => scoreFranchise(b, brief) - scoreFranchise(a, brief))[0];
+}
+
+function episodeIndex(metadata = {}, narrative) {
+  const explicit = Number(metadata.episodeNumber || metadata.episode || metadata.seriesEpisode);
+  if (Number.isFinite(explicit) && explicit > 0) return explicit - 1;
+  const seed = narrative.curiosity * 0.37 + narrative.interaction * 0.29 + narrative.subject * 0.23 + narrative.brightness * 0.11;
+  return deterministicIndex(seed, 6);
 }
 
 export function createCommercialCampaign({ analysis = {}, metadata = {} } = {}) {
-  const narrative = narrativeFromAnalysis(analysis);
-  const pool = conceptPool(narrative);
-  const seed = narrative.curiosity * 0.37 + narrative.interaction * 0.29 + narrative.subject * 0.23 + narrative.brightness * 0.11;
-  const ignoredTitle = metadata.videoTitle || metadata.title || metadata.fileName || "";
-  const title = pick(pool.titles, seed);
-  const subtitle = pick(pool.subtitles, seed + 0.173);
-  const hook = pick(pool.hooks, seed + 0.317);
+  const narrative = narrativeFromAnalysis(analysis, metadata);
+  const product = classifyProduct(narrative);
+  const fantasy = classifyFantasy(narrative, product);
+  const visualElement = classifyVisualElement(narrative);
+  const category = classifyCommercialCategory(product, fantasy, visualElement);
+  const brief = { product, fantasy, visualElement, category };
+  const franchise = selectFranchise(brief);
+  const index = episodeIndex(metadata, narrative) % franchise.episodes.length;
+  const episodeNumber = index + 1;
+  const episodeTitle = franchise.episodes[index];
+  const performer = metadata.performerName || metadata.performer || "FLESHLAB Cast";
+  const hookLine = `${franchise.tagline} ${product === "Trailer" ? "The preview starts now." : "The episode starts here."}`;
   return {
-    title,
-    subtitle,
-    hook,
-    headline: title,
-    logline: hook,
-    source: "visual_narrative_extraction",
-    ignoredFilename: looksLikeFilename(ignoredTitle) ? ignoredTitle : "metadata title intentionally ignored",
+    ...brief,
+    campaignName: franchise.campaignName,
+    mainTitle: franchise.campaignName,
+    title: franchise.campaignName,
+    episodeNumber,
+    episodeTitle,
+    subtitle: `Episode ${episodeNumber}: ${episodeTitle}`,
+    performer,
+    hookLine,
+    hook: hookLine,
+    marketingTagline: franchise.tagline,
+    footerCategory: franchise.footerCategory,
+    cta: franchise.cta,
+    source: "fleshlab_brand_bible",
+    brandBibleAnswers: {
+      commercialProduct: product,
+      emotionalFantasy: fantasy,
+      strongestVisualElement: visualElement,
+      commercialCategory: category,
+    },
     visualNarrative: {
       subjects: narrative.closeEncounter ? "two-person encounter" : "human-led private scene",
-      location: narrative.location,
-      emotionalHook: narrative.emotionalHook,
-      atmosphere: narrative.atmosphere,
-      commercialPromise: "a streaming-quality key art concept designed for curiosity and clicks",
+      setting: narrative.hotel ? "hotel" : narrative.water ? "water / vacation" : narrative.outdoor ? "outdoor" : narrative.privateRoom ? "private room" : "undisclosed location",
+      emotionalHook: fantasy,
+      strongestVisualElement: visualElement,
+      commercialPromise: "a recognizable FLESHLAB franchise concept, not a filename-derived title",
     },
-    hierarchy: ["campaign title", "emotional subtitle", "hero image", "brand anchor", "supporting proof points"],
-    clickScore: Math.round((0.42 + narrative.curiosity * 0.25 + narrative.interaction * 0.18 + narrative.subject * 0.15) * 100),
+    hierarchy: ["campaign name", "episode title", "performer", "hook line", "brand anchor", "CTA"],
+    clickScore: Math.round((0.46 + narrative.curiosity * 0.22 + narrative.interaction * 0.17 + narrative.subject * 0.15) * 100),
+    ignoredFilename: "all filename/title metadata intentionally ignored for campaign naming",
   };
 }
