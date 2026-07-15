@@ -78,54 +78,48 @@ function fillBackground(ctx, width, height) {
 }
 
 function drawPhoto(ctx, image, width, height, settings, preset) {
-  const x = Math.round(width * 0.46);
-  const w = width - x;
-  const rect = { x, y: 0, w, h: height };
-
   if (image) {
     const iw = image.width;
     const ih = image.height;
-    const scale = Math.max(rect.w / iw, rect.h / ih) * Number(settings.zoom || 1.08);
-    const sw = rect.w / scale;
-    const sh = rect.h / scale;
-    const sx = Math.max(0, Math.min(iw - sw, (iw - sw) / 2 - Number(settings.x || 0) * iw * 0.004));
-    const sy = Math.max(0, Math.min(ih - sh, (ih - sh) / 2 - Number(settings.y || 0) * ih * 0.004));
+    const scale = Math.max(width / iw, height / ih) * Number(settings.zoom || 1.16);
+    const sw = width / scale;
+    const sh = height / scale;
+    const sx = Math.max(0, Math.min(iw - sw, (iw - sw) * 0.64 - Number(settings.x || 0) * iw * 0.004));
+    const sy = Math.max(0, Math.min(ih - sh, (ih - sh) * 0.48 - Number(settings.y || 0) * ih * 0.004));
     ctx.save();
     ctx.filter = `brightness(${settings.brightness}%) contrast(${settings.contrast}%) saturate(${settings.saturation}%)`;
-    ctx.drawImage(image, sx, sy, sw, sh, rect.x, rect.y, rect.w, rect.h);
+    ctx.drawImage(image, sx, sy, sw, sh, 0, 0, width, height);
     ctx.restore();
   } else {
-    const beach = ctx.createLinearGradient(rect.x, 0, width, height);
-    beach.addColorStop(0, "#18100f");
-    beach.addColorStop(0.35, "#315568");
-    beach.addColorStop(0.62, "#d7b07c");
+    const beach = ctx.createLinearGradient(width * 0.45, 0, width, height);
+    beach.addColorStop(0, "#102534");
+    beach.addColorStop(0.35, "#5a8faf");
+    beach.addColorStop(0.62, "#dfb77e");
     beach.addColorStop(1, "#080808");
     ctx.fillStyle = beach;
-    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-    ctx.fillStyle = "rgba(0,0,0,0.42)";
+    ctx.fillRect(width * 0.42, 0, width * 0.58, height);
+    ctx.fillStyle = "rgba(0,0,0,0.34)";
     ctx.beginPath();
-    ctx.ellipse(width * 0.72, height * 0.62, width * 0.13, height * 0.34, -0.18, 0, Math.PI * 2);
+    ctx.ellipse(width * 0.73, height * 0.58, width * 0.16, height * 0.38, -0.18, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = "rgba(255,255,255,0.16)";
     ctx.beginPath();
-    ctx.arc(width * 0.72, height * 0.28, height * 0.105, 0, Math.PI * 2);
+    ctx.arc(width * 0.72, height * 0.25, height * 0.115, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  const photoFade = ctx.createLinearGradient(width * 0.42, 0, width * 0.72, 0);
-  photoFade.addColorStop(0, "#050505");
-  photoFade.addColorStop(0.44, "rgba(5,5,5,0.78)");
-  photoFade.addColorStop(1, "rgba(5,5,5,0)");
-  ctx.fillStyle = photoFade;
-  ctx.fillRect(width * 0.38, 0, width * 0.36, height);
+  const leftWall = ctx.createLinearGradient(0, 0, width * 0.72, 0);
+  leftWall.addColorStop(0, "rgba(0,0,0,0.99)");
+  leftWall.addColorStop(0.48, "rgba(0,0,0,0.94)");
+  leftWall.addColorStop(0.72, "rgba(0,0,0,0.48)");
+  leftWall.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = leftWall;
+  ctx.fillRect(0, 0, width * 0.74, height);
 
-  const vignette = ctx.createRadialGradient(width * 0.76, height * 0.42, height * 0.12, width * 0.76, height * 0.42, width * 0.62);
+  const vignette = ctx.createRadialGradient(width * 0.78, height * 0.35, height * 0.12, width * 0.78, height * 0.35, width * 0.62);
   vignette.addColorStop(0, "rgba(0,0,0,0)");
-  vignette.addColorStop(1, "rgba(0,0,0,0.56)");
+  vignette.addColorStop(1, "rgba(0,0,0,0.48)");
   ctx.fillStyle = vignette;
-  ctx.fillRect(0, 0, width, height);
-
-  ctx.fillStyle = "rgba(0,0,0,0.18)";
   ctx.fillRect(0, 0, width, height);
 }
 
@@ -178,10 +172,15 @@ async function drawOfficialLogo(ctx, width, height) {
 }
 
 function splitTitle(metadata) {
-  const title = String(metadata.videoTitle || metadata.performerName || "BEACH ESCAPE").trim().toUpperCase();
+  const title = String(metadata.videoTitle || "BEACH ESCAPE").trim().toUpperCase();
+  if (title.includes("|")) {
+    const [white, red] = title.split("|").map(part => part.trim());
+    return { white, red };
+  }
   const words = title.split(/\s+/).filter(Boolean);
-  if (words.length <= 1) return { white: title, red: String(metadata.optionalSubtitle || "").toUpperCase() };
-  return { white: words[0], red: words.slice(1).join(" ") };
+  if (metadata.optionalSubtitle) return { white: title, red: String(metadata.optionalSubtitle).toUpperCase() };
+  if (words.length <= 1) return { white: title, red: "" };
+  return { white: words.slice(0, -1).join(" "), red: words[words.length - 1] };
 }
 
 function fitText(ctx, text, maxWidth, startSize, minSize, fontFamily) {
@@ -217,42 +216,49 @@ function drawBrushWord(ctx, text, x, y, maxWidth, preset, width) {
 
 function drawMainTypography(ctx, width, height, metadata, preset, settings) {
   const { white, red } = splitTitle(metadata);
-  const x = width * 0.065;
-  const maxWidth = width * 0.48;
-  const whiteSize = fitText(ctx, white, maxWidth, width * 0.178, width * 0.07, "Bebas Neue, Impact, Arial Black, sans-serif");
-  const y = height * 0.55;
+  const x = width * 0.055;
+  const maxWidth = width * 0.52;
+  const titleWords = white.split(/\s+/).filter(Boolean);
+  const titleLines = titleWords.length > 2 ? [titleWords.slice(0, Math.ceil(titleWords.length / 2)).join(" "), titleWords.slice(Math.ceil(titleWords.length / 2)).join(" ")] : [white];
+  const longest = titleLines.reduce((a, b) => (a.length > b.length ? a : b), "");
+  const whiteSize = fitText(ctx, longest, maxWidth, width * 0.2, width * 0.085, "Bebas Neue, Impact, Arial Black, sans-serif");
+  const lineHeight = whiteSize * 0.82;
+  const y = height * 0.52 - (titleLines.length - 1) * lineHeight * 0.42;
 
   ctx.save();
   ctx.shadowColor = "rgba(0,0,0,0.95)";
   ctx.shadowBlur = width * 0.012;
   ctx.fillStyle = "#f2f2f2";
-  ctx.strokeStyle = "rgba(0,0,0,0.38)";
-  ctx.lineWidth = width * 0.002;
+  ctx.strokeStyle = "rgba(0,0,0,0.44)";
+  ctx.lineWidth = width * 0.0024;
   ctx.font = `900 ${whiteSize}px Bebas Neue, Impact, Arial Black, sans-serif`;
-  ctx.strokeText(white, x, y);
-  ctx.fillText(white, x, y);
+  titleLines.forEach((line, index) => {
+    const lineY = y + index * lineHeight;
+    ctx.strokeText(line, x, lineY);
+    ctx.fillText(line, x, lineY);
+  });
 
-  ctx.globalAlpha = 0.16;
+  ctx.globalAlpha = 0.18;
   ctx.strokeStyle = "#000000";
-  for (let i = 0; i < 16; i += 1) {
+  for (let i = 0; i < 28; i += 1) {
     ctx.beginPath();
-    ctx.moveTo(x + seededNoise(i) * maxWidth, y - whiteSize * 0.86);
-    ctx.lineTo(x + seededNoise(i + 20) * maxWidth, y - whiteSize * 0.05);
+    ctx.moveTo(x + seededNoise(i) * maxWidth, y - whiteSize * 0.82);
+    ctx.lineTo(x + seededNoise(i + 20) * maxWidth, y + lineHeight * titleLines.length - whiteSize * 0.08);
     ctx.stroke();
   }
   ctx.globalAlpha = 1;
   ctx.restore();
 
-  drawBrushWord(ctx, red, x + width * 0.005, y + height * 0.155, maxWidth, preset, width);
+  const redY = y + lineHeight * titleLines.length + height * 0.075;
+  drawBrushWord(ctx, red, x + width * 0.005, redY, maxWidth * 0.98, preset, width);
 
   const small = String(metadata.performerName || metadata.campaignName || "KRAKEN SOLO").toUpperCase();
   ctx.save();
   ctx.fillStyle = preset.red;
-  ctx.fillRect(x + width * 0.065, height * 0.765, width * 0.008, height * 0.032);
+  ctx.fillRect(x + width * 0.06, height * 0.762, width * 0.008, height * 0.034);
   ctx.fillStyle = "#ffffff";
-  ctx.font = `400 ${width * 0.035}px Bebas Neue, Arial, sans-serif`;
-  ctx.letterSpacing = `${width * 0.015}px`;
-  ctx.fillText(small, x + width * 0.108, height * 0.795);
+  ctx.font = `400 ${width * 0.037}px Bebas Neue, Arial, sans-serif`;
+  ctx.fillText(small, x + width * 0.105, height * 0.796);
   ctx.restore();
 }
 
@@ -260,8 +266,8 @@ function drawFooterIcons(ctx, width, height, preset, settings) {
   const labels = String(settings.sellingPoints || "EXCLUSIVE CONTENT\nHIGH QUALITY VIDEO\nONLY ON FLESHLAB").split(/\n|,/).map(item => item.trim()).filter(Boolean).slice(0, 3);
   while (labels.length < 3) labels.push(["EXCLUSIVE CONTENT", "HIGH QUALITY VIDEO", "ONLY ON FLESHLAB"][labels.length]);
 
-  const startX = width * 0.12;
-  const gap = width * 0.15;
+  const startX = width * 0.13;
+  const gap = width * 0.155;
   const y = height * 0.88;
   ctx.save();
   labels.forEach((label, index) => {
@@ -270,21 +276,21 @@ function drawFooterIcons(ctx, width, height, preset, settings) {
     ctx.fillStyle = preset.red;
     ctx.lineWidth = width * 0.0022;
     if (index === 0) {
-      ctx.strokeRect(x - width * 0.017, y - height * 0.018, width * 0.034, height * 0.026);
-      ctx.beginPath(); ctx.arc(x, y - height * 0.005, width * 0.0065, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeRect(x - width * 0.019, y - height * 0.023, width * 0.038, height * 0.032);
+      ctx.beginPath(); ctx.arc(x, y - height * 0.007, width * 0.0075, 0, Math.PI * 2); ctx.stroke();
     } else if (index === 1) {
-      ctx.strokeRect(x - width * 0.024, y - height * 0.02, width * 0.048, height * 0.028);
-      ctx.font = `900 ${width * 0.017}px Arial Black, sans-serif`;
-      ctx.fillText("HD", x - width * 0.016, y + height * 0.002);
+      ctx.strokeRect(x - width * 0.027, y - height * 0.024, width * 0.054, height * 0.034);
+      ctx.font = `900 ${width * 0.019}px Arial Black, sans-serif`;
+      ctx.fillText("HD", x - width * 0.018, y + height * 0.002);
     } else {
-      ctx.strokeRect(x - width * 0.015, y - height * 0.012, width * 0.03, height * 0.024);
-      ctx.beginPath(); ctx.arc(x, y - height * 0.014, width * 0.012, Math.PI, 0); ctx.stroke();
+      ctx.strokeRect(x - width * 0.017, y - height * 0.015, width * 0.034, height * 0.029);
+      ctx.beginPath(); ctx.arc(x, y - height * 0.018, width * 0.014, Math.PI, 0); ctx.stroke();
     }
     ctx.fillStyle = "#ffffff";
-    ctx.font = `400 ${width * 0.017}px Bebas Neue, Arial, sans-serif`;
+    ctx.font = `400 ${width * 0.019}px Bebas Neue, Arial, sans-serif`;
     const parts = label.toUpperCase().split(" ");
-    ctx.fillText(parts.slice(0, Math.ceil(parts.length / 2)).join(" "), x - width * 0.04, y + height * 0.055);
-    ctx.fillText(parts.slice(Math.ceil(parts.length / 2)).join(" "), x - width * 0.04, y + height * 0.082);
+    ctx.fillText(parts.slice(0, Math.ceil(parts.length / 2)).join(" "), x - width * 0.045, y + height * 0.06);
+    ctx.fillText(parts.slice(Math.ceil(parts.length / 2)).join(" "), x - width * 0.045, y + height * 0.088);
     if (index > 0) {
       ctx.fillStyle = "rgba(255,255,255,0.3)";
       ctx.fillRect(x - gap * 0.5, y - height * 0.035, 2, height * 0.09);
