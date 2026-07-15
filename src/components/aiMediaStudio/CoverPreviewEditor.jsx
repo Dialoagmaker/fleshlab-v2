@@ -9,6 +9,7 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
   const rafRef = useRef(null);
+  const renderTokenRef = useRef(0);
   const [rendered, setRendered] = useState(false);
   const [plan, setPlan] = useState(null);
   const [error, setError] = useState("");
@@ -49,20 +50,35 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
   useEffect(() => {
     if (!plan || !imageRef.current || !canvasRef.current) return;
     window.cancelAnimationFrame(rafRef.current);
+    const renderToken = renderTokenRef.current + 1;
+    renderTokenRef.current = renderToken;
     setRendered(false);
-    rafRef.current = window.requestAnimationFrame(async () => {
+
+    const frameId = window.requestAnimationFrame(async () => {
       try {
         const chosen = selectPosterVariant(plan, settings);
-        const nextPlan = await renderPosterVariantToCanvas(canvasRef.current, imageRef.current, plan, chosen, settings, dims.width, dims.height);
+        const scratchCanvas = document.createElement("canvas");
+        const nextPlan = await renderPosterVariantToCanvas(scratchCanvas, imageRef.current, plan, chosen, settings, dims.width, dims.height);
+        if (renderTokenRef.current !== renderToken || !canvasRef.current) return;
+
+        canvasRef.current.width = scratchCanvas.width;
+        canvasRef.current.height = scratchCanvas.height;
+        const visibleCtx = canvasRef.current.getContext("2d");
+        visibleCtx.clearRect(0, 0, scratchCanvas.width, scratchCanvas.height);
+        visibleCtx.drawImage(scratchCanvas, 0, 0);
+        canvasRef.current.__fleshlabPosterPlan = nextPlan;
+
         const failures = chosen?.score?.qualityFailures || [];
         setWarning(failures.length ? `Manual preview allowed. ${failures.join(", ")}.` : "");
         setRendered(true);
         setError("");
       } catch (err) {
-        setError(err.message || "Preview render failed");
+        if (renderTokenRef.current === renderToken) setError(err.message || "Preview render failed");
       }
     });
-    return () => window.cancelAnimationFrame(rafRef.current);
+
+    rafRef.current = frameId;
+    return () => window.cancelAnimationFrame(frameId);
   }, [plan, settings, dims.width, dims.height]);
 
   const download = async (type) => {
