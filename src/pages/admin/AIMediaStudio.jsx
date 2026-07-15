@@ -8,6 +8,7 @@ import SmartReviewPanel from "@/components/aiMediaStudio/SmartReviewPanel";
 import OutputFilesPanel from "@/components/aiMediaStudio/OutputFilesPanel";
 import ProcessingLog from "@/components/aiMediaStudio/ProcessingLog";
 import PrivacyVerification from "@/components/aiMediaStudio/PrivacyVerification";
+import CoverGeneratorPanel from "@/components/aiMediaStudio/CoverGeneratorPanel";
 import { createOutputs, createTeaserFromFrames, detectScenes, isSupportedVideoFile, loadVideoMetadata, sampleVideoFrames } from "@/lib/aiMediaStudio/localAnalyzer";
 import { installLocalMediaPrivacyGuard } from "@/lib/aiMediaStudio/privacyGuard";
 import { base44 } from "@/api/base44Client";
@@ -109,12 +110,13 @@ export default function AIMediaStudio() {
       <PrivacyVerification outputCount={outputCount} />
 
       <Tabs defaultValue="review" className="space-y-4">
-        <TabsList className="grid h-auto w-full grid-cols-3 md:w-[520px]"><TabsTrigger value="review">Review</TabsTrigger><TabsTrigger value="outputs">Outputs</TabsTrigger><TabsTrigger value="log">Log</TabsTrigger></TabsList>
+        <TabsList className="grid h-auto w-full grid-cols-4 md:w-[680px]"><TabsTrigger value="review">Review</TabsTrigger><TabsTrigger value="outputs">Outputs</TabsTrigger><TabsTrigger value="covers">Covers</TabsTrigger><TabsTrigger value="log">Log</TabsTrigger></TabsList>
         <TabsContent value="review" className="grid gap-4 lg:grid-cols-[360px_1fr]">
           <Card><CardHeader><CardTitle className="text-sm">Local Queue</CardTitle></CardHeader><CardContent><AnalysisQueue items={items} selectedId={selectedId} onSelect={setSelectedId} /></CardContent></Card>
           <SmartReviewPanel item={selected} />
         </TabsContent>
         <TabsContent value="outputs"><OutputFilesPanel outputs={selected?.outputs || []} teasers={selected?.teasers || (selected?.teaser ? [selected.teaser] : [])} /></TabsContent>
+        <TabsContent value="covers"><CoverGeneratorPanel item={selected} /></TabsContent>
         <TabsContent value="log"><ProcessingLog entries={logs} /></TabsContent>
       </Tabs>
     </div>
