@@ -2,15 +2,7 @@ import { Link } from "react-router-dom";
 import { Play, Lock, Star } from "lucide-react";
 import { useState, useRef } from "react";
 import { isPublicImageUrl } from "@/lib/seoValidation";
-
-// Build asset URL (same as admin panel)
-function buildAssetUrl(value) {
-  if (!value) return null;
-  const clean = String(value).trim();
-  if (!clean) return null;
-  if (clean.startsWith("http://") || clean.startsWith("https://")) return clean;
-  return `https://video.fleshlab.online/${clean.replace(/^\/+/, "")}`;
-}
+import { getVideoPreviewUrl } from "@/lib/videoAssetResolver";
 
 /**
  * CinematicVideoCard - Premium video card for studio portal design
@@ -21,8 +13,8 @@ export default function CinematicVideoCard({ video, variant = "standard", brands
   const videoRef = useRef(null);
   const brand = brands?.find(b => b.id === video.brand_id);
   const hasValidThumbnail = isPublicImageUrl(video.primary_thumbnail_url);
-  const rawTrailerUrl = video.trailer_url || video.preview_gif_url || null;
-  const trailerUrl = buildAssetUrl(rawTrailerUrl);
+  const trailerUrl = getVideoPreviewUrl(video);
+  const rawTrailerUrl = trailerUrl;
   const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   
   // Access tier badges

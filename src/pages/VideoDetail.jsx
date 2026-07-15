@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { getVideoPreviewUrl } from "@/lib/videoAssetResolver";
 
 const ACCESS_TIER = {
   free:    { label: 'Free Preview',       color: 'bg-green-500/10 text-green-500' },
@@ -169,7 +170,8 @@ export default function VideoDetail() {
   const scrollToPurchaseBox = () => document.getElementById('purchase-box')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   const primaryPerformer = performers[0] || null;
   const canonicalUrl = `https://fleshlab.online/videos/${video.slug}`;
-  const hasPublicPreview = !!video.trailer_url;
+  const publicPreviewUrl = getVideoPreviewUrl(video);
+  const hasPublicPreview = !!publicPreviewUrl;
 
   const cta = getCTA(video.access_tier === 'fanclub' ? 'fanclub' : video.access_tier === 'ppv' ? 'ppv' : 'full-video');
 
@@ -221,7 +223,7 @@ export default function VideoDetail() {
     "uploadDate": isoUploadDate,
     "datePublished": isoUploadDate,
     ...(trailerSchemaDuration && { "duration": trailerSchemaDuration }),
-    "contentUrl": video.trailer_url,
+    "contentUrl": publicPreviewUrl,
     "embedUrl": canonicalUrl,
     "isFamilyFriendly": false,
     "inLanguage": "en",
@@ -298,7 +300,7 @@ export default function VideoDetail() {
                     poster={video.primary_thumbnail_url}
                     className="w-full h-full"
                   >
-                    <source src={video.trailer_url} />
+                    <source src={publicPreviewUrl} />
                   </video>
 
                 ) : (

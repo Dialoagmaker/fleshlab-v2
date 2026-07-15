@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { sampleVideoFrames, rankHeroFrames } from "@/lib/aiMediaStudio/localAnalyzer";
+import { isSupportedVideoFile, sampleVideoFrames, rankHeroFrames } from "@/lib/aiMediaStudio/localAnalyzer";
 import { DEFAULT_COVER_SETTINGS, blobToCanvasImage, getCoverDimensions } from "@/lib/aiMediaStudio/coverRenderer";
 import { generatePosterPlan, renderPosterVariantToCanvas } from "@/lib/aiMediaStudio/posterRenderer";
+import { resolveAnalyzableVideoSource } from "@/lib/videoAssetResolver";
+import { aggregatePreflightDiagnostics, preflightAnalyzableVideoSource } from "@/lib/aiMediaStudio/videoPreflight";
 
 const PROOF_SIZE = 100;
 const HISTOGRAM_BUCKETS = [
@@ -22,46 +24,15 @@ function safeName(title) {
   return `${String(title || "library-video").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")}.mp4`;
 }
 
-function loadRemoteVideoMetadata(url) {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement("video");
-    video.crossOrigin = "anonymous";
-    video.preload = "metadata";
-    video.onloadedmetadata = () => {
-      if (!video.duration || !video.videoWidth || !video.videoHeight) {
-        reject(new Error("Video metadata could not be read"));
-        return;
-      }
-      resolve({
-        previewUrl: url,
-        duration: video.duration,
-        width: video.videoWidth,
-        height: video.videoHeight,
-        aspectRatio: Number((video.videoWidth / video.videoHeight).toFixed(3)),
-      });
-    };
-    video.onerror = () => reject(new Error("Video could not be loaded for browser analysis"));
-    video.src = url;
-  });
+function sourceKey(source) {
+  return source.videoId || source.redactedUrl || source.title;
 }
 
-async function buildLibraryCandidates() {
-  const [videos, sourceAssets] = await Promise.all([
-    base44.entities.Video.list("-published_at", 140),
-    base44.entities.VideoAsset.filter({ asset_type: "source" }, "-updated_date", 220),
-  ]);
-  const assetByVideo = new Map(sourceAssets.filter(asset => asset.cdn_url).map(asset => [asset.video_id, asset.cdn_url]));
-  return videos
-    .map(video => ({
-      id: video.id,
-      title: video.title || video.slug || "Untitled Video",
-      url: video.source_video_url || assetByVideo.get(video.id) || video.trailer_url,
-    }))
-    .filter(item => item.url)
-    .slice(0, PROOF_SIZE);
+function getExtension(fileName = "") {
+  return fileName.split(".").pop()?.toLowerCase() || "unknown";
 }
 
-async function canvasDataUrl(canvas) {
+async function canvasObjectUrl(canvas) {
   return new Promise((resolve, reject) => {
     canvas.toBlob(blob => blob ? resolve(URL.createObjectURL(blob)) : reject(new Error("Proof image export failed")), "image/jpeg", 0.82);
   });
@@ -99,8 +70,10 @@ async function renderProofImages(hero, video) {
       label: `Variant ${String.fromCharCode(65 + index)}`,
       variant: variant.variant,
       score: variant.score,
-      url: await canvasDataUrl(canvas),
+      url: await canvasObjectUrl(canvas),
     });
+    canvas.width = 0;
+    canvas.height = 0;
   }
 
   return {
@@ -111,17 +84,17 @@ async function renderProofImages(hero, video) {
   };
 }
 
-function calculateStats(results) {
-  const completed = results.filter(item => item.status !== "processing");
-  const scored = completed.filter(item => Number.isFinite(item.storyScore));
-  const accepted = completed.filter(item => item.accepted).length;
-  const rejected = completed.filter(item => item.status === "failed" || item.accepted === false).length;
+function calculateStats(results, diagnostics) {
+  const scored = results.filter(item => Number.isFinite(item.storyScore));
+  const rendered = scored.length;
+  const rejected = results.filter(item => item.status === "failed" || item.accepted === false).length;
+  const skipped = diagnostics.filter(item => item.classification && item.classification !== "READY").length;
   const average = (key) => scored.length ? Math.round(scored.reduce((sum, item) => sum + (item[key] || 0), 0) / scored.length) : 0;
-  const rejectionReasons = completed.reduce((map, item) => {
+  const rejectionReasons = results.reduce((map, item) => {
     (item.rejectionReasons || (item.error ? [item.error] : [])).forEach(reason => map.set(reason, (map.get(reason) || 0) + 1));
     return map;
   }, new Map());
-  const familyDistribution = completed.reduce((map, item) => {
+  const familyDistribution = scored.reduce((map, item) => {
     if (item.posterFamily) map.set(item.posterFamily, (map.get(item.posterFamily) || 0) + 1);
     return map;
   }, new Map());
@@ -129,113 +102,295 @@ function calculateStats(results) {
     ...bucket,
     count: scored.filter(item => item.storyScore >= bucket.min && item.storyScore <= bucket.max).length,
   }));
+  const uniqueLayouts = new Set(scored.map(item => item.variants?.[0]?.variant).filter(Boolean)).size;
+  const distinctVariantCases = scored.filter(item => new Set((item.variants || []).map(variant => variant.variant)).size >= 3).length;
 
   return {
-    processed: completed.length,
-    accepted,
+    rendered,
     rejected,
+    skipped,
     averageStoryScore: average("storyScore"),
     averageQuality: average("qualityScore"),
     rejectionReasons: Array.from(rejectionReasons.entries()),
     familyDistribution: Array.from(familyDistribution.entries()),
     histogram,
+    uniqueLayouts,
+    distinctVariantCases,
   };
+}
+
+function revokeResultUrls(results) {
+  results.forEach(item => {
+    if (item.heroFrameUrl?.startsWith("blob:")) URL.revokeObjectURL(item.heroFrameUrl);
+    if (item.finalPosterUrl?.startsWith("blob:")) URL.revokeObjectURL(item.finalPosterUrl);
+    (item.variants || []).forEach(variant => {
+      if (variant.url?.startsWith("blob:")) URL.revokeObjectURL(variant.url);
+    });
+  });
 }
 
 export default function LibraryCoverProof() {
   const [running, setRunning] = useState(false);
+  const [preflighting, setPreflighting] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [status, setStatus] = useState(`Ready to run semantic Vision proof across ${PROOF_SIZE} library videos.`);
+  const [status, setStatus] = useState("Ready. Run pre-flight first; only READY videos enter frame extraction.");
+  const [sources, setSources] = useState([]);
+  const [diagnostics, setDiagnostics] = useState([]);
   const [results, setResults] = useState([]);
   const [error, setError] = useState("");
   const abortRef = useRef(null);
   const pausedRef = useRef(false);
-  const stats = useMemo(() => calculateStats(results), [results]);
+  const folderInputRef = useRef(null);
+  const stats = useMemo(() => calculateStats(results, diagnostics), [results, diagnostics]);
+  const preflightCounts = useMemo(() => aggregatePreflightDiagnostics(diagnostics), [diagnostics]);
 
-  const runProof = async () => {
-    setRunning(true);
+  const resetRun = () => {
+    abortRef.current?.abort();
+    revokeResultUrls(results);
     setError("");
+    setProgress(0);
     setResults([]);
+    setDiagnostics([]);
+    setSources([]);
+  };
+
+  const buildLibrarySources = async () => {
+    const [videos, sourceAssets] = await Promise.all([
+      base44.entities.Video.list("-published_at", 160),
+      base44.entities.VideoAsset.list("-updated_date", 500),
+    ]);
+    return videos.slice(0, PROOF_SIZE).map(video => {
+      const resolved = resolveAnalyzableVideoSource(video, sourceAssets, { mode: "analysis" });
+      return {
+        ...resolved,
+        videoId: video.id,
+        title: video.title || video.slug || "Untitled Video",
+        sourceMode: "library",
+      };
+    });
+  };
+
+  const preflightSources = async (nextSources, label) => {
+    setPreflighting(true);
+    setError("");
     setProgress(0);
     abortRef.current = new AbortController();
+    setSources(nextSources);
+    const nextDiagnostics = [];
 
     try {
-      setStatus("Loading existing library videos…");
-      const candidates = await buildLibraryCandidates();
-      if (candidates.length < PROOF_SIZE) throw new Error(`Only ${candidates.length} usable library videos were found with playable source URLs; ${PROOF_SIZE} are required for this proof run.`);
+      for (let index = 0; index < nextSources.length; index += 1) {
+        const source = nextSources[index];
+        setStatus(`Pre-flight ${label} ${index + 1}/${nextSources.length}: ${source.title}`);
+        const diag = await preflightAnalyzableVideoSource(source, { signal: abortRef.current.signal });
+        nextDiagnostics.push({ ...diag, sourceKey: sourceKey(source), sourceMode: source.sourceMode });
+        setDiagnostics([...nextDiagnostics]);
+        setProgress(Math.round(((index + 1) / nextSources.length) * 100));
+      }
+      const counts = aggregatePreflightDiagnostics(nextDiagnostics);
+      setStatus(`Pre-flight complete: ${counts.READY} READY, ${counts.PLAYABLE_ONLY} PLAYABLE_ONLY, ${counts.UNSUPPORTED_CODEC} UNSUPPORTED_CODEC, ${counts.URL_FAILED} URL_FAILED, ${counts.NO_SOURCE} NO_SOURCE, ${counts.TIMEOUT} TIMEOUT.`);
+      return nextDiagnostics;
+    } catch (err) {
+      setError(err.name === "AbortError" ? "Pre-flight cancelled." : err.message);
+      setStatus("Pre-flight stopped.");
+      return nextDiagnostics;
+    } finally {
+      setPreflighting(false);
+    }
+  };
 
-      const nextResults = [];
-      for (let index = 0; index < candidates.length; index += 1) {
-        const video = candidates[index];
-        setStatus(`Analyzing ${index + 1}/${PROOF_SIZE}: ${video.title}`);
-        const metadata = await loadRemoteVideoMetadata(video.url);
-        const file = { name: safeName(video.title) };
-        const frames = await sampleVideoFrames({
-          file,
-          previewUrl: video.url,
-          metadata,
-          onProgress: value => setProgress(Math.round(((index + value / 100) / candidates.length) * 100)),
-          log: null,
-          pausedRef,
-          signal: abortRef.current.signal,
-        });
-        const hero = rankHeroFrames(frames, 1)[0];
-        if (!hero) {
-          nextResults.push({ ...video, status: "failed", accepted: false, error: "No hero frame passed the automatic Story Score detector.", rejectionReasons: ["No hero frame passed the automatic Story Score detector"] });
-          setResults([...nextResults]);
-          continue;
-        }
+  const runLibraryPreflight = async () => {
+    resetRun();
+    const nextSources = await buildLibrarySources();
+    await preflightSources(nextSources, "library video");
+  };
 
+  const collectDirectoryFiles = async (directoryHandle, collected = []) => {
+    for await (const entry of directoryHandle.values()) {
+      if (entry.kind === "file") {
+        const file = await entry.getFile();
+        collected.push(file);
+      } else if (entry.kind === "directory") {
+        await collectDirectoryFiles(entry, collected);
+      }
+      if (collected.length >= PROOF_SIZE) break;
+    }
+    return collected;
+  };
+
+  const buildLocalSources = (files) => files
+    .filter(isSupportedVideoFile)
+    .slice(0, PROOF_SIZE)
+    .map(file => ({
+      videoId: file.webkitRelativePath || file.name,
+      title: file.webkitRelativePath || file.name,
+      url: URL.createObjectURL(file),
+      redactedUrl: file.webkitRelativePath || file.name,
+      selectedSourceField: "local_folder_file",
+      sourceField: "local_folder_file",
+      sourceType: "local_file",
+      extension: getExtension(file.name),
+      mimeType: file.type || "video/local",
+      accessType: "local",
+      browserCanPlay: "local-file",
+      sourceMode: "local",
+      file,
+    }));
+
+  const startLocalFolderProof = async () => {
+    resetRun();
+    if (window.showDirectoryPicker) {
+      try {
+        const directory = await window.showDirectoryPicker();
+        const files = await collectDirectoryFiles(directory, []);
+        const localSources = buildLocalSources(files);
+        const nextDiagnostics = await preflightSources(localSources, "local file");
+        await runReadyProof(localSources, nextDiagnostics);
+      } catch (err) {
+        if (err.name !== "AbortError") setError(err.message);
+      }
+      return;
+    }
+    folderInputRef.current?.click();
+  };
+
+  const handleLocalFolderInput = async (event) => {
+    resetRun();
+    const files = Array.from(event.target.files || []);
+    const localSources = buildLocalSources(files);
+    const nextDiagnostics = await preflightSources(localSources, "local file");
+    await runReadyProof(localSources, nextDiagnostics);
+    event.target.value = "";
+  };
+
+  const runReadyProof = async (sourceList = sources, diagnosticList = diagnostics) => {
+    const readyDiagnostics = diagnosticList.filter(item => item.classification === "READY");
+    const completedKeys = new Set(results.filter(item => item.status === "ready").map(item => item.sourceKey));
+    const readySources = sourceList.filter(source => readyDiagnostics.some(diag => diag.sourceKey === sourceKey(source)) && !completedKeys.has(sourceKey(source)));
+
+    setRunning(true);
+    setError("");
+    abortRef.current = new AbortController();
+    const nextResults = [...results];
+
+    try {
+      for (let index = 0; index < readySources.length; index += 1) {
+        const source = readySources[index];
+        const diag = readyDiagnostics.find(item => item.sourceKey === sourceKey(source));
+        setStatus(`Frame extraction ${index + 1}/${readySources.length}: ${source.title}`);
         try {
-          const proof = await renderProofImages(hero, video);
+          const file = source.file || { name: safeName(source.title) };
+          const frames = await sampleVideoFrames({
+            file,
+            previewUrl: diag.metadata.previewUrl,
+            metadata: diag.metadata,
+            onProgress: value => setProgress(Math.round(((index + value / 100) / Math.max(readySources.length, 1)) * 100)),
+            log: null,
+            pausedRef,
+            signal: abortRef.current.signal,
+          });
+          const hero = rankHeroFrames(frames, 1)[0];
+          if (!hero) {
+            nextResults.push({ sourceKey: sourceKey(source), ...source, status: "failed", accepted: false, error: "No hero frame passed the automatic Story Score detector.", rejectionReasons: ["No hero frame passed the automatic Story Score detector"], diagnostic: diag });
+            frames.forEach(frame => URL.revokeObjectURL(frame.url));
+            setResults([...nextResults]);
+            continue;
+          }
+
+          const proof = await renderProofImages(hero, source);
           const bestScore = proof.plan.best?.score || {};
           nextResults.push({
-            ...video,
+            sourceKey: sourceKey(source),
+            ...source,
             status: "ready",
             accepted: proof.accepted,
-            hero,
             heroFrameUrl: hero.url,
             storyScore: bestScore.story,
             qualityScore: bestScore.imageQuality,
             visionAnalysis: proof.plan.analysis,
             visionSummary: summarizeVision(proof.plan.analysis),
-            posterFamily: proof.plan.family?.label || "Unknown",
+            posterFamily: proof.plan.family?.label || proof.plan.family?.id || "Unknown",
             winningReason: winningReason(proof.plan),
             variants: proof.variants,
             finalPosterUrl: proof.finalPosterUrl,
             rejectionReasons: bestScore.qualityFailures || [],
+            diagnostic: diag,
+          });
+          frames.forEach(frame => {
+            if (frame.url !== hero.url) URL.revokeObjectURL(frame.url);
           });
         } catch (renderError) {
-          nextResults.push({ ...video, status: "failed", accepted: false, error: renderError.message, hero, heroFrameUrl: hero.url, rejectionReasons: [renderError.message] });
+          nextResults.push({ sourceKey: sourceKey(source), ...source, status: "failed", accepted: false, error: renderError.message, rejectionReasons: [renderError.message], diagnostic: diag });
+        } finally {
+          if (source.sourceMode === "local" && source.url?.startsWith("blob:")) URL.revokeObjectURL(source.url);
         }
         setResults([...nextResults]);
       }
       setProgress(100);
-      setStatus(`${PROOF_SIZE}-video semantic Vision proof gallery complete.`);
+      setStatus(`Proof run complete for ${readySources.length} READY videos. Skipped videos remain in diagnostics with exact failure stages.`);
     } catch (err) {
       setError(err.name === "AbortError" ? "Proof run cancelled." : err.message);
-      setStatus("Proof run stopped.");
+      setStatus("Proof run stopped. Resume will continue with remaining READY videos.");
     } finally {
       setRunning(false);
     }
+  };
+
+  const exportDiagnostics = () => {
+    const payload = {
+      generated_at: new Date().toISOString(),
+      preflight_counts: preflightCounts,
+      proof_stats: stats,
+      diagnostics: diagnostics.map(({ url, metadata, ...item }) => ({ ...item, metadata: metadata ? { duration: metadata.duration, width: metadata.width, height: metadata.height, aspectRatio: metadata.aspectRatio } : null })),
+      results: results.map(item => ({
+        videoId: item.videoId,
+        title: item.title,
+        status: item.status,
+        accepted: item.accepted,
+        storyScore: item.storyScore,
+        qualityScore: item.qualityScore,
+        posterFamily: item.posterFamily,
+        winningReason: item.winningReason,
+        rejectionReasons: item.rejectionReasons,
+        sourceField: item.selectedSourceField,
+        sourceType: item.sourceType,
+        variants: (item.variants || []).map(variant => ({ label: variant.label, variant: variant.variant, score: variant.score })),
+      })),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `fleshlab-proof-gallery-diagnostics-${Date.now()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const cancel = () => abortRef.current?.abort();
 
   return (
     <div className="space-y-4">
+      <input ref={folderInputRef} type="file" accept=".mp4,.mov,.webm,.m4v,video/mp4,video/quicktime,video/webm" multiple webkitdirectory="" directory="" className="hidden" onChange={handleLocalFolderInput} />
+
       <Card>
         <CardHeader>
           <CardTitle className="flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-            <span>Semantic Vision Proof Gallery</span>
-            <Badge variant="outline">100 library videos · scoring unchanged</Badge>
+            <span>Proof Gallery Source Diagnostics</span>
+            <Badge variant="outline">Scoring unchanged</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">Runs the current Vision Layer and poster engine against 100 existing library videos, saving the selected hero frame, all internal variants, final poster, Story Score, Vision analysis, poster family, and winning reason for review.</p>
+          <div className="rounded-lg border border-border bg-card/70 p-3 text-xs text-muted-foreground">
+            <p className="font-bold text-foreground">Privacy mode</p>
+            <p>Local Folder Proof: file uploaded NO · processing browser local.</p>
+            <p>Library Proof: existing FLESHLAB storage URL fetched YES · new upload NO · frames sent to external AI NO · processing browser local after fetch.</p>
+          </div>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={runProof} disabled={running}>{running ? "Running proof…" : "Generate 100-Video Proof Gallery"}</Button>
-            {running && <Button variant="outline" onClick={cancel}>Cancel</Button>}
+            <Button onClick={startLocalFolderProof} disabled={running || preflighting}>Mode A: Local Folder Proof</Button>
+            <Button variant="outline" onClick={runLibraryPreflight} disabled={running || preflighting}>Mode B: Pre-flight Library URLs</Button>
+            <Button variant="secondary" onClick={() => runReadyProof()} disabled={running || preflighting || !diagnostics.some(item => item.classification === "READY")}>Run / Resume READY Proof</Button>
+            {!!diagnostics.length && <Button variant="outline" onClick={exportDiagnostics}>Download Diagnostics JSON</Button>}
+            {(running || preflighting) && <Button variant="destructive" onClick={cancel}>Cancel</Button>}
           </div>
           <div className="space-y-2">
             <Progress value={progress} />
@@ -245,30 +400,42 @@ export default function LibraryCoverProof() {
         </CardContent>
       </Card>
 
-      {!!results.length && (
+      {!!diagnostics.length && (
         <Card>
-          <CardHeader><CardTitle className="text-sm">Proof Statistics</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              <div className="rounded-lg border border-border p-3"><p className="text-xs text-muted-foreground">Processed</p><p className="text-2xl font-black">{stats.processed}</p></div>
-              <div className="rounded-lg border border-border p-3"><p className="text-xs text-muted-foreground">Accepted</p><p className="text-2xl font-black">{stats.accepted}</p></div>
-              <div className="rounded-lg border border-border p-3"><p className="text-xs text-muted-foreground">Rejected</p><p className="text-2xl font-black">{stats.rejected}</p></div>
-              <div className="rounded-lg border border-border p-3"><p className="text-xs text-muted-foreground">Avg Story</p><p className="text-2xl font-black">{stats.averageStoryScore}</p></div>
-              <div className="rounded-lg border border-border p-3"><p className="text-xs text-muted-foreground">Avg Quality</p><p className="text-2xl font-black">{stats.averageQuality}</p></div>
-            </div>
-            <div className="grid gap-4 lg:grid-cols-3">
-              <div className="space-y-2"><p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">Distribution Histogram</p>{stats.histogram.map(bucket => <div key={bucket.label} className="flex items-center gap-2 text-xs"><span className="w-14">{bucket.label}</span><div className="h-2 flex-1 rounded bg-muted"><div className="h-2 rounded bg-primary" style={{ width: `${Math.min(100, bucket.count)}%` }} /></div><span>{bucket.count}</span></div>)}</div>
-              <div className="space-y-2"><p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">Rejection Reasons</p>{stats.rejectionReasons.length ? stats.rejectionReasons.map(([reason, count]) => <p key={reason} className="text-xs text-muted-foreground">{count}× {reason}</p>) : <p className="text-xs text-muted-foreground">None yet</p>}</div>
-              <div className="space-y-2"><p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">Poster Families</p>{stats.familyDistribution.map(([family, count]) => <p key={family} className="text-xs text-muted-foreground">{count}× {family}</p>)}</div>
-            </div>
+          <CardHeader><CardTitle className="text-sm">Pre-flight Counts</CardTitle></CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+            {Object.entries(preflightCounts).map(([key, value]) => <Metric key={key} label={key} value={value} />)}
           </CardContent>
         </Card>
       )}
 
       {!!results.length && (
+        <Card>
+          <CardHeader><CardTitle className="text-sm">Proof Statistics — Completed Analyses Only</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+              <Metric label="Rendered" value={stats.rendered} />
+              <Metric label="Skipped" value={stats.skipped} />
+              <Metric label="Rejected" value={stats.rejected} />
+              <Metric label="Avg Story" value={stats.averageStoryScore} />
+              <Metric label="Layouts" value={stats.uniqueLayouts} />
+              <Metric label="Distinct A/B/C" value={stats.distinctVariantCases} />
+            </div>
+            <div className="grid gap-4 lg:grid-cols-3">
+              <div className="space-y-2"><p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">Score Distribution</p>{stats.histogram.map(bucket => <div key={bucket.label} className="flex items-center gap-2 text-xs"><span className="w-14">{bucket.label}</span><div className="h-2 flex-1 rounded bg-muted"><div className="h-2 rounded bg-primary" style={{ width: `${Math.min(100, bucket.count)}%` }} /></div><span>{bucket.count}</span></div>)}</div>
+              <ListBlock title="Rejection Reasons" items={stats.rejectionReasons} empty="None from completed analyses" />
+              <ListBlock title="Poster Families" items={stats.familyDistribution} empty="None yet" />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!!diagnostics.length && <DiagnosticsTable diagnostics={diagnostics} />}
+
+      {!!results.length && (
         <div className="space-y-4">
           {results.map((item, index) => (
-            <Card key={`${item.id}-${index}`} className="overflow-hidden">
+            <Card key={`${item.sourceKey}-${index}`} className="overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex flex-col gap-2 text-sm sm:flex-row sm:items-start sm:justify-between">
                   <span>{index + 1}. {item.title}</span>
@@ -296,11 +463,33 @@ export default function LibraryCoverProof() {
   );
 }
 
+function Metric({ label, value }) {
+  return <div className="rounded-lg border border-border p-3"><p className="text-xs text-muted-foreground">{label}</p><p className="text-2xl font-black">{value}</p></div>;
+}
+
+function ListBlock({ title, items, empty }) {
+  return <div className="space-y-2"><p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">{title}</p>{items.length ? items.map(([label, count]) => <p key={label} className="text-xs text-muted-foreground">{count}× {label}</p>) : <p className="text-xs text-muted-foreground">{empty}</p>}</div>;
+}
+
+function DiagnosticsTable({ diagnostics }) {
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-sm">Per-video Source Diagnostics</CardTitle></CardHeader>
+      <CardContent className="overflow-x-auto">
+        <table className="w-full min-w-[1500px] text-left text-xs">
+          <thead className="text-muted-foreground"><tr>{["Class", "Video ID", "Title", "Source Field", "Source Type", "Ext", "MIME", "Access", "Metadata", "Playback", "Seek", "Draw", "Pixels", "Media Error", "CORS", "Codec", "Failure Stage"].map(head => <th key={head} className="border-b border-border p-2">{head}</th>)}</tr></thead>
+          <tbody>{diagnostics.map(item => <tr key={`${item.sourceKey}-${item.selectedSourceField}`} className="border-b border-border/60"><td className="p-2 font-bold">{item.classification}</td><td className="p-2">{item.videoId}</td><td className="p-2">{item.title}</td><td className="p-2">{item.selectedSourceField}</td><td className="p-2">{item.sourceType}</td><td className="p-2">{item.extension}</td><td className="p-2">{item.mimeType || "—"}</td><td className="p-2">{item.accessType}</td><td className="p-2">{item.metadataLoaded ? "YES" : "NO"}</td><td className="p-2">{item.playbackStarted ? "YES" : "NO"}</td><td className="p-2">{item.seekingWorked ? "YES" : "NO"}</td><td className="p-2">{item.canvasDrawSucceeded ? "YES" : "NO"}</td><td className="p-2">{item.canvasPixelReadingSucceeded ? "YES" : "NO"}</td><td className="p-2">{item.browserMediaError || item.browserMediaErrorCode || "—"}</td><td className="p-2">{item.corsStatus}</td><td className="p-2">{item.codecInformation}</td><td className="p-2">{item.finalFailureStage}{item.failureMessage ? ` · ${item.failureMessage}` : ""}</td></tr>)}</tbody>
+        </table>
+      </CardContent>
+    </Card>
+  );
+}
+
 function ProofImage({ label, url, error }) {
   return (
     <div className="space-y-2">
       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
-      {url ? <img src={url} alt={label} className="aspect-video w-full rounded-lg border border-border bg-black object-cover" /> : <div className="flex aspect-video items-center justify-center rounded-lg border border-border bg-black p-2 text-center text-[10px] text-destructive">{error || "Pending"}</div>}
+      {url ? <img src={url} alt={label} className="aspect-video w-full rounded-lg border border-border bg-black object-cover" /> : <div className="flex aspect-video items-center justify-center rounded-lg border border-border bg-black p-2 text-center text-[10px] text-destructive">{error || "Not rendered"}</div>}
     </div>
   );
 }

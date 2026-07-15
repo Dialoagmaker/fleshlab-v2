@@ -14,6 +14,97 @@
 
 const CDN_BASE = 'https://video.fleshlab.online';
 const LEGACY_R2_PATTERN = /pub-[a-f0-9]+\.r2\.dev/i;
+const VIDEO_EXTENSIONS = ['mp4', 'm4v', 'webm', 'mov', 'ogv', 'ogg'];
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
+
+function stripSecretQuery(url) {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    parsed.search = '';
+    parsed.hash = '';
+    return parsed.toString();
+  } catch {
+    return String(url).split('?')[0].split('#')[0];
+  }
+}
+
+function getExtension(value) {
+  const clean = stripSecretQuery(value) || '';
+  const match = clean.match(/\.([a-z0-9]+)$/i);
+  return match ? match[1].toLowerCase() : '';
+}
+
+function mimeFromExtension(ext) {
+  const map = {
+    mp4: 'video/mp4',
+    m4v: 'video/mp4',
+    mov: 'video/quicktime',
+    webm: 'video/webm',
+    ogv: 'video/ogg',
+    ogg: 'video/ogg',
+    m3u8: 'application/vnd.apple.mpegurl'
+  };
+  return map[ext] || '';
+}
+
+function classifyAccess(url) {
+  if (!url) return 'missing';
+  if (String(url).startsWith('blob:')) return 'local';
+  try {
+    const parsed = new URL(url);
+    const params = parsed.searchParams;
+    const hasSignature = ['signature', 'sig', 'token', 'X-Amz-Signature', 'X-Amz-Credential', 'Expires', 'expires'].some(key => params.has(key));
+    const expiryValue = params.get('Expires') || params.get('expires') || params.get('X-Amz-Date');
+    if (expiryValue && /^\d+$/.test(expiryValue) && Number(expiryValue) * 1000 < Date.now()) return 'expired';
+    if (hasSignature) return 'signed';
+    if (/protected|private|token|signed/i.test(parsed.pathname)) return 'protected';
+    return 'public';
+  } catch {
+    return 'unknown';
+  }
+}
+
+function browserCanPlay(mimeType) {
+  if (typeof document === 'undefined' || !mimeType) return '';
+  const video = document.createElement('video');
+  return video.canPlayType(mimeType) || '';
+}
+
+function isVideoCandidate(url) {
+  const ext = getExtension(url);
+  if (IMAGE_EXTENSIONS.includes(ext)) return false;
+  return VIDEO_EXTENSIONS.includes(ext) || !ext;
+}
+
+function makeVideoSourceCandidate({ video, rawValue, sourceField, sourceKind, asset = null, basePriority = 50 }) {
+  const url = buildPublicAssetUrl(rawValue);
+  if (!url || !isVideoCandidate(url)) return null;
+  const extension = getExtension(url);
+  const mimeType = asset?.mime_type || mimeFromExtension(extension);
+  const playability = browserCanPlay(mimeType);
+  const mp4Bonus = extension === 'mp4' || extension === 'm4v' ? 30 : 0;
+  const webmBonus = extension === 'webm' ? 20 : 0;
+  const maybePenalty = !extension ? -8 : 0;
+  const unsupportedPenalty = mimeType && playability === '' ? -20 : 0;
+
+  return {
+    videoId: video?.id || null,
+    title: video?.title || video?.slug || 'Untitled Video',
+    url,
+    redactedUrl: stripSecretQuery(url),
+    selectedSourceField: sourceField,
+    sourceField,
+    sourceType: sourceKind,
+    extension: extension || 'unknown',
+    mimeType,
+    accessType: classifyAccess(url),
+    browserCanPlay: playability || 'unknown',
+    assetId: asset?.id || null,
+    assetType: asset?.asset_type || null,
+    priority: basePriority + mp4Bonus + webmBonus + maybePenalty + unsupportedPenalty,
+  };
+}
 
 /**
  * Classify asset URL into categories
@@ -108,18 +199,61 @@ export function getVideoThumbnailUrl(video) {
  * @param {Object} video - Video entity
  * @returns {string|null} - Preview URL or null
  */
+export function resolveAnalyzableVideoSource(video, assets = [], options = {}) {
+  if (!video) return { status: 'NO_SOURCE', reason: 'No video record supplied', candidates: [] };
+  const mode = options.mode || 'analysis';
+  const relatedAssets = Array.isArray(assets) ? assets.filter(asset => {
+    if (asset.video_id && asset.video_id !== video.id) return false;
+    if (mode === 'preview') return ['trailer', 'preview'].includes(asset.asset_type || '');
+    return true;
+  }) : [];
+  const candidates = [];
+  const add = (rawValue, sourceField, sourceKind, basePriority, asset = null) => {
+    const candidate = makeVideoSourceCandidate({ video, rawValue, sourceField, sourceKind, basePriority, asset });
+    if (candidate) candidates.push(candidate);
+  };
+
+  if (mode === 'preview') {
+    add(video.trailer_url, 'video.trailer_url', 'video_preview_trailer', 95);
+    add(video.preview_video_url, 'video.preview_video_url', 'video_preview_mp4', 92);
+    add(video.preview_url, 'video.preview_url', 'video_preview_url', 88);
+  }
+
+  if (mode !== 'preview') {
+    add(video.transcoded_mp4_url, 'video.transcoded_mp4_url', 'transcoded_h264_mp4', 120);
+    add(video.playable_url, 'video.playable_url', 'playable_video_url', 116);
+    add(video.playback_url, 'video.playback_url', 'playback_video_url', 112);
+    add(video.source_video_url, 'video.source_video_url', 'original_source_video', 108);
+    add(video.original_video_url, 'video.original_video_url', 'original_video_url', 104);
+    add(video.mp4_url, 'video.mp4_url', 'mp4_video_url', 102);
+    add(video.storage_url, 'video.storage_url', 'storage_video_url', 96);
+    add(video.video_url, 'video.video_url', 'generic_video_url', 92);
+  }
+
+  relatedAssets.forEach(asset => {
+    const type = asset.asset_type || 'asset';
+    if (['thumbnail', 'cover', 'poster', 'keyframe', 'gif', 'cover_candidate'].includes(type)) return;
+    const typePriority = type === 'source' ? 114 : type === 'trailer' ? 98 : type === 'preview' ? 94 : 86;
+    add(asset.cdn_url, `VideoAsset.${type}.cdn_url`, `video_asset_${type}_cdn_url`, typePriority, asset);
+    add(asset.public_url, `VideoAsset.${type}.public_url`, `video_asset_${type}_public_url`, typePriority - 1, asset);
+    add(asset.url, `VideoAsset.${type}.url`, `video_asset_${type}_url`, typePriority - 2, asset);
+    add(asset.r2_key, `VideoAsset.${type}.r2_key`, `video_asset_${type}_r2_key`, typePriority - 4, asset);
+  });
+
+  if (mode !== 'analysis') {
+    add(video.trailer_url, 'video.trailer_url', 'video_preview_trailer', 80);
+    add(video.preview_video_url, 'video.preview_video_url', 'video_preview_mp4', 78);
+    add(video.preview_url, 'video.preview_url', 'video_preview_url', 76);
+  }
+
+  const unique = Array.from(new Map(candidates.map(candidate => [candidate.url, candidate])).values());
+  unique.sort((a, b) => b.priority - a.priority);
+  return unique[0] ? { ...unique[0], status: 'SOURCE_SELECTED', candidates: unique } : { status: 'NO_SOURCE', reason: 'No browser-compatible video source fields found', candidates: unique };
+}
+
 export function getVideoPreviewUrl(video) {
   if (!video) return null;
-
-  // Priority 1: trailer_url
-  const trailer = buildPublicAssetUrl(video.trailer_url);
-  if (trailer) return trailer;
-
-  // Priority 2: preview_gif_url (legacy, but still usable)
-  const gif = buildPublicAssetUrl(video.preview_gif_url);
-  if (gif) return gif;
-
-  return null;
+  return resolveAnalyzableVideoSource(video, [], { mode: 'preview' }).url || null;
 }
 
 /**
@@ -127,10 +261,9 @@ export function getVideoPreviewUrl(video) {
  * @param {Object} video - Video entity
  * @returns {string|null} - Source URL or null
  */
-export function getVideoSourceUrl(video) {
+export function getVideoSourceUrl(video, assets = []) {
   if (!video) return null;
-
-  return buildPublicAssetUrl(video.source_video_url);
+  return resolveAnalyzableVideoSource(video, assets, { mode: 'analysis' }).url || null;
 }
 
 /**

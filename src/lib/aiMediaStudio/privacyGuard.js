@@ -78,12 +78,12 @@ export function installLocalMediaPrivacyGuard(log, base44Client = null) {
 
 export function getPrivacyFacts(outputCount = 0) {
   return [
-    ["Video uploaded", "NO"],
-    ["Video Blob transmitted", "NO"],
-    ["Frames transmitted", "NO"],
-    ["External AI API used", "NO"],
-    ["Remote storage used", "NO"],
-    ["Processing mode", "Browser local"],
+    ["Local file uploaded", "NO"],
+    ["Library video fetched", "Only in Proof mode"],
+    ["New upload", "NO"],
+    ["Frames sent to external AI", "NO"],
+    ["Local file processing", "Browser local"],
+    ["Library proof processing", "Browser local after fetch"],
     ["Generated outputs", outputCount ? "Local Blob URLs" : "None yet"],
   ];
 }

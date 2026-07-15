@@ -177,10 +177,10 @@ export async function loadVideoMetadata(file, log) {
 
 export async function sampleVideoFrames({ file, previewUrl, metadata, onProgress, log, pausedRef, signal }) {
   const video = document.createElement("video");
-  video.src = previewUrl;
+  if (/^https?:/i.test(previewUrl)) video.crossOrigin = "anonymous";
   video.muted = true;
   video.preload = "auto";
-  video.crossOrigin = "anonymous";
+  video.src = previewUrl;
   log?.("decoding started");
   await new Promise((resolve, reject) => {
     video.onloadedmetadata = resolve;
