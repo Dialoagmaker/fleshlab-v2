@@ -2,23 +2,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import CoverPreviewEditor from "./CoverPreviewEditor";
 
-const MASTER_SETTINGS = {
-  presetId: "cinematic",
-  zoom: 1.34,
-  x: 0,
-  y: 0,
-  brightness: 102,
-  contrast: 114,
-  saturation: 106,
-  titleSize: 190,
-  subtitleSize: 130,
-  titleY: 57,
-  gradientStrength: 90,
-  borderTexture: 42,
-  showSafeMargins: false,
-  sellingPoints: "REAL MOMENTS\nRAW & AUTHENTIC\nEXCLUSIVE CONTENT",
-};
-
 export default function CoverVariantCompare({ frame, candidateFrames = [], metadata, settings, itemFileName }) {
   const fileTitle = itemFileName?.replace(/\.[^/.]+$/, "") || "";
   const effectiveMetadata = {
@@ -42,7 +25,7 @@ export default function CoverVariantCompare({ frame, candidateFrames = [], metad
           frame={frame}
           candidateFrames={candidateFrames}
           metadata={effectiveMetadata}
-          settings={{ ...settings, ...MASTER_SETTINGS, variantId: "fleshlab-master" }}
+          settings={settings}
           fileSuffix="fleshlab-master"
         />
       </CardContent>

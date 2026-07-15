@@ -7,6 +7,10 @@ function font(size, family = "Bebas Neue", weight = 900) {
   return `${weight} ${size}px "${family}", Impact, Arial, sans-serif`;
 }
 
+function isManual(settings, key) {
+  return Boolean(settings?.manualOverrides?.[key]);
+}
+
 export function splitTitle(metadata = {}) {
   const raw = String(metadata.videoTitle || "BEACH ESCAPE").trim().toUpperCase();
   const explicit = String(metadata.optionalSubtitle || metadata.campaignName || "").trim().toUpperCase();
@@ -36,12 +40,13 @@ export function buildTitleLines(ctx, text, maxWidth, startSize, minSize, family 
   return { lines: [String(text || "")], size: minSize, lineHeight: minSize * 0.84, score: 0.42 };
 }
 
-export function calculateTypography(ctx, box, width, family, metadata) {
+export function calculateTypography(ctx, box, width, family, metadata, settings = {}) {
   const { title, subtitle } = splitTitle(metadata);
   const maxWidth = width * box.w;
-  const titleStart = width * family.typography.titleScale;
-  const titleMin = width * 0.052;
+  const titleStart = isManual(settings, "titleSize") ? Number(settings.titleSize) || width * family.typography.titleScale : width * family.typography.titleScale;
+  const titleMin = isManual(settings, "titleSize") ? titleStart : width * 0.052;
   const titleBlock = buildTitleLines(ctx, title, maxWidth, titleStart, titleMin, family.typography.titleFont);
-  const subtitleSize = Math.max(width * 0.036, Math.min(width * family.typography.accentScale, maxWidth / Math.max(4, subtitle.length || 8)));
+  const autoSubtitleSize = Math.max(width * 0.036, Math.min(width * family.typography.accentScale, maxWidth / Math.max(4, subtitle.length || 8)));
+  const subtitleSize = isManual(settings, "subtitleSize") ? Number(settings.subtitleSize) || autoSubtitleSize : autoSubtitleSize;
   return { title, subtitle, ...titleBlock, subtitleSize, score: titleBlock.score };
 }

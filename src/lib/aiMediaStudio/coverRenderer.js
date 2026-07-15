@@ -12,6 +12,7 @@ export const COVER_PRESETS = [
   { id: "v2-auto", label: "Cinematic Poster Engine v2", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
   { id: "v2-title", label: "Title Dominant", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
   { id: "v2-performer", label: "Performer Dominant", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
+  { id: "v2-balanced", label: "Balanced", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
 ];
 
 export const DEFAULT_COVER_SETTINGS = {
@@ -19,6 +20,8 @@ export const DEFAULT_COVER_SETTINGS = {
   customWidth: 1600,
   customHeight: 900,
   presetId: "v2-auto",
+  variant: "auto",
+  manualOverrides: {},
   zoom: 1,
   x: 0,
   y: 0,

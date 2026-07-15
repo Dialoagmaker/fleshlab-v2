@@ -11,10 +11,23 @@ import { DEFAULT_COVER_SETTINGS } from "@/lib/aiMediaStudio/coverRenderer";
 import { Button } from "@/components/ui/button";
 import { rankHeroFrames } from "@/lib/aiMediaStudio/localAnalyzer";
 
+function markManual(settings, patch) {
+  return {
+    ...settings,
+    ...patch,
+    manualOverrides: {
+      ...(settings.manualOverrides || {}),
+      ...Object.keys(patch).reduce((map, key) => ({ ...map, [key]: true }), {}),
+    },
+  };
+}
+
 export default function CoverGeneratorPanel({ item }) {
   const [selectedFrameIndex, setSelectedFrameIndex] = useState(null);
   const [metadata, setMetadata] = useState({ performerName: "", videoTitle: item?.fileName?.replace(/\.[^/.]+$/, "") || "", optionalSubtitle: "", contentType: "", campaignName: "" });
-  const [settings, setSettings] = useState(DEFAULT_COVER_SETTINGS);
+  const [settings, setSettings] = useState({ ...DEFAULT_COVER_SETTINGS, manualOverrides: {} });
+  const updateSettings = (patch) => setSettings(current => markManual(current, patch));
+  const resetSettings = () => setSettings({ ...DEFAULT_COVER_SETTINGS, manualOverrides: {} });
   const [coverMode, setCoverMode] = useState("local");
   const heroCandidates = useMemo(() => rankHeroFrames(item?.frames || [], 12), [item?.frames]);
   const bestIndex = heroCandidates[0]?.index ?? null;
@@ -39,7 +52,7 @@ export default function CoverGeneratorPanel({ item }) {
 
   return (
     <div className="space-y-4">
-      <Card><CardHeader><CardTitle className="flex items-center justify-between gap-3 text-sm">Cover generation mode <Badge variant="outline">Video stays local</Badge></CardTitle></CardHeader><CardContent className="space-y-5"><div className="grid gap-2 sm:grid-cols-2"><Button variant={coverMode === "local" ? "default" : "outline"} onClick={() => setCoverMode("local")}>Cinematic Poster Engine v2</Button><Button variant={coverMode === "openrouter" ? "default" : "outline"} onClick={() => setCoverMode("openrouter")}>OpenRouter Still Enhancement</Button></div><CoverFramePicker frames={item.frames} selectedIndex={actualIndex} onSelect={setSelectedFrameIndex} onBestFrame={setSelectedFrameIndex} /><CoverMetadataForm metadata={metadata} onChange={setMetadata} /><CoverPresetControls settings={settings} onChange={setSettings} /><CoverAdjustmentControls settings={settings} onChange={setSettings} /></CardContent></Card>
+      <Card><CardHeader><CardTitle className="flex items-center justify-between gap-3 text-sm">Cover generation mode <Badge variant="outline">Video stays local</Badge></CardTitle></CardHeader><CardContent className="space-y-5"><div className="grid gap-2 sm:grid-cols-2"><Button variant={coverMode === "local" ? "default" : "outline"} onClick={() => setCoverMode("local")}>Cinematic Poster Engine v2</Button><Button variant={coverMode === "openrouter" ? "default" : "outline"} onClick={() => setCoverMode("openrouter")}>OpenRouter Still Enhancement</Button></div><CoverFramePicker frames={item.frames} selectedIndex={actualIndex} onSelect={setSelectedFrameIndex} onBestFrame={setSelectedFrameIndex} /><CoverMetadataForm metadata={metadata} onChange={setMetadata} /><CoverPresetControls settings={settings} onChange={updateSettings} /><CoverAdjustmentControls settings={settings} onChange={updateSettings} onReset={resetSettings} /></CardContent></Card>
       {!frame ? <Card><CardContent className="p-6 text-sm font-semibold text-destructive">No suitable hero frame found</CardContent></Card> : coverMode === "local" ? <CoverVariantCompare frame={frame} candidateFrames={heroCandidates} metadata={metadata} settings={settings} itemFileName={item?.fileName} /> : <OpenRouterCoverMode frame={frame} metadata={metadata} settings={settings} />}
     </div>
   );
