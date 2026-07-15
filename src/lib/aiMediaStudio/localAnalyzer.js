@@ -60,7 +60,7 @@ function clamp(value, min = 0, max = 100) {
 }
 
 function calculateHeroMetrics(imageData, metrics) {
-  const vision = analyzeVisionFromImageData(imageData, { source: "frame-story-ranking" });
+  const vision = analyzeVisionFromImageData(imageData, { source: "advertising-moment-search" });
   const subject = vision.primarySubject || {};
   const box = subject.box || { x: 0.5, y: 0.2, w: 0.28, h: 0.34 };
   const lighting = clamp(1 - Math.abs(metrics.brightness - 126) / 126 - metrics.overexposure * 0.018 - metrics.underexposure * 0.018, 0, 1);
@@ -68,45 +68,78 @@ function calculateHeroMetrics(imageData, metrics) {
   const transitionPenalty = metrics.visualDifference > 30 ? clamp((metrics.visualDifference - 30) / 28, 0, 0.32) : 0;
   const motionEnergy = clamp(metrics.visualDifference / 24, 0, 1);
   const blurPenalty = sharpnessScore < 0.25 ? (0.25 - sharpnessScore) * 120 : 0;
-  const storyScore = clamp(
-    Number(vision.storyScore || 0) * 68 +
-    Number(vision.clickPotential || 0) * 18 +
-    Number(vision.visualCuriosity || 0) * 8 +
-    Number(vision.interactionStrength || 0) * 6 +
-    motionEnergy * 5 +
-    lighting * 4 -
-    transitionPenalty * 80 -
+  const subjectDominance = clamp(Number(subject.dominance || 0), 0, 1);
+  const bodySeparation = clamp(Number(subject.separationScore || 0), 0, 1);
+  const bodyLanguage = clamp(Number(vision.bodyLanguage || 0), 0, 1);
+  const clickPotential = clamp(Number(vision.clickPotential || 0), 0, 1);
+  const visualCuriosity = clamp(Number(vision.visualCuriosity || 0), 0, 1);
+  const interactionStrength = clamp(Number(vision.interactionStrength || 0), 0, 1);
+  const emotionalPresence = clamp(Number(vision.emotionalPresence || 0), 0, 1);
+  const thumbnailImpact = clamp(Number(vision.thumbnailImpact || 0), 0, 1);
+  const sceneReadability = clamp(Number(vision.sceneReadability || 0), 0, 1);
+  const cropRisk = clamp(Number(subject.cropRisk || 0), 0, 1);
+  const eyeContact = subject.faceVisible ? clamp(clickPotential * 0.5 + emotionalPresence * 0.3 + sceneReadability * 0.2, 0, 1) : 0;
+  const silhouette = clamp(subjectDominance * 0.46 + bodyLanguage * 0.3 + bodySeparation * 0.24, 0, 1);
+  const lightingScore = clamp(lighting * 0.55 + clamp(metrics.contrast / 80, 0, 1) * 0.25 + clamp(metrics.technicalScore / 100, 0, 1) * 0.2, 0, 1);
+  const movementFreeze = clamp(motionEnergy * 0.32 + sharpnessScore * 0.43 + clickPotential * 0.25 - transitionPenalty, 0, 1);
+  const tension = clamp(visualCuriosity * 0.36 + interactionStrength * 0.24 + emotionalPresence * 0.22 + bodyLanguage * 0.18, 0, 1);
+  const advertisingScore = clamp(
+    eyeContact * 11 +
+    silhouette * 18 +
+    bodySeparation * 13 +
+    lightingScore * 12 +
+    bodyLanguage * 10 +
+    tension * 12 +
+    interactionStrength * 8 +
+    emotionalPresence * 7 +
+    movementFreeze * 5 +
+    thumbnailImpact * 4 -
+    cropRisk * 16 -
+    transitionPenalty * 42 -
     blurPenalty,
     0,
     100
   );
 
   return {
-    score: Number(storyScore.toFixed(2)),
-    posterScore: Number(storyScore.toFixed(2)),
-    storyScore: Number(storyScore.toFixed(2)),
-    subjectDominance: Number((subject.dominance || 0).toFixed(2)),
+    score: Number(advertisingScore.toFixed(2)),
+    posterScore: Number(advertisingScore.toFixed(2)),
+    heroPotential: Number(advertisingScore.toFixed(2)),
+    storyScore: Number(advertisingScore.toFixed(2)),
+    advertisingMoments: {
+      eyeContact: Number((eyeContact * 100).toFixed(1)),
+      silhouette: Number((silhouette * 100).toFixed(1)),
+      separation: Number((bodySeparation * 100).toFixed(1)),
+      lighting: Number((lightingScore * 100).toFixed(1)),
+      gesture: Number((bodyLanguage * 100).toFixed(1)),
+      tension: Number((tension * 100).toFixed(1)),
+      interaction: Number((interactionStrength * 100).toFixed(1)),
+      emotion: Number((emotionalPresence * 100).toFixed(1)),
+      movementFreeze: Number((movementFreeze * 100).toFixed(1)),
+      thumbnail: Number((thumbnailImpact * 100).toFixed(1)),
+    },
+    subjectDominance: Number(subjectDominance.toFixed(2)),
     negativeSpaceScore: Number((vision.safeTypographyZone?.score || 0).toFixed(2)),
-    compositionScore: Number((subject.separationScore || 0).toFixed(2)),
-    visualCuriosity: Number((vision.visualCuriosity || 0).toFixed(2)),
-    sceneReadability: Number((vision.sceneReadability || 0).toFixed(2)),
-    interactionStrength: Number((vision.interactionStrength || 0).toFixed(2)),
-    bodyLanguage: Number((vision.bodyLanguage || 0).toFixed(2)),
-    emotionalPresence: Number((vision.emotionalPresence || 0).toFixed(2)),
+    compositionScore: Number(bodySeparation.toFixed(2)),
+    visualCuriosity: Number(visualCuriosity.toFixed(2)),
+    sceneReadability: Number(sceneReadability.toFixed(2)),
+    interactionStrength: Number(interactionStrength.toFixed(2)),
+    bodyLanguage: Number(bodyLanguage.toFixed(2)),
+    emotionalPresence: Number(emotionalPresence.toFixed(2)),
     storyContinuation: Number((vision.storyContinuation || 0).toFixed(2)),
-    clickPotential: Number((vision.clickPotential || 0).toFixed(2)),
-    thumbnailImpact: Number((vision.thumbnailImpact || 0).toFixed(2)),
+    clickPotential: Number(clickPotential.toFixed(2)),
+    thumbnailImpact: Number(thumbnailImpact.toFixed(2)),
     centroidX: Number((subject.visualFocus?.x || 0.5).toFixed(2)),
     centroidY: Number((subject.visualFocus?.y || 0.46).toFixed(2)),
     subjectBox: { x: Number(box.x.toFixed(2)), y: Number(box.y.toFixed(2)), w: Number(box.w.toFixed(2)), h: Number(box.h.toFixed(2)) },
-    cropRisk: Number((subject.cropRisk || 0).toFixed(2)),
+    cropRisk: Number(cropRisk.toFixed(2)),
     faceVisible: Boolean(subject.faceVisible),
     skinRatio: 0,
     upperBodyRatio: Number((subject.visibilityScore || 0).toFixed(2)),
     rightHeroRatio: Number(((subject.visualFocus?.x || 0.5) > 0.5 ? 1 : 0.45).toFixed(2)),
-    centerInterestRatio: Number((subject.separationScore || 0).toFixed(2)),
+    centerInterestRatio: Number(bodySeparation.toFixed(2)),
     faceZoneRatio: subject.faceVisible ? 1 : 0,
-    suitable: storyScore >= 58 && Number(subject.dominance || 0) >= 0.18 && Number(vision.sceneReadability || 0) >= 0.3 && sharpnessScore >= 0.25,
+    suitable: advertisingScore >= 85 && subjectDominance >= 0.18 && sceneReadability >= 0.3 && sharpnessScore >= 0.25,
   };
 }
 
@@ -198,9 +231,11 @@ export async function sampleVideoFrames({ file, previewUrl, metadata, onProgress
   const thumbCtx = thumbCanvas.getContext("2d");
 
   const sampleTimes = [];
-  const sampleStep = Math.max(1, metadata.duration / 180);
+  const targetFrameCount = Math.max(1000, Math.min(1400, Math.ceil(metadata.duration * 6)));
+  const sampleStep = Math.max(0.03, metadata.duration / targetFrameCount);
   for (let time = 0; time < metadata.duration; time += sampleStep) sampleTimes.push(Number(time.toFixed(2)));
   if (!sampleTimes.length) sampleTimes.push(0);
+  log?.(`advertising moment search: ${sampleTimes.length} candidate frames queued`);
 
   const frames = [];
   let previousLuma = null;
@@ -264,23 +299,20 @@ export function rankScreenshots(frames, limit = 10) {
   return [...frames].sort((a, b) => b.metrics.technicalScore - a.metrics.technicalScore).slice(0, limit);
 }
 
-export function rankHeroFrames(frames, limit = 12, minimumScore = 58) {
+export function rankAdvertisingFrames(frames, limit = 10, minimumHeroPotential = 85) {
   return [...frames]
     .filter(frame => {
       const hero = frame.hero || {};
-      return hero.suitable &&
-        Number(hero.posterScore || hero.score || 0) >= minimumScore &&
+      return Number(hero.heroPotential || hero.posterScore || hero.score || 0) >= minimumHeroPotential &&
         Number(hero.subjectDominance || 0) >= 0.18 &&
         Number(hero.sceneReadability || 0) >= 0.3;
     })
-    .sort((a, b) => {
-      const aHero = a.hero || {};
-      const bHero = b.hero || {};
-      const aPremium = Number(aHero.storyScore || aHero.posterScore || aHero.score || 0) + Number(aHero.clickPotential || 0) * 32 + Number(aHero.visualCuriosity || 0) * 22 + Number(aHero.interactionStrength || 0) * 18 + Number(aHero.sceneReadability || 0) * 18 + Number(aHero.thumbnailImpact || 0) * 16 + (aHero.faceVisible ? 6 : 0) - Number(aHero.cropRisk || 0) * 28;
-      const bPremium = Number(bHero.storyScore || bHero.posterScore || bHero.score || 0) + Number(bHero.clickPotential || 0) * 32 + Number(bHero.visualCuriosity || 0) * 22 + Number(bHero.interactionStrength || 0) * 18 + Number(bHero.sceneReadability || 0) * 18 + Number(bHero.thumbnailImpact || 0) * 16 + (bHero.faceVisible ? 6 : 0) - Number(bHero.cropRisk || 0) * 28;
-      return bPremium - aPremium;
-    })
+    .sort((a, b) => Number(b.hero?.heroPotential || b.hero?.score || 0) - Number(a.hero?.heroPotential || a.hero?.score || 0))
     .slice(0, limit);
+}
+
+export function rankHeroFrames(frames, limit = 12, minimumScore = 85) {
+  return rankAdvertisingFrames(frames, limit, minimumScore);
 }
 
 export function selectDiverseFrames(frames, limit = 10, initialMinGapSeconds = 8) {
@@ -342,8 +374,8 @@ function outputFile(filename, blob, url, previewUrl = null, status = "ready") {
 
 export async function createOutputs({ file, frames, scenes, log }) {
   const baseName = file.name.replace(/\.[^/.]+$/, "").replace(/\s+/g, "_");
-  const screenshots = selectDiverseFrames(frames, 10, 8);
-  log?.("diverse screenshots selected");
+  const screenshots = rankAdvertisingFrames(frames, 10, 85);
+  log?.("top advertising moments selected");
   const outputs = screenshots.map((frame, index) => outputFile(
     `${baseName}_top_${String(index + 1).padStart(2, "0")}.jpg`,
     frame.blob,
