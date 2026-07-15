@@ -62,61 +62,94 @@ function calculateHeroMetrics(imageData, metrics) {
   const data = imageData.data;
   const width = imageData.width;
   const height = imageData.height;
-  let sampled = 0, skin = 0, upperSkin = 0, rightSkin = 0, centerSkin = 0, faceZoneSkin = 0, cx = 0, cy = 0;
-  for (let y = 0; y < height; y += 2) {
-    for (let x = 0; x < width; x += 2) {
+  let sampled = 0;
+  let salient = 0;
+  let cx = 0;
+  let cy = 0;
+  let minX = 1;
+  let minY = 1;
+  let maxX = 0;
+  let maxY = 0;
+  let lowComplexityCells = 0;
+  const cellStats = Array.from({ length: 48 }, () => ({ edge: 0, samples: 0 }));
+
+  for (let y = 1; y < height - 1; y += 2) {
+    for (let x = 1; x < width - 1; x += 2) {
       const i = (y * width + x) * 4;
       const r = data[i], g = data[i + 1], b = data[i + 2];
-      const max = Math.max(r, g, b), min = Math.min(r, g, b);
-      const brightness = (r + g + b) / 3;
-      const isSkinLike = r > 58 && g > 32 && b > 20 && r > g * 1.05 && r > b * 1.18 && max - min > 14 && brightness > 45 && brightness < 235;
+      const l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      const rx = data[i + 4], gx = data[i + 5], bx = data[i + 6];
+      const ry = data[i + width * 4], gy = data[i + width * 4 + 1], by = data[i + width * 4 + 2];
+      const lx = 0.2126 * rx + 0.7152 * gx + 0.0722 * bx;
+      const ly = 0.2126 * ry + 0.7152 * gy + 0.0722 * by;
+      const edge = Math.abs(l - lx) + Math.abs(l - ly);
+      const saturation = (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
+      const centerBias = 1 - Math.min(1, Math.hypot(x / width - 0.5, y / height - 0.46) / 0.74);
+      const saliency = edge * 0.62 + saturation * 38 + centerBias * 18;
+      const cellX = Math.min(7, Math.floor((x / width) * 8));
+      const cellY = Math.min(5, Math.floor((y / height) * 6));
+      const cell = cellStats[cellY * 8 + cellX];
+      cell.edge += edge;
+      cell.samples += 1;
       sampled += 1;
-      if (isSkinLike) {
-        skin += 1;
+      if (saliency > 36 && l > 22 && l < 238) {
+        salient += 1;
         cx += x;
         cy += y;
-        if (y < height * 0.6) upperSkin += 1;
-        if (x > width * 0.4) rightSkin += 1;
-        if (x > width * 0.36 && x < width * 0.82 && y < height * 0.74) centerSkin += 1;
-        if (x > width * 0.48 && x < width * 0.82 && y > height * 0.12 && y < height * 0.5) faceZoneSkin += 1;
+        minX = Math.min(minX, x / width);
+        minY = Math.min(minY, y / height);
+        maxX = Math.max(maxX, x / width);
+        maxY = Math.max(maxY, y / height);
       }
     }
   }
-  const skinRatio = sampled ? (skin / sampled) * 100 : 0;
-  const upperRatio = skin ? upperSkin / skin : 0;
-  const rightRatio = skin ? rightSkin / skin : 0;
-  const centerRatio = skin ? centerSkin / skin : 0;
-  const faceZoneRatio = skin ? faceZoneSkin / skin : 0;
-  const centroidX = skin ? cx / skin / width : 0;
-  const centroidY = skin ? cy / skin / height : 0;
-  const rightPanelRatio = rightRatio;
-  const presence = clamp(skinRatio * 7.4, 0, 48);
-  const heroPlacement = skin ? clamp((1 - Math.abs(centroidX - 0.68) / 0.26) * 20, 0, 20) + clamp((1 - Math.abs(centroidY - 0.43) / 0.3) * 12, 0, 12) : 0;
-  const upperBody = clamp(upperRatio * 26, 0, 26);
-  const rightHero = clamp(rightPanelRatio * 18, 0, 18);
-  const centerInterest = clamp(centerRatio * 8, 0, 8);
-  const faceFocus = clamp(faceZoneRatio * 14, 0, 14);
-  const lighting = clamp(12 - Math.abs(metrics.brightness - 126) * 0.08 - metrics.overexposure * 1.8 - metrics.underexposure * 1.2, 0, 12);
-  const cinematicContrast = clamp(metrics.contrast * 0.28, 0, 9);
-  const transitionPenalty = metrics.visualDifference > 26 ? (metrics.visualDifference - 26) * 1.35 : 0;
-  const blurPenalty = metrics.sharpness < 5.8 ? (5.8 - metrics.sharpness) * 4.4 : 0;
-  const emptyPenalty = skinRatio < 2.5 ? 48 : skinRatio < 5 ? 28 : skinRatio < 7 ? 12 : 0;
-  const wallPenalty = skinRatio < 7 && metrics.contrast < 38 ? 24 : skinRatio < 5 ? 14 : 0;
-  const hiddenPenalty = skin && upperRatio < 0.36 ? 20 : 0;
-  const edgePenalty = skin && (centroidX > 0.88 || centroidX < 0.46) ? 24 : 0;
-  const lowBodyPenalty = skin && centroidY > 0.68 ? 18 : 0;
-  const leftPanelPenalty = skin && rightPanelRatio < 0.62 ? 20 : 0;
-  const score = clamp(presence + heroPlacement + upperBody + rightHero + centerInterest + faceFocus + lighting + cinematicContrast - transitionPenalty - blurPenalty - emptyPenalty - wallPenalty - hiddenPenalty - edgePenalty - lowBodyPenalty - leftPanelPenalty);
+
+  cellStats.forEach(cell => {
+    const avgEdge = cell.edge / Math.max(1, cell.samples);
+    if (avgEdge < 7.5) lowComplexityCells += 1;
+  });
+
+  const subjectRatio = sampled ? salient / sampled : 0;
+  const centroidX = salient ? cx / salient / width : 0.5;
+  const centroidY = salient ? cy / salient / height : 0.46;
+  const boxWidth = salient ? Math.max(0.08, maxX - minX) : 0.28;
+  const boxHeight = salient ? Math.max(0.08, maxY - minY) : 0.34;
+  const subjectDominance = clamp((boxWidth * boxHeight) * 1.65 + subjectRatio * 2.2, 0, 1);
+  const negativeSpace = clamp(lowComplexityCells / cellStats.length, 0, 1);
+  const thirds = clamp(1 - Math.min(Math.abs(centroidX - 0.33), Math.abs(centroidX - 0.67), Math.abs(centroidX - 0.5)) * 2.2, 0, 1);
+  const lighting = clamp(1 - Math.abs(metrics.brightness - 126) / 126 - metrics.overexposure * 0.025 - metrics.underexposure * 0.018, 0, 1);
+  const contrastScore = clamp(metrics.contrast / 58, 0, 1);
+  const sharpnessScore = clamp(metrics.sharpness / 10, 0, 1);
+  const transitionPenalty = metrics.visualDifference > 30 ? clamp((metrics.visualDifference - 30) / 28, 0, 0.32) : 0;
+  const score = clamp(
+    subjectDominance * 28 +
+    negativeSpace * 18 +
+    thirds * 14 +
+    lighting * 14 +
+    contrastScore * 10 +
+    sharpnessScore * 10 +
+    clamp(1 - Math.abs(centroidY - 0.44), 0, 1) * 6 -
+    transitionPenalty * 100,
+    0,
+    100
+  );
+
   return {
     score: Number(score.toFixed(2)),
-    skinRatio: Number(skinRatio.toFixed(2)),
-    upperBodyRatio: Number(upperRatio.toFixed(2)),
-    rightHeroRatio: Number(rightPanelRatio.toFixed(2)),
-    centerInterestRatio: Number(centerRatio.toFixed(2)),
-    faceZoneRatio: Number(faceZoneRatio.toFixed(2)),
+    posterScore: Number(score.toFixed(2)),
+    subjectDominance: Number(subjectDominance.toFixed(2)),
+    negativeSpaceScore: Number(negativeSpace.toFixed(2)),
+    compositionScore: Number(thirds.toFixed(2)),
+    thumbnailImpact: Number(clamp(score / 100 * 0.7 + contrastScore * 0.15 + sharpnessScore * 0.15, 0, 1).toFixed(2)),
     centroidX: Number(centroidX.toFixed(2)),
     centroidY: Number(centroidY.toFixed(2)),
-    suitable: score >= 62 && skinRatio >= 5 && upperRatio >= 0.36 && rightPanelRatio >= 0.62 && centroidX >= 0.46 && centroidX <= 0.88 && centroidY <= 0.68,
+    subjectBox: { x: Number(minX.toFixed(2)), y: Number(minY.toFixed(2)), w: Number(boxWidth.toFixed(2)), h: Number(boxHeight.toFixed(2)) },
+    skinRatio: Number((subjectDominance * 100).toFixed(2)),
+    upperBodyRatio: Number(subjectDominance.toFixed(2)),
+    rightHeroRatio: Number((centroidX > 0.5 ? 1 : 0.45).toFixed(2)),
+    centerInterestRatio: Number(thirds.toFixed(2)),
+    faceZoneRatio: 0,
+    suitable: score >= 58 && subjectDominance >= 0.18 && negativeSpace >= 0.2 && sharpnessScore >= 0.25,
   };
 }
 
@@ -274,24 +307,20 @@ export function rankScreenshots(frames, limit = 10) {
   return [...frames].sort((a, b) => b.metrics.technicalScore - a.metrics.technicalScore).slice(0, limit);
 }
 
-export function rankHeroFrames(frames, limit = 12, minimumScore = 62) {
+export function rankHeroFrames(frames, limit = 12, minimumScore = 58) {
   return [...frames]
     .filter(frame => {
       const hero = frame.hero || {};
       return hero.suitable &&
-        Number(hero.score || 0) >= minimumScore &&
-        Number(hero.skinRatio || 0) >= 5 &&
-        Number(hero.upperBodyRatio || 0) >= 0.36 &&
-        Number(hero.rightHeroRatio || 0) >= 0.62 &&
-        Number(hero.centroidX || 0) >= 0.46 &&
-        Number(hero.centroidX || 0) <= 0.88 &&
-        Number(hero.centroidY || 0) <= 0.68;
+        Number(hero.posterScore || hero.score || 0) >= minimumScore &&
+        Number(hero.subjectDominance || 0) >= 0.18 &&
+        Number(hero.negativeSpaceScore || 0) >= 0.2;
     })
     .sort((a, b) => {
       const aHero = a.hero || {};
       const bHero = b.hero || {};
-      const aPremium = Number(aHero.score || 0) + Number(aHero.skinRatio || 0) * 2.8 + Number(aHero.rightHeroRatio || 0) * 22 + Number(aHero.faceZoneRatio || 0) * 10 + Number(aHero.upperBodyRatio || 0) * 10 - Math.abs(Number(aHero.centroidX || 0) - 0.68) * 36 - Math.max(0, Number(aHero.centroidY || 0) - 0.58) * 34;
-      const bPremium = Number(bHero.score || 0) + Number(bHero.skinRatio || 0) * 2.8 + Number(bHero.rightHeroRatio || 0) * 22 + Number(bHero.faceZoneRatio || 0) * 10 + Number(bHero.upperBodyRatio || 0) * 10 - Math.abs(Number(bHero.centroidX || 0) - 0.68) * 36 - Math.max(0, Number(bHero.centroidY || 0) - 0.58) * 34;
+      const aPremium = Number(aHero.posterScore || aHero.score || 0) + Number(aHero.subjectDominance || 0) * 32 + Number(aHero.negativeSpaceScore || 0) * 24 + Number(aHero.compositionScore || 0) * 18 + Number(aHero.thumbnailImpact || 0) * 26;
+      const bPremium = Number(bHero.posterScore || bHero.score || 0) + Number(bHero.subjectDominance || 0) * 32 + Number(bHero.negativeSpaceScore || 0) * 24 + Number(bHero.compositionScore || 0) * 18 + Number(bHero.thumbnailImpact || 0) * 26;
       return bPremium - aPremium;
     })
     .slice(0, limit);

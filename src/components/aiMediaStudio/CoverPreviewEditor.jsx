@@ -7,15 +7,17 @@ import { canvasToBlob, getCoverDimensions, renderCoverToCanvas } from "@/lib/aiM
 export default function CoverPreviewEditor({ frame, metadata, settings, fileSuffix = "cover" }) {
   const canvasRef = useRef(null);
   const [rendered, setRendered] = useState(false);
+  const [plan, setPlan] = useState(null);
   const [error, setError] = useState("");
   const dims = getCoverDimensions(settings);
 
   useEffect(() => {
     let active = true;
     setRendered(false);
+    setPlan(null);
     setError("");
-    if ((!frame?.blob && !frame?.demo) || !canvasRef.current) return;
-    renderCoverToCanvas(canvasRef.current, frame.blob, metadata, settings).then(() => active && setRendered(true)).catch(err => active && setError(err.message));
+    if (!frame?.blob || !canvasRef.current) return;
+    renderCoverToCanvas(canvasRef.current, frame.blob, metadata, settings).then((nextPlan) => { if (active) { setPlan(nextPlan || canvasRef.current.__fleshlabPosterPlan || null); setRendered(true); } }).catch(err => active && setError(err.message));
     return () => { active = false; };
   }, [frame, metadata, settings]);
 
@@ -33,7 +35,7 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3"><div><h3 className="font-bold text-foreground">Rendered cover preview</h3><p className="text-xs text-muted-foreground">Exact output size: {dims.width} × {dims.height}px</p></div>{rendered ? <Badge variant="outline">Rendered locally</Badge> : <Badge variant="secondary">Rendering</Badge>}</div>
+      <div className="flex items-center justify-between gap-3"><div><h3 className="font-bold text-foreground">Cinematic poster preview</h3><p className="text-xs text-muted-foreground">{plan?.best ? `${plan.family.label} · ${plan.best.variant} · Quality ${plan.best.score.total}/100` : `Exact output size: ${dims.width} × ${dims.height}px`}</p></div>{rendered ? <Badge variant="outline">V2 scored</Badge> : <Badge variant="secondary">Rendering</Badge>}</div>
       {error && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
       <div className="relative overflow-auto rounded-xl border border-border bg-black p-3">
         <canvas ref={canvasRef} className="mx-auto h-auto max-h-[72vh] max-w-full rounded-lg" />

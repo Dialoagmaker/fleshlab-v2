@@ -93,10 +93,14 @@ export default function LibraryCoverProof() {
           continue;
         }
 
-        const canvas = document.createElement("canvas");
-        await renderCoverToCanvas(canvas, hero.blob, { performerName: "", videoTitle: video.title, optionalSubtitle: "" }, DEFAULT_COVER_SETTINGS);
-        const coverUrl = canvas.toDataURL("image/jpeg", 0.9);
-        nextResults.push({ ...video, status: "ready", coverUrl, hero });
+        try {
+          const canvas = document.createElement("canvas");
+          await renderCoverToCanvas(canvas, hero.blob, { performerName: "", videoTitle: video.title, optionalSubtitle: "" }, DEFAULT_COVER_SETTINGS);
+          const coverUrl = canvas.toDataURL("image/jpeg", 0.9);
+          nextResults.push({ ...video, status: "ready", coverUrl, hero });
+        } catch (renderError) {
+          nextResults.push({ ...video, status: "failed", error: renderError.message, hero });
+        }
         setResults([...nextResults]);
       }
       setProgress(100);
@@ -125,7 +129,7 @@ export default function LibraryCoverProof() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">Runs the current hero-frame detector against 10 existing library videos, then renders each cover with the locked FLESHLAB master layout.</p>
+          <p className="text-sm text-muted-foreground">Runs the v2 poster-frame detector against 10 existing library videos, then renders each cover through the image-aware cinematic poster engine.</p>
           <div className="flex flex-wrap gap-2">
             <Button onClick={runProof} disabled={running}>{running ? "Running proof…" : "Generate 10 Library Covers"}</Button>
             {running && <Button variant="outline" onClick={cancel}>Cancel</Button>}
@@ -151,9 +155,9 @@ export default function LibraryCoverProof() {
                 </div>
                 {item.hero && (
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground sm:grid-cols-4">
-                    <span>Score {item.hero.hero?.score}</span>
-                    <span>Presence {item.hero.hero?.skinRatio}%</span>
-                    <span>Upper {Math.round((item.hero.hero?.upperBodyRatio || 0) * 100)}%</span>
+                    <span>Score {item.hero.hero?.posterScore || item.hero.hero?.score}</span>
+                    <span>Subject {Math.round((item.hero.hero?.subjectDominance || 0) * 100)}%</span>
+                    <span>Space {Math.round((item.hero.hero?.negativeSpaceScore || 0) * 100)}%</span>
                     <span>X {item.hero.hero?.centroidX} / Y {item.hero.hero?.centroidY}</span>
                   </div>
                 )}

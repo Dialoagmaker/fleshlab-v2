@@ -31,10 +31,10 @@ export default function CoverVariantCompare({ frame, metadata, settings, itemFil
       <CardHeader className="space-y-2">
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="text-sm">FLESHLAB Master Cover</CardTitle>
-          <Badge variant="outline">One locked identity</Badge>
+          <Badge variant="outline">Poster Engine v2</Badge>
         </div>
         <p className="text-xs text-muted-foreground">
-          Fixed studio layout: real performer hero, cinematic left panel, official logo, title, subtitle, footer.
+          Image-aware composition: poster-frame analysis, adaptive crop, dynamic text area, ranked variants and quality-gated export.
         </p>
       </CardHeader>
       <CardContent className="p-4 pt-0">

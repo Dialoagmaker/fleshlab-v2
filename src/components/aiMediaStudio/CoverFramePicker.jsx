@@ -9,7 +9,7 @@ export default function CoverFramePicker({ frames, selectedIndex, onSelect, onBe
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <div><h3 className="font-bold text-foreground">Hero cover frame</h3><p className="text-xs text-muted-foreground">Chosen for click-through potential: face, upper body, pose, lighting, emotion, and cinematic composition.</p></div>
+        <div><h3 className="font-bold text-foreground">Poster frame</h3><p className="text-xs text-muted-foreground">Ranked for storytelling potential: subject dominance, negative space, composition, lighting, readability and thumbnail impact.</p></div>
         <Button size="sm" onClick={() => onBestFrame(candidates[0]?.index)}>Best Hero Frame Automatically</Button>
       </div>
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-6">
@@ -18,7 +18,7 @@ export default function CoverFramePicker({ frames, selectedIndex, onSelect, onBe
             <img src={frame.url} alt={`Frame at ${formatTime(frame.time)}`} className="aspect-video w-full object-cover" />
             <div className="flex items-center justify-between gap-2 p-2 text-xs">
               <span className="text-muted-foreground">{formatTime(frame.time)}</span>
-              <Badge variant="outline">Hero {Math.round(frame.hero?.score || 0)}</Badge>
+              <Badge variant="outline">Poster {Math.round(frame.hero?.posterScore || frame.hero?.score || 0)}</Badge>
             </div>
           </button>
         ))}
