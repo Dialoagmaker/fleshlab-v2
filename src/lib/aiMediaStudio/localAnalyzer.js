@@ -284,7 +284,7 @@ function withTimeout(promise, ms, message) {
 }
 
 async function createTeaserWithFFmpeg({ file, scenes, log, onProgress }) {
-  log?.("FFmpeg WASM loading started");
+  log?.("FFmpeg WASM loading started; first MP4 run can take up to 60 seconds");
   let FFmpeg;
   let fetchFile;
   try {
@@ -296,7 +296,7 @@ async function createTeaserWithFFmpeg({ file, scenes, log, onProgress }) {
   const ffmpeg = new FFmpeg();
   ffmpeg.on("progress", ({ progress }) => onProgress?.(75 + Math.round((progress || 0) * 20)));
   try {
-    await withTimeout(ffmpeg.load(), 15000, "FFmpeg load timed out");
+    await withTimeout(ffmpeg.load(), 60000, "FFmpeg load timed out after 60 seconds");
   } catch (error) {
     throw new Error(`FFmpeg failed to load: ${error.message}`);
   }
@@ -326,13 +326,13 @@ async function createTeaserWithFFmpeg({ file, scenes, log, onProgress }) {
     if (canStreamCopyToMp4) {
       try {
         log?.("fast MP4 teaser cut started");
-        await withTimeout(ffmpeg.exec(fastCopyArgs), 12000, "Fast MP4 cut timed out");
+        await withTimeout(ffmpeg.exec(fastCopyArgs), 20000, "Fast MP4 cut timed out");
       } catch (copyError) {
         log?.(`fast MP4 cut failed: ${copyError.message}; transcoding MP4 preview`);
-        await withTimeout(ffmpeg.exec(transcodeArgs), 30000, "FFmpeg teaser encode timed out");
+        await withTimeout(ffmpeg.exec(transcodeArgs), 90000, "FFmpeg teaser encode timed out");
       }
     } else {
-      await withTimeout(ffmpeg.exec(transcodeArgs), 30000, "FFmpeg teaser encode timed out");
+      await withTimeout(ffmpeg.exec(transcodeArgs), 90000, "FFmpeg teaser encode timed out");
     }
     const data = await ffmpeg.readFile(outputName);
     const blob = new Blob([data.buffer], { type: "video/mp4" });
