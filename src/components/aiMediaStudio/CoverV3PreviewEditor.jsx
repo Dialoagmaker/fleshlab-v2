@@ -8,10 +8,10 @@ import { generatePosterPlan, renderPosterVariantToCanvas } from '@/lib/aiMediaSt
 function MetricRow({ candidate }) {
   return (
     <div className="mt-2 grid grid-cols-4 gap-1 text-[10px] text-muted-foreground">
-      <span>Impact <b className="text-foreground">{candidate.impact_score}</b></span>
+      <span>Ad Score <b className="text-foreground">{candidate.impact_score}</b></span>
       <span>Hero <b className="text-foreground">{candidate.hero_score}</b></span>
       <span>Thumb <b className="text-foreground">{candidate.thumbnail_score}</b></span>
-      <span>Comm. <b className="text-foreground">{candidate.commercial_score}</b></span>
+      <span>Desire <b className="text-foreground">{candidate.commercial_score}</b></span>
     </div>
   );
 }
@@ -100,7 +100,7 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
         <div>
           <h3 className="font-bold text-foreground">Automatic Commercial Key Art Generator</h3>
           <p className="text-xs text-muted-foreground">
-            {plan ? `${plan.engine} · painted artwork pipeline · Impact ${plan.selected.impact_score}/100` : `Exact output size: ${dims.width} × ${dims.height}px`}
+            {plan ? `${plan.engine} · advertising artwork pipeline · Ad Score ${plan.selected.impact_score}/100` : `Exact output size: ${dims.width} × ${dims.height}px`}
           </p>
         </div>
         <Badge variant={rendered ? 'outline' : 'secondary'}>{rendered ? 'Artwork ready' : 'Painting artwork'}</Badge>

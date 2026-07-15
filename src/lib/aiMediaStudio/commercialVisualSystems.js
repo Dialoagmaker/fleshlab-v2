@@ -49,8 +49,8 @@ function artDirection(plan, attempt = 0) {
     paper: warm ? "246,224,184" : editorial ? "230,220,205" : "255,246,235",
     accent: danger ? "208,0,18" : warm ? "226,106,42" : "208,0,18",
     secondary: warm ? "255,189,88" : editorial ? "230,220,205" : "255,255,255",
-    density: editorial ? 0.28 + seed * 0.18 : 0.48 + seed * 0.34,
-    contrast: danger ? 1.28 : editorial ? 1.06 : 1.18,
+    density: editorial ? 0.36 + seed * 0.22 : 0.62 + seed * 0.3,
+    contrast: danger ? 1.36 : editorial ? 1.18 : 1.3,
     warmth: warm ? 1 : editorial ? 0.5 : 0.72,
     editorial,
   };
@@ -426,24 +426,67 @@ function paintPremiumMaterials(ctx, width, height, direction) {
   ctx.restore();
 }
 
-function scorePremiumArtwork(plan, map, direction) {
+function scoreCommercialAdvertising(plan, map, direction, width, height) {
   const analysis = plan.analysis || {};
   const separation = clamp(analysis.subjectSeparation || 0.58);
   const curiosity = clamp(analysis.visualCuriosity || 0.58);
-  const depth = clamp(direction.density * 0.7 + separation * 0.3);
-  const balance = 1 - Math.abs(map.heroCx - 0.5) * 0.55;
-  const premium = 0.3 + depth * 0.24 + curiosity * 0.18 + separation * 0.18 + balance * 0.1;
-  return Math.round(clamp(premium, 0, 1) * 100);
+  const negativeSpace = clamp(analysis.negativeSpace?.score || 0.54);
+  const complexity = clamp(analysis.backgroundComplexity || 0.5);
+  const heroArea = clamp((map.hero.w * map.hero.h) / (width * height) * 2.7, 0.22, 1);
+  const heroPositionPower = 1 - Math.abs(map.heroCx - 0.5) * 0.46;
+  const directionStrength = clamp((map.tension === "diagonal-rise" ? 0.9 : map.tension === "center-crush" ? 0.84 : 0.76) + direction.density * 0.12);
+  const depth = clamp(direction.density * 0.42 + separation * 0.34 + negativeSpace * 0.16 + (1 - complexity) * 0.08);
+  const visualMass = clamp(heroArea * 0.56 + heroPositionPower * 0.18 + directionStrength * 0.26);
+  const screenshotRisk = clamp(complexity * 0.42 + (1 - depth) * 0.34 + (1 - separation) * 0.24);
+
+  const scrollStopPower = clamp(curiosity * 0.28 + visualMass * 0.28 + directionStrength * 0.2 + depth * 0.16 + (1 - screenshotRisk) * 0.08);
+  const premiumFeel = clamp(depth * 0.34 + (1 - screenshotRisk) * 0.3 + direction.contrast * 0.16 / 1.35 + negativeSpace * 0.12 + direction.density * 0.08);
+  const emotionalImpact = clamp(curiosity * 0.45 + direction.warmth * 0.18 + directionStrength * 0.17 + separation * 0.2);
+  const heroDominance = clamp(heroArea * 0.42 + separation * 0.34 + visualMass * 0.24);
+  const brandRecognition = clamp(direction.density * 0.25 + direction.contrast * 0.2 / 1.35 + (plan.campaign?.franchise ? 0.2 : 0.08) + 0.27);
+  const thumbnailReadability = clamp(heroDominance * 0.58 + visualMass * 0.22 + directionStrength * 0.2);
+
+  const total = Math.round(
+    scrollStopPower * 30 +
+    premiumFeel * 20 +
+    emotionalImpact * 15 +
+    heroDominance * 15 +
+    brandRecognition * 10 +
+    thumbnailReadability * 10
+  );
+
+  const tests = {
+    noTextCampaign: premiumFeel >= 0.72 && depth >= 0.64 && screenshotRisk <= 0.48,
+    scrollStop: scrollStopPower >= 0.76,
+    squint: heroDominance >= 0.66 && directionStrength >= 0.7 && visualMass >= 0.64,
+    screenshot: screenshotRisk <= 0.48,
+    premium: premiumFeel >= 0.72,
+  };
+  const passed = Object.values(tests).every(Boolean) && total >= 82;
+  return {
+    total,
+    passed,
+    tests,
+    components: {
+      scrollStopPower: Math.round(scrollStopPower * 100),
+      premiumFeel: Math.round(premiumFeel * 100),
+      emotionalImpact: Math.round(emotionalImpact * 100),
+      heroDominance: Math.round(heroDominance * 100),
+      brandRecognition: Math.round(brandRecognition * 100),
+      thumbnailReadability: Math.round(thumbnailReadability * 100),
+      screenshotRisk: Math.round(screenshotRisk * 100),
+    },
+  };
 }
 
 function selectValidatedArtwork(plan, image, width, height) {
-  const attempts = [0, 1, 2, 3, 4].map(attempt => {
+  const attempts = [0, 1, 2, 3, 4, 5, 6].map(attempt => {
     const direction = artDirection(plan, attempt);
     const map = compositionMap(plan, image, width, height, attempt);
-    const score = scorePremiumArtwork(plan, map, direction);
-    return { attempt, direction, map, score };
-  }).sort((a, b) => b.score - a.score);
-  return attempts.find(item => item.score >= 84) || attempts[0];
+    const commercialScore = scoreCommercialAdvertising(plan, map, direction, width, height);
+    return { attempt, direction, map, commercialScore };
+  }).sort((a, b) => b.commercialScore.total - a.commercialScore.total);
+  return attempts.find(item => item.commercialScore.passed) || attempts[0];
 }
 
 function paintPremiumArtworkOnly(ctx, image, map, width, height, direction) {
@@ -456,7 +499,6 @@ function paintPremiumArtworkOnly(ctx, image, map, width, height, direction) {
   paintLocalHeroContrast(ctx, image, map, width, height, direction);
   paintAtmosphere(ctx, map, width, height, direction);
   paintPremiumMaterials(ctx, width, height, direction);
-  paintBrandAccents(ctx, map, width, height, direction);
   finalGrade(ctx, width, height, direction);
 }
 
@@ -465,12 +507,13 @@ export async function paintCommercialVisualSystem(canvas, image, plan, settings,
   canvas.height = height;
   const ctx = canvas.getContext("2d");
   const artwork = selectValidatedArtwork(plan, image, width, height);
-  const { direction, map, score } = artwork;
+  const { direction, map, commercialScore } = artwork;
   paintPremiumArtworkOnly(ctx, image, map, width, height, direction);
+  paintBrandAccents(ctx, map, width, height, direction);
   await paintLogo(ctx, map, width, direction);
   paintTitleBlock(ctx, map, width, height, plan, direction);
   paintPerformerBlock(ctx, map, width, height, plan, direction);
   paintCTA(ctx, map, width, height, plan, direction);
   paintFooter(ctx, width, height, plan, settings, direction);
-  return { logoHeight: width * 0.06, compositionMode: map.tension, artworkOnlyScore: score, artworkValidation: score >= 84 ? "passed" : "best_available" };
+  return { logoHeight: width * 0.06, compositionMode: map.tension, commercialAdvertisingScore: commercialScore.total, commercialScore, artworkValidation: commercialScore.passed ? "passed" : "best_available" };
 }

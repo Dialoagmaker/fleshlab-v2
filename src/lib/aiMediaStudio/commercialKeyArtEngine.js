@@ -4,7 +4,7 @@ import { paintCommercialVisualSystem } from "./commercialVisualSystems";
 import { createCommercialCampaign } from "./commercialCreativeDirector";
 
 const ENGINE_NAME = "Commercial Key Art Engine";
-const TARGET_POSTER_IMPACT = 84;
+const TARGET_COMMERCIAL_AD_SCORE = 84;
 const OFFICIAL_LOGO_URL = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a1f9333f9_ChatGPTImageJul14202612_16_43AM.png";
 
 const COMMERCIAL_PHILOSOPHIES = [
@@ -100,32 +100,52 @@ function buildDirectedLanguage(baseLanguage, philosophy, attemptIndex) {
 }
 
 function buildPlanScore(analysis, language, philosophy, attemptIndex) {
-  const story = clamp((analysis.visualCuriosity || 0.55) * 0.16 + (analysis.emotionalPresence || 0.55) * 0.14 + (analysis.interactionStrength || 0.5) * 0.1 + language.strength * 0.24 + philosophy.believability * 0.36);
-  const artDirection = clamp(0.12 + philosophy.graphicRatio * 0.28 + philosophy.depth * 0.22 + philosophy.believability * 0.2 + (analysis.subjectSeparation || 0.55) * 0.08 + attemptIndex * 0.018);
-  const title = clamp(philosophy.titleDominance * 0.72 + language.strength * 0.18 + attemptIndex * 0.015);
-  const hero = clamp((analysis.subjectSeparation || 0.55) * 0.46 + philosophy.depth * 0.38 + philosophy.heroBias * 0.16 + attemptIndex * 0.018);
-  const brand = clamp(philosophy.brand * 0.72 + philosophy.graphicRatio * 0.18 + attemptIndex * 0.012);
-  const polish = clamp(philosophy.believability * 0.5 + artDirection * 0.24 + story * 0.14 + brand * 0.12);
-  const total = clamp(artDirection * 0.3 + polish * 0.24 + title * 0.14 + hero * 0.14 + philosophy.graphicRatio * 0.12 + brand * 0.06);
+  const curiosity = clamp(analysis.visualCuriosity || 0.55);
+  const emotionalPresence = clamp(analysis.emotionalPresence || 0.55);
+  const interaction = clamp(analysis.interactionStrength || 0.5);
+  const separation = clamp(analysis.subjectSeparation || 0.55);
+  const negativeSpace = clamp(analysis.negativeSpace?.score || 0.54);
+  const complexity = clamp(analysis.backgroundComplexity || 0.5);
+  const depth = clamp(philosophy.depth * 0.42 + philosophy.graphicRatio * 0.28 + separation * 0.2 + attemptIndex * 0.012);
+  const screenshotRisk = clamp(complexity * 0.42 + (1 - depth) * 0.34 + (1 - philosophy.graphicRatio) * 0.24);
+  const scrollStopPower = clamp(curiosity * 0.28 + philosophy.graphicRatio * 0.24 + depth * 0.2 + philosophy.believability * 0.18 + (1 - screenshotRisk) * 0.1);
+  const premiumFeel = clamp(philosophy.believability * 0.34 + depth * 0.28 + philosophy.brand * 0.16 + negativeSpace * 0.12 + (1 - screenshotRisk) * 0.1);
+  const emotionalImpact = clamp(emotionalPresence * 0.34 + curiosity * 0.25 + interaction * 0.16 + language.strength * 0.15 + philosophy.depth * 0.1);
+  const heroDominance = clamp(separation * 0.42 + philosophy.heroBias * 0.24 + depth * 0.24 + attemptIndex * 0.012);
+  const brandRecognition = clamp(philosophy.brand * 0.58 + philosophy.graphicRatio * 0.24 + language.strength * 0.18);
+  const thumbnailReadability = clamp(heroDominance * 0.48 + scrollStopPower * 0.26 + philosophy.titleDominance * 0.16 + negativeSpace * 0.1);
+  const total = clamp(
+    scrollStopPower * 0.3 +
+    premiumFeel * 0.2 +
+    emotionalImpact * 0.15 +
+    heroDominance * 0.15 +
+    brandRecognition * 0.1 +
+    thumbnailReadability * 0.1
+  );
   const failures = [];
-  if (philosophy.graphicRatio < 0.62) failures.push("Screenshot feeling: not enough graphic design reconstruction");
-  if (title < 0.68) failures.push("Title too weak for commercial key art");
-  if (hero < 0.7) failures.push("Hero too small or not isolated enough");
-  if (philosophy.depth < 0.78) failures.push("Image too flat: insufficient depth creation");
-  if (brand < 0.74) failures.push("Brand weak: identity anchor not integrated enough");
-  if (polish < 0.78) failures.push("Not believable as premium streaming key art");
-  if (total * 100 < TARGET_POSTER_IMPACT) failures.push("Commercial poster impact threshold not met");
+  if (scrollStopPower < 0.76) failures.push("Scroll stop test failed: not enough instant desire");
+  if (premiumFeel < 0.74) failures.push("Premium test failed: not expensive enough");
+  if (emotionalImpact < 0.68) failures.push("Emotional impact too weak");
+  if (heroDominance < 0.7) failures.push("Squint test failed: hero does not dominate");
+  if (screenshotRisk > 0.46) failures.push("Screenshot test failed: still reads as a video frame");
+  if (philosophy.graphicRatio < 0.68) failures.push("No-text test failed: insufficient commercial artwork transformation");
+  if (total * 100 < TARGET_COMMERCIAL_AD_SCORE) failures.push("Commercial Advertising Score threshold not met");
   return {
     total: Math.round(total * 100),
-    artDirection: Math.round(artDirection * 100),
+    scrollStopPower: Math.round(scrollStopPower * 100),
+    premiumFeel: Math.round(premiumFeel * 100),
+    emotionalImpact: Math.round(emotionalImpact * 100),
+    hero: Math.round(heroDominance * 100),
+    brand: Math.round(brandRecognition * 100),
+    thumbnailReadability: Math.round(thumbnailReadability * 100),
+    screenshotRisk: Math.round(screenshotRisk * 100),
+    artDirection: Math.round(depth * 100),
     graphicDesignRatio: Math.round(philosophy.graphicRatio * 100),
-    story: Math.round(story * 100),
-    title: Math.round(title * 100),
-    hero: Math.round(hero * 100),
-    brand: Math.round(brand * 100),
-    polish: Math.round(polish * 100),
-    marketing: Math.round(polish * 100),
-    imageQuality: Math.round(polish * 100),
+    story: Math.round(emotionalImpact * 100),
+    title: Math.round(thumbnailReadability * 100),
+    polish: Math.round(premiumFeel * 100),
+    marketing: Math.round(scrollStopPower * 100),
+    imageQuality: Math.round(premiumFeel * 100),
     passesQualityGate: failures.length === 0,
     qualityFailures: failures,
     designActions: rejectionActions(failures),
@@ -226,7 +246,7 @@ function buildAttemptPlan(image, metadata, settings, width, height, analysis, ba
     best: selected,
     variants: [selected],
     attempts: [],
-    winner_reason: score.passesQualityGate ? `${philosophy.label} reached Poster Impact ${score.total}.` : `${philosophy.label} rejected: ${score.qualityFailures.join(", ")}.`,
+    winner_reason: score.passesQualityGate ? `${philosophy.label} reached Commercial Advertising Score ${score.total}.` : `${philosophy.label} rejected: ${score.qualityFailures.join(", ")}.`,
   };
 }
 
@@ -236,12 +256,12 @@ export async function generateCommercialKeyArtPlan(image, metadata = {}, setting
   const campaign = createCommercialCampaign({ analysis, metadata });
   const strategies = orderedPhilosophies(metadata, analysis);
   const planned = strategies.map((philosophy, index) => buildAttemptPlan(image, metadata, settings, width, height, analysis, baseLanguage, campaign, philosophy, index));
-  const selectedPlan = planned.find(plan => plan.selected.score.passesQualityGate && plan.selected.score.total >= TARGET_POSTER_IMPACT) || planned[planned.length - 1];
+  const selectedPlan = planned.find(plan => plan.selected.score.passesQualityGate && plan.selected.score.total >= TARGET_COMMERCIAL_AD_SCORE) || planned[planned.length - 1];
   return {
     ...selectedPlan,
     preparedIterations: planned,
     variants: planned.map(plan => plan.selected),
-    attempts: planned.map(plan => ({ philosophy: plan.philosophy.label, score: plan.selected.score, accepted: plan.selected.score.passesQualityGate && plan.selected.score.total >= TARGET_POSTER_IMPACT, designActions: plan.selected.design_actions })),
+    attempts: planned.map(plan => ({ philosophy: plan.philosophy.label, score: plan.selected.score, accepted: plan.selected.score.passesQualityGate && plan.selected.score.total >= TARGET_COMMERCIAL_AD_SCORE, designActions: plan.selected.design_actions })),
     winner_reason: selectedPlan.selected.score.passesQualityGate ? `${selectedPlan.philosophy.label} is the first commercially believable concept.` : "No planned concept passed before render; render loop will keep iterating concepts.",
   };
 }
@@ -518,7 +538,7 @@ export async function renderCommercialKeyArtToCanvas(canvas, image, metadata = {
   for (let index = 0; index < iterations.length; index += 1) {
     const scratch = document.createElement("canvas");
     const renderedPlan = await paintCommercialPipeline(scratch, image, iterations[index], settings, width, height);
-    const accepted = renderedPlan.selected.score.passesQualityGate && renderedPlan.selected.score.total >= TARGET_POSTER_IMPACT;
+    const accepted = renderedPlan.selected.score.passesQualityGate && renderedPlan.selected.score.total >= TARGET_COMMERCIAL_AD_SCORE;
     const attempt = {
       attempt: index + 1,
       philosophy: renderedPlan.philosophy.label,
@@ -536,7 +556,7 @@ export async function renderCommercialKeyArtToCanvas(canvas, image, metadata = {
 
     if (accepted) {
       copyCanvas(scratch, canvas);
-      canvas.__fleshlabPosterPlan = { ...renderedPlan, attempts, winner_reason: `${renderedPlan.philosophy.label} accepted at Poster Impact ${renderedPlan.selected.score.total} after ${index + 1} art-direction iteration${index ? "s" : ""}.` };
+      canvas.__fleshlabPosterPlan = { ...renderedPlan, attempts, winner_reason: `${renderedPlan.philosophy.label} accepted at Commercial Advertising Score ${renderedPlan.selected.score.total} after ${index + 1} art-direction iteration${index ? "s" : ""}.` };
       return canvas.__fleshlabPosterPlan;
     }
   }
