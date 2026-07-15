@@ -54,6 +54,63 @@ function seekVideo(video, time, signal) {
   });
 }
 
+function clamp(value, min = 0, max = 100) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function calculateHeroMetrics(imageData, metrics) {
+  const data = imageData.data;
+  const width = imageData.width;
+  const height = imageData.height;
+  let sampled = 0, skin = 0, upperSkin = 0, rightSkin = 0, centerSkin = 0, cx = 0, cy = 0;
+  for (let y = 0; y < height; y += 2) {
+    for (let x = 0; x < width; x += 2) {
+      const i = (y * width + x) * 4;
+      const r = data[i], g = data[i + 1], b = data[i + 2];
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      const brightness = (r + g + b) / 3;
+      const isSkinLike = r > 58 && g > 32 && b > 20 && r > g * 1.05 && r > b * 1.18 && max - min > 14 && brightness > 45 && brightness < 235;
+      sampled += 1;
+      if (isSkinLike) {
+        skin += 1;
+        cx += x;
+        cy += y;
+        if (y < height * 0.62) upperSkin += 1;
+        if (x > width * 0.42) rightSkin += 1;
+        if (x > width * 0.28 && x < width * 0.86 && y < height * 0.78) centerSkin += 1;
+      }
+    }
+  }
+  const skinRatio = sampled ? (skin / sampled) * 100 : 0;
+  const upperRatio = skin ? upperSkin / skin : 0;
+  const rightRatio = skin ? rightSkin / skin : 0;
+  const centerRatio = skin ? centerSkin / skin : 0;
+  const centroidX = skin ? cx / skin / width : 0;
+  const centroidY = skin ? cy / skin / height : 0;
+  const presence = clamp(skinRatio * 5.2, 0, 38);
+  const heroPlacement = skin ? clamp((1 - Math.abs(centroidX - 0.66) / 0.54) * 14, 0, 14) + clamp((1 - Math.abs(centroidY - 0.43) / 0.5) * 8, 0, 8) : 0;
+  const upperBody = clamp(upperRatio * 18, 0, 18);
+  const rightHero = clamp(rightRatio * 13, 0, 13);
+  const centerInterest = clamp(centerRatio * 8, 0, 8);
+  const lighting = clamp(16 - Math.abs(metrics.brightness - 126) * 0.09 - metrics.overexposure * 1.7 - metrics.underexposure * 1.15, 0, 16);
+  const cinematicContrast = clamp(metrics.contrast * 0.36, 0, 11);
+  const transitionPenalty = metrics.visualDifference > 28 ? (metrics.visualDifference - 28) * 1.25 : 0;
+  const blurPenalty = metrics.sharpness < 5.5 ? (5.5 - metrics.sharpness) * 4 : 0;
+  const emptyPenalty = skinRatio < 1 ? 32 : skinRatio < 2.2 ? 16 : 0;
+  const hiddenPenalty = skin && upperRatio < 0.28 ? 12 : 0;
+  const score = clamp(presence + heroPlacement + upperBody + rightHero + centerInterest + lighting + cinematicContrast - transitionPenalty - blurPenalty - emptyPenalty - hiddenPenalty);
+  return {
+    score: Number(score.toFixed(2)),
+    skinRatio: Number(skinRatio.toFixed(2)),
+    upperBodyRatio: Number(upperRatio.toFixed(2)),
+    rightHeroRatio: Number(rightRatio.toFixed(2)),
+    centerInterestRatio: Number(centerRatio.toFixed(2)),
+    centroidX: Number(centroidX.toFixed(2)),
+    centroidY: Number(centroidY.toFixed(2)),
+    suitable: score >= 48 && skinRatio >= 2.2,
+  };
+}
+
 function calculateMetrics(imageData, previousLuma) {
   const data = imageData.data;
   const width = imageData.width;
@@ -154,13 +211,16 @@ export async function sampleVideoFrames({ file, previewUrl, metadata, onProgress
     await seekVideo(video, time, signal);
     analysisCtx.drawImage(video, 0, 0, analysisCanvas.width, analysisCanvas.height);
     thumbCtx.drawImage(video, 0, 0, thumbCanvas.width, thumbCanvas.height);
-    const metrics = calculateMetrics(analysisCtx.getImageData(0, 0, analysisCanvas.width, analysisCanvas.height), previousLuma);
+    const imageData = analysisCtx.getImageData(0, 0, analysisCanvas.width, analysisCanvas.height);
+    const metrics = calculateMetrics(imageData, previousLuma);
+    const hero = calculateHeroMetrics(imageData, metrics);
     previousLuma = metrics.luma;
     const thumbBlob = await canvasToBlob(thumbCanvas, "image/jpeg", 0.88);
     frames.push({
       index,
       time,
       metrics: { ...metrics, luma: undefined },
+      hero,
       blob: thumbBlob,
       url: URL.createObjectURL(thumbBlob),
       filename: `${file.name.replace(/\.[^/.]+$/, "")}_frame_${String(index + 1).padStart(4, "0")}.jpg`,
@@ -202,6 +262,13 @@ export function detectScenes(frames, duration, log) {
 
 export function rankScreenshots(frames, limit = 10) {
   return [...frames].sort((a, b) => b.metrics.technicalScore - a.metrics.technicalScore).slice(0, limit);
+}
+
+export function rankHeroFrames(frames, limit = 12, minimumScore = 48) {
+  return [...frames]
+    .filter(frame => frame.hero?.suitable && Number(frame.hero?.score || 0) >= minimumScore)
+    .sort((a, b) => Number(b.hero?.score || 0) - Number(a.hero?.score || 0))
+    .slice(0, limit);
 }
 
 export function selectDiverseFrames(frames, limit = 10, initialMinGapSeconds = 8) {
