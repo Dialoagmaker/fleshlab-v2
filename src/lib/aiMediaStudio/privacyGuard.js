@@ -24,11 +24,22 @@ function block(kind, log) {
   throw new Error(message);
 }
 
+function isApprovedOpenRouterCoverInvoke(args) {
+  const [functionName, payload] = args;
+  if (functionName !== "openRouterAICover") return false;
+  if (payload?.action !== "generate" || payload?.consent !== true) return false;
+  if (typeof payload.frame_data_url !== "string" || !payload.frame_data_url.startsWith("data:image/")) return false;
+  const { frame_data_url, ...rest } = payload;
+  return !isBlockedPayload(rest);
+}
+
 function patchFunction(owner, key, label, log) {
   if (!owner?.[key] || owner[key].__localMediaGuarded) return;
   const original = owner[key].bind(owner);
   owner[key] = (...args) => {
-    if (args.some(arg => isBlockedPayload(arg))) block(label, log);
+    const approvedOpenRouterStill = key === "invoke" && isApprovedOpenRouterCoverInvoke(args);
+    if (!approvedOpenRouterStill && args.some(arg => isBlockedPayload(arg))) block(label, log);
+    if (approvedOpenRouterStill) log?.("privacy guard allowed one approved still image for OpenRouter cover generation");
     return original(...args);
   };
   owner[key].__localMediaGuarded = true;

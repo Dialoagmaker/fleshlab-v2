@@ -98,15 +98,28 @@ function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
 }
 
 function drawLogo(ctx, width, height, preset, settings, margin) {
-  const x = settings.logoPosition === "top-right" ? width - margin : margin;
-  const align = settings.logoPosition === "top-right" ? "right" : "left";
-  ctx.textAlign = align;
+  const logoW = Math.max(250, width * 0.265);
+  const logoH = Math.max(58, height * 0.078);
+  const x = margin;
+  const y = margin;
+  ctx.save();
+  ctx.textAlign = "left";
+  ctx.strokeStyle = "rgba(255,255,255,0.88)";
+  ctx.lineWidth = Math.max(2, width * 0.002);
+  ctx.strokeRect(x, y, logoW, logoH);
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+  ctx.fillRect(x, y, logoW, logoH);
   ctx.fillStyle = "#ffffff";
-  ctx.font = `900 ${Math.max(32, width * 0.038)}px Impact, Arial Black, sans-serif`;
-  ctx.fillText("FLESHLAB", x, margin + height * 0.035);
+  ctx.font = `900 ${logoH * 0.63}px Impact, Arial Black, sans-serif`;
+  ctx.fillText("FLESH", x + logoW * 0.05, y + logoH * 0.72);
+  const fleshW = ctx.measureText("FLESH").width;
+  ctx.fillStyle = preset.red;
+  ctx.fillText("LAB", x + logoW * 0.05 + fleshW, y + logoH * 0.72);
   ctx.fillStyle = preset.red;
   ctx.font = `800 ${Math.max(14, width * 0.014)}px Arial Black, sans-serif`;
-  ctx.fillText("AMATEUR WINS.", x, margin + height * 0.07);
+  ctx.letterSpacing = `${Math.max(4, width * 0.006)}px`;
+  ctx.fillText("AMATEUR WINS.", x + logoW * 0.01, y + logoH + height * 0.045);
+  ctx.restore();
 }
 
 function drawTexture(ctx, width, height, preset, strength) {
@@ -131,9 +144,45 @@ function drawTexture(ctx, width, height, preset, strength) {
 function getImageRect(width, height) {
   const vertical = height > width * 1.15;
   const squareish = Math.abs(width - height) < width * 0.15;
-  if (vertical) return { x: 0, y: Math.round(height * 0.19), w: width, h: Math.round(height * 0.55) };
-  if (squareish) return { x: Math.round(width * 0.31), y: 0, w: Math.round(width * 0.69), h: height };
-  return { x: Math.round(width * 0.36), y: 0, w: Math.round(width * 0.64), h: height };
+  if (vertical) return { x: Math.round(width * 0.3), y: Math.round(height * 0.08), w: Math.round(width * 0.7), h: Math.round(height * 0.76) };
+  if (squareish) return { x: Math.round(width * 0.36), y: 0, w: Math.round(width * 0.64), h: height };
+  return { x: Math.round(width * 0.42), y: 0, w: Math.round(width * 0.58), h: height };
+}
+
+function drawLeftPanel(ctx, width, height, preset, imageRect, settings) {
+  const panelW = imageRect.x + width * 0.11;
+  ctx.save();
+  const panelGradient = ctx.createLinearGradient(0, 0, panelW, 0);
+  panelGradient.addColorStop(0, "rgba(0,0,0,0.98)");
+  panelGradient.addColorStop(0.58, "rgba(0,0,0,0.92)");
+  panelGradient.addColorStop(1, "rgba(0,0,0,0.18)");
+  ctx.fillStyle = panelGradient;
+  ctx.fillRect(0, 0, panelW, height);
+  ctx.globalAlpha = Math.min(0.5, Number(settings.borderTexture || 60) / 150);
+  ctx.fillStyle = preset.red;
+  for (let i = 0; i < 18; i += 1) {
+    const y = seededNoise(i + 77) * height;
+    const h = Math.max(5, height * 0.008);
+    ctx.save();
+    ctx.translate(width * 0.02 + seededNoise(i) * width * 0.08, y);
+    ctx.rotate((-8 + seededNoise(i + 5) * 16) * Math.PI / 180);
+    ctx.fillRect(0, 0, width * (0.15 + seededNoise(i + 9) * 0.28), h);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function drawCampaignLabel(ctx, text, x, y, width, preset) {
+  if (!text) return;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(-1.5 * Math.PI / 180);
+  ctx.fillStyle = preset.red;
+  ctx.fillRect(0, 0, width, Math.max(32, width * 0.07));
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `800 ${Math.max(18, width * 0.04)}px Arial Black, sans-serif`;
+  ctx.fillText(String(text).toUpperCase(), width * 0.06, width * 0.052);
+  ctx.restore();
 }
 
 export async function renderCoverToCanvas(canvas, frameBlob, metadata, settings) {
@@ -148,47 +197,65 @@ export async function renderCoverToCanvas(canvas, frameBlob, metadata, settings)
 
   const imageRect = getImageRect(width, height);
   drawCoverImage(ctx, image, imageRect, settings);
+  drawLeftPanel(ctx, width, height, preset, imageRect, settings);
 
-  const gradient = ctx.createLinearGradient(0, 0, width, 0);
-  gradient.addColorStop(0, `rgba(0,0,0,${Number(settings.gradientStrength || 70) / 100})`);
-  gradient.addColorStop(0.46, `rgba(0,0,0,${Number(settings.gradientStrength || 70) / 150})`);
-  gradient.addColorStop(1, "rgba(0,0,0,0.05)");
-  ctx.fillStyle = gradient;
+  const vignette = ctx.createRadialGradient(width * 0.78, height * 0.42, height * 0.08, width * 0.78, height * 0.42, width * 0.7);
+  vignette.addColorStop(0, "rgba(0,0,0,0)");
+  vignette.addColorStop(1, "rgba(0,0,0,0.68)");
+  ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, width, height);
 
   const margin = Math.round(width * (Number(settings.safeMargin || 7) / 100));
   drawLogo(ctx, width, height, preset, settings, margin);
 
   ctx.textAlign = "left";
-  ctx.shadowColor = "rgba(0,0,0,0.75)";
-  ctx.shadowBlur = width * 0.012;
+  ctx.shadowColor = "rgba(0,0,0,0.85)";
+  ctx.shadowBlur = width * 0.014;
   const vertical = height > width * 1.15;
-  const textMax = imageRect.x > width * 0.2 ? imageRect.x - margin * 1.2 : width - margin * 2;
-  const titlePercent = vertical && Number(settings.titleY || 44) === 44 ? 76 : Number(settings.titleY || 44);
+  const textMax = Math.max(width * 0.34, imageRect.x - margin * 0.65);
+  const titlePercent = vertical ? Math.max(34, Number(settings.titleY || 44)) : Number(settings.titleY || 44);
   const titleY = Math.round(height * (titlePercent / 100));
+  const label = metadata.campaignName || metadata.contentType || metadata.optionalSubtitle;
+  drawCampaignLabel(ctx, label, margin, titleY - height * 0.09, Math.min(textMax * 0.82, width * 0.34), preset);
+
+  const titleSize = Math.max(34, Number(settings.titleSize || 118) * width / 1920);
+  const subtitleSize = Math.max(24, Number(settings.subtitleSize || 64) * width / 1920);
   ctx.fillStyle = "#ffffff";
-  ctx.font = `900 ${Math.max(30, Number(settings.titleSize || 110) * width / 1920)}px Impact, Arial Black, sans-serif`;
-  const lines = drawWrappedText(ctx, metadata.performerName || "PERFORMER NAME", margin, titleY, textMax, Number(settings.titleSize || 110) * width / 1600, 2);
+  ctx.font = `900 ${titleSize}px Impact, Arial Black, sans-serif`;
+  const lines = drawWrappedText(ctx, metadata.performerName || "TITLE", margin, titleY, textMax, titleSize * 0.93, 2);
   ctx.fillStyle = preset.red;
-  ctx.font = `900 ${Math.max(22, Number(settings.subtitleSize || 64) * width / 1920)}px Impact, Arial Black, sans-serif`;
-  drawWrappedText(ctx, metadata.videoTitle || "VIDEO TITLE", margin, titleY + lines * Number(settings.titleSize || 110) * width / 1550 + height * 0.035, textMax, Number(settings.subtitleSize || 64) * width / 1500, 2);
+  ctx.font = `900 ${subtitleSize}px Impact, Arial Black, sans-serif`;
+  drawWrappedText(ctx, metadata.videoTitle || "SUBTITLE", margin, titleY + lines * titleSize * 0.92 + height * 0.035, textMax, subtitleSize * 1.02, 2);
 
-  if (metadata.optionalSubtitle) {
-    ctx.fillStyle = "rgba(255,255,255,0.82)";
-    ctx.font = `700 ${Math.max(16, width * 0.016)}px Arial, sans-serif`;
-    ctx.fillText(metadata.optionalSubtitle, margin, titleY + height * 0.25);
-  }
+  const underlineY = Math.min(height - height * 0.2, titleY + lines * titleSize + subtitleSize * 1.65);
+  const underline = ctx.createLinearGradient(margin, 0, margin + textMax, 0);
+  underline.addColorStop(0, preset.red);
+  underline.addColorStop(0.7, "rgba(255,255,255,0.18)");
+  underline.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.shadowBlur = width * 0.008;
+  ctx.fillStyle = underline;
+  ctx.fillRect(margin, underlineY, textMax, Math.max(3, height * 0.006));
 
-  const barH = Math.max(58, height * 0.075);
+  const barH = Math.max(72, height * 0.105);
   ctx.shadowBlur = 0;
-  ctx.fillStyle = "rgba(0,0,0,0.78)";
+  ctx.fillStyle = "rgba(0,0,0,0.88)";
   ctx.fillRect(0, height - barH, width, barH);
   ctx.fillStyle = preset.red;
-  ctx.fillRect(0, height - barH, width, Math.max(4, height * 0.006));
+  ctx.fillRect(0, height - barH, width, Math.max(5, height * 0.007));
   const points = String(settings.sellingPoints || "").split(/\n|,/).map(item => item.trim()).filter(Boolean).slice(0, 3);
-  ctx.fillStyle = "#ffffff";
-  ctx.font = `800 ${Math.max(14, width * 0.014)}px Arial Black, sans-serif`;
-  points.forEach((point, index) => ctx.fillText(`◆ ${point.toUpperCase()}`, margin + index * (width - margin * 2) / 3, height - barH / 2 + width * 0.006));
+  ctx.font = `800 ${Math.max(13, width * 0.013)}px Arial Black, sans-serif`;
+  points.forEach((point, index) => {
+    const x = margin + index * (width - margin * 2) / 3;
+    ctx.strokeStyle = preset.red;
+    ctx.lineWidth = Math.max(2, width * 0.002);
+    ctx.strokeRect(x, height - barH * 0.58, barH * 0.23, barH * 0.23);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(point.toUpperCase(), x + barH * 0.34, height - barH * 0.36);
+    if (index > 0) {
+      ctx.fillStyle = "rgba(255,255,255,0.35)";
+      ctx.fillRect(x - width * 0.035, height - barH * 0.7, 2, barH * 0.48);
+    }
+  });
 
   drawTexture(ctx, width, height, preset, settings.borderTexture);
   return canvas;

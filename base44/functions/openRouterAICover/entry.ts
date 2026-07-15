@@ -7,40 +7,34 @@ const PRIMARY_MODEL = 'black-forest-labs/flux.2-pro';
 const QUALITY_MODEL = 'black-forest-labs/flux.2-max';
 const MAX_DATA_URL_CHARS = 12_000_000;
 
-const COVER_PROMPT = `Create a cinematic promotional cover using the supplied reference image.
+const COVER_PROMPT = `Create a FLESHLAB franchise cover background using the supplied approved still image.
 
-Preserve the same adult performer:
-- preserve face
-- preserve hairstyle
-- preserve tattoos
-- preserve skin tone
-- preserve body proportions
-- preserve pose where possible
+OFFICIAL FLESHLAB DESIGN SYSTEM — do not invent a new layout:
+- Consistent Netflix-series franchise composition, not random thumbnail design.
+- Dark cinematic left information panel with strong black-to-charcoal negative space.
+- Real performer remains on the right side as the hero subject.
+- Black / charcoal background mood with deep red distressed accents.
+- Premium movie-poster lighting, high contrast, subtle grunge texture.
+- Modern streaming-platform quality, platform-ready polish.
+- Preserve the established FLESHLAB visual identity across every generation.
+
+Preserve the same performer:
+- preserve face, hairstyle, tattoos, skin tone, body proportions, and pose where possible
 - do not replace the performer
 - do not add extra people
+- do not sexualize beyond the supplied still
 
 Improve only:
-- lighting
-- depth
-- atmosphere
-- background composition
-- cinematic framing
-- background extension
-- visual polish
+- composition balance, lighting, depth, atmosphere, background mood, background extension, cinematic framing, accent graphics
 
-Create dark negative space on the left for later typography.
+Important typography rules:
+- leave clean dark space on the left for the local renderer
+- do NOT generate readable text
+- do NOT generate FLESHLAB logo
+- do NOT generate AMATEUR WINS.
+- do NOT generate watermarks
 
-Visual style:
-- FLESHLAB cinematic branding
-- black and deep red accents
-- raw but premium
-- modern movie-poster composition
-- strong subject separation
-- no generated text
-- no generated logos
-- no generated watermark
-
-The final typography must be added locally after generation.`;
+The app will add the official FLESHLAB logo, AMATEUR WINS., white primary headline, red secondary headline, campaign label, icons, spacing, and final typography locally after generation.`;
 
 function json(data, status = 200) {
   return Response.json(data, { status });

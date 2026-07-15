@@ -1,7 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const sliders = [
   ["zoom", "Zoom", 0.7, 2.2, 0.01], ["x", "Horizontal position", -100, 100, 1], ["y", "Vertical position", -100, 100, 1],
@@ -20,7 +19,7 @@ export default function CoverAdjustmentControls({ settings, onChange }) {
         ))}
       </div>
       <div className="grid gap-3 md:grid-cols-3">
-        <div className="space-y-1"><Label className="text-xs">Logo position</Label><Select value={settings.logoPosition} onValueChange={value => patch({ logoPosition: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="top-left">Top left</SelectItem><SelectItem value="top-right">Top right</SelectItem></SelectContent></Select></div>
+        <div className="rounded-lg border border-border p-3"><Label className="text-xs">Logo placement</Label><p className="mt-1 text-sm text-muted-foreground">Locked: top left with AMATEUR WINS. below.</p></div>
         <div className="flex items-center gap-3 rounded-lg border border-border p-3"><Switch checked={settings.showSafeMargins} onCheckedChange={value => patch({ showSafeMargins: value })} /><span className="text-sm text-muted-foreground">Show safe-margin guide</span></div>
         <div className="space-y-1 md:col-span-1"><Label className="text-xs">Selling points</Label><Textarea value={settings.sellingPoints} onChange={event => patch({ sellingPoints: event.target.value })} rows={3} /></div>
       </div>
