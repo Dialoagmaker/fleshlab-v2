@@ -21,11 +21,12 @@ export function calculateCrop(image, analysis, outputWidth, outputHeight, varian
   const subject = analysis.subjectBox;
   const cx = (subject.x + subject.w / 2) * image.width;
   const cy = (subject.y + subject.h / 2) * image.height;
+  const language = family?.graphicLanguage || {};
   const commercialBias = variant === "performer" || variant === "close_hero" ? 0.18 : 0.13;
   let sx = cx - sw * (0.5 + commercialBias);
   let sy = cy - sh * 0.46;
 
-  const autoZoom = Math.max(family?.cropZoom || 1, variant === "performer" || variant === "close_hero" ? 1.22 : 1.12);
+  const autoZoom = Math.max(family?.cropZoom || 1, variant === "performer" || variant === "close_hero" ? 1.22 : 1.12) * (language.camera_feeling === "aspirational_lifestyle" ? 0.96 : 1);
   const zoom = isManual(settings, "zoom") ? clamp(Number(settings.zoom) || 1, 0.7, 2.4) : clamp(autoZoom, 0.85, 2.4);
   if (zoom !== 1) {
     const centerX = sx + sw / 2;
@@ -44,13 +45,15 @@ export function calculateCrop(image, analysis, outputWidth, outputHeight, varian
   return { sx, sy, sw, sh, zoom };
 }
 
-export function calculateTextArea(analysis, variant = "balanced", settings = {}) {
+export function calculateTextArea(analysis, variant = "balanced", settings = {}, family = {}) {
   const margin = safeMargin(settings);
-  const designZoneWidth = clamp(variant === "performer" ? 0.42 : 0.39, 0.3, 0.45);
+  const language = family?.graphicLanguage || {};
+  const baseZone = language.designZoneWidth || (variant === "performer" ? 0.42 : 0.39);
+  const designZoneWidth = clamp(baseZone, 0.3, 0.45);
   const area = {
     x: margin,
     y: variant === "title" ? 0.085 : 0.095,
-    w: Math.max(0.28, designZoneWidth - margin * 1.55),
+    w: Math.max(0.24, designZoneWidth - margin * (language.negative_space_strategy === "premium_silence" ? 1.85 : 1.55)),
     h: 0.82,
     align: "left",
   };
@@ -81,10 +84,11 @@ export function shouldShowFooter(analysis, variant = "balanced", family = {}) {
 
 export function calculateComposition(image, analysis, family, width, height, variant = "balanced", settings = {}) {
   const crop = calculateCrop(image, analysis, width, height, variant, settings, family);
-  const textArea = calculateTextArea(analysis, variant, settings);
+  const textArea = calculateTextArea(analysis, variant, settings, family);
   const logoArea = calculateLogoArea(textArea, variant, settings, family);
-  const designZone = { x: 0, y: 0, w: clamp(textArea.w + textArea.x + safeMargin(settings) * 0.85, 0.3, 0.45), h: 1 };
+  const designZone = { x: 0, y: 0, w: clamp(textArea.w + textArea.x + safeMargin(settings) * 0.85, 0.3, family?.graphicLanguage?.designZoneWidth ? Math.max(0.34, family.graphicLanguage.designZoneWidth + 0.04) : 0.45), h: 1 };
   const footerVisible = shouldShowFooter(analysis, variant, family);
-  const layoutScore = Math.min(1, 0.72 + (family?.id === "commercial-thumbnail" ? 0.1 : 0) + (variant === "title" ? 0.06 : 0));
+  const languageFit = family?.graphicLanguage?.strength || 0.62;
+  const layoutScore = Math.min(1, 0.66 + languageFit * 0.14 + (family?.id === "commercial-thumbnail" ? 0.08 : 0) + (variant === "title" ? 0.05 : 0));
   return { crop, textArea, logoArea, designZone, footerVisible, footerY: 1 - safeMargin(settings) - 0.025, variant, familyId: family.id, layoutScore };
 }

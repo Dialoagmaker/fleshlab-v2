@@ -2,6 +2,7 @@ import { analyzePosterImage, scorePosterCandidate } from "./posterAnalysis";
 import { choosePosterFamily } from "./posterFamilies";
 import { calculateComposition } from "./posterComposition";
 import { calculateTypography } from "./posterTypography";
+import { applyGraphicLanguageToFamily, inferGraphicLanguage } from "./graphicLanguage";
 
 const OFFICIAL_LOGO_URL = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a1f9333f9_ChatGPTImageJul14202612_16_43AM.png";
 const VARIANTS = ["title", "performer", "balanced", "close_hero", "brand_hero", "action"];
@@ -77,11 +78,12 @@ function settingNumber(settings, key, fallback) {
   return Number.isFinite(Number(settings?.[key])) ? Number(settings[key]) : fallback;
 }
 
-function drawImageCover(ctx, image, crop, width, height, settings) {
+function drawImageCover(ctx, image, crop, width, height, settings, family = {}) {
   ctx.save();
-  const brightness = isManual(settings, "brightness") ? settingNumber(settings, "brightness", 102) : 102;
-  const contrast = isManual(settings, "contrast") ? settingNumber(settings, "contrast", 114) : 114;
-  const saturation = isManual(settings, "saturation") ? settingNumber(settings, "saturation", 106) : 106;
+  const language = family?.graphicLanguage || {};
+  const brightness = isManual(settings, "brightness") ? settingNumber(settings, "brightness", 102) : Math.round((language.brightness || 1.02) * 100);
+  const contrast = isManual(settings, "contrast") ? settingNumber(settings, "contrast", 114) : Math.round((language.contrast || 1.14) * 100);
+  const saturation = isManual(settings, "saturation") ? settingNumber(settings, "saturation", 106) : Math.round((language.saturation || 1.06) * 100);
   ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
   ctx.drawImage(image, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, width, height);
   ctx.restore();
@@ -92,28 +94,31 @@ function alpha(base, settings) {
   return Math.max(0, Math.min(0.98, base * strength));
 }
 
-function drawDesignZone(ctx, image, crop, width, height, composition, settings) {
+function drawDesignZone(ctx, image, crop, width, height, composition, settings, family = {}) {
   const zone = composition.designZone || { x: 0, y: 0, w: 0.39, h: 1 };
+  const language = family?.graphicLanguage || {};
+  const darkness = language.darkness || 0.7;
+  const redIntensity = language.redIntensity || 0.46;
   const zx = width * zone.x;
   const zw = width * zone.w;
   ctx.save();
   ctx.beginPath();
   ctx.rect(zx, 0, zw, height);
   ctx.clip();
-  ctx.filter = "blur(16px) brightness(42%) contrast(48%) saturate(84%)";
+  ctx.filter = `blur(${Math.round(10 + (language.texture_density || 0.42) * 14)}px) brightness(${Math.round((1 - darkness) * 72)}%) contrast(${Math.round(42 + (language.graphic_aggression || 0.58) * 22)}%) saturate(${Math.round(76 + redIntensity * 32)}%)`;
   ctx.drawImage(image, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, width, height);
   ctx.filter = "none";
 
   const blackout = ctx.createLinearGradient(zx, 0, zx + zw, 0);
-  blackout.addColorStop(0, `rgba(0,0,0,${alpha(0.94, settings)})`);
-  blackout.addColorStop(0.62, `rgba(0,0,0,${alpha(0.82, settings)})`);
-  blackout.addColorStop(1, `rgba(0,0,0,${alpha(0.34, settings)})`);
+  blackout.addColorStop(0, `rgba(0,0,0,${alpha(0.52 + darkness * 0.42, settings)})`);
+  blackout.addColorStop(0.62, `rgba(0,0,0,${alpha(0.42 + darkness * 0.4, settings)})`);
+  blackout.addColorStop(1, `rgba(0,0,0,${alpha(0.16 + darkness * 0.22, settings)})`);
   ctx.fillStyle = blackout;
   ctx.fillRect(zx, 0, zw, height);
 
   const redCore = ctx.createRadialGradient(zx + zw * 0.3, height * 0.48, 0, zx + zw * 0.3, height * 0.48, zw * 0.98);
-  redCore.addColorStop(0, `rgba(208,0,18,${alpha(0.46, settings)})`);
-  redCore.addColorStop(0.5, `rgba(208,0,18,${alpha(0.2, settings)})`);
+  redCore.addColorStop(0, `rgba(208,0,18,${alpha(redIntensity, settings)})`);
+  redCore.addColorStop(0.5, `rgba(208,0,18,${alpha(redIntensity * 0.45, settings)})`);
   redCore.addColorStop(1, "rgba(208,0,18,0)");
   ctx.fillStyle = redCore;
   ctx.fillRect(zx, 0, zw, height);
@@ -122,33 +127,38 @@ function drawDesignZone(ctx, image, crop, width, height, composition, settings) 
 
 function drawAdaptiveAtmosphere(ctx, width, height, composition, family, settings) {
   const zone = composition.designZone || { x: 0, y: 0, w: 0.39, h: 1 };
-  const treatment = family?.treatment || family?.gradient || "warm-hero";
-  const redTone = treatment === "premium-gold" ? "214,173,91" : treatment === "cinema-noir" ? "80,108,155" : "208,0,18";
+  const language = family?.graphicLanguage || {};
+  const treatment = family?.treatment || family?.gradient || language.atmosphere || "warm-hero";
+  const redTone = treatment === "soft-bloom" ? "214,173,91" : treatment === "documentary-air" ? "255,255,255" : treatment === "warm-haze" ? "236,146,72" : treatment === "cinema-noir" ? "80,108,155" : "208,0,18";
+  const aggression = language.graphic_aggression || 0.58;
+  const redIntensity = language.redIntensity || 0.46;
   const edge = width * zone.w;
 
   const integratedShade = ctx.createLinearGradient(0, 0, width, 0);
-  integratedShade.addColorStop(0, `rgba(0,0,0,${alpha(0.62, settings)})`);
-  integratedShade.addColorStop(Math.min(0.52, zone.w + 0.08), `rgba(0,0,0,${alpha(0.18, settings)})`);
-  integratedShade.addColorStop(1, `rgba(0,0,0,${alpha(0.42, settings)})`);
+  integratedShade.addColorStop(0, `rgba(0,0,0,${alpha(0.36 + aggression * 0.3, settings)})`);
+  integratedShade.addColorStop(Math.min(0.52, zone.w + 0.08), `rgba(0,0,0,${alpha(0.1 + aggression * 0.12, settings)})`);
+  integratedShade.addColorStop(1, `rgba(0,0,0,${alpha(0.18 + aggression * 0.28, settings)})`);
   ctx.fillStyle = integratedShade;
   ctx.fillRect(0, 0, width, height);
 
   const seamGlow = ctx.createRadialGradient(edge * 0.88, height * 0.46, 0, edge * 0.88, height * 0.46, width * 0.34);
-  seamGlow.addColorStop(0, `rgba(${redTone},${alpha(0.3, settings)})`);
-  seamGlow.addColorStop(0.48, `rgba(${redTone},${alpha(0.13, settings)})`);
+  seamGlow.addColorStop(0, `rgba(${redTone},${alpha(redIntensity * 0.72, settings)})`);
+  seamGlow.addColorStop(0.48, `rgba(${redTone},${alpha(redIntensity * 0.32, settings)})`);
   seamGlow.addColorStop(1, `rgba(${redTone},0)`);
   ctx.fillStyle = seamGlow;
   ctx.fillRect(0, 0, width, height);
 
   const vignette = ctx.createRadialGradient(width * 0.58, height * 0.44, height * 0.08, width * 0.58, height * 0.44, width * 0.78);
   vignette.addColorStop(0, "rgba(0,0,0,0)");
-  vignette.addColorStop(1, `rgba(0,0,0,${alpha(0.62, settings)})`);
+  vignette.addColorStop(1, `rgba(0,0,0,${alpha(0.36 + aggression * 0.36, settings)})`);
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, width, height);
 }
 
-function drawBorderTexture(ctx, width, height, settings) {
-  const amount = isManual(settings, "borderTexture") ? settingNumber(settings, "borderTexture", 42) : 42;
+function drawBorderTexture(ctx, width, height, settings, family = {}) {
+  const language = family?.graphicLanguage || {};
+  const autoAmount = Math.round((language.texture_density ?? 0.42) * 90);
+  const amount = isManual(settings, "borderTexture") ? settingNumber(settings, "borderTexture", 42) : autoAmount;
   if (amount <= 0) return;
   ctx.save();
   ctx.globalAlpha = Math.min(0.32, amount / 260);
@@ -359,7 +369,8 @@ async function drawKeyArtComposition(ctx, renderPlan, width, height, settings) {
 
 export async function generatePosterPlan(image, metadata, settings, width, height) {
   const analysis = await analyzePosterImage(image);
-  const family = choosePosterFamily(analysis, metadata);
+  const graphicLanguage = inferGraphicLanguage(metadata, analysis);
+  const family = applyGraphicLanguageToFamily(choosePosterFamily(analysis, metadata, graphicLanguage), graphicLanguage);
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -367,11 +378,11 @@ export async function generatePosterPlan(image, metadata, settings, width, heigh
   const variants = VARIANTS.map(variant => {
     const composition = calculateComposition(image, analysis, family, width, height, variant, settings);
     const typography = calculateTypography(ctx, composition.textArea, width, family, metadata, settings, height);
-    const score = scorePosterCandidate({ analysis, typographyScore: typography.score, brandScore: 0.9, layoutScore: composition.layoutScore });
-    return { variant, family, analysis, composition, typography, score };
+    const score = scorePosterCandidate({ analysis, typographyScore: typography.score, brandScore: 0.9, layoutScore: composition.layoutScore, graphicLanguageScore: graphicLanguage.strength });
+    return { variant, family, graphicLanguage, analysis, composition, typography, score };
   }).sort((a, b) => b.score.total - a.score.total);
   const best = variants.find(candidate => candidate.score.passesQualityGate) || variants[0];
-  return { analysis, family, metadata, variants, best };
+  return { analysis, family, graphicLanguage, metadata, variants, best };
 }
 
 export function selectPosterVariant(plan, settings = {}) {
@@ -390,10 +401,10 @@ export async function renderPosterVariantToCanvas(canvas, image, plan, variantPl
   const renderPlan = { ...variantPlan, family: renderFamily, composition: refreshedComposition, typography: refreshedTypography };
   ctx.fillStyle = "#030303";
   ctx.fillRect(0, 0, width, height);
-  drawImageCover(ctx, image, renderPlan.composition.crop, width, height, settings);
-  drawDesignZone(ctx, image, renderPlan.composition.crop, width, height, renderPlan.composition, settings);
+  drawImageCover(ctx, image, renderPlan.composition.crop, width, height, settings, renderPlan.family);
+  drawDesignZone(ctx, image, renderPlan.composition.crop, width, height, renderPlan.composition, settings, renderPlan.family);
   drawAdaptiveAtmosphere(ctx, width, height, renderPlan.composition, renderPlan.family, settings);
-  drawBorderTexture(ctx, width, height, settings);
+  drawBorderTexture(ctx, width, height, settings, renderPlan.family);
   await drawKeyArtComposition(ctx, renderPlan, width, height, settings);
   canvas.__fleshlabPosterPlan = { ...plan, selected: renderPlan };
   return canvas.__fleshlabPosterPlan;

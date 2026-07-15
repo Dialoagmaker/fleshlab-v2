@@ -49,18 +49,21 @@ export function calculateTypography(ctx, box, width, family, metadata, settings 
   const performer = upper(metadata.performerName);
   const performerCredit = performer;
   const maxWidth = width * box.w;
+  const language = family?.graphicLanguage || {};
+  const aggression = language.graphic_aggression ?? 0.58;
+  const density = language.poster_density ?? 0.58;
 
-  const targetTitleBlockHeight = height * box.h * 0.44;
-  const aggressiveStart = Math.max(width * (family?.typography?.titleScale || 0.12) * 1.36, targetTitleBlockHeight / 1.7);
+  const targetTitleBlockHeight = height * box.h * (0.34 + aggression * 0.14 + density * 0.08);
+  const aggressiveStart = Math.max(width * (family?.typography?.titleScale || 0.12) * (1.08 + aggression * 0.42), targetTitleBlockHeight / 1.7);
   const titleStart = isManual(settings, "titleSize") ? Number(settings.titleSize) || aggressiveStart : aggressiveStart;
-  const titleMin = isManual(settings, "titleSize") ? titleStart : width * 0.095;
+  const titleMin = isManual(settings, "titleSize") ? titleStart : width * (0.068 + aggression * 0.035);
   const titleBlock = buildTitleLines(ctx, title, maxWidth, titleStart, titleMin, family.typography.titleFont, 4);
 
-  const autoSubtitleSize = Math.max(width * 0.022, Math.min(width * 0.038, maxWidth / Math.max(10, subtitle.length || 14)));
+  const autoSubtitleSize = Math.max(width * 0.019, Math.min(width * (0.03 + aggression * 0.012), maxWidth / Math.max(10, subtitle.length || 14)));
   const subtitleStart = isManual(settings, "subtitleSize") ? Number(settings.subtitleSize) || autoSubtitleSize : autoSubtitleSize;
   const subtitleBlock = buildTitleLines(ctx, subtitle, maxWidth, subtitleStart, Math.max(width * 0.019, subtitleStart * 0.72), family.typography.accentFont, 2);
 
-  const autoPerformerSize = Math.max(width * 0.036, Math.min(width * 0.064, maxWidth / Math.max(7, performerCredit.length || 10)));
+  const autoPerformerSize = Math.max(width * 0.03, Math.min(width * (0.048 + aggression * 0.018), maxWidth / Math.max(7, performerCredit.length || 10)));
   const performerStart = isManual(settings, "performerSize") ? Number(settings.performerSize) || autoPerformerSize : autoPerformerSize;
   const performerBlock = buildTitleLines(ctx, performerCredit, maxWidth, performerStart, Math.max(width * 0.03, performerStart * 0.76), "Inter", 2);
 
@@ -86,6 +89,7 @@ export function calculateTypography(ctx, box, width, family, metadata, settings 
     titleHeight,
     totalHeight,
     titleDominance,
-    score: Math.min(1, titleBlock.score * 0.48 + titleDominance * 0.52),
+    graphicLanguage: language,
+    score: Math.min(1, titleBlock.score * 0.42 + titleDominance * 0.44 + (language.strength || 0.62) * 0.14),
   };
 }

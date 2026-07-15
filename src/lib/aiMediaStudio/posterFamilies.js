@@ -111,9 +111,9 @@ export const POSTER_FAMILIES = [
   },
 ];
 
-export function getPosterFamilySearchSpace(analysis = {}, metadata = {}) {
+export function getPosterFamilySearchSpace(analysis = {}, metadata = {}, graphicLanguage = null) {
   const text = [metadata.videoTitle, metadata.optionalSubtitle, metadata.campaignName, metadata.contentType].filter(Boolean).join(' ').toLowerCase();
-  const preferred = [];
+  const preferred = [...(graphicLanguage?.family_bias || [])];
   if (/dark|night|hotel|room|secret|forbidden/.test(text) || analysis.brightness < 0.45) preferred.push('dark-poster', 'movie-poster');
   if (/first|raw|real|amateur|debut/.test(text)) preferred.push('emotional-poster', 'story-poster');
   if (/beach|outdoor|travel|summer|island|cebu/.test(text)) preferred.push('hero-poster', 'premium-poster');
@@ -127,6 +127,6 @@ export function getPosterFamilySearchSpace(analysis = {}, metadata = {}) {
   return ordered;
 }
 
-export function choosePosterFamily(analysis, metadata = {}) {
-  return getPosterFamilySearchSpace(analysis, metadata)[0];
+export function choosePosterFamily(analysis, metadata = {}, graphicLanguage = null) {
+  return getPosterFamilySearchSpace(analysis, metadata, graphicLanguage)[0];
 }
