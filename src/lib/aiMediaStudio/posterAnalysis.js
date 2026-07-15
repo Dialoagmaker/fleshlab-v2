@@ -68,10 +68,10 @@ export function scorePosterCandidate({ analysis, typographyScore = 0.7, brandSco
   if (readableSubject < 0.26) qualityFailures.push("subject cannot be recognised");
   if (typographyScore < 0.62) qualityFailures.push("title not dominant enough for thumbnail");
   if (hierarchy < 0.68) qualityFailures.push("weak commercial hierarchy");
-  if (professionalMarketingScore < 0.68) qualityFailures.push("not professional marketing key art");
-  if (graphicLanguage < 0.58) qualityFailures.push("graphic language too weak");
-  if (artDirection < 0.68) qualityFailures.push("still reads as layout, not integrated key art");
-  if (total < 0.68) qualityFailures.push("weak commercial impact");
+  if (professionalMarketingScore < 0.72) qualityFailures.push("not professional marketing key art");
+  if (graphicLanguage < 0.62) qualityFailures.push("graphic language too weak");
+  if (artDirection < 0.76) qualityFailures.push("still reads as layout, not integrated key art");
+  if (total < 0.72) qualityFailures.push("weak commercial impact");
 
   return {
     total: Math.round(total * 100),

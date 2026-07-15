@@ -5,7 +5,7 @@ import { calculateTypography } from "./posterTypography";
 import { applyGraphicLanguageToFamily, inferGraphicLanguage } from "./graphicLanguage";
 
 const OFFICIAL_LOGO_URL = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a1f9333f9_ChatGPTImageJul14202612_16_43AM.png";
-const VARIANTS = ["title", "performer", "balanced", "close_hero", "brand_hero", "action"];
+const VARIANTS = ["title", "performer", "balanced", "close_hero", "brand_hero", "action", "diagonal", "full_graphic"];
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -84,6 +84,7 @@ function drawImageCover(ctx, image, crop, width, height, settings, family = {}) 
   const brightness = isManual(settings, "brightness") ? settingNumber(settings, "brightness", 102) : Math.round((language.brightness || 1.02) * 100);
   const contrast = isManual(settings, "contrast") ? settingNumber(settings, "contrast", 114) : Math.round((language.contrast || 1.14) * 100);
   const saturation = isManual(settings, "saturation") ? settingNumber(settings, "saturation", 106) : Math.round((language.saturation || 1.06) * 100);
+  ctx.globalAlpha = 0.74;
   ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
   ctx.drawImage(image, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, width, height);
   ctx.restore();
@@ -328,6 +329,27 @@ function drawTransformedEnvironment(ctx, image, crop, width, height, family, set
   ctx.restore();
 
   ctx.save();
+  ctx.globalAlpha = 0.86;
+  ctx.fillStyle = "#020202";
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(width * (0.24 + aggression * 0.18), 0);
+  ctx.bezierCurveTo(width * (0.34 + aggression * 0.12), height * 0.24, width * (0.26 + aggression * 0.18), height * 0.72, width * (0.48 + aggression * 0.1), height);
+  ctx.lineTo(0, height);
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = 0.48 + aggression * 0.18;
+  ctx.fillStyle = `rgba(${tone.rgb},0.2)`;
+  ctx.beginPath();
+  ctx.moveTo(width * 0.02, height * 0.06);
+  ctx.bezierCurveTo(width * 0.32, height * 0.12, width * 0.26, height * 0.6, width * 0.08, height * 0.92);
+  ctx.lineTo(width * 0.52, height);
+  ctx.bezierCurveTo(width * 0.38, height * 0.62, width * 0.5, height * 0.22, width * 0.2, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  ctx.save();
   ctx.globalCompositeOperation = "screen";
   ctx.lineCap = "round";
   for (let i = 0; i < 4; i += 1) {
@@ -383,6 +405,11 @@ async function drawIntegratedLogo(ctx, x, y, maxW, width) {
   const logoW = Math.max(width * 0.13, Math.min(width * 0.19, maxW));
   const logoH = logoW * (source.sh / source.sw);
   ctx.save();
+  ctx.globalAlpha = 0.72;
+  ctx.fillStyle = "rgba(0,0,0,0.62)";
+  ctx.fillRect(x - width * 0.012, y - width * 0.008, logoW + width * 0.026, logoH + width * 0.016);
+  ctx.fillStyle = "rgba(208,0,18,0.72)";
+  ctx.fillRect(x - width * 0.012, y + logoH + width * 0.012, logoW * 0.68, Math.max(2, width * 0.003));
   ctx.globalAlpha = 0.96;
   ctx.shadowColor = "rgba(0,0,0,0.9)";
   ctx.shadowBlur = width * 0.012;
@@ -397,6 +424,12 @@ function drawAtmosphericForeground(ctx, width, height, family) {
   const density = language.texture_density || 0.42;
   ctx.save();
   ctx.globalCompositeOperation = "screen";
+  const smoke = ctx.createRadialGradient(width * 0.18, height * 0.42, 0, width * 0.18, height * 0.42, width * 0.42);
+  smoke.addColorStop(0, `rgba(${tone.warm},${0.08 + density * 0.08})`);
+  smoke.addColorStop(0.5, "rgba(255,255,255,0.025)");
+  smoke.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = smoke;
+  ctx.fillRect(0, 0, width, height);
   for (let i = 0; i < Math.round(22 + density * 46); i += 1) {
     const x = width * ((i * 37) % 100) / 100;
     const y = height * ((i * 61) % 100) / 100;
@@ -405,6 +438,18 @@ function drawAtmosphericForeground(ctx, width, height, family) {
     ctx.beginPath();
     ctx.arc(x, y, Math.max(0.8, width * (0.0006 + ((i % 3) * 0.00045))), 0, Math.PI * 2);
     ctx.fill();
+  }
+  ctx.globalCompositeOperation = "source-over";
+  ctx.globalAlpha = 0.13 + density * 0.12;
+  ctx.strokeStyle = "rgba(255,255,255,0.85)";
+  ctx.lineWidth = Math.max(1, width * 0.0009);
+  for (let i = 0; i < 18; i += 1) {
+    const x = width * (((i * 19) % 55) / 100);
+    const y = height * (((i * 43) % 100) / 100);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + width * (0.015 + (i % 4) * 0.008), y - height * (0.03 + (i % 5) * 0.012));
+    ctx.stroke();
   }
   ctx.restore();
 }
@@ -455,6 +500,14 @@ async function drawKeyArtComposition(ctx, renderPlan, image, width, height, sett
     y += titleLineHeight;
   });
 
+  const brushText = typography.subtitle || typography.lines[0] || "FLESHLAB";
+  ctx.globalAlpha = 0.52 + aggression * 0.16;
+  ctx.shadowBlur = width * 0.018;
+  ctx.fillStyle = `rgba(${tone.rgb},0.78)`;
+  ctx.font = font(Math.max(width * 0.055, titleSize * 0.34), "Permanent Marker", 900);
+  ctx.fillText(brushText, titleX + width * 0.018, y - titleLineHeight * 0.18);
+  ctx.globalAlpha = 1;
+
   y += height * 0.02;
   const logoSize = await drawIntegratedLogo(ctx, titleX, y, width * composition.logoArea.w, width);
   y += logoSize.h + height * 0.028;
@@ -495,8 +548,11 @@ async function drawKeyArtComposition(ctx, renderPlan, image, width, height, sett
     ctx.font = font(width * 0.012, "Bebas Neue", 400);
     let pointX = titleX;
     points.forEach((text, index) => {
-      ctx.fillText(text, pointX, y);
-      pointX += ctx.measureText(text).width + width * 0.016;
+      ctx.fillStyle = `rgba(${tone.rgb},0.86)`;
+      ctx.fillRect(pointX, y - width * 0.011, width * 0.008, width * 0.008);
+      ctx.fillStyle = "rgba(255,255,255,0.54)";
+      ctx.fillText(text, pointX + width * 0.014, y);
+      pointX += ctx.measureText(text).width + width * 0.03;
       if (index < points.length - 1) {
         ctx.fillStyle = `rgba(${tone.rgb},0.72)`;
         ctx.fillRect(pointX - width * 0.008, y - width * 0.01, 1, width * 0.016);

@@ -89,7 +89,7 @@ export function calculateComposition(image, analysis, family, width, height, var
   const designZone = { x: 0, y: 0, w: clamp(textArea.w + textArea.x + safeMargin(settings) * 0.85, 0.3, family?.graphicLanguage?.designZoneWidth ? Math.max(0.34, family.graphicLanguage.designZoneWidth + 0.04) : 0.45), h: 1 };
   const footerVisible = shouldShowFooter(analysis, variant, family);
   const languageFit = family?.graphicLanguage?.strength || 0.62;
-  const artDirectionScore = Math.min(1, languageFit * 0.42 + (family?.graphicLanguage?.poster_density || 0.58) * 0.18 + (family?.graphicLanguage?.emotional_intensity || 0.66) * 0.18 + (analysis.subjectSeparation || 0.55) * 0.14 + (analysis.visualCuriosity || 0.55) * 0.08);
+  const artDirectionScore = Math.min(1, 0.18 + languageFit * 0.34 + (family?.graphicLanguage?.poster_density || 0.58) * 0.17 + (family?.graphicLanguage?.emotional_intensity || 0.66) * 0.15 + (analysis.subjectSeparation || 0.55) * 0.1 + (analysis.visualCuriosity || 0.55) * 0.06);
   const layoutScore = Math.min(1, 0.6 + languageFit * 0.12 + artDirectionScore * 0.18 + (family?.id === "commercial-thumbnail" ? 0.06 : 0) + (variant === "title" ? 0.04 : 0));
   return { crop, textArea, logoArea, designZone, footerVisible, footerY: 1 - safeMargin(settings) - 0.025, variant, familyId: family.id, layoutScore, artDirectionScore };
 }
