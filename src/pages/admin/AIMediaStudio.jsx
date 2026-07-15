@@ -45,8 +45,14 @@ export default function AIMediaStudio() {
     const frames = await sampleVideoFrames({ file, previewUrl: metadata.previewUrl, metadata, onProgress: setProgress, log, pausedRef, signal: abortRef.current.signal });
     const scenes = detectScenes(frames, metadata.duration, log);
     const outputs = await createOutputs({ file, frames, scenes, log });
-    const teasers = await createTeaserFromFrames({ file, frames, scenes, log, onProgress: setProgress });
-    updateItem(id, { status: "analyzed", statusLabel: "Analyzed", analysis: true, frames, scenes, outputs, teasers, teaser: teasers[0] });
+    updateItem(id, { status: "outputs_ready", statusLabel: "Outputs ready", analysis: true, frames, scenes, outputs });
+    try {
+      const teasers = await createTeaserFromFrames({ file, frames, scenes, log, onProgress: setProgress });
+      updateItem(id, { status: "analyzed", statusLabel: "Analyzed", teasers, teaser: teasers[0], teaserError: "" });
+    } catch (teaserError) {
+      log(`teaser unavailable: ${teaserError.message}`);
+      updateItem(id, { status: "analyzed", statusLabel: "Analyzed, teaser unavailable", teaserError: teaserError.message });
+    }
     setProgress(100);
   };
 

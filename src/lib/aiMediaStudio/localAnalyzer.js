@@ -303,7 +303,7 @@ async function createTeasersWithFFmpeg({ file, frames, log, onProgress }) {
   const candidates = selectDiverseFrames(frames, 3, 12);
   if (!candidates.length) throw new Error("No frames available for teaser generation");
 
-  log?.("FFmpeg WASM loading started; first MP4 run can take up to 60 seconds");
+  log?.("FFmpeg WASM loading started; first MP4 run can take up to 120 seconds");
   let FFmpeg;
   let fetchFile;
   try {
@@ -315,7 +315,7 @@ async function createTeasersWithFFmpeg({ file, frames, log, onProgress }) {
 
   const ffmpeg = new FFmpeg();
   try {
-    await withTimeout(ffmpeg.load(), 60000, "FFmpeg load timed out after 60 seconds");
+    await withTimeout(ffmpeg.load(), 120000, "FFmpeg load timed out after 120 seconds");
   } catch (error) {
     throw new Error(`FFmpeg failed to load: ${error.message}`);
   }
