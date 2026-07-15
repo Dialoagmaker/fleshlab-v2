@@ -149,6 +149,32 @@ function getImageRect(width, height) {
   return { x: Math.round(width * 0.42), y: 0, w: Math.round(width * 0.58), h: height };
 }
 
+function drawDemoImage(ctx, rect, preset) {
+  ctx.save();
+  const bg = ctx.createLinearGradient(rect.x, rect.y, rect.x + rect.w, rect.y + rect.h);
+  bg.addColorStop(0, "#151515");
+  bg.addColorStop(0.45, "#332020");
+  bg.addColorStop(1, "#050505");
+  ctx.fillStyle = bg;
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.globalAlpha = 0.34;
+  ctx.fillStyle = preset.red;
+  ctx.beginPath();
+  ctx.arc(rect.x + rect.w * 0.62, rect.y + rect.h * 0.35, rect.h * 0.18, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 0.46;
+  ctx.fillStyle = "rgba(255,255,255,0.16)";
+  ctx.beginPath();
+  ctx.ellipse(rect.x + rect.w * 0.63, rect.y + rect.h * 0.78, rect.w * 0.28, rect.h * 0.34, -0.12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 0.22;
+  for (let i = 0; i < 9; i += 1) {
+    ctx.fillStyle = i % 2 ? "rgba(255,255,255,0.12)" : preset.red;
+    ctx.fillRect(rect.x + rect.w * (0.08 + i * 0.1), rect.y, rect.w * 0.018, rect.h);
+  }
+  ctx.restore();
+}
+
 function drawLeftPanel(ctx, width, height, preset, imageRect, settings) {
   const panelW = imageRect.x + width * 0.11;
   ctx.save();
@@ -188,7 +214,7 @@ function drawCampaignLabel(ctx, text, x, y, width, preset) {
 export async function renderCoverToCanvas(canvas, frameBlob, metadata, settings) {
   const preset = COVER_PRESETS.find(item => item.id === settings.presetId) || COVER_PRESETS[0];
   const { width, height } = getCoverDimensions(settings);
-  const image = await blobToCanvasImage(frameBlob);
+  const image = frameBlob ? await blobToCanvasImage(frameBlob) : null;
   if (document?.fonts?.load) await document.fonts.load("400 80px Bebas Neue");
   canvas.width = width;
   canvas.height = height;
@@ -197,7 +223,8 @@ export async function renderCoverToCanvas(canvas, frameBlob, metadata, settings)
   ctx.fillRect(0, 0, width, height);
 
   const imageRect = getImageRect(width, height);
-  drawCoverImage(ctx, image, imageRect, settings);
+  if (image) drawCoverImage(ctx, image, imageRect, settings);
+  else drawDemoImage(ctx, imageRect, preset);
   drawLeftPanel(ctx, width, height, preset, imageRect, settings);
 
   const vignette = ctx.createRadialGradient(width * 0.78, height * 0.42, height * 0.08, width * 0.78, height * 0.42, width * 0.7);

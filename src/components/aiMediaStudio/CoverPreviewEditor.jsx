@@ -14,7 +14,7 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
     let active = true;
     setRendered(false);
     setError("");
-    if (!frame?.blob || !canvasRef.current) return;
+    if ((!frame?.blob && !frame?.demo) || !canvasRef.current) return;
     renderCoverToCanvas(canvasRef.current, frame.blob, metadata, settings).then(() => active && setRendered(true)).catch(err => active && setError(err.message));
     return () => { active = false; };
   }, [frame, metadata, settings]);
