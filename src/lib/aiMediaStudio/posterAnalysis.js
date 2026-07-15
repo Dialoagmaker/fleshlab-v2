@@ -53,22 +53,21 @@ export async function analyzePosterImage(image, targetWidth = 360) {
 }
 
 export function scorePosterCandidate({ analysis, typographyScore = 0.7, brandScore = 0.82, layoutScore = 0.7 }) {
-  const faceScore = analysis.detections?.face ? 1 : analysis.vision?.capabilities?.faceDetection ? 0.18 : 0.45;
-  const typographySafety = clamp(analysis.negativeSpace.score * 0.66 + typographyScore * 0.34);
-  const story = clamp((analysis.storyScore || 0) * 0.46 + (analysis.clickPotential || 0) * 0.18 + (analysis.visualCuriosity || 0) * 0.12 + (analysis.sceneReadability || 0) * 0.12 + faceScore * 0.06 + (analysis.interactionStrength || 0) * 0.06);
-  const imageQuality = clamp((analysis.imageQualityScore || 0) * 0.42 + (analysis.sceneReadability || 0) * 0.24 + (analysis.thumbnailImpact || 0) * 0.18 + typographySafety * 0.16);
-  const hierarchy = clamp(story * 0.38 + typographySafety * 0.28 + layoutScore * 0.18 + (analysis.thumbnailImpact || 0) * 0.16);
-  const composition = clamp(layoutScore * 0.28 + typographySafety * 0.22 + (analysis.sceneReadability || 0) * 0.22 + (analysis.bodyLanguage || 0) * 0.16 + (analysis.subjectSeparation || 0) * 0.12);
-  const marketing = clamp((analysis.clickPotential || 0) * 0.34 + story * 0.28 + (analysis.visualCuriosity || 0) * 0.16 + imageQuality * 0.12 + brandScore * 0.1);
-  const total = clamp(story * 0.34 + marketing * 0.22 + imageQuality * 0.2 + composition * 0.14 + hierarchy * 0.1);
+  const faceScore = analysis.detections?.face ? 1 : analysis.vision?.capabilities?.faceDetection ? 0.28 : 0.48;
+  const readableSubject = clamp((analysis.sceneReadability || 0) * 0.46 + (analysis.subjectSeparation || 0) * 0.24 + faceScore * 0.18 + (analysis.bodyLanguage || 0) * 0.12);
+  const hierarchy = clamp(typographyScore * 0.58 + brandScore * 0.18 + layoutScore * 0.24);
+  const composition = clamp(layoutScore * 0.42 + hierarchy * 0.32 + readableSubject * 0.16 + (analysis.thumbnailImpact || 0) * 0.1);
+  const marketing = clamp(hierarchy * 0.38 + (analysis.clickPotential || 0) * 0.24 + (analysis.thumbnailImpact || 0) * 0.18 + (analysis.visualCuriosity || 0) * 0.1 + brandScore * 0.1);
+  const story = clamp((analysis.storyScore || 0) * 0.32 + readableSubject * 0.28 + (analysis.interactionStrength || 0) * 0.16 + marketing * 0.24);
+  const professionalMarketingScore = clamp(hierarchy * 0.38 + marketing * 0.3 + composition * 0.22 + readableSubject * 0.1);
+  const imageQuality = clamp((analysis.imageQualityScore || 0) * 0.24 + readableSubject * 0.28 + composition * 0.2 + hierarchy * 0.28);
+  const total = clamp(professionalMarketingScore * 0.44 + marketing * 0.24 + hierarchy * 0.18 + story * 0.14);
   const qualityFailures = [];
-  if (analysis.subjectDominance < 0.18) qualityFailures.push("performer too small");
-  if (analysis.sceneReadability < 0.3) qualityFailures.push("subject cannot be recognised");
-  if (analysis.subjectCropRisk > 0.72) qualityFailures.push("crop destroys visual understanding");
-  if (analysis.backgroundComplexity > 0.86 && analysis.subjectSeparation < 0.34) qualityFailures.push("unreadable silhouette");
-  if (analysis.thumbnailImpact < 0.34) qualityFailures.push("weak thumbnail impact");
-  if (analysis.vision?.capabilities?.faceDetection && !analysis.detections?.face && analysis.sceneReadability < 0.42) qualityFailures.push("face and subject not readable enough");
-  if (total < 0.55) qualityFailures.push("weak story score");
+  if (readableSubject < 0.26) qualityFailures.push("subject cannot be recognised");
+  if (typographyScore < 0.62) qualityFailures.push("title not dominant enough for thumbnail");
+  if (hierarchy < 0.68) qualityFailures.push("weak commercial hierarchy");
+  if (professionalMarketingScore < 0.68) qualityFailures.push("not professional marketing key art");
+  if (total < 0.66) qualityFailures.push("weak commercial impact");
 
   return {
     total: Math.round(total * 100),
@@ -76,6 +75,7 @@ export function scorePosterCandidate({ analysis, typographyScore = 0.7, brandSco
     imageQuality: Math.round(imageQuality * 100),
     hierarchy: Math.round(hierarchy * 100),
     composition: Math.round(composition * 100),
+    professionalMarketing: Math.round(professionalMarketingScore * 100),
     subjectDominance: Math.round((analysis.subjectDominance || 0) * 100),
     negativeSpace: Math.round(analysis.negativeSpace.score * 100),
     typography: Math.round(typographyScore * 100),

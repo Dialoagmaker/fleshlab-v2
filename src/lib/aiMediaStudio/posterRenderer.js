@@ -4,7 +4,7 @@ import { calculateComposition } from "./posterComposition";
 import { calculateTypography } from "./posterTypography";
 
 const OFFICIAL_LOGO_URL = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a1f9333f9_ChatGPTImageJul14202612_16_43AM.png";
-const VARIANTS = ["title", "performer", "balanced"];
+const VARIANTS = ["title", "performer", "balanced", "close_hero", "brand_hero", "action"];
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -92,39 +92,57 @@ function alpha(base, settings) {
   return Math.max(0, Math.min(0.98, base * strength));
 }
 
-function drawAdaptiveAtmosphere(ctx, width, height, composition, family, settings) {
-  const { textArea } = composition;
-  const treatment = family?.treatment || family?.gradient || "warm-hero";
-  const cx = width * (textArea.x + textArea.w * 0.34);
-  const cy = height * (textArea.y + textArea.h * 0.42);
-  const redTone = treatment === "premium-gold" ? "214,173,91" : treatment === "cinema-noir" ? "80,108,155" : "208,0,18";
+function drawDesignZone(ctx, image, crop, width, height, composition, settings) {
+  const zone = composition.designZone || { x: 0, y: 0, w: 0.39, h: 1 };
+  const zx = width * zone.x;
+  const zw = width * zone.w;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(zx, 0, zw, height);
+  ctx.clip();
+  ctx.filter = "blur(16px) brightness(42%) contrast(48%) saturate(84%)";
+  ctx.drawImage(image, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, width, height);
+  ctx.filter = "none";
 
-  const darkShape = ctx.createLinearGradient(0, 0, width, 0);
-  darkShape.addColorStop(0, `rgba(0,0,0,${alpha(0.92, settings)})`);
-  darkShape.addColorStop(0.34, `rgba(0,0,0,${alpha(0.7, settings)})`);
-  darkShape.addColorStop(0.64, `rgba(0,0,0,${alpha(0.24, settings)})`);
-  darkShape.addColorStop(1, `rgba(0,0,0,${alpha(0.5, settings)})`);
-  ctx.fillStyle = darkShape;
+  const blackout = ctx.createLinearGradient(zx, 0, zx + zw, 0);
+  blackout.addColorStop(0, `rgba(0,0,0,${alpha(0.94, settings)})`);
+  blackout.addColorStop(0.62, `rgba(0,0,0,${alpha(0.82, settings)})`);
+  blackout.addColorStop(1, `rgba(0,0,0,${alpha(0.34, settings)})`);
+  ctx.fillStyle = blackout;
+  ctx.fillRect(zx, 0, zw, height);
+
+  const redCore = ctx.createRadialGradient(zx + zw * 0.3, height * 0.48, 0, zx + zw * 0.3, height * 0.48, zw * 0.98);
+  redCore.addColorStop(0, `rgba(208,0,18,${alpha(0.46, settings)})`);
+  redCore.addColorStop(0.5, `rgba(208,0,18,${alpha(0.2, settings)})`);
+  redCore.addColorStop(1, "rgba(208,0,18,0)");
+  ctx.fillStyle = redCore;
+  ctx.fillRect(zx, 0, zw, height);
+  ctx.restore();
+}
+
+function drawAdaptiveAtmosphere(ctx, width, height, composition, family, settings) {
+  const zone = composition.designZone || { x: 0, y: 0, w: 0.39, h: 1 };
+  const treatment = family?.treatment || family?.gradient || "warm-hero";
+  const redTone = treatment === "premium-gold" ? "214,173,91" : treatment === "cinema-noir" ? "80,108,155" : "208,0,18";
+  const edge = width * zone.w;
+
+  const integratedShade = ctx.createLinearGradient(0, 0, width, 0);
+  integratedShade.addColorStop(0, `rgba(0,0,0,${alpha(0.62, settings)})`);
+  integratedShade.addColorStop(Math.min(0.52, zone.w + 0.08), `rgba(0,0,0,${alpha(0.18, settings)})`);
+  integratedShade.addColorStop(1, `rgba(0,0,0,${alpha(0.42, settings)})`);
+  ctx.fillStyle = integratedShade;
   ctx.fillRect(0, 0, width, height);
 
-  if (treatment !== "minimal-premium") {
-    const heroGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, width * 0.54);
-    heroGlow.addColorStop(0, `rgba(${redTone},${alpha(treatment === "high-click" ? 0.44 : 0.3, settings)})`);
-    heroGlow.addColorStop(0.42, `rgba(${redTone},${alpha(0.18, settings)})`);
-    heroGlow.addColorStop(1, `rgba(${redTone},0)`);
-    ctx.fillStyle = heroGlow;
-    ctx.fillRect(0, 0, width, height);
+  const seamGlow = ctx.createRadialGradient(edge * 0.88, height * 0.46, 0, edge * 0.88, height * 0.46, width * 0.34);
+  seamGlow.addColorStop(0, `rgba(${redTone},${alpha(0.3, settings)})`);
+  seamGlow.addColorStop(0.48, `rgba(${redTone},${alpha(0.13, settings)})`);
+  seamGlow.addColorStop(1, `rgba(${redTone},0)`);
+  ctx.fillStyle = seamGlow;
+  ctx.fillRect(0, 0, width, height);
 
-    const rimGlow = ctx.createRadialGradient(width * 0.02, height * 0.72, 0, width * 0.02, height * 0.72, width * 0.42);
-    rimGlow.addColorStop(0, `rgba(${redTone},${alpha(0.24, settings)})`);
-    rimGlow.addColorStop(1, `rgba(${redTone},0)`);
-    ctx.fillStyle = rimGlow;
-    ctx.fillRect(0, 0, width, height);
-  }
-
-  const vignette = ctx.createRadialGradient(width * 0.58, height * 0.44, height * 0.1, width * 0.58, height * 0.44, width * 0.76);
+  const vignette = ctx.createRadialGradient(width * 0.58, height * 0.44, height * 0.08, width * 0.58, height * 0.44, width * 0.78);
   vignette.addColorStop(0, "rgba(0,0,0,0)");
-  vignette.addColorStop(1, `rgba(0,0,0,${alpha(0.58, settings)})`);
+  vignette.addColorStop(1, `rgba(0,0,0,${alpha(0.62, settings)})`);
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, width, height);
 }
@@ -244,7 +262,8 @@ function drawFooter(ctx, composition, width, height, settings) {
 
 function fittedTitleSize(ctx, lines, maxWidth, desiredSize, family) {
   let size = desiredSize;
-  while (size > desiredSize * 0.82) {
+  const minSize = Math.max(48, maxWidth * 0.18);
+  while (size > minSize) {
     ctx.font = font(size, family, 900);
     if (lines.every(line => ctx.measureText(line).width <= maxWidth)) return size;
     size -= 4;
@@ -260,28 +279,15 @@ async function drawKeyArtComposition(ctx, renderPlan, width, height, settings) {
   let y = height * box.y;
 
   ctx.save();
-  const logo = await getLogo();
-  const source = getLogoCrop(logo);
-  let logoW = Math.min(width * composition.logoArea.w, maxWidth * 0.78);
-  let logoH = logoW * (source.sh / source.sw);
-  if (logoH > height * 0.15) {
-    logoH = height * 0.15;
-    logoW = logoH * (source.sw / source.sh);
-  }
-  ctx.globalAlpha = 0.95;
-  ctx.shadowColor = "rgba(0,0,0,0.86)";
-  ctx.shadowBlur = width * 0.009;
-  ctx.drawImage(logo, source.sx, source.sy, source.sw, source.sh, x, y, logoW, logoH);
-  y += logoH + height * 0.034;
-
-  const titleSize = fittedTitleSize(ctx, typography.lines, maxWidth, typography.size * 1.18, family.typography.titleFont);
-  const titleLineHeight = titleSize * 0.78;
+  const titleTarget = (height * (composition.designZone?.h || 1) * 0.42) / Math.max(1, typography.lines.length);
+  const titleSize = fittedTitleSize(ctx, typography.lines, maxWidth, Math.max(typography.size, titleTarget / 0.78), family.typography.titleFont);
+  const titleLineHeight = titleSize * 0.76;
   ctx.globalAlpha = 1;
-  ctx.shadowColor = "rgba(0,0,0,0.94)";
-  ctx.shadowBlur = width * 0.014;
-  ctx.lineWidth = Math.max(3, titleSize * 0.018);
-  ctx.strokeStyle = "rgba(0,0,0,0.64)";
-  ctx.fillStyle = "#f6f2ee";
+  ctx.shadowColor = "rgba(0,0,0,0.98)";
+  ctx.shadowBlur = width * 0.018;
+  ctx.lineWidth = Math.max(4, titleSize * 0.022);
+  ctx.strokeStyle = "rgba(0,0,0,0.72)";
+  ctx.fillStyle = "#f8f4ef";
   ctx.font = font(titleSize, family.typography.titleFont, 900);
   typography.lines.forEach(line => {
     ctx.strokeText(line, x, y + titleSize);
@@ -289,14 +295,40 @@ async function drawKeyArtComposition(ctx, renderPlan, width, height, settings) {
     y += titleLineHeight;
   });
 
+  if (typography.performerLines?.length) {
+    y += height * 0.018;
+    const performerSize = Math.max(width * 0.038, Math.min(width * 0.064, typography.performerSize * 1.15));
+    ctx.shadowBlur = width * 0.01;
+    ctx.lineWidth = Math.max(2, performerSize * 0.014);
+    ctx.strokeStyle = "rgba(0,0,0,0.78)";
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.font = font(performerSize, "Inter", 900);
+    typography.performerLines.forEach(line => {
+      ctx.strokeText(line, x, y + performerSize);
+      ctx.fillText(line, x, y + performerSize);
+      y += performerSize * 1.08;
+    });
+  }
+
+  y += height * 0.026;
+  const logo = await getLogo();
+  const source = getLogoCrop(logo);
+  const logoW = Math.max(width * 0.15, Math.min(width * 0.2, width * composition.logoArea.w));
+  const logoH = logoW * (source.sh / source.sw);
+  ctx.globalAlpha = 0.96;
+  ctx.shadowColor = "rgba(0,0,0,0.9)";
+  ctx.shadowBlur = width * 0.01;
+  ctx.drawImage(logo, source.sx, source.sy, source.sw, source.sh, x, y, logoW, logoH);
+  y += logoH + height * 0.032;
+
   if (typography.subtitleLines?.length) {
-    y += titleSize * 0.1;
-    const subtitleSize = Math.max(width * 0.026, typography.subtitleSize * 0.68);
+    const subtitleSize = Math.max(width * 0.022, Math.min(width * 0.04, typography.subtitleSize));
     const subtitleLineHeight = subtitleSize * 1.04;
-    ctx.shadowBlur = width * 0.007;
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = width * 0.008;
     ctx.lineWidth = Math.max(2, subtitleSize * 0.018);
-    ctx.strokeStyle = "rgba(0,0,0,0.7)";
-    ctx.fillStyle = "rgba(246,242,238,0.94)";
+    ctx.strokeStyle = "rgba(0,0,0,0.76)";
+    ctx.fillStyle = "rgba(248,244,239,0.82)";
     ctx.font = font(subtitleSize, "Inter", 900);
     typography.subtitleLines.forEach(line => {
       ctx.strokeText(line, x, y + subtitleSize);
@@ -305,35 +337,20 @@ async function drawKeyArtComposition(ctx, renderPlan, width, height, settings) {
     });
   }
 
-  if (typography.performerLines?.length) {
-    y += height * 0.018;
-    const creditSize = Math.max(width * 0.018, typography.performerSize * 0.54);
-    ctx.shadowBlur = width * 0.005;
-    ctx.lineWidth = Math.max(1, creditSize * 0.012);
-    ctx.strokeStyle = "rgba(0,0,0,0.72)";
-    ctx.fillStyle = "rgba(255,255,255,0.76)";
-    ctx.font = font(creditSize, "Inter", 900);
-    typography.performerLines.forEach(line => {
-      ctx.strokeText(line, x, y + creditSize);
-      ctx.fillText(line, x, y + creditSize);
-      y += creditSize * 1.16;
-    });
-  }
-
   const points = sellingPoints(settings);
   if (points.length) {
-    y += height * 0.02;
+    y += height * 0.026;
     ctx.shadowBlur = width * 0.004;
-    ctx.fillStyle = "rgba(255,255,255,0.62)";
-    ctx.font = font(width * 0.0135, "Bebas Neue", 400);
+    ctx.fillStyle = "rgba(255,255,255,0.56)";
+    ctx.font = font(width * 0.0125, "Bebas Neue", 400);
     let pointX = x;
     points.forEach((text, index) => {
       ctx.fillText(text, pointX, y);
-      pointX += ctx.measureText(text).width + width * 0.022;
+      pointX += ctx.measureText(text).width + width * 0.018;
       if (index < points.length - 1) {
-        ctx.fillStyle = "rgba(208,0,18,0.8)";
-        ctx.fillRect(pointX - width * 0.012, y - width * 0.011, 1, width * 0.017);
-        ctx.fillStyle = "rgba(255,255,255,0.62)";
+        ctx.fillStyle = "rgba(208,0,18,0.72)";
+        ctx.fillRect(pointX - width * 0.01, y - width * 0.01, 1, width * 0.016);
+        ctx.fillStyle = "rgba(255,255,255,0.56)";
       }
     });
   }
@@ -349,17 +366,18 @@ export async function generatePosterPlan(image, metadata, settings, width, heigh
   const ctx = canvas.getContext("2d");
   const variants = VARIANTS.map(variant => {
     const composition = calculateComposition(image, analysis, family, width, height, variant, settings);
-    const typography = calculateTypography(ctx, composition.textArea, width, family, metadata, settings);
-    const score = scorePosterCandidate({ analysis, typographyScore: typography.score, brandScore: 0.86, layoutScore: composition.layoutScore });
+    const typography = calculateTypography(ctx, composition.textArea, width, family, metadata, settings, height);
+    const score = scorePosterCandidate({ analysis, typographyScore: typography.score, brandScore: 0.9, layoutScore: composition.layoutScore });
     return { variant, family, analysis, composition, typography, score };
   }).sort((a, b) => b.score.total - a.score.total);
-  return { analysis, family, metadata, variants, best: variants[0] };
+  const best = variants.find(candidate => candidate.score.passesQualityGate) || variants[0];
+  return { analysis, family, metadata, variants, best };
 }
 
 export function selectPosterVariant(plan, settings = {}) {
   if (!plan) return null;
   if (settings.variant && settings.variant !== "auto") return plan.variants.find(item => item.variant === settings.variant) || plan.best;
-  return plan.best;
+  return plan.variants.find(candidate => candidate.score.passesQualityGate) || plan.best;
 }
 
 export async function renderPosterVariantToCanvas(canvas, image, plan, variantPlan, settings, width, height) {
@@ -368,11 +386,12 @@ export async function renderPosterVariantToCanvas(canvas, image, plan, variantPl
   const ctx = canvas.getContext("2d");
   const renderFamily = variantPlan.family || plan.family;
   const refreshedComposition = calculateComposition(image, plan.analysis, renderFamily, width, height, variantPlan.variant, settings);
-  const refreshedTypography = calculateTypography(ctx, refreshedComposition.textArea, width, renderFamily, plan.metadata, settings);
+  const refreshedTypography = calculateTypography(ctx, refreshedComposition.textArea, width, renderFamily, plan.metadata, settings, height);
   const renderPlan = { ...variantPlan, family: renderFamily, composition: refreshedComposition, typography: refreshedTypography };
   ctx.fillStyle = "#030303";
   ctx.fillRect(0, 0, width, height);
   drawImageCover(ctx, image, renderPlan.composition.crop, width, height, settings);
+  drawDesignZone(ctx, image, renderPlan.composition.crop, width, height, renderPlan.composition, settings);
   drawAdaptiveAtmosphere(ctx, width, height, renderPlan.composition, renderPlan.family, settings);
   drawBorderTexture(ctx, width, height, settings);
   await drawKeyArtComposition(ctx, renderPlan, width, height, settings);

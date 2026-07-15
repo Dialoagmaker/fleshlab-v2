@@ -21,12 +21,12 @@ export function calculateCrop(image, analysis, outputWidth, outputHeight, varian
   const subject = analysis.subjectBox;
   const cx = (subject.x + subject.w / 2) * image.width;
   const cy = (subject.y + subject.h / 2) * image.height;
-  const variantBias = variant === "title" || variant === "brand_hero" || variant === "editorial" ? (analysis.subjectSide === "left" ? -0.14 : 0.14) : variant === "environment" || variant === "floating" ? -0.06 : 0;
-  let sx = cx - sw * (0.5 + variantBias);
+  const commercialBias = variant === "performer" || variant === "close_hero" ? 0.18 : 0.13;
+  let sx = cx - sw * (0.5 + commercialBias);
   let sy = cy - sh * 0.46;
 
-  const autoZoom = family?.cropZoom || (variant === "close_hero" ? 1.14 : variant === "minimal" ? 0.96 : 1);
-  const zoom = isManual(settings, "zoom") ? clamp(Number(settings.zoom) || 1, 0.7, 2.2) : clamp(autoZoom, 0.7, 2.2);
+  const autoZoom = Math.max(family?.cropZoom || 1, variant === "performer" || variant === "close_hero" ? 1.22 : 1.12);
+  const zoom = isManual(settings, "zoom") ? clamp(Number(settings.zoom) || 1, 0.7, 2.4) : clamp(autoZoom, 0.85, 2.4);
   if (zoom !== 1) {
     const centerX = sx + sw / 2;
     const centerY = sy + sh / 2;
@@ -45,57 +45,31 @@ export function calculateCrop(image, analysis, outputWidth, outputHeight, varian
 }
 
 export function calculateTextArea(analysis, variant = "balanced", settings = {}) {
-  const ns = analysis.negativeSpace;
-  const subject = analysis.subjectBox;
-  const leftOpen = subject.x > 0.42 || subject.x + subject.w / 2 > 0.5;
-  let area;
-
-  if (variant === "title" || variant === "brand_hero") {
-    area = leftOpen ? { x: 0.055, y: 0.15, w: 0.48, h: 0.74, align: "left" } : { x: 0.49, y: 0.15, w: 0.45, h: 0.74, align: "left" };
-  } else if (variant === "performer" || variant === "close_hero") {
-    area = leftOpen ? { x: 0.055, y: 0.14, w: 0.48, h: 0.74, align: "left" } : { x: 0.49, y: 0.14, w: 0.45, h: 0.74, align: "left" };
-  } else if (variant === "floating") {
-    area = leftOpen ? { x: 0.08, y: 0.18, w: 0.4, h: 0.32, align: "left" } : { x: 0.52, y: 0.18, w: 0.4, h: 0.32, align: "left" };
-  } else if (variant === "minimal") {
-    area = { x: 0.08, y: 0.72, w: 0.44, h: 0.18, align: "left" };
-  } else if (variant === "editorial") {
-    area = { x: 0.055, y: 0.1, w: 0.48, h: 0.48, align: "left" };
-  } else if (variant === "premium" || variant === "emotional") {
-    area = leftOpen ? { x: 0.07, y: 0.54, w: 0.38, h: 0.24, align: "left" } : { x: 0.56, y: 0.54, w: 0.38, h: 0.24, align: "left" };
-  } else if (variant === "action") {
-    area = leftOpen ? { x: 0.06, y: 0.31, w: 0.45, h: 0.38, align: "left" } : { x: 0.55, y: 0.31, w: 0.4, h: 0.38, align: "left" };
-  } else if (analysis.subjectSide === "center") {
-    area = { x: 0.07, y: 0.66, w: 0.56, h: 0.25, align: "left" };
-  } else {
-    area = {
-      x: Math.max(0.05, Math.min(0.58, ns.x)),
-      y: Math.max(0.18, Math.min(0.64, ns.y + 0.04)),
-      w: Math.max(0.32, Math.min(0.46, ns.w + 0.13)),
-      h: Math.max(0.25, Math.min(0.42, ns.h + 0.12)),
-      align: "left",
-    };
-  }
-
   const margin = safeMargin(settings);
-  if (isManual(settings, "titleY")) area.y = clamp((Number(settings.titleY) || 57) / 100, margin, 1 - margin - area.h);
-  area.x = clamp(area.x, margin, 1 - margin - area.w);
+  const designZoneWidth = clamp(variant === "performer" ? 0.42 : 0.39, 0.3, 0.45);
+  const area = {
+    x: margin,
+    y: variant === "title" ? 0.085 : 0.095,
+    w: Math.max(0.28, designZoneWidth - margin * 1.55),
+    h: 0.82,
+    align: "left",
+  };
+
+  if (isManual(settings, "titleY")) area.y = clamp((Number(settings.titleY) || 10) / 100, margin, 1 - margin - area.h);
+  area.x = clamp(area.x, margin, 0.45 - area.w);
   area.y = clamp(area.y, margin, 1 - margin - area.h);
   return area;
 }
 
 export function calculateLogoArea(textArea, variant = "balanced", settings = {}, family = {}) {
   const margin = safeMargin(settings);
-  let logoArea;
-  if (variant === "title" || variant === "brand_hero" || family.id === "commercial-thumbnail") logoArea = { x: textArea.x, y: textArea.y, w: 0.34 };
-  else if (variant === "performer" || variant === "close_hero") logoArea = { x: textArea.x, y: textArea.y, w: 0.3 };
-  else if (variant === "minimal" || family.id === "minimal-poster") logoArea = { x: textArea.x, y: textArea.y, w: 0.24 };
-  else logoArea = { x: textArea.x, y: textArea.y, w: 0.3 };
+  const logoArea = { x: textArea.x, y: textArea.y, w: 0.18 };
 
-  if (isManual(settings, "logoScale")) logoArea.w *= clamp((Number(settings.logoScale) || 100) / 100, 0.4, 3.2);
-  logoArea.w = clamp(logoArea.w, 0.08, Math.min(0.42, 1 - margin * 2));
+  if (isManual(settings, "logoScale")) logoArea.w *= clamp((Number(settings.logoScale) || 100) / 100, 0.85, 1.35);
+  logoArea.w = clamp(logoArea.w, 0.15, 0.2);
   if (isManual(settings, "logoX")) logoArea.x += (Number(settings.logoX) || 0) / 100;
   if (isManual(settings, "logoY")) logoArea.y += (Number(settings.logoY) || 0) / 100;
-  logoArea.x = clamp(logoArea.x, margin, 1 - margin - logoArea.w);
+  logoArea.x = clamp(logoArea.x, margin, 0.45 - logoArea.w);
   logoArea.y = clamp(logoArea.y, margin, 1 - margin - logoArea.w * 0.35);
   return logoArea;
 }
@@ -108,12 +82,9 @@ export function shouldShowFooter(analysis, variant = "balanced", family = {}) {
 export function calculateComposition(image, analysis, family, width, height, variant = "balanced", settings = {}) {
   const crop = calculateCrop(image, analysis, width, height, variant, settings, family);
   const textArea = calculateTextArea(analysis, variant, settings);
-  if (family?.id && family.id !== "minimal-poster" && textArea.x > 0.12) {
-    textArea.x = safeMargin(settings);
-    textArea.w = Math.max(textArea.w, 0.46);
-  }
   const logoArea = calculateLogoArea(textArea, variant, settings, family);
+  const designZone = { x: 0, y: 0, w: clamp(textArea.w + textArea.x + safeMargin(settings) * 0.85, 0.3, 0.45), h: 1 };
   const footerVisible = shouldShowFooter(analysis, variant, family);
-  const layoutScore = Math.min(1, 0.5 + analysis.negativeSpace.score * 0.32 + analysis.subjectDominance * 0.18 + (family?.id === "commercial-thumbnail" ? 0.06 : 0));
-  return { crop, textArea, logoArea, footerVisible, footerY: 1 - safeMargin(settings) - 0.025, variant, familyId: family.id, layoutScore };
+  const layoutScore = Math.min(1, 0.72 + (family?.id === "commercial-thumbnail" ? 0.1 : 0) + (variant === "title" ? 0.06 : 0));
+  return { crop, textArea, logoArea, designZone, footerVisible, footerY: 1 - safeMargin(settings) - 0.025, variant, familyId: family.id, layoutScore };
 }

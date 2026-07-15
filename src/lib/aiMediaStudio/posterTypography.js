@@ -44,27 +44,31 @@ export function buildTitleLines(ctx, text, maxWidth, startSize, minSize, family 
   return { lines: [String(text || "")], size: minSize, lineHeight: minSize * 0.84, score: 0.42 };
 }
 
-export function calculateTypography(ctx, box, width, family, metadata, settings = {}) {
+export function calculateTypography(ctx, box, width, family, metadata, settings = {}, height = width * 9 / 16) {
   const { title, subtitle } = splitTitle(metadata);
   const performer = upper(metadata.performerName);
-  const performerCredit = performer ? `STARRING ${performer}` : "";
+  const performerCredit = performer;
   const maxWidth = width * box.w;
 
-  const titleStart = isManual(settings, "titleSize") ? Number(settings.titleSize) || width * family.typography.titleScale : width * family.typography.titleScale * 1.18;
-  const titleMin = isManual(settings, "titleSize") ? titleStart : width * 0.07;
-  const titleBlock = buildTitleLines(ctx, title, maxWidth, titleStart, titleMin, family.typography.titleFont, 3);
+  const targetTitleBlockHeight = height * box.h * 0.44;
+  const aggressiveStart = Math.max(width * (family?.typography?.titleScale || 0.12) * 1.36, targetTitleBlockHeight / 1.7);
+  const titleStart = isManual(settings, "titleSize") ? Number(settings.titleSize) || aggressiveStart : aggressiveStart;
+  const titleMin = isManual(settings, "titleSize") ? titleStart : width * 0.095;
+  const titleBlock = buildTitleLines(ctx, title, maxWidth, titleStart, titleMin, family.typography.titleFont, 4);
 
-  const autoSubtitleSize = Math.max(width * 0.026, Math.min(width * 0.054, maxWidth / Math.max(7, subtitle.length || 9)));
+  const autoSubtitleSize = Math.max(width * 0.022, Math.min(width * 0.038, maxWidth / Math.max(10, subtitle.length || 14)));
   const subtitleStart = isManual(settings, "subtitleSize") ? Number(settings.subtitleSize) || autoSubtitleSize : autoSubtitleSize;
-  const subtitleBlock = buildTitleLines(ctx, subtitle, maxWidth, subtitleStart, Math.max(width * 0.022, subtitleStart * 0.72), family.typography.accentFont, 2);
+  const subtitleBlock = buildTitleLines(ctx, subtitle, maxWidth, subtitleStart, Math.max(width * 0.019, subtitleStart * 0.72), family.typography.accentFont, 2);
 
-  const autoPerformerSize = Math.max(width * 0.026, Math.min(width * 0.044, maxWidth / Math.max(9, performerCredit.length || 12)));
+  const autoPerformerSize = Math.max(width * 0.036, Math.min(width * 0.064, maxWidth / Math.max(7, performerCredit.length || 10)));
   const performerStart = isManual(settings, "performerSize") ? Number(settings.performerSize) || autoPerformerSize : autoPerformerSize;
-  const performerBlock = buildTitleLines(ctx, performerCredit, maxWidth, performerStart, Math.max(width * 0.02, performerStart * 0.72), "Inter", 2);
+  const performerBlock = buildTitleLines(ctx, performerCredit, maxWidth, performerStart, Math.max(width * 0.03, performerStart * 0.76), "Inter", 2);
 
   const subtitleHeight = subtitleBlock.lines.length ? subtitleBlock.lines.length * subtitleBlock.lineHeight + subtitleBlock.size * 0.18 : 0;
-  const performerHeight = performerBlock.lines.length ? performerBlock.lines.length * performerBlock.lineHeight + performerBlock.size * 0.36 : 0;
-  const totalHeight = titleBlock.lines.length * titleBlock.lineHeight + subtitleHeight + performerHeight;
+  const performerHeight = performerBlock.lines.length ? performerBlock.lines.length * performerBlock.lineHeight + performerBlock.size * 0.24 : 0;
+  const titleHeight = titleBlock.lines.length * titleBlock.lineHeight;
+  const totalHeight = titleHeight + subtitleHeight + performerHeight;
+  const titleDominance = Math.min(1, titleHeight / Math.max(1, height * box.h * 0.35));
 
   return {
     title,
@@ -79,7 +83,9 @@ export function calculateTypography(ctx, box, width, family, metadata, settings 
     performerLines: performerBlock.lines,
     performerSize: performerBlock.size,
     performerLineHeight: performerBlock.lineHeight,
+    titleHeight,
     totalHeight,
-    score: titleBlock.score,
+    titleDominance,
+    score: Math.min(1, titleBlock.score * 0.48 + titleDominance * 0.52),
   };
 }
