@@ -17,9 +17,52 @@ function loadImage(src) {
 }
 
 let logoPromise;
+let logoCrop;
 function getLogo() {
   if (!logoPromise) logoPromise = loadImage(OFFICIAL_LOGO_URL);
   return logoPromise;
+}
+
+function getLogoCrop(logo) {
+  if (logoCrop) return logoCrop;
+  const full = { sx: 0, sy: 0, sw: logo.width, sh: logo.height };
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = logo.width;
+    canvas.height = logo.height;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(logo, 0, 0);
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let minX = canvas.width;
+    let minY = canvas.height;
+    let maxX = 0;
+    let maxY = 0;
+    for (let y = 0; y < canvas.height; y += 1) {
+      for (let x = 0; x < canvas.width; x += 1) {
+        if (data[(y * canvas.width + x) * 4 + 3] > 8) {
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x);
+          maxY = Math.max(maxY, y);
+        }
+      }
+    }
+    if (minX > maxX || minY > maxY) logoCrop = full;
+    else {
+      const pad = 4;
+      const sx = Math.max(0, minX - pad);
+      const sy = Math.max(0, minY - pad);
+      logoCrop = {
+        sx,
+        sy,
+        sw: Math.min(canvas.width - sx, maxX - minX + 1 + pad * 2),
+        sh: Math.min(canvas.height - sy, maxY - minY + 1 + pad * 2),
+      };
+    }
+  } catch (error) {
+    logoCrop = full;
+  }
+  return logoCrop;
 }
 
 function isManual(settings, key) {
@@ -155,13 +198,14 @@ function drawTitle(ctx, typography, composition, width, height, family) {
 
 async function drawLogo(ctx, composition, width, height) {
   const logo = await getLogo();
+  const source = getLogoCrop(logo);
   const w = width * composition.logoArea.w;
-  const h = w * (logo.height / logo.width);
+  const h = w * (source.sh / source.sw);
   ctx.save();
-  ctx.globalAlpha = 0.88;
-  ctx.shadowColor = "rgba(0,0,0,0.8)";
-  ctx.shadowBlur = width * 0.006;
-  ctx.drawImage(logo, width * composition.logoArea.x, height * composition.logoArea.y, w, h);
+  ctx.globalAlpha = 0.94;
+  ctx.shadowColor = "rgba(0,0,0,0.82)";
+  ctx.shadowBlur = width * 0.008;
+  ctx.drawImage(logo, source.sx, source.sy, source.sw, source.sh, width * composition.logoArea.x, height * composition.logoArea.y, w, h);
   ctx.restore();
 }
 

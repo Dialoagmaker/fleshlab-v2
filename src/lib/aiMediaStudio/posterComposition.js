@@ -86,13 +86,13 @@ export function calculateTextArea(analysis, variant = "balanced", settings = {})
 export function calculateLogoArea(textArea, variant = "balanced", settings = {}, family = {}) {
   const margin = safeMargin(settings);
   let logoArea;
-  if (variant === "title" || variant === "brand_hero" || family.id === "commercial-thumbnail") logoArea = { x: textArea.x, y: 0.06, w: 0.155 };
-  else if (variant === "performer" || variant === "close_hero") logoArea = { x: 0.055, y: 0.06, w: 0.14 };
-  else if (variant === "minimal" || family.id === "minimal-poster") logoArea = { x: textArea.x, y: Math.max(0.055, textArea.y - 0.18), w: 0.11 };
-  else logoArea = { x: textArea.x, y: Math.max(0.05, textArea.y - 0.25), w: 0.148 };
+  if (variant === "title" || variant === "brand_hero" || family.id === "commercial-thumbnail") logoArea = { x: textArea.x, y: 0.06, w: 0.22 };
+  else if (variant === "performer" || variant === "close_hero") logoArea = { x: 0.055, y: 0.06, w: 0.19 };
+  else if (variant === "minimal" || family.id === "minimal-poster") logoArea = { x: textArea.x, y: Math.max(0.055, textArea.y - 0.18), w: 0.16 };
+  else logoArea = { x: textArea.x, y: Math.max(0.05, textArea.y - 0.25), w: 0.2 };
 
-  if (isManual(settings, "logoScale")) logoArea.w *= clamp((Number(settings.logoScale) || 100) / 100, 0.6, 1.5);
-  logoArea.w = clamp(logoArea.w, 0.08, Math.min(0.22, 1 - margin * 2));
+  if (isManual(settings, "logoScale")) logoArea.w *= clamp((Number(settings.logoScale) || 100) / 100, 0.4, 3.2);
+  logoArea.w = clamp(logoArea.w, 0.08, Math.min(0.42, 1 - margin * 2));
   if (isManual(settings, "logoX")) logoArea.x += (Number(settings.logoX) || 0) / 100;
   if (isManual(settings, "logoY")) logoArea.y += (Number(settings.logoY) || 0) / 100;
   logoArea.x = clamp(logoArea.x, margin, 1 - margin - logoArea.w);

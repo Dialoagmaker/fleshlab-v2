@@ -25,8 +25,10 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
   const [plan, setPlan] = useState(null);
   const [rendered, setRendered] = useState(false);
   const [error, setError] = useState('');
+  const renderSeqRef = useRef(0);
   const dims = getCoverDimensions(settings);
   const key = JSON.stringify({ metadata, width: dims.width, height: dims.height, frame: frame?.index });
+  const settingsKey = JSON.stringify(settings);
 
   useEffect(() => {
     let active = true;
@@ -56,6 +58,8 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
     if (!plan || !imageRef.current || !winnerCanvasRef.current) return;
     window.cancelAnimationFrame(rafRef.current);
     setRendered(false);
+    const renderSeq = renderSeqRef.current + 1;
+    renderSeqRef.current = renderSeq;
     const frameId = window.requestAnimationFrame(async () => {
       try {
         const visibleCandidates = plan.variants.slice(0, 4);
@@ -65,15 +69,17 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
           return renderPosterVariantToCanvas(canvas, imageRef.current, plan, candidate, settings, dims.width, dims.height);
         }));
         await renderPosterVariantToCanvas(winnerCanvasRef.current, imageRef.current, plan, plan.selected, settings, dims.width, dims.height);
+        if (renderSeq !== renderSeqRef.current) return;
         setRendered(true);
         setError('');
       } catch (err) {
+        if (renderSeq !== renderSeqRef.current) return;
         setError(err.message || 'v3 candidate render failed');
       }
     });
     rafRef.current = frameId;
     return () => window.cancelAnimationFrame(frameId);
-  }, [plan, settings, metadata, dims.width, dims.height]);
+  }, [plan, settingsKey, metadata, dims.width, dims.height]);
 
   const download = async (type) => {
     if (!rendered || !winnerCanvasRef.current) return;
