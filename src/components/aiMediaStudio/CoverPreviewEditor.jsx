@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Download } from "lucide-react";
 import { canvasToBlob, getCoverDimensions, renderCoverToCanvas } from "@/lib/aiMediaStudio/coverRenderer";
 
-export default function CoverPreviewEditor({ frame, metadata, settings }) {
+export default function CoverPreviewEditor({ frame, metadata, settings, fileSuffix = "cover" }) {
   const canvasRef = useRef(null);
   const [rendered, setRendered] = useState(false);
   const [error, setError] = useState("");
@@ -26,7 +26,7 @@ export default function CoverPreviewEditor({ frame, metadata, settings }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `fleshlab_cover_${dims.width}x${dims.height}.${ext}`;
+    a.download = `fleshlab_${fileSuffix}_${dims.width}x${dims.height}.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
   };

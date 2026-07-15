@@ -5,7 +5,7 @@ import CoverAdjustmentControls from "./CoverAdjustmentControls";
 import CoverFramePicker from "./CoverFramePicker";
 import CoverMetadataForm from "./CoverMetadataForm";
 import CoverPresetControls from "./CoverPresetControls";
-import CoverPreviewEditor from "./CoverPreviewEditor";
+import CoverVariantCompare from "./CoverVariantCompare";
 import OpenRouterCoverMode from "./OpenRouterCoverMode";
 import { DEFAULT_COVER_SETTINGS } from "@/lib/aiMediaStudio/coverRenderer";
 import { Button } from "@/components/ui/button";
@@ -26,10 +26,7 @@ export default function CoverGeneratorPanel({ item }) {
   return (
     <div className="space-y-4">
       <Card><CardHeader><CardTitle className="flex items-center justify-between gap-3 text-sm">Cover generation mode <Badge variant="outline">Video stays local</Badge></CardTitle></CardHeader><CardContent className="space-y-5"><div className="grid gap-2 sm:grid-cols-2"><Button variant={coverMode === "local" ? "default" : "outline"} onClick={() => setCoverMode("local")}>Local Template Cover</Button><Button variant={coverMode === "openrouter" ? "default" : "outline"} onClick={() => setCoverMode("openrouter")}>OpenRouter Frame Enhancement</Button></div><CoverFramePicker frames={item.frames} selectedIndex={actualIndex} onSelect={setSelectedFrameIndex} onBestFrame={setSelectedFrameIndex} /><CoverMetadataForm metadata={metadata} onChange={setMetadata} /><CoverPresetControls settings={settings} onChange={setSettings} /><CoverAdjustmentControls settings={settings} onChange={setSettings} /></CardContent></Card>
-      {!frame ? <Card><CardContent className="p-6 text-sm font-semibold text-destructive">No suitable hero frame found</CardContent></Card> : coverMode === "local" ? <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
-        <Card><CardContent className="p-4"><CoverPreviewEditor frame={frame} metadata={metadata} settings={settings} /></CardContent></Card>
-        <Card><CardHeader><CardTitle className="text-sm">Future local generative mode</CardTitle></CardHeader><CardContent className="space-y-2 text-sm text-muted-foreground"><p>Defined for a future Local Desktop Worker only: background extension, relighting, restoration, controlled stylization, and wider compositions.</p><p>No external generation API is used here, and no frame leaves the computer.</p></CardContent></Card>
-      </div> : <OpenRouterCoverMode frame={frame} metadata={metadata} settings={settings} />}
+      {!frame ? <Card><CardContent className="p-6 text-sm font-semibold text-destructive">No suitable hero frame found</CardContent></Card> : coverMode === "local" ? <CoverVariantCompare frame={frame} metadata={metadata} settings={settings} itemFileName={item?.fileName} /> : <OpenRouterCoverMode frame={frame} metadata={metadata} settings={settings} />}
     </div>
   );
 }

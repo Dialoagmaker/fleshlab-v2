@@ -1,3 +1,5 @@
+const OFFICIAL_LOGO_URL = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a1f9333f9_ChatGPTImageJul14202612_16_43AM.png";
+
 export const COVER_FORMATS = [
   { id: "landscape", label: "16:9 Landscape", width: 1920, height: 1080 },
   { id: "post", label: "4:5 Promotional Post", width: 1080, height: 1350 },
@@ -56,6 +58,16 @@ export async function blobToCanvasImage(blob) {
   });
 }
 
+function loadCanvasImage(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Official logo asset could not be loaded"));
+    image.src = src;
+  });
+}
+
 function seededNoise(index) {
   const value = Math.sin(index * 999.123) * 10000;
   return value - Math.floor(value);
@@ -97,28 +109,16 @@ function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
   return drawn;
 }
 
-function drawLogo(ctx, width, height, preset, settings, margin) {
-  const logoW = Math.max(250, width * 0.265);
-  const logoH = Math.max(58, height * 0.078);
+async function drawOfficialLogo(ctx, width, height, margin) {
+  const logo = await loadCanvasImage(OFFICIAL_LOGO_URL);
+  const logoW = Math.max(300, width * 0.31);
+  const logoH = logoW * (logo.height / logo.width);
   const x = margin;
-  const y = margin;
+  const y = margin * 0.78;
   ctx.save();
-  ctx.textAlign = "left";
-  ctx.strokeStyle = "rgba(255,255,255,0.88)";
-  ctx.lineWidth = Math.max(2, width * 0.002);
-  ctx.strokeRect(x, y, logoW, logoH);
-  ctx.fillStyle = "rgba(0,0,0,0.45)";
-  ctx.fillRect(x, y, logoW, logoH);
-  ctx.fillStyle = "#ffffff";
-  ctx.font = `900 ${logoH * 0.63}px Impact, Arial Black, sans-serif`;
-  ctx.fillText("FLESH", x + logoW * 0.05, y + logoH * 0.72);
-  const fleshW = ctx.measureText("FLESH").width;
-  ctx.fillStyle = preset.red;
-  ctx.fillText("LAB", x + logoW * 0.05 + fleshW, y + logoH * 0.72);
-  ctx.fillStyle = preset.red;
-  ctx.font = `800 ${Math.max(14, width * 0.014)}px Arial Black, sans-serif`;
-  ctx.letterSpacing = `${Math.max(4, width * 0.006)}px`;
-  ctx.fillText("AMATEUR WINS.", x + logoW * 0.01, y + logoH + height * 0.045);
+  ctx.shadowColor = "rgba(0,0,0,0.78)";
+  ctx.shadowBlur = width * 0.012;
+  ctx.drawImage(logo, x, y, logoW, logoH);
   ctx.restore();
 }
 
@@ -180,7 +180,7 @@ function drawCampaignLabel(ctx, text, x, y, width, preset) {
   ctx.fillStyle = preset.red;
   ctx.fillRect(0, 0, width, Math.max(32, width * 0.07));
   ctx.fillStyle = "#ffffff";
-  ctx.font = `800 ${Math.max(18, width * 0.04)}px Arial Black, sans-serif`;
+  ctx.font = `400 ${Math.max(18, width * 0.04)}px Bebas Neue, Impact, Arial Black, sans-serif`;
   ctx.fillText(String(text).toUpperCase(), width * 0.06, width * 0.052);
   ctx.restore();
 }
@@ -189,6 +189,7 @@ export async function renderCoverToCanvas(canvas, frameBlob, metadata, settings)
   const preset = COVER_PRESETS.find(item => item.id === settings.presetId) || COVER_PRESETS[0];
   const { width, height } = getCoverDimensions(settings);
   const image = await blobToCanvasImage(frameBlob);
+  if (document?.fonts?.load) await document.fonts.load("400 80px Bebas Neue");
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d");
@@ -206,7 +207,7 @@ export async function renderCoverToCanvas(canvas, frameBlob, metadata, settings)
   ctx.fillRect(0, 0, width, height);
 
   const margin = Math.round(width * (Number(settings.safeMargin || 7) / 100));
-  drawLogo(ctx, width, height, preset, settings, margin);
+  await drawOfficialLogo(ctx, width, height, margin);
 
   ctx.textAlign = "left";
   ctx.shadowColor = "rgba(0,0,0,0.85)";
@@ -220,12 +221,16 @@ export async function renderCoverToCanvas(canvas, frameBlob, metadata, settings)
 
   const titleSize = Math.max(34, Number(settings.titleSize || 118) * width / 1920);
   const subtitleSize = Math.max(24, Number(settings.subtitleSize || 64) * width / 1920);
+  const mainTitle = metadata.performerName || metadata.videoTitle || "TITLE";
+  const subtitle = metadata.performerName ? metadata.videoTitle : (metadata.optionalSubtitle || metadata.contentType || "");
   ctx.fillStyle = "#ffffff";
-  ctx.font = `900 ${titleSize}px Impact, Arial Black, sans-serif`;
-  const lines = drawWrappedText(ctx, metadata.performerName || "TITLE", margin, titleY, textMax, titleSize * 0.93, 2);
-  ctx.fillStyle = preset.red;
-  ctx.font = `900 ${subtitleSize}px Impact, Arial Black, sans-serif`;
-  drawWrappedText(ctx, metadata.videoTitle || "SUBTITLE", margin, titleY + lines * titleSize * 0.92 + height * 0.035, textMax, subtitleSize * 1.02, 2);
+  ctx.font = `400 ${titleSize}px Bebas Neue, Impact, Arial Black, sans-serif`;
+  const lines = drawWrappedText(ctx, mainTitle, margin, titleY, textMax, titleSize * 0.93, 2);
+  if (subtitle) {
+    ctx.fillStyle = preset.red;
+    ctx.font = `400 ${subtitleSize}px Bebas Neue, Impact, Arial Black, sans-serif`;
+    drawWrappedText(ctx, subtitle, margin, titleY + lines * titleSize * 0.92 + height * 0.035, textMax, subtitleSize * 1.02, 2);
+  }
 
   const underlineY = Math.min(height - height * 0.2, titleY + lines * titleSize + subtitleSize * 1.65);
   const underline = ctx.createLinearGradient(margin, 0, margin + textMax, 0);
@@ -243,7 +248,7 @@ export async function renderCoverToCanvas(canvas, frameBlob, metadata, settings)
   ctx.fillStyle = preset.red;
   ctx.fillRect(0, height - barH, width, Math.max(5, height * 0.007));
   const points = String(settings.sellingPoints || "").split(/\n|,/).map(item => item.trim()).filter(Boolean).slice(0, 3);
-  ctx.font = `800 ${Math.max(13, width * 0.013)}px Arial Black, sans-serif`;
+  ctx.font = `400 ${Math.max(13, width * 0.015)}px Bebas Neue, Impact, Arial Black, sans-serif`;
   points.forEach((point, index) => {
     const x = margin + index * (width - margin * 2) / 3;
     ctx.strokeStyle = preset.red;
