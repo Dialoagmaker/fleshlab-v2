@@ -9,18 +9,19 @@ const VARIANTS = [
     description: "Classic left-title FLESHLAB poster",
     settings: {
       presetId: "cinematic",
-      zoom: 1.08,
-      x: 0,
+      zoom: 1.18,
+      x: -18,
       y: 0,
-      brightness: 98,
+      brightness: 102,
       contrast: 116,
-      saturation: 104,
+      saturation: 108,
       titleSize: 126,
       subtitleSize: 58,
       titleY: 43,
-      gradientStrength: 84,
-      borderTexture: 88,
-      sellingPoints: "RAW & AUTHENTIC\nCINEMATIC CUT\nAMATEUR WINS"
+      gradientStrength: 92,
+      borderTexture: 90,
+      showSafeMargins: false,
+      sellingPoints: "EXCLUSIVE CONTENT\nHIGH QUALITY VIDEO\nONLY ON FLESHLAB"
     }
   },
   {
@@ -29,18 +30,19 @@ const VARIANTS = [
     description: "Harder red-grunge studio campaign",
     settings: {
       presetId: "raw",
-      zoom: 1.16,
-      x: -8,
+      zoom: 1.28,
+      x: -28,
       y: 0,
-      brightness: 94,
-      contrast: 124,
-      saturation: 112,
+      brightness: 98,
+      contrast: 128,
+      saturation: 116,
       titleSize: 112,
       subtitleSize: 54,
       titleY: 49,
-      gradientStrength: 92,
+      gradientStrength: 96,
       borderTexture: 100,
-      sellingPoints: "REAL PERFORMER\nUNCUT ENERGY\nFLESHLAB ORIGINAL"
+      showSafeMargins: false,
+      sellingPoints: "EXCLUSIVE CONTENT\nHIGH QUALITY VIDEO\nONLY ON FLESHLAB"
     }
   }
 ];
