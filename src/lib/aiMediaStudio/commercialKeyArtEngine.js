@@ -8,16 +8,14 @@ const TARGET_COMMERCIAL_AD_SCORE = 84;
 const OFFICIAL_LOGO_URL = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a1f9333f9_ChatGPTImageJul14202612_16_43AM.png";
 
 const COMMERCIAL_PHILOSOPHIES = [
-  { id: "netflix-drama", label: "Netflix Drama", geometry: "fractured-spotlight", titleSide: "left", heroBias: 0.62, titleScale: 1.04, logo: "under-title", graphicRatio: 0.64, depth: 0.78, titleDominance: 0.72, brand: 0.76, believability: 0.79 },
-  { id: "aaa-game-cover", label: "AAA Game Cover", geometry: "impact-vortex", titleSide: "bottom-left", heroBias: 0.5, titleScale: 1.16, logo: "top-left", graphicRatio: 0.7, depth: 0.9, titleDominance: 0.82, brand: 0.78, believability: 0.84 },
-  { id: "cinema-poster", label: "Cinema Poster", geometry: "monumental-arc", titleSide: "bottom", heroBias: 0.54, titleScale: 1.1, logo: "top-left", graphicRatio: 0.68, depth: 0.86, titleDominance: 0.8, brand: 0.82, believability: 0.86 },
-  { id: "luxury-magazine", label: "Luxury Magazine", geometry: "editorial-frame", titleSide: "right", heroBias: 0.46, titleScale: 0.9, logo: "top-right", graphicRatio: 0.61, depth: 0.74, titleDominance: 0.64, brand: 0.86, believability: 0.82 },
-  { id: "premium-streaming-thumbnail", label: "Premium Streaming Thumbnail", geometry: "thumbnail-burst", titleSide: "left", heroBias: 0.64, titleScale: 1.18, logo: "under-title", graphicRatio: 0.72, depth: 0.88, titleDominance: 0.88, brand: 0.84, believability: 0.9 },
-  { id: "sports-documentary", label: "Sports Documentary", geometry: "documentary-motion", titleSide: "bottom-left", heroBias: 0.58, titleScale: 1, logo: "top-left", graphicRatio: 0.66, depth: 0.82, titleDominance: 0.74, brand: 0.78, believability: 0.83 },
-  { id: "cinematic-character-poster", label: "Cinematic Character Poster", geometry: "character-shrine", titleSide: "bottom", heroBias: 0.5, titleScale: 1.06, logo: "top-left", graphicRatio: 0.65, depth: 0.9, titleDominance: 0.78, brand: 0.8, believability: 0.87 },
-  { id: "lifestyle-campaign", label: "Lifestyle Campaign", geometry: "campaign-diagonal", titleSide: "right", heroBias: 0.44, titleScale: 0.88, logo: "top-right", graphicRatio: 0.62, depth: 0.76, titleDominance: 0.66, brand: 0.82, believability: 0.8 },
-  { id: "editorial-fashion", label: "Editorial Fashion", geometry: "fashion-negative-space", titleSide: "right", heroBias: 0.48, titleScale: 0.82, logo: "top-right", graphicRatio: 0.6, depth: 0.72, titleDominance: 0.58, brand: 0.88, believability: 0.81 },
-  { id: "commercial-advertising", label: "Commercial Advertising", geometry: "ad-system", titleSide: "left", heroBias: 0.6, titleScale: 1.08, logo: "under-title", graphicRatio: 0.74, depth: 0.86, titleDominance: 0.86, brand: 0.92, believability: 0.92 },
+  { id: "netflix-original", label: "Netflix Original", geometry: "fractured-spotlight", titleSide: "left", heroBias: 0.62, titleScale: 1.04, logo: "under-title", graphicRatio: 0.64, depth: 0.78, titleDominance: 0.72, brand: 0.76, believability: 0.79, typographyFamily: "condensed-streaming", colorLanguage: "black-red-white", hierarchy: "series-title-first", logoStrategy: "under-title" },
+  { id: "luxury-fashion", label: "Luxury Fashion", geometry: "fashion-negative-space", titleSide: "right", heroBias: 0.46, titleScale: 0.82, logo: "top-right", graphicRatio: 0.6, depth: 0.72, titleDominance: 0.58, brand: 0.9, believability: 0.84, typographyFamily: "editorial-serif-feel", colorLanguage: "warm-black-gold", hierarchy: "image-first", logoStrategy: "quiet-corner" },
+  { id: "street-campaign", label: "Street Campaign", geometry: "campaign-diagonal", titleSide: "bottom-left", heroBias: 0.58, titleScale: 1.22, logo: "top-left", graphicRatio: 0.76, depth: 0.82, titleDominance: 0.86, brand: 0.78, believability: 0.82, typographyFamily: "poster-block", colorLanguage: "raw-red-monochrome", hierarchy: "slogan-first", logoStrategy: "sticker-brand" },
+  { id: "movie-poster", label: "Movie Poster", geometry: "monumental-arc", titleSide: "bottom", heroBias: 0.54, titleScale: 1.1, logo: "top-left", graphicRatio: 0.68, depth: 0.86, titleDominance: 0.8, brand: 0.82, believability: 0.86, typographyFamily: "cinema-title", colorLanguage: "cinematic-red-shadow", hierarchy: "character-first", logoStrategy: "studio-mark" },
+  { id: "youtube-thumbnail", label: "YouTube Thumbnail", geometry: "thumbnail-burst", titleSide: "left", heroBias: 0.64, titleScale: 1.28, logo: "under-title", graphicRatio: 0.78, depth: 0.86, titleDominance: 0.92, brand: 0.74, believability: 0.8, typographyFamily: "loud-thumbnail", colorLanguage: "high-click-red-white", hierarchy: "instant-hook", logoStrategy: "small-proof" },
+  { id: "magazine-cover", label: "Magazine Cover", geometry: "editorial-frame", titleSide: "right", heroBias: 0.44, titleScale: 0.9, logo: "top-right", graphicRatio: 0.62, depth: 0.76, titleDominance: 0.66, brand: 0.86, believability: 0.82, typographyFamily: "magazine-stack", colorLanguage: "cream-black-red", hierarchy: "masthead-editorial", logoStrategy: "masthead" },
+  { id: "premium-streaming", label: "Premium Streaming", geometry: "impact-vortex", titleSide: "left", heroBias: 0.64, titleScale: 1.18, logo: "under-title", graphicRatio: 0.72, depth: 0.9, titleDominance: 0.88, brand: 0.84, believability: 0.9, typographyFamily: "platform-ui-bold", colorLanguage: "premium-black-red", hierarchy: "thumbnail-read", logoStrategy: "platform-lockup" },
+  { id: "hbo-documentary", label: "HBO Documentary", geometry: "documentary-motion", titleSide: "bottom-left", heroBias: 0.56, titleScale: 0.98, logo: "top-left", graphicRatio: 0.66, depth: 0.82, titleDominance: 0.74, brand: 0.8, believability: 0.88, typographyFamily: "documentary-minimal", colorLanguage: "natural-shadow-white", hierarchy: "truth-first", logoStrategy: "quiet-authority" },
 ];
 
 function clamp(value, min = 0, max = 1) {
@@ -156,10 +154,10 @@ function buildPlanScore(analysis, language, philosophy, attemptIndex) {
 function orderedPhilosophies(metadata = {}, analysis = {}) {
   const text = `${metadata.videoTitle || ""} ${metadata.optionalSubtitle || ""} ${(metadata.tags || []).join(" ")}`.toLowerCase();
   const preferred = [];
-  if (/sport|fit|gym|training|competition/.test(text)) preferred.push("sports-documentary");
-  if (/luxury|fashion|model|editorial|style/.test(text)) preferred.push("luxury-magazine", "editorial-fashion");
-  if (/movie|cinema|story|drama/.test(text)) preferred.push("cinema-poster", "netflix-drama");
-  if ((analysis.thumbnailImpact || 0) < 0.58) preferred.push("premium-streaming-thumbnail", "aaa-game-cover");
+  if (/sport|fit|gym|training|competition/.test(text)) preferred.push("hbo-documentary", "street-campaign");
+  if (/luxury|fashion|model|editorial|style/.test(text)) preferred.push("luxury-fashion", "magazine-cover");
+  if (/movie|cinema|story|drama/.test(text)) preferred.push("movie-poster", "netflix-original");
+  if ((analysis.thumbnailImpact || 0) < 0.58) preferred.push("youtube-thumbnail", "premium-streaming");
   const seen = new Set();
   return [...preferred, ...COMMERCIAL_PHILOSOPHIES.map(item => item.id)]
     .map(id => COMMERCIAL_PHILOSOPHIES.find(item => item.id === id))
@@ -302,24 +300,32 @@ export async function generateCommercialKeyArtPlan(image, metadata = {}, setting
   const analysis = await analyzePosterImage(image);
   const baseLanguage = inferGraphicLanguage(metadata, analysis);
   const campaign = createCommercialCampaign({ analysis, metadata });
-  const seed = { ...orderedPhilosophies(metadata, analysis)[0], baseId: orderedPhilosophies(metadata, analysis)[0].id, id: `${orderedPhilosophies(metadata, analysis)[0].id}-optimized-1`, optimizationDirectives: ["initial commercial concept"] };
-  const planned = [];
-  let concept = seed;
+  const conceptPhilosophies = orderedPhilosophies(metadata, analysis).slice(0, 8).map((philosophy, index) => ({
+    ...philosophy,
+    baseId: philosophy.id,
+    optimizationDirectives: [
+      `commercial philosophy: ${philosophy.label}`,
+      `typography family: ${philosophy.typographyFamily}`,
+      `color language: ${philosophy.colorLanguage}`,
+      `visual hierarchy: ${philosophy.hierarchy}`,
+      `logo strategy: ${philosophy.logoStrategy}`,
+      index < 4 ? "primary candidate concept" : "secondary candidate concept",
+    ],
+  }));
 
-  for (let index = 0; index < 8; index += 1) {
-    const plan = buildAttemptPlan(image, metadata, settings, width, height, analysis, baseLanguage, campaign, concept, index);
-    planned.push(plan);
-    if (plan.selected.score.passesQualityGate && plan.selected.score.total >= TARGET_COMMERCIAL_AD_SCORE) break;
-    concept = tuneCommercialConcept(concept, plan.selected.score.qualityFailures, plan.selected.score, index + 1);
-  }
+  const planned = conceptPhilosophies.map((philosophy, index) => buildAttemptPlan(image, metadata, settings, width, height, analysis, baseLanguage, campaign, philosophy, index));
+  const selectedPlan = planned.reduce((best, plan) => plan.selected.score.total > best.selected.score.total ? plan : best, planned[0]);
+  const microOptimizedPhilosophy = tuneCommercialConcept(selectedPlan.philosophy, selectedPlan.selected.score.qualityFailures, selectedPlan.selected.score, 1);
+  const microOptimizedPlan = buildAttemptPlan(image, metadata, settings, width, height, analysis, baseLanguage, campaign, microOptimizedPhilosophy, planned.length);
+  const finalPlan = microOptimizedPlan.selected.score.total > selectedPlan.selected.score.total ? microOptimizedPlan : selectedPlan;
 
-  const selectedPlan = planned.find(plan => plan.selected.score.passesQualityGate && plan.selected.score.total >= TARGET_COMMERCIAL_AD_SCORE) || planned.reduce((best, plan) => plan.selected.score.total > best.selected.score.total ? plan : best, planned[0]);
   return {
-    ...selectedPlan,
+    ...finalPlan,
     preparedIterations: planned,
+    microOptimizedPlan,
     variants: planned.map(plan => plan.selected),
     attempts: planned.map(plan => ({ philosophy: plan.philosophy.label, score: plan.selected.score, accepted: plan.selected.score.passesQualityGate && plan.selected.score.total >= TARGET_COMMERCIAL_AD_SCORE, designActions: plan.selected.design_actions, optimizationDirectives: plan.selected.optimization_directives })),
-    winner_reason: selectedPlan.selected.score.passesQualityGate ? `${selectedPlan.philosophy.label} optimized to Commercial Advertising Score ${selectedPlan.selected.score.total}.` : "Optimization did not reach the acceptance gate; the best learned iteration is shown.",
+    winner_reason: `${finalPlan.philosophy.label} selected from ${planned.length} different campaign concepts before micro layout optimization.`,
   };
 }
 
@@ -596,7 +602,7 @@ export async function renderCommercialKeyArtToCanvas(canvas, image, metadata = {
     const scratch = document.createElement("canvas");
     const renderedPlan = await paintCommercialPipeline(scratch, image, iterations[index], settings, width, height);
     const accepted = renderedPlan.selected.score.passesQualityGate && renderedPlan.selected.score.total >= TARGET_COMMERCIAL_AD_SCORE;
-    const attempt = {
+    attempts.push({
       attempt: index + 1,
       philosophy: renderedPlan.philosophy.label,
       impact: renderedPlan.selected.score.total,
@@ -604,25 +610,19 @@ export async function renderCommercialKeyArtToCanvas(canvas, image, metadata = {
       rejectedBecause: renderedPlan.selected.score.qualityFailures,
       designActions: renderedPlan.selected.design_actions,
       optimizationDirectives: renderedPlan.selected.optimization_directives,
-    };
-    attempts.push(attempt);
+    });
 
     if (!bestPlan || renderedPlan.selected.score.total > bestPlan.selected.score.total) {
       bestPlan = renderedPlan;
       bestCanvas = scratch;
     }
-
-    if (accepted) {
-      copyCanvas(scratch, canvas);
-      canvas.__fleshlabPosterPlan = { ...renderedPlan, attempts, winner_reason: `${renderedPlan.philosophy.label} accepted at Commercial Advertising Score ${renderedPlan.selected.score.total} after ${index + 1} art-direction iteration${index ? "s" : ""}.` };
-      return canvas.__fleshlabPosterPlan;
-    }
   }
 
   if (bestCanvas) copyCanvas(bestCanvas, canvas);
   const finalFailures = bestPlan?.selected?.score?.qualityFailures || ["Commercial poster impact threshold not met"];
-  canvas.__fleshlabPosterPlan = { ...bestPlan, attempts, winner_reason: `Rejected after ${attempts.length} optimization iterations: ${finalFailures.join(", ")}.` };
-  throw new Error(`Commercial Key Art rejected after ${attempts.length} optimization iterations: ${finalFailures.join(", ")}`);
+  canvas.__fleshlabPosterPlan = { ...bestPlan, attempts, winner_reason: `${bestPlan?.philosophy?.label || "Best concept"} selected after comparing ${attempts.length} distinct campaign concepts.` };
+  if (bestPlan?.selected?.score?.total >= TARGET_COMMERCIAL_AD_SCORE || bestPlan?.selected?.score?.passesQualityGate) return canvas.__fleshlabPosterPlan;
+  throw new Error(`Best campaign concept rejected by poster quality gate: ${finalFailures.join(", ")}`);
 }
 
 export async function renderPosterToCanvas(canvas, image, metadata, settings, width, height) {
@@ -640,5 +640,8 @@ export function selectPosterVariant(plan) {
 export async function renderPosterVariantToCanvas(canvas, image, plan, variantPlan, settings, width, height) {
   const metadata = plan?.metadata || {};
   const commercialPlan = plan?.preparedIterations ? plan : await generateCommercialKeyArtPlan(image, metadata, settings, width, height);
-  return await renderCommercialKeyArtToCanvas(canvas, image, commercialPlan.metadata, settings, width, height, commercialPlan);
+  const conceptPlan = commercialPlan.preparedIterations?.find(item => item.selected.poster_family_id === variantPlan?.poster_family_id) || commercialPlan;
+  const renderedPlan = await paintCommercialPipeline(canvas, image, conceptPlan, settings, width, height);
+  canvas.__fleshlabPosterPlan = renderedPlan;
+  return renderedPlan;
 }
