@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { isSupportedVideoFile, sampleVideoFrames, rankHeroFrames } from "@/lib/aiMediaStudio/localAnalyzer";
 import { DEFAULT_COVER_SETTINGS, blobToCanvasImage, getCoverDimensions } from "@/lib/aiMediaStudio/coverRenderer";
-import { generatePosterPlan, renderPosterVariantToCanvas } from "@/lib/aiMediaStudio/posterRenderer";
+import { generatePosterPlan, renderPosterVariantToCanvas } from "@/lib/aiMediaStudio/commercialKeyArtEngine";
 import { resolveAnalyzableVideoSource } from "@/lib/videoAssetResolver";
 import { aggregatePreflightDiagnostics, preflightAnalyzableVideoSource } from "@/lib/aiMediaStudio/videoPreflight";
 
@@ -376,7 +376,7 @@ export default function LibraryCoverProof() {
         <CardHeader>
           <CardTitle className="flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
             <span>Proof Gallery Source Diagnostics</span>
-            <Badge variant="outline">Scoring unchanged</Badge>
+            <Badge variant="outline">Commercial Key Art Engine</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download } from "lucide-react";
 import { blobToCanvasImage, canvasToBlob, getCoverDimensions } from "@/lib/aiMediaStudio/coverRenderer";
-import { generatePosterPlan, renderPosterVariantToCanvas, selectPosterVariant } from "@/lib/aiMediaStudio/posterRenderer";
+import { generatePosterPlan, renderPosterVariantToCanvas, selectPosterVariant } from "@/lib/aiMediaStudio/commercialKeyArtEngine";
 
 export default function CoverPreviewEditor({ frame, metadata, settings, fileSuffix = "cover" }) {
   const canvasRef = useRef(null);
@@ -95,7 +95,7 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3"><div><h3 className="font-bold text-foreground">Cinematic poster preview</h3><p className="text-xs text-muted-foreground">{selectedPlan ? `${plan.family.label} · ${selectedPlan.variant} · Quality ${selectedPlan.score.total}/100` : `Exact output size: ${dims.width} × ${dims.height}px`}</p></div>{rendered ? <Badge variant="outline">Live preview</Badge> : <Badge variant="secondary">Rendering</Badge>}</div>
+      <div className="flex items-center justify-between gap-3"><div><h3 className="font-bold text-foreground">Commercial Key Art Engine</h3><p className="text-xs text-muted-foreground">{selectedPlan ? `${plan.family.label} · ${selectedPlan.variant} · Quality ${selectedPlan.score.total}/100` : `Exact output size: ${dims.width} × ${dims.height}px`}</p></div>{rendered ? <Badge variant="outline">Live preview</Badge> : <Badge variant="secondary">Painting artwork</Badge>}</div>
       {warning && <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm text-yellow-300">{warning}</div>}
       {error && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
       <div className="relative overflow-auto rounded-xl border border-border bg-black p-3">

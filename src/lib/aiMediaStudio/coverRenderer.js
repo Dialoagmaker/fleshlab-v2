@@ -1,4 +1,4 @@
-import { renderPosterToCanvas } from "./posterRenderer";
+import { renderPosterToCanvas } from "./commercialKeyArtEngine";
 
 export const COVER_FORMATS = [
   { id: "landscape", label: "16:9 Landscape", width: 1920, height: 1080 },
@@ -9,10 +9,10 @@ export const COVER_FORMATS = [
 ];
 
 export const COVER_PRESETS = [
-  { id: "v2-auto", label: "Cinematic Poster Engine v2", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
-  { id: "v2-title", label: "Title Dominant", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
-  { id: "v2-performer", label: "Performer Dominant", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
-  { id: "v2-balanced", label: "Balanced", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
+  { id: "v2-auto", label: "Commercial Key Art Engine", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
+  { id: "v2-title", label: "Commercial Key Art — Dramatic", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
+  { id: "v2-performer", label: "Commercial Key Art — Hero", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
+  { id: "v2-balanced", label: "Commercial Key Art — Streaming", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
 ];
 
 export const DEFAULT_COVER_SETTINGS = {

@@ -3,8 +3,7 @@ import { Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { blobToCanvasImage, canvasToBlob, getCoverDimensions } from '@/lib/aiMediaStudio/coverRenderer';
-import { generateKeyArtPlan } from '@/lib/aiMediaStudio/posterKeyArtRenderer';
-import { renderPosterVariantToCanvas } from '@/lib/aiMediaStudio/posterRenderer';
+import { generatePosterPlan, renderPosterVariantToCanvas } from '@/lib/aiMediaStudio/commercialKeyArtEngine';
 
 function MetricRow({ candidate }) {
   return (
@@ -41,7 +40,7 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
         const image = await blobToCanvasImage(frame.blob);
         if (!active) return;
         imageRef.current = image;
-        const nextPlan = await generateKeyArtPlan(image, metadata, settings, dims.width, dims.height);
+        const nextPlan = await generatePosterPlan(image, metadata, settings, dims.width, dims.height);
         if (active) setPlan(nextPlan);
       } catch (err) {
         if (active) setError(err.message || 'v3 candidate generation failed');
@@ -101,10 +100,10 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
         <div>
           <h3 className="font-bold text-foreground">Automatic Commercial Key Art Generator</h3>
           <p className="text-xs text-muted-foreground">
-            {plan ? `Global family search · ${plan.variants.length} poster philosophies · Winner Impact ${plan.selected.impact_score}/100` : `Exact output size: ${dims.width} × ${dims.height}px`}
+            {plan ? `${plan.engine} · painted artwork pipeline · Impact ${plan.selected.impact_score}/100` : `Exact output size: ${dims.width} × ${dims.height}px`}
           </p>
         </div>
-        <Badge variant={rendered ? 'outline' : 'secondary'}>{rendered ? 'Candidates ready' : 'Generating candidates'}</Badge>
+        <Badge variant={rendered ? 'outline' : 'secondary'}>{rendered ? 'Artwork ready' : 'Painting artwork'}</Badge>
       </div>
 
       {error && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
