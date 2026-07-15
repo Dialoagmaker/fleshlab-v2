@@ -47,6 +47,7 @@ const NAV_GROUPS = [
       { href: "/admin/performer-support",             label: "Performer Support", icon: MessageSquare },
       { href: "/admin/ai-text-generator",             label: "AI Text Generator", icon: Sparkles },
       { href: "/admin/ai-media-studio",               label: "AI Media Studio", icon: Sparkles },
+      { href: "/admin/cover-engine/visual-attention", label: "Cover Engine Lab", icon: Eye },
     ],
   },
   {
