@@ -33,8 +33,8 @@ export default function Home() {
   return (
     <>
       <SEOMeta
-        title="FLESHLAB Amateur Wins – Real Asian Amateur Videos & Models"
-        description="Watch real FLESHLAB videos, Asian amateur performers, featured collections, community updates and verified 18+ studio productions."
+        title="FLESHLAB Amateur Wins – Become an Amateur Creator"
+        description="FLESHLAB helps real first-time amateur creators build confidence, earn from verified 18+ studio productions and start with clear support."
         canonical="/"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
@@ -42,7 +42,7 @@ export default function Home() {
           "@type": "WebSite",
           "name": "FLESHLAB Amateur Wins",
           "url": "https://fleshlab.online",
-          "description": "Real Asian amateur videos, performers and FLESHLAB studio updates."
+          "description": "A recruitment-first amateur creator studio for real verified 18+ performers."
         }}
       />
       <HomeTubePage videos={videos} totalVideoCount={totalVideoCount} performers={performers} articles={articles} />

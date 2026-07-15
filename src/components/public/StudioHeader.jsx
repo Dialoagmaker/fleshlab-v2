@@ -29,14 +29,14 @@ export default function StudioHeader({ scrolled }) {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
             <Link
-              to="/videos"
+              to="/become-performer"
               className={`text-sm font-medium transition-colors ${
-                location.pathname === '/videos'
+                location.pathname === '/become-performer'
                   ? 'text-rose-500'
                   : 'text-[#F5F5F5]/80 hover:text-white'
               }`}
             >
-              Videos
+              Become a Performer
             </Link>
             <Link
               to="/performers"
@@ -46,7 +46,7 @@ export default function StudioHeader({ scrolled }) {
                   : 'text-[#F5F5F5]/80 hover:text-white'
               }`}
             >
-              Performers
+              Creators
             </Link>
             <Link
               to="/news"
@@ -59,14 +59,14 @@ export default function StudioHeader({ scrolled }) {
               Studio Journal
             </Link>
             <Link
-              to="/become-performer"
+              to="/videos"
               className={`text-sm font-medium transition-colors ${
-                location.pathname === '/become-performer'
+                location.pathname === '/videos'
                   ? 'text-rose-500'
                   : 'text-[#F5F5F5]/80 hover:text-white'
               }`}
             >
-              Become a Performer
+              Videos
             </Link>
           </nav>
           
@@ -87,9 +87,9 @@ export default function StudioHeader({ scrolled }) {
             </Button>
             
             {/* Desktop CTA */}
-            <Link to="/fanclub" className="hidden sm:block">
+            <Link to="/become-performer" className="hidden sm:block">
               <Button className="bg-rose-600 hover:bg-rose-700 text-white">
-                Join Fanclub
+                Apply Now
               </Button>
             </Link>
           </div>
@@ -101,18 +101,18 @@ export default function StudioHeader({ scrolled }) {
         <div className="md:hidden fixed inset-0 z-50 bg-[#0A0A0A] pt-16">
           <nav className="flex flex-col p-4 space-y-4">
             <Link
-              to="/videos"
-              className="text-lg font-medium text-[#F5F5F5]/80 hover:text-white py-2"
+              to="/become-performer"
+              className="text-lg font-medium text-rose-500 py-2"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Videos
+              Become a Performer
             </Link>
             <Link
               to="/performers"
               className="text-lg font-medium text-[#F5F5F5]/80 hover:text-white py-2"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Performers
+              Creators
             </Link>
             <Link
               to="/news"
@@ -122,18 +122,18 @@ export default function StudioHeader({ scrolled }) {
               Studio Journal
             </Link>
             <Link
-              to="/become-performer"
+              to="/videos"
               className="text-lg font-medium text-[#F5F5F5]/80 hover:text-white py-2"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Become a Performer
+              Videos
             </Link>
             <Link
               to="/fanclub"
-              className="text-lg font-medium text-rose-500 py-2"
+              className="text-lg font-medium text-[#F5F5F5]/80 hover:text-white py-2"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Join Fanclub
+              Fanclub
             </Link>
           </nav>
         </div>
