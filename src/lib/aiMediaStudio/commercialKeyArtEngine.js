@@ -1,5 +1,6 @@
 import { analyzePosterImage } from "./posterAnalysis";
 import { inferGraphicLanguage } from "./graphicLanguage";
+import { paintCommercialVisualSystem } from "./commercialVisualSystems";
 
 const ENGINE_NAME = "Commercial Key Art Engine";
 const TARGET_POSTER_IMPACT = 84;
@@ -492,24 +493,8 @@ function commercialPolish(ctx, width, height, language) {
 }
 
 async function paintCommercialPipeline(canvas, image, plan, settings, width, height) {
-  const language = plan.graphicLanguage;
-  const crop = plan.selected.crop;
-  const hero = heroOnCanvas(image, plan.analysis, crop, width, height);
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  reconstructBackground(ctx, image, crop, width, height, language);
-  paintPhoto(ctx, image, crop, width, height, language);
-  createDepth(ctx, hero, width, height, language);
-  atmosphericLighting(ctx, width, height, language);
-  graphicDesignSystem(ctx, width, height, language);
-  texturesParticles(ctx, width, height, language);
-  isolateHero(ctx, image, crop, hero, width, height, language);
-  const anchor = typographyLayer(ctx, width, height, plan.metadata, language);
-  const logoHeight = await brandAnchor(ctx, anchor, width, height, language);
-  footerSystem(ctx, width, height, settings, language);
-  commercialPolish(ctx, width, height, language);
-  return { ...plan, selected: { ...plan.selected, logoHeight } };
+  const systemResult = await paintCommercialVisualSystem(canvas, image, plan, settings, width, height);
+  return { ...plan, selected: { ...plan.selected, ...systemResult } };
 }
 
 function copyCanvas(source, target) {
