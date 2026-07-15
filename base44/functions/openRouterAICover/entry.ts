@@ -7,34 +7,55 @@ const PRIMARY_MODEL = 'black-forest-labs/flux.2-pro';
 const QUALITY_MODEL = 'black-forest-labs/flux.2-max';
 const MAX_DATA_URL_CHARS = 12_000_000;
 
-const COVER_PROMPT = `Create a FLESHLAB franchise cover background using the supplied approved still image.
+const PHOTO_RETOUCH_PROMPT = `You are editing an existing reference image.
 
-OFFICIAL FLESHLAB DESIGN SYSTEM — do not invent a new layout:
-- Consistent Netflix-series franchise composition, not random thumbnail design.
-- Dark cinematic left information panel with strong black-to-charcoal negative space.
-- Real performer remains on the right side as the hero subject.
-- Black / charcoal background mood with deep red distressed accents.
-- Premium movie-poster lighting, high contrast, subtle grunge texture.
-- Modern streaming-platform quality, platform-ready polish.
-- Preserve the established FLESHLAB visual identity across every generation.
+The person in the reference image MUST remain exactly the same.
 
-Preserve the same performer:
-- preserve face, hairstyle, tattoos, skin tone, body proportions, and pose where possible
-- do not replace the performer
-- do not add extra people
-- do not sexualize beyond the supplied still
+Preserve:
+- exact face
+- exact hairstyle
+- exact tattoos
+- exact skin tone
+- exact body
+- exact proportions
+- exact pose
+- exact expression
+- exact clothing and accessories
+- exact ethnicity
+
+Do NOT generate another person.
+Do NOT redesign the performer.
+Do NOT replace the face.
+Do NOT replace the body.
+Do NOT invent tattoos.
+Do NOT invent a different hairstyle.
+Do NOT invent another pose.
+Do NOT add another person.
+Do NOT remove the performer.
+
+Treat this as professional photo retouching.
 
 Improve only:
-- composition balance, lighting, depth, atmosphere, background mood, background extension, cinematic framing, accent graphics
+lighting
+contrast
+background depth
+cinematic atmosphere
+sharpness
+color grading
+subtle environmental enhancement
+dynamic range
+skin tones
+sunlight
+shadows
+noise reduction
 
-Important typography rules:
-- leave clean dark space on the left for the local renderer
-- do NOT generate readable text
-- do NOT generate FLESHLAB logo
-- do NOT generate AMATEUR WINS.
-- do NOT generate watermarks
-
-The app will add the official FLESHLAB logo, AMATEUR WINS., white primary headline, red secondary headline, campaign label, icons, spacing, and final typography locally after generation.`;
+Return ONLY the improved image.
+No typography.
+No logos.
+No icons.
+No text.
+No poster layout.
+No cover design.`;
 
 function json(data, status = 200) {
   return Response.json(data, { status });
@@ -125,19 +146,19 @@ async function auditOpenRouter(apiKey) {
     existing_openrouter_functions: [
       { name: 'generateVideoTextFromIdea', endpoint: '/api/v1/chat/completions', purpose: 'Kimi/OpenRouter adult SEO metadata text generation' }
     ],
-    current_openrouter_endpoint_used: 'https://openrouter.ai/api/v1/chat/completions',
+    current_openrouter_endpoint_used: 'https://openrouter.ai/api/v1/images',
     image_generation_endpoint_to_use: 'https://openrouter.ai/api/v1/images',
     credits,
     image_generation_support: { primary: primarySupport, quality: qualitySupport },
     current_integration_supports_image_generation: false,
-    note: 'Existing integration is text-only via chat completions; this function adds image generation through the dedicated OpenRouter Images API.'
+    note: 'OpenRouter is used only for selected-frame photo retouching. The final FLESHLAB logo, titles, layout, and artwork are rendered locally by Canvas.'
   };
 }
 
 async function callImageGeneration(apiKey, model, frameDataUrl, aspectRatio) {
   const payload = {
     model,
-    prompt: COVER_PROMPT,
+    prompt: PHOTO_RETOUCH_PROMPT,
     input_references: [{ type: 'image_url', image_url: { url: frameDataUrl } }],
     aspect_ratio: aspectRatio || '16:9',
     resolution: '1K',
@@ -182,7 +203,10 @@ async function generateCover(apiKey, body) {
           original_video_transmitted: false,
           selected_approved_still_transmitted: true,
           generated_image_received_from_openrouter: true,
-          final_typography_added_locally: true
+          ai_role: 'photo_retouch_only',
+          ai_generates_cover_layout: false,
+          ai_generates_typography_or_logo: false,
+          final_branding_and_typography_added_locally: true
         }
       });
     } catch (error) {
