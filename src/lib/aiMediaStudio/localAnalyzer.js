@@ -1,4 +1,5 @@
 import JSZip from "jszip";
+import { analyzeVisionFromImageData } from "./visionLayer";
 
 const ACCEPTED_EXTENSIONS = ["mp4", "mov", "webm", "m4v"];
 
@@ -59,97 +60,41 @@ function clamp(value, min = 0, max = 100) {
 }
 
 function calculateHeroMetrics(imageData, metrics) {
-  const data = imageData.data;
-  const width = imageData.width;
-  const height = imageData.height;
-  let sampled = 0;
-  let salient = 0;
-  let cx = 0;
-  let cy = 0;
-  let minX = 1;
-  let minY = 1;
-  let maxX = 0;
-  let maxY = 0;
-  let lowComplexityCells = 0;
-  const cellStats = Array.from({ length: 48 }, () => ({ edge: 0, samples: 0 }));
-
-  for (let y = 1; y < height - 1; y += 2) {
-    for (let x = 1; x < width - 1; x += 2) {
-      const i = (y * width + x) * 4;
-      const r = data[i], g = data[i + 1], b = data[i + 2];
-      const l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-      const rx = data[i + 4], gx = data[i + 5], bx = data[i + 6];
-      const ry = data[i + width * 4], gy = data[i + width * 4 + 1], by = data[i + width * 4 + 2];
-      const lx = 0.2126 * rx + 0.7152 * gx + 0.0722 * bx;
-      const ly = 0.2126 * ry + 0.7152 * gy + 0.0722 * by;
-      const edge = Math.abs(l - lx) + Math.abs(l - ly);
-      const saturation = (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
-      const centerBias = 1 - Math.min(1, Math.hypot(x / width - 0.5, y / height - 0.46) / 0.74);
-      const saliency = edge * 0.62 + saturation * 38 + centerBias * 18;
-      const cellX = Math.min(7, Math.floor((x / width) * 8));
-      const cellY = Math.min(5, Math.floor((y / height) * 6));
-      const cell = cellStats[cellY * 8 + cellX];
-      cell.edge += edge;
-      cell.samples += 1;
-      sampled += 1;
-      if (saliency > 36 && l > 22 && l < 238) {
-        salient += 1;
-        cx += x;
-        cy += y;
-        minX = Math.min(minX, x / width);
-        minY = Math.min(minY, y / height);
-        maxX = Math.max(maxX, x / width);
-        maxY = Math.max(maxY, y / height);
-      }
-    }
-  }
-
-  cellStats.forEach(cell => {
-    const avgEdge = cell.edge / Math.max(1, cell.samples);
-    if (avgEdge < 7.5) lowComplexityCells += 1;
-  });
-
-  const subjectRatio = sampled ? salient / sampled : 0;
-  const centroidX = salient ? cx / salient / width : 0.5;
-  const centroidY = salient ? cy / salient / height : 0.46;
-  const boxWidth = salient ? Math.max(0.08, maxX - minX) : 0.28;
-  const boxHeight = salient ? Math.max(0.08, maxY - minY) : 0.34;
-  const subjectDominance = clamp((boxWidth * boxHeight) * 1.65 + subjectRatio * 2.2, 0, 1);
-  const negativeSpace = clamp(lowComplexityCells / cellStats.length, 0, 1);
-  const thirds = clamp(1 - Math.min(Math.abs(centroidX - 0.33), Math.abs(centroidX - 0.67), Math.abs(centroidX - 0.5)) * 2.2, 0, 1);
-  const lighting = clamp(1 - Math.abs(metrics.brightness - 126) / 126 - metrics.overexposure * 0.025 - metrics.underexposure * 0.018, 0, 1);
-  const contrastScore = clamp(metrics.contrast / 58, 0, 1);
+  const vision = analyzeVisionFromImageData(imageData, { source: "frame-story-ranking" });
+  const subject = vision.primarySubject || {};
+  const box = subject.box || { x: 0.5, y: 0.2, w: 0.28, h: 0.34 };
+  const lighting = clamp(1 - Math.abs(metrics.brightness - 126) / 126 - metrics.overexposure * 0.018 - metrics.underexposure * 0.018, 0, 1);
   const sharpnessScore = clamp(metrics.sharpness / 10, 0, 1);
   const transitionPenalty = metrics.visualDifference > 30 ? clamp((metrics.visualDifference - 30) / 28, 0, 0.32) : 0;
-  const score = clamp(
-    subjectDominance * 28 +
-    negativeSpace * 18 +
-    thirds * 14 +
-    lighting * 14 +
-    contrastScore * 10 +
-    sharpnessScore * 10 +
-    clamp(1 - Math.abs(centroidY - 0.44), 0, 1) * 6 -
+  const storyScore = clamp(
+    Number(vision.storyScore || 0) * 72 +
+    Number(vision.thumbnailImpact || 0) * 14 +
+    lighting * 8 +
+    sharpnessScore * 6 -
     transitionPenalty * 100,
     0,
     100
   );
 
   return {
-    score: Number(score.toFixed(2)),
-    posterScore: Number(score.toFixed(2)),
-    subjectDominance: Number(subjectDominance.toFixed(2)),
-    negativeSpaceScore: Number(negativeSpace.toFixed(2)),
-    compositionScore: Number(thirds.toFixed(2)),
-    thumbnailImpact: Number(clamp(score / 100 * 0.7 + contrastScore * 0.15 + sharpnessScore * 0.15, 0, 1).toFixed(2)),
-    centroidX: Number(centroidX.toFixed(2)),
-    centroidY: Number(centroidY.toFixed(2)),
-    subjectBox: { x: Number(minX.toFixed(2)), y: Number(minY.toFixed(2)), w: Number(boxWidth.toFixed(2)), h: Number(boxHeight.toFixed(2)) },
-    skinRatio: Number((subjectDominance * 100).toFixed(2)),
-    upperBodyRatio: Number(subjectDominance.toFixed(2)),
-    rightHeroRatio: Number((centroidX > 0.5 ? 1 : 0.45).toFixed(2)),
-    centerInterestRatio: Number(thirds.toFixed(2)),
-    faceZoneRatio: 0,
-    suitable: score >= 58 && subjectDominance >= 0.18 && negativeSpace >= 0.2 && sharpnessScore >= 0.25,
+    score: Number(storyScore.toFixed(2)),
+    posterScore: Number(storyScore.toFixed(2)),
+    storyScore: Number(storyScore.toFixed(2)),
+    subjectDominance: Number((subject.dominance || 0).toFixed(2)),
+    negativeSpaceScore: Number((vision.safeTypographyZone?.score || 0).toFixed(2)),
+    compositionScore: Number((subject.separationScore || 0).toFixed(2)),
+    thumbnailImpact: Number((vision.thumbnailImpact || 0).toFixed(2)),
+    centroidX: Number((subject.visualFocus?.x || 0.5).toFixed(2)),
+    centroidY: Number((subject.visualFocus?.y || 0.46).toFixed(2)),
+    subjectBox: { x: Number(box.x.toFixed(2)), y: Number(box.y.toFixed(2)), w: Number(box.w.toFixed(2)), h: Number(box.h.toFixed(2)) },
+    cropRisk: Number((subject.cropRisk || 0).toFixed(2)),
+    faceVisible: Boolean(subject.faceVisible),
+    skinRatio: 0,
+    upperBodyRatio: Number((subject.visibilityScore || 0).toFixed(2)),
+    rightHeroRatio: Number(((subject.visualFocus?.x || 0.5) > 0.5 ? 1 : 0.45).toFixed(2)),
+    centerInterestRatio: Number((subject.separationScore || 0).toFixed(2)),
+    faceZoneRatio: subject.faceVisible ? 1 : 0,
+    suitable: storyScore >= 58 && Number(subject.dominance || 0) >= 0.16 && Number(vision.safeTypographyZone?.score || 0) >= 0.2 && sharpnessScore >= 0.25,
   };
 }
 
@@ -313,14 +258,14 @@ export function rankHeroFrames(frames, limit = 12, minimumScore = 58) {
       const hero = frame.hero || {};
       return hero.suitable &&
         Number(hero.posterScore || hero.score || 0) >= minimumScore &&
-        Number(hero.subjectDominance || 0) >= 0.18 &&
+        Number(hero.subjectDominance || 0) >= 0.16 &&
         Number(hero.negativeSpaceScore || 0) >= 0.2;
     })
     .sort((a, b) => {
       const aHero = a.hero || {};
       const bHero = b.hero || {};
-      const aPremium = Number(aHero.posterScore || aHero.score || 0) + Number(aHero.subjectDominance || 0) * 32 + Number(aHero.negativeSpaceScore || 0) * 24 + Number(aHero.compositionScore || 0) * 18 + Number(aHero.thumbnailImpact || 0) * 26;
-      const bPremium = Number(bHero.posterScore || bHero.score || 0) + Number(bHero.subjectDominance || 0) * 32 + Number(bHero.negativeSpaceScore || 0) * 24 + Number(bHero.compositionScore || 0) * 18 + Number(bHero.thumbnailImpact || 0) * 26;
+      const aPremium = Number(aHero.storyScore || aHero.posterScore || aHero.score || 0) + Number(aHero.thumbnailImpact || 0) * 34 + Number(aHero.compositionScore || 0) * 22 + Number(aHero.negativeSpaceScore || 0) * 16 + Number(aHero.subjectDominance || 0) * 12 + (aHero.faceVisible ? 10 : 0) - Number(aHero.cropRisk || 0) * 20;
+      const bPremium = Number(bHero.storyScore || bHero.posterScore || bHero.score || 0) + Number(bHero.thumbnailImpact || 0) * 34 + Number(bHero.compositionScore || 0) * 22 + Number(bHero.negativeSpaceScore || 0) * 16 + Number(bHero.subjectDominance || 0) * 12 + (bHero.faceVisible ? 10 : 0) - Number(bHero.cropRisk || 0) * 20;
       return bPremium - aPremium;
     })
     .slice(0, limit);

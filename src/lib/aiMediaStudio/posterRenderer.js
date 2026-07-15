@@ -137,7 +137,7 @@ export async function generatePosterPlan(image, metadata, settings, width, heigh
 export async function renderPosterToCanvas(canvas, image, metadata, settings, width, height) {
   const plan = await generatePosterPlan(image, metadata, settings, width, height);
   const chosen = plan.best;
-  if (chosen.score.total < 55) throw new Error("No poster composition met the v2 quality threshold. Select a stronger storytelling frame.");
+  if (!chosen.score.passesQualityGate) throw new Error(`No poster composition met the semantic quality threshold: ${chosen.score.qualityFailures.join(", ")}.`);
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d");

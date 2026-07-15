@@ -19,7 +19,7 @@ const MASTER_SETTINGS = {
   sellingPoints: "REAL MOMENTS\nRAW & AUTHENTIC\nEXCLUSIVE CONTENT",
 };
 
-export default function CoverVariantCompare({ frame, metadata, settings, itemFileName }) {
+export default function CoverVariantCompare({ frame, candidateFrames = [], metadata, settings, itemFileName }) {
   const fileTitle = itemFileName?.replace(/\.[^/.]+$/, "") || "";
   const effectiveMetadata = {
     ...metadata,
@@ -40,6 +40,7 @@ export default function CoverVariantCompare({ frame, metadata, settings, itemFil
       <CardContent className="p-4 pt-0">
         <CoverPreviewEditor
           frame={frame}
+          candidateFrames={candidateFrames}
           metadata={effectiveMetadata}
           settings={{ ...settings, ...MASTER_SETTINGS, variantId: "fleshlab-master" }}
           fileSuffix="fleshlab-master"

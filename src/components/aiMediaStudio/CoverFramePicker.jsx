@@ -18,7 +18,7 @@ export default function CoverFramePicker({ frames, selectedIndex, onSelect, onBe
             <img src={frame.url} alt={`Frame at ${formatTime(frame.time)}`} className="aspect-video w-full object-cover" />
             <div className="flex items-center justify-between gap-2 p-2 text-xs">
               <span className="text-muted-foreground">{formatTime(frame.time)}</span>
-              <Badge variant="outline">Poster {Math.round(frame.hero?.posterScore || frame.hero?.score || 0)}</Badge>
+              <Badge variant="outline">Story {Math.round(frame.hero?.storyScore || frame.hero?.posterScore || frame.hero?.score || 0)}</Badge>
             </div>
           </button>
         ))}

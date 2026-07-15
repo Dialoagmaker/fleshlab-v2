@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Download } from "lucide-react";
 import { canvasToBlob, getCoverDimensions, renderCoverToCanvas } from "@/lib/aiMediaStudio/coverRenderer";
 
-export default function CoverPreviewEditor({ frame, metadata, settings, fileSuffix = "cover" }) {
+export default function CoverPreviewEditor({ frame, candidateFrames = [], metadata, settings, fileSuffix = "cover" }) {
   const canvasRef = useRef(null);
   const [rendered, setRendered] = useState(false);
   const [plan, setPlan] = useState(null);
@@ -16,10 +16,23 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
     setRendered(false);
     setPlan(null);
     setError("");
-    if (!frame?.blob || !canvasRef.current) return;
-    renderCoverToCanvas(canvasRef.current, frame.blob, metadata, settings).then((nextPlan) => { if (active) { setPlan(nextPlan || canvasRef.current.__fleshlabPosterPlan || null); setRendered(true); } }).catch(err => active && setError(err.message));
+    const candidates = [frame, ...candidateFrames].filter((candidate, index, all) => candidate?.blob && all.findIndex(item => item?.index === candidate.index) === index);
+    if (!candidates.length || !canvasRef.current) return;
+    (async () => {
+      let lastError = "";
+      for (const candidate of candidates) {
+        try {
+          const nextPlan = await renderCoverToCanvas(canvasRef.current, candidate.blob, metadata, settings);
+          if (active) { setPlan(nextPlan || canvasRef.current.__fleshlabPosterPlan || null); setRendered(true); }
+          return;
+        } catch (err) {
+          lastError = err.message;
+        }
+      }
+      if (active) setError(lastError || "No candidate frame passed the semantic poster quality gate");
+    })();
     return () => { active = false; };
-  }, [frame, metadata, settings]);
+  }, [frame, candidateFrames, metadata, settings]);
 
   const download = async (type) => {
     if (!rendered || !canvasRef.current) return;
