@@ -51,28 +51,31 @@ function alpha(base, settings) {
 
 function drawAdaptiveAtmosphere(ctx, width, height, composition, family, settings) {
   const { textArea } = composition;
+  const treatment = family?.treatment || family?.gradient || "warm-hero";
   const x = width * textArea.x;
   const y = height * Math.max(0, textArea.y - 0.18);
   const w = width * Math.min(0.62, textArea.w + 0.16);
   const h = height * Math.min(0.76, textArea.h + 0.34);
   const gradient = ctx.createLinearGradient(x, 0, x + w, 0);
   const leftHeavy = textArea.x < 0.5;
-  gradient.addColorStop(0, leftHeavy ? `rgba(0,0,0,${alpha(0.90, settings)})` : `rgba(0,0,0,${alpha(0.18, settings)})`);
-  gradient.addColorStop(0.55, `rgba(0,0,0,${alpha(0.58, settings)})`);
+  const panelAlpha = treatment === "minimal-premium" ? 0.5 : treatment === "high-click" ? 0.96 : 0.9;
+  gradient.addColorStop(0, leftHeavy ? `rgba(0,0,0,${alpha(panelAlpha, settings)})` : `rgba(0,0,0,${alpha(0.18, settings)})`);
+  gradient.addColorStop(0.55, treatment === "high-click" ? `rgba(92,0,14,${alpha(0.58, settings)})` : `rgba(0,0,0,${alpha(0.58, settings)})`);
   gradient.addColorStop(1, leftHeavy ? "rgba(0,0,0,0)" : `rgba(0,0,0,${alpha(0.88, settings)})`);
   ctx.fillStyle = gradient;
   ctx.fillRect(Math.max(0, x - width * 0.05), 0, Math.min(width, w + width * 0.1), height);
 
   const vignette = ctx.createRadialGradient(width * 0.62, height * 0.44, height * 0.1, width * 0.62, height * 0.44, width * 0.72);
   vignette.addColorStop(0, "rgba(0,0,0,0)");
-  vignette.addColorStop(1, `rgba(0,0,0,${alpha(0.48, settings)})`);
+  vignette.addColorStop(1, `rgba(0,0,0,${alpha(treatment === "minimal-premium" ? 0.36 : 0.52, settings)})`);
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, width, height);
 
-  if (family.gradient !== "cinema-vignette") {
+  if (treatment !== "minimal-premium") {
+    const glowColor = treatment === "premium-gold" ? "214,173,91" : treatment === "cinema-noir" ? "50,90,140" : "208,0,18";
     const red = ctx.createRadialGradient(x + w * 0.25, y + h * 0.5, 0, x + w * 0.25, y + h * 0.5, w * 0.8);
-    red.addColorStop(0, `rgba(208,0,18,${alpha(0.15, settings)})`);
-    red.addColorStop(1, "rgba(208,0,18,0)");
+    red.addColorStop(0, `rgba(${glowColor},${alpha(treatment === "high-click" ? 0.22 : 0.15, settings)})`);
+    red.addColorStop(1, `rgba(${glowColor},0)`);
     ctx.fillStyle = red;
     ctx.fillRect(0, 0, width, height);
   }
@@ -216,9 +219,10 @@ export async function renderPosterVariantToCanvas(canvas, image, plan, variantPl
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d");
-  const refreshedComposition = calculateComposition(image, plan.analysis, plan.family, width, height, variantPlan.variant, settings);
-  const refreshedTypography = calculateTypography(ctx, refreshedComposition.textArea, width, plan.family, plan.metadata, settings);
-  const renderPlan = { ...variantPlan, composition: refreshedComposition, typography: refreshedTypography };
+  const renderFamily = variantPlan.family || plan.family;
+  const refreshedComposition = calculateComposition(image, plan.analysis, renderFamily, width, height, variantPlan.variant, settings);
+  const refreshedTypography = calculateTypography(ctx, refreshedComposition.textArea, width, renderFamily, plan.metadata, settings);
+  const renderPlan = { ...variantPlan, family: renderFamily, composition: refreshedComposition, typography: refreshedTypography };
   ctx.fillStyle = "#030303";
   ctx.fillRect(0, 0, width, height);
   drawImageCover(ctx, image, renderPlan.composition.crop, width, height, settings);

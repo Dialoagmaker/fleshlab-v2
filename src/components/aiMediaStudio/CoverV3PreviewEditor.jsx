@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { blobToCanvasImage } from '@/lib/aiMediaStudio/coverRenderer';
-import { canvasToBlob, generateKeyArtPlan, getCoverDimensions, renderKeyArtToCanvas } from '@/lib/aiMediaStudio/posterKeyArtRenderer';
+import { blobToCanvasImage, canvasToBlob, getCoverDimensions } from '@/lib/aiMediaStudio/coverRenderer';
+import { generateKeyArtPlan } from '@/lib/aiMediaStudio/posterKeyArtRenderer';
+import { renderPosterVariantToCanvas } from '@/lib/aiMediaStudio/posterRenderer';
 
 function MetricRow({ candidate }) {
   return (
@@ -61,9 +62,9 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
         await Promise.all(visibleCandidates.map((candidate, index) => {
           const canvas = candidateRefs.current[index];
           if (!canvas) return Promise.resolve();
-          return renderKeyArtToCanvas(canvas, imageRef.current, plan, metadata, settings, dims.width, dims.height, candidate);
+          return renderPosterVariantToCanvas(canvas, imageRef.current, plan, candidate, settings, dims.width, dims.height);
         }));
-        await renderKeyArtToCanvas(winnerCanvasRef.current, imageRef.current, plan, metadata, settings, dims.width, dims.height, plan.selected);
+        await renderPosterVariantToCanvas(winnerCanvasRef.current, imageRef.current, plan, plan.selected, settings, dims.width, dims.height);
         setRendered(true);
         setError('');
       } catch (err) {
