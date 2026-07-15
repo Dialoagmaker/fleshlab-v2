@@ -89,7 +89,7 @@ export default function StudioHeader({ scrolled }) {
             {/* Desktop CTA */}
             <Link to="/become-performer" className="hidden sm:block">
               <Button className="bg-rose-600 hover:bg-rose-700 text-white">
-                Apply Now
+                Join The World
               </Button>
             </Link>
           </div>

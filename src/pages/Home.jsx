@@ -33,8 +33,8 @@ export default function Home() {
   return (
     <>
       <SEOMeta
-        title="FLESHLAB Amateur Wins – Become an Amateur Creator"
-        description="FLESHLAB helps real first-time amateur creators build confidence, earn from verified 18+ studio productions and start with clear support."
+        title="FLESHLAB Amateur Wins – A Documentary Creator World"
+        description="Enter the FLESHLAB universe: real creators, cinematic amateur stories, behind-the-scenes moments and verified 18+ studio originals."
         canonical="/"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
