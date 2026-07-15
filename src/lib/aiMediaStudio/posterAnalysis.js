@@ -52,7 +52,7 @@ export async function analyzePosterImage(image, targetWidth = 360) {
   };
 }
 
-export function scorePosterCandidate({ analysis, typographyScore = 0.7, brandScore = 0.82, layoutScore = 0.7, graphicLanguageScore = 0.62 }) {
+export function scorePosterCandidate({ analysis, typographyScore = 0.7, brandScore = 0.82, layoutScore = 0.7, graphicLanguageScore = 0.62, artDirectionScore = 0.62 }) {
   const faceScore = analysis.detections?.face ? 1 : analysis.vision?.capabilities?.faceDetection ? 0.28 : 0.48;
   const readableSubject = clamp((analysis.sceneReadability || 0) * 0.46 + (analysis.subjectSeparation || 0) * 0.24 + faceScore * 0.18 + (analysis.bodyLanguage || 0) * 0.12);
   const hierarchy = clamp(typographyScore * 0.58 + brandScore * 0.18 + layoutScore * 0.24);
@@ -60,16 +60,18 @@ export function scorePosterCandidate({ analysis, typographyScore = 0.7, brandSco
   const marketing = clamp(hierarchy * 0.38 + (analysis.clickPotential || 0) * 0.24 + (analysis.thumbnailImpact || 0) * 0.18 + (analysis.visualCuriosity || 0) * 0.1 + brandScore * 0.1);
   const story = clamp((analysis.storyScore || 0) * 0.32 + readableSubject * 0.28 + (analysis.interactionStrength || 0) * 0.16 + marketing * 0.24);
   const graphicLanguage = clamp(graphicLanguageScore);
-  const professionalMarketingScore = clamp(hierarchy * 0.34 + marketing * 0.26 + composition * 0.18 + readableSubject * 0.08 + graphicLanguage * 0.14);
-  const imageQuality = clamp((analysis.imageQualityScore || 0) * 0.22 + readableSubject * 0.24 + composition * 0.18 + hierarchy * 0.22 + graphicLanguage * 0.14);
-  const total = clamp(professionalMarketingScore * 0.38 + marketing * 0.2 + hierarchy * 0.16 + story * 0.12 + graphicLanguage * 0.14);
+  const artDirection = clamp(artDirectionScore);
+  const professionalMarketingScore = clamp(hierarchy * 0.28 + marketing * 0.23 + composition * 0.15 + readableSubject * 0.08 + graphicLanguage * 0.12 + artDirection * 0.14);
+  const imageQuality = clamp((analysis.imageQualityScore || 0) * 0.2 + readableSubject * 0.22 + composition * 0.16 + hierarchy * 0.18 + graphicLanguage * 0.1 + artDirection * 0.14);
+  const total = clamp(professionalMarketingScore * 0.34 + marketing * 0.18 + hierarchy * 0.14 + story * 0.1 + graphicLanguage * 0.1 + artDirection * 0.14);
   const qualityFailures = [];
   if (readableSubject < 0.26) qualityFailures.push("subject cannot be recognised");
   if (typographyScore < 0.62) qualityFailures.push("title not dominant enough for thumbnail");
   if (hierarchy < 0.68) qualityFailures.push("weak commercial hierarchy");
   if (professionalMarketingScore < 0.68) qualityFailures.push("not professional marketing key art");
   if (graphicLanguage < 0.58) qualityFailures.push("graphic language too weak");
-  if (total < 0.66) qualityFailures.push("weak commercial impact");
+  if (artDirection < 0.68) qualityFailures.push("still reads as layout, not integrated key art");
+  if (total < 0.68) qualityFailures.push("weak commercial impact");
 
   return {
     total: Math.round(total * 100),
@@ -79,6 +81,7 @@ export function scorePosterCandidate({ analysis, typographyScore = 0.7, brandSco
     composition: Math.round(composition * 100),
     professionalMarketing: Math.round(professionalMarketingScore * 100),
     graphicLanguage: Math.round(graphicLanguage * 100),
+    artDirection: Math.round(artDirection * 100),
     subjectDominance: Math.round((analysis.subjectDominance || 0) * 100),
     negativeSpace: Math.round(analysis.negativeSpace.score * 100),
     typography: Math.round(typographyScore * 100),

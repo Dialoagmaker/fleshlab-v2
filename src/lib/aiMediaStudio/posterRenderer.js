@@ -281,86 +281,226 @@ function fittedTitleSize(ctx, lines, maxWidth, desiredSize, family) {
   return size;
 }
 
-async function drawKeyArtComposition(ctx, renderPlan, width, height, settings) {
-  const { composition, typography, family } = renderPlan;
-  const box = composition.textArea;
-  const x = width * box.x;
-  const maxWidth = width * box.w;
-  let y = height * box.y;
+function subjectCanvasBox(image, analysis, crop, width, height) {
+  const box = analysis.subjectBox || { x: 0.5, y: 0.2, w: 0.38, h: 0.62 };
+  const cropX = crop.sx / image.width;
+  const cropY = crop.sy / image.height;
+  const cropW = crop.sw / image.width;
+  const cropH = crop.sh / image.height;
+  return {
+    x: ((box.x - cropX) / cropW) * width,
+    y: ((box.y - cropY) / cropH) * height,
+    w: (box.w / cropW) * width,
+    h: (box.h / cropH) * height,
+  };
+}
+
+function artDirectionTone(family = {}) {
+  const language = family.graphicLanguage || {};
+  if (language.atmosphere === "soft-bloom") return { rgb: "214,173,91", warm: "255,226,170" };
+  if (language.atmosphere === "documentary-air") return { rgb: "255,255,255", warm: "220,235,255" };
+  if (language.atmosphere === "warm-haze") return { rgb: "236,146,72", warm: "255,196,124" };
+  return { rgb: "208,0,18", warm: "255,56,72" };
+}
+
+function drawTransformedEnvironment(ctx, image, crop, width, height, family, settings) {
+  const language = family.graphicLanguage || {};
+  const tone = artDirectionTone(family);
+  const aggression = language.graphic_aggression || 0.58;
+  const depth = language.poster_density || 0.58;
 
   ctx.save();
-  const titleTarget = (height * (composition.designZone?.h || 1) * 0.42) / Math.max(1, typography.lines.length);
-  const titleSize = fittedTitleSize(ctx, typography.lines, maxWidth, Math.max(typography.size, titleTarget / 0.78), family.typography.titleFont);
-  const titleLineHeight = titleSize * 0.76;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.bezierCurveTo(width * 0.34, height * 0.02, width * 0.5, height * 0.36, width * (0.36 + aggression * 0.14), height);
+  ctx.lineTo(0, height);
+  ctx.closePath();
+  ctx.clip();
+  ctx.filter = `blur(${Math.round(18 + depth * 18)}px) brightness(${Math.round(34 + (1 - aggression) * 22)}%) contrast(${Math.round(120 + aggression * 26)}%) saturate(${Math.round(92 + aggression * 44)}%)`;
+  ctx.drawImage(image, crop.sx, crop.sy, crop.sw, crop.sh, -width * 0.04, -height * 0.04, width * 1.1, height * 1.1);
+  ctx.filter = "none";
+  const wash = ctx.createLinearGradient(0, 0, width * 0.58, height);
+  wash.addColorStop(0, `rgba(0,0,0,${alpha(0.78, settings)})`);
+  wash.addColorStop(0.45, `rgba(${tone.rgb},${alpha(0.16 + aggression * 0.28, settings)})`);
+  wash.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = wash;
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.lineCap = "round";
+  for (let i = 0; i < 4; i += 1) {
+    ctx.globalAlpha = 0.08 + aggression * 0.06;
+    ctx.strokeStyle = `rgba(${tone.warm},1)`;
+    ctx.lineWidth = width * (0.004 + i * 0.002);
+    ctx.beginPath();
+    ctx.moveTo(width * (-0.04 + i * 0.04), height * (0.22 + i * 0.12));
+    ctx.bezierCurveTo(width * 0.22, height * (0.16 + i * 0.08), width * 0.38, height * (0.34 + i * 0.08), width * (0.58 + i * 0.06), height * (0.16 + i * 0.14));
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawSubjectSeparation(ctx, image, renderPlan, width, height) {
+  const { analysis, composition, family } = renderPlan;
+  const language = family.graphicLanguage || {};
+  const hero = subjectCanvasBox(image, analysis, composition.crop, width, height);
+  const padX = hero.w * 0.24;
+  const padY = hero.h * 0.14;
+
+  ctx.save();
+  const halo = ctx.createRadialGradient(hero.x + hero.w * 0.54, hero.y + hero.h * 0.36, 0, hero.x + hero.w * 0.54, hero.y + hero.h * 0.36, Math.max(hero.w, hero.h) * 0.68);
+  halo.addColorStop(0, `rgba(255,255,255,${0.08 + (language.emotional_intensity || 0.66) * 0.1})`);
+  halo.addColorStop(0.44, `rgba(208,0,18,${(language.redIntensity || 0.46) * 0.16})`);
+  halo.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = halo;
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(hero.x + hero.w * 0.5, hero.y + hero.h * 0.47, Math.max(18, hero.w * 0.68 + padX), Math.max(18, hero.h * 0.58 + padY), 0, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.filter = `brightness(${Math.round(104 + (language.emotional_intensity || 0.66) * 8)}%) contrast(${Math.round(114 + (language.graphic_aggression || 0.58) * 18)}%) saturate(${Math.round(104 + (language.redIntensity || 0.46) * 12)}%)`;
+  ctx.drawImage(image, composition.crop.sx, composition.crop.sy, composition.crop.sw, composition.crop.sh, 0, 0, width, height);
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.strokeStyle = `rgba(${artDirectionTone(family).warm},${0.16 + (language.graphic_aggression || 0.58) * 0.16})`;
+  ctx.lineWidth = Math.max(2, width * 0.003);
+  ctx.beginPath();
+  ctx.moveTo(hero.x + hero.w * 0.08, hero.y + hero.h * 0.12);
+  ctx.bezierCurveTo(hero.x - hero.w * 0.08, hero.y + hero.h * 0.38, hero.x + hero.w * 0.02, hero.y + hero.h * 0.72, hero.x + hero.w * 0.24, hero.y + hero.h * 0.96);
+  ctx.stroke();
+  ctx.restore();
+}
+
+async function drawIntegratedLogo(ctx, x, y, maxW, width) {
+  const logo = await getLogo();
+  const source = getLogoCrop(logo);
+  const logoW = Math.max(width * 0.13, Math.min(width * 0.19, maxW));
+  const logoH = logoW * (source.sh / source.sw);
+  ctx.save();
+  ctx.globalAlpha = 0.96;
+  ctx.shadowColor = "rgba(0,0,0,0.9)";
+  ctx.shadowBlur = width * 0.012;
+  ctx.drawImage(logo, source.sx, source.sy, source.sw, source.sh, x, y, logoW, logoH);
+  ctx.restore();
+  return { w: logoW, h: logoH };
+}
+
+function drawAtmosphericForeground(ctx, width, height, family) {
+  const language = family.graphicLanguage || {};
+  const tone = artDirectionTone(family);
+  const density = language.texture_density || 0.42;
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  for (let i = 0; i < Math.round(22 + density * 46); i += 1) {
+    const x = width * ((i * 37) % 100) / 100;
+    const y = height * ((i * 61) % 100) / 100;
+    ctx.globalAlpha = 0.025 + density * 0.035;
+    ctx.fillStyle = `rgba(${tone.warm},1)`;
+    ctx.beginPath();
+    ctx.arc(x, y, Math.max(0.8, width * (0.0006 + ((i % 3) * 0.00045))), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+async function drawKeyArtComposition(ctx, renderPlan, image, width, height, settings) {
+  const { composition, typography, family } = renderPlan;
+  const language = family.graphicLanguage || {};
+  const tone = artDirectionTone(family);
+  const aggression = language.graphic_aggression || 0.58;
+  const hero = subjectCanvasBox(image, renderPlan.analysis, composition.crop, width, height);
+  const titleX = Math.max(width * 0.035, Math.min(width * 0.11, hero.x - width * 0.46));
+  const maxWidth = Math.min(width * (0.54 + aggression * 0.12), Math.max(width * 0.42, hero.x + hero.w * 0.32 - titleX));
+  let y = height * (0.12 + (1 - aggression) * 0.035);
+  const titleTarget = (height * (0.48 + aggression * 0.14)) / Math.max(1, typography.lines.length);
+  const titleSize = fittedTitleSize(ctx, typography.lines, maxWidth, Math.max(typography.size, titleTarget / 0.75), family.typography.titleFont);
+  const titleLineHeight = titleSize * (language.typography_style === "minimal_elegant" ? 0.9 : 0.74);
+
+  drawTransformedEnvironment(ctx, image, composition.crop, width, height, family, settings);
+
+  ctx.save();
+  ctx.globalAlpha = 0.24 + aggression * 0.14;
+  ctx.shadowColor = `rgba(${tone.rgb},0.9)`;
+  ctx.shadowBlur = width * 0.025;
+  ctx.fillStyle = `rgba(${tone.rgb},0.18)`;
+  ctx.strokeStyle = "rgba(0,0,0,0.72)";
+  ctx.lineWidth = Math.max(5, titleSize * 0.03);
+  ctx.font = font(titleSize * 1.04, family.typography.titleFont, 900);
+  typography.lines.forEach((line, index) => {
+    ctx.strokeText(line, titleX - width * 0.01, y + titleSize + index * titleLineHeight);
+    ctx.fillText(line, titleX - width * 0.01, y + titleSize + index * titleLineHeight);
+  });
+  ctx.restore();
+
+  drawSubjectSeparation(ctx, image, renderPlan, width, height);
+  drawAtmosphericForeground(ctx, width, height, family);
+
+  ctx.save();
   ctx.globalAlpha = 1;
   ctx.shadowColor = "rgba(0,0,0,0.98)";
-  ctx.shadowBlur = width * 0.018;
-  ctx.lineWidth = Math.max(4, titleSize * 0.022);
-  ctx.strokeStyle = "rgba(0,0,0,0.72)";
-  ctx.fillStyle = "#f8f4ef";
+  ctx.shadowBlur = width * (0.014 + aggression * 0.008);
+  ctx.lineWidth = Math.max(4, titleSize * 0.024);
+  ctx.strokeStyle = "rgba(0,0,0,0.8)";
+  ctx.fillStyle = language.typography_style === "minimal_elegant" ? "#f2eee7" : "#fff7ee";
   ctx.font = font(titleSize, family.typography.titleFont, 900);
   typography.lines.forEach(line => {
-    ctx.strokeText(line, x, y + titleSize);
-    ctx.fillText(line, x, y + titleSize);
+    ctx.strokeText(line, titleX, y + titleSize);
+    ctx.fillText(line, titleX, y + titleSize);
     y += titleLineHeight;
   });
 
+  y += height * 0.02;
+  const logoSize = await drawIntegratedLogo(ctx, titleX, y, width * composition.logoArea.w, width);
+  y += logoSize.h + height * 0.028;
+
   if (typography.performerLines?.length) {
-    y += height * 0.018;
-    const performerSize = Math.max(width * 0.038, Math.min(width * 0.064, typography.performerSize * 1.15));
+    const performerSize = Math.max(width * 0.032, Math.min(width * 0.056, typography.performerSize));
     ctx.shadowBlur = width * 0.01;
     ctx.lineWidth = Math.max(2, performerSize * 0.014);
     ctx.strokeStyle = "rgba(0,0,0,0.78)";
-    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    ctx.fillStyle = `rgba(${tone.warm},0.9)`;
     ctx.font = font(performerSize, "Inter", 900);
     typography.performerLines.forEach(line => {
-      ctx.strokeText(line, x, y + performerSize);
-      ctx.fillText(line, x, y + performerSize);
-      y += performerSize * 1.08;
+      ctx.strokeText(line, titleX, y + performerSize);
+      ctx.fillText(line, titleX, y + performerSize);
+      y += performerSize * 1.04;
     });
   }
 
-  y += height * 0.026;
-  const logo = await getLogo();
-  const source = getLogoCrop(logo);
-  const logoW = Math.max(width * 0.15, Math.min(width * 0.2, width * composition.logoArea.w));
-  const logoH = logoW * (source.sh / source.sw);
-  ctx.globalAlpha = 0.96;
-  ctx.shadowColor = "rgba(0,0,0,0.9)";
-  ctx.shadowBlur = width * 0.01;
-  ctx.drawImage(logo, source.sx, source.sy, source.sw, source.sh, x, y, logoW, logoH);
-  y += logoH + height * 0.032;
-
   if (typography.subtitleLines?.length) {
-    const subtitleSize = Math.max(width * 0.022, Math.min(width * 0.04, typography.subtitleSize));
-    const subtitleLineHeight = subtitleSize * 1.04;
-    ctx.globalAlpha = 1;
-    ctx.shadowBlur = width * 0.008;
-    ctx.lineWidth = Math.max(2, subtitleSize * 0.018);
+    y += height * 0.018;
+    const subtitleSize = Math.max(width * 0.02, Math.min(width * 0.035, typography.subtitleSize));
+    ctx.font = font(subtitleSize, family.typography.accentFont, 900);
+    ctx.fillStyle = "rgba(255,255,255,0.82)";
     ctx.strokeStyle = "rgba(0,0,0,0.76)";
-    ctx.fillStyle = "rgba(248,244,239,0.82)";
-    ctx.font = font(subtitleSize, "Inter", 900);
+    ctx.lineWidth = Math.max(2, subtitleSize * 0.018);
     typography.subtitleLines.forEach(line => {
-      ctx.strokeText(line, x, y + subtitleSize);
-      ctx.fillText(line, x, y + subtitleSize);
-      y += subtitleLineHeight;
+      ctx.strokeText(line, titleX, y + subtitleSize);
+      ctx.fillText(line, titleX, y + subtitleSize);
+      y += subtitleSize * 1.02;
     });
   }
 
   const points = sellingPoints(settings);
   if (points.length) {
-    y += height * 0.026;
+    y += height * 0.025;
     ctx.shadowBlur = width * 0.004;
-    ctx.fillStyle = "rgba(255,255,255,0.56)";
-    ctx.font = font(width * 0.0125, "Bebas Neue", 400);
-    let pointX = x;
+    ctx.fillStyle = "rgba(255,255,255,0.54)";
+    ctx.font = font(width * 0.012, "Bebas Neue", 400);
+    let pointX = titleX;
     points.forEach((text, index) => {
       ctx.fillText(text, pointX, y);
-      pointX += ctx.measureText(text).width + width * 0.018;
+      pointX += ctx.measureText(text).width + width * 0.016;
       if (index < points.length - 1) {
-        ctx.fillStyle = "rgba(208,0,18,0.72)";
-        ctx.fillRect(pointX - width * 0.01, y - width * 0.01, 1, width * 0.016);
-        ctx.fillStyle = "rgba(255,255,255,0.56)";
+        ctx.fillStyle = `rgba(${tone.rgb},0.72)`;
+        ctx.fillRect(pointX - width * 0.008, y - width * 0.01, 1, width * 0.016);
+        ctx.fillStyle = "rgba(255,255,255,0.54)";
       }
     });
   }
@@ -378,7 +518,7 @@ export async function generatePosterPlan(image, metadata, settings, width, heigh
   const variants = VARIANTS.map(variant => {
     const composition = calculateComposition(image, analysis, family, width, height, variant, settings);
     const typography = calculateTypography(ctx, composition.textArea, width, family, metadata, settings, height);
-    const score = scorePosterCandidate({ analysis, typographyScore: typography.score, brandScore: 0.9, layoutScore: composition.layoutScore, graphicLanguageScore: graphicLanguage.strength });
+    const score = scorePosterCandidate({ analysis, typographyScore: typography.score, brandScore: 0.9, layoutScore: composition.layoutScore, graphicLanguageScore: graphicLanguage.strength, artDirectionScore: composition.artDirectionScore });
     return { variant, family, graphicLanguage, analysis, composition, typography, score };
   }).sort((a, b) => b.score.total - a.score.total);
   const best = variants.find(candidate => candidate.score.passesQualityGate) || variants[0];
@@ -402,10 +542,9 @@ export async function renderPosterVariantToCanvas(canvas, image, plan, variantPl
   ctx.fillStyle = "#030303";
   ctx.fillRect(0, 0, width, height);
   drawImageCover(ctx, image, renderPlan.composition.crop, width, height, settings, renderPlan.family);
-  drawDesignZone(ctx, image, renderPlan.composition.crop, width, height, renderPlan.composition, settings, renderPlan.family);
   drawAdaptiveAtmosphere(ctx, width, height, renderPlan.composition, renderPlan.family, settings);
+  await drawKeyArtComposition(ctx, renderPlan, image, width, height, settings);
   drawBorderTexture(ctx, width, height, settings, renderPlan.family);
-  await drawKeyArtComposition(ctx, renderPlan, width, height, settings);
   canvas.__fleshlabPosterPlan = { ...plan, selected: renderPlan };
   return canvas.__fleshlabPosterPlan;
 }
