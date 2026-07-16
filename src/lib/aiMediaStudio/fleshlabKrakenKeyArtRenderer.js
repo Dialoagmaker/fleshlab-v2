@@ -36,22 +36,32 @@ function loadLogo() {
   return logoPromise;
 }
 
-function titleParts(plan = {}) {
+function manualText(plan = {}) {
   const metadata = plan.metadata || {};
-  const lockedTitle = String(metadata.videoTitle || "").trim();
-  const fallbackTitle = String(metadata.campaignName || plan.campaign?.mainTitle || plan.campaign?.title || "HOTEL SESSIONS").trim();
-  const clean = String(lockedTitle || fallbackTitle).toUpperCase();
+  return {
+    title: String(metadata.videoTitle || '').trim(),
+    subtitle: String(metadata.optionalSubtitle || '').trim(),
+    campaign: String(metadata.campaignName || '').trim(),
+    contentType: String(metadata.contentType || '').trim(),
+    performer: String(metadata.performerName || '').trim(),
+  };
+}
+
+function titleParts(plan = {}) {
+  const text = manualText(plan);
+  const fallbackTitle = String(plan.campaign?.mainTitle || plan.campaign?.title || text.campaign || "HOTEL SESSIONS").trim();
+  const clean = String(text.title || text.campaign || fallbackTitle).toUpperCase();
   const words = clean.split(/\s+/).filter(Boolean);
   if (words.length <= 1) return { primary: words[0] || "HOTEL", brush: "SESSIONS" };
   return { primary: words.slice(0, -1).join(" "), brush: words.slice(-1).join(" ") };
 }
 
 function episodeText(plan = {}) {
-  const metadata = plan.metadata || {};
-  if (String(metadata.optionalSubtitle || "").trim()) return String(metadata.optionalSubtitle).trim().toUpperCase();
-  if (String(metadata.campaignName || "").trim()) return String(metadata.campaignName).trim().toUpperCase();
-  if (String(metadata.contentType || "").trim()) return String(metadata.contentType).trim().toUpperCase();
-  if (String(metadata.performerName || "").trim()) return `STARRING ${String(metadata.performerName).trim().toUpperCase()}`;
+  const text = manualText(plan);
+  if (text.subtitle) return text.subtitle.toUpperCase();
+  if (text.contentType) return text.contentType.toUpperCase();
+  if (text.performer) return `STARRING ${text.performer.toUpperCase()}`;
+  if (text.campaign) return text.campaign.toUpperCase();
   return String(plan.campaign?.hookLine || plan.campaign?.marketingTagline || "EPISODE 1: THE CHECK-IN").toUpperCase();
 }
 

@@ -25,7 +25,7 @@ export default function CoverV3Mode({ frame, compareFrames = [], lockedHero = tr
             {compareFrames.map((compareFrame, index) => (
               <div key={compareFrame.index} className="rounded-xl border border-border bg-background/40 p-3">
                 <Badge variant="outline" className="mb-3">Hero Frame {index + 1} · locked photograph</Badge>
-                <CoverV3PreviewEditor frame={compareFrame} metadata={effectiveMetadata} settings={settings} fileSuffix={`key-art-kraken-frame-${index + 1}`} />
+                <CoverV3PreviewEditor frame={compareFrame} metadata={effectiveMetadata} settings={settings} fileSuffix={`key-art-kraken-frame-${index + 1}`} onUseFallback={onUseFallback} />
               </div>
             ))}
           </div>

@@ -71,18 +71,25 @@ function applyTextPayloadToPlan(plan, metadata) {
   const patch = (item) => {
     if (!item) return item;
     const campaign = item.campaign || plan.campaign || {};
+    const userTitle = String(metadata.videoTitle || '').trim();
+    const userSubtitle = String(metadata.optionalSubtitle || '').trim();
+    const userCampaign = String(metadata.campaignName || '').trim();
+    const userContentType = String(metadata.contentType || '').trim();
+    const userPerformer = String(metadata.performerName || '').trim();
     return {
       ...item,
       metadata: { ...(item.metadata || {}), ...metadata },
       campaign: {
         ...campaign,
-        mainTitle: metadata.videoTitle || campaign.mainTitle,
-        title: metadata.videoTitle || campaign.title,
-        hookLine: metadata.optionalSubtitle || campaign.hookLine,
-        marketingTagline: metadata.optionalSubtitle || campaign.marketingTagline,
-        campaignName: metadata.campaignName || campaign.campaignName,
-        contentType: metadata.contentType || campaign.contentType,
-        performerName: metadata.performerName || campaign.performerName,
+        mainTitle: userTitle || userCampaign || campaign.mainTitle,
+        title: userTitle || userCampaign || campaign.title,
+        hookLine: userSubtitle || userContentType || campaign.hookLine,
+        marketingTagline: userSubtitle || userContentType || campaign.marketingTagline,
+        subtitle: userSubtitle || userContentType || campaign.subtitle,
+        campaignName: userCampaign || campaign.campaignName,
+        contentType: userContentType || campaign.contentType,
+        performerName: userPerformer || campaign.performerName,
+        performer: userPerformer || campaign.performer,
       },
     };
   };
@@ -168,7 +175,7 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
   const rendererMetadata = renderPayload.metadataForRenderer;
   const rendererMetadataKey = JSON.stringify(rendererMetadata || {});
   const stableRendererMetadata = useMemo(() => rendererMetadata, [rendererMetadataKey]);
-  const key = JSON.stringify({ width: dims.width, height: dims.height, frame: frame?.index });
+  const key = JSON.stringify({ width: dims.width, height: dims.height, frame: frame?.index, text: rendererMetadataKey });
   const effectivePlan = useMemo(() => applyTextPayloadToPlan(plan, stableRendererMetadata), [plan, stableRendererMetadata]);
 
   useEffect(() => {
