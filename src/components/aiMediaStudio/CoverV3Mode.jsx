@@ -5,7 +5,7 @@ import CoverV3PreviewEditor from './CoverV3PreviewEditor';
 export default function CoverV3Mode({ frame, metadata, settings, itemFileName, onUseFallback }) {
   const effectiveMetadata = {
     ...metadata,
-    videoTitle: metadata.videoTitle || itemFileName?.replace(/\.[^/.]+$/, '') || 'FLESHLAB ORIGINAL',
+    videoTitle: metadata.videoTitle || '',
   };
 
   return (
@@ -13,10 +13,10 @@ export default function CoverV3Mode({ frame, metadata, settings, itemFileName, o
       <CardHeader className="space-y-2">
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="text-sm">FLESHLAB Automatic Key Art</CardTitle>
-          <Badge variant="outline">Poster Engine v3</Badge>
+          <Badge variant="outline">Cover Engine v4</Badge>
         </div>
         <p className="text-xs text-muted-foreground">
-          Art-directed pipeline: hero-frame analysis, key-art treatment, protected performer zones, dynamic typography, multi-candidate generation, and winner selection.
+          Advertising Photographer → Hero Image Reconstruction → Creative Director → Art Director → Commercial Validation → Final Cover.
         </p>
       </CardHeader>
       <CardContent className="p-4 pt-0">

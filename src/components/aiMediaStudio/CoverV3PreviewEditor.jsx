@@ -100,7 +100,7 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
         const image = await blobToCanvasImage(frame.blob);
         if (!active) return;
         imageRef.current = image;
-        const nextPlan = await generatePosterPlan(image, metadata, automaticSettings, dims.width, dims.height);
+        const nextPlan = await generatePosterPlan(image, { ...metadata, advertisingPhotographer: frame.advertisingPhotographer || null }, automaticSettings, dims.width, dims.height);
         if (active) {
           setPlan(nextPlan);
           setSelectedCandidateId(nextPlan.selected?.candidate_id || nextPlan.variants?.[0]?.candidate_id || null);

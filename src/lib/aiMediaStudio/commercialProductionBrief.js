@@ -1,3 +1,5 @@
+import { createArtDirectionPlan, createCommercialAgencyValidation, createHeroImageReconstructionPlan, createVisualCampaignFromReconstructedHero, validateNoTextHeroImage } from "./coverEngineV4Stages";
+
 const BRAND = "FLESHLAB";
 const RED = "#cf102d";
 const PAPER = "#f4f1ea";
@@ -20,16 +22,13 @@ function looksLikeFilename(value = "") {
 }
 
 function resolveTitle(metadata = {}, campaign = {}) {
-  const consensus = metadata.campaignConsensus || {};
-  const candidates = [consensus.campaignTerritory, consensus.campaignName, campaign.campaignName, campaign.episodeTitle, campaign.marketingTagline].filter(Boolean);
-  const supplied = metadata.videoTitle || metadata.title;
-  if (supplied && !looksLikeFilename(supplied)) return upper(supplied);
-  return upper(candidates[0] || "THE CHECK-IN");
+  const visualCampaign = metadata.visualCampaign || {};
+  return upper(visualCampaign.campaignTitle || campaign.visualCampaignTitle || "THE CHECK-IN");
 }
 
 function resolveSubtitle(metadata = {}, campaign = {}) {
-  const consensus = metadata.campaignConsensus || {};
-  return upper(metadata.optionalSubtitle || consensus.commercialPromise || campaign.subtitle || campaign.hookLine || "EVERY ROOM HAS A SECRET");
+  const visualCampaign = metadata.visualCampaign || {};
+  return upper(visualCampaign.subtitle || campaign.visualCampaignSubtitle || "A PRIVATE MOMENT TURNS INTO A STORY");
 }
 
 function heroBoxPixels(analysis, crop, image, width, height) {
@@ -103,17 +102,22 @@ function buildTypographyPlan(width, height, hero, metadata, campaign, side) {
 
 function buildBriefCandidate(image, plan, metadata, settings, width, height, revision = {}) {
   const analysis = plan.analysis || {};
-  const campaign = plan.campaign || {};
-  const crop = cropFromHero(image, analysis, width, height, revision.zoom || Number(settings.zoom) || 1.24);
+  const reconstructionPlan = createHeroImageReconstructionPlan(analysis);
+  const visualCampaign = createVisualCampaignFromReconstructedHero(analysis, reconstructionPlan);
+  const artDirection = createArtDirectionPlan(visualCampaign, reconstructionPlan, width, height);
+  const campaign = { ...(plan.campaign || {}), visualCampaignTitle: visualCampaign.campaignTitle, visualCampaignSubtitle: visualCampaign.subtitle, cta: "WATCH NOW", footerCategory: visualCampaign.seriesName };
+  const creativeMetadata = { visualCampaign };
+  const crop = cropFromHero(image, analysis, width, height, revision.zoom || Number(settings.zoom) || 1.3);
   const hero = heroBoxPixels(analysis, crop, image, width, height);
   const side = revision.side || ((hero.x + hero.w * 0.5) > width * 0.52 ? "left" : "right");
-  const typography = buildTypographyPlan(width, height, hero, metadata, campaign, side);
+  const typography = buildTypographyPlan(width, height, hero, creativeMetadata, campaign, side);
   const face = analysis.detections?.face ? heroBoxPixels({ subjectBox: analysis.detections.face }, crop, image, width, height) : { x: hero.x + hero.w * 0.28, y: hero.y + hero.h * 0.08, w: hero.w * 0.44, h: hero.h * 0.22 };
   return Object.freeze({
     type: "CommercialProductionBrief",
     locked: true,
     revision: revision.revision || 1,
-    heroFrame: { source: "analyzed_video_session", frameIndex: metadata.frameIndex || null },
+    stageContracts: { advertisingPhotographer: metadata.advertisingPhotographer || null, reconstructionPlan, visualCampaign, artDirection },
+    heroFrame: { source: "advertising_photographer_selection", frameIndex: metadata.frameIndex || null },
     heroCrop: crop,
     heroSafeZones: { hero, face, body: hero },
     faceSafeZones: [face],
@@ -126,11 +130,12 @@ function buildBriefCandidate(image, plan, metadata, settings, width, height, rev
     logoRules: { text: BRAND, box: typography.logoBox, minWidth: width * 0.12 },
     ctaRules: { text: upper(campaign.cta || "WATCH NOW"), box: typography.ctaBox },
     brandRules: { accent: RED, paper: PAPER, footer: upper(campaign.footerCategory || "FLESHLAB ORIGINAL") },
-    lightingPlan: { heroRim: true, typographyShadow: true, backgroundSuppression: revision.backgroundSuppression ?? 0.72 },
-    colorGradePlan: { palette: "premium black, warm skin, FLESHLAB red", contrast: 1.22, saturation: 1.08 },
-    backgroundPlan: { mode: "reconstructed_from_source", blur: width * 0.02, darkness: 0.68 },
-    texturePlan: { grain: 0.035, particles: 44 },
-    artDirectionPlan: { qualityBar: "premium_streaming_key_art", noTextMustStillWork: true },
+    reconstructionPlan,
+    lightingPlan: { heroRim: true, typographyShadow: true, backgroundSuppression: revision.backgroundSuppression ?? reconstructionPlan.backgroundSuppression },
+    colorGradePlan: { palette: reconstructionPlan.colorGrade, contrast: reconstructionPlan.localContrast, saturation: 1.08 },
+    backgroundPlan: { mode: "reconstructed_from_source", blur: width * 0.028, darkness: reconstructionPlan.backgroundSuppression },
+    texturePlan: { grain: 0.035, particles: 24 },
+    artDirectionPlan: { ...artDirection, qualityBar: "premium_streaming_key_art", noTextMustStillWork: true },
     typographyPlan: typography,
     platformRules: { safeMargin: typography.safeMargin, forbidTextFaceOverlap: true, forbidBorderTouch: true },
     exportRules: { width, height, rendererMustObeyBrief: true },
@@ -179,11 +184,15 @@ function paintBackground(ctx, image, brief) {
   ctx.fillStyle = "#030303";
   ctx.fillRect(0, 0, width, height);
   ctx.save();
-  ctx.filter = `blur(${brief.backgroundPlan.blur}px) brightness(42%) contrast(135%) saturate(90%)`;
-  ctx.globalAlpha = 0.72;
-  drawCovered(ctx, image, brief.heroCrop, -width * 0.04, -height * 0.04, width * 1.08, height * 1.08);
+  ctx.filter = `blur(${brief.backgroundPlan.blur}px) brightness(34%) contrast(150%) saturate(82%)`;
+  ctx.globalAlpha = 0.82;
+  drawCovered(ctx, image, brief.heroCrop, -width * 0.08, -height * 0.08, width * 1.16, height * 1.16);
   ctx.restore();
-  ctx.fillStyle = `rgba(0,0,0,${brief.backgroundPlan.darkness})`;
+  const shadow = ctx.createLinearGradient(0, 0, width, height);
+  shadow.addColorStop(0, `rgba(0,0,0,${brief.backgroundPlan.darkness})`);
+  shadow.addColorStop(0.5, "rgba(0,0,0,0.28)");
+  shadow.addColorStop(1, `rgba(0,0,0,${Math.min(0.94, brief.backgroundPlan.darkness + 0.14)})`);
+  ctx.fillStyle = shadow;
   ctx.fillRect(0, 0, width, height);
 }
 
@@ -192,17 +201,25 @@ function paintHero(ctx, image, brief) {
   const hero = brief.heroSafeZones.hero;
   ctx.save();
   ctx.beginPath();
-  ctx.ellipse(hero.x + hero.w * 0.5, hero.y + hero.h * 0.47, Math.max(60, hero.w * 0.7), Math.max(90, hero.h * 0.62), 0, 0, Math.PI * 2);
+  ctx.ellipse(hero.x + hero.w * 0.5, hero.y + hero.h * 0.46, Math.max(80, hero.w * 0.74), Math.max(120, hero.h * 0.68), 0, 0, Math.PI * 2);
   ctx.clip();
-  ctx.filter = "brightness(112%) contrast(132%) saturate(112%)";
+  ctx.filter = `brightness(118%) contrast(${Math.round(brief.colorGradePlan.contrast * 100)}%) saturate(112%)`;
   drawCovered(ctx, image, brief.heroCrop, 0, 0, width, height);
   ctx.restore();
-  const glow = ctx.createRadialGradient(hero.x + hero.w * 0.55, hero.y + hero.h * 0.28, 0, hero.x + hero.w * 0.55, hero.y + hero.h * 0.28, hero.h * 0.72);
-  glow.addColorStop(0, "rgba(255,210,160,0.18)");
-  glow.addColorStop(0.45, "rgba(207,16,45,0.12)");
-  glow.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = glow;
+  const key = ctx.createRadialGradient(hero.x + hero.w * 0.45, hero.y + hero.h * 0.22, 0, hero.x + hero.w * 0.48, hero.y + hero.h * 0.3, hero.h * 0.62);
+  key.addColorStop(0, "rgba(255,218,172,0.28)");
+  key.addColorStop(0.42, "rgba(255,160,96,0.12)");
+  key.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = key;
   ctx.fillRect(0, 0, width, height);
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.strokeStyle = "rgba(207,16,45,0.26)";
+  ctx.lineWidth = Math.max(3, width * 0.004);
+  ctx.beginPath();
+  ctx.ellipse(hero.x + hero.w * 0.52, hero.y + hero.h * 0.46, Math.max(80, hero.w * 0.78), Math.max(120, hero.h * 0.7), 0, Math.PI * 0.74, Math.PI * 1.45);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function paintComposition(ctx, brief) {
@@ -317,13 +334,17 @@ export function validateRenderedProductionCanvas(canvas, brief) {
   return { total, passed: failures.length === 0, failures, components: { titleReadability: Math.round(titleReadability * 100), subtitleReadability: Math.round(subtitleReadability * 100), logoVisibility: Math.round(logoVisibility * 100), heroDominance: Math.round(heroDominance * 100), typographyCollisions: Math.round(noCollision * 100), premiumSimilarity: Math.round(premiumSimilarity * 100), screenshotLikeness: Math.round(screenshotLikeness * 100) } };
 }
 
-export function renderProductionBriefToCanvas(canvas, image, brief) {
+export function renderProductionBriefToCanvas(canvas, image, brief, options = {}) {
   canvas.width = brief.exportRules.width;
   canvas.height = brief.exportRules.height;
   const ctx = canvas.getContext("2d");
   const paintBrief = { ...brief, ctx };
   paintBackground(ctx, image, brief);
   paintHero(ctx, image, brief);
+  if (options.noText) {
+    finalGrade(ctx, brief);
+    return;
+  }
   paintComposition(ctx, brief);
   paintBrand(ctx, paintBrief);
   paintTypography(ctx, brief);
@@ -332,16 +353,30 @@ export function renderProductionBriefToCanvas(canvas, image, brief) {
 }
 
 export async function renderBriefDrivenCommercialKeyArt(canvas, image, plan, settings, width, height) {
-  const metadata = { ...(plan.metadata || {}), frameIndex: plan.selected?.candidate_id };
+  const metadata = { advertisingPhotographer: plan.metadata?.advertisingPhotographer || null, frameIndex: plan.selected?.candidate_id };
   let brief = createCommercialProductionBrief(image, plan, metadata, settings, width, height);
+  const noTextCanvas = document.createElement("canvas");
+  renderProductionBriefToCanvas(noTextCanvas, image, brief, { noText: true });
+  let noTextValidation = validateNoTextHeroImage(noTextCanvas, brief);
+  if (!noTextValidation.passed) {
+    brief = createCommercialProductionBrief(image, plan, metadata, { ...settings, zoom: 1.38 }, width, height);
+    renderProductionBriefToCanvas(noTextCanvas, image, brief, { noText: true });
+    noTextValidation = validateNoTextHeroImage(noTextCanvas, brief);
+  }
   renderProductionBriefToCanvas(canvas, image, brief);
   let validation = validateRenderedProductionCanvas(canvas, brief);
-  if (!validation.passed) {
-    brief = createCommercialProductionBrief(image, plan, metadata, { ...settings, zoom: 1.1 }, width, height);
+  let agencyValidation = createCommercialAgencyValidation(validation, noTextValidation);
+  if (!agencyValidation.passed) {
+    brief = createCommercialProductionBrief(image, plan, metadata, { ...settings, zoom: 1.18 }, width, height);
+    renderProductionBriefToCanvas(noTextCanvas, image, brief, { noText: true });
+    noTextValidation = validateNoTextHeroImage(noTextCanvas, brief);
     renderProductionBriefToCanvas(canvas, image, brief);
     validation = validateRenderedProductionCanvas(canvas, brief);
+    agencyValidation = createCommercialAgencyValidation(validation, noTextValidation);
   }
   canvas.__commercialProductionBrief = brief;
   canvas.__commercialRenderedValidation = validation;
-  return { logoHeight: brief.logoRules.box.h, compositionMode: brief.compositionGrid.textColumn, visualSystemId: "locked-production-brief", renderedRenderPlanHash: plan.renderPlanHash, renderMap: brief, renderDirection: brief.artDirectionPlan, commercialAdvertisingScore: validation.total, commercialScore: validation, artworkValidation: validation.passed ? "passed" : "best_available", commercialProductionBrief: brief };
+  canvas.__noTextHeroValidation = noTextValidation;
+  canvas.__commercialAgencyValidation = agencyValidation;
+  return { logoHeight: brief.logoRules.box.h, compositionMode: brief.compositionGrid.textColumn, visualSystemId: "cover-engine-v4-production", renderedRenderPlanHash: plan.renderPlanHash, renderMap: brief, renderDirection: brief.artDirectionPlan, commercialAdvertisingScore: validation.total, commercialScore: { ...validation, noTextValidation, agencyValidation }, artworkValidation: agencyValidation.passed ? "passed" : "rejected_or_best_available", commercialProductionBrief: brief };
 }
