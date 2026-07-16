@@ -37,17 +37,22 @@ function loadLogo() {
 }
 
 function titleParts(plan = {}) {
-  const name = String(plan.metadata?.videoTitle || plan.metadata?.campaignName || "HOTEL SESSIONS").trim();
-  const clean = /hotel/i.test(name) ? "HOTEL SESSIONS" : name.toUpperCase();
+  const metadata = plan.metadata || {};
+  const lockedTitle = String(metadata.videoTitle || "").trim();
+  const fallbackTitle = String(metadata.campaignName || plan.campaign?.mainTitle || plan.campaign?.title || "HOTEL SESSIONS").trim();
+  const clean = String(lockedTitle || fallbackTitle).toUpperCase();
   const words = clean.split(/\s+/).filter(Boolean);
   if (words.length <= 1) return { primary: words[0] || "HOTEL", brush: "SESSIONS" };
   return { primary: words.slice(0, -1).join(" "), brush: words.slice(-1).join(" ") };
 }
 
 function episodeText(plan = {}) {
-  const episode = plan.metadata?.optionalSubtitle || "THE CHECK-IN";
-  const star = plan.metadata?.performerName || "";
-  return star ? `STARRING ${String(star).toUpperCase()}` : `EPISODE 1: ${String(episode).toUpperCase()}`;
+  const metadata = plan.metadata || {};
+  if (String(metadata.optionalSubtitle || "").trim()) return String(metadata.optionalSubtitle).trim().toUpperCase();
+  if (String(metadata.campaignName || "").trim()) return String(metadata.campaignName).trim().toUpperCase();
+  if (String(metadata.contentType || "").trim()) return String(metadata.contentType).trim().toUpperCase();
+  if (String(metadata.performerName || "").trim()) return `STARRING ${String(metadata.performerName).trim().toUpperCase()}`;
+  return String(plan.campaign?.hookLine || plan.campaign?.marketingTagline || "EPISODE 1: THE CHECK-IN").toUpperCase();
 }
 
 function sourceCropForRightHero(image, analysis = {}, width, height) {

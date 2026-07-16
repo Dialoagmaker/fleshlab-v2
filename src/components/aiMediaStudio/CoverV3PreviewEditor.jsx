@@ -45,6 +45,56 @@ function DiagnosticTable({ diagnostics = [] }) {
   );
 }
 
+function buildRenderPayload(metadata = {}) {
+  const text = {
+    videoTitle: String(metadata.videoTitle || '').trim(),
+    optionalSubtitle: String(metadata.optionalSubtitle || '').trim(),
+    campaignName: String(metadata.campaignName || '').trim(),
+    contentType: String(metadata.contentType || '').trim(),
+    performerName: String(metadata.performerName || '').trim(),
+  };
+  const locked = metadata.lockUserText !== false;
+  return {
+    lockUserText: locked,
+    title: text.videoTitle ? text.videoTitle.toUpperCase() : '(Creative Director fallback)',
+    subtitle: text.optionalSubtitle ? text.optionalSubtitle.toUpperCase() : '(Creative Director fallback)',
+    campaign: text.campaignName ? text.campaignName.toUpperCase() : '(Creative Director fallback)',
+    contentType: text.contentType ? text.contentType.toUpperCase() : '(Creative Director fallback)',
+    performer: text.performerName ? text.performerName.toUpperCase() : '(blank unless Creative Director needs it)',
+    source: Object.values(text).some(Boolean) && locked ? 'USER INPUT LOCKED' : Object.values(text).some(Boolean) ? 'USER INPUT' : 'CREATIVE DIRECTOR FALLBACK',
+    metadataForRenderer: { ...metadata, ...text, lockUserText: locked },
+  };
+}
+
+function resolvedDebugPayload(payload, plan) {
+  const campaign = plan?.campaign || {};
+  const isFallback = value => String(value || '').includes('Creative Director fallback') || String(value || '').includes('blank unless');
+  return {
+    ...payload,
+    title: isFallback(payload.title) ? String(campaign.mainTitle || campaign.title || 'HOTEL SESSIONS').toUpperCase() : payload.title,
+    subtitle: isFallback(payload.subtitle) ? String(campaign.hookLine || campaign.marketingTagline || 'EPISODE 1: THE CHECK-IN').toUpperCase() : payload.subtitle,
+    campaign: isFallback(payload.campaign) ? String(campaign.campaignName || campaign.mainTitle || campaign.title || 'KRAKEN ORIGINALS').toUpperCase() : payload.campaign,
+    contentType: isFallback(payload.contentType) ? String(campaign.contentType || campaign.productType || campaign.category || 'SERIES').toUpperCase() : payload.contentType,
+    performer: isFallback(payload.performer) ? String(campaign.performerName || '').toUpperCase() || '(BLANK)' : payload.performer,
+  };
+}
+
+function RenderPayloadDebug({ payload }) {
+  return (
+    <div className="rounded-xl border border-primary/30 bg-primary/10 p-3 text-xs">
+      <p className="mb-2 font-black uppercase tracking-widest text-primary">Render Payload</p>
+      <div className="grid gap-1 md:grid-cols-2 xl:grid-cols-3">
+        <div><span className="text-muted-foreground">Title:</span> <b className="text-foreground">{payload.title}</b></div>
+        <div><span className="text-muted-foreground">Subtitle:</span> <b className="text-foreground">{payload.subtitle}</b></div>
+        <div><span className="text-muted-foreground">Campaign:</span> <b className="text-foreground">{payload.campaign}</b></div>
+        <div><span className="text-muted-foreground">Content Type:</span> <b className="text-foreground">{payload.contentType}</b></div>
+        <div><span className="text-muted-foreground">Performer:</span> <b className="text-foreground">{payload.performer}</b></div>
+        <div><span className="text-muted-foreground">Source:</span> <b className="text-foreground">{payload.source}</b></div>
+      </div>
+    </div>
+  );
+}
+
 function drawFallbackPreview(canvas, image, metadata, dims) {
   if (!canvas || !image) return;
   canvas.width = dims.width;
@@ -87,7 +137,9 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
   const renderSeqRef = useRef(0);
   const dims = getCoverDimensions(settings);
   const automaticSettings = useMemo(() => ({ formatId: settings.formatId, customWidth: settings.customWidth, customHeight: settings.customHeight, sellingPoints: settings.sellingPoints }), [settings.formatId, settings.customWidth, settings.customHeight, settings.sellingPoints]);
-  const key = JSON.stringify({ metadata, width: dims.width, height: dims.height, frame: frame?.index });
+  const renderPayload = useMemo(() => buildRenderPayload(metadata), [metadata]);
+  const rendererMetadata = renderPayload.metadataForRenderer;
+  const key = JSON.stringify({ metadata: rendererMetadata, width: dims.width, height: dims.height, frame: frame?.index });
 
   useEffect(() => {
     let active = true;
@@ -100,14 +152,14 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
         const image = await blobToCanvasImage(frame.blob);
         if (!active) return;
         imageRef.current = image;
-        const nextPlan = await generatePosterPlan(image, { ...metadata, advertisingPhotographer: frame.advertisingPhotographer || null }, automaticSettings, dims.width, dims.height);
+        const nextPlan = await generatePosterPlan(image, { ...rendererMetadata, advertisingPhotographer: frame.advertisingPhotographer || null }, automaticSettings, dims.width, dims.height);
         if (active) {
           setPlan(nextPlan);
           setSelectedCandidateId(nextPlan.selected?.candidate_id || nextPlan.variants?.[0]?.candidate_id || null);
         }
       } catch (err) {
         if (active) {
-          drawFallbackPreview(winnerCanvasRef.current, imageRef.current, metadata, dims);
+          drawFallbackPreview(winnerCanvasRef.current, imageRef.current, rendererMetadata, dims);
           setRendered(true);
           setError(err.message || 'v3 candidate generation failed');
         }
@@ -118,7 +170,7 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
       if (imageRef.current?.close) imageRef.current.close();
       imageRef.current = null;
     };
-  }, [key, automaticSettings]);
+  }, [key, automaticSettings, rendererMetadata]);
 
   useEffect(() => {
     if (!plan || !imageRef.current) return;
@@ -178,6 +230,7 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
   };
 
   const visibleCandidates = plan?.variants?.slice(0, 4) || [];
+  const debugPayload = resolvedDebugPayload(renderPayload, plan);
   const selectedCandidate = visibleCandidates.find(candidate => candidate.candidate_id === selectedCandidateId) || plan?.selected || visibleCandidates[0];
   const selectedApproved = !!selectedCandidate?.score?.passesQualityGate;
   const canExport = rendered;
@@ -193,6 +246,8 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
         </div>
         <Badge variant={rendered ? 'outline' : 'secondary'}>{rendered ? 'Artwork ready' : 'Painting artwork'}</Badge>
       </div>
+
+      <RenderPayloadDebug payload={debugPayload} />
 
       {error && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
       {onUseFallback && (error || (selectedCandidate && !selectedApproved)) && <Button variant="outline" onClick={onUseFallback}>Use v2 fallback</Button>}
