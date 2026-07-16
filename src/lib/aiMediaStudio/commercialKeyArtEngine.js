@@ -2,6 +2,7 @@ import { analyzePosterImage } from "./posterAnalysis";
 import { inferGraphicLanguage } from "./graphicLanguage";
 import { paintCommercialVisualSystem } from "./commercialVisualSystems";
 import { createCommercialCampaign } from "./commercialCreativeDirector";
+import { renderBriefDrivenCommercialKeyArt } from "./commercialProductionBrief";
 
 const ENGINE_NAME = "Commercial Key Art Engine";
 const TARGET_COMMERCIAL_AD_SCORE = 84;
@@ -672,7 +673,7 @@ function commercialPolish(ctx, width, height, language) {
 }
 
 async function paintCommercialPipeline(canvas, image, plan, settings, width, height) {
-  const systemResult = await paintCommercialVisualSystem(canvas, image, plan, settings, width, height);
+  const systemResult = await renderBriefDrivenCommercialKeyArt(canvas, image, plan, settings, width, height);
   return { ...plan, selected: { ...plan.selected, ...systemResult } };
 }
 
