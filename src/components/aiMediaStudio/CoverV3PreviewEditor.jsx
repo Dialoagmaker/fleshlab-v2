@@ -163,10 +163,13 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
   const renderSeqRef = useRef(0);
   const dims = getCoverDimensions(settings);
   const automaticSettings = useMemo(() => ({ formatId: settings.formatId, customWidth: settings.customWidth, customHeight: settings.customHeight, sellingPoints: settings.sellingPoints }), [settings.formatId, settings.customWidth, settings.customHeight, settings.sellingPoints]);
-  const renderPayload = useMemo(() => buildRenderPayload(metadata), [metadata]);
+  const metadataKey = JSON.stringify(metadata || {});
+  const renderPayload = useMemo(() => buildRenderPayload(metadata), [metadataKey]);
   const rendererMetadata = renderPayload.metadataForRenderer;
+  const rendererMetadataKey = JSON.stringify(rendererMetadata || {});
+  const stableRendererMetadata = useMemo(() => rendererMetadata, [rendererMetadataKey]);
   const key = JSON.stringify({ width: dims.width, height: dims.height, frame: frame?.index });
-  const effectivePlan = useMemo(() => applyTextPayloadToPlan(plan, rendererMetadata), [plan, rendererMetadata]);
+  const effectivePlan = useMemo(() => applyTextPayloadToPlan(plan, stableRendererMetadata), [plan, stableRendererMetadata]);
 
   useEffect(() => {
     let active = true;
@@ -179,14 +182,14 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
         const image = await blobToCanvasImage(frame.blob);
         if (!active) return;
         imageRef.current = image;
-        const nextPlan = await generatePosterPlan(image, { ...rendererMetadata, advertisingPhotographer: frame.advertisingPhotographer || null }, automaticSettings, dims.width, dims.height);
+        const nextPlan = await generatePosterPlan(image, { ...stableRendererMetadata, advertisingPhotographer: frame.advertisingPhotographer || null }, automaticSettings, dims.width, dims.height);
         if (active) {
           setPlan(nextPlan);
           setSelectedCandidateId(nextPlan.selected?.candidate_id || nextPlan.variants?.[0]?.candidate_id || null);
         }
       } catch (err) {
         if (active) {
-          drawFallbackPreview(winnerCanvasRef.current, imageRef.current, rendererMetadata, dims);
+          drawFallbackPreview(winnerCanvasRef.current, imageRef.current, stableRendererMetadata, dims);
           setRendered(true);
           setError(err.message || 'v3 candidate generation failed');
         }
@@ -235,14 +238,14 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
         setError('');
       } catch (err) {
         if (renderSeq !== renderSeqRef.current) return;
-        drawFallbackPreview(winnerCanvasRef.current, imageRef.current, rendererMetadata, dims);
+        drawFallbackPreview(winnerCanvasRef.current, imageRef.current, stableRendererMetadata, dims);
         setRendered(true);
         setError(err.message || 'v3 winner render failed');
       }
     });
     rafRef.current = frameId;
     return () => window.cancelAnimationFrame(frameId);
-  }, [effectivePlan, selectedCandidateId, settings, dims.width, dims.height, rendererMetadata]);
+  }, [effectivePlan, selectedCandidateId, settings, dims.width, dims.height, stableRendererMetadata]);
 
   const download = async (type) => {
     if (!rendered || !winnerCanvasRef.current) return;

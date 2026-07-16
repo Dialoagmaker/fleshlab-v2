@@ -30,7 +30,7 @@ export default function CoverV3Mode({ frame, compareFrames = [], lockedHero = tr
             ))}
           </div>
         ) : (
-          <CoverV3PreviewEditor key={frame?.index} frame={frame} metadata={effectiveMetadata} settings={settings} fileSuffix="key-art-kraken" />
+          <CoverV3PreviewEditor key={frame?.index} frame={frame} metadata={effectiveMetadata} settings={settings} fileSuffix="key-art-kraken" onUseFallback={onUseFallback} />
         )}
       </CardContent>
     </Card>
