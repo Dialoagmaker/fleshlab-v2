@@ -6,7 +6,7 @@ import HomeTubePage from "@/components/homeTube/HomeTubePage";
 export default function Home() {
   const { data: videosData } = useQuery({
     queryKey: ["public-videos-fn"],
-    queryFn: () => callPublicFunction("getPublicVideos"),
+    queryFn: () => callPublicFunction("getPublicVideos", { limit: 48 }),
     retry: 1,
     staleTime: 30000,
   });

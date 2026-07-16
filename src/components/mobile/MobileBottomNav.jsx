@@ -13,7 +13,7 @@ export default function MobileBottomNav() {
   const items = [
     { href: "/", label: "Home", icon: Home },
     { href: "/videos", label: "Videos", icon: Film },
-    { href: "/performers", label: "Models", icon: Users },
+    { href: "/performers", label: "Performers", icon: Users },
     { href: "/fanclub", label: "Fanclub", icon: Crown },
     isAuthenticated
       ? { href: getDashboardPath(user), label: "Account", icon: UserCircle }

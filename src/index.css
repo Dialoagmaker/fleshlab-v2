@@ -95,3 +95,26 @@
     linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
   background-size: 40px 40px;
 }
+
+.kraken-grain {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0.18;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(229,29,42,0.35), transparent 24%),
+    radial-gradient(circle at 80% 10%, rgba(255,255,255,0.12), transparent 18%),
+    linear-gradient(135deg, rgba(255,255,255,0.045) 1px, transparent 1px);
+  background-size: auto, auto, 18px 18px;
+  mix-blend-mode: screen;
+}
+
+.kraken-paint-stroke {
+  background: linear-gradient(90deg, transparent, #E51D2A 12%, #E51D2A 84%, transparent);
+  transform: skewX(-18deg) rotate(-2deg);
+  box-shadow: 0 0 34px rgba(229,29,42,0.28);
+}
+
+.kraken-distressed {
+  text-shadow: 0.035em 0.025em 0 rgba(229,29,42,0.28), -0.02em -0.015em 0 rgba(255,255,255,0.08);
+}

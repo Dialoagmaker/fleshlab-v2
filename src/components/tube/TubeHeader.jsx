@@ -8,17 +8,16 @@ import BrandLogo from "@/components/BrandLogo";
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/videos", label: "Videos" },
-  { href: "/performers", label: "Models" },
+  { href: "/performers", label: "Performers" },
   { href: "/videos?category=collections", label: "Collections" },
   { href: "/videos?search=photos", label: "Photos" },
   { href: "/news", label: "Blog" },
-  { href: "/fanclub", label: "Community" },
-  { href: "/become-performer", label: "Become a Performer" },
+  { href: "/become-performer", label: "Become a Performer", strong: true },
 ];
 
-function NavItem({ href, label, active, onClick }) {
+function NavItem({ href, label, active, onClick, strong }) {
   return (
-    <a href={href} onClick={onClick} className={`relative flex h-12 items-center px-1 text-[10px] font-black uppercase tracking-[0.16em] transition-colors after:absolute after:bottom-1 after:left-0 after:h-[2px] after:bg-[#E51D2A] after:transition-all after:duration-300 ${active ? "text-white after:w-full" : "text-white/62 hover:text-white after:w-0 hover:after:w-full"}`}>{label}</a>
+    <a href={href} onClick={onClick} className={`relative flex h-12 items-center px-1 text-[10px] font-black uppercase tracking-[0.16em] transition-colors after:absolute after:bottom-1 after:left-0 after:h-[2px] after:bg-[#E51D2A] after:transition-all after:duration-300 ${strong ? "text-[#E51D2A] hover:text-white" : active ? "text-white after:w-full" : "text-white/62 hover:text-white after:w-0 hover:after:w-full"}`}>{label}</a>
   );
 }
 
@@ -49,7 +48,7 @@ export default function TubeHeader() {
   };
 
   return (
-    <header className={`sticky top-0 z-[100] border-b transition-all duration-300 ${scrolled ? "border-white/10 bg-[#050505]/82 shadow-2xl shadow-black/40 backdrop-blur-xl" : "border-white/[0.06] bg-[#050505]/58 backdrop-blur-md"}`}>
+    <header className={`sticky top-0 z-[100] border-b transition-all duration-300 ${scrolled ? "border-[#E51D2A]/20 bg-[#050505]/88 shadow-2xl shadow-black/50 backdrop-blur-xl" : "border-white/[0.06] bg-[#050505]/72 backdrop-blur-md"}`}>
       <div className="mx-auto flex h-[120px] max-w-[1440px] items-center gap-10 px-8 py-5 md:px-12 lg:px-16">
         <a href="/" className="flex shrink-0 items-center py-5" aria-label="FLESHLAB home">
           <BrandLogo className="h-[82px] w-[248px] md:h-[94px] md:w-[288px]" />
