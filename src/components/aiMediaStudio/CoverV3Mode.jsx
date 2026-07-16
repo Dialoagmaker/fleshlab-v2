@@ -16,11 +16,11 @@ export default function CoverV3Mode({ frame, metadata, settings, itemFileName, o
           <Badge variant="outline">Cover Engine v4</Badge>
         </div>
         <p className="text-xs text-muted-foreground">
-          Advertising Photographer → Hero Image Reconstruction → Creative Director → Art Director → Commercial Validation → Final Cover.
+          Advertising Photographer → dedicated KRAKEN-family renderer → export validation. No generic text panel, no CTA, no tiny boxed logo.
         </p>
       </CardHeader>
       <CardContent className="p-4 pt-0">
-        <CoverV3PreviewEditor frame={frame} metadata={effectiveMetadata} settings={settings} fileSuffix="key-art-v3" onUseFallback={onUseFallback} />
+        <CoverV3PreviewEditor frame={frame} metadata={effectiveMetadata} settings={settings} fileSuffix="key-art-kraken" />
       </CardContent>
     </Card>
   );

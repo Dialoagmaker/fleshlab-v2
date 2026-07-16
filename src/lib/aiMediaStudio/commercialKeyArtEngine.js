@@ -2,7 +2,7 @@ import { analyzePosterImage } from "./posterAnalysis";
 import { inferGraphicLanguage } from "./graphicLanguage";
 import { paintCommercialVisualSystem } from "./commercialVisualSystems";
 import { createCommercialCampaign } from "./commercialCreativeDirector";
-import { renderBriefDrivenCommercialKeyArt } from "./commercialProductionBrief";
+import { renderFleshlabKrakenKeyArt } from "./fleshlabKrakenKeyArtRenderer";
 
 const ENGINE_NAME = "Commercial Key Art Engine";
 const TARGET_COMMERCIAL_AD_SCORE = 84;
@@ -364,7 +364,7 @@ function buildAttemptPlan(image, metadata, settings, width, height, analysis, ba
     diagnostic,
     family: { id: philosophy.id, label: philosophy.label },
     visualStory: { emotionalCenter: graphicLanguage.thumbnail_priority, viewerFeeling: graphicLanguage.energy },
-    artDirection: { graphicDesignRatio: philosophy.graphicRatio, pipeline: ["Frame", "Hero Isolation", "Background Reconstruction", "Depth Creation", "Atmospheric Lighting", "Commercial Color Grade", "Graphic Shapes", "Red Identity System", "Textures", "Light Effects", "Particles", "Typography", "Footer System", "Commercial Polish"] },
+    artDirection: { graphicDesignRatio: 0.92, pipeline: ["Advertising Photographer Frame", "KRAKEN Split Canvas", "Left Brand Environment", "Large Upper-Left Logo", "White Metallic Title Mass", "Red Brush Title", "Subtitle Strip", "Right-Dominant Hero", "Three-Icon Footer", "Export Validation"], visualSystemId: "fleshlab_kraken_key_art" },
     selected,
     best: selected,
     variants: [selected],
@@ -419,7 +419,7 @@ export async function generateCommercialKeyArtPlan(image, metadata = {}, setting
     diagnostics: planned.map(plan => plan.diagnostic),
     uniquenessAssertions: { passed: true, checkedFields: ["candidateId", "conceptId", "renderPlanId", "renderPlanHash", "canvasCacheKey", "philosophyName"] },
     attempts: planned.map(plan => ({ candidateId: plan.candidateId, philosophy: plan.philosophy.label, renderPlanHash: plan.renderPlanHash, score: plan.selected.score, accepted: plan.selected.score.passesQualityGate && plan.selected.score.total >= TARGET_COMMERCIAL_AD_SCORE, designActions: plan.selected.design_actions, optimizationDirectives: plan.selected.optimization_directives })),
-    winner_reason: `${selectedPlan.philosophy.label} selected from four unique diagnostic RenderPlans.`,
+    winner_reason: `fleshlab_kraken_key_art selected: KRAKEN-family split composition with left brand environment and right-dominant hero.`, 
   };
 }
 
@@ -673,7 +673,7 @@ function commercialPolish(ctx, width, height, language) {
 }
 
 async function paintCommercialPipeline(canvas, image, plan, settings, width, height) {
-  const systemResult = await renderBriefDrivenCommercialKeyArt(canvas, image, plan, settings, width, height);
+  const systemResult = await renderFleshlabKrakenKeyArt(canvas, image, plan, settings, width, height);
   return { ...plan, selected: { ...plan.selected, ...systemResult } };
 }
 
