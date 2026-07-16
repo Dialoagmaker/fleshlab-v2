@@ -13,6 +13,14 @@
           document.head.appendChild(g);
           document.title = 'Staging – Not Indexed';
         }
+        window.addEventListener('error', function(event) {
+          var target = event.target;
+          var src = target && (target.src || target.href || '');
+          if (src.indexOf('/assets/') !== -1 && !sessionStorage.getItem('fleshlab_asset_reload')) {
+            sessionStorage.setItem('fleshlab_asset_reload', '1');
+            window.location.reload();
+          }
+        }, true);
       })();
     </script>
     <link rel="icon" type="image/png" href="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/1591ab54c_ChatGPTImageJul14202612_16_43AM.png" />
