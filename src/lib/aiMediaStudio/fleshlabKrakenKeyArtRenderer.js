@@ -1,4 +1,4 @@
-const LOGO_URL = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/1591ab54c_ChatGPTImageJul14202612_16_43AM.png";
+const LOGO_URL = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a1f9333f9_ChatGPTImageJul14202612_16_43AM.png";
 const RED = "#cf102d";
 const WHITE = "#f4f1ea";
 const BLACK = "#020202";
@@ -9,6 +9,15 @@ function clamp(value, min = 0, max = 1) {
 
 function font(size, family = "Bebas Neue", weight = 900) {
   return `${weight} ${size}px ${family}, Impact, Arial Black, sans-serif`;
+}
+
+function drawSpacedText(ctx, text, x, y, spacing, maxWidth = Infinity) {
+  let cursor = x;
+  for (const char of String(text)) {
+    ctx.fillText(char, cursor, y);
+    cursor += ctx.measureText(char).width + spacing;
+    if (cursor > x + maxWidth) break;
+  }
 }
 
 function loadImage(url) {
@@ -118,22 +127,48 @@ function drawTexture(ctx, width, height, splitX) {
 
   ctx.save();
   ctx.globalCompositeOperation = "screen";
-  for (let i = 0; i < 85; i += 1) {
+  for (let i = 0; i < 160; i += 1) {
     const x = splitX * (((i * 29) % 100) / 100);
     const y = height * (((i * 71) % 100) / 100);
-    ctx.fillStyle = i % 4 === 0 ? "rgba(207,16,45,0.9)" : "rgba(255,255,255,0.24)";
+    ctx.fillStyle = i % 4 === 0 ? "rgba(207,16,45,0.95)" : "rgba(255,255,255,0.22)";
     ctx.fillRect(x, y, Math.max(1, width * 0.0014), Math.max(1, width * 0.0014));
   }
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalCompositeOperation = "multiply";
+  ctx.fillStyle = "rgba(0,0,0,0.52)";
+  for (let i = 0; i < 42; i += 1) {
+    ctx.beginPath();
+    ctx.ellipse(splitX * (0.08 + ((i * 17) % 80) / 100), height * (((i * 31) % 100) / 100), width * (0.014 + (i % 5) * 0.006), height * (0.01 + (i % 7) * 0.006), (i % 6) * 0.7, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.strokeStyle = "rgba(255,40,54,0.5)";
+  ctx.lineWidth = Math.max(2, width * 0.003);
+  ctx.beginPath();
+  ctx.moveTo(splitX * 0.08, height * 0.405);
+  ctx.lineTo(splitX * 0.86, height * 0.35);
+  ctx.stroke();
+  const flare = ctx.createRadialGradient(splitX * 0.75, height * 0.35, 0, splitX * 0.75, height * 0.35, width * 0.1);
+  flare.addColorStop(0, "rgba(255,255,255,0.6)");
+  flare.addColorStop(0.18, "rgba(255,38,52,0.52)");
+  flare.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = flare;
+  ctx.fillRect(splitX * 0.58, height * 0.22, width * 0.26, height * 0.22);
   ctx.restore();
 }
 
 function drawHero(ctx, image, analysis, width, height, splitX) {
   const crop = sourceCropForRightHero(image, analysis, width, height);
-  const heroX = width * 0.54;
+  const heroX = width * 0.525;
   const heroW = width - heroX;
   ctx.save();
-  ctx.filter = "brightness(110%) contrast(132%) saturate(112%)";
-  ctx.drawImage(image, crop.sx, crop.sy, crop.sw, crop.sh, heroX - width * 0.03, 0, heroW + width * 0.04, height);
+  ctx.filter = "brightness(112%) contrast(138%) saturate(116%)";
+  ctx.drawImage(image, crop.sx, crop.sy, crop.sw, crop.sh, heroX - width * 0.045, -height * 0.015, heroW + width * 0.065, height * 1.035);
   ctx.restore();
 
   const blend = ctx.createLinearGradient(splitX - width * 0.06, 0, splitX + width * 0.14, 0);
@@ -161,16 +196,15 @@ function drawHero(ctx, image, analysis, width, height, splitX) {
 
 async function drawLogo(ctx, width, height, splitX) {
   const logo = await loadLogo();
-  const x = width * 0.052;
-  const y = height * 0.064;
-  const w = splitX * 0.38;
+  const x = width * 0.034;
+  const y = height * 0.062;
+  const w = splitX * 0.46;
   if (logo) {
     const h = w * (logo.height / logo.width);
     ctx.drawImage(logo, x, y, w, h);
     ctx.fillStyle = RED;
-    ctx.font = font(width * 0.022, "Inter", 900);
-    ctx.letterSpacing = "0px";
-    ctx.fillText("AMATEUR WINS.", x + w * 0.06, y + h + height * 0.032);
+    ctx.font = font(width * 0.021, "Inter", 900);
+    drawSpacedText(ctx, "AMATEUR WINS.", x + w * 0.035, y + h + height * 0.036, width * 0.009, w);
     return { x, y, w, h: h + height * 0.05 };
   }
   ctx.fillStyle = WHITE;
@@ -235,32 +269,42 @@ function drawBrushTitle(ctx, text, x, y, maxW, size) {
 function drawTitleSystem(ctx, plan, width, height, splitX) {
   const { primary, brush } = titleParts(plan);
   const x = width * 0.052;
-  const maxW = splitX * 0.76;
-  const whiteSize = Math.min(width * 0.15, maxW / Math.max(4.6, primary.length * 0.44));
-  const redSize = Math.min(width * 0.112, maxW / Math.max(5.4, brush.length * 0.42));
-  const y = height * 0.42;
+  const maxW = splitX * 0.86;
+  const whiteSize = Math.min(width * 0.19, maxW / Math.max(3.9, primary.length * 0.36));
+  const redSize = Math.min(width * 0.15, maxW / Math.max(4.6, brush.length * 0.34));
+  const y = height * 0.47;
   drawDistressedWhiteLine(ctx, primary, x, y, maxW, whiteSize);
-  drawBrushTitle(ctx, brush, x + splitX * 0.03, y + whiteSize * 0.84, maxW, redSize);
-  return { x, y: y - whiteSize, w: maxW, h: whiteSize + redSize * 1.1 };
+  ctx.save();
+  ctx.strokeStyle = RED;
+  ctx.lineWidth = Math.max(5, width * 0.007);
+  ctx.beginPath();
+  ctx.moveTo(x + width * 0.01, y + whiteSize * 0.08);
+  ctx.lineTo(x + maxW * 0.92, y + whiteSize * 0.02);
+  ctx.stroke();
+  ctx.restore();
+  drawBrushTitle(ctx, brush, x + splitX * 0.015, y + whiteSize * 0.8, maxW, redSize);
+  return { x, y: y - whiteSize, w: maxW, h: whiteSize + redSize * 1.05 };
 }
 
 function drawSubtitleStrip(ctx, text, titleBox, width, height, splitX) {
-  const x = titleBox.x;
-  const y = titleBox.y + titleBox.h + height * 0.038;
-  const w = splitX * 0.58;
-  const h = Math.max(height * 0.052, 42);
+  const x = titleBox.x + width * 0.006;
+  const y = titleBox.y + titleBox.h + height * 0.03;
+  const w = splitX * 0.56;
+  const h = Math.max(height * 0.058, 48);
   ctx.save();
-  ctx.fillStyle = "rgba(207,16,45,0.92)";
+  ctx.shadowColor = "rgba(0,0,0,0.8)";
+  ctx.shadowBlur = width * 0.012;
+  ctx.fillStyle = "rgba(244,241,234,0.96)";
   ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.lineTo(x + w, y + h * 0.08);
-  ctx.lineTo(x + w - width * 0.018, y + h);
-  ctx.lineTo(x + width * 0.01, y + h * 0.92);
+  ctx.moveTo(x - width * 0.012, y + h * 0.16);
+  ctx.lineTo(x + w + width * 0.018, y);
+  ctx.lineTo(x + w - width * 0.012, y + h * 0.86);
+  ctx.lineTo(x - width * 0.02, y + h);
   ctx.closePath();
   ctx.fill();
-  ctx.fillStyle = "#fff";
-  ctx.font = font(h * 0.42, "Inter", 900);
-  ctx.fillText(text, x + h * 0.42, y + h * 0.66, w - h * 0.7);
+  ctx.fillStyle = "rgba(0,0,0,0.95)";
+  ctx.font = font(h * 0.48, "Permanent Marker", 900);
+  ctx.fillText(text, x + h * 0.42, y + h * 0.7, w - h * 0.7);
   ctx.restore();
   return { x, y, w, h };
 }
@@ -285,17 +329,19 @@ function drawFooterIcon(ctx, type, cx, cy, s) {
 
 function drawFooter(ctx, width, height, splitX) {
   const labels = ["REAL MOMENTS", "RAW & AUTHENTIC", "EXCLUSIVE CONTENT"];
-  const y = height * 0.895;
-  const startX = width * 0.052;
-  const groupW = splitX * 0.27;
-  const iconS = width * 0.026;
+  const y = height * 0.89;
+  const startX = width * 0.062;
+  const groupW = splitX * 0.285;
+  const iconS = width * 0.031;
   ctx.save();
   labels.forEach((label, index) => {
     const x = startX + groupW * index;
     drawFooterIcon(ctx, index, x + iconS * 0.5, y, iconS);
     ctx.fillStyle = WHITE;
-    ctx.font = font(width * 0.015, "Inter", 900);
-    ctx.fillText(label, x + iconS * 1.25, y + iconS * 0.15, groupW - iconS * 1.4);
+    ctx.font = font(width * 0.0145, "Inter", 900);
+    const parts = label.split(" ");
+    ctx.fillText(parts.slice(0, 2).join(" "), x + iconS * 1.25, y - iconS * 0.02, groupW - iconS * 1.4);
+    ctx.fillText(parts.slice(2).join(" ") || " ", x + iconS * 1.25, y + iconS * 0.42, groupW - iconS * 1.4);
     if (index < labels.length - 1) {
       ctx.fillStyle = "rgba(255,255,255,0.38)";
       ctx.fillRect(x + groupW - width * 0.015, y - iconS * 0.6, 1.5, iconS * 1.2);
@@ -305,12 +351,34 @@ function drawFooter(ctx, width, height, splitX) {
 }
 
 function finalVignette(ctx, width, height) {
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  for (let i = 0; i < 9; i += 1) {
+    ctx.strokeStyle = `rgba(207,16,45,${0.34 - i * 0.026})`;
+    ctx.lineWidth = width * (0.008 + (i % 3) * 0.004);
+    ctx.beginPath();
+    ctx.moveTo(-width * 0.04, height * (0.018 + i * 0.012));
+    ctx.bezierCurveTo(width * 0.18, height * (0.0 + i * 0.018), width * 0.38, height * (0.035 + i * 0.01), width * 0.62, -height * 0.02);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(width * (0.18 + i * 0.01), height + height * 0.04);
+    ctx.bezierCurveTo(width * 0.46, height * (0.94 - i * 0.006), width * 0.74, height * (0.99 - i * 0.008), width + width * 0.04, height * (0.88 - i * 0.008));
+    ctx.stroke();
+  }
+  ctx.strokeStyle = "rgba(255,35,48,0.82)";
+  ctx.lineWidth = Math.max(3, width * 0.004);
+  ctx.beginPath();
+  ctx.moveTo(width * 0.83, height * 0.98);
+  ctx.lineTo(width * 0.99, height * 0.74);
+  ctx.stroke();
+  ctx.restore();
+
   const vignette = ctx.createRadialGradient(width * 0.58, height * 0.42, height * 0.08, width * 0.58, height * 0.42, width * 0.82);
   vignette.addColorStop(0, "rgba(0,0,0,0)");
-  vignette.addColorStop(1, "rgba(0,0,0,0.68)");
+  vignette.addColorStop(1, "rgba(0,0,0,0.72)");
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, width, height);
-  ctx.strokeStyle = "rgba(207,16,45,0.32)";
+  ctx.strokeStyle = "rgba(207,16,45,0.4)";
   ctx.lineWidth = Math.max(2, width * 0.002);
   ctx.strokeRect(width * 0.018, width * 0.018, width - width * 0.036, height - width * 0.036);
 }
