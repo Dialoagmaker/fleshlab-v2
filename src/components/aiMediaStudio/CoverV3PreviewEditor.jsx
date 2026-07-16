@@ -66,6 +66,32 @@ function buildRenderPayload(metadata = {}) {
   };
 }
 
+function applyTextPayloadToPlan(plan, metadata) {
+  if (!plan) return null;
+  const patch = (item) => {
+    if (!item) return item;
+    const campaign = item.campaign || plan.campaign || {};
+    return {
+      ...item,
+      metadata: { ...(item.metadata || {}), ...metadata },
+      campaign: {
+        ...campaign,
+        mainTitle: metadata.videoTitle || campaign.mainTitle,
+        title: metadata.videoTitle || campaign.title,
+        hookLine: metadata.optionalSubtitle || campaign.hookLine,
+        marketingTagline: metadata.optionalSubtitle || campaign.marketingTagline,
+        campaignName: metadata.campaignName || campaign.campaignName,
+        contentType: metadata.contentType || campaign.contentType,
+        performerName: metadata.performerName || campaign.performerName,
+      },
+    };
+  };
+  return {
+    ...patch(plan),
+    preparedIterations: plan.preparedIterations?.map(patch),
+  };
+}
+
 function resolvedDebugPayload(payload, plan) {
   const campaign = plan?.campaign || {};
   const isFallback = value => String(value || '').includes('Creative Director fallback') || String(value || '').includes('blank unless');
@@ -139,7 +165,8 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
   const automaticSettings = useMemo(() => ({ formatId: settings.formatId, customWidth: settings.customWidth, customHeight: settings.customHeight, sellingPoints: settings.sellingPoints }), [settings.formatId, settings.customWidth, settings.customHeight, settings.sellingPoints]);
   const renderPayload = useMemo(() => buildRenderPayload(metadata), [metadata]);
   const rendererMetadata = renderPayload.metadataForRenderer;
-  const key = JSON.stringify({ metadata: rendererMetadata, width: dims.width, height: dims.height, frame: frame?.index });
+  const key = JSON.stringify({ width: dims.width, height: dims.height, frame: frame?.index });
+  const effectivePlan = useMemo(() => applyTextPayloadToPlan(plan, rendererMetadata), [plan, rendererMetadata]);
 
   useEffect(() => {
     let active = true;
@@ -170,18 +197,18 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
       if (imageRef.current?.close) imageRef.current.close();
       imageRef.current = null;
     };
-  }, [key, automaticSettings, rendererMetadata]);
+  }, [key, automaticSettings]);
 
   useEffect(() => {
-    if (!plan || !imageRef.current) return;
-    const visibleCandidates = plan.variants.slice(0, 4);
+    if (!effectivePlan || !imageRef.current) return;
+    const visibleCandidates = effectivePlan.variants.slice(0, 4);
     let active = true;
     window.requestAnimationFrame(async () => {
       try {
         const rendered = await Promise.all(visibleCandidates.map((candidate, index) => {
           const canvas = candidateRefs.current[index];
           if (!canvas) return Promise.resolve(null);
-          return renderPosterVariantToCanvas(canvas, imageRef.current, plan, candidate, automaticSettings, dims.width, dims.height);
+          return renderPosterVariantToCanvas(canvas, imageRef.current, effectivePlan, candidate, automaticSettings, dims.width, dims.height);
         }));
         if (!active) return;
         setRenderedCandidates(rendered.filter(Boolean).map(item => ({ candidateId: item.candidateId, renderPlanHash: item.renderPlanHash, visualSystemId: item.selected?.visualSystemId || item.visualSystemId, compositionMode: item.selected?.compositionMode, artworkValidation: item.selected?.artworkValidation })));
@@ -190,32 +217,32 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
       }
     });
     return () => { active = false; };
-  }, [plan, automaticSettings, dims.width, dims.height]);
+  }, [effectivePlan, automaticSettings, dims.width, dims.height]);
 
   useEffect(() => {
-    if (!plan || !imageRef.current || !winnerCanvasRef.current) return;
+    if (!effectivePlan || !imageRef.current || !winnerCanvasRef.current) return;
     window.cancelAnimationFrame(rafRef.current);
     setRendered(false);
     const renderSeq = renderSeqRef.current + 1;
     renderSeqRef.current = renderSeq;
     const frameId = window.requestAnimationFrame(async () => {
       try {
-        const visibleCandidates = plan.variants.slice(0, 4);
-        const selectedCandidate = visibleCandidates.find(candidate => candidate.candidate_id === selectedCandidateId) || plan.selected || visibleCandidates[0];
-        await renderPosterVariantToCanvas(winnerCanvasRef.current, imageRef.current, plan, selectedCandidate, settings, dims.width, dims.height);
+        const visibleCandidates = effectivePlan.variants.slice(0, 4);
+        const selectedCandidate = visibleCandidates.find(candidate => candidate.candidate_id === selectedCandidateId) || effectivePlan.selected || visibleCandidates[0];
+        await renderPosterVariantToCanvas(winnerCanvasRef.current, imageRef.current, effectivePlan, selectedCandidate, settings, dims.width, dims.height);
         if (renderSeq !== renderSeqRef.current) return;
         setRendered(true);
         setError('');
       } catch (err) {
         if (renderSeq !== renderSeqRef.current) return;
-        drawFallbackPreview(winnerCanvasRef.current, imageRef.current, metadata, dims);
+        drawFallbackPreview(winnerCanvasRef.current, imageRef.current, rendererMetadata, dims);
         setRendered(true);
         setError(err.message || 'v3 winner render failed');
       }
     });
     rafRef.current = frameId;
     return () => window.cancelAnimationFrame(frameId);
-  }, [plan, selectedCandidateId, settings, dims.width, dims.height]);
+  }, [effectivePlan, selectedCandidateId, settings, dims.width, dims.height, rendererMetadata]);
 
   const download = async (type) => {
     if (!rendered || !winnerCanvasRef.current) return;
@@ -229,9 +256,9 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
     URL.revokeObjectURL(url);
   };
 
-  const visibleCandidates = plan?.variants?.slice(0, 4) || [];
-  const debugPayload = resolvedDebugPayload(renderPayload, plan);
-  const selectedCandidate = visibleCandidates.find(candidate => candidate.candidate_id === selectedCandidateId) || plan?.selected || visibleCandidates[0];
+  const visibleCandidates = effectivePlan?.variants?.slice(0, 4) || [];
+  const debugPayload = resolvedDebugPayload(renderPayload, effectivePlan);
+  const selectedCandidate = visibleCandidates.find(candidate => candidate.candidate_id === selectedCandidateId) || effectivePlan?.selected || visibleCandidates[0];
   const selectedApproved = !!selectedCandidate?.score?.passesQualityGate;
   const canExport = rendered;
 
@@ -271,7 +298,7 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
           <button type="button" key={candidate.candidate_id} onClick={() => setSelectedCandidateId(candidate.candidate_id)} className={`rounded-xl border p-2 text-left transition ${candidate.candidate_id === selectedCandidate?.candidate_id ? 'border-primary bg-primary/10' : 'border-border bg-secondary/20 hover:bg-secondary/40'}`}>
             <div className="mb-2 flex items-center justify-between gap-2">
               <span className="text-xs font-bold text-foreground">Candidate {index + 1}</span>
-              {candidate.candidate_id === plan.selected.candidate_id && <Badge variant="outline">Best score</Badge>}
+              {candidate.candidate_id === effectivePlan?.selected?.candidate_id && <Badge variant="outline">Best score</Badge>}
             </div>
             <canvas ref={(node) => { candidateRefs.current[index] = node; }} className="h-auto w-full rounded-lg bg-black" />
             <p className="mt-2 text-xs font-semibold text-foreground">{candidate.poster_family_label}</p>
