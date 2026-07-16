@@ -1,16 +1,16 @@
 const cards = [
-  ["Real People", "No actors.", "No fake personalities."],
-  ["Real Chemistry", "No scripts.", "No staged emotions."],
-  ["Real Stories", "Every production starts", "with someone's first step."],
+  ["Ordinary Men", "Students. Workers.", "Neighbors. Friends."],
+  ["Private Rooms", "Hotels. Bedrooms.", "Late night messages."],
+  ["No Performance", "No pornstar attitude.", "Just real lust."],
 ];
 
 export default function BrandPhilosophy() {
   return (
     <section className="border-y border-white/10 bg-[#050505] px-5 py-24 text-white md:px-10 md:py-32 lg:px-14">
       <div className="mx-auto max-w-[1440px]">
-        <p className="mb-8 text-[11px] font-black uppercase tracking-[0.34em] text-[#E51D2A]">Brand philosophy</p>
+        <p className="mb-8 text-[11px] font-black uppercase tracking-[0.34em] text-[#E51D2A]">The whisper</p>
         <h2 className="max-w-6xl text-5xl font-black uppercase leading-[0.88] tracking-[-0.075em] md:text-7xl lg:text-8xl">
-          Amateur doesn't mean low quality.<br />It means real.
+          Real fantasy.<br />Because it really happened.
         </h2>
         <div className="mt-16 grid gap-5 md:grid-cols-3">
           {cards.map(([title, lineOne, lineTwo]) => (

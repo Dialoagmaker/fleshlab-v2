@@ -1,18 +1,18 @@
 import StoryPoster from "./StoryPoster";
 
 const moments = [
-  ["FIRST HOTEL SHOOT", "Room key"],
-  ["COFFEE BEFORE FILMING", "Morning nerves"],
-  ["THE MASSAGE ROOM", "Studio chapter"],
-  ["FROM CUSTOMER TO CREATOR", "Crossing over"],
-  ["REAL COUPLES", "Chemistry"],
+  ["LATE CHECK-IN", "Room key"],
+  ["MIRROR SELFIE", "Before camera"],
+  ["THE MASSAGE ROOM", "Door closed"],
+  ["STRAIGHT?", "Hidden desire"],
+  ["REAL COUPLES", "No acting"],
 ];
 
 export default function DocumentaryMosaic({ videos = [], performers = [] }) {
   return (
     <section className="mx-auto max-w-[1440px] px-5 py-12 md:px-10 lg:px-14">
       <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
-        <StoryPoster title="MY FIRST SHOOT" label="The beginning" video={videos[0]} image={performers[0]?.cover_image_url} href="/become-performer" tall />
+        <StoryPoster title="HE NEVER PLANNED THIS" label="Ordinary guy" video={videos[0]} image={performers[0]?.cover_image_url} href="/become-performer" tall />
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
           {moments.slice(0, 2).map(([title, label], index) => <StoryPoster key={title} title={title} label={label} video={videos[index + 1]} image={performers[index + 1]?.profile_image_url} href="/become-performer" />)}
         </div>

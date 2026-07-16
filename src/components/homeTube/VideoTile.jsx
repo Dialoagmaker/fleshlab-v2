@@ -21,7 +21,7 @@ export default function VideoTile({ video, label = "Featured" }) {
         <span className="absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/14 text-white opacity-0 backdrop-blur transition-all duration-300 group-hover:scale-105 group-hover:opacity-100"><Play className="ml-1 h-5 w-5 fill-white" /></span>
         <div className="absolute inset-x-0 bottom-0 p-5 transition-transform duration-300 group-hover:-translate-y-1">
           <h3 className="line-clamp-2 text-lg font-black leading-tight text-white">{video?.title || "FLESHLAB Production"}</h3>
-          <p className="mt-2 text-xs font-bold uppercase tracking-[0.14em] text-white/50">Asia · Amateur Studio</p>
+          <p className="mt-2 text-xs font-bold uppercase tracking-[0.14em] text-white/50">Real amateur · No script</p>
         </div>
       </div>
     </a>

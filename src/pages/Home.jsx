@@ -33,8 +33,8 @@ export default function Home() {
   return (
     <>
       <SEOMeta
-        title="FLESHLAB Amateur Wins – A Documentary Creator World"
-        description="Enter the FLESHLAB universe: real creators, cinematic amateur stories, behind-the-scenes moments and verified 18+ studio originals."
+        title="FLESHLAB Amateur Wins – Real Men. Real Lust. Real Amateurs."
+        description="Enter FLESHLAB: a dark, premium amateur studio world where ordinary guys become unforgettable real-life fantasies."
         canonical="/"
         ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
@@ -42,7 +42,7 @@ export default function Home() {
           "@type": "WebSite",
           "name": "FLESHLAB Amateur Wins",
           "url": "https://fleshlab.online",
-          "description": "A recruitment-first amateur creator studio for real verified 18+ performers."
+          "description": "A premium amateur studio for real verified 18+ creators, private fantasies and authentic productions."
         }}
       />
       <HomeTubePage videos={videos} totalVideoCount={totalVideoCount} performers={performers} articles={articles} />
