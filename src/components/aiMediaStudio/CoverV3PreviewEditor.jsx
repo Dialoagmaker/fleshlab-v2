@@ -88,6 +88,26 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
   }, [key, automaticSettings]);
 
   useEffect(() => {
+    if (!plan || !imageRef.current) return;
+    const visibleCandidates = plan.variants.slice(0, 4);
+    let active = true;
+    window.requestAnimationFrame(async () => {
+      try {
+        const rendered = await Promise.all(visibleCandidates.map((candidate, index) => {
+          const canvas = candidateRefs.current[index];
+          if (!canvas) return Promise.resolve(null);
+          return renderPosterVariantToCanvas(canvas, imageRef.current, plan, candidate, automaticSettings, dims.width, dims.height);
+        }));
+        if (!active) return;
+        setRenderedCandidates(rendered.filter(Boolean).map(item => ({ candidateId: item.candidateId, renderPlanHash: item.renderPlanHash, visualSystemId: item.selected?.visualSystemId || item.visualSystemId, compositionMode: item.selected?.compositionMode, artworkValidation: item.selected?.artworkValidation })));
+      } catch (err) {
+        if (active) setError(err.message || 'v3 candidate render failed');
+      }
+    });
+    return () => { active = false; };
+  }, [plan, automaticSettings, dims.width, dims.height]);
+
+  useEffect(() => {
     if (!plan || !imageRef.current || !winnerCanvasRef.current) return;
     window.cancelAnimationFrame(rafRef.current);
     setRendered(false);
@@ -96,25 +116,19 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
     const frameId = window.requestAnimationFrame(async () => {
       try {
         const visibleCandidates = plan.variants.slice(0, 4);
-        const rendered = await Promise.all(visibleCandidates.map((candidate, index) => {
-          const canvas = candidateRefs.current[index];
-          if (!canvas) return Promise.resolve(null);
-          return renderPosterVariantToCanvas(canvas, imageRef.current, plan, candidate, automaticSettings, dims.width, dims.height);
-        }));
         const selectedCandidate = visibleCandidates.find(candidate => candidate.candidate_id === selectedCandidateId) || plan.selected || visibleCandidates[0];
         await renderPosterVariantToCanvas(winnerCanvasRef.current, imageRef.current, plan, selectedCandidate, settings, dims.width, dims.height);
         if (renderSeq !== renderSeqRef.current) return;
-        setRenderedCandidates(rendered.filter(Boolean).map(item => ({ candidateId: item.candidateId, renderPlanHash: item.renderPlanHash, visualSystemId: item.selected?.visualSystemId || item.visualSystemId, compositionMode: item.selected?.compositionMode, artworkValidation: item.selected?.artworkValidation })));
         setRendered(true);
         setError('');
       } catch (err) {
         if (renderSeq !== renderSeqRef.current) return;
-        setError(err.message || 'v3 candidate render failed');
+        setError(err.message || 'v3 winner render failed');
       }
     });
     rafRef.current = frameId;
     return () => window.cancelAnimationFrame(frameId);
-  }, [plan, selectedCandidateId, settings, automaticSettings, dims.width, dims.height]);
+  }, [plan, selectedCandidateId, settings, dims.width, dims.height]);
 
   const download = async (type) => {
     if (!rendered || !winnerCanvasRef.current) return;

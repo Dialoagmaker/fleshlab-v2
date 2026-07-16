@@ -740,7 +740,7 @@ export async function renderPosterVariantToCanvas(canvas, image, plan, variantPl
   const commercialPlan = plan?.preparedIterations ? plan : await generateCommercialKeyArtPlan(image, metadata, automaticCandidateSettings(settings), width, height);
   const conceptPlan = commercialPlan.preparedIterations?.find(item => item.selected.candidate_id === variantPlan?.candidate_id || item.selected.render_plan_hash === variantPlan?.render_plan_hash) || commercialPlan;
   canvas.dataset.cacheKey = conceptPlan.canvasCacheKey;
-  const renderedPlan = await paintCommercialPipeline(canvas, image, conceptPlan, automaticCandidateSettings(settings), width, height);
+  const renderedPlan = await paintCommercialPipeline(canvas, image, conceptPlan, settings, width, height);
   canvas.__fleshlabPosterPlan = renderedPlan;
   return renderedPlan;
 }
