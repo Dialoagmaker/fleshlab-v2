@@ -28,7 +28,8 @@ function heroBox(image, analysis, crop, width, height) {
 
 function seedFromPlan(plan) {
   const campaign = plan.campaign || {};
-  const text = `${campaign.campaignName || ""}${campaign.episodeTitle || ""}${campaign.product || ""}${campaign.fantasy || ""}`;
+  const philosophy = plan.philosophy || {};
+  const text = `${plan.candidateId || ""}${plan.renderPlanHash || ""}${plan.conceptId || ""}${philosophy.id || ""}${philosophy.visualSystemId || ""}${campaign.campaignName || ""}${campaign.episodeTitle || ""}${campaign.product || ""}${campaign.fantasy || ""}`;
   const base = [...text].reduce((total, char, index) => total + char.charCodeAt(0) * (index + 3), 0);
   const analysis = plan.analysis || {};
   return ((base % 997) / 997 + (analysis.visualCuriosity || 0.51) * 0.37 + (analysis.subjectSeparation || 0.57) * 0.21) % 1;
@@ -36,22 +37,24 @@ function seedFromPlan(plan) {
 
 function artDirection(plan, attempt = 0) {
   const campaign = plan.campaign || {};
+  const philosophy = plan.philosophy || {};
   const seed = (seedFromPlan(plan) + attempt * 0.193) % 1;
   const fantasy = campaign.fantasy || "Private";
   const product = campaign.product || "Feature Release";
   const category = campaign.category || "Streaming Cover";
-  const warm = fantasy === "Vacation" || product === "Vacation";
-  const danger = ["Forbidden", "Danger", "Secret", "Public Risk"].includes(fantasy);
-  const editorial = ["Luxury Magazine", "Fashion Editorial", "Documentary Style"].includes(category);
+  const warm = philosophy.atmosphere === "warm-haze" || fantasy === "Vacation" || product === "Vacation";
+  const danger = philosophy.atmosphere === "impact-red" || ["Forbidden", "Danger", "Secret", "Public Risk"].includes(fantasy);
+  const editorial = philosophy.id === "minimal_editorial" || ["Luxury Magazine", "Fashion Editorial", "Documentary Style"].includes(category);
+  const documentary = philosophy.id === "dark_documentary";
   return {
     seed,
-    bg: editorial ? "#11100d" : "#030303",
-    paper: warm ? "246,224,184" : editorial ? "230,220,205" : "255,246,235",
-    accent: danger ? "208,0,18" : warm ? "226,106,42" : "208,0,18",
-    secondary: warm ? "255,189,88" : editorial ? "230,220,205" : "255,255,255",
-    density: editorial ? 0.36 + seed * 0.22 : 0.62 + seed * 0.3,
-    contrast: danger ? 1.36 : editorial ? 1.18 : 1.3,
-    warmth: warm ? 1 : editorial ? 0.5 : 0.72,
+    bg: editorial ? "#11100d" : documentary ? "#06080c" : "#030303",
+    paper: warm ? "246,224,184" : editorial ? "230,220,205" : documentary ? "230,235,244" : "255,246,235",
+    accent: danger ? "208,0,18" : warm ? "226,106,42" : documentary ? "230,235,244" : "208,0,18",
+    secondary: warm ? "255,189,88" : editorial ? "230,220,205" : documentary ? "180,195,218" : "255,255,255",
+    density: editorial ? 0.36 + seed * 0.22 : documentary ? 0.46 + seed * 0.18 : 0.62 + seed * 0.3,
+    contrast: danger ? 1.36 : editorial ? 1.18 : documentary ? 1.24 : 1.3,
+    warmth: warm ? 1 : editorial ? 0.5 : documentary ? 0.24 : 0.72,
     editorial,
   };
 }
@@ -59,31 +62,42 @@ function artDirection(plan, attempt = 0) {
 function compositionMap(plan, image, width, height, attempt = 0) {
   const crop = plan.selected.crop;
   const hero = heroBox(image, plan.analysis, crop, width, height);
+  const philosophy = plan.philosophy || {};
   const seed = (seedFromPlan(plan) + attempt * 0.231) % 1;
   const heroCx = clamp((hero.x + hero.w * 0.5) / width, 0.12, 0.88);
   const heroCy = clamp((hero.y + hero.h * 0.45) / height, 0.14, 0.82);
-  const negativeSide = heroCx > 0.52 ? "left" : "right";
+  const negativeSide = philosophy.titleSide === "right" ? "right" : philosophy.titleSide === "left" || philosophy.titleSide === "bottom-left" ? "left" : heroCx > 0.52 ? "left" : "right";
   const topSpace = heroCy > 0.47;
+  const geometryTension = {
+    "documentary-motion": "edge-whisper",
+    "thumbnail-burst": "center-crush",
+    "editorial-frame": "floating-offset",
+    "monumental-arc": "poster-stack",
+  };
   const tensionModes = ["diagonal-rise", "low-anchor", "floating-offset", "center-crush", "edge-whisper", "poster-stack"];
-  const tension = tensionModes[Math.floor(seed * tensionModes.length) % tensionModes.length];
-  const titleX = negativeSide === "left"
-    ? width * (0.05 + seed * 0.08)
-    : width * (0.52 + seed * 0.08);
-  const titleY = tension === "low-anchor"
-    ? height * (0.62 + seed * 0.1)
-    : tension === "edge-whisper"
-      ? height * (0.18 + seed * 0.16)
-      : topSpace
-        ? height * (0.12 + seed * 0.12)
-        : height * (0.48 + seed * 0.16);
-  const titleMaxW = negativeSide === "left"
-    ? Math.min(width * 0.56, Math.max(width * 0.34, hero.x - width * 0.02))
-    : Math.min(width * 0.5, Math.max(width * 0.34, width - titleX - width * 0.05));
-  const logoX = tension === "center-crush" ? width * 0.055 : titleX;
-  const logoY = titleY > height * 0.5 ? height * 0.07 : height * 0.82;
+  const tension = geometryTension[philosophy.geometry] || tensionModes[Math.floor(seed * tensionModes.length) % tensionModes.length];
+  const titleX = philosophy.titleSide === "right"
+    ? width * (0.56 + seed * 0.04)
+    : width * (0.05 + seed * 0.05);
+  const titleY = philosophy.titleSide === "bottom"
+    ? height * (0.64 + seed * 0.08)
+    : philosophy.titleSide === "bottom-left"
+      ? height * (0.5 + seed * 0.09)
+      : tension === "edge-whisper"
+        ? height * (0.2 + seed * 0.12)
+        : topSpace
+          ? height * (0.12 + seed * 0.12)
+          : height * (0.44 + seed * 0.14);
+  const titleMaxW = philosophy.titleSide === "bottom"
+    ? width * 0.82
+    : negativeSide === "left"
+      ? Math.min(width * 0.56, Math.max(width * 0.34, hero.x - width * 0.02))
+      : Math.min(width * 0.5, Math.max(width * 0.34, width - titleX - width * 0.05));
+  const logoX = philosophy.logo === "top-right" ? width * 0.79 : philosophy.logo === "top-left" ? width * 0.055 : titleX;
+  const logoY = philosophy.logo === "under-title" ? Math.min(height * 0.86, titleY + height * 0.24) : height * 0.07;
   const ctaX = titleX;
   const ctaY = titleY > height * 0.5 ? height * 0.5 : Math.min(height * 0.86, titleY + height * 0.34);
-  return { crop, hero, heroCx, heroCy, negativeSide, topSpace, tension, titleX, titleY, titleMaxW, logoX, logoY, ctaX, ctaY };
+  return { crop, hero, heroCx, heroCy, negativeSide, topSpace, tension, titleX, titleY, titleMaxW, logoX, logoY, ctaX, ctaY, visualSystemId: philosophy.visualSystemId, renderPlanHash: plan.renderPlanHash };
 }
 
 function wrapTitle(ctx, text, maxWidth, startSize, family = "Bebas Neue", maxLines = 3) {
@@ -515,5 +529,5 @@ export async function paintCommercialVisualSystem(canvas, image, plan, settings,
   paintPerformerBlock(ctx, map, width, height, plan, direction);
   paintCTA(ctx, map, width, height, plan, direction);
   paintFooter(ctx, width, height, plan, settings, direction);
-  return { logoHeight: width * 0.06, compositionMode: map.tension, commercialAdvertisingScore: commercialScore.total, commercialScore, artworkValidation: commercialScore.passed ? "passed" : "best_available" };
+  return { logoHeight: width * 0.06, compositionMode: map.tension, visualSystemId: map.visualSystemId, renderedRenderPlanHash: map.renderPlanHash, renderMap: map, renderDirection: direction, commercialAdvertisingScore: commercialScore.total, commercialScore, artworkValidation: commercialScore.passed ? "passed" : "best_available" };
 }

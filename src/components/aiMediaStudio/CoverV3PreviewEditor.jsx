@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,35 @@ function MetricRow({ candidate }) {
   );
 }
 
+function DiagnosticTable({ diagnostics = [] }) {
+  if (!diagnostics.length) return null;
+  return (
+    <div className="overflow-auto rounded-xl border border-border bg-secondary/20 p-3">
+      <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Runtime candidate data</p>
+      <table className="w-full min-w-[980px] text-left text-[10px]">
+        <thead className="text-muted-foreground">
+          <tr><th>Candidate</th><th>Philosophy</th><th>Concept</th><th>Visual system</th><th>Render hash</th><th>Cache key</th><th>Title</th><th>Logo</th><th>Color</th></tr>
+        </thead>
+        <tbody>
+          {diagnostics.map(item => (
+            <tr key={item.candidateId} className="border-t border-border/60 align-top">
+              <td className="py-1 font-mono text-foreground">{item.candidateId}</td>
+              <td>{item.philosophyId}</td>
+              <td className="font-mono">{item.conceptId}</td>
+              <td>{item.visualSystemId}</td>
+              <td className="font-mono text-foreground">{item.renderPlanHash}</td>
+              <td className="font-mono">{item.canvasCacheKey}</td>
+              <td>{item.titleGeometry?.side}</td>
+              <td>{item.logoGeometry?.strategy}</td>
+              <td>{item.colorStrategy}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSuffix = 'key-art-v3' }) {
   const winnerCanvasRef = useRef(null);
   const candidateRefs = useRef([]);
@@ -24,10 +53,12 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
   const [plan, setPlan] = useState(null);
   const [rendered, setRendered] = useState(false);
   const [error, setError] = useState('');
+  const [renderedCandidates, setRenderedCandidates] = useState([]);
+  const [selectedCandidateId, setSelectedCandidateId] = useState(null);
   const renderSeqRef = useRef(0);
   const dims = getCoverDimensions(settings);
+  const automaticSettings = useMemo(() => ({ formatId: settings.formatId, customWidth: settings.customWidth, customHeight: settings.customHeight, sellingPoints: settings.sellingPoints }), [settings.formatId, settings.customWidth, settings.customHeight, settings.sellingPoints]);
   const key = JSON.stringify({ metadata, width: dims.width, height: dims.height, frame: frame?.index });
-  const settingsKey = JSON.stringify(settings);
 
   useEffect(() => {
     let active = true;
@@ -40,8 +71,11 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
         const image = await blobToCanvasImage(frame.blob);
         if (!active) return;
         imageRef.current = image;
-        const nextPlan = await generatePosterPlan(image, metadata, settings, dims.width, dims.height);
-        if (active) setPlan(nextPlan);
+        const nextPlan = await generatePosterPlan(image, metadata, automaticSettings, dims.width, dims.height);
+        if (active) {
+          setPlan(nextPlan);
+          setSelectedCandidateId(nextPlan.selected?.candidate_id || nextPlan.variants?.[0]?.candidate_id || null);
+        }
       } catch (err) {
         if (active) setError(err.message || 'v3 candidate generation failed');
       }
@@ -51,7 +85,7 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
       if (imageRef.current?.close) imageRef.current.close();
       imageRef.current = null;
     };
-  }, [key]);
+  }, [key, automaticSettings]);
 
   useEffect(() => {
     if (!plan || !imageRef.current || !winnerCanvasRef.current) return;
@@ -62,13 +96,15 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
     const frameId = window.requestAnimationFrame(async () => {
       try {
         const visibleCandidates = plan.variants.slice(0, 4);
-        await Promise.all(visibleCandidates.map((candidate, index) => {
+        const rendered = await Promise.all(visibleCandidates.map((candidate, index) => {
           const canvas = candidateRefs.current[index];
-          if (!canvas) return Promise.resolve();
-          return renderPosterVariantToCanvas(canvas, imageRef.current, plan, candidate, settings, dims.width, dims.height);
+          if (!canvas) return Promise.resolve(null);
+          return renderPosterVariantToCanvas(canvas, imageRef.current, plan, candidate, automaticSettings, dims.width, dims.height);
         }));
-        await renderPosterVariantToCanvas(winnerCanvasRef.current, imageRef.current, plan, plan.selected, settings, dims.width, dims.height);
+        const selectedCandidate = visibleCandidates.find(candidate => candidate.candidate_id === selectedCandidateId) || plan.selected || visibleCandidates[0];
+        await renderPosterVariantToCanvas(winnerCanvasRef.current, imageRef.current, plan, selectedCandidate, automaticSettings, dims.width, dims.height);
         if (renderSeq !== renderSeqRef.current) return;
+        setRenderedCandidates(rendered.filter(Boolean).map(item => ({ candidateId: item.candidateId, renderPlanHash: item.renderPlanHash, visualSystemId: item.selected?.visualSystemId || item.visualSystemId, compositionMode: item.selected?.compositionMode, artworkValidation: item.selected?.artworkValidation })));
         setRendered(true);
         setError('');
       } catch (err) {
@@ -78,7 +114,7 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
     });
     rafRef.current = frameId;
     return () => window.cancelAnimationFrame(frameId);
-  }, [plan, settingsKey, metadata, dims.width, dims.height]);
+  }, [plan, selectedCandidateId, automaticSettings, dims.width, dims.height]);
 
   const download = async (type) => {
     if (!rendered || !winnerCanvasRef.current) return;
@@ -93,6 +129,9 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
   };
 
   const visibleCandidates = plan?.variants?.slice(0, 4) || [];
+  const selectedCandidate = visibleCandidates.find(candidate => candidate.candidate_id === selectedCandidateId) || plan?.selected || visibleCandidates[0];
+  const selectedApproved = !!selectedCandidate?.score?.passesQualityGate;
+  const canExport = rendered && selectedApproved;
 
   return (
     <div className="space-y-4">
@@ -108,12 +147,14 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
 
       {error && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
-      {plan?.selected && (
+      {selectedCandidate && (
         <div className="rounded-lg border border-border bg-secondary/30 p-3 text-xs text-muted-foreground">
-          Winner: <span className="text-foreground">{plan.selected.poster_family_label}</span> · {plan.winner_reason}
-          <MetricRow candidate={plan.selected} />
+          {selectedApproved ? 'Selected candidate' : 'Best attempt — not approved'}: <span className="text-foreground">{selectedCandidate.poster_family_label}</span> · {selectedApproved ? plan.winner_reason : selectedCandidate.rejection_reasons?.join(', ')}
+          <MetricRow candidate={selectedCandidate} />
         </div>
       )}
+
+      <DiagnosticTable diagnostics={plan?.diagnostics || []} />
 
       <div className="relative overflow-auto rounded-xl border border-border bg-black p-3">
         <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Winning Candidate</p>
@@ -122,25 +163,26 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {visibleCandidates.map((candidate, index) => (
-          <div key={candidate.poster_family_id} className={`rounded-xl border p-2 ${candidate.poster_family_id === plan.selected.poster_family_id ? 'border-primary bg-primary/10' : 'border-border bg-secondary/20'}`}>
+          <button type="button" key={candidate.candidate_id} onClick={() => setSelectedCandidateId(candidate.candidate_id)} className={`rounded-xl border p-2 text-left transition ${candidate.candidate_id === selectedCandidate?.candidate_id ? 'border-primary bg-primary/10' : 'border-border bg-secondary/20 hover:bg-secondary/40'}`}>
             <div className="mb-2 flex items-center justify-between gap-2">
               <span className="text-xs font-bold text-foreground">Candidate {index + 1}</span>
-              {candidate.poster_family_id === plan.selected.poster_family_id && <Badge variant="outline">Winner</Badge>}
+              {candidate.candidate_id === plan.selected.candidate_id && <Badge variant="outline">Best score</Badge>}
             </div>
             <canvas ref={(node) => { candidateRefs.current[index] = node; }} className="h-auto w-full rounded-lg bg-black" />
             <p className="mt-2 text-xs font-semibold text-foreground">{candidate.poster_family_label}</p>
+            <p className="mt-1 font-mono text-[10px] text-muted-foreground">{candidate.render_plan_hash} · {candidate.visual_system_id}</p>
             <p className="mt-1 text-[10px] text-muted-foreground">{candidate.philosophy}</p>
             <MetricRow candidate={candidate} />
             {!!candidate.rejection_reasons?.length && (
               <p className="mt-2 text-[10px] text-muted-foreground">Needs work: {candidate.rejection_reasons.join(', ')}</p>
             )}
-          </div>
+          </button>
         ))}
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2">
-        <Button disabled={!rendered} onClick={() => download('image/png')} className="gap-2"><Download className="h-4 w-4" />Download Winner PNG</Button>
-        <Button disabled={!rendered} onClick={() => download('image/jpeg')} variant="outline" className="gap-2"><Download className="h-4 w-4" />Download Winner JPG</Button>
+        <Button disabled={!canExport} onClick={() => download('image/png')} className="gap-2"><Download className="h-4 w-4" />Download Selected PNG</Button>
+        <Button disabled={!canExport} onClick={() => download('image/jpeg')} variant="outline" className="gap-2"><Download className="h-4 w-4" />Download Selected JPG</Button>
       </div>
     </div>
   );
