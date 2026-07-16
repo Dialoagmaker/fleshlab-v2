@@ -10,6 +10,7 @@ import ProcessingLog from "@/components/aiMediaStudio/ProcessingLog";
 import PrivacyVerification from "@/components/aiMediaStudio/PrivacyVerification";
 import CoverGeneratorPanel from "@/components/aiMediaStudio/CoverGeneratorPanel";
 import LibraryCoverProof from "@/components/aiMediaStudio/LibraryCoverProof";
+import HotelSessionsCampaignV1 from "@/components/aiMediaStudio/campaignV1/HotelSessionsCampaignV1";
 import { createOutputs, createTeaserFromFrames, detectScenes, isSupportedVideoFile, loadVideoMetadata, sampleVideoFrames } from "@/lib/aiMediaStudio/localAnalyzer";
 import { installLocalMediaPrivacyGuard } from "@/lib/aiMediaStudio/privacyGuard";
 import { base44 } from "@/api/base44Client";
@@ -111,11 +112,12 @@ export default function AIMediaStudio() {
       <PrivacyVerification outputCount={outputCount} />
 
       <Tabs defaultValue="review" className="space-y-4">
-        <TabsList className="grid h-auto w-full grid-cols-5 md:w-[820px]"><TabsTrigger value="review">Review</TabsTrigger><TabsTrigger value="outputs">Outputs</TabsTrigger><TabsTrigger value="covers">Covers</TabsTrigger><TabsTrigger value="proof">Proof Gallery</TabsTrigger><TabsTrigger value="log">Log</TabsTrigger></TabsList>
+        <TabsList className="grid h-auto w-full grid-cols-3 md:w-[980px] md:grid-cols-6"><TabsTrigger value="review">Review</TabsTrigger><TabsTrigger value="campaign">Campaign V1</TabsTrigger><TabsTrigger value="outputs">Outputs</TabsTrigger><TabsTrigger value="covers">Covers</TabsTrigger><TabsTrigger value="proof">Proof Gallery</TabsTrigger><TabsTrigger value="log">Log</TabsTrigger></TabsList>
         <TabsContent value="review" className="grid gap-4 lg:grid-cols-[360px_1fr]">
           <Card><CardHeader><CardTitle className="text-sm">Local Queue</CardTitle></CardHeader><CardContent><AnalysisQueue items={items} selectedId={selectedId} onSelect={setSelectedId} /></CardContent></Card>
           <SmartReviewPanel item={selected} />
         </TabsContent>
+        <TabsContent value="campaign"><HotelSessionsCampaignV1 item={selected} /></TabsContent>
         <TabsContent value="outputs"><OutputFilesPanel outputs={selected?.outputs || []} teasers={selected?.teasers || (selected?.teaser ? [selected.teaser] : [])} /></TabsContent>
         <TabsContent value="covers"><CoverGeneratorPanel item={selected} /></TabsContent>
         <TabsContent value="proof"><LibraryCoverProof /></TabsContent>
