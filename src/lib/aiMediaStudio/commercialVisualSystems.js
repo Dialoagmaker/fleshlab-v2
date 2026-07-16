@@ -341,12 +341,6 @@ function paintTitleBlock(ctx, map, width, height, plan, direction, settings = {}
     y += height * 0.038;
   }
 
-  if (campaign.hookLine) {
-    ctx.font = font(width * 0.014, "Inter", 800);
-    ctx.fillStyle = "rgba(255,255,255,0.68)";
-    const hook = upper(campaign.hookLine).slice(0, 72);
-    ctx.fillText(hook, map.titleX, y);
-  }
   ctx.restore();
   return y;
 }
