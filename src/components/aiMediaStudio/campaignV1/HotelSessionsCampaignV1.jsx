@@ -17,7 +17,9 @@ export default function HotelSessionsCampaignV1({ item }) {
     setBusy(true);
     setError("");
     try {
-      setCampaign(await createHotelSessionsCampaign(item));
+      const nextCampaign = await createHotelSessionsCampaign(item);
+      localStorage.setItem("fleshlab_hotel_sessions_latest_campaign", JSON.stringify({ consensus: nextCampaign.consensus, campaignId: nextCampaign.campaignId, createdAt: nextCampaign.createdAt }));
+      setCampaign(nextCampaign);
     } catch (err) {
       setError(err.message || "Campaign creation failed");
     } finally {

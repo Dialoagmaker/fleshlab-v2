@@ -154,15 +154,15 @@ export default function VisualAttentionMapLab() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-black tracking-tight text-foreground">Cover Engine Optimizer Lab</h1>
-            <Badge variant="outline">Executable iteration</Badge>
+            <Badge variant="destructive">Internal R&D</Badge>
           </div>
           <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-            Candidate actions now change measurable parameters, generate a second candidate, measure actual score delta, then accept or revert each action. Poster Engine v2 remains untouched.
+            Internal R&D only. Production covers are generated from AI Media Studio → Upload Video → Analyze Video → Covers → Generate Automatic Cover. This lab does not replace the production cover workflow.
           </p>
         </div>
         <div className="flex gap-2">
           <input id="attention-file" type="file" accept="image/*" onChange={handleFile} className="hidden" />
-          <Button asChild><label htmlFor="attention-file">Upload frame or cover</label></Button>
+          <Button asChild><label htmlFor="attention-file">Upload lab frame/cover</label></Button>
           <Button variant="outline" onClick={runIteration} disabled={!map}>Run iteration</Button>
         </div>
       </div>

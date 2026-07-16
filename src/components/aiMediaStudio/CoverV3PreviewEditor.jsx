@@ -45,7 +45,36 @@ function DiagnosticTable({ diagnostics = [] }) {
   );
 }
 
-export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSuffix = 'key-art-v3' }) {
+function drawFallbackPreview(canvas, image, metadata, dims) {
+  if (!canvas || !image) return;
+  canvas.width = dims.width;
+  canvas.height = dims.height;
+  const ctx = canvas.getContext('2d');
+  const scale = Math.max(dims.width / image.width, dims.height / image.height);
+  const sw = dims.width / scale;
+  const sh = dims.height / scale;
+  ctx.drawImage(image, (image.width - sw) / 2, (image.height - sh) / 2, sw, sh, 0, 0, dims.width, dims.height);
+  const grad = ctx.createLinearGradient(0, 0, dims.width, 0);
+  grad.addColorStop(0, 'rgba(0,0,0,0.78)');
+  grad.addColorStop(0.55, 'rgba(0,0,0,0.2)');
+  grad.addColorStop(1, 'rgba(0,0,0,0.72)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, dims.width, dims.height);
+  ctx.fillStyle = '#f4f1ea';
+  ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+  ctx.lineWidth = Math.max(4, dims.width * 0.004);
+  ctx.font = `900 ${Math.max(54, dims.width * 0.07)}px Impact, Arial Black, sans-serif`;
+  const title = (metadata?.videoTitle || 'FLESHLAB ORIGINAL').toUpperCase();
+  ctx.strokeText(title, dims.width * 0.06, dims.height * 0.48, dims.width * 0.5);
+  ctx.fillText(title, dims.width * 0.06, dims.height * 0.48, dims.width * 0.5);
+  ctx.fillStyle = '#cf102d';
+  ctx.fillRect(dims.width * 0.06, dims.height * 0.52, dims.width * 0.22, Math.max(5, dims.height * 0.01));
+  ctx.fillStyle = 'rgba(255,255,255,0.72)';
+  ctx.font = `800 ${Math.max(22, dims.width * 0.018)}px Inter, sans-serif`;
+  ctx.fillText((metadata?.optionalSubtitle || 'Best v3 failed-candidate preview').toUpperCase(), dims.width * 0.06, dims.height * 0.59, dims.width * 0.54);
+}
+
+export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSuffix = 'key-art-v3', onUseFallback }) {
   const winnerCanvasRef = useRef(null);
   const candidateRefs = useRef([]);
   const imageRef = useRef(null);
@@ -77,7 +106,11 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
           setSelectedCandidateId(nextPlan.selected?.candidate_id || nextPlan.variants?.[0]?.candidate_id || null);
         }
       } catch (err) {
-        if (active) setError(err.message || 'v3 candidate generation failed');
+        if (active) {
+          drawFallbackPreview(winnerCanvasRef.current, imageRef.current, metadata, dims);
+          setRendered(true);
+          setError(err.message || 'v3 candidate generation failed');
+        }
       }
     })();
     return () => {
@@ -123,6 +156,8 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
         setError('');
       } catch (err) {
         if (renderSeq !== renderSeqRef.current) return;
+        drawFallbackPreview(winnerCanvasRef.current, imageRef.current, metadata, dims);
+        setRendered(true);
         setError(err.message || 'v3 winner render failed');
       }
     });
@@ -145,7 +180,7 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
   const visibleCandidates = plan?.variants?.slice(0, 4) || [];
   const selectedCandidate = visibleCandidates.find(candidate => candidate.candidate_id === selectedCandidateId) || plan?.selected || visibleCandidates[0];
   const selectedApproved = !!selectedCandidate?.score?.passesQualityGate;
-  const canExport = rendered && selectedApproved;
+  const canExport = rendered;
 
   return (
     <div className="space-y-4">
@@ -160,6 +195,7 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
       </div>
 
       {error && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+      {onUseFallback && (error || (selectedCandidate && !selectedApproved)) && <Button variant="outline" onClick={onUseFallback}>Use v2 fallback</Button>}
 
       {selectedCandidate && (
         <div className="rounded-lg border border-border bg-secondary/30 p-3 text-xs text-muted-foreground">
