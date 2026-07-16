@@ -12,9 +12,9 @@ function formatDuration(seconds) {
 export default function VideoTile({ video, label = "Featured" }) {
   const href = video?.slug ? `/videos/${video.slug}` : "/videos";
   return (
-    <a href={href} className="group block overflow-hidden rounded-[26px] bg-[#101010] shadow-xl shadow-black/25 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(0,0,0,0.72)]">
+    <a href={href} className="group block overflow-hidden rounded-[28px] bg-[#101010] shadow-xl shadow-black/25 transition-all duration-700 hover:-translate-y-1 hover:shadow-[0_32px_84px_rgba(0,0,0,0.74)]">
       <div className="relative aspect-[16/10] overflow-hidden">
-        <MediaImage src={getVideoThumbnailUrl(video)} alt={video?.title} className="h-full w-full transition-transform duration-500 group-hover:scale-[1.06]" />
+        <MediaImage src={getVideoThumbnailUrl(video)} alt={video?.title} className="h-full w-full transition-transform duration-1000 ease-out group-hover:scale-[1.07]" />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent opacity-85" />
         <span className="absolute left-4 top-4 rounded-full bg-[#E51D2A] px-3 py-1 text-[10px] font-black uppercase tracking-wide text-white">{label}</span>
         <span className="absolute right-4 top-4 rounded-full bg-black/60 px-3 py-1 text-[10px] font-bold text-white backdrop-blur">{formatDuration(video?.duration_seconds)}</span>
