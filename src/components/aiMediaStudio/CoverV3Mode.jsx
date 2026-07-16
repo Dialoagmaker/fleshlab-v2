@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import CoverV3PreviewEditor from './CoverV3PreviewEditor';
 
-export default function CoverV3Mode({ frame, metadata, settings, itemFileName, onUseFallback }) {
+export default function CoverV3Mode({ frame, compareFrames = [], lockedHero = true, metadata, settings, itemFileName, onUseFallback }) {
   const effectiveMetadata = {
     ...metadata,
     videoTitle: metadata.videoTitle || '',
@@ -16,11 +16,22 @@ export default function CoverV3Mode({ frame, metadata, settings, itemFileName, o
           <Badge variant="outline">Cover Engine v4</Badge>
         </div>
         <p className="text-xs text-muted-foreground">
-          Advertising Photographer → dedicated KRAKEN-family renderer → export validation. No generic text panel, no CTA, no tiny boxed logo.
+          Advertising Photographer → human locked hero frame → dedicated KRAKEN-family renderer → export validation. {lockedHero ? 'Locked Hero Mode: typography and branding may change, the photograph may not.' : 'Hero locking is off.'}
         </p>
       </CardHeader>
       <CardContent className="p-4 pt-0">
-        <CoverV3PreviewEditor frame={frame} metadata={effectiveMetadata} settings={settings} fileSuffix="key-art-kraken" />
+        {compareFrames.length > 1 ? (
+          <div className="grid gap-4 xl:grid-cols-2">
+            {compareFrames.map((compareFrame, index) => (
+              <div key={compareFrame.index} className="rounded-xl border border-border bg-background/40 p-3">
+                <Badge variant="outline" className="mb-3">Hero Frame {index + 1} · locked photograph</Badge>
+                <CoverV3PreviewEditor frame={compareFrame} metadata={effectiveMetadata} settings={settings} fileSuffix={`key-art-kraken-frame-${index + 1}`} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <CoverV3PreviewEditor key={frame?.index} frame={frame} metadata={effectiveMetadata} settings={settings} fileSuffix="key-art-kraken" />
+        )}
       </CardContent>
     </Card>
   );
