@@ -127,15 +127,17 @@ export function createCommercialCampaign({ analysis = {}, metadata = {} } = {}) 
   const episodeNumber = index + 1;
   const episodeTitle = franchise.episodes[index];
   const performer = metadata.performerName || metadata.performer || "FLESHLAB Cast";
+  const explicitTitle = metadata.videoTitle || metadata.title || metadata.campaignName || franchise.campaignName;
+  const explicitSubtitle = metadata.optionalSubtitle || metadata.subtitle || `Episode ${episodeNumber}: ${episodeTitle}`;
   const hookLine = `${franchise.tagline} ${product === "Trailer" ? "The preview starts now." : "The episode starts here."}`;
   return {
     ...brief,
-    campaignName: franchise.campaignName,
-    mainTitle: franchise.campaignName,
-    title: franchise.campaignName,
+    campaignName: metadata.campaignName || franchise.campaignName,
+    mainTitle: explicitTitle,
+    title: explicitTitle,
     episodeNumber,
     episodeTitle,
-    subtitle: `Episode ${episodeNumber}: ${episodeTitle}`,
+    subtitle: explicitSubtitle,
     performer,
     hookLine,
     hook: hookLine,
@@ -158,6 +160,6 @@ export function createCommercialCampaign({ analysis = {}, metadata = {} } = {}) 
     },
     hierarchy: ["campaign name", "episode title", "performer", "hook line", "brand anchor", "CTA"],
     clickScore: Math.round((0.46 + narrative.curiosity * 0.22 + narrative.interaction * 0.17 + narrative.subject * 0.15) * 100),
-    ignoredFilename: "all filename/title metadata intentionally ignored for campaign naming",
+    titleSource: explicitTitle === franchise.campaignName ? "franchise" : "user_input",
   };
 }

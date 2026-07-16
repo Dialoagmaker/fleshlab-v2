@@ -16,6 +16,29 @@ function coverImage(ctx, image, crop, x, y, width, height) {
   ctx.drawImage(image, crop.sx, crop.sy, crop.sw, crop.sh, x, y, width, height);
 }
 
+function manualValue(settings, key, fallback) {
+  return settings?.manualOverrides?.[key] ? Number(settings[key]) : fallback;
+}
+
+function adjustedCrop(image, crop, settings = {}) {
+  const zoom = clamp(manualValue(settings, "zoom", 1), 0.7, 2.2);
+  const sw = crop.sw / zoom;
+  const sh = crop.sh / zoom;
+  const cx = crop.sx + crop.sw * 0.5 + (manualValue(settings, "x", 0) / 100) * crop.sw * 0.42;
+  const cy = crop.sy + crop.sh * 0.5 + (manualValue(settings, "y", 0) / 100) * crop.sh * 0.42;
+  return {
+    ...crop,
+    sx: clamp(cx - sw * 0.5, 0, Math.max(0, image.width - sw)),
+    sy: clamp(cy - sh * 0.5, 0, Math.max(0, image.height - sh)),
+    sw,
+    sh,
+  };
+}
+
+function imageFilter(settings = {}, brightness = 100, contrast = 120, saturation = 100) {
+  return `brightness(${Math.round(manualValue(settings, "brightness", brightness))}%) contrast(${Math.round(manualValue(settings, "contrast", contrast))}%) saturate(${Math.round(manualValue(settings, "saturation", saturation))}%)`;
+}
+
 function heroBox(image, analysis, crop, width, height) {
   const source = analysis.subjectBox || { x: 0.5, y: 0.16, w: 0.34, h: 0.66 };
   return {
@@ -59,8 +82,8 @@ function artDirection(plan, attempt = 0) {
   };
 }
 
-function compositionMap(plan, image, width, height, attempt = 0) {
-  const crop = plan.selected.crop;
+function compositionMap(plan, image, width, height, attempt = 0, settings = {}) {
+  const crop = adjustedCrop(image, plan.selected.crop, settings);
   const hero = heroBox(image, plan.analysis, crop, width, height);
   const philosophy = plan.philosophy || {};
   const seed = (seedFromPlan(plan) + attempt * 0.231) % 1;
@@ -93,11 +116,15 @@ function compositionMap(plan, image, width, height, attempt = 0) {
     : negativeSide === "left"
       ? Math.min(width * 0.56, Math.max(width * 0.34, hero.x - width * 0.02))
       : Math.min(width * 0.5, Math.max(width * 0.34, width - titleX - width * 0.05));
-  const logoX = philosophy.logo === "top-right" ? width * 0.79 : philosophy.logo === "top-left" ? width * 0.055 : titleX;
-  const logoY = philosophy.logo === "under-title" ? Math.min(height * 0.86, titleY + height * 0.24) : height * 0.07;
-  const ctaX = titleX;
-  const ctaY = titleY > height * 0.5 ? height * 0.5 : Math.min(height * 0.86, titleY + height * 0.34);
-  return { crop, hero, heroCx, heroCy, negativeSide, topSpace, tension, titleX, titleY, titleMaxW, logoX, logoY, ctaX, ctaY, visualSystemId: philosophy.visualSystemId, renderPlanHash: plan.renderPlanHash };
+  const manualTitleY = settings?.manualOverrides?.titleY ? height * (settings.titleY / 100) : titleY;
+  const manualTitleX = titleX + (manualValue(settings, "x", 0) / 100) * width * 0.08;
+  const logoBaseX = philosophy.logo === "top-right" ? width * 0.79 : philosophy.logo === "top-left" ? width * 0.055 : manualTitleX;
+  const logoBaseY = philosophy.logo === "under-title" ? Math.min(height * 0.86, manualTitleY + height * 0.24) : height * 0.07;
+  const logoX = clamp(logoBaseX + (manualValue(settings, "logoX", 0) / 100) * width * 0.28, width * 0.02, width * 0.9);
+  const logoY = clamp(logoBaseY + (manualValue(settings, "logoY", 0) / 100) * height * 0.28, height * 0.02, height * 0.88);
+  const ctaX = manualTitleX;
+  const ctaY = manualTitleY > height * 0.5 ? height * 0.5 : Math.min(height * 0.86, manualTitleY + height * 0.34);
+  return { crop, hero, heroCx, heroCy, negativeSide, topSpace, tension, titleX: manualTitleX, titleY: manualTitleY, titleMaxW, logoX, logoY, ctaX, ctaY, visualSystemId: philosophy.visualSystemId, renderPlanHash: plan.renderPlanHash };
 }
 
 function wrapTitle(ctx, text, maxWidth, startSize, family = "Bebas Neue", maxLines = 3) {
@@ -131,9 +158,10 @@ function getLogo() {
   return logoPromise;
 }
 
-async function paintLogo(ctx, map, width, direction) {
+async function paintLogo(ctx, map, width, direction, settings = {}) {
   const logo = await getLogo();
-  const w = width * (0.12 + direction.seed * 0.045);
+  const scale = clamp(manualValue(settings, "logoScale", 100) / 100, 0.4, 3.2);
+  const w = width * (0.12 + direction.seed * 0.045) * scale;
   const h = w * (logo.height / logo.width);
   ctx.save();
   ctx.globalAlpha = 0.92;
@@ -146,16 +174,16 @@ async function paintLogo(ctx, map, width, direction) {
   return { w, h };
 }
 
-function paintBackgroundLayer(ctx, image, map, width, height, direction) {
+function paintBackgroundLayer(ctx, image, map, width, height, direction, settings = {}) {
   ctx.fillStyle = direction.bg;
   ctx.fillRect(0, 0, width, height);
   ctx.save();
-  ctx.filter = `blur(${Math.round(width * 0.012)}px) brightness(42%) contrast(130%) saturate(92%)`;
+  ctx.filter = `blur(${Math.round(width * 0.012)}px) brightness(${Math.round(manualValue(settings, "brightness", 42))}%) contrast(${Math.round(manualValue(settings, "contrast", 130))}%) saturate(${Math.round(manualValue(settings, "saturation", 92))}%)`;
   coverImage(ctx, image, map.crop, -width * 0.035, -height * 0.035, width * 1.07, height * 1.07);
   ctx.restore();
   ctx.save();
   ctx.globalAlpha = direction.editorial ? 0.76 : 0.86;
-  ctx.filter = `brightness(${Math.round(84 + direction.warmth * 12)}%) contrast(${Math.round(direction.contrast * 100)}%) saturate(${Math.round(88 + direction.warmth * 34)}%)`;
+  ctx.filter = imageFilter(settings, 84 + direction.warmth * 12, direction.contrast * 100, 88 + direction.warmth * 34);
   coverImage(ctx, image, map.crop, 0, 0, width, height);
   ctx.restore();
 }
@@ -207,12 +235,12 @@ function paintDepthLayer(ctx, map, width, height, direction) {
   ctx.restore();
 }
 
-function paintHeroEnhancement(ctx, image, map, width, height, direction) {
+function paintHeroEnhancement(ctx, image, map, width, height, direction, settings = {}) {
   ctx.save();
   ctx.beginPath();
   ctx.ellipse(map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.46, Math.max(40, map.hero.w * 0.62), Math.max(60, map.hero.h * 0.55), 0, 0, Math.PI * 2);
   ctx.clip();
-  ctx.filter = `brightness(${Math.round(102 + direction.warmth * 8)}%) contrast(${Math.round(116 + direction.density * 18)}%) saturate(${Math.round(96 + direction.warmth * 22)}%)`;
+  ctx.filter = imageFilter(settings, 102 + direction.warmth * 8, 116 + direction.density * 18, 96 + direction.warmth * 22);
   coverImage(ctx, image, map.crop, 0, 0, width, height);
   ctx.restore();
 
@@ -262,19 +290,22 @@ function paintBrandAccents(ctx, map, width, height, direction) {
   ctx.restore();
 }
 
-function paintTitleBlock(ctx, map, width, height, plan, direction) {
+function paintTitleBlock(ctx, map, width, height, plan, direction, settings = {}) {
   const campaign = plan.campaign || {};
-  const title = campaign.mainTitle || campaign.title || "FLESHLAB ORIGINAL";
+  const title = upper(campaign.mainTitle || campaign.title || "FLESHLAB ORIGINAL");
+  const words = title.split(/\s+/).filter(Boolean);
+  const brushWord = !direction.editorial && words.length > 1 ? words.pop() : "";
+  const blockTitle = words.length ? words.join(" ") : title;
   const titleFamily = direction.editorial ? "Inter" : "Bebas Neue";
-  const titleSize = direction.editorial ? width * (0.056 + direction.seed * 0.018) : width * (0.09 + direction.seed * 0.04);
-  const block = wrapTitle(ctx, title, map.titleMaxW, titleSize, titleFamily, direction.editorial ? 4 : 3);
+  const baseSize = manualValue(settings, "titleSize", direction.editorial ? width * 0.07 : width * 0.145);
+  const block = wrapTitle(ctx, blockTitle, map.titleMaxW, baseSize, titleFamily, direction.editorial ? 4 : 2);
   let y = map.titleY;
   ctx.save();
-  ctx.shadowColor = "rgba(0,0,0,0.95)";
-  ctx.shadowBlur = width * 0.017;
-  ctx.lineWidth = Math.max(2, block.size * 0.026);
-  ctx.strokeStyle = "rgba(0,0,0,0.7)";
-  ctx.fillStyle = direction.editorial ? `rgb(${direction.paper})` : "#fff6ea";
+  ctx.shadowColor = "rgba(0,0,0,0.98)";
+  ctx.shadowBlur = width * 0.018;
+  ctx.lineWidth = Math.max(3, block.size * 0.032);
+  ctx.strokeStyle = "rgba(0,0,0,0.82)";
+  ctx.fillStyle = direction.editorial ? `rgb(${direction.paper})` : "#f4f0e7";
   ctx.font = font(block.size, titleFamily, 900);
   block.lines.forEach((line, index) => {
     const offset = map.tension === "diagonal-rise" ? index * width * 0.012 : map.tension === "poster-stack" ? (index % 2) * width * 0.025 : 0;
@@ -283,12 +314,30 @@ function paintTitleBlock(ctx, map, width, height, plan, direction) {
     y += block.lineHeight;
   });
 
+  if (brushWord) {
+    const brushSize = manualValue(settings, "subtitleSize", Math.max(width * 0.09, block.size * 0.72));
+    y += height * 0.012;
+    ctx.save();
+    ctx.translate(map.titleX - width * 0.012, y);
+    ctx.rotate(-0.055);
+    ctx.font = font(brushSize, "Permanent Marker", 900);
+    ctx.lineWidth = Math.max(3, brushSize * 0.045);
+    ctx.strokeStyle = "rgba(0,0,0,0.72)";
+    ctx.fillStyle = `rgba(${direction.accent},0.96)`;
+    ctx.strokeText(brushWord, 0, 0);
+    ctx.fillText(brushWord, 0, 0);
+    ctx.restore();
+    y += brushSize * 0.58;
+  }
+
   if (campaign.subtitle || campaign.episodeTitle) {
-    y += height * 0.015;
-    ctx.font = font(width * (direction.editorial ? 0.018 : 0.024), "Inter", 900);
+    y += height * 0.024;
+    ctx.font = font(Math.max(24, manualValue(settings, "performerSize", width * 0.022)), "Inter", 900);
+    ctx.fillStyle = "rgba(255,255,255,0.88)";
+    const subtitle = upper(campaign.subtitle || campaign.episodeTitle).slice(0, 46);
+    ctx.fillText(subtitle, map.titleX + width * 0.015, y);
     ctx.fillStyle = `rgba(${direction.accent},0.95)`;
-    const subtitle = upper(campaign.subtitle || campaign.episodeTitle);
-    ctx.fillText(subtitle, map.titleX, y);
+    ctx.fillRect(map.titleX, y - width * 0.016, width * 0.006, width * 0.012);
     y += height * 0.038;
   }
 
@@ -381,10 +430,10 @@ function paintCommercialColorGrade(ctx, width, height, direction) {
   ctx.restore();
 }
 
-function paintBackgroundSuppression(ctx, image, map, width, height, direction) {
+function paintBackgroundSuppression(ctx, image, map, width, height, direction, settings = {}) {
   ctx.save();
   ctx.globalAlpha = 0.58;
-  ctx.filter = `blur(${Math.round(width * 0.018)}px) brightness(48%) contrast(118%) saturate(74%)`;
+  ctx.filter = `blur(${Math.round(width * 0.018)}px) brightness(${Math.round(manualValue(settings, "brightness", 48))}%) contrast(${Math.round(manualValue(settings, "contrast", 118))}%) saturate(${Math.round(manualValue(settings, "saturation", 74))}%)`;
   coverImage(ctx, image, map.crop, 0, 0, width, height);
   ctx.restore();
   ctx.save();
@@ -397,12 +446,12 @@ function paintBackgroundSuppression(ctx, image, map, width, height, direction) {
   ctx.restore();
 }
 
-function paintLocalHeroContrast(ctx, image, map, width, height, direction) {
+function paintLocalHeroContrast(ctx, image, map, width, height, direction, settings = {}) {
   ctx.save();
   ctx.beginPath();
   ctx.ellipse(map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.43, Math.max(42, map.hero.w * 0.72), Math.max(70, map.hero.h * 0.64), 0, 0, Math.PI * 2);
   ctx.clip();
-  ctx.filter = `brightness(108%) contrast(${Math.round(132 + direction.density * 24)}%) saturate(${Math.round(106 + direction.warmth * 22)}%)`;
+  ctx.filter = imageFilter(settings, 108, 132 + direction.density * 24, 106 + direction.warmth * 22);
   coverImage(ctx, image, map.crop, 0, 0, width, height);
   ctx.restore();
   ctx.save();
@@ -493,24 +542,24 @@ function scoreCommercialAdvertising(plan, map, direction, width, height) {
   };
 }
 
-function selectValidatedArtwork(plan, image, width, height) {
+function selectValidatedArtwork(plan, image, width, height, settings = {}) {
   const attempts = [0, 1, 2, 3, 4, 5, 6].map(attempt => {
     const direction = artDirection(plan, attempt);
-    const map = compositionMap(plan, image, width, height, attempt);
+    const map = compositionMap(plan, image, width, height, attempt, settings);
     const commercialScore = scoreCommercialAdvertising(plan, map, direction, width, height);
     return { attempt, direction, map, commercialScore };
   }).sort((a, b) => b.commercialScore.total - a.commercialScore.total);
   return attempts.find(item => item.commercialScore.passed) || attempts[0];
 }
 
-function paintPremiumArtworkOnly(ctx, image, map, width, height, direction) {
-  paintBackgroundLayer(ctx, image, map, width, height, direction);
+function paintPremiumArtworkOnly(ctx, image, map, width, height, direction, settings = {}) {
+  paintBackgroundLayer(ctx, image, map, width, height, direction, settings);
   paintCommercialColorGrade(ctx, width, height, direction);
-  paintBackgroundSuppression(ctx, image, map, width, height, direction);
+  paintBackgroundSuppression(ctx, image, map, width, height, direction, settings);
   paintLightShaping(ctx, map, width, height, direction);
   paintDepthLayer(ctx, map, width, height, direction);
-  paintHeroEnhancement(ctx, image, map, width, height, direction);
-  paintLocalHeroContrast(ctx, image, map, width, height, direction);
+  paintHeroEnhancement(ctx, image, map, width, height, direction, settings);
+  paintLocalHeroContrast(ctx, image, map, width, height, direction, settings);
   paintAtmosphere(ctx, map, width, height, direction);
   paintPremiumMaterials(ctx, width, height, direction);
   finalGrade(ctx, width, height, direction);
@@ -520,12 +569,12 @@ export async function paintCommercialVisualSystem(canvas, image, plan, settings,
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d");
-  const artwork = selectValidatedArtwork(plan, image, width, height);
+  const artwork = selectValidatedArtwork(plan, image, width, height, settings);
   const { direction, map, commercialScore } = artwork;
-  paintPremiumArtworkOnly(ctx, image, map, width, height, direction);
+  paintPremiumArtworkOnly(ctx, image, map, width, height, direction, settings);
   paintBrandAccents(ctx, map, width, height, direction);
-  await paintLogo(ctx, map, width, direction);
-  paintTitleBlock(ctx, map, width, height, plan, direction);
+  await paintLogo(ctx, map, width, direction, settings);
+  paintTitleBlock(ctx, map, width, height, plan, direction, settings);
   paintPerformerBlock(ctx, map, width, height, plan, direction);
   paintCTA(ctx, map, width, height, plan, direction);
   paintFooter(ctx, width, height, plan, settings, direction);

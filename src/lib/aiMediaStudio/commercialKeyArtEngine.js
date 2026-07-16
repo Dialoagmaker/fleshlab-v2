@@ -281,7 +281,7 @@ function buildAttemptPlan(image, metadata, settings, width, height, analysis, ba
   const graphicLanguage = buildDirectedLanguage(baseLanguage, philosophy, attemptIndex);
   const crop = cropForHero(image, analysis, graphicLanguage, width, height, automaticCandidateSettings(settings));
   const score = buildPlanScore(analysis, graphicLanguage, philosophy, attemptIndex);
-  const campaignTitle = campaign.campaignName || campaign.mainTitle || campaign.title || metadata.videoTitle || "FLESHLAB ORIGINAL";
+  const campaignTitle = campaign.mainTitle || campaign.title || metadata.videoTitle || campaign.campaignName || "FLESHLAB ORIGINAL";
   const emotionalHook = campaign.hookLine || campaign.marketingTagline || campaign.fantasy || graphicLanguage.energy || "Authentic commercial moment";
   const candidateId = `candidate_${attemptIndex + 1}_${philosophy.id}`;
   const iterationId = `concept_iteration_${attemptIndex + 1}`;

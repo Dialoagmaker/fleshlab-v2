@@ -102,7 +102,7 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
           return renderPosterVariantToCanvas(canvas, imageRef.current, plan, candidate, automaticSettings, dims.width, dims.height);
         }));
         const selectedCandidate = visibleCandidates.find(candidate => candidate.candidate_id === selectedCandidateId) || plan.selected || visibleCandidates[0];
-        await renderPosterVariantToCanvas(winnerCanvasRef.current, imageRef.current, plan, selectedCandidate, automaticSettings, dims.width, dims.height);
+        await renderPosterVariantToCanvas(winnerCanvasRef.current, imageRef.current, plan, selectedCandidate, settings, dims.width, dims.height);
         if (renderSeq !== renderSeqRef.current) return;
         setRenderedCandidates(rendered.filter(Boolean).map(item => ({ candidateId: item.candidateId, renderPlanHash: item.renderPlanHash, visualSystemId: item.selected?.visualSystemId || item.visualSystemId, compositionMode: item.selected?.compositionMode, artworkValidation: item.selected?.artworkValidation })));
         setRendered(true);
@@ -114,7 +114,7 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
     });
     rafRef.current = frameId;
     return () => window.cancelAnimationFrame(frameId);
-  }, [plan, selectedCandidateId, automaticSettings, dims.width, dims.height]);
+  }, [plan, selectedCandidateId, settings, automaticSettings, dims.width, dims.height]);
 
   const download = async (type) => {
     if (!rendered || !winnerCanvasRef.current) return;
