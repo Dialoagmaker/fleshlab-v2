@@ -218,7 +218,7 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
         const rendered = await Promise.all(visibleCandidates.map((candidate, index) => {
           const canvas = candidateRefs.current[index];
           if (!canvas) return Promise.resolve(null);
-          return renderPosterVariantToCanvas(canvas, imageRef.current, effectivePlan, candidate, automaticSettings, dims.width, dims.height);
+          return renderPosterVariantToCanvas(canvas, imageRef.current, effectivePlan, candidate, settings, dims.width, dims.height);
         }));
         if (!active) return;
         setRenderedCandidates(rendered.filter(Boolean).map(item => ({ candidateId: item.candidateId, renderPlanHash: item.renderPlanHash, visualSystemId: item.selected?.visualSystemId || item.visualSystemId, compositionMode: item.selected?.compositionMode, artworkValidation: item.selected?.artworkValidation })));
@@ -227,7 +227,7 @@ export default function CoverV3PreviewEditor({ frame, metadata, settings, fileSu
       }
     });
     return () => { active = false; };
-  }, [effectivePlan, automaticSettings, dims.width, dims.height]);
+  }, [effectivePlan, settings, dims.width, dims.height]);
 
   useEffect(() => {
     if (!effectivePlan || !imageRef.current || !winnerCanvasRef.current) return;

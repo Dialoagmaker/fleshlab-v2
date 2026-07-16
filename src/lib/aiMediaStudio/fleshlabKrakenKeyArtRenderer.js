@@ -281,13 +281,14 @@ function drawBrushTitle(ctx, text, x, y, maxW, size) {
   ctx.restore();
 }
 
-function drawTitleSystem(ctx, plan, width, height, splitX) {
+function drawTitleSystem(ctx, plan, width, height, splitX, settings = {}) {
   const { primary, brush } = titleParts(plan);
   const x = width * 0.052;
   const maxW = splitX * 0.86;
-  const whiteSize = Math.min(width * 0.19, maxW / Math.max(3.9, primary.length * 0.36));
-  const redSize = Math.min(width * 0.15, maxW / Math.max(4.6, brush.length * 0.34));
-  const y = height * 0.47;
+  const titleScale = clamp((Number(settings.titleSize) || 190) / 190, 0.26, 1.9);
+  const whiteSize = Math.min(width * 0.19, maxW / Math.max(3.9, primary.length * 0.36)) * titleScale;
+  const redSize = Math.min(width * 0.15, maxW / Math.max(4.6, brush.length * 0.34)) * titleScale;
+  const y = height * clamp(((Number(settings.titleY) || 57) - 10) / 100, 0.18, 0.78);
   drawDistressedWhiteLine(ctx, primary, x, y, maxW, whiteSize);
   ctx.save();
   ctx.strokeStyle = RED;
@@ -301,11 +302,12 @@ function drawTitleSystem(ctx, plan, width, height, splitX) {
   return { x, y: y - whiteSize, w: maxW, h: whiteSize + redSize * 1.05 };
 }
 
-function drawSubtitleStrip(ctx, text, titleBox, width, height, splitX) {
+function drawSubtitleStrip(ctx, text, titleBox, width, height, splitX, settings = {}) {
   const x = titleBox.x + width * 0.006;
   const y = titleBox.y + titleBox.h + height * 0.03;
   const w = splitX * 0.56;
-  const h = Math.max(height * 0.058, 48);
+  const subtitleScale = clamp((Number(settings.subtitleSize) || 92) / 92, 0.3, 1.95);
+  const h = Math.max(height * 0.058 * subtitleScale, 28);
   ctx.save();
   ctx.shadowColor = "rgba(0,0,0,0.8)";
   ctx.shadowBlur = width * 0.012;
@@ -416,8 +418,8 @@ export async function renderFleshlabKrakenKeyArt(canvas, image, plan = {}, setti
   drawTexture(ctx, width, height, splitX);
   const hero = drawHero(ctx, image, plan.analysis || {}, width, height, splitX);
   const logo = await drawLogo(ctx, width, height, splitX);
-  const title = drawTitleSystem(ctx, plan, width, height, splitX);
-  const subtitle = drawSubtitleStrip(ctx, episodeText(plan), title, width, height, splitX);
+  const title = drawTitleSystem(ctx, plan, width, height, splitX, settings);
+  const subtitle = drawSubtitleStrip(ctx, episodeText(plan), title, width, height, splitX, settings);
   drawFooter(ctx, width, height, splitX);
   finalVignette(ctx, width, height);
   const validation = validateKraken(canvas, { splitRatio: splitX / width, logo, hero, title, subtitle, hasCta: false });
