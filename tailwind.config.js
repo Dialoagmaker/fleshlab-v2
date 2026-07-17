@@ -43,6 +43,20 @@ module.exports = {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
+  			fl: {
+  				background: 'hsl(var(--fl-background))',
+  				surface: 'hsl(var(--fl-surface))',
+  				'elevated': 'hsl(var(--fl-surface-elevated))',
+  				overlay: 'hsl(var(--fl-overlay))',
+  				border: 'hsl(var(--fl-border))',
+  				primary: 'hsl(var(--fl-primary))',
+  				'primary-hover': 'hsl(var(--fl-primary-hover))',
+  				text: 'hsl(var(--fl-text))',
+  				muted: 'hsl(var(--fl-text-muted))'
+  			},
+  			success: 'hsl(var(--fl-success))',
+  			warning: 'hsl(var(--fl-warning))',
+  			error: 'hsl(var(--fl-error))',
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',

@@ -69,21 +69,21 @@ export default function BecomePerformer() {
         jsonLd={{ "@context": "https://schema.org", "@type": "FAQPage", "mainEntity": FAQ_JSON_LD.map(({ q, a }) => ({ "@type": "Question", "name": q, "acceptedAnswer": { "@type": "Answer", "text": a } })) }}
       />
 
-      <div className="min-h-screen bg-[#080808] text-white">
+      <div className="min-h-screen bg-fl-background text-foreground">
         <BPHero onApplyClick={scrollToForm} onEarnClick={scrollToEarn} />
 
         <BPChapterSection number="01" eyebrow="Why FLESHLAB" question="Why build with FLESHLAB?" answer="Start with what you already have: body, confidence and energy. We add production, publishing, compliance, sales and support.">
           <div className="grid gap-7 lg:grid-cols-[0.95fr_1.05fr]">
-            <div className="rounded-[2rem] border border-rose-500/25 bg-gradient-to-br from-rose-950/30 to-white/[0.03] p-8 md:p-10">
-              <p className="mb-7 text-2xl font-black leading-tight text-white md:text-3xl">You bring the raw material. FLESHLAB turns it into a performer brand.</p>
+            <div className="rounded-[2rem] border border-primary/25 bg-gradient-to-br from-primary/12 to-card p-8 md:p-10">
+              <p className="mb-7 text-2xl font-black leading-tight text-foreground md:text-3xl">You bring the raw material. FLESHLAB turns it into a performer brand.</p>
               <div className="grid gap-3 sm:grid-cols-2">
-                {["Your look", "Your boundaries", "Your sexual energy", "Your consistency"].map((item) => <div key={item} className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm font-bold text-white/68">{item}</div>)}
+                {["Your look", "Your boundaries", "Your sexual energy", "Your consistency"].map((item) => <div key={item} className="rounded-2xl border border-border bg-background/45 px-4 py-3 text-sm font-bold text-foreground/70">{item}</div>)}
               </div>
             </div>
-            <div className="rounded-[2rem] border border-white/10 bg-[#111] p-6 md:p-8">
-              <h3 className="mb-5 text-lg font-black uppercase tracking-wide text-white">Studio support</h3>
+            <div className="rounded-[2rem] border border-border bg-card p-6 md:p-8">
+              <h3 className="mb-5 text-lg font-black uppercase tracking-wide text-foreground">Studio support</h3>
               <div className="grid gap-2 sm:grid-cols-2">
-                {SUPPORT.map((item) => <div key={item} className="flex items-center gap-2 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2.5 text-sm text-white/60"><CheckCircle2 className="h-4 w-4 shrink-0 text-rose-400" />{item}</div>)}
+                {SUPPORT.map((item) => <div key={item} className="flex items-center gap-2 rounded-xl border border-border bg-secondary/45 px-3 py-2.5 text-sm text-muted-foreground"><CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />{item}</div>)}
               </div>
             </div>
           </div>
@@ -92,49 +92,49 @@ export default function BecomePerformer() {
         <div ref={earnRef}>
           <BPChapterSection number="02" eyebrow="How You Earn" question="How can this make money?" answer="Scenes create income opportunities. A catalog, fanclub, livecam schedule and partner distribution create momentum." tone="amber">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-              {INCOME.map(({ Icon, title, text }) => <div key={title} className="rounded-[1.6rem] border border-white/10 bg-[#111] p-5 transition hover:-translate-y-0.5 hover:border-rose-400/30"><Icon className="mb-5 h-7 w-7 text-rose-400" /><h3 className="mb-2 text-lg font-black text-white">{title}</h3><p className="text-sm leading-relaxed text-white/45">{text}</p></div>)}
+              {INCOME.map(({ Icon, title, text }) => <div key={title} className="rounded-[1.6rem] border border-border bg-card p-5 transition hover:-translate-y-0.5 hover:border-primary/30"><Icon className="mb-5 h-7 w-7 text-primary" /><h3 className="mb-2 text-lg font-black text-foreground">{title}</h3><p className="text-sm leading-relaxed text-muted-foreground">{text}</p></div>)}
             </div>
-            <div className="mt-8 rounded-[2rem] border border-amber-500/25 bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-transparent p-7 md:p-9">
+            <div className="mt-8 rounded-[2rem] border border-primary/25 bg-gradient-to-r from-primary/12 via-card to-card p-7 md:p-9">
               <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
-                <div><div className="text-4xl font-black leading-none text-amber-300 md:text-5xl">One video is a chance.</div><p className="mt-4 text-white/58">A catalog becomes market presence. Older videos can keep working while new scenes go online.</p></div>
-                <div className="grid gap-3 sm:grid-cols-3"><div className="rounded-2xl bg-black/30 p-5 text-center"><b className="text-2xl text-rose-300">4–8</b><p className="mt-1 text-xs text-white/38">starter videos / month</p></div><div className="rounded-2xl bg-black/30 p-5 text-center"><b className="text-2xl text-rose-300">10–15</b><p className="mt-1 text-xs text-white/38">growth videos / month</p></div><div className="rounded-2xl bg-black/30 p-5 text-center"><b className="text-2xl text-rose-300">20+</b><p className="mt-1 text-xs text-white/38">aggressive build-up</p></div></div>
+                <div><div className="text-4xl font-black leading-none text-primary md:text-5xl">One video is a chance.</div><p className="mt-4 text-muted-foreground">A catalog becomes market presence. Older videos can keep working while new scenes go online.</p></div>
+                <div className="grid gap-3 sm:grid-cols-3"><div className="rounded-2xl bg-background/45 p-5 text-center"><b className="text-2xl text-primary">4–8</b><p className="mt-1 text-xs text-muted-foreground">starter videos / month</p></div><div className="rounded-2xl bg-background/45 p-5 text-center"><b className="text-2xl text-primary">10–15</b><p className="mt-1 text-xs text-muted-foreground">growth videos / month</p></div><div className="rounded-2xl bg-background/45 p-5 text-center"><b className="text-2xl text-primary">20+</b><p className="mt-1 text-xs text-muted-foreground">aggressive build-up</p></div></div>
               </div>
             </div>
-            <div className="mt-6 rounded-[2rem] border border-white/10 bg-[#111] p-7 md:p-8">
-              <h3 className="mb-4 text-xl font-black text-white">What improves performance</h3>
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">{EARNING_FACTORS.map((item) => <div key={item} className="flex items-center gap-2 text-sm text-white/56"><span className="h-1.5 w-1.5 rounded-full bg-rose-400" />{item}</div>)}</div>
-              <p className="mt-5 max-w-3xl text-sm leading-relaxed text-white/35">Earnings are not guaranteed. Some start at zero; some starter cam shows make $25–$30 in three hours. Growth depends on content, demand and consistency.</p>
+            <div className="mt-6 rounded-[2rem] border border-border bg-card p-7 md:p-8">
+              <h3 className="mb-4 text-xl font-black text-foreground">What improves performance</h3>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">{EARNING_FACTORS.map((item) => <div key={item} className="flex items-center gap-2 text-sm text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-primary" />{item}</div>)}</div>
+              <p className="mt-5 max-w-3xl text-sm leading-relaxed text-muted-foreground/70">Earnings are not guaranteed. Some start at zero; some starter cam shows make $25–$30 in three hours. Growth depends on content, demand and consistency.</p>
             </div>
           </BPChapterSection>
         </div>
 
-        <BPChapterSection number="03" eyebrow="Choose Your Model" question="Which model fits you?" answer="New performers usually need studio management. Established creators usually need reach, infrastructure and smarter monetization." tone="purple">
+        <BPChapterSection number="03" eyebrow="Choose Your Model" question="Which model fits you?" answer="New performers usually need studio management. Established creators usually need reach, infrastructure and smarter monetization.">
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-[2rem] border-2 border-rose-500/45 bg-gradient-to-br from-rose-950/35 to-[#111] p-8 md:p-10"><span className="rounded-full bg-rose-600 px-3 py-1 text-[10px] font-black uppercase tracking-widest">New Performers</span><h3 className="mt-7 text-2xl font-black text-white">Managed Performer</h3><div className="mt-4 flex items-end gap-3"><span className="text-6xl font-black text-rose-400">40%</span><span className="pb-2 text-sm text-white/48">performer share</span></div><ul className="mt-6 space-y-3 text-sm text-white/58"><li>• For beginners or performers starting from scratch</li><li>• Studio support for planning, setup, promo and compliance</li><li>• We help build the performer brand around you</li></ul></div>
-            <div className="rounded-[2rem] border-2 border-purple-500/40 bg-gradient-to-br from-purple-950/25 to-[#111] p-8 md:p-10"><span className="rounded-full bg-purple-600 px-3 py-1 text-[10px] font-black uppercase tracking-widest">Established Creators</span><h3 className="mt-7 text-2xl font-black text-white">Network Performer</h3><div className="mt-4 flex items-end gap-3"><span className="text-6xl font-black text-purple-300">70%</span><span className="pb-2 text-sm text-white/48">performer share</span></div><ul className="mt-6 space-y-3 text-sm text-white/58"><li>• For creators with content, fans or cam experience</li><li>• FLESHLAB adds distribution, SEO, fanclub tools and sales</li><li>• Keep creating while the network helps you grow</li></ul></div>
+            <div className="rounded-[2rem] border-2 border-primary/45 bg-gradient-to-br from-primary/12 to-card p-8 md:p-10"><span className="rounded-full bg-primary px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary-foreground">New Performers</span><h3 className="mt-7 text-2xl font-black text-foreground">Managed Performer</h3><div className="mt-4 flex items-end gap-3"><span className="text-6xl font-black text-primary">40%</span><span className="pb-2 text-sm text-muted-foreground">performer share</span></div><ul className="mt-6 space-y-3 text-sm text-muted-foreground"><li>• For beginners or performers starting from scratch</li><li>• Studio support for planning, setup, promo and compliance</li><li>• We help build the performer brand around you</li></ul></div>
+            <div className="rounded-[2rem] border-2 border-border bg-card p-8 md:p-10"><span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary">Established Creators</span><h3 className="mt-7 text-2xl font-black text-foreground">Network Performer</h3><div className="mt-4 flex items-end gap-3"><span className="text-6xl font-black text-primary">70%</span><span className="pb-2 text-sm text-muted-foreground">performer share</span></div><ul className="mt-6 space-y-3 text-sm text-muted-foreground"><li>• For creators with content, fans or cam experience</li><li>• FLESHLAB adds distribution, SEO, fanclub tools and sales</li><li>• Keep creating while the network helps you grow</li></ul></div>
           </div>
-          <p className="mx-auto mt-8 max-w-3xl text-center text-xs leading-relaxed text-white/32">Revenue models are reviewed during application. Splits apply to eligible gross revenue and may vary by product type or contract. Your boundaries still matter.</p>
+          <p className="mx-auto mt-8 max-w-3xl text-center text-xs leading-relaxed text-muted-foreground/70">Revenue models are reviewed during application. Splits apply to eligible gross revenue and may vary by product type or contract. Your boundaries still matter.</p>
         </BPChapterSection>
 
         <BPChapterSection number="04" eyebrow="Apply" question="Apply today" answer="You have seen the path. Start privately, verify safely, and let the team review your fit for FLESHLAB.">
-          <div className="rounded-[2.2rem] border border-rose-500/25 bg-gradient-to-b from-rose-950/20 to-[#111] p-7 shadow-2xl shadow-rose-950/20 md:p-10">
+          <div className="rounded-[2.2rem] border border-primary/25 bg-gradient-to-b from-primary/12 to-card p-7 shadow-2xl shadow-primary/10 md:p-10">
             <div className="grid gap-7 lg:grid-cols-[0.9fr_1.1fr]">
-              <div className="rounded-[1.7rem] border border-white/10 bg-black/25 p-6">
-                <h3 className="mb-5 text-xl font-black text-white">Before you apply</h3>
-                <div className="space-y-3">{[{ Icon: Shield, text: "Verified 18+ only" }, { Icon: FileText, text: "Valid ID + selfie required" }, { Icon: Film, text: "Private review photos and videos" }, { Icon: Lock, text: "Nothing published without consent" }].map(({ Icon, text }) => <div key={text} className="flex min-h-12 items-center gap-3 rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm text-white/66"><Icon className="h-4 w-4 shrink-0 text-rose-400" />{text}</div>)}</div>
+              <div className="rounded-[1.7rem] border border-border bg-background/35 p-6">
+                <h3 className="mb-5 text-xl font-black text-foreground">Before you apply</h3>
+                <div className="space-y-3">{[{ Icon: Shield, text: "Verified 18+ only" }, { Icon: FileText, text: "Valid ID + selfie required" }, { Icon: Film, text: "Private review photos and videos" }, { Icon: Lock, text: "Nothing published without consent" }].map(({ Icon, text }) => <div key={text} className="flex min-h-12 items-center gap-3 rounded-xl border border-border bg-secondary/45 px-4 py-3 text-sm text-muted-foreground"><Icon className="h-4 w-4 shrink-0 text-primary" />{text}</div>)}</div>
               </div>
-              <div className="rounded-[1.7rem] border border-white/10 bg-black/25 p-6">
-                <h3 className="mb-5 text-xl font-black text-white">What happens next</h3>
-                <div className="grid gap-3 sm:grid-cols-2">{APPLICATION_STEPS.map((step, i) => <div key={step} className="flex min-h-12 items-center gap-3 rounded-xl bg-white/[0.04] px-3 py-3"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/10 text-xs font-black text-rose-300">{i + 1}</span><span className="text-sm text-white/60">{step}</span></div>)}</div>
+              <div className="rounded-[1.7rem] border border-border bg-background/35 p-6">
+                <h3 className="mb-5 text-xl font-black text-foreground">What happens next</h3>
+                <div className="grid gap-3 sm:grid-cols-2">{APPLICATION_STEPS.map((step, i) => <div key={step} className="flex min-h-12 items-center gap-3 rounded-xl bg-secondary/45 px-3 py-3"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-xs font-black text-primary">{i + 1}</span><span className="text-sm text-muted-foreground">{step}</span></div>)}</div>
               </div>
             </div>
 
             <div className="mt-8 grid gap-4 md:grid-cols-2">
-              <Link to="/gay-performer-recruitment-philippines" className="rounded-3xl border border-amber-500/25 bg-amber-500/10 p-6 transition hover:-translate-y-1 hover:border-amber-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"><div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/15 text-lg">🇵🇭</div><h3 className="mb-2 font-black text-white">Philippines Recruitment</h3><p className="mb-4 text-sm leading-relaxed text-white/50">Start from home, use your phone, get setup support and PHP/USD payouts.</p><span className="inline-flex items-center gap-2 text-xs font-bold text-amber-300">Learn more <Globe className="h-3.5 w-3.5" /></span></Link>
-              <button type="button" aria-label="Learn more about the cam model partnership" onClick={() => navigate("/chaturbate-model-join-studio")} className="rounded-3xl border border-purple-500/25 bg-purple-500/10 p-6 text-left transition hover:-translate-y-1 hover:border-purple-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"><div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-purple-500/30 bg-purple-500/15"><Video className="h-5 w-5 text-purple-300" /></div><h3 className="mb-2 font-black text-white">Cam Model Partnership</h3><p className="mb-4 text-sm leading-relaxed text-white/50">Already camming? Add studio content, fanclub income and the 70% network split.</p><span className="inline-flex items-center gap-2 text-xs font-bold text-purple-300">Learn more <ArrowRight className="h-3.5 w-3.5" /></span></button>
+              <Link to="/gay-performer-recruitment-philippines" className="rounded-3xl border border-border bg-secondary/35 p-6 transition hover:-translate-y-1 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-lg">🇵🇭</div><h3 className="mb-2 font-black text-foreground">Philippines Recruitment</h3><p className="mb-4 text-sm leading-relaxed text-muted-foreground">Start from home, use your phone, get setup support and PHP/USD payouts.</p><span className="inline-flex items-center gap-2 text-xs font-bold text-primary">Learn more <Globe className="h-3.5 w-3.5" /></span></Link>
+              <button type="button" aria-label="Learn more about the cam model partnership" onClick={() => navigate("/chaturbate-model-join-studio")} className="rounded-3xl border border-border bg-secondary/35 p-6 text-left transition hover:-translate-y-1 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-primary/30 bg-primary/10"><Video className="h-5 w-5 text-primary" /></div><h3 className="mb-2 font-black text-foreground">Cam Model Partnership</h3><p className="mb-4 text-sm leading-relaxed text-muted-foreground">Already camming? Add studio content, fanclub income and the 70% network split.</p><span className="inline-flex items-center gap-2 text-xs font-bold text-primary">Learn more <ArrowRight className="h-3.5 w-3.5" /></span></button>
             </div>
 
-            <div className="mx-auto mt-14 max-w-3xl text-center"><p className="mb-5 text-2xl font-black text-white md:text-3xl">This is where you start.</p><Button onClick={scrollToForm} className="h-auto min-h-14 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 px-10 py-5 text-base font-black uppercase tracking-wide text-white shadow-xl shadow-rose-700/35 hover:from-rose-500 hover:to-rose-600 focus-visible:ring-2 focus-visible:ring-rose-300">Start Private Application</Button><p className="mt-3 text-xs text-white/35">Private review · 48-hour response · No obligation</p></div>
+            <div className="mx-auto mt-14 max-w-3xl text-center"><p className="mb-5 text-2xl font-black text-foreground md:text-3xl">This is where you start.</p><Button onClick={scrollToForm} className="h-auto min-h-14 rounded-xl bg-primary px-10 py-5 text-base font-black uppercase tracking-wide text-primary-foreground shadow-xl shadow-primary/35 hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary">Start Private Application</Button><p className="mt-3 text-xs text-muted-foreground">Private review · 48-hour response · No obligation</p></div>
             <BPApplicationForm ref={formRef} onSuccess={handleSuccess} embedded />
           </div>
         </BPChapterSection>

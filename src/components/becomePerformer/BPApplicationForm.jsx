@@ -21,15 +21,15 @@ function StepIndicator({ current }) {
       {STEP_LABELS.map((label, i) => (
         <div key={i} className="flex items-center gap-2 flex-1">
           <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 text-xs font-black transition-colors ${
-            i < current ? "bg-rose-600 border-rose-600 text-white"
-            : i === current ? "bg-rose-600/20 border-rose-600 text-rose-400"
+            i < current ? "bg-primary border-primary text-primary-foreground"
+            : i === current ? "bg-primary/20 border-primary text-primary"
             : "bg-transparent border-white/20 text-white/25"
           }`}>
             {i < current ? "✓" : i + 1}
           </div>
           <span className={`text-xs font-semibold truncate hidden sm:block ${i === current ? "text-white" : "text-white/30"}`}>{label}</span>
           {i < STEP_LABELS.length - 1 && (
-            <div className={`flex-1 h-px ${i < current ? "bg-rose-600/50" : "bg-white/10"}`} />
+            <div className={`flex-1 h-px ${i < current ? "bg-primary/50" : "bg-border"}`} />
           )}
         </div>
       ))}
@@ -42,8 +42,8 @@ function ChoiceButton({ label, selected, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`min-h-11 px-4 py-3 rounded-xl border text-sm font-semibold transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
-        selected ? "border-rose-600/60 bg-rose-600/12 text-rose-300" : "border-white/10 bg-white/3 text-white/55 hover:border-white/25 hover:text-white/75"
+      className={`min-h-11 px-4 py-3 rounded-xl border text-sm font-semibold transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+        selected ? "border-primary/60 bg-primary/10 text-primary" : "border-border bg-secondary/35 text-muted-foreground hover:border-primary/35 hover:text-foreground"
       }`}
     >
       {label}
@@ -181,16 +181,16 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
   const Wrapper = embedded ? "div" : "section";
 
   return (
-    <Wrapper id="application-form" ref={ref} className={embedded ? "pt-16 md:pt-20" : "py-24 px-6 bg-gradient-to-b from-[#0d0505] to-[#080808] border-t border-white/6"}>
+    <Wrapper id="application-form" ref={ref} className={embedded ? "pt-16 md:pt-20" : "py-24 px-6 bg-gradient-to-b from-fl-surface to-fl-background border-t border-border"}>
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-10">
           <h2 className="text-4xl md:text-5xl font-black mb-3 text-white">
-            START YOUR <span className="text-rose-500">APPLICATION</span>
+            START YOUR <span className="text-primary">APPLICATION</span>
           </h2>
           <p className="text-white/45 text-base">Private review · 48-hour response · Confidential uploads</p>
         </div>
 
-        <div className="bg-[#111] border border-rose-500/20 rounded-[1.75rem] p-6 shadow-2xl shadow-rose-950/25 md:p-10">
+        <div className="bg-card border border-primary/20 rounded-[1.75rem] p-6 shadow-2xl shadow-primary/10 md:p-10">
           <StepIndicator current={step} />
 
           {/* ── STEP 0 — Who are you? ── */}
@@ -273,7 +273,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 bg-rose-600/8 border border-rose-600/20 rounded-xl px-4 py-3">
+              <div className="flex items-start gap-3 bg-primary/10 border border-primary/20 rounded-xl px-4 py-3">
                 <Checkbox checked={p1.age_confirmed} onCheckedChange={v => setP1({...p1, age_confirmed: v})} />
                 <span className="text-white/65 text-sm">I confirm I am 18 years or older *</span>
               </div>
@@ -283,7 +283,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
           {/* ── STEP 1 — Show us something of you ── */}
           {step === 1 && (
             <div className="space-y-6">
-              <div className="bg-[#0d0d0d] border border-white/6 rounded-xl px-5 py-4">
+              <div className="bg-secondary/45 border border-border rounded-xl px-5 py-4">
                 <p className="text-white/45 text-sm leading-relaxed">
                 Private review material only. Nothing is published without contract and consent.
                 </p>
@@ -328,9 +328,9 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
               </div>
 
               {!step1Valid && (
-                <div className="flex items-start gap-2 bg-amber-600/10 border border-amber-600/25 rounded-xl px-4 py-3">
-                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                  <p className="text-amber-300 text-xs leading-relaxed">
+                <div className="flex items-start gap-2 bg-warning/10 border border-warning/25 rounded-xl px-4 py-3">
+                  <AlertCircle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+                  <p className="text-warning text-xs leading-relaxed">
                     Please upload all required files:
                     {mediaKeys.profile_photo_r2_keys.length < 5 && ` ${5 - mediaKeys.profile_photo_r2_keys.length} more photo(s),`}
                     {!mediaKeys.intro_video_r2_key && " body video,"}
@@ -344,7 +344,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
           {/* ── STEP 2 — Are you real? ── */}
           {step === 2 && (
             <div className="space-y-6">
-              <div className="bg-[#0d0d0d] border border-white/6 rounded-xl px-5 py-4">
+              <div className="bg-secondary/45 border border-border rounded-xl px-5 py-4">
                 <p className="text-white/45 text-sm leading-relaxed">
                 Your ID is used for age verification, compliance and contracts. It is never published.
                 </p>
@@ -435,7 +435,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
               <Button
                 onClick={() => setStep(s => s + 1)}
                 disabled={step === 0 ? !step0Valid : step === 1 ? !step1Valid : false}
-                className="min-h-11 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 focus-visible:ring-2 focus-visible:ring-rose-300"
+                className="min-h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 focus-visible:ring-2 focus-visible:ring-primary"
               >
                 Continue
                 <ChevronRight className="w-4 h-4 ml-1" />
@@ -444,7 +444,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
               <Button
                 disabled={!step2Valid || submitMutation.isPending}
                 onClick={() => submitMutation.mutate()}
-                className="min-h-14 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black px-10 py-5 h-auto text-base shadow-xl shadow-rose-700/35 focus-visible:ring-2 focus-visible:ring-rose-300"
+                className="min-h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-black px-10 py-5 h-auto text-base shadow-xl shadow-primary/30 focus-visible:ring-2 focus-visible:ring-primary"
               >
                 {submitMutation.isPending ? "Submitting..." : "Submit application"}
               </Button>
