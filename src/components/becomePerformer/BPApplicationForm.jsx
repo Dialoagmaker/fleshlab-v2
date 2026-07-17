@@ -13,7 +13,7 @@ import toast from "react-hot-toast";
 import FileUploadField from "@/components/application/FileUploadField";
 import MultiPhotoUpload from "@/components/application/MultiPhotoUpload";
 
-const STEP_LABELS = ["Who are you?", "Show us something of you", "Are you real?"];
+const STEP_LABELS = ["Your profile", "Your media", "Verify 18+"];
 
 function StepIndicator({ current }) {
   return (
@@ -42,7 +42,7 @@ function ChoiceButton({ label, selected, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`px-4 py-2.5 rounded-xl border text-sm font-semibold transition-colors text-left ${
+      className={`min-h-11 px-4 py-3 rounded-xl border text-sm font-semibold transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 ${
         selected ? "border-rose-600/60 bg-rose-600/12 text-rose-300" : "border-white/10 bg-white/3 text-white/55 hover:border-white/25 hover:text-white/75"
       }`}
     >
@@ -181,28 +181,28 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
   const Wrapper = embedded ? "div" : "section";
 
   return (
-    <Wrapper id="application-form" ref={ref} className={embedded ? "pt-12" : "py-24 px-6 bg-gradient-to-b from-[#0d0505] to-[#080808] border-t border-white/6"}>
+    <Wrapper id="application-form" ref={ref} className={embedded ? "pt-16 md:pt-20" : "py-24 px-6 bg-gradient-to-b from-[#0d0505] to-[#080808] border-t border-white/6"}>
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-10">
           <h2 className="text-4xl md:text-5xl font-black mb-3 text-white">
-            APPLY AS <span className="text-rose-500">PERFORMER</span>
+            START YOUR <span className="text-rose-500">APPLICATION</span>
           </h2>
-          <p className="text-white/40 text-base">Private application · Reviewed within 48 hours · All uploads are confidential</p>
+          <p className="text-white/45 text-base">Private review · 48-hour response · Confidential uploads</p>
         </div>
 
-        <div className="bg-[#111] border border-white/8 rounded-2xl p-7 md:p-10">
+        <div className="bg-[#111] border border-rose-500/20 rounded-[1.75rem] p-6 shadow-2xl shadow-rose-950/25 md:p-10">
           <StepIndicator current={step} />
 
           {/* ── STEP 0 — Who are you? ── */}
           {step === 0 && (
             <div className="space-y-5">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label className="text-white/60 text-xs uppercase tracking-widest">First Name *</Label>
+                  <Label className="text-white/60 text-xs uppercase tracking-widest">First name *</Label>
                   <Input value={p1.first_name} onChange={e => setP1({...p1, first_name: e.target.value})} placeholder="First name" className="bg-white/5 border-white/12 text-white" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-white/60 text-xs uppercase tracking-widest">Last Name *</Label>
+                  <Label className="text-white/60 text-xs uppercase tracking-widest">Last name *</Label>
                   <Input value={p1.last_name} onChange={e => setP1({...p1, last_name: e.target.value})} placeholder="Last name" className="bg-white/5 border-white/12 text-white" />
                 </div>
               </div>
@@ -222,10 +222,10 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
                 <Input value={p1.other_contact} onChange={e => setP1({...p1, other_contact: e.target.value})} placeholder="Telegram, Instagram, Twitter, Line..." className="bg-white/5 border-white/12 text-white" />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label className="text-white/60 text-xs uppercase tracking-widest">Country *</Label>
-                  <Input value={p1.country} onChange={e => setP1({...p1, country: e.target.value})} placeholder="Where you are based" className="bg-white/5 border-white/12 text-white" />
+                  <Input value={p1.country} onChange={e => setP1({...p1, country: e.target.value})} placeholder="Your country" className="bg-white/5 border-white/12 text-white" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-white/60 text-xs uppercase tracking-widest">City</Label>
@@ -234,7 +234,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
               </div>
 
               <div>
-                <Label className="text-white/60 text-xs uppercase tracking-widest block mb-2">Sexual identity / orientation</Label>
+                <Label className="text-white/60 text-xs uppercase tracking-widest block mb-2">Identity / orientation</Label>
                 <div className="flex flex-wrap gap-2">
                   {["Gay", "Bisexual", "Straight", "Trans", "Other", "Prefer not to say"].map(v => (
                     <ChoiceButton key={v} label={v} selected={p1.sexual_identity === v} onClick={() => setP1({...p1, sexual_identity: v})} />
@@ -243,7 +243,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
               </div>
 
               <div>
-                <Label className="text-white/60 text-xs uppercase tracking-widest block mb-2">What are you interested in?</Label>
+                <Label className="text-white/60 text-xs uppercase tracking-widest block mb-2">What do you want to do?</Label>
                 <div className="flex flex-wrap gap-2">
                   {["Live Cam", "Productions", "Both"].map(v => (
                     <ChoiceButton key={v} label={v} selected={p1.interests === v} onClick={() => setP1({...p1, interests: v})} />
@@ -285,7 +285,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
             <div className="space-y-6">
               <div className="bg-[#0d0d0d] border border-white/6 rounded-xl px-5 py-4">
                 <p className="text-white/45 text-sm leading-relaxed">
-                  Your uploads are private review material. Nothing is published without approval, contract and consent.
+                Private review material only. Nothing is published without contract and consent.
                 </p>
               </div>
 
@@ -297,7 +297,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
 
               <FileUploadField
                 label="Explicit video 1 — Body / Intro"
-                hint="Show your body, physique, confidence and sexual energy. Does not need to be professionally produced."
+                hint="Show your body, confidence and sexual energy. No professional production needed."
                 fileType="intro_video"
                 sessionId={sessionId}
                 accept="video/mp4,video/quicktime,video/webm"
@@ -308,7 +308,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
 
               <FileUploadField
                 label="Explicit video 2 — Hardcore / Action"
-                hint="Show explicit action — masturbation, sexual performance, etc. We want to see your confidence and sexual energy."
+                hint="Show explicit action and sexual confidence. Keep it clear and natural."
                 fileType="hardcore_video"
                 sessionId={sessionId}
                 accept="video/mp4,video/quicktime,video/webm"
@@ -318,11 +318,11 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
               />
 
               <div className="space-y-1.5">
-                <Label className="text-white/60 text-xs uppercase tracking-widest">Why are you the right performer for FLESHLAB?</Label>
+                <Label className="text-white/60 text-xs uppercase tracking-widest">Why would fans want more of you?</Label>
                 <Textarea
                   value={p2.why}
                   onChange={e => setP2({...p2, why: e.target.value})}
-                  placeholder="Tell us why fans would want to see more of you. Describe your look, energy, personality, sexual style and what makes you stand out."
+                  placeholder="Describe your look, energy, personality, sexual style and what makes you stand out."
                   className="min-h-[120px] bg-white/5 border-white/12 text-white"
                 />
               </div>
@@ -346,7 +346,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
             <div className="space-y-6">
               <div className="bg-[#0d0d0d] border border-white/6 rounded-xl px-5 py-4">
                 <p className="text-white/45 text-sm leading-relaxed">
-                  Your ID is used only for age verification, performer compliance and contract preparation. It will never be published on FLESHLAB. Only authorized compliance staff can access it.
+                Your ID is used for age verification, compliance and contracts. It is never published.
                 </p>
               </div>
 
@@ -420,12 +420,12 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
           )}
 
           {/* Navigation */}
-          <div className="flex justify-between mt-8">
+          <div className="flex justify-between gap-3 mt-8">
             <Button
               variant="outline"
               onClick={() => setStep(s => s - 1)}
               disabled={step === 0}
-              className="border-white/15 text-white/60 hover:bg-white/5"
+              className="min-h-11 border-white/15 text-white/60 hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-white/30"
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
               Back
@@ -435,7 +435,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
               <Button
                 onClick={() => setStep(s => s + 1)}
                 disabled={step === 0 ? !step0Valid : step === 1 ? !step1Valid : false}
-                className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8"
+                className="min-h-11 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-8 focus-visible:ring-2 focus-visible:ring-rose-300"
               >
                 Continue
                 <ChevronRight className="w-4 h-4 ml-1" />
@@ -444,9 +444,9 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
               <Button
                 disabled={!step2Valid || submitMutation.isPending}
                 onClick={() => submitMutation.mutate()}
-                className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black px-10 py-5 h-auto text-base shadow-xl shadow-rose-700/35"
+                className="min-h-14 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black px-10 py-5 h-auto text-base shadow-xl shadow-rose-700/35 focus-visible:ring-2 focus-visible:ring-rose-300"
               >
-                {submitMutation.isPending ? "Submitting..." : "Submit Application"}
+                {submitMutation.isPending ? "Submitting..." : "Submit application"}
               </Button>
             )}
           </div>

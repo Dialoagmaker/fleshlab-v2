@@ -52,13 +52,13 @@ export default function BPHero({ onApplyClick, onEarnClick }) {
   return (
     <section className="relative min-h-[92vh] flex items-center overflow-hidden">
       {/* Background */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: "url(https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png)",
-          backgroundSize: "cover",
-          backgroundPosition: "center top",
-        }}
+      <img
+        src="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png"
+        alt=""
+        aria-hidden="true"
+        fetchPriority="high"
+        decoding="async"
+        className="absolute inset-0 h-full w-full object-cover object-top"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-[#050505] via-[#080808]/92 to-[#080808]/50" />
       <div className="absolute inset-0 bg-gradient-to-t from-[#080808] via-transparent to-[#080808]/40" />
@@ -76,17 +76,17 @@ export default function BPHero({ onApplyClick, onEarnClick }) {
           </div>
 
           {/* H1 */}
-          <h1 className="text-6xl md:text-8xl font-black leading-[0.92] tracking-tighter mb-6 text-white">
+          <h1 className="text-5xl sm:text-6xl md:text-8xl font-black leading-[0.92] tracking-tighter mb-6 text-white">
             MAKE MONEY<br />
             <span className="text-rose-500">WITH YOUR</span><br />
             BODY.
           </h1>
 
-          <p className="text-lg md:text-xl text-white/70 leading-relaxed mb-3 max-w-[560px]">
-            Turn your body, confidence and sexual energy into paid scenes, fanclub access, PPV sales, livecam opportunities and platform distribution — with a studio behind you.
+          <p className="text-lg md:text-xl text-white/72 leading-relaxed mb-3 max-w-[560px]">
+            You already have the body, confidence and energy. FLESHLAB helps turn it into paid scenes, fanclub access, PPV sales, livecam and distribution.
           </p>
-          <p className="text-base text-white/45 leading-relaxed mb-8 max-w-[480px]">
-            Your first video can become the start of a performer brand.
+          <p className="text-base text-white/48 leading-relaxed mb-8 max-w-[480px]">
+            One video can become the start of a performer brand.
           </p>
 
           {/* Earnings animation */}
@@ -123,17 +123,17 @@ export default function BPHero({ onApplyClick, onEarnClick }) {
             <Button
               size="lg"
               onClick={handleApplyClick}
-              className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black px-10 py-5 rounded-xl h-auto shadow-xl shadow-rose-700/40 text-base uppercase tracking-wide"
+              className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black px-10 py-5 rounded-xl h-auto min-h-14 shadow-xl shadow-rose-700/40 text-base uppercase tracking-wide focus-visible:ring-2 focus-visible:ring-rose-300"
             >
-              Apply as Performer
+              Start application
             </Button>
             <Button
               size="lg"
               variant="outline"
               onClick={onEarnClick}
-              className="border-white/20 text-white hover:bg-white/8 font-semibold px-8 py-5 rounded-xl h-auto text-base"
+              className="border-white/20 text-white hover:bg-white/8 font-semibold px-8 py-5 rounded-xl h-auto min-h-14 text-base focus-visible:ring-2 focus-visible:ring-white/40"
             >
-              How you earn money
+              See how you earn
             </Button>
           </div>
 

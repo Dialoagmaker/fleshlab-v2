@@ -72,12 +72,12 @@ export default function BecomePerformer() {
       <div className="min-h-screen bg-[#080808] text-white">
         <BPHero onApplyClick={scrollToForm} onEarnClick={scrollToEarn} />
 
-        <BPChapterSection number="01" eyebrow="Why FLESHLAB" question="Why build with FLESHLAB?" answer="Because you should not have to figure out production, publishing, compliance and sales alone. We help turn your performance into a real adult creator brand.">
+        <BPChapterSection number="01" eyebrow="Why FLESHLAB" question="Why build with FLESHLAB?" answer="Start with what you already have: body, confidence and energy. We add production, publishing, compliance, sales and support.">
           <div className="grid gap-7 lg:grid-cols-[0.95fr_1.05fr]">
             <div className="rounded-[2rem] border border-rose-500/25 bg-gradient-to-br from-rose-950/30 to-white/[0.03] p-8 md:p-10">
-              <p className="mb-7 text-2xl font-black leading-tight text-white md:text-3xl">Adult content production, fanclub access, PPV, livecam and distribution — with consent and contracts built in.</p>
+              <p className="mb-7 text-2xl font-black leading-tight text-white md:text-3xl">You bring the raw material. FLESHLAB turns it into a performer brand.</p>
               <div className="grid gap-3 sm:grid-cols-2">
-                {["Verified 18+ only", "No escort or dating", "Private data handling", "Publishing needs consent"].map((item) => <div key={item} className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm font-bold text-white/68">{item}</div>)}
+                {["Your look", "Your boundaries", "Your sexual energy", "Your consistency"].map((item) => <div key={item} className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm font-bold text-white/68">{item}</div>)}
               </div>
             </div>
             <div className="rounded-[2rem] border border-white/10 bg-[#111] p-6 md:p-8">
@@ -90,7 +90,7 @@ export default function BecomePerformer() {
         </BPChapterSection>
 
         <div ref={earnRef}>
-          <BPChapterSection number="02" eyebrow="How You Earn" question="How can this make money?" answer="One scene can start the journey. A growing catalog, fanclub, livecam schedule and partner distribution create more chances to earn." tone="amber">
+          <BPChapterSection number="02" eyebrow="How You Earn" question="How can this make money?" answer="Scenes create income opportunities. A catalog, fanclub, livecam schedule and partner distribution create momentum." tone="amber">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               {INCOME.map(({ Icon, title, text }) => <div key={title} className="rounded-[1.6rem] border border-white/10 bg-[#111] p-5 transition hover:-translate-y-0.5 hover:border-rose-400/30"><Icon className="mb-5 h-7 w-7 text-rose-400" /><h3 className="mb-2 text-lg font-black text-white">{title}</h3><p className="text-sm leading-relaxed text-white/45">{text}</p></div>)}
             </div>
@@ -116,7 +116,7 @@ export default function BecomePerformer() {
           <p className="mx-auto mt-8 max-w-3xl text-center text-xs leading-relaxed text-white/32">Revenue models are reviewed during application. Splits apply to eligible gross revenue and may vary by product type or contract. Your boundaries still matter.</p>
         </BPChapterSection>
 
-        <BPChapterSection number="04" eyebrow="Apply" question="Ready to start?" answer="This is the destination. Apply privately, verify safely, and let the team review your fit for FLESHLAB.">
+        <BPChapterSection number="04" eyebrow="Apply" question="Apply today" answer="You have seen the path. Start privately, verify safely, and let the team review your fit for FLESHLAB.">
           <div className="rounded-[2.2rem] border border-rose-500/25 bg-gradient-to-b from-rose-950/20 to-[#111] p-7 shadow-2xl shadow-rose-950/20 md:p-10">
             <div className="grid gap-7 lg:grid-cols-[0.9fr_1.1fr]">
               <div className="rounded-[1.7rem] border border-white/10 bg-black/25 p-6">
@@ -134,7 +134,7 @@ export default function BecomePerformer() {
               <button type="button" aria-label="Learn more about the cam model partnership" onClick={() => navigate("/chaturbate-model-join-studio")} className="rounded-3xl border border-purple-500/25 bg-purple-500/10 p-6 text-left transition hover:-translate-y-1 hover:border-purple-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"><div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-purple-500/30 bg-purple-500/15"><Video className="h-5 w-5 text-purple-300" /></div><h3 className="mb-2 font-black text-white">Cam Model Partnership</h3><p className="mb-4 text-sm leading-relaxed text-white/50">Already camming? Add studio content, fanclub income and the 70% network split.</p><span className="inline-flex items-center gap-2 text-xs font-bold text-purple-300">Learn more <ArrowRight className="h-3.5 w-3.5" /></span></button>
             </div>
 
-            <div className="mx-auto mt-12 max-w-3xl text-center"><p className="mb-5 text-2xl font-black text-white md:text-3xl">Start here.</p><Button onClick={scrollToForm} className="h-auto min-h-14 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 px-10 py-5 text-base font-black uppercase tracking-wide text-white shadow-xl shadow-rose-700/35 hover:from-rose-500 hover:to-rose-600 focus-visible:ring-2 focus-visible:ring-rose-300">Start Private Application</Button><p className="mt-3 text-xs text-white/35">Reviewed within 48 hours · No obligation</p></div>
+            <div className="mx-auto mt-14 max-w-3xl text-center"><p className="mb-5 text-2xl font-black text-white md:text-3xl">This is where you start.</p><Button onClick={scrollToForm} className="h-auto min-h-14 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 px-10 py-5 text-base font-black uppercase tracking-wide text-white shadow-xl shadow-rose-700/35 hover:from-rose-500 hover:to-rose-600 focus-visible:ring-2 focus-visible:ring-rose-300">Start Private Application</Button><p className="mt-3 text-xs text-white/35">Private review · 48-hour response · No obligation</p></div>
             <BPApplicationForm ref={formRef} onSuccess={handleSuccess} embedded />
           </div>
         </BPChapterSection>
