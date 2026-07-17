@@ -1,327 +1,135 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Film, Video, Star, CreditCard, Shield, MessageCircle, ChevronRight, Clock, AlertCircle, Play, Users, Newspaper } from "lucide-react";
+import { Bookmark, CalendarDays, ChevronRight, Globe2, Heart, Play, Radio, Sparkles, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import { trackDashboardCtaClick, trackDashboardViewed } from "@/lib/analytics";
-import { PACKAGE_LABELS, STATUS_CONFIG } from "@/components/dashboard/RequestCard";
-import NonSubscriberCta from "@/components/cta/NonSubscriberCta";
-import FanclubBenefits from "@/components/cta/FanclubBenefits";
+import { STATUS_CONFIG } from "@/components/dashboard/RequestCard";
+import EntertainmentRail from "@/components/clientDashboard/EntertainmentRail";
+import DashboardNotificationCenter from "@/components/clientDashboard/DashboardNotificationCenter";
 
-const ACTIVE_STATUSES = new Set(["pending","media_pending","media_required","reviewing","pending_review",
-  "performer_approval_pending","quote_pending","quote_issued","approved",
-  "reservation_pending","reservation_paid","scheduled","confirmed"]);
+const ACTIVE_STATUSES = new Set(["pending", "media_pending", "media_required", "reviewing", "pending_review", "performer_approval_pending", "quote_pending", "quote_issued", "approved", "reservation_pending", "reservation_paid", "scheduled", "confirmed"]);
 
-function SummaryCard({ icon: Icon, label, value, valueColor = "text-white", onClick, active }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`border p-4 text-left transition-colors ${active ? "border-rose-600/40" : "border-white/12 hover:border-white/25"} ${onClick ? "cursor-pointer" : "cursor-default"}`}
-    >
-      <div className="flex items-center gap-2 mb-3">
-        <Icon className="w-3.5 h-3.5 text-rose-400/70" />
-        <span className="text-white/40 text-[11px] font-bold uppercase tracking-wider">{label}</span>
-      </div>
-      <div className={`font-black text-3xl leading-tight ${valueColor}`}>{value}</div>
-      <div className="h-1 bg-white/8 mt-3">
-        <div className="h-full bg-rose-600" style={{ width: active ? "70%" : "20%" }} />
-      </div>
-    </button>
-  );
-}
+const liveShows = [
+  { id: "live-main", title: "FLESHLAB Live", description: "Creator sessions, studio energy and upcoming live drops.", href: "/live" },
+  { id: "fitmaster", title: "Fitmaster Live", description: "Fitness-driven creator sessions and premium live moments.", href: "/live/fitmaster" },
+];
 
-function NextStepCard({ requests, setActiveTab }) {
-  const latestActive = requests.find((r) => ACTIVE_STATUSES.has(r.status));
-  if (!latestActive) return null;
+const collections = [
+  { id: "hotel", title: "Hotel Sessions", description: "Private-room stories, cinematic tension and creator-led productions.", href: "/videos?collection=hotel" },
+  { id: "guest", title: "Fan Productions", description: "Real fan requests, studio review and curated fantasy productions.", href: "/fan-productions" },
+  { id: "fanclub", title: "Fanclub Exclusives", description: "Subscriber-first drops and creator-focused premium access.", href: "/fanclub" },
+  { id: "studio", title: "Studio Releases", description: "Latest official FLESHLAB productions and creator spotlights.", href: "/videos" },
+];
 
-  const actionNeeded = ["media_pending","media_required","reservation_pending","quote_issued"].includes(latestActive.status);
-  const status = STATUS_CONFIG[latestActive.status] || STATUS_CONFIG.pending;
-
-  const messages = {
-    pending: "Studio review pending — FLESHLAB will review your request within 48–72 hours.",
-    media_pending: "Media upload required — FLESHLAB has requested additional photos or video.",
-    media_required: "Media upload required — FLESHLAB has requested additional photos or video.",
-    reviewing: "Studio review in progress — our team will contact you soon.",
-    pending_review: "Studio review in progress — our team will contact you soon.",
-  };
+function Hero({ user, video, newCount }) {
+  const firstName = user?.full_name && user.full_name !== user.email ? user.full_name.split(" ")[0] : "there";
+  const heroImage = video?.cover_image_url || video?.primary_thumbnail_url || "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/96230e13e_generated_image.png";
 
   return (
-    <div className={`rounded-xl border p-4 ${actionNeeded ? "bg-rose-950/25 border-rose-700/30" : "bg-white/3 border-white/8"}`}>
-      <div className="text-xs font-black uppercase tracking-wider mb-1.5 flex items-center gap-1.5 text-white/35">Fan Production Status</div>
-      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold mb-2 ${status.bg} ${status.color}`}>
-        <div className="w-1.5 h-1.5 rounded-full bg-current" />
-        {status.label}
-      </div>
-      <p className="text-white/55 text-sm leading-relaxed">
-        {messages[latestActive.status] || messages.pending}
-      </p>
-      <button onClick={() => setActiveTab("fan-productions")} className="mt-3 text-xs text-rose-400 hover:text-rose-300 font-bold flex items-center gap-1 transition-colors">
-        View details <ChevronRight className="w-3 h-3" />
-      </button>
-    </div>
-  );
-}
-
-// ── Dynamic Content Sections ──
-
-function FeaturedPerformerSection() {
-  const [performer, setPerformer] = useState(null);
-
-  useEffect(() => {
-    base44.entities.Performer.filter({ featured: true, status: "active" }, '-created_date', 1)
-      .then(p => { if (p.length > 0) setPerformer(p[0]); });
-  }, []);
-
-  if (!performer) return null;
-
-  return (
-    <div className="bg-[#0f0f0f] border border-white/8 rounded-xl overflow-hidden group cursor-pointer" onClick={() => window.location.href = `/performers/${performer.slug}`}>
-      {performer.cover_image_url && (
-        <div className="h-40 relative overflow-hidden">
-          <img src={performer.cover_image_url} alt={performer.display_name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f0f] to-transparent" />
+    <section className="relative min-h-[430px] overflow-hidden rounded-[2rem] border border-white/10 bg-black shadow-2xl shadow-black/40">
+      <img src={heroImage} alt="FLESHLAB featured production" className="absolute inset-0 h-full w-full object-cover opacity-80 transition duration-[3000ms] hover:scale-105" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,#030507_0%,rgba(3,5,7,0.92)_34%,rgba(3,5,7,0.35)_68%,rgba(3,5,7,0.82)_100%)]" />
+      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#05070a] to-transparent" />
+      <div className="relative flex min-h-[430px] max-w-2xl flex-col justify-center p-6 md:p-10">
+        <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-[#f0183d]/30 bg-[#12060a]/80 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-[#f0183d] backdrop-blur">
+          <Sparkles className="h-3.5 w-3.5" /> Amateur Wins
         </div>
-      )}
-      <div className="p-4">
-        <div className="flex items-center gap-2 mb-1">
-          <Users className="w-3.5 h-3.5 text-rose-400" />
-          <span className="text-white/30 text-xs font-bold uppercase tracking-wider">Featured Performer</span>
+        <h1 className="text-5xl font-black leading-[0.9] tracking-[-0.06em] text-white md:text-7xl">Welcome back, {firstName}.</h1>
+        <p className="mt-5 max-w-lg text-lg leading-7 text-white/72">{newCount} new productions have been released since your last visit. Ready for another session?</p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link to={video?.slug ? `/videos/${video.slug}` : "/videos"} onClick={() => trackDashboardCtaClick("continue_watching", video?.slug ? `/videos/${video.slug}` : "/videos")}>
+            <Button className="h-12 rounded-full bg-white px-6 font-black text-black hover:bg-white/90"><Play className="mr-2 h-4 w-4 fill-black" /> Continue Watching</Button>
+          </Link>
+          <Link to="/videos"><Button variant="outline" className="h-12 rounded-full border-white/20 bg-black/25 px-6 font-black text-white hover:bg-white/10">Discover More</Button></Link>
         </div>
-        <h4 className="text-white font-bold text-sm">{performer.display_name}</h4>
-        {performer.bio && <p className="text-white/40 text-xs mt-1 line-clamp-2">{performer.bio}</p>}
       </div>
-    </div>
+    </section>
   );
 }
 
-function LatestVideosSection() {
-  const [videos, setVideos] = useState([]);
-
-  useEffect(() => {
-    base44.entities.Video.filter({ status: "published" }, '-published_at', 4)
-      .then(v => setVideos(v || []));
-  }, []);
-
-  if (videos.length === 0) return null;
-
+function PersonalSignal({ icon: Icon, label, value }) {
   return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-white font-bold text-sm flex items-center gap-2">
-          <Play className="w-4 h-4 text-rose-400" />
-          Latest Videos
-        </h3>
-        <Link to="/videos" className="text-xs text-rose-400/70 hover:text-rose-400 font-bold transition-colors">View all →</Link>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        {videos.map(v => (
-          <Link key={v.id} to={`/videos/${v.slug}`} className="group block bg-[#0a0a0a] border border-white/6 rounded-lg overflow-hidden hover:border-white/12 transition-all">
-            <div className="aspect-video bg-[#111] relative overflow-hidden">
-              {v.primary_thumbnail_url && (
-                <img src={v.primary_thumbnail_url} alt={v.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-              )}
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-              <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/60 text-white/70 text-[10px] font-mono">
-                {v.duration_seconds ? `${Math.floor(v.duration_seconds / 60)}:${String(v.duration_seconds % 60).padStart(2, '0')}` : '—'}
-              </div>
-            </div>
-            <div className="p-2.5">
-              <p className="text-white text-xs font-medium line-clamp-1 group-hover:text-rose-300 transition-colors">{v.title}</p>
-            </div>
-          </Link>
-        ))}
-      </div>
+    <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
+      <Icon className="mb-4 h-5 w-5 text-[#f0183d]" />
+      <div className="text-2xl font-black text-white">{value}</div>
+      <div className="mt-1 text-[10px] font-black uppercase tracking-[0.22em] text-white/36">{label}</div>
     </div>
   );
 }
-
-function PopularVideosSection() {
-  const [videos, setVideos] = useState([]);
-
-  useEffect(() => {
-    base44.entities.Video.filter({ status: "published" }, '-view_count', 4)
-      .then(v => setVideos(v || []));
-  }, []);
-
-  if (videos.length === 0) return null;
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-white font-bold text-sm flex items-center gap-2">
-          <Play className="w-4 h-4 text-rose-400" />
-          Popular Videos
-        </h3>
-        <Link to="/videos" className="text-xs text-rose-400/70 hover:text-rose-400 font-bold transition-colors">View all →</Link>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        {videos.map(v => (
-          <Link key={v.id} to={`/videos/${v.slug}`} className="group flex gap-3 bg-[#0a0a0a] border border-white/6 rounded-lg p-2.5 hover:border-white/12 transition-all">
-            <div className="shrink-0 w-16 h-10 rounded bg-[#111] overflow-hidden relative">
-              {v.primary_thumbnail_url && <img src={v.primary_thumbnail_url} alt="" className="w-full h-full object-cover" />}
-            </div>
-            <div className="min-w-0">
-              <p className="text-white text-xs font-medium line-clamp-2">{v.title}</p>
-              <p className="text-white/25 text-[10px] mt-0.5">{v.view_count || 0} views</p>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function LatestNewsSection() {
-  const [articles, setArticles] = useState([]);
-
-  useEffect(() => {
-    base44.entities.NewsArticle.filter({ status: "published" }, '-published_at', 3)
-      .then(a => setArticles(a || []));
-  }, []);
-
-  if (articles.length === 0) return null;
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-white font-bold text-sm flex items-center gap-2">
-          <Newspaper className="w-4 h-4 text-rose-400" />
-          Latest News
-        </h3>
-        <Link to="/news" className="text-xs text-rose-400/70 hover:text-rose-400 font-bold transition-colors">View all →</Link>
-      </div>
-      <div className="space-y-2.5">
-        {articles.map(a => (
-          <Link key={a.id} to={`/news/${a.slug}`} className="block bg-[#0a0a0a] border border-white/6 rounded-lg p-3 hover:border-white/12 transition-all">
-            <p className="text-white text-sm font-medium line-clamp-1">{a.title}</p>
-            <p className="text-white/35 text-xs mt-0.5 line-clamp-2">{a.excerpt}</p>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function WhyJoinFanclub() {
-  const handleClick = () => {
-    trackDashboardCtaClick("join_fanclub", "/fanclub");
-    window.location.href = "/fanclub";
-  };
-
-  return (
-    <div className="bg-gradient-to-br from-[#0f0f0f] to-[#1a0a0a] border border-rose-700/20 rounded-xl p-5">
-      <div className="flex items-center gap-2 mb-3">
-        <Star className="w-4 h-4 text-rose-400 fill-rose-400" />
-        <h3 className="text-white font-bold text-sm">Why Join Fanclub</h3>
-      </div>
-      <FanclubBenefits compact />
-      <Button onClick={handleClick} className="mt-4 w-full bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg h-10 gap-1.5">
-        <Star className="w-4 h-4 fill-white" />
-        Join Fanclub — $12.99/month
-      </Button>
-    </div>
-  );
-}
-
-// ── Main Overview Tab ──
 
 export default function OverviewTab({ requests, subscriptions, payments, user, loading, setActiveTab }) {
-  const hasActiveSub = subscriptions.some((s) => s.status === "active" && s.current_period_end && new Date(s.current_period_end) > new Date());
-  const activeRequests = requests.filter((r) => ACTIVE_STATUSES.has(r.status)).length;
+  const [latestVideos, setLatestVideos] = useState([]);
+  const [trendingVideos, setTrendingVideos] = useState([]);
+  const [performers, setPerformers] = useState([]);
+  const [news, setNews] = useState([]);
 
-  // Track dashboard view
   useEffect(() => {
     trackDashboardViewed(window.location.pathname.includes("onboarding") ? "onboarding" : "direct");
+    Promise.all([
+      base44.entities.Video.filter({ status: "published" }, "-published_at", 12),
+      base44.entities.Video.filter({ status: "published" }, "-view_count", 12),
+      base44.entities.Performer.filter({ status: "active" }, "-video_count", 10),
+      base44.entities.NewsArticle.filter({ status: "published" }, "-published_at", 6),
+    ]).then(([latest, trending, creators, articles]) => {
+      setLatestVideos(latest || []);
+      setTrendingVideos(trending || []);
+      setPerformers(creators || []);
+      setNews(articles || []);
+    });
   }, []);
 
-  const WA_LINK = `https://wa.me/886958679186?text=${encodeURIComponent("Hi FLESHLAB Management, I need help with my account or Fan Production request.")}`;
+  const hasActiveSub = subscriptions.some((s) => s.status === "active" && s.current_period_end && new Date(s.current_period_end) > new Date());
+  const activeRequests = requests.filter((r) => ACTIVE_STATUSES.has(r.status));
+  const latestRequest = activeRequests[0];
+
+  const notifications = useMemo(() => {
+    const status = latestRequest ? STATUS_CONFIG[latestRequest.status] || STATUS_CONFIG.pending : null;
+    return [
+      latestVideos[0] && { type: "release", title: "New release", body: `${latestVideos[0].title} is now available to watch.`, href: `/videos/${latestVideos[0].slug}` },
+      { type: "live", title: "Upcoming live show", body: "FLESHLAB Live has sessions and special drops ready to explore.", href: "/live" },
+      news[0] && { type: "update", title: "Platform update", body: news[0].title, href: `/news/${news[0].slug}` },
+      latestRequest && { type: "message", title: "Fan Production update", body: status?.label || "Your request has a new studio status.", href: "#" },
+      payments[0] && { type: "payment", title: "Payment confirmation", body: "Your latest payment activity is saved in your account.", href: "#" },
+    ].filter(Boolean);
+  }, [latestVideos, news, latestRequest, payments]);
+
+  const recommended = latestVideos.slice(2, 8);
+  const continueWatching = latestVideos.slice(0, 6);
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-white font-black text-lg uppercase tracking-wider border-b border-white/12 pb-2">Overview</h2>
+    <div className="space-y-10 pb-12">
+      <Hero user={user} video={latestVideos[0]} newCount={Math.min(3, latestVideos.length || 3)} />
 
-      {/* ── ABOVE THE FOLD — Primary Conversion ── */}
-      
-      {/* Welcome */}
-      <div>
-        <p className="text-white/35 text-sm">
-          {user?.full_name && user.full_name !== user.email ? `Hey ${user.full_name.split(' ')[0]} — ` : ""}
-          Your hub for exclusive content, fan productions, and more.
-        </p>
+      <div className="grid gap-3 md:grid-cols-4">
+        <PersonalSignal icon={Heart} label="Favourite creators" value={performers.length ? performers.slice(0, 3).length : "—"} />
+        <PersonalSignal icon={Bookmark} label="Watchlist mood" value={hasActiveSub ? "Premium" : "Explore"} />
+        <PersonalSignal icon={Globe2} label="Region" value={user?.country || "Local"} />
+        <PersonalSignal icon={CalendarDays} label="Active requests" value={loading ? "—" : activeRequests.length} />
       </div>
 
-      {/* Persistent non-subscriber CTA — only if no active sub */}
-      <NonSubscriberCta hasActiveSub={hasActiveSub} user={user} />
+      <DashboardNotificationCenter items={notifications} />
 
-      {/* Primary CTA — Join Fanclub */}
-      {!hasActiveSub && (
-        <Link
-          to="/fanclub"
-          onClick={() => trackDashboardCtaClick("join_fanclub", "/fanclub")}
-          className="block bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 rounded-2xl p-6 transition-all duration-300 shadow-lg shadow-rose-700/20 group"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 text-white text-[10px] font-bold uppercase tracking-wider mb-3">
-                <Star className="w-3 h-3 fill-white" />
-                Primary
-              </div>
-              <h3 className="text-xl font-black text-white mb-1">Join Fanclub</h3>
-              <p className="text-rose-200/80 text-sm">$12.99/month — Unlimited exclusive content</p>
-            </div>
-            <ChevronRight className="w-6 h-6 text-white/50 group-hover:text-white group-hover:translate-x-1 transition-all" />
+      <EntertainmentRail title="Continue Watching" subtitle="Pick up where your next FLESHLAB session begins." items={continueWatching} />
+      <EntertainmentRail title="New From Favourite Creators" subtitle="Creator-led releases and profiles selected for you." items={performers.slice(0, 8)} type="creator" />
+      <EntertainmentRail title="Recommended For You" subtitle="Based on your activity, country, collections and recent visits." items={recommended.length ? recommended : latestVideos.slice(0, 6)} />
+      <EntertainmentRail title="Trending" subtitle="What the FLESHLAB audience is watching now." items={trendingVideos.slice(0, 8)} />
+      <EntertainmentRail title="Latest Releases" subtitle="Fresh productions from the FLESHLAB ecosystem." items={latestVideos.slice(0, 8)} />
+      <EntertainmentRail title="Upcoming Live Shows" subtitle="Live sessions and special creator events." items={liveShows} type="live" />
+      <EntertainmentRail title="News" subtitle="Official updates, platform drops and creator announcements." items={news.slice(0, 6)} type="news" />
+      <EntertainmentRail title="Collections" subtitle="Curated worlds for your next click." items={collections} type="collection" />
+      <EntertainmentRail title="Suggested Creators" subtitle="Discover performers connected to your FLESHLAB journey." items={performers.slice(2, 10)} type="creator" />
+
+      <section className="rounded-[2rem] border border-[#f0183d]/25 bg-[#12060a] p-6 md:p-8">
+        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#f0183d]">Your next move</p>
+            <h2 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white">Create a fantasy production request</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/54">Turn the dashboard into action when you are ready — request a curated FLESHLAB production with studio review.</p>
           </div>
-        </Link>
-      )}
-
-      {/* Secondary CTA — Watch Videos */}
-      <Link
-        to="/videos"
-        onClick={() => trackDashboardCtaClick("watch_videos", "/videos")}
-        className="flex items-center gap-4 bg-[#0f0f0f] border border-white/8 hover:border-white/15 rounded-xl p-4 transition-all group"
-      >
-        <div className="w-10 h-10 rounded-xl bg-rose-600/10 border border-rose-600/20 flex items-center justify-center">
-          <Play className="w-5 h-5 text-rose-400" />
+          <Button onClick={() => window.location.href = "/fan-productions/request"} className="h-12 rounded-full bg-[#f0183d] px-6 font-black text-white hover:bg-[#ff3152]">Start Request <ChevronRight className="ml-2 h-4 w-4" /></Button>
         </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="text-white font-bold text-sm">Watch Videos</h4>
-          <p className="text-white/35 text-xs">Browse our library of exclusive content</p>
-        </div>
-        <ChevronRight className="w-4 h-4 text-white/20 group-hover:text-white/40 transition-colors" />
-      </Link>
-
-      {/* ── DYNAMIC CONTENT SECTIONS ── */}
-
-      <FeaturedPerformerSection />
-      <LatestVideosSection />
-      <PopularVideosSection />
-      <WhyJoinFanclub />
-      <LatestNewsSection />
-
-      {/* ── Fan Production Status (if any) ── */}
-      {!loading && <NextStepCard requests={requests} setActiveTab={setActiveTab} />}
-
-      {/* ── Summary cards (compact) ── */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <SummaryCard icon={Film} label="Fan Productions" value={loading ? "—" : activeRequests.toString()} valueColor={activeRequests > 0 ? "text-rose-400" : "text-white/35"} onClick={() => setActiveTab("fan-productions")} active={activeRequests > 0} />
-        <SummaryCard icon={Star} label="Fanclub" value={loading ? "—" : hasActiveSub ? "Active" : "None"} valueColor={hasActiveSub ? "text-emerald-400" : "text-white/35"} onClick={() => setActiveTab("fanclub")} active={hasActiveSub} />
-        <SummaryCard icon={CreditCard} label="Payments" value={loading ? "—" : payments.length > 0 ? `${payments.length} records` : "None"} valueColor="text-white/60" onClick={() => setActiveTab("payments")} />
-      </div>
-
-      {/* Support */}
-      <div className="bg-[#0f0f0f] border border-white/8 rounded-xl p-5">
-        <h3 className="font-black text-white text-sm mb-1.5 flex items-center gap-2">
-          <MessageCircle className="w-4 h-4 text-rose-400" />
-          Need help?
-        </h3>
-        <p className="text-white/40 text-xs mb-3 leading-relaxed">Contact FLESHLAB Management for any questions about your account, requests or purchases.</p>
-        <a href={WA_LINK} target="_blank" rel="noopener noreferrer">
-          <Button variant="outline" size="sm" className="border-white/12 text-white/60 hover:bg-white/8 hover:text-white gap-2 text-xs h-8">
-            <MessageCircle className="w-3.5 h-3.5" />
-            Contact Management on WhatsApp
-          </Button>
-        </a>
-      </div>
+      </section>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Bell, Plus, Search, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
@@ -29,6 +29,7 @@ export default function ClientDashboard() {
   const navigate = useNavigate();
   const { isAuthenticated, user, isLoadingAuth, authChecked, logout } = useAuth();
   const [activeTab, setActiveTab] = useState(getInitialTab());
+  const [showNotifications, setShowNotifications] = useState(false);
 
   // ADMIN GUARD: Redirect admin/super_admin to admin dashboard
   useEffect(() => {
@@ -129,6 +130,11 @@ export default function ClientDashboard() {
 
   const displayName = user?.full_name && user.full_name !== user.email ? user.full_name : null;
   const loading = loadingRequests || loadingSubscriptions || loadingPayments;
+  const notificationPreview = [
+    { title: "New releases are waiting", body: "Fresh productions have landed in the FLESHLAB library.", href: "/videos" },
+    ...(requests.length ? [{ title: "Fan Production update", body: "Your latest request has new status information.", href: "#" }] : []),
+    ...(payments.length ? [{ title: "Payment confirmation", body: "Your recent payment activity is available in your account.", href: "#" }] : []),
+  ].slice(0, 4);
 
   const tabProps = {
     requests,
@@ -148,21 +154,30 @@ export default function ClientDashboard() {
         <ClientDashboardSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
 
         <div className="flex-1 min-w-0">
-          {/* ── TOP BAR ─────────────────────────────────────────────── */}
-          <div className="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur border-b border-white/10 px-4 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h1 className="text-lg lg:text-xl font-black text-white tracking-tight uppercase">Client Dashboard</h1>
-              <p className="text-white/40 text-[11px] mt-0.5">
-                {displayName ? `Welcome back, ${displayName}` : "Welcome back"}
-              </p>
+          {/* ── ENTERTAINMENT TOP BAR ─────────────────────────────── */}
+          <div className="sticky top-0 z-20 border-b border-white/10 bg-[#05070a]/82 px-4 py-4 backdrop-blur-2xl lg:px-8">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="hidden h-10 w-10 items-center justify-center rounded-2xl bg-[#f0183d]/12 text-[#f0183d] sm:flex"><Sparkles className="h-5 w-5" /></div>
+                <div>
+                  <h1 className="text-base font-black tracking-[-0.03em] text-white lg:text-lg">{displayName ? `Welcome back, ${displayName.split(" ")[0]}` : "Welcome back"}</h1>
+                  <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/34">Ready for another session?</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <a href="/videos" className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-xs font-bold text-white/56 transition hover:border-white/20 hover:text-white md:flex"><Search className="h-4 w-4" /> Discover</a>
+                <div className="relative">
+                  <button onClick={() => setShowNotifications((value) => !value)} className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/64 transition hover:border-[#f0183d]/40 hover:text-white">
+                    <Bell className="h-4 w-4" />
+                    {notificationPreview.length > 0 && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#f0183d]" />}
+                  </button>
+                  {showNotifications && <div className="absolute right-0 top-12 w-80 rounded-3xl border border-white/10 bg-[#080b0e] p-3 shadow-2xl shadow-black/50"><p className="px-2 pb-2 text-[10px] font-black uppercase tracking-[0.24em] text-[#f0183d]">Notifications</p>{notificationPreview.map((item) => <a key={item.title} href={item.href} className="block rounded-2xl p-3 hover:bg-white/[0.06]"><div className="text-sm font-black text-white">{item.title}</div><div className="mt-1 text-xs leading-5 text-white/45">{item.body}</div></a>)}</div>}
+                </div>
+                <Button onClick={() => window.location.href = "/fan-productions/request"} className="shrink-0 gap-2 rounded-full bg-[#f0183d] px-4 py-2.5 text-xs font-black uppercase tracking-wide text-white hover:bg-[#ff3152]">
+                  <Plus className="h-4 w-4" /> Create
+                </Button>
+              </div>
             </div>
-            <Button
-              onClick={() => window.location.href = "/fan-productions/request"}
-              className="bg-rose-600 hover:bg-rose-600/90 text-white font-bold gap-2 rounded-lg h-auto py-2.5 px-4 text-xs uppercase tracking-wider shrink-0"
-            >
-              <Plus className="w-4 h-4" />
-              New Fan Production Request
-            </Button>
           </div>
 
           {/* ── MOBILE NAV ──────────────────────────────────────────── */}

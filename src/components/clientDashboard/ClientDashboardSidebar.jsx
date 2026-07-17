@@ -1,45 +1,42 @@
-import { LogOut } from "lucide-react";
+import { LogOut, Sparkles } from "lucide-react";
 import { TABS } from "@/components/clientDashboard/DashboardNav";
+
+function handleNav(tab, setActiveTab) {
+  if (tab.href) window.location.href = tab.href;
+  else setActiveTab(tab.id);
+}
 
 export default function ClientDashboardSidebar({ activeTab, setActiveTab, onLogout }) {
   return (
-    <aside className="hidden lg:flex flex-col w-60 shrink-0 h-screen sticky top-0 bg-[#0a0a0a] border-r border-white/10">
-      <div className="flex items-center gap-2 px-5 h-16 border-b border-white/10 shrink-0">
-        <svg viewBox="0 0 24 24" className="w-5 h-5 text-rose-500 fill-current shrink-0"><path d="M12 2C9 2 7 4 7 7c0 2 1 3 1 5-2 0-3 1-3 3 0 3 3 5 7 5s7-2 7-5c0-2-1-3-3-3 0-2 1-3 1-5 0-3-2-5-5-5z"/></svg>
-        <div className="leading-none">
-          <div className="text-white font-black text-sm tracking-wide">FLESHLAB</div>
-          <div className="text-white/40 text-[9px] tracking-widest uppercase">Account</div>
+    <aside className="hidden lg:flex h-screen w-72 shrink-0 sticky top-0 flex-col border-r border-white/10 bg-[#05070a]/95 backdrop-blur-xl">
+      <div className="relative overflow-hidden border-b border-white/10 px-6 py-6">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(240,24,61,0.18),transparent_35%)]" />
+        <div className="relative flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f0183d] shadow-lg shadow-[#f0183d]/25"><Sparkles className="h-5 w-5 text-white" /></div>
+          <div className="leading-none">
+            <div className="text-lg font-black tracking-[-0.055em] text-white">FLESH<span className="text-[#f0183d]">LAB</span></div>
+            <div className="mt-1 text-[9px] font-black uppercase tracking-[0.36em] text-white/42">Home</div>
+          </div>
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-6">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = tab.id === activeTab;
           return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-colors ${
-                isActive
-                  ? "bg-rose-600 text-white"
-                  : "text-white/50 hover:bg-white/5 hover:text-white/80"
-              }`}
-            >
-              <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-white" : "text-white/40"}`} />
-              <span className="truncate">{tab.label}</span>
+            <button key={tab.id} onClick={() => handleNav(tab, setActiveTab)} className={`group relative flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all duration-300 ${isActive ? "bg-white text-black shadow-xl shadow-black/30" : "text-white/54 hover:bg-white/[0.06] hover:text-white"}`}>
+              <Icon className={`h-5 w-5 shrink-0 transition-transform duration-300 group-hover:scale-110 ${isActive ? "text-[#f0183d]" : "text-white/36"}`} />
+              <span>{tab.label}</span>
+              {isActive && <span className="ml-auto h-2 w-2 rounded-full bg-[#f0183d]" />}
             </button>
           );
         })}
       </nav>
 
-      <div className="p-3 border-t border-white/10 shrink-0">
-        <button
-          onClick={() => onLogout?.()}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors"
-        >
-          <LogOut className="w-4 h-4 shrink-0" />
-          Log Out
+      <div className="border-t border-white/10 p-4">
+        <button onClick={() => onLogout?.()} className="flex w-full items-center gap-4 rounded-2xl px-4 py-3 text-sm font-bold text-red-400/78 transition-all hover:bg-red-500/10 hover:text-red-300">
+          <LogOut className="h-5 w-5 shrink-0" /> Log Out
         </button>
       </div>
     </aside>
