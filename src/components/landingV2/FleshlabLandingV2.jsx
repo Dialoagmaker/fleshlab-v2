@@ -116,7 +116,7 @@ export default function FleshlabLandingV2({ performers = [] }) {
 
         <HumanMomentsSection />
 
-        <SectionReveal id="journey" className="relative border-y border-white/8 bg-[#05090c] px-5 py-18 lg:px-7">
+        <SectionReveal id="journey" className="relative overflow-hidden border-y border-white/8 bg-[#05090c] px-5 pb-24 pt-20 lg:px-7">
           <div className="mx-auto max-w-[1180px]">
             <div className="mb-10 max-w-3xl">
               <p className="text-[10px] font-black uppercase tracking-[0.32em] text-[#f0183d]">CREATOR JOURNEY</p>
@@ -124,13 +124,13 @@ export default function FleshlabLandingV2({ performers = [] }) {
               <p className="mt-4 text-base leading-7 text-white/60">A simple, guided path from joining FLESHLAB to publishing your first work, growing your audience and getting paid.</p>
             </div>
             <div className="grid gap-10 lg:grid-cols-[1fr_360px]">
-              <div className="relative space-y-5">
-                <div className="absolute left-8 top-10 h-[calc(100%-5rem)] w-px bg-white/10" />
-                <motion.div animate={{ height: `${Math.min(100, ((activeJourneyStep + 1) / journey.length) * 100)}%` }} transition={{ duration: 0.45, ease: "easeOut" }} className="absolute left-8 top-10 w-px bg-gradient-to-b from-[#f0183d] via-[#f0183d] to-[#f0183d]/20 shadow-[0_0_18px_rgba(240,24,61,0.65)]" />
+              <div className="relative space-y-6 pb-3">
+                <div className="absolute bottom-12 left-8 top-10 w-px bg-white/10" />
+                <motion.div animate={{ height: `${Math.min(100, ((activeJourneyStep + 1) / journey.length) * 100)}%` }} transition={{ duration: 0.45, ease: "easeOut" }} className="absolute left-8 top-10 max-h-[calc(100%-5.5rem)] w-px bg-gradient-to-b from-[#f0183d] via-[#f0183d] to-[#f0183d]/20 shadow-[0_0_18px_rgba(240,24,61,0.65)]" />
                 {journey.map(([Icon, title, body], index) => {
                   const isActive = activeJourneyStep === index;
                   return (
-                    <motion.div key={title} ref={(node) => { journeyStepRefs.current[index] = node; }} initial={{ opacity: 0.45, x: -18 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false, amount: 0.55 }} transition={{ duration: 0.5, delay: index * 0.03 }} className={`relative grid gap-5 rounded-xl border p-5 pl-24 backdrop-blur transition duration-500 md:grid-cols-[180px_1fr] ${isActive ? "border-[#f0183d]/80 bg-[#16070b] shadow-[0_0_42px_rgba(240,24,61,0.16)]" : "border-white/10 bg-black/24"}`}>
+                    <motion.div key={title} ref={(node) => { journeyStepRefs.current[index] = node; }} initial={{ opacity: 0.45, x: -18 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false, amount: 0.55 }} transition={{ duration: 0.5, delay: index * 0.03 }} className={`relative grid min-h-[112px] gap-5 rounded-xl border p-5 pl-24 backdrop-blur transition duration-500 md:grid-cols-[180px_1fr] ${isActive ? "border-[#f0183d]/80 bg-[#16070b] shadow-[0_0_42px_rgba(240,24,61,0.16)]" : "border-white/10 bg-black/24"}`}>
                       <motion.div animate={isActive ? { scale: [1, 1.1, 1], rotate: [0, -3, 3, 0] } : { scale: 1, rotate: 0 }} transition={{ duration: 0.7, ease: "easeOut" }} className={`absolute left-0 top-1/2 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-full border bg-[#07090b] transition duration-500 ${isActive ? "border-[#f0183d] text-[#f0183d] shadow-[0_0_26px_rgba(240,24,61,0.38)]" : "border-white/18 text-white/42"}`}>
                         <Icon className="h-7 w-7" />
                       </motion.div>
