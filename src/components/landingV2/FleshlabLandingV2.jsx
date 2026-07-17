@@ -10,7 +10,7 @@ import { buildPublicAssetUrl } from "@/lib/videoAssetResolver";
 const HERO_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/96230e13e_generated_image.png";
 const SELFIE_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a3babcb65_generated_image.png";
 const PRODUCTION_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/4b2a370cb_generated_image.png";
-const FAN_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/0aee5828b_generated_image.png";
+const FAN_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/aeb2e88fe_generated_image.png";
 const WORLD_IMAGES = ["https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/d35df4180_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/5b2120e6a_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/fcaf5cd40_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/5dcc0f51a_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/b8b8e17cc_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/cdc27160e_generated_image.png"];
 
 const navItems = [["WHO WE ARE", "#who"], ["HOW IT WORKS", "#journey"], ["EARN MONEY", "#paths"], ["VIDEOS", "/videos"], ["FAN PRODUCTIONS", "#fan-productions"], ["BLOG", "/news"], ["TRUST CENTER", "#trust"]];
