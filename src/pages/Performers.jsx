@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { callPublicFunction } from "@/lib/publicApi";
-import PerformerCard from "@/components/public/PerformerCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Users, Search, X, Loader2, Sparkles, CheckCircle2, Star, Film } from "lucide-react";
+import { Users, Search, X, Loader2, Sparkles, CheckCircle2, Star } from "lucide-react";
+import PerformerDiscoverySection from "@/components/public/PerformerDiscoverySection";
 import SEOMeta from "@/components/SEOMeta";
 import { useI18n } from "@/i18n/i18n.jsx";
 
@@ -20,26 +20,13 @@ export default function Performers() {
   const performers = publicData?.performers || [];
   const brands = publicData?.brands || [];
 
-  // Featured Talent selection: ONLY The_Fitmaker and Jameson
   const featuredPerformers = useMemo(() => {
-    const priority = [];
-    
-    for (const performer of performers) {
+    const priority = performers.filter((performer) => {
       const nameLower = performer.display_name.toLowerCase().replace(/[_\s-]/g, '');
       const slugLower = performer.slug.toLowerCase().replace(/[_\s-]/g, '');
-      
-      // Match Fitmaster variants (with/without "the")
-      const isFitmaster = nameLower.includes('fitmaster') || slugLower.includes('fitmaster');
-      // Match Jameson
-      const isJameson = nameLower.includes('jameson') || slugLower.includes('jameson');
-      
-      if (isFitmaster || isJameson) {
-        priority.push(performer);
-      }
-    }
-    
-    // ONLY show priority performers (max 2), NO fallbacks
-    return priority.slice(0, 2);
+      return nameLower.includes('fitmaster') || slugLower.includes('fitmaster') || nameLower.includes('jameson') || slugLower.includes('jameson') || performer.featured;
+    });
+    return (priority.length ? priority : performers).slice(0, 1);
   }, [performers]);
 
   // Filter performers
@@ -52,6 +39,22 @@ export default function Performers() {
       (p.nationality && p.nationality.toLowerCase().includes(searchLower))
     );
   }, [performers, search]);
+
+  const trendingPerformers = useMemo(() => {
+    const featuredIds = new Set(featuredPerformers.map((performer) => performer.id));
+    return performers
+      .filter((performer) => !featuredIds.has(performer.id) && (performer.video_count || 0) > 0)
+      .sort((a, b) => (b.video_count || 0) - (a.video_count || 0))
+      .slice(0, 4);
+  }, [performers, featuredPerformers]);
+
+  const newPerformers = useMemo(() => {
+    const usedIds = new Set([...featuredPerformers, ...trendingPerformers].map((performer) => performer.id));
+    return performers
+      .filter((performer) => !usedIds.has(performer.id))
+      .sort((a, b) => new Date(b.created_date || 0) - new Date(a.created_date || 0))
+      .slice(0, 4);
+  }, [performers, featuredPerformers, trendingPerformers]);
 
   const handleClear = () => setSearch("");
 
@@ -100,143 +103,51 @@ export default function Performers() {
           }] : [])
         ]}
       />
-      <div className="min-h-screen bg-background">
-        {/* Cinematic Hero */}
-        <div className="relative bg-gradient-to-b from-[#0f0f0f] via-[#0a0a0a] to-background border-b border-rose-600/20 pb-8 pt-12 px-4 overflow-hidden">
-          {/* Subtle rose glow */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-rose-600/5 rounded-full blur-[120px] pointer-events-none" />
-          
-          <div className="max-w-[1600px] mx-auto relative z-10">
-            {/* Icon + Title */}
-            <div className="flex items-start gap-4 mb-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-rose-600 to-rose-700 rounded-xl flex items-center justify-center shadow-lg shadow-rose-600/25 flex-shrink-0">
-                <Users className="w-7 h-7 text-white" />
-              </div>
-              <div className="flex-1">
-                <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight mb-2">
-                  FLESHLAB Studios Performer Roster
-                </h1>
-                <p className="text-white/60 text-sm leading-relaxed max-w-3xl">
-                  Verified 18+ Asian gay performers, Filipino twink talent, and exclusive studio artists. 
-                  Discover professional profiles, fanclub access, and premium gay adult content.
-                </p>
+      <div className="min-h-screen bg-[#040608] px-4 py-8 text-white">
+        <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_16%_10%,rgba(240,24,61,0.14),transparent_30%),radial-gradient(circle_at_84%_18%,rgba(255,255,255,0.06),transparent_24%)]" />
+        <div className="relative mx-auto max-w-[1440px] space-y-10">
+          <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#070b0e] p-6 md:p-10">
+            <div className="absolute inset-y-0 right-0 hidden w-1/2 bg-[linear-gradient(120deg,transparent,rgba(240,24,61,0.13))] md:block" />
+            <div className="relative max-w-3xl">
+              <p className="text-[10px] font-black uppercase tracking-[0.34em] text-[#f0183d]">Creator Directory</p>
+              <h1 className="fl-condensed mt-3 text-[66px] uppercase leading-[0.9] tracking-[-0.025em] text-white md:text-[88px]">Discover people, not profiles.</h1>
+              <p className="mt-5 max-w-2xl text-base leading-7 text-white/62">Meet verified FLESHLAB creators through production worlds, personality cues and cinematic portraits designed to make the next click feel natural.</p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3"><p className="text-2xl font-black text-white">{performers.length}</p><p className="text-[10px] font-black uppercase tracking-wide text-white/42">Creators</p></div>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3"><p className="text-2xl font-black text-white">{performers.filter(p => p.fanclub_enabled).length}</p><p className="text-[10px] font-black uppercase tracking-wide text-white/42">Fanclubs</p></div>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3"><p className="text-2xl font-black text-white">{performers.filter(p => p.verified).length}</p><p className="text-[10px] font-black uppercase tracking-wide text-white/42">Verified</p></div>
               </div>
             </div>
+          </section>
 
-            {/* Stats Row */}
-            <div className="flex flex-wrap gap-3">
-              <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-                <div className="w-8 h-8 bg-rose-600/15 rounded-md flex items-center justify-center">
-                  <Users className="w-4 h-4 text-rose-500" />
-                </div>
-                <div className="leading-tight">
-                  <p className="text-white font-semibold text-xs">{performers.length}</p>
-                  <p className="text-white/40 text-[10px]">Performers</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-                <div className="w-8 h-8 bg-purple-600/15 rounded-md flex items-center justify-center">
-                  <Star className="w-4 h-4 text-purple-500" />
-                </div>
-                <div className="leading-tight">
-                  <p className="text-white font-semibold text-xs">{performers.filter(p => p.fanclub_enabled).length}</p>
-                  <p className="text-white/40 text-[10px]">Fanclub</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-                <div className="w-8 h-8 bg-emerald-600/15 rounded-md flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                </div>
-                <div className="leading-tight">
-                  <p className="text-white font-semibold text-xs">{performers.filter(p => p.verified).length}</p>
-                  <p className="text-white/40 text-[10px]">Verified</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-                <div className="w-8 h-8 bg-amber-600/15 rounded-md flex items-center justify-center">
-                  <Film className="w-4 h-4 text-amber-500" />
-                </div>
-                <div className="leading-tight">
-                  <p className="text-white font-semibold text-xs">100%</p>
-                  <p className="text-white/40 text-[10px]">Exclusive</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="max-w-[1600px] mx-auto px-4 py-6">
-          {/* Search Bar */}
-          <div className="relative max-w-2xl mx-auto mb-6">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-rose-500 transition-colors" />
+          <div className="relative max-w-2xl">
+            <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-white/40" />
             <Input
               placeholder={t('performers.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-[#1a1a1a]/50 backdrop-blur-sm border border-white/8 text-white placeholder:text-white/40 h-12 pl-14 pr-12 rounded-lg focus:outline-none focus:border-rose-600/40 focus:ring-2 focus:ring-rose-600/15 transition-all"
+              className="h-12 w-full rounded-full border border-white/10 bg-white/[0.045] pl-14 pr-12 text-white placeholder:text-white/38 focus:border-[#f0183d]/45 focus:ring-2 focus:ring-[#f0183d]/15"
             />
-            {search && (
-              <button
-                onClick={handleClear}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
-              >
-                <X className="w-4 h-4 text-white/60" />
-              </button>
-            )}
+            {search && <button onClick={handleClear} className="absolute right-4 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full hover:bg-white/10"><X className="h-4 w-4 text-white/60" /></button>}
           </div>
 
-          {/* Featured Performers Row */}
-          {featuredPerformers.length > 0 && (
-            <div className="mb-6">
-              <div className="mb-4">
-                <h2 className="text-lg font-bold text-white/90 mb-0.5">Featured Talent</h2>
-                <p className="text-white/50 text-xs">Top verified performers and fanclub exclusives</p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
-                {featuredPerformers.map(performer => (
-                  <PerformerCard 
-                    key={performer.id} 
-                    performer={performer} 
-                    brands={brands}
-                    videoCount={performer.video_count || 0}
-                    featured
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Main Grid */}
           {filteredPerformers.length > 0 ? (
-            <div>
-              <div className="mb-4 pb-3 border-b border-white/5">
-                <h2 className="text-lg font-bold text-white/90 mb-0.5">All Performers</h2>
-                <p className="text-white/50 text-xs">Browse complete roster ({filteredPerformers.length} performers)</p>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
-                {filteredPerformers.map(performer => (
-                  <PerformerCard 
-                    key={performer.id} 
-                    performer={performer} 
-                    brands={brands}
-                    videoCount={performer.video_count || 0}
-                  />
-                ))}
-              </div>
-            </div>
+            search ? (
+              <PerformerDiscoverySection eyebrow="Search Results" title="Matching creators" subtitle={`${filteredPerformers.length} creators found.`} performers={filteredPerformers} />
+            ) : (
+              <>
+                <PerformerDiscoverySection eyebrow="Featured Creator" title="Start with a story." subtitle="A larger cinematic profile gives one creator room to feel memorable before the full roster appears." performers={featuredPerformers} featured />
+                <PerformerDiscoverySection eyebrow="Trending Creators" title="Audience momentum." subtitle="Creators with the strongest current production footprint." performers={trendingPerformers} badge="trending" />
+                <PerformerDiscoverySection eyebrow="New Creators" title="Fresh faces, new worlds." subtitle="Recently added creators and emerging personalities to watch next." performers={newPerformers} badge="new" />
+                <PerformerDiscoverySection eyebrow="Browse All" title="The full creator roster." subtitle="A calmer grid with personality, country, production world and video count visible at a glance." performers={filteredPerformers} />
+              </>
+            )
           ) : (
-            <div className="text-center py-20 bg-[#121212] rounded-xl border border-white/10">
-              <Users className="w-16 h-16 mx-auto mb-4 text-white/40 opacity-50" />
-              <h2 className="text-xl font-semibold mb-2 text-white">{t('performers.noResults')}</h2>
-              <p className="text-white/60 mb-4">
-                {search ? 'Try adjusting your search' : 'No performers available'}
-              </p>
-              {search && (
-                <Button variant="outline" onClick={handleClear} className="border-white/20 text-white hover:bg-white/10">
-                  Clear Search
-                </Button>
-              )}
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] py-20 text-center">
+              <Users className="mx-auto mb-4 h-16 w-16 text-white/28" />
+              <h2 className="text-xl font-semibold text-white">{t('performers.noResults')}</h2>
+              <p className="mb-4 mt-2 text-white/60">{search ? 'Try adjusting your search' : 'No performers available'}</p>
+              {search && <Button variant="outline" onClick={handleClear} className="border-white/20 text-white hover:bg-white/10">Clear Search</Button>}
             </div>
           )}
         </div>
