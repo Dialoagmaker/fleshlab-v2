@@ -1,6 +1,6 @@
 import { useState } from "react";
 import BrandLogo from "@/components/BrandLogo";
-import { ArrowRight, Instagram, Send, Twitter, Youtube } from "lucide-react";
+import { ArrowRight, Facebook, Instagram, Twitter } from "lucide-react";
 
 const linkGroups = [
   { title: "Explore", links: [{ href: "/videos", label: "Videos" }, { href: "/performers", label: "Creators" }, { href: "/videos", label: "Collections" }, { href: "/news", label: "News" }] },
@@ -10,10 +10,9 @@ const linkGroups = [
 ];
 
 const socials = [
-  { href: "https://twitter.com/fleshlabasia", label: "X", Icon: Twitter },
-  { href: "https://instagram.com/fleshlabasia", label: "Instagram", Icon: Instagram },
-  { href: "#", label: "Telegram", Icon: Send },
-  { href: "#", label: "YouTube", Icon: Youtube },
+  { href: "https://x.com/fleshlabstudios", label: "X", Icon: Twitter },
+  { href: "https://www.instagram.com/fleshlabstudios/", label: "Instagram", Icon: Instagram },
+  { href: "https://www.facebook.com/fleshlab/", label: "Facebook", Icon: Facebook },
 ];
 
 export default function FinalBrandFooter() {
