@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import en from './locales/en';
 import tl from './locales/tl';
 import zhTW from './locales/zh-TW';
+import zhCN from './locales/zh-CN';
 import th from './locales/th';
 import vi from './locales/vi';
 
@@ -10,6 +11,7 @@ const locales = {
   en,
   tl,
   'zh-TW': zhTW,
+  'zh-CN': zhCN,
   th,
   vi,
 };

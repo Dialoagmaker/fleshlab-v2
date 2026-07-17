@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 const languages = [
   { code: 'en', label: 'English', native: 'English' },
   { code: 'tl', label: 'Tagalog', native: 'Tagalog' },
-  { code: 'zh-TW', label: '繁體中文', native: '繁體中文' },
+  { code: 'zh-CN', label: 'Chinese (Simplified)', native: '简体中文' },
   { code: 'th', label: 'ไทย', native: 'ไทย' },
   { code: 'vi', label: 'Tiếng Việt', native: 'Tiếng Việt' },
 ];
