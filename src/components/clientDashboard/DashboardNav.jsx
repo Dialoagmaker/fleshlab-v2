@@ -1,4 +1,4 @@
-import { Bookmark, Compass, Home, Layers3, Newspaper, Radio, User, Users, LogOut } from "lucide-react";
+import { Bookmark, Compass, Home, Layers3, Newspaper, Radio, User, Users, LogOut, Wallet } from "lucide-react";
 
 export const TABS = [
   { id: "overview", label: "Home", icon: Home },
@@ -6,6 +6,7 @@ export const TABS = [
   { id: "creators", label: "Creators", icon: Users, href: "/performers" },
   { id: "collections", label: "Collections", icon: Layers3, href: "/brands" },
   { id: "live", label: "Live", icon: Radio, href: "/live" },
+  { id: "wallet", label: "FlashPay", icon: Wallet },
   { id: "videos", label: "Watchlist", icon: Bookmark },
   { id: "news", label: "News", icon: Newspaper, href: "/news" },
   { id: "profile", label: "Account", icon: User },

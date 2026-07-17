@@ -19,6 +19,7 @@ import ProfileTab from "@/components/clientDashboard/ProfileTab";
 import VerificationTab from "@/components/clientDashboard/VerificationTab";
 import SecurityTab from "@/components/clientDashboard/SecurityTab";
 import WalletTab from "@/components/clientDashboard/WalletTab";
+import FlashPayHeaderBalance from "@/components/clientDashboard/FlashPayHeaderBalance";
 
 function getInitialTab() {
   const params = new URLSearchParams(window.location.search);
@@ -165,6 +166,7 @@ export default function ClientDashboard() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                <FlashPayHeaderBalance />
                 <a href="/videos" className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-xs font-bold text-white/56 transition hover:border-white/20 hover:text-white md:flex"><Search className="h-4 w-4" /> Discover</a>
                 <div className="relative">
                   <button onClick={() => setShowNotifications((value) => !value)} className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/64 transition hover:border-[#f0183d]/40 hover:text-white">

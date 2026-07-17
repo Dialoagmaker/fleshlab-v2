@@ -1,8 +1,8 @@
 const INFO = [
   { icon: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/21cc2fca6_icon_dollar.png", label: "Currency", value: "USD" },
-  { icon: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/b8728ab4e_icon_lightning.png", label: "Processing Time", value: "Instant" },
-  { icon: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/6efbc6209_icon_document.png", label: "Accepted Payments", value: "Stripe, PayPal" },
-  { icon: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/0018320f3_icon_support.png", label: "Support", value: "24/7 Available" },
+  { icon: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/b8728ab4e_icon_lightning.png", label: "Credits", value: "Webhook verified" },
+  { icon: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/6efbc6209_icon_document.png", label: "Funding", value: "Secure checkout" },
+  { icon: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/0018320f3_icon_support.png", label: "Support", value: "Account help" },
 ];
 
 export default function WalletInfoFooter() {

@@ -12,7 +12,8 @@
         "ccbill",
         "segpay",
         "mock",
-        "nowpayments"
+        "nowpayments",
+        "fleshpay"
       ],
       "title": "Payment Provider"
     },
@@ -21,7 +22,8 @@
       "enum": [
         "fanclub",
         "ppv",
-        "guest_production_deposit"
+        "guest_production_deposit",
+        "wallet_topup"
       ],
       "title": "Payment Type"
     },
@@ -58,6 +60,7 @@
       "type": "string",
       "enum": [
         "pending",
+        "processing_webhook",
         "completed",
         "failed",
         "cancelled",

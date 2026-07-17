@@ -468,8 +468,9 @@ const AuthenticatedApp = () => {
       <Route path="/brands/:slug" element={<PublicPageShell><BrandDetail /></PublicPageShell>} />
       <Route path="/fan-productions" element={<PublicPageShell><FanProductions /></PublicPageShell>} />
       <Route path="/fan-productions/request" element={<PublicPageShell noIndex={true}><FanProductionRequest /></PublicPageShell>} />
-      {/* FleshPay Wallet — redirect to the single client dashboard wallet tab */}
+      {/* FlashPay Wallet — redirect to the single client dashboard wallet tab */}
       <Route path="/wallet" element={<Navigate to="/client/dashboard?tab=wallet" replace />} />
+      <Route path="/account/wallet" element={<Navigate to="/client/dashboard?tab=wallet" replace />} />
       <Route path="/client/dashboard" element={
         <PublicPageShell noIndex={true}>
           <ClientDashboardGuard>

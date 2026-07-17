@@ -956,186 +956,139 @@ Deno.serve(async (req) => {
       // ── BRANCH: wallet_topup vs standard entitlement ──────────────────────
 
       if (intent.payment_type === 'wallet_topup') {
-        // ── FleshPay Wallet Top‑up Credit ──────────────────────────────────
-        const topupOrders = await base44.asServiceRole.entities.FleshPayTopupOrder.filter({
-          user_id: intent.user_id,
-          payment_intent_id: intent.id,
-        });
+        const intentMeta = JSON.parse(intent.metadata || '{}');
 
-        if (topupOrders.length === 0) {
-          console.warn('[paymentWebhook] wallet_topup — no matching FleshPayTopupOrder for intent:', intent.id);
-          await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
-            payment_intent_id: intent.id,
-            user_id: intent.user_id,
-            product_type: 'wallet_topup',
-            error_message: 'No matching FleshPayTopupOrder found',
-            processed: true,
-            processed_at: new Date().toISOString(),
+        if (intentMeta.flashpay_wallet_id) {
+          const pendingTransactionId = intentMeta.flashpay_pending_transaction_id;
+          let wallet = await base44.asServiceRole.entities.FlashPayWallet.get(intentMeta.flashpay_wallet_id);
+          const topupAmount = intent.amount;
+
+          let flashPayTransaction = null;
+          if (pendingTransactionId) {
+            try { flashPayTransaction = await base44.asServiceRole.entities.FlashPayTransaction.get(pendingTransactionId); } catch { flashPayTransaction = null; }
+          }
+          if (!flashPayTransaction) {
+            const matches = await base44.asServiceRole.entities.FlashPayTransaction.filter({ reference_type: 'payment_intent', reference_id: intent.id });
+            flashPayTransaction = matches[0] || null;
+          }
+
+          if (flashPayTransaction?.status === 'completed') {
+            await base44.asServiceRole.entities.PaymentIntent.update(intent.id, { status: 'completed', completed_at: new Date().toISOString() });
+            await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+              payment_intent_id: intent.id,
+              user_id: intent.user_id,
+              product_type: 'wallet_topup',
+              product_id: wallet.id,
+              normalized_status: event.normalizedStatus,
+              verification_details: JSON.stringify(verificationDetails),
+              processed: true,
+              entitlement_granted: false,
+              entitlement_duplicate: true,
+              entitlement_type: 'wallet_topup',
+              entitlement_id: flashPayTransaction.id,
+              processed_at: new Date().toISOString(),
+            });
+            return Response.json({ success: true, duplicate: true, message: 'FlashPay wallet already credited' });
+          }
+
+          if (wallet.status !== 'active') {
+            await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
+              payment_intent_id: intent.id,
+              user_id: intent.user_id,
+              product_type: 'wallet_topup',
+              error_message: 'FlashPay wallet not active',
+              processed: true,
+              processed_at: new Date().toISOString(),
+            });
+            return Response.json({ success: false, error: 'Wallet not active' });
+          }
+
+          const balanceBefore = wallet.available_balance || 0;
+          const balanceAfter = Math.round((balanceBefore + topupAmount) * 100) / 100;
+          const completedAt = new Date().toISOString();
+
+          if (flashPayTransaction) {
+            await base44.asServiceRole.entities.FlashPayTransaction.update(flashPayTransaction.id, {
+              status: 'completed',
+              provider_transaction_id: event.paymentId,
+              balance_before: balanceBefore,
+              balance_after: balanceAfter,
+              completed_at: completedAt,
+              description: `FlashPay top-up — $${topupAmount} USD via NOWPayments`,
+              metadata: JSON.stringify({ payment_intent_id: intent.id, provider_payment_id: event.paymentId, raw_status: event.rawStatus, actually_paid: event.actuallyPaid }),
+            });
+          } else {
+            flashPayTransaction = await base44.asServiceRole.entities.FlashPayTransaction.create({
+              wallet_id: wallet.id,
+              user_id: intent.user_id,
+              transaction_type: 'deposit',
+              direction: 'credit',
+              amount: topupAmount,
+              currency: 'usd',
+              status: 'completed',
+              reference_type: 'payment_intent',
+              reference_id: intent.id,
+              provider: 'nowpayments',
+              provider_transaction_id: event.paymentId,
+              idempotency_key: `flashpay_deposit_intent_${intent.id}`,
+              description: `FlashPay top-up — $${topupAmount} USD via NOWPayments`,
+              balance_before: balanceBefore,
+              balance_after: balanceAfter,
+              completed_at: completedAt,
+              metadata: JSON.stringify({ payment_intent_id: intent.id, provider_payment_id: event.paymentId, raw_status: event.rawStatus, actually_paid: event.actuallyPaid }),
+            });
+          }
+
+          await base44.asServiceRole.entities.FlashPayWallet.update(wallet.id, {
+            available_balance: balanceAfter,
+            pending_balance: 0,
+            lifetime_deposited: Math.round(((wallet.lifetime_deposited || 0) + topupAmount) * 100) / 100,
+            updated_at: completedAt,
           });
-          return Response.json({ success: false, error: 'No matching topup order' });
-        }
 
-        const topupOrder = topupOrders[0];
-        const idempotencyKey = `nowpayments_${event.paymentId}_wallet_topup_credit`;
-
-        // IDEMPOTENCY CHECK: Prevent duplicate wallet credits
-        const existingLedger = await base44.asServiceRole.entities.FleshPayLedger.filter({
-          idempotency_key: idempotencyKey,
-        });
-
-        if (existingLedger.length > 0) {
-          console.log('[paymentWebhook] wallet_topup already credited — idempotent skip:', {
-            topupOrderId: topupOrder.id,
-            existingLedgerId: existingLedger[0].id,
-          });
           await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
             status: 'completed',
-            completed_at: new Date().toISOString(),
+            completed_at: completedAt,
+            metadata: JSON.stringify({ ...intentMeta, nowpayments_payment_id: event.paymentId, verified_amount: true, verified_currency: true, flashpay_transaction_id: flashPayTransaction.id }),
           });
+
           await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
             payment_intent_id: intent.id,
             user_id: intent.user_id,
             product_type: 'wallet_topup',
+            product_id: wallet.id,
             normalized_status: event.normalizedStatus,
             verification_details: JSON.stringify(verificationDetails),
             processed: true,
-            entitlement_granted: false,
-            entitlement_duplicate: true,
-            processed_at: new Date().toISOString(),
+            entitlement_granted: true,
+            entitlement_type: 'wallet_topup',
+            entitlement_id: flashPayTransaction.id,
+            processed_at: completedAt,
           });
-          return Response.json({
-            success: true,
-            duplicate: true,
-            message: 'Wallet already credited — idempotent',
-          });
-        }
 
-        // Get or create wallet
-        let wallets = await base44.asServiceRole.entities.FleshPayWallet.filter({ user_id: intent.user_id });
-        let wallet;
-
-        if (wallets.length === 0) {
-          wallet = await base44.asServiceRole.entities.FleshPayWallet.create({
-            user_id: intent.user_id,
-            balance_usd: 0,
-            currency: 'usd',
-            status: 'active',
-            lifetime_topups_usd: 0,
-            lifetime_spends_usd: 0,
-          });
+          console.log('[paymentWebhook] FlashPay wallet_topup credited:', { userId: intent.user_id, walletId: wallet.id, topupAmount, balanceBefore, balanceAfter, transactionId: flashPayTransaction.id });
         } else {
-          wallet = wallets[0];
+          // ── Legacy FleshPay Wallet Top‑up Credit ──────────────────────────
+          const topupOrders = await base44.asServiceRole.entities.FleshPayTopupOrder.filter({ user_id: intent.user_id, payment_intent_id: intent.id });
+          if (topupOrders.length === 0) {
+            await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, { payment_intent_id: intent.id, user_id: intent.user_id, product_type: 'wallet_topup', error_message: 'No matching legacy top-up order found', processed: true, processed_at: new Date().toISOString() });
+            return Response.json({ success: false, error: 'No matching topup order' });
+          }
+          const topupOrder = topupOrders[0];
+          const idempotencyKey = `nowpayments_${event.paymentId}_wallet_topup_credit`;
+          const existingLedger = await base44.asServiceRole.entities.FleshPayLedger.filter({ idempotency_key: idempotencyKey });
+          if (existingLedger.length > 0) return Response.json({ success: true, duplicate: true, message: 'Legacy wallet already credited' });
+          let wallets = await base44.asServiceRole.entities.FleshPayWallet.filter({ user_id: intent.user_id });
+          let wallet = wallets[0] || await base44.asServiceRole.entities.FleshPayWallet.create({ user_id: intent.user_id, balance_usd: 0, currency: 'usd', status: 'active', lifetime_topups_usd: 0, lifetime_spends_usd: 0 });
+          const topupAmount = intent.amount;
+          const balanceBefore = wallet.balance_usd || 0;
+          const balanceAfter = Math.round((balanceBefore + topupAmount) * 100) / 100;
+          const ledgerEntry = await base44.asServiceRole.entities.FleshPayLedger.create({ wallet_id: wallet.id, user_id: intent.user_id, entry_type: 'credit', transaction_type: 'credit', amount_usd: topupAmount, balance_before_usd: balanceBefore, balance_after_usd: balanceAfter, source_type: 'topup', reference_type: 'topup', source_id: topupOrder.id, reference_id: topupOrder.id, provider: 'nowpayments', provider_transaction_id: event.paymentId, idempotency_key: idempotencyKey, status: 'completed', description: `Wallet top-up — $${topupAmount} USD via NOWPayments`, metadata_json: JSON.stringify({ provider: 'nowpayments', provider_payment_id: event.paymentId, payment_intent_id: intent.id }) });
+          await base44.asServiceRole.entities.FleshPayWallet.update(wallet.id, { balance_usd: balanceAfter, lifetime_topups_usd: (wallet.lifetime_topups_usd || 0) + topupAmount, lifetime_topup_usd: (wallet.lifetime_topup_usd || 0) + topupAmount, last_transaction_at: new Date().toISOString() });
+          await base44.asServiceRole.entities.FleshPayTopupOrder.update(topupOrder.id, { status: 'paid', completed_at: new Date().toISOString(), confirmed_at: new Date().toISOString(), provider_payment_id: event.paymentId, actually_paid: event.actuallyPaid, amount_received_usd: topupAmount });
+          await base44.asServiceRole.entities.PaymentIntent.update(intent.id, { status: 'completed', completed_at: new Date().toISOString() });
+          await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, { payment_intent_id: intent.id, user_id: intent.user_id, product_type: 'wallet_topup', product_id: topupOrder.id, normalized_status: event.normalizedStatus, verification_details: JSON.stringify(verificationDetails), processed: true, entitlement_granted: true, entitlement_type: 'wallet_topup', entitlement_id: ledgerEntry.id, processed_at: new Date().toISOString() });
         }
-
-        if (wallet.status !== 'active') {
-          console.error('[paymentWebhook] wallet_topup — wallet not active:', wallet.id);
-          await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
-            payment_intent_id: intent.id,
-            user_id: intent.user_id,
-            product_type: 'wallet_topup',
-            error_message: 'Wallet not active',
-            processed: true,
-            processed_at: new Date().toISOString(),
-          });
-          return Response.json({ success: false, error: 'Wallet not active' });
-        }
-
-        const topupAmount = intent.amount;
-        const balanceBefore = wallet.balance_usd;
-        const balanceAfter = balanceBefore + topupAmount;
-
-        // Create FleshPayLedger credit entry
-        const ledgerEntry = await base44.asServiceRole.entities.FleshPayLedger.create({
-          wallet_id:            wallet.id,
-          user_id:              intent.user_id,
-          entry_type:           'credit',
-          transaction_type:     'credit',
-          amount_usd:           topupAmount,
-          balance_before_usd:   balanceBefore,
-          balance_after_usd:    balanceAfter,
-          source_type:          'topup',
-          reference_type:       'topup',
-          source_id:            topupOrder.id,
-          reference_id:         topupOrder.id,
-          provider:             'nowpayments',
-          provider_transaction_id: event.paymentId,
-          idempotency_key:      idempotencyKey,
-          status:               'completed',
-          description:          `Wallet top-up — $${topupAmount} USD via NOWPayments`,
-          metadata_json:        JSON.stringify({
-            provider: 'nowpayments',
-            provider_payment_id: event.paymentId,
-            webhook_status: event.rawStatus,
-            actually_paid: event.actuallyPaid,
-            payment_intent_id: intent.id,
-            topup_order_id: topupOrder.id,
-          }),
-        });
-
-        // Update wallet balance
-        await base44.asServiceRole.entities.FleshPayWallet.update(wallet.id, {
-          balance_usd: balanceAfter,
-          lifetime_topups_usd: wallet.lifetime_topups_usd + topupAmount,
-          lifetime_topup_usd: wallet.lifetime_topup_usd + topupAmount,
-          last_transaction_at: new Date().toISOString(),
-        });
-
-        // Update FleshPayTopupOrder
-        await base44.asServiceRole.entities.FleshPayTopupOrder.update(topupOrder.id, {
-          status: 'paid',
-          completed_at: new Date().toISOString(),
-          confirmed_at: new Date().toISOString(),
-          provider_payment_id: event.paymentId,
-          actually_paid: event.actuallyPaid,
-          amount_received_usd: topupAmount,
-          ipn_callback_raw: JSON.stringify({
-            payment_id: event.paymentId,
-            payment_status: event.rawStatus,
-            actually_paid: event.actuallyPaid,
-            price_amount: event.amount,
-            price_currency: event.currency,
-          }),
-        });
-
-        // Update PaymentIntent to completed
-        await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-          metadata: JSON.stringify({
-            ...JSON.parse(intent.metadata || '{}'),
-            nowpayments_payment_id: event.paymentId,
-            actually_paid: event.actuallyPaid,
-            raw_status: event.rawStatus,
-            verified_amount: true,
-            verified_currency: true,
-            wallet_topup_credited: true,
-            ledger_entry_id: ledgerEntry.id,
-          }),
-        });
-
-        // Update event log
-        await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
-          payment_intent_id: intent.id,
-          user_id: intent.user_id,
-          product_type: 'wallet_topup',
-          product_id: topupOrder.id,
-          normalized_status: event.normalizedStatus,
-          verification_details: JSON.stringify(verificationDetails),
-          processed: true,
-          entitlement_granted: true,
-          entitlement_type: 'wallet_topup',
-          entitlement_id: ledgerEntry.id,
-          processed_at: new Date().toISOString(),
-        });
-
-        console.log('[paymentWebhook] wallet_topup credited:', {
-          userId: intent.user_id,
-          walletId: wallet.id,
-          topupAmount,
-          balanceBefore,
-          balanceAfter,
-          ledgerEntryId: ledgerEntry.id,
-        });
 
       } else {
         // ── Standard entitlement (PPV / fanclub / guest production) ─────────
@@ -1202,11 +1155,20 @@ Deno.serve(async (req) => {
       }
 
     } else if (event.eventType === 'payment.failed') {
+      const intentMeta = JSON.parse(intent.metadata || '{}');
+      const failedAt = new Date().toISOString();
       await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
         status:        'failed',
-        failed_at:     new Date().toISOString(),
+        failed_at:     failedAt,
         error_message: event.errorMessage || `Payment failed (${event.rawStatus})`,
       });
+      if (intent.payment_type === 'wallet_topup' && intentMeta.flashpay_pending_transaction_id) {
+        await base44.asServiceRole.entities.FlashPayTransaction.update(intentMeta.flashpay_pending_transaction_id, {
+          status: 'failed',
+          failed_at: failedAt,
+          metadata: JSON.stringify({ payment_intent_id: intent.id, provider_payment_id: event.paymentId, raw_status: event.rawStatus }),
+        });
+      }
       await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
         payment_intent_id: intent.id,
         user_id: intent.user_id,
@@ -1220,11 +1182,20 @@ Deno.serve(async (req) => {
       });
 
     } else if (event.eventType === 'payment.cancelled') {
+      const intentMeta = JSON.parse(intent.metadata || '{}');
+      const cancelledAt = new Date().toISOString();
       await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
         status:       'cancelled',
-        cancelled_at: new Date().toISOString(),
+        cancelled_at: cancelledAt,
         error_message: 'Payment expired or cancelled',
       });
+      if (intent.payment_type === 'wallet_topup' && intentMeta.flashpay_pending_transaction_id) {
+        await base44.asServiceRole.entities.FlashPayTransaction.update(intentMeta.flashpay_pending_transaction_id, {
+          status: 'cancelled',
+          failed_at: cancelledAt,
+          metadata: JSON.stringify({ payment_intent_id: intent.id, provider_payment_id: event.paymentId, raw_status: event.rawStatus }),
+        });
+      }
       await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
         payment_intent_id: intent.id,
         user_id: intent.user_id,
@@ -1238,10 +1209,40 @@ Deno.serve(async (req) => {
       });
 
     } else if (event.eventType === 'payment.refunded') {
+      const intentMeta = JSON.parse(intent.metadata || '{}');
       await base44.asServiceRole.entities.PaymentIntent.update(intent.id, {
         status:        'refunded',
         error_message: 'Payment refunded',
       });
+      if (intent.payment_type === 'wallet_topup' && intentMeta.flashpay_wallet_id) {
+        const wallet = await base44.asServiceRole.entities.FlashPayWallet.get(intentMeta.flashpay_wallet_id);
+        const alreadyRefunded = await base44.asServiceRole.entities.FlashPayTransaction.filter({ reference_type: 'provider_refund', reference_id: intent.id });
+        if (alreadyRefunded.length === 0 && wallet) {
+          const refundAmount = intent.amount;
+          const before = wallet.available_balance || 0;
+          const after = Math.max(0, Math.round((before - refundAmount) * 100) / 100);
+          const refundTx = await base44.asServiceRole.entities.FlashPayTransaction.create({
+            wallet_id: wallet.id,
+            user_id: intent.user_id,
+            transaction_type: 'reversal',
+            direction: 'debit',
+            amount: Math.min(refundAmount, before),
+            currency: 'usd',
+            status: 'completed',
+            reference_type: 'provider_refund',
+            reference_id: intent.id,
+            provider: 'nowpayments',
+            provider_transaction_id: event.paymentId,
+            idempotency_key: `flashpay_provider_refund_${intent.id}`,
+            description: 'Provider refund reversal',
+            balance_before: before,
+            balance_after: after,
+            completed_at: new Date().toISOString(),
+            metadata: JSON.stringify({ payment_intent_id: intent.id, provider_payment_id: event.paymentId }),
+          });
+          await base44.asServiceRole.entities.FlashPayWallet.update(wallet.id, { available_balance: after, updated_at: new Date().toISOString() });
+        }
+      }
       await base44.asServiceRole.entities.PaymentWebhookEvent.update(eventId, {
         payment_intent_id: intent.id,
         user_id: intent.user_id,

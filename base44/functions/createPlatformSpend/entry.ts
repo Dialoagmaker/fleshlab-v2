@@ -1,37 +1,23 @@
-/**
- * createPlatformSpend — Backend Function
- *
- * Generic FlashPay wallet spend for eligible purchase types:
- *   ppv | fanclub (incl. premium membership plans) | guest_production_deposit
- *
- * Pricing is always resolved SERVER-SIDE — client cannot override amount.
- * After a successful wallet debit, entitlement is granted via the SAME
- * shared pipeline used by NOWPayments (shared/grantEntitlement) — no
- * duplicated entitlement logic.
- *
- * Safety:
- *   - Idempotency key required on every ledger entry (never double-charge)
- *   - No negative balances allowed
- *   - Content is only unlocked after the wallet debit succeeds
- */
-
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
 const SUPPORTED_TYPES = ['ppv', 'fanclub', 'guest_production_deposit'];
-
-// Kept in sync with SERVER_PRICING in createCheckoutSession/entry.ts
-const FANCLUB_PRICING = {
-  fanclub_monthly: 20.99,
-  premium_monthly: 29.99,
-  fanclub_3mo: 49.99,
-};
+const FANCLUB_PRICING = { fanclub_monthly: 20.99, premium_monthly: 29.99, fanclub_3mo: 49.99, fanclub_6mo: 49.99 };
 const GUEST_PRODUCTION_DEPOSIT_PRICE = 999;
+const TRANSACTION_TYPE = { ppv: 'video_purchase', fanclub: 'fanclub_purchase', guest_production_deposit: 'subscription_purchase' };
 
-const PURCHASE_TYPE_MAP = {
-  ppv: 'ppv_unlock',
-  fanclub: 'fanclub',
-  guest_production_deposit: 'guest_production_deposit',
-};
+async function getOrCreateWallet(base44, userId) {
+  const wallets = await base44.entities.FlashPayWallet.filter({ user_id: userId });
+  if (wallets.length > 0) {
+    const candidates = wallets.filter(wallet => wallet.status !== 'closed');
+    return (candidates.length ? candidates : wallets).sort((a, b) => ((b.available_balance || 0) + (b.pending_balance || 0) + (b.lifetime_deposited || 0)) - ((a.available_balance || 0) + (a.pending_balance || 0) + (a.lifetime_deposited || 0)))[0];
+  }
+  const now = new Date().toISOString();
+  return await base44.entities.FlashPayWallet.create({ user_id: userId, currency: 'usd', available_balance: 0, pending_balance: 0, lifetime_deposited: 0, lifetime_spent: 0, status: 'active', created_at: now, updated_at: now });
+}
+
+function roundMoney(value) {
+  return Math.round(Number(value || 0) * 100) / 100;
+}
 
 Deno.serve(async (req) => {
   try {
@@ -39,240 +25,134 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // ── Beta gate (same as other FleshPay endpoints) ──────────────────────
-    const betaEnabled = Deno.env.get('FLESHPAY_BETA_ENABLED');
-    if (betaEnabled !== 'true') {
-      return Response.json({ error: 'FleshPay beta is not currently enabled.' }, { status: 403 });
-    }
-    const allowlistRaw = Deno.env.get('FLESHPAY_BETA_ALLOWLIST') || '';
-    if (allowlistRaw.trim() && user.role !== 'admin') {
-      const allowedIds = allowlistRaw.split(',').map(s => s.trim().toLowerCase());
-      const isAllowed = allowedIds.includes(user.id.toLowerCase()) || allowedIds.includes((user.email || '').toLowerCase());
-      if (!isAllowed) {
-        return Response.json({ error: 'FleshPay beta is limited to selected users.' }, { status: 403 });
-      }
-    }
-
     const body = await req.json();
     const { item_type, item_id, plan_id, price_tier, idempotency_key } = body;
+    if (!SUPPORTED_TYPES.includes(item_type)) return Response.json({ error: `Unsupported item_type: ${item_type}` }, { status: 400 });
 
-    if (!SUPPORTED_TYPES.includes(item_type)) {
-      return Response.json({ error: `Unsupported item_type: ${item_type}` }, { status: 400 });
-    }
-
-    // ── Resolve price + entity refs server-side ───────────────────────────
-    let amount = null, videoId = null, planId = null, applicationId = null, video = null;
+    let amount = null;
+    let videoId = null;
+    let planId = null;
+    let applicationId = null;
+    let label = 'FlashPay purchase';
 
     if (item_type === 'ppv') {
       videoId = item_id;
-      if (!videoId) return Response.json({ error: 'item_id (videoId) required for ppv' }, { status: 400 });
-      try {
-        video = await base44.entities.Video.get(videoId);
-      } catch {
-        return Response.json({ error: 'Video not found' }, { status: 404 });
-      }
-      if (!video || video.status !== 'published') return Response.json({ error: 'Video is not published or not available' }, { status: 404 });
-      if (video.access_tier !== 'ppv') return Response.json({ error: 'This video is not a PPV purchase' }, { status: 400 });
-      if (video.download_price && video.download_price > 0) amount = video.download_price;
+      if (!videoId) return Response.json({ error: 'Video required.' }, { status: 400 });
+      let video;
+      try { video = await base44.entities.Video.get(videoId); } catch { return Response.json({ error: 'Video not found.' }, { status: 404 }); }
+      if (!video || video.status !== 'published') return Response.json({ error: 'Video is not available.' }, { status: 404 });
+      if (video.access_tier !== 'ppv') return Response.json({ error: 'This video is not a PPV purchase.' }, { status: 400 });
+      amount = Number(video.download_price || 0);
       if (!amount && video.ai_metadata_draft) {
-        try {
-          const m = JSON.parse(video.ai_metadata_draft);
-          if (m.ppv_price && m.ppv_price > 0) amount = m.ppv_price;
-        } catch (_) { /* ignore */ }
+        try { const meta = JSON.parse(video.ai_metadata_draft); amount = Number(meta.ppv_price || 0); } catch { amount = 0; }
       }
-      if (!amount) return Response.json({ error: 'No valid PPV price configured for this video' }, { status: 400 });
-    } else if (item_type === 'fanclub') {
+      if (!amount || amount <= 0) return Response.json({ error: 'No valid server-side price configured.' }, { status: 400 });
+      label = video.title || 'Video purchase';
+
+      const existingAccess = await base44.entities.Payment.filter({ user_id: user.id, payment_type: 'ppv', status: 'completed', related_entity_type: 'Video', related_entity_id: videoId });
+      if (existingAccess.length > 0) return Response.json({ success: true, already_purchased: true, duplicate: true, message: 'You already own this video.' });
+    }
+
+    if (item_type === 'fanclub') {
       planId = plan_id || item_id;
-      if (!planId) return Response.json({ error: 'plan_id required for fanclub' }, { status: 400 });
       amount = FANCLUB_PRICING[planId];
-      if (!amount) return Response.json({ error: `Invalid plan_id: ${planId}` }, { status: 400 });
-    } else if (item_type === 'guest_production_deposit') {
-      applicationId = item_id;
-      if (!applicationId) return Response.json({ error: 'item_id (applicationId) required for guest production deposit' }, { status: 400 });
-      amount = GUEST_PRODUCTION_DEPOSIT_PRICE;
-    }
-
-    // Fanclub keys include a period marker so renewals aren't blocked forever by a past purchase,
-    // while still protecting a single in-flight purchase from double-click/duplicate submission.
-    const periodMarker = item_type === 'fanclub' ? new Date().toISOString().slice(0, 7) : null;
-    const idempotencyKey = idempotency_key || (periodMarker
-      ? `${user.id}_wallet_${item_type}_${item_id}_${periodMarker}`
-      : `${user.id}_wallet_${item_type}_${item_id}`);
-    const purchaseType = PURCHASE_TYPE_MAP[item_type];
-    const productId = videoId || planId || applicationId;
-
-    // ── Idempotency: existing purchase for this exact key ──────────────────
-    const existingPurchases = await base44.entities.FleshPayPurchase.filter({ user_id: user.id, idempotency_key: idempotencyKey });
-    if (existingPurchases.length > 0 && existingPurchases[0].status === 'completed' && existingPurchases[0].access_granted === true) {
-      return Response.json({ success: true, duplicate: true, already_purchased: true, purchase: existingPurchases[0] });
-    }
-    // Another request for this exact key is already in flight (pending) — reject immediately, do not debit again.
-    const inFlightPurchase = existingPurchases.find(p => p.status === 'pending') || null;
-    if (inFlightPurchase) {
-      return Response.json({
-        error: 'A purchase for this item is already in progress. Please wait.',
-        pending: true,
-        purchase_id: inFlightPurchase.id,
-      }, { status: 409 });
-    }
-
-    // ── Wallet validation ───────────────────────────────────────────────────
-    const wallets = await base44.entities.FleshPayWallet.filter({ user_id: user.id });
-    if (wallets.length === 0) return Response.json({ error: 'No FleshPay wallet found. Please add funds first.' }, { status: 400 });
-    const wallet = wallets[0];
-    if (wallet.status !== 'active') return Response.json({ error: 'Wallet is not active. Please contact support.' }, { status: 403 });
-
-    const balanceBefore = wallet.balance_usd;
-    const balanceAfter = Math.round((balanceBefore - amount) * 100) / 100;
-
-    if (balanceBefore < amount) {
-      return Response.json({
-        error: 'Insufficient balance',
-        balance_usd: balanceBefore,
-        required_usd: amount,
-        needed_usd: Math.round((amount - balanceBefore) * 100) / 100,
-      }, { status: 402 });
-    }
-
-    // ── Create Purchase in PENDING state FIRST — this is the lock. ─────────
-    // Any concurrent request with the same idempotency_key will hit the
-    // in-flight check above and be rejected with 409 before it can debit.
-    let purchase;
-    try {
-      purchase = await base44.entities.FleshPayPurchase.create({
-        user_id: user.id,
-        wallet_id: wallet.id,
-        purchase_type: purchaseType,
-        product_type: purchaseType,
-        video_id: videoId || undefined,
-        fanclub_id: planId || undefined,
-        application_id: applicationId || undefined,
-        product_id: productId,
-        amount_usd: amount,
-        currency: 'usd',
-        access_granted: false,
-        status: 'pending',
-        idempotency_key: idempotencyKey,
-        metadata: JSON.stringify({ item_type, video_title: video?.title || null }),
-      });
-    } catch (createErr) {
-      // Race: another request created the pending/completed record microseconds earlier — re-check and bail out safely.
-      const recheck = await base44.entities.FleshPayPurchase.filter({ user_id: user.id, idempotency_key: idempotencyKey });
-      if (recheck.length > 0) {
-        return Response.json({
-          error: 'A purchase for this item is already in progress or completed.',
-          pending: recheck[0].status === 'pending',
-          duplicate: recheck[0].status === 'completed',
-          purchase: recheck[0],
-        }, { status: 409 });
+      if (!amount) return Response.json({ error: 'Invalid fanclub plan.' }, { status: 400 });
+      label = 'Fanclub access';
+      const activeSubs = await base44.entities.Subscription.filter({ user_id: user.id, fanclub_id: planId, status: 'active' });
+      if (activeSubs.some(s => !s.current_period_end || new Date(s.current_period_end) > new Date())) {
+        return Response.json({ success: true, already_purchased: true, duplicate: true, message: 'You already have active fanclub access.' });
       }
-      throw createErr;
     }
 
-    let ledgerEntry = null;
-    // ── Ledger debit ─────────────────────────────────────────────────────────
-    {
-      ledgerEntry = await base44.entities.FleshPayLedger.create({
-        wallet_id: wallet.id,
-        user_id: user.id,
-        entry_type: 'debit',
-        transaction_type: 'debit',
-        amount_usd: amount,
-        balance_before_usd: balanceBefore,
-        balance_after_usd: balanceAfter,
-        source_type: purchaseType,
-        reference_type: purchaseType,
-        source_id: productId,
-        reference_id: productId,
-        provider: 'fleshpay',
-        provider_transaction_id: '',
-        idempotency_key: idempotencyKey,
-        status: 'completed',
-        description: `${item_type} purchase via FlashPay wallet`,
-        metadata_json: JSON.stringify({ item_type, product_id: productId, price_usd: amount, purchase_id: purchase.id }),
-      });
-
-      const currentSpends = wallet.lifetime_spends_usd || wallet.lifetime_spent_usd || 0;
-      await base44.entities.FleshPayWallet.update(wallet.id, {
-        balance_usd: balanceAfter,
-        lifetime_spends_usd: currentSpends + amount,
-        lifetime_spent_usd: currentSpends + amount,
-        last_transaction_at: new Date().toISOString(),
-      });
+    if (item_type === 'guest_production_deposit') {
+      applicationId = item_id;
+      if (!applicationId) return Response.json({ error: 'Application required.' }, { status: 400 });
+      amount = GUEST_PRODUCTION_DEPOSIT_PRICE;
+      label = 'Fan Production reservation';
     }
 
-    // Wallet is now debited; record the ledger link on the purchase but do NOT
-    // claim access_granted/completed until entitlement is confirmed granted.
-    await base44.entities.FleshPayPurchase.update(purchase.id, {
-      ledger_entry_id: ledgerEntry.id,
-    });
+    amount = roundMoney(amount);
+    const productId = videoId || planId || applicationId;
+    const serverKey = idempotency_key ? `${user.id}_${idempotency_key}` : `${user.id}_flashpay_${item_type}_${productId}`;
 
-    // ── Grant entitlement via the existing shared pipeline (no duplication) ──
-    const entitlementIntent = {
+    const existingTx = await base44.entities.FlashPayTransaction.filter({ user_id: user.id, idempotency_key: serverKey });
+    const completedTx = existingTx.find(t => t.status === 'completed');
+    if (completedTx) return Response.json({ success: true, duplicate: true, already_purchased: true, transaction: completedTx });
+    if (existingTx.some(t => t.status === 'pending')) return Response.json({ error: 'A purchase for this item is already in progress.', pending: true }, { status: 409 });
+
+    const wallet = await getOrCreateWallet(base44, user.id);
+    if (wallet.status !== 'active') return Response.json({ error: 'Wallet is not active.' }, { status: 403 });
+
+    const balanceBefore = roundMoney(wallet.available_balance);
+    if (balanceBefore < amount) return Response.json({ error: 'Insufficient balance', balance_usd: balanceBefore, required_usd: amount, needed_usd: roundMoney(amount - balanceBefore) }, { status: 402 });
+    const balanceAfter = roundMoney(balanceBefore - amount);
+
+    const transaction = await base44.entities.FlashPayTransaction.create({
+      wallet_id: wallet.id,
       user_id: user.id,
-      provider: 'fleshpay',
-      provider_session_id: purchase.id,
-      payment_type: item_type,
-      plan_id: planId,
-      video_id: videoId,
-      application_id: applicationId,
-      price_tier: price_tier || null,
+      transaction_type: TRANSACTION_TYPE[item_type],
+      direction: 'debit',
       amount,
       currency: 'usd',
-    };
+      status: 'pending',
+      reference_type: item_type,
+      reference_id: productId,
+      provider: 'flashpay',
+      provider_transaction_id: '',
+      idempotency_key: serverKey,
+      description: label,
+      balance_before: balanceBefore,
+      balance_after: balanceAfter,
+      metadata: JSON.stringify({ item_type, product_id: productId, price_tier: price_tier || null }),
+    });
 
-    let entitlementResult;
-    let entitlementOk = false;
+    await base44.entities.FlashPayWallet.update(wallet.id, { available_balance: balanceAfter, lifetime_spent: roundMoney((wallet.lifetime_spent || 0) + amount), updated_at: new Date().toISOString() });
+
+    const entitlementIntent = { user_id: user.id, provider: 'flashpay', provider_session_id: transaction.id, payment_type: item_type, plan_id: planId, video_id: videoId, application_id: applicationId, price_tier: price_tier || null, amount, currency: 'usd', id: transaction.id };
+    let entitlement;
     try {
       const res = await base44.functions.invoke('shared/grantEntitlement', { intent: entitlementIntent });
-      entitlementResult = res.data;
-      entitlementOk = !!entitlementResult?.ok;
-    } catch (entErr) {
-      console.error('[createPlatformSpend] Entitlement grant error:', entErr.message);
-      entitlementResult = { ok: false, error: entErr.message };
+      entitlement = res.data;
+    } catch (err) {
+      entitlement = { ok: false, error: err.message };
     }
 
-    if (!entitlementOk) {
-      // Money was debited but entitlement was NOT confirmed — do not claim access_granted.
-      // Flag for manual admin resolution instead of silently losing the charge.
-      await base44.entities.FleshPayPurchase.update(purchase.id, {
-        status: 'failed_entitlement',
-        access_granted: false,
-        notes: `ADMIN ALERT: wallet debited (ledger ${ledgerEntry.id}) but entitlement grant failed: ${entitlementResult?.error || 'unknown error'}. Requires manual review.`,
+    if (!entitlement?.ok) {
+      const freshWallets = await base44.entities.FlashPayWallet.filter({ user_id: user.id });
+      const freshWallet = freshWallets[0] || { ...wallet, available_balance: balanceAfter };
+      const reversalBefore = roundMoney(freshWallet.available_balance);
+      const reversalAfter = roundMoney(reversalBefore + amount);
+      await base44.entities.FlashPayTransaction.create({
+        wallet_id: wallet.id,
+        user_id: user.id,
+        transaction_type: 'reversal',
+        direction: 'credit',
+        amount,
+        currency: 'usd',
+        status: 'completed',
+        reference_type: 'failed_purchase',
+        reference_id: transaction.id,
+        provider: 'flashpay',
+        provider_transaction_id: '',
+        idempotency_key: `${serverKey}_reversal`,
+        description: `Automatic reversal — ${label}`,
+        balance_before: reversalBefore,
+        balance_after: reversalAfter,
+        completed_at: new Date().toISOString(),
+        metadata: JSON.stringify({ failed_transaction_id: transaction.id, entitlement_error: entitlement?.error || 'unknown' }),
       });
-      console.error('[createPlatformSpend] ADMIN ALERT — debited but entitlement failed', {
-        userId: user.id, purchaseId: purchase.id, ledgerId: ledgerEntry.id, item_type, itemId: item_id,
-      });
-      return Response.json({
-        success: false,
-        error: 'Your wallet was charged, but we could not confirm access. Our team has been notified — please contact support with this reference: ' + purchase.id,
-        purchase_id: purchase.id,
-      }, { status: 502 });
+      await base44.entities.FlashPayWallet.update(wallet.id, { available_balance: reversalAfter, lifetime_spent: Math.max(0, roundMoney((freshWallet.lifetime_spent || 0) - amount)), updated_at: new Date().toISOString() });
+      await base44.entities.FlashPayTransaction.update(transaction.id, { status: 'failed', failed_at: new Date().toISOString(), metadata: JSON.stringify({ item_type, product_id: productId, entitlement_error: entitlement?.error || 'unknown' }) });
+      return Response.json({ success: false, error: 'Purchase failed before access was granted. Your wallet debit was reversed.', transaction_id: transaction.id }, { status: 502 });
     }
 
-    await base44.entities.FleshPayPurchase.update(purchase.id, {
-      access_granted: true,
-      status: 'completed',
-    });
+    await base44.entities.FlashPayTransaction.update(transaction.id, { status: 'completed', completed_at: new Date().toISOString(), metadata: JSON.stringify({ item_type, product_id: productId, entitlement, price_tier: price_tier || null }) });
+    const userWallets = await base44.entities.FlashPayWallet.filter({ user_id: user.id });
+    const updatedWallet = userWallets.sort((a, b) => ((b.available_balance || 0) + (b.pending_balance || 0) + (b.lifetime_deposited || 0)) - ((a.available_balance || 0) + (a.pending_balance || 0) + (a.lifetime_deposited || 0)))[0];
 
-    return Response.json({
-      success: true,
-      purchase: {
-        id: purchase.id,
-        item_type,
-        amount_usd: amount,
-        balance_before_usd: balanceBefore,
-        balance_after_usd: balanceAfter,
-        access_granted: true,
-      },
-      entitlement: entitlementResult,
-      message: 'Purchase completed via FlashPay Wallet',
-    });
-  } catch (err) {
-    console.error('[createPlatformSpend]', err);
-    return Response.json({
-      error: err.message,
-      detail: 'Purchase failed. Your wallet has not been charged further. Please try again or contact support.',
-    }, { status: 500 });
+    return Response.json({ success: true, transaction: { ...transaction, status: 'completed' }, wallet: updatedWallet, entitlement, message: 'Purchase completed with FlashPay.' });
+  } catch (error) {
+    console.error('[createPlatformSpend]', error);
+    return Response.json({ error: error.message }, { status: 500 });
   }
 });

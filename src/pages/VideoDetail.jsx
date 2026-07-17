@@ -107,6 +107,17 @@ export default function VideoDetail() {
   }, [video?.slug]);
 
   useEffect(() => {
+    const handleFlashPayPurchase = async (event) => {
+      const purchasedVideoId = event.detail?.entitlement?.payment_id ? video?.id : event.detail?.transaction?.reference_id;
+      if (!video?.id || purchasedVideoId !== video.id) return;
+      const res = await base44.functions.invoke('getVideoPlaybackUrl', { videoId: video.id });
+      if (res.data?.entitled && res.data?.playback_url) setPlaybackUrl(res.data.playback_url);
+    };
+    window.addEventListener('flashpay-purchase-completed', handleFlashPayPurchase);
+    return () => window.removeEventListener('flashpay-purchase-completed', handleFlashPayPurchase);
+  }, [video?.id]);
+
+  useEffect(() => {
     performers.forEach(p => {
       if (p?.slug) {
         trackPerformerProfileView(p.slug);

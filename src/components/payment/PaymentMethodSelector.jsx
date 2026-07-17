@@ -40,14 +40,17 @@ export default function PaymentMethodSelector({
   const [success, setSuccess] = useState(false);
 
   const checkWallet = async () => {
-    if (walletChecked || walletLoading) return;
+    if (walletChecked || walletLoading) return wallet;
     setWalletLoading(true);
+    let loadedWallet = wallet;
     try {
-      const res = await base44.functions.invoke("getFleshPayWallet", {});
-      setWallet(res.data.wallet);
+      const res = await base44.functions.invoke("getFlashPayWallet", {});
+      loadedWallet = res.data.wallet;
+      setWallet(loadedWallet);
     } catch { /* best-effort */ }
     setWalletChecked(true);
     setWalletLoading(false);
+    return loadedWallet;
   };
 
   const isUnsupportedPlan = paymentType === "fanclub" && !WALLET_SUPPORTED_FANCLUB_PLANS.includes(planId);
@@ -69,13 +72,15 @@ export default function PaymentMethodSelector({
     );
   }
 
-  const balance = wallet?.balance_usd ?? 0;
+  const balance = wallet?.available_balance ?? 0;
   const hasEnough = walletChecked && balance >= priceUsd;
 
-  const handleSelectWallet = () => {
+  const handleSelectWallet = async () => {
     trackWalletSelected(paymentType, itemId);
-    if (!hasEnough) {
-      trackTopupBeforePurchase(paymentType, itemId, Math.round((priceUsd - balance) * 100) / 100);
+    const currentWallet = walletChecked ? wallet : await checkWallet();
+    const currentBalance = currentWallet?.available_balance ?? 0;
+    if (currentBalance < priceUsd) {
+      trackTopupBeforePurchase(paymentType, itemId, Math.round((priceUsd - currentBalance) * 100) / 100);
       return;
     }
     setShowConfirm(true);
@@ -95,8 +100,9 @@ export default function PaymentMethodSelector({
       });
       if (res.data?.success) {
         trackWalletPurchaseCompleted(paymentType, itemId, priceUsd);
+        if (res.data.wallet) setWallet(res.data.wallet);
         setSuccess(true);
-        setTimeout(() => window.location.reload(), 1200);
+        window.dispatchEvent(new CustomEvent("flashpay-purchase-completed", { detail: res.data }));
       } else {
         const reason = res.data?.error || "Payment failed";
         trackWalletPurchaseFailed(paymentType, itemId, reason);
@@ -150,7 +156,7 @@ export default function PaymentMethodSelector({
           </div>
         </div>
         {walletChecked && !hasEnough && (
-          <a href="/wallet" className="text-xs font-medium text-primary shrink-0" onClick={(e) => e.stopPropagation()}>Add Funds</a>
+          <a href="/account/wallet" className="text-xs font-medium text-primary shrink-0" onClick={(e) => e.stopPropagation()}>Add Funds</a>
         )}
       </button>
 
