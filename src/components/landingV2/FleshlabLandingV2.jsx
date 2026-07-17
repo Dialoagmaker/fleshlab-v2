@@ -3,6 +3,8 @@ import { Users, ShieldCheck, CreditCard, Headphones, Globe2, Wallet, Play, Clapp
 import LanguageSwitcher from "@/components/public/LanguageSwitcher";
 import MediaImage from "@/components/homeTube/MediaImage";
 import FleshlabEcosystem from "@/components/landingV2/FleshlabEcosystem";
+import AnimatedCounter from "@/components/landingV2/AnimatedCounter";
+import HumanMomentsSection from "@/components/landingV2/HumanMomentsSection";
 import { buildPublicAssetUrl } from "@/lib/videoAssetResolver";
 
 const HERO_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/8e0d8a14d_generated_image.png";
@@ -56,17 +58,26 @@ export default function FleshlabLandingV2({ performers = [] }) {
               <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.75, delay: 0.2 }} className="mt-6 max-w-[360px] text-[18px] font-semibold leading-7 text-white/88">Start earning with your smartphone.<br />Safe.<br />Private.<br />Professional.</motion.p>
               <motion.div initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.32 }} className="mt-8 flex gap-3"><a href="/become-performer" className="w-[182px] rounded bg-[#f0183d] py-3.5 text-center text-[10px] font-black uppercase tracking-wide transition hover:-translate-y-0.5 hover:bg-[#ff3152]">BECOME PERFORMER</a><a href="/videos" className="w-[182px] rounded border border-white/45 bg-black/25 py-3.5 text-center text-[10px] font-black uppercase tracking-wide transition hover:-translate-y-0.5 hover:border-[#f0183d]">EXPLORE VIDEOS</a></motion.div>
               <div className="mt-16"><ThumbStack performers={performers} /></div>
+              <div className="mt-7 grid max-w-[360px] grid-cols-2 gap-3">
+                <AnimatedCounter value={17} label="performers" className="rounded-xl border border-white/12 bg-black/26 p-4 backdrop-blur" />
+                <div className="rounded-xl border border-white/12 bg-black/26 p-4 backdrop-blur">
+                  <div className="fl-condensed text-[38px] uppercase leading-none tracking-[-0.02em] text-white">Weekly</div>
+                  <div className="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#f0183d]">payouts</div>
+                </div>
+              </div>
             </div>
             <aside className="hidden items-center justify-end lg:flex"><div className="w-[220px] space-y-5 rounded border border-white/14 bg-black/38 p-6 backdrop-blur-md">{[[Camera, "PHONE READY"], [Clapperboard, "STUDIO REVIEW"], [ShieldCheck, "PRIVATE & SAFE"], [DollarSign, "CREATOR INCOME"]].map(([Icon, label]) => <div key={label} className="flex items-center gap-4"><Icon className="h-6 w-6 text-[#f0183d]" /><div className="text-[10px] font-black uppercase leading-4 text-white/86">{label}</div></div>)}</div></aside>
           </div>
         </section>
 
-        <section className="border-b border-white/8 bg-[#080e11]"><div className="mx-auto grid max-w-[1360px] gap-4 px-5 py-4 md:grid-cols-5 lg:px-7">{trustItems.map(([Icon, title, body]) => <div key={title} className="flex gap-3"><Icon className="h-6 w-6 shrink-0 text-[#f0183d]" /><div><h3 className="text-[10px] font-black uppercase">{title}</h3><p className="mt-1 text-[9px] leading-4 text-white/54">{body}</p></div></div>)}</div></section>
+        <section className="border-b border-white/8 bg-[#080e11]"><div className="mx-auto grid max-w-[1360px] gap-4 px-5 py-4 md:grid-cols-5 lg:px-7">{trustItems.map(([Icon, title, body], index) => <div key={title} className="flex gap-3"><Icon className="h-6 w-6 shrink-0 text-[#f0183d]" /><div><h3 className="text-[10px] font-black uppercase">{title}</h3><p className="mt-1 text-[9px] leading-4 text-white/54">{body}</p>{index === 0 && <p className="mt-2 text-[10px] font-black uppercase tracking-wide text-white/82">300+ videos</p>}{index === 2 && <p className="mt-2 text-[10px] font-black uppercase tracking-wide text-white/82">4K productions</p>}{index === 4 && <p className="mt-2 text-[10px] font-black uppercase tracking-wide text-white/82">5 countries</p>}</div></div>)}</div></section>
 
         <SectionReveal id="paths" className="mx-auto max-w-[1360px] px-5 py-14 lg:px-7">
           <div className="mb-8 max-w-xl"><h2 className="fl-condensed text-[48px] uppercase leading-none tracking-[-0.02em] text-white/90">CHOOSE <span className="text-[#f0183d]">YOUR</span> PATH</h2><p className="mt-2 text-sm text-white/50">Four entrances into the FLESHLAB creator ecosystem.</p></div>
           <div className="grid gap-5 md:grid-cols-2">{paths.map(([Icon, title, body, href, image], index) => <motion.a key={title} href={href} initial={{ opacity: 1, y: 0 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.62, delay: index * 0.08 }} className="group relative min-h-[330px] overflow-hidden rounded-xl border border-white/12 bg-[#0a1115] p-7"><MediaImage src={image} alt={title} className="absolute inset-0 h-full w-full object-cover object-[center_38%] opacity-66 transition duration-700 group-hover:scale-105 group-hover:opacity-80" /><div className="absolute inset-0 bg-gradient-to-t from-black via-black/42 to-black/8" /><div className="relative flex h-full flex-col justify-between"><Icon className="h-10 w-10 text-[#f0183d]" /><div><h3 className="fl-condensed text-[56px] uppercase leading-none tracking-[-0.02em]">{title}</h3><p className="mt-3 max-w-[360px] text-sm leading-6 text-white/74">{body}</p></div><ChevronRight className="absolute bottom-0 right-0 h-6 w-6 transition group-hover:translate-x-1" /></div></motion.a>)}</div>
         </SectionReveal>
+
+        <HumanMomentsSection />
 
         <SectionReveal id="journey" className="relative border-y border-white/8 bg-[#05090c] px-5 py-18 lg:px-7">
           <div className="mx-auto max-w-[1180px]"><div className="mb-10 max-w-3xl"><p className="text-[10px] font-black uppercase tracking-[0.32em] text-[#f0183d]">CREATOR JOURNEY</p><h2 className="fl-condensed mt-3 text-[58px] uppercase leading-none tracking-[-0.02em] text-white/92">FROM HOTEL ROOM TO PUBLISHED RELEASE.</h2><p className="mt-4 text-base leading-7 text-white/60">A simple path designed for real amateur performers: upload securely, get reviewed by the studio, publish only when approved, then grow your income.</p></div>
