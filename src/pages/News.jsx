@@ -4,7 +4,6 @@ import { callPublicFunction } from "@/lib/publicApi";
 import { appParams } from "@/lib/app-params";
 import SEOMeta from "@/components/SEOMeta";
 import NewsCard from "@/components/public/NewsCard";
-import NewsFooter from "@/components/public/NewsFooter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Newspaper, RadioTower, Rss, Search } from "lucide-react";
@@ -138,7 +137,7 @@ export default function News({ initialCategory = "all", archiveLabel = "" }) {
           )}
         </main>
 
-        <NewsFooter rssBase={rssBase} />
+
       </div>
     </>
   );
