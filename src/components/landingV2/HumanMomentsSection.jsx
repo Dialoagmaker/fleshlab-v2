@@ -40,6 +40,10 @@ export default function HumanMomentsSection() {
             <AnimatedCounter value={17} label="performers" note="Active creator profiles in the platform." className="rounded-2xl border border-white/10 bg-black/24 p-5" />
             <AnimatedCounter value={5} label="countries" note="A growing international creator network." className="rounded-2xl border border-white/10 bg-black/24 p-5" />
           </div>
+          <div className="mt-5 max-w-xl rounded-2xl border border-white/10 bg-black/24 p-5">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#f0183d]">Creator note</p>
+            <p className="mt-2 text-base font-semibold leading-7 text-white/76">“My first payout arrived after one week.”</p>
+          </div>
         </motion.div>
         <div className="grid gap-4 sm:grid-cols-2">
           {moments.map((moment, index) => (

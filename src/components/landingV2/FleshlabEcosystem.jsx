@@ -72,6 +72,13 @@ export default function FleshlabEcosystem() {
             <div className="absolute inset-3 rounded-full border border-white/10" />
             <div className="text-center"><div className="text-[23px] font-black tracking-[-0.06em]">FLESH<span className="text-[#f0183d]">LAB</span></div><div className="mt-1 text-[7px] font-black uppercase tracking-[0.42em] text-white/55">network core</div></div>
           </motion.div>
+          <div className="relative mb-7 hidden overflow-hidden rounded-full border border-white/10 bg-black/24 px-5 py-3 lg:block">
+            <div className="absolute left-6 right-6 top-1/2 h-px -translate-y-1/2 bg-white/10" />
+            <motion.div animate={{ x: ["-20%", "120%"] }} transition={{ duration: 5.8, repeat: Infinity, ease: "easeInOut" }} className="absolute top-1/2 h-px w-1/3 -translate-y-1/2 bg-[#f0183d] shadow-[0_0_18px_rgba(240,24,61,0.95)]" />
+            <div className="relative flex items-center justify-between">
+              {nodes.map((node) => <span key={node.key} className="rounded-full border border-white/10 bg-[#05090c] px-3 py-1 text-[8px] font-black uppercase tracking-[0.14em] text-white/72">{node.key}</span>)}
+            </div>
+          </div>
           <div className="relative grid gap-3 lg:grid-cols-7">
             {nodes.map((node, index) => <FlowNode key={node.key} node={node} index={index} active={active} setActive={setActive} />)}
           </div>
