@@ -281,11 +281,7 @@ const AuthenticatedApp = () => {
   }
 
   if (path === "/") {
-    return (
-      <PublicPageShell>
-        <Home />
-      </PublicPageShell>
-    );
+    return <Home />;
   }
 
   if (path === "/videos") {
