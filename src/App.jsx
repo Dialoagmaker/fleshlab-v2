@@ -82,6 +82,7 @@ import PerformerDetail from './pages/PerformerDetail';
 import PublicBrands from './pages/Brands';
 import BrandDetail from './pages/BrandDetail';
 import PublicNews from './pages/News';
+import NewsCategory from './pages/NewsCategory';
 import NewsDetail from './pages/NewsDetail';
 import BecomePerformer from './pages/BecomePerformer';
 import GlobalErrorBoundary from './components/GlobalErrorBoundary';
@@ -462,6 +463,7 @@ const AuthenticatedApp = () => {
       {/* Dynamic detail pages — use PublicPageShell + React Router so useParams() works */}
       <Route path="/videos/:slug" element={<PublicPageShell><VideoDetail /></PublicPageShell>} />
       <Route path="/performers/:slug" element={<PublicPageShell><PerformerDetail /></PublicPageShell>} />
+      <Route path="/news/category/:categorySlug" element={<PublicPageShell><NewsCategory /></PublicPageShell>} />
       <Route path="/news/:slug" element={<PublicPageShell><NewsDetail /></PublicPageShell>} />
       <Route path="/brands/:slug" element={<PublicPageShell><BrandDetail /></PublicPageShell>} />
       <Route path="/fan-productions" element={<PublicPageShell><FanProductions /></PublicPageShell>} />

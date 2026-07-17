@@ -54,6 +54,8 @@ Deno.serve(async (req) => {
       category: article.category,
       meta_title: article.meta_title,
       meta_description: article.meta_description,
+      updated_date: article.updated_date,
+      created_date: article.created_date,
     };
 
     return Response.json({ article: safe }, {
