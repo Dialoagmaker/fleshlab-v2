@@ -5,211 +5,149 @@ import SEOMeta from "@/components/SEOMeta";
 import NewsCard from "@/components/public/NewsCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, Search, Newspaper, Sparkles } from "lucide-react";
-import { useI18n } from "@/i18n/i18n.jsx";
+import { Loader2, Newspaper, RadioTower, Search } from "lucide-react";
 
 export default function News() {
-  const { t } = useI18n();
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [category, setCategory] = useState("all");
   const limit = 12;
 
-  // Fetch news articles
   const { data, isLoading, error } = useQuery({
     queryKey: ['public-news', page, searchQuery, category],
-    queryFn: async () => {
-      const response = await callPublicFunction('getPublicNews', {
-        page,
-        limit,
-        search: searchQuery,
-        category: category !== 'all' ? category : ''
-      });
-      return response;
-    },
+    queryFn: async () => callPublicFunction('getPublicNews', {
+      page,
+      limit,
+      search: searchQuery,
+      category: category !== 'all' ? category : ''
+    }),
     retry: 1,
     staleTime: 60000,
   });
 
   const articles = data?.articles || [];
+  const orderedArticles = [...articles].sort((a, b) => new Date(b.published_at || b.created_date || 0) - new Date(a.published_at || a.created_date || 0));
+  const featuredArticle = orderedArticles[0] || null;
+  const regularArticles = orderedArticles.slice(1);
   const hasMore = data?.hasMore;
-  
-  // Featured article = first article (newest)
-  const featuredArticle = articles.length > 0 ? articles[0] : null;
-  const regularArticles = articles.length > 1 ? articles.slice(1) : [];
 
   const categories = [
-    { value: 'all', label: 'All News' },
-    { value: 'studioUpdates', label: 'Studio Update' },
-    { value: 'creatorStories', label: 'Performer Story' },
-    { value: 'fanclub', label: 'Fanclub' },
-    { value: 'guestProduction', label: 'Guest Production' },
-    { value: 'behindTheScenes', label: 'Behind the Scenes' },
-    { value: 'production', label: 'Production' },
-    { value: 'casting', label: 'Casting' },
+    { value: 'all', label: 'All Updates' },
+    { value: 'studioUpdates', label: 'Platform Update' },
+    { value: 'behindTheScenes', label: 'Studio News' },
+    { value: 'production', label: 'New Release' },
+    { value: 'creatorStories', label: 'Creator Announcement' },
+    { value: 'fanclub', label: 'Community Update' },
+    { value: 'platformNews', label: 'Feature Rollout' },
+    { value: 'casting', label: 'Press Release' },
   ];
 
   return (
     <>
       <SEOMeta
-        title="FLESHLAB Studios News & Creator Updates"
-        description="Behind-the-scenes updates, performer stories, production news, fanclub releases and creator announcements from FLESHLAB Studios."
+        title="FLESHLAB News Center | Official Updates"
+        description="Official FLESHLAB News Center for platform updates, studio news, new releases, creator announcements, feature rollouts and press releases."
         canonical="/news"
-        ogImage="https://pub-5ace3b335273433f8258995325cf09c1.r2.dev/studios/fleshlabasia/thumbnails/jam05.jpg"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "CollectionPage",
-          "name": "FLESHLAB Studios News",
-          "description": "Latest news, updates, and announcements from FLESHLAB Studios."
+          "name": "FLESHLAB News Center",
+          "description": "Official updates, announcements and platform news from FLESHLAB."
         }}
       />
-      <div className="min-h-screen bg-background">
-        {/* Enhanced Hero */}
-        <div className="relative bg-gradient-to-b from-card to-background border-b border-border overflow-hidden">
-          {/* Subtle background pattern */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.03)_1px,transparent_0)] bg-[length:20px_20px] opacity-20" />
-          
-          <div className="relative max-w-7xl mx-auto px-4 py-16 md:py-20">
-            <div className="space-y-6 max-w-4xl">
-              {/* Icon + Badge */}
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
-                  <Sparkles className="w-3.5 h-3.5 text-primary" />
-                  <span className="text-xs font-semibold text-primary uppercase tracking-wide">
-                    Studio updates • Performer stories • Fanclub releases • Production news
-                  </span>
-                </div>
-              </div>
 
-              {/* Main Headline */}
-              <div className="space-y-3">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight">
-                  FLESHLAB Studios
-                  <br />
-                  <span className="text-primary">News & Creator Updates</span>
-                </h1>
-                
-                <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl">
-                  Behind-the-scenes updates, performer stories, production news, fanclub releases 
-                  and creator announcements from FLESHLAB Studios.
-                </p>
+      <div className="min-h-screen bg-[#040608] text-white">
+        <section className="border-b border-white/10 bg-[#05080a]">
+          <div className="mx-auto max-w-7xl px-4 py-16 md:py-20">
+            <div className="max-w-4xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#f0183d]/30 bg-[#12060a] px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-[#f0183d]">
+                <RadioTower className="h-3.5 w-3.5" /> Official News Center
               </div>
+              <h1 className="mt-7 text-5xl font-black leading-[0.9] tracking-[-0.055em] md:text-7xl">FLESHLAB News Center</h1>
+              <p className="mt-6 max-w-3xl text-base leading-7 text-white/58 md:text-lg">
+                Official updates, platform improvements, creator announcements, production releases, community news and company milestones.
+              </p>
+              <p className="mt-5 text-[10px] font-black uppercase tracking-[0.32em] text-white/36">AMATEUR WINS.</p>
             </div>
 
-            {/* Search and Filters */}
-            <div className="mt-10 space-y-4">
-              {/* Search */}
-              <div className="relative max-w-md">
-                <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.035] p-4 md:p-5">
+              <div className="relative max-w-lg">
+                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/36" />
                 <Input
-                  placeholder={t('news.searchPlaceholder')}
+                  placeholder="Search News Center"
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
                     setPage(1);
                   }}
-                  className="pl-10 bg-background/50 border-border backdrop-blur-sm"
+                  className="border-white/10 bg-black/40 pl-10 text-white placeholder:text-white/34"
                 />
               </div>
-
-              {/* Category Chips - Improved */}
-              <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-                <div className="flex gap-2 pb-2 min-w-max">
-                  {categories.map(cat => (
-                    <Button
-                      key={cat.value}
-                      variant={category === cat.value ? "default" : "secondary"}
-                      size="sm"
-                      onClick={() => {
-                        setCategory(cat.value);
-                        setPage(1);
-                      }}
-                      className={`whitespace-nowrap transition-all ${
-                        category === cat.value 
-                          ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md" 
-                          : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
-                      }`}
-                    >
-                      {cat.label}
-                    </Button>
-                  ))}
-                </div>
+              <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {categories.map((cat) => (
+                  <Button
+                    key={cat.value}
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setCategory(cat.value);
+                      setPage(1);
+                    }}
+                    className={`shrink-0 rounded-full text-[10px] font-black uppercase tracking-wide ${category === cat.value ? "bg-[#f0183d] text-white hover:bg-[#ff3152]" : "bg-white/[0.06] text-white/58 hover:bg-white/[0.1] hover:text-white"}`}
+                  >
+                    {cat.label}
+                  </Button>
+                ))}
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Content */}
-        <div className="max-w-7xl mx-auto px-4 py-12 space-y-12">
+        <main className="mx-auto max-w-7xl px-4 py-12">
           {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="bg-card rounded-xl overflow-hidden border border-border animate-pulse">
-                  <div className="aspect-[16/10] bg-muted" />
-                  <div className="p-5 space-y-3">
-                    <div className="h-4 bg-muted rounded w-3/4" />
-                    <div className="h-3 bg-muted rounded w-full" />
-                    <div className="h-3 bg-muted rounded w-2/3" />
-                  </div>
-                </div>
-              ))}
+            <div className="flex min-h-[260px] items-center justify-center text-white/50">
+              <Loader2 className="h-8 w-8 animate-spin text-[#f0183d]" />
             </div>
           ) : error ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <p>{t('news.errorLoading')}</p>
-            </div>
-          ) : articles.length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground">
-              <Newspaper className="w-16 h-16 mx-auto mb-4 opacity-20" />
-              <h2 className="text-2xl font-semibold mb-2 text-foreground">{t('news.noResults')}</h2>
-              <p className="text-muted-foreground mb-4">
-                {searchQuery ? 'Try adjusting your search' : 'Check back soon for updates'}
-              </p>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-10 text-center text-white/56">News Center updates could not be loaded.</div>
+          ) : orderedArticles.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-12 text-center text-white/56">
+              <Newspaper className="mx-auto mb-4 h-14 w-14 opacity-20" />
+              <h2 className="text-2xl font-black text-white">No updates found</h2>
+              <p className="mt-2">{searchQuery ? "Try adjusting your search." : "Check back soon for official FLESHLAB updates."}</p>
             </div>
           ) : (
-            <>
-              {/* Featured Article */}
+            <div className="space-y-12">
               {featuredArticle && (
-                <section className="space-y-6">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                    <h2 className="text-xl font-bold text-white">Latest Featured Update</h2>
+                <section className="space-y-5">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#f0183d]">Featured Update</p>
+                    <h2 className="mt-2 text-2xl font-black tracking-[-0.03em] text-white">Most important announcement</h2>
                   </div>
                   <NewsCard article={featuredArticle} featured />
                 </section>
               )}
 
-              {/* Regular Articles Grid */}
-              {regularArticles.length > 0 && (
-                <section className="space-y-6">
-                  <div className="flex items-center gap-2">
-                    <Newspaper className="w-5 h-5 text-primary" />
-                    <h2 className="text-xl font-bold text-white">More Updates</h2>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {regularArticles.map(article => (
-                      <NewsCard key={article.id} article={article} />
-                    ))}
-                  </div>
-                </section>
-              )}
-              
-              {/* Pagination */}
+              <section className="space-y-5">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#f0183d]">Latest News</p>
+                  <h2 className="mt-2 text-2xl font-black tracking-[-0.03em] text-white">Chronological updates</h2>
+                </div>
+                <div className="grid gap-4">
+                  {regularArticles.map((article) => <NewsCard key={article.id} article={article} />)}
+                </div>
+              </section>
+
               {hasMore && (
-                <div className="flex justify-center pt-4">
-                  <Button
-                    onClick={() => setPage(p => p + 1)}
-                    className="px-8 bg-primary hover:bg-primary/90"
-                    size="lg"
-                  >
-                    Load More
+                <div className="flex justify-center pt-2">
+                  <Button onClick={() => setPage((p) => p + 1)} className="bg-[#f0183d] px-8 text-white hover:bg-[#ff3152]" size="lg">
+                    Load More Updates
                   </Button>
                 </div>
               )}
-            </>
+            </div>
           )}
-        </div>
+        </main>
       </div>
     </>
   );

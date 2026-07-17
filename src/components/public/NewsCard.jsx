@@ -1,145 +1,52 @@
 import React from "react";
-import { Calendar, ArrowRight, Tag } from "lucide-react";
+import { ArrowRight, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const categoryLabels = {
-  studioUpdates: "Studio Update",
-  creatorStories: "Performer Story",
-  fanclub: "Fanclub",
-  guestProduction: "Guest Production",
-  behindTheScenes: "Behind the Scenes",
-  production: "Production",
-  casting: "Casting",
-  platformNews: "Platform News"
+  studioUpdates: "Platform Update",
+  creatorStories: "Creator Announcement",
+  fanclub: "Community Update",
+  guestProduction: "New Release",
+  behindTheScenes: "Studio News",
+  production: "New Release",
+  casting: "Creator Announcement",
+  platformNews: "Feature Rollout",
+  pressRelease: "Press Release"
 };
 
+function formatDate(value) {
+  if (!value) return "Current";
+  return new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 export default function NewsCard({ article, featured = false }) {
-  const categoryLabel = categoryLabels[article.category] || article.category || "News";
+  const categoryLabel = categoryLabels[article.category] || article.category || "Studio News";
+  const summary = article.excerpt || article.short_summary || article.meta_description;
+  const date = article.published_at || article.created_date;
 
-  if (featured) {
-    return (
-      <a href={`/news/${article.slug}`} className="group block">
-        <div className="rounded-2xl overflow-hidden bg-card border border-border hover:border-primary/30 transition-all duration-300 hover:shadow-[0_8px_30px_rgba(180,30,50,0.15)]">
-          <div className="grid md:grid-cols-2 gap-0">
-            {/* Image Side */}
-            <div className="relative aspect-[16/10] md:aspect-auto overflow-hidden bg-muted">
-              {article.cover_image_url ? (
-                <img
-                  src={article.cover_image_url}
-                  alt={article.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                  loading="lazy"
-                  decoding="async"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] flex items-center justify-center">
-                  <span className="text-6xl opacity-10">✦</span>
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-            </div>
-
-            {/* Content Side */}
-            <div className="p-6 md:p-8 flex flex-col justify-center">
-              <div className="space-y-4">
-                {article.category && (
-                  <Badge className="bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wide">
-                    {categoryLabel}
-                  </Badge>
-                )}
-
-                <h2 className="text-2xl md:text-3xl font-bold text-white group-hover:text-primary transition-colors leading-tight">
-                  {article.title}
-                </h2>
-
-                {article.excerpt && (
-                  <p className="text-muted-foreground leading-relaxed line-clamp-3">
-                    {article.excerpt}
-                  </p>
-                )}
-
-                <div className="flex items-center justify-between pt-2">
-                  {article.published_at && (
-                    <span className="text-sm text-muted-foreground flex items-center gap-1.5">
-                      <Calendar className="w-4 h-4" />
-                      {new Date(article.published_at).toLocaleDateString('en-US', {
-                        year: 'numeric', month: 'long', day: 'numeric'
-                      })}
-                    </span>
-                  )}
-                  
-                  <span className="text-primary font-semibold text-sm flex items-center gap-1.5 group-hover:gap-2.5 transition-all">
-                    Read Update <ArrowRight className="w-4 h-4" />
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </a>
-    );
-  }
-
-  // Standard Card
   return (
-    <a href={`/news/${article.slug}`} className="group block h-full">
-      <div className="rounded-xl overflow-hidden bg-card border border-border hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(180,30,50,0.15)] h-full flex flex-col">
-        {/* Cover image */}
-        <div className="relative aspect-[16/10] overflow-hidden bg-muted">
-          {article.cover_image_url ? (
-            <img
-              src={article.cover_image_url}
-              alt={article.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              loading="lazy"
-              decoding="async"
-              width="640"
-              height="360"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] flex items-center justify-center">
-              <span className="text-4xl opacity-10">✦</span>
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+    <a href={`/news/${article.slug}`} className="group block">
+      <article className={`border border-white/10 bg-[#080b0e] transition duration-300 hover:border-[#f0183d]/60 ${featured ? "rounded-[1.75rem] p-7 md:p-10" : "rounded-2xl p-5 md:p-6"}`}>
+        <div className="flex flex-wrap items-center gap-3">
+          <Badge className="rounded-full bg-[#f0183d] px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white hover:bg-[#f0183d]">
+            {featured ? "Featured Update" : categoryLabel}
+          </Badge>
+          {featured && <Badge className="rounded-full border border-white/12 bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white/62 hover:bg-white/[0.04]">{categoryLabel}</Badge>}
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/44">
+            <Calendar className="h-3.5 w-3.5" /> {formatDate(date)}
+          </span>
         </div>
 
-        {/* Content */}
-        <div className="p-5 space-y-3 flex-1 flex flex-col">
-          <div className="space-y-2 flex-1">
-            {article.category && (
-              <Badge className="bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wide">
-                {categoryLabel}
-              </Badge>
-            )}
+        <h2 className={`${featured ? "mt-7 max-w-5xl text-4xl md:text-6xl" : "mt-5 text-2xl"} font-black leading-[0.98] tracking-[-0.035em] text-white transition group-hover:text-[#f0183d]`}>
+          {article.title}
+        </h2>
 
-            <h3 className="font-bold text-white text-lg leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-              {article.title}
-            </h3>
+        {summary && <p className={`${featured ? "mt-6 max-w-3xl text-base md:text-lg" : "mt-4 text-sm"} leading-7 text-white/58 line-clamp-3`}>{summary}</p>}
 
-            {article.excerpt && (
-              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
-                {article.excerpt}
-              </p>
-            )}
-          </div>
-
-          <div className="pt-2 flex items-center justify-between">
-            {article.published_at && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                {new Date(article.published_at).toLocaleDateString('en-US', {
-                  month: 'short', day: 'numeric', year: 'numeric'
-                })}
-              </span>
-            )}
-            
-            <span className="text-primary font-semibold text-xs flex items-center gap-1 group-hover:gap-2 transition-all">
-              Read More <ArrowRight className="w-3 h-3" />
-            </span>
-          </div>
+        <div className="mt-7 inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-[#f0183d] transition group-hover:gap-4">
+          Read Update <ArrowRight className="h-4 w-4" />
         </div>
-      </div>
+      </article>
     </a>
   );
 }
