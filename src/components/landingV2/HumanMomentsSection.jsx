@@ -5,22 +5,22 @@ import AnimatedCounter from "@/components/landingV2/AnimatedCounter";
 
 const moments = [
   {
-    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/86a799192_generated_image.png",
+    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/98a1350da_generated_image.png",
     title: "People before production",
     body: "Approachable creators, real emotion and a studio process built around comfort."
   },
   {
-    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/814e5a34b_generated_image.png",
+    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/2a831d36b_generated_image.png",
     title: "Stories reviewed together",
     body: "Creators see the process, understand the outcome and stay part of the decision."
   },
   {
-    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/837b660b2_generated_image.png",
+    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/fc718bfea_generated_image.png",
     title: "Start from everyday moments",
     body: "A phone, a room and a simple first step into a premium creator platform."
   },
   {
-    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/75a6d7b33_generated_image.png",
+    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/93e3a06ce_generated_image.png",
     title: "Supported by a real team",
     body: "Production can be homemade, studio-supported or both as the creator grows."
   }

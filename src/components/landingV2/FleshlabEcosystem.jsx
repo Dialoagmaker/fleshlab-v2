@@ -4,7 +4,7 @@ import { ArrowRight, Camera, Clapperboard, CloudUpload, ExternalLink, HeartHands
 import MediaImage from "@/components/homeTube/MediaImage";
 import AnimatedCounter from "@/components/landingV2/AnimatedCounter";
 
-const fanImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/21f88df13_generated_image.png";
+const fanImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/98a1350da_generated_image.png";
 
 const nodes = [
   { key: "CREATE", icon: Smartphone, detail: "Studio & homemade starts" },
