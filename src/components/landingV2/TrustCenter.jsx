@@ -5,7 +5,7 @@ const items = [
   ["Is this legal?", "18+ verification, consent records and compliance workflows.", FileCheck],
   ["Identity protected", "Private verification data and controlled profile publishing.", Fingerprint],
   ["Verification", "Every creator and participant is reviewed before production.", Shield],
-  ["Payments", "Transparent earning models and weekly payout workflow.", BadgeDollarSign],
+  ["Payments", "Monthly transparent payouts so creators know exactly when and how they get paid.", BadgeDollarSign],
   ["Contracts", "Clear production agreements and content ownership terms.", LockKeyhole],
   ["Can I stop?", "Creators can pause, request review and manage future participation.", RotateCcw],
 ];

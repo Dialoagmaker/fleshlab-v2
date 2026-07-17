@@ -7,7 +7,7 @@ const steps = [
   ["Upload", "Dashboard → Cloudflare R2", CloudUpload],
   ["Review", "FLESHLAB approval", ClipboardCheck],
   ["Published", "Your content goes live", Radio],
-  ["Earn", "Weekly payout workflow", CircleDollarSign],
+  ["Earn", "Monthly transparent payouts", CircleDollarSign],
 ];
 
 export default function CreatorJourneyFlow({ text }) {

@@ -85,7 +85,7 @@ export default function FleshlabEcosystem() {
           <div className="relative mt-7 grid gap-4 md:grid-cols-3">
             <AnimatedCounter value={300} suffix="+" label="videos" note="A growing library of published stories." className="rounded-2xl border border-white/10 bg-black/24 p-5" />
             <div className="rounded-2xl border border-white/10 bg-black/24 p-5"><div className="fl-condensed text-[38px] uppercase leading-none tracking-[-0.02em] text-white">4K</div><div className="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#f0183d]">productions</div><p className="mt-2 text-xs leading-5 text-white/48">Premium presentation without losing authenticity.</p></div>
-            <div className="rounded-2xl border border-white/10 bg-black/24 p-5"><div className="fl-condensed text-[38px] uppercase leading-none tracking-[-0.02em] text-white">Weekly</div><div className="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#f0183d]">payouts</div><p className="mt-2 text-xs leading-5 text-white/48">Clear earning rhythm for creators.</p></div>
+            <div className="rounded-2xl border border-white/10 bg-black/24 p-5"><div className="fl-condensed text-[38px] uppercase leading-none tracking-[-0.02em] text-white">Monthly</div><div className="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#f0183d]">transparent payouts</div><p className="mt-2 text-xs leading-5 text-white/48">Know exactly when and how you get paid.</p></div>
           </div>
         </div>
 
