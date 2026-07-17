@@ -51,7 +51,7 @@ function ChoiceButton({ label, selected, onClick }) {
   );
 }
 
-const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sourcePage, sourceCountry, utmSource, utmMarket, utmCampaign }, ref) {
+const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sourcePage, sourceCountry, utmSource, utmMarket, utmCampaign, embedded = false }, ref) {
   const sessionId = useMemo(() => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, []);
   const [step, setStep] = useState(0);
 
@@ -178,8 +178,10 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
   const step1Valid = mediaKeys.profile_photo_r2_keys.length >= 5 && mediaKeys.intro_video_r2_key && mediaKeys.hardcore_video_r2_key;
   const step2Valid = p3.id_document_r2_key && p3.selfie_r2_key && p3.consent1 && p3.consent2 && p3.consent3 && p3.consent4 && p3.consent5;
 
+  const Wrapper = embedded ? "div" : "section";
+
   return (
-    <section id="application-form" ref={ref} className="py-24 px-6 bg-gradient-to-b from-[#0d0505] to-[#080808] border-t border-white/6">
+    <Wrapper id="application-form" ref={ref} className={embedded ? "pt-12" : "py-24 px-6 bg-gradient-to-b from-[#0d0505] to-[#080808] border-t border-white/6"}>
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-10">
           <h2 className="text-4xl md:text-5xl font-black mb-3 text-white">
@@ -450,7 +452,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
           </div>
         </div>
       </div>
-    </section>
+    </Wrapper>
   );
 });
 
