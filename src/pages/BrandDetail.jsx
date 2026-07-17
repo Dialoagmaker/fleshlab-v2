@@ -1,21 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { callPublicFunction } from "@/lib/publicApi";
-import VideoCard from "@/components/public/VideoCard";
 import SEOMeta from "@/components/SEOMeta";
-import PremiumTeaserBlock from "@/components/public/PremiumTeaserBlock";
-import { 
-  ArrowLeft, 
-  Loader2, 
-  Building2, 
-  Film, 
-  Users,
-  Crown,
-  Play
-} from "lucide-react";
+import CollectionHero from "@/components/collection/CollectionHero";
+import CollectionVideoRail from "@/components/collection/CollectionVideoRail";
+import CollectionVideoCard from "@/components/collection/CollectionVideoCard";
+import CollectionCreatorSpotlight from "@/components/collection/CollectionCreatorSpotlight";
+import { ArrowLeft, Film, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 export default function BrandDetail() {
   const { slug } = useParams();
@@ -30,6 +23,13 @@ export default function BrandDetail() {
   });
   const brands = publicData?.brands || [];
   const videos = publicData?.videos || [];
+
+  const { data: performerData } = useQuery({
+    queryKey: ['public-performers-for-collection'],
+    queryFn: () => callPublicFunction('getPublicPerformers'),
+    retry: 0,
+  });
+  const performers = performerData?.performers || [];
 
   useEffect(() => {
     if (brands.length > 0 && slug) {
@@ -72,6 +72,15 @@ export default function BrandDetail() {
     }
   ] : undefined;
 
+  const latestReleases = useMemo(() => [...brandVideos].sort((a, b) => new Date(b.release_date || b.published_at || b.created_date || 0) - new Date(a.release_date || a.published_at || a.created_date || 0)).slice(0, 10), [brandVideos]);
+  const mostPopular = useMemo(() => [...brandVideos].sort((a, b) => (b.view_count || 0) - (a.view_count || 0)).slice(0, 10), [brandVideos]);
+  const recentlyAdded = useMemo(() => [...brandVideos].sort((a, b) => new Date(b.created_date || 0) - new Date(a.created_date || 0)).slice(0, 10), [brandVideos]);
+  const brandPerformers = useMemo(() => brand ? performers.filter((performer) => performer.brand_id === brand.id) : [], [performers, brand]);
+  const featuredCreator = useMemo(() => {
+    const pool = brandPerformers.length ? brandPerformers : performers;
+    return pool.find((performer) => performer.featured) || [...pool].sort((a, b) => (b.video_count || 0) - (a.video_count || 0))[0];
+  }, [brandPerformers, performers]);
+
   if (!brand) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -91,110 +100,43 @@ export default function BrandDetail() {
         jsonLd={jsonLd}
       />
       
-      <div className="min-h-screen bg-background">
-        {/* Back Navigation */}
-        <div className="bg-card border-b border-border">
-          <div className="max-w-7xl mx-auto px-4 py-3">
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/brands')}
-              className="gap-2 text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Studios
-            </Button>
-          </div>
-        </div>
+      <div className="min-h-screen bg-[#040608] px-4 py-6 text-white">
+        <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(240,24,61,0.12),transparent_30%),radial-gradient(circle_at_82%_20%,rgba(255,255,255,0.06),transparent_24%)]" />
+        <div className="relative mx-auto max-w-[1440px] space-y-12">
+          <Button variant="ghost" onClick={() => navigate('/brands')} className="gap-2 text-white/54 hover:bg-white/10 hover:text-white">
+            <ArrowLeft className="w-4 h-4" /> Back to Collections
+          </Button>
 
-        {/* Hero Banner with Cover Image */}
-        {brand.cover_image_url && (
-          <div className="relative h-72 md:h-96 bg-secondary overflow-hidden">
-            <img
-              src={brand.cover_image_url}
-              alt={brand.name}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-            
-            {/* Brand logo overlay */}
-            {brand.logo_url && (
-              <div className="absolute bottom-8 left-8">
-                <div className="w-20 h-20 md:w-28 md:h-28 bg-card rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl">
-                  <img
-                    src={brand.logo_url}
-                    alt={brand.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+          <CollectionHero brand={brand} heroVideo={latestReleases[0]} count={brandVideos.length} />
 
-        <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-          {/* Brand Header */}
-          <div className="space-y-4 pt-8">
-            <div className="flex items-center gap-3 mb-2">
-              <Crown className="w-8 h-8 text-primary" />
-              <h1 className="text-4xl sm:text-5xl font-black text-foreground">{brand.name}</h1>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Badge className={
-                brand.status === 'active' ? 'bg-green-500/10 text-green-500' : 'bg-muted text-muted-foreground'
-              }>
-                {brand.status === 'active' ? 'Active Studio' : brand.status}
-              </Badge>
-            </div>
-
-            {/* Description */}
-            {brand.description && (
-              <div className="prose prose-invert max-w-none pt-4">
-                <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed text-lg">
-                  {brand.description}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Videos Section */}
           {brandVideos.length > 0 ? (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                    <Film className="w-5 h-5 text-primary" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-foreground">Videos from {brand.name}</h2>
+            <>
+              <div id="latest-releases">
+                <CollectionVideoRail eyebrow="Latest Releases" title="Start with what just dropped." subtitle="Fresh productions from this collection, presented as a focused rail instead of a wall of options." videos={latestReleases} large />
+              </div>
+              <CollectionVideoRail eyebrow="Most Popular" title="Audience favourites." subtitle="The releases getting the strongest attention inside this collection." videos={mostPopular} />
+              <CollectionCreatorSpotlight creator={featuredCreator} />
+              <CollectionVideoRail eyebrow="Recently Added" title="New to the collection." subtitle="A calmer way to keep exploring without falling into an endless grid." videos={recentlyAdded} />
+
+              <section className="space-y-5">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#f0183d]">Browse All</p>
+                  <h2 className="fl-condensed mt-2 text-[52px] uppercase leading-none tracking-[-0.02em] text-white">Complete collection.</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-white/50">The full library remains available, but with more breathing room, clearer badges and shorter titles.</p>
                 </div>
-                <Badge variant="outline" className="text-sm">
-                  {brandVideos.length} {brandVideos.length === 1 ? 'video' : 'videos'}
-                </Badge>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {brandVideos.map(video => (
-                  <VideoCard key={video.id} video={video} brands={[brand]} />
-                ))}
-              </div>
-            </div>
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {brandVideos.map((video) => <CollectionVideoCard key={video.id} video={video} />)}
+                </div>
+              </section>
+            </>
           ) : (
-            <div className="bg-card/50 rounded-2xl p-12 border border-border text-center">
-              <Film className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <h3 className="text-xl font-bold mb-2 text-foreground">Videos Coming Soon</h3>
-              <p className="text-muted-foreground mb-6">
-                {brand.name}'s library is being populated with exclusive content
-              </p>
-              <Button onClick={() => navigate('/videos')} variant="outline">
-                Browse All Videos
-              </Button>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-12 text-center">
+              <Film className="w-16 h-16 mx-auto mb-4 text-white/28" />
+              <h3 className="text-xl font-bold text-white">Productions Coming Soon</h3>
+              <p className="mt-2 mb-6 text-white/58">{brand.name}'s curated collection is being prepared.</p>
+              <Button onClick={() => navigate('/videos')} variant="outline" className="border-white/20 text-white hover:bg-white/10">Browse All Videos</Button>
             </div>
           )}
-
-          {/* Premium Teaser */}
-          <div className="pt-8">
-            <PremiumTeaserBlock title={`Want More ${brand.name} Content?`} />
-          </div>
         </div>
       </div>
     </>
