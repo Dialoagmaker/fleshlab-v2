@@ -4,7 +4,7 @@ import { ArrowRight, Camera, Clapperboard, CloudUpload, ExternalLink, HeartHands
 import MediaImage from "@/components/homeTube/MediaImage";
 import AnimatedCounter from "@/components/landingV2/AnimatedCounter";
 
-const fanImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/4ecf7441b_generated_image.png";
+const fanImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/b49928468_generated_image.png";
 
 const nodes = [
   { key: "CREATE", icon: Smartphone, detail: "Studio & homemade starts" },
@@ -17,7 +17,7 @@ const nodes = [
 ];
 
 const createSources = [[Smartphone, "Homemade Productions", "Start with a phone and a room."], [Camera, "Studio Productions", "Upgrade into crew-supported 4K shoots."], [Radio, "Live Cam", "Build daily interaction and income."]];
-const platforms = [["xHamster", "Global discovery channel for selected FLESHLAB releases."], ["FapHouse", "Premium distribution for creator-led fan experiences."], ["LoyalFans", "Direct fan monetization and creator community access."], ["Clip4Sale", "Niche clip distribution for future premium collections."]];
+const platforms = [["FLESHLAB Videos", "Approved releases become part of the main library."], ["Preview Drops", "Short signals help fans discover real creator moments."], ["Fanclub Access", "Supporters can follow creator updates and premium releases."], ["Partner Reach", "Selected projects can travel beyond the platform with controlled distribution."]];
 const livePlatforms = ["FLESHLIVE", "BongaCams", "xHamster Live", "Future Live Platforms"];
 const schedule = [["Kraken", "20:00"], ["Alex", "22:00"], ["Kevin", "23:30"]];
 const community = [["Instagram", "Behind-the-scenes hotel story posted", "24.8K"], ["Facebook", "Studio update and creator feature", "12.4K"], ["X", "Tonight's live schedule preview", "18.1K"], ["TikTok", "Creator journey teaser", "41.6K"], ["YouTube", "Production diary trailer", "8.9K"]];
@@ -99,8 +99,8 @@ export default function FleshlabEcosystem() {
           </motion.div>
 
           <motion.div onMouseEnter={() => setActive("VIDEOS")} initial={{ opacity: 0, y: 26 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.6 }} className="rounded-[2rem] border border-white/12 bg-[#05090c] p-7 md:p-9">
-            <SectionTitle eyebrow="02 / Videos + Distribution" title="A premium library with global reach" body="FLESHLAB turns creator uploads into releases, then connects them to controlled distribution surfaces where the story can keep growing." />
-            <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">{platforms.map(([name, description], index) => <motion.a key={name} href="#" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.46, delay: index * 0.06 }} className="group relative overflow-hidden rounded-2xl border border-white/12 bg-white/[0.035] p-5 transition hover:-translate-y-1 hover:border-[#f0183d]/70"><div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-[#f0183d]/10 blur-2xl" /><Wordmark>{name}</Wordmark><p className="mt-4 min-h-[66px] text-xs leading-5 text-white/56">{description}</p><span className="mt-5 inline-flex items-center gap-2 rounded-full border border-[#f0183d]/60 px-4 py-2 text-[9px] font-black uppercase text-[#f0183d] transition group-hover:bg-[#f0183d] group-hover:text-white">Watch Here <ExternalLink className="h-3.5 w-3.5" /></span></motion.a>)}</div>
+            <SectionTitle eyebrow="02 / Videos + Reach" title="From first upload to a living library" body="FLESHLAB turns creator moments into reviewed releases, then connects them to the places where fans discover, follow and support the story." />
+            <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">{platforms.map(([name, description], index) => <motion.a key={name} href="#" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.46, delay: index * 0.06 }} className="group relative overflow-hidden rounded-2xl border border-white/12 bg-white/[0.035] p-5 transition hover:-translate-y-1 hover:border-[#f0183d]/70"><div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-[#f0183d]/10 blur-2xl" /><Wordmark>{name}</Wordmark><p className="mt-4 min-h-[66px] text-xs leading-5 text-white/56">{description}</p><span className="mt-5 inline-flex items-center gap-2 rounded-full border border-[#f0183d]/60 px-4 py-2 text-[9px] font-black uppercase text-[#f0183d] transition group-hover:bg-[#f0183d] group-hover:text-white">Explore Flow <ExternalLink className="h-3.5 w-3.5" /></span></motion.a>)}</div>
           </motion.div>
 
           <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">

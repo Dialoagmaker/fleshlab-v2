@@ -5,24 +5,24 @@ import AnimatedCounter from "@/components/landingV2/AnimatedCounter";
 
 const moments = [
   {
-    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/4ecf7441b_generated_image.png",
-    title: "People before production",
-    body: "Approachable creators, real emotion and a studio process built around comfort."
+    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/359af7592_generated_image.png",
+    title: "Coffee before creation",
+    body: "Real conversations, simple setups and creators who feel like people you could know."
   },
   {
-    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/4b2a370cb_generated_image.png",
-    title: "Stories reviewed together",
-    body: "Creators see the process, understand the outcome and stay part of the decision."
+    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/8fc2c2c38_generated_image.png",
+    title: "The first room",
+    body: "A backpack, a phone and the quiet moment before a creator decides to begin."
   },
   {
-    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/d9bb27add_generated_image.png",
-    title: "Start from everyday moments",
-    body: "A phone, a room and a simple first step into a premium creator platform."
+    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/d4502b853_generated_image.png",
+    title: "Live from home",
+    body: "A bedroom desk can become the start of a real creator business."
   },
   {
-    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/6418c7379_generated_image.png",
-    title: "Supported by a real team",
-    body: "Production can be homemade, studio-supported or both as the creator grows."
+    image: "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/402796e2d_generated_image.png",
+    title: "After the shoot",
+    body: "Walking home, laughing together and feeling part of something real."
   }
 ];
 

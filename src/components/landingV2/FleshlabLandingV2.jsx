@@ -7,10 +7,10 @@ import AnimatedCounter from "@/components/landingV2/AnimatedCounter";
 import HumanMomentsSection from "@/components/landingV2/HumanMomentsSection";
 import { buildPublicAssetUrl } from "@/lib/videoAssetResolver";
 
-const HERO_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/0e3cd6784_generated_image.png";
+const HERO_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/96230e13e_generated_image.png";
 const SELFIE_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a3babcb65_generated_image.png";
 const PRODUCTION_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/4b2a370cb_generated_image.png";
-const FAN_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/4ecf7441b_generated_image.png";
+const FAN_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/b49928468_generated_image.png";
 const WORLD_IMAGES = ["https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/d35df4180_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/5b2120e6a_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/fcaf5cd40_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/5dcc0f51a_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/b8b8e17cc_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/cdc27160e_generated_image.png"];
 
 const navItems = [["WHO WE ARE", "#who"], ["HOW IT WORKS", "#journey"], ["EARN MONEY", "#paths"], ["VIDEOS", "/videos"], ["FAN PRODUCTIONS", "#fan-productions"], ["BLOG", "/news"], ["TRUST CENTER", "#trust"]];
@@ -67,7 +67,7 @@ export default function FleshlabLandingV2({ performers = [] }) {
               </div>
               <div className="mt-4 max-w-[360px] rounded-xl border border-white/12 bg-black/28 p-4 backdrop-blur">
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#f0183d]">Creator note</p>
-                <p className="mt-2 text-sm leading-6 text-white/72">“I started with nothing more than my smartphone.”</p>
+                <p className="mt-2 text-sm leading-6 text-white/72">“I filmed my first production using only my phone.”</p>
               </div>
             </div>
             <aside className="hidden items-center justify-end lg:flex"><div className="w-[220px] space-y-5 rounded border border-white/14 bg-black/38 p-6 backdrop-blur-md">{[[Camera, "PHONE READY"], [Clapperboard, "STUDIO REVIEW"], [ShieldCheck, "PRIVATE & SAFE"], [DollarSign, "CREATOR INCOME"]].map(([Icon, label]) => <div key={label} className="flex items-center gap-4"><Icon className="h-6 w-6 text-[#f0183d]" /><div className="text-[10px] font-black uppercase leading-4 text-white/86">{label}</div></div>)}</div></aside>
@@ -107,7 +107,7 @@ export default function FleshlabLandingV2({ performers = [] }) {
               </div>
               <div className="mt-6 rounded-2xl border border-[#f0183d]/28 bg-[#16070b] p-5">
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#f0183d]">Creator note</p>
-                <p className="mt-3 text-lg font-semibold leading-7 text-white/78">“The team helped me throughout my first production.”</p>
+                <p className="mt-3 text-lg font-semibold leading-7 text-white/78">“The team helped me through every step.”</p>
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
