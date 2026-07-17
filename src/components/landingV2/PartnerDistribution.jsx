@@ -1,6 +1,14 @@
 import { motion } from "framer-motion";
 import { Crown, HeartHandshake, Play, Radio, Sparkles } from "lucide-react";
 
+const platformLinks = {
+  "xHamster": "https://xhamster.com/users/fleshlab",
+  "FapHouse": "https://faphouse.com/gay/studios/mazu-production",
+  "LoyalFans": "https://www.loyalfans.com/fleshlabstudios",
+  "Clip4Sale": "https://www.clips4sale.com/studio/534073/fleshlab-studios",
+  "FLESHLAB Live": "https://www.fleshlab-live.com/"
+};
+
 const groups = [
   {
     label: "FREE",
@@ -25,7 +33,7 @@ const groups = [
     icon: Radio,
     headline: "Real-time energy.",
     sentence: "Live platforms create immediacy, presence and interaction.",
-    platforms: ["BongaCams", "xHamster Live", "LiveJasmin", "BongaModels"],
+    platforms: ["FLESHLAB Live", "BongaCams", "xHamster Live", "LiveJasmin", "BongaModels"],
     surface: "border-[#f0183d]/35 bg-[radial-gradient(circle_at_top_right,rgba(240,24,61,0.18),rgba(255,255,255,0.035)_44%)]",
     iconStyle: "bg-[#f0183d]/12 text-[#f0183d]",
     live: true
@@ -91,9 +99,14 @@ export default function PartnerDistribution() {
               <div className="mt-auto pt-6">
                 <p className="mb-2 text-[8px] font-black uppercase tracking-[0.22em] text-white/30">Platforms</p>
                 <div className="flex flex-wrap gap-2">
-                  {platforms.map((platform) => (
-                    <span key={platform} className="rounded-full border border-white/10 bg-black/24 px-3 py-1 text-[10px] font-bold text-white/62">{platform}</span>
-                  ))}
+                  {platforms.map((platform) => {
+                    const href = platformLinks[platform];
+                    return href ? (
+                      <a key={platform} href={href} target="_blank" rel="noopener noreferrer" className="rounded-full border border-white/10 bg-black/24 px-3 py-1 text-[10px] font-bold text-white/62 transition hover:border-[#f0183d]/60 hover:text-white">{platform}</a>
+                    ) : (
+                      <span key={platform} className="rounded-full border border-white/10 bg-black/24 px-3 py-1 text-[10px] font-bold text-white/62">{platform}</span>
+                    );
+                  })}
                 </div>
               </div>
             </motion.div>
