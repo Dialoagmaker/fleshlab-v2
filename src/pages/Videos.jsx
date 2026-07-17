@@ -3,9 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { appParams } from "@/lib/app-params";
 import VideoCard from "@/components/public/VideoCard";
-import VideoFilters from "@/components/public/VideoFilters";
 import { Button } from "@/components/ui/button";
-import { Film, Play, AlertCircle, Users, Clock, Crown, Sparkles } from "lucide-react";
+import { Film, Play, AlertCircle } from "lucide-react";
+import CinematicFeaturedProduction from "@/components/platform/CinematicFeaturedProduction";
+import CollectionRail from "@/components/platform/CollectionRail";
+import CreatorHeroRail from "@/components/platform/CreatorHeroRail";
 import SEOMeta from "@/components/SEOMeta";
 import { useI18n } from "@/i18n/i18n";
 
@@ -45,6 +47,29 @@ async function fetchPublicVideosAndBrands(page = 1, filters = {}) {
   return data;
 }
 
+async function fetchPublicPerformers() {
+  const resp = await fetch(`/api/apps/${appParams.appId}/functions/getPublicPerformers`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  if (!resp.ok) throw new Error(`Performers fetch failed: ${resp.status}`);
+  return resp.json();
+}
+
+const collectionSpecs = [
+  { title: "Hotel Sessions", subtitle: "Private rooms, warm light, first-night tension.", terms: ["hotel", "room"] },
+  { title: "Beach Escape", subtitle: "Travel heat and vacation stories.", terms: ["beach", "escape", "travel"] },
+  { title: "Student Life", subtitle: "Young adult city energy and ambition.", terms: ["student", "campus"] },
+  { title: "Massage Stories", subtitle: "Slow atmosphere and cinematic intimacy.", terms: ["massage"] },
+  { title: "Gym Sessions", subtitle: "Fitness confidence and after-hours energy.", terms: ["gym", "fitness"] },
+];
+
+function videoMatches(video, terms) {
+  const text = [video.title, video.description, video.short_summary, ...(video.categories || []), ...(video.tags || [])].join(" ").toLowerCase();
+  return terms.some((term) => text.includes(term));
+}
+
 export default function Videos() {
   const { t } = useI18n();
   const [searchParams] = useSearchParams();
@@ -72,10 +97,32 @@ export default function Videos() {
     retry: 0,
   });
 
+  const { data: performerData } = useQuery({
+    queryKey: ['public-performers-platform'],
+    queryFn: fetchPublicPerformers,
+    retry: 0,
+  });
+
   const videos = data?.videos || [];
   const brands = data?.brands || [];
+  const performers = performerData?.performers || [];
   const total = data?.total || 0;
   const hasMore = data?.hasMore || false;
+
+  const featuredVideo = useMemo(() => videos.find((video) => video.featured) || videos[0], [videos]);
+  const collections = useMemo(() => {
+    const worldCollections = collectionSpecs.map((collection) => ({
+      ...collection,
+      videos: videos.filter((video) => videoMatches(video, collection.terms)),
+    })).filter((collection) => collection.videos.length > 0);
+
+    return [
+      ...worldCollections,
+      { title: "New Releases", subtitle: "The latest productions entering the FLESHLAB world.", videos: videos.slice(0, 10) },
+      { title: "Editor's Picks", subtitle: "Curated productions with stronger story energy.", videos: videos.filter((video) => video.featured || video.is_exclusive).slice(0, 10) },
+      { title: "Most Watched", subtitle: "Audience momentum this week.", videos: [...videos].sort((a, b) => (b.view_count || 0) - (a.view_count || 0)).slice(0, 10) },
+    ].filter((collection) => collection.videos.length > 0);
+  }, [videos]);
 
   // Reset page when filters change
   const handleFilterChange = useCallback((newFilters) => {
@@ -137,131 +184,68 @@ export default function Videos() {
           "description": "Asian gay videos, Filipino twink scenes, gay solo content and full-length gay adult videos"
         }}
       />
-      <div className="min-h-screen bg-[#0a0a0a]">
-        {/* Always render hero section immediately for SEO and UX */}
-        <div className="relative bg-gradient-to-b from-[#0f0f0f] via-[#0a0a0a] to-[#0a0a0a] border-b border-rose-600/20 pb-6 pt-10 px-4 overflow-hidden">
-          {/* Subtle rose glow */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-rose-600/5 rounded-full blur-[100px] pointer-events-none" />
-          
-          <div className="max-w-7xl mx-auto relative z-10">
-            {/* Icon + Title */}
-            <div className="flex items-start gap-3 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-rose-600 to-rose-700 rounded-xl flex items-center justify-center shadow-lg shadow-rose-600/25 flex-shrink-0">
-                <Play className="w-6 h-6 text-white fill-white" />
-              </div>
-              <div className="flex-1">
-                <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight mb-2.5">
-                  Premium Asian Gay Videos & Filipino Twink Scenes
-                </h1>
-                <p className="text-white/60 text-sm leading-relaxed max-w-4xl">
-                  Browse verified 18+ Asian and Filipino gay adult videos including solo scenes, shower videos, outdoor shoots, bareback scenes, oral and anal content, full-length gay adult scenes including solo, oral, anal, bareback, shower and studio productions, and exclusive fanclub releases.
-                </p>
+      <div className="min-h-screen bg-[#040608] px-4 py-8 text-white">
+        <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(240,24,61,0.12),transparent_30%),radial-gradient(circle_at_85%_22%,rgba(255,255,255,0.06),transparent_24%)]" />
+        <div className="relative mx-auto max-w-[1440px] space-y-12">
+          {filters.search && (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#f0183d]">Search results</p>
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-white/62">Showing productions matching “{filters.search}”.</p>
+                <Button variant="outline" onClick={handleClearFilters} className="border-white/20 text-white hover:bg-white/10">Clear Search</Button>
               </div>
             </div>
-
-            {/* Stats Row - Sleeker */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-              <div className="bg-white/[0.02] border border-white/5 rounded-lg p-3 flex items-center gap-2.5">
-                <div className="w-9 h-9 bg-rose-600/15 rounded-md flex items-center justify-center flex-shrink-0">
-                  <Users className="w-4 h-4 text-rose-500" />
-                </div>
-                <div>
-                  <p className="text-white font-semibold text-xs">Verified 18+</p>
-                  <p className="text-white/40 text-[10px]">Performers</p>
-                </div>
-              </div>
-              <div className="bg-white/[0.02] border border-white/5 rounded-lg p-3 flex items-center gap-2.5">
-                <div className="w-9 h-9 bg-purple-600/15 rounded-md flex items-center justify-center flex-shrink-0">
-                  <Crown className="w-4 h-4 text-purple-500" />
-                </div>
-                <div>
-                  <p className="text-white font-semibold text-xs">Full-Length</p>
-                  <p className="text-white/40 text-[10px]">Scenes</p>
-                </div>
-              </div>
-              <div className="bg-white/[0.02] border border-white/5 rounded-lg p-3 flex items-center gap-2.5">
-                <div className="w-9 h-9 bg-amber-600/15 rounded-md flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
-                </div>
-                <div>
-                  <p className="text-white font-semibold text-xs">Fanclub</p>
-                  <p className="text-white/40 text-[10px]">Exclusives</p>
-                </div>
-              </div>
-              <div className="bg-white/[0.02] border border-white/5 rounded-lg p-3 flex items-center gap-2.5">
-                <div className="w-9 h-9 bg-emerald-600/15 rounded-md flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-4 h-4 text-emerald-500" />
-                </div>
-                <div>
-                  <p className="text-white font-semibold text-xs">Updated</p>
-                  <p className="text-white/40 text-[10px]">Weekly</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Live counter - always render immediately */}
-            <p className="text-white/50 text-xs">
-              {isLoading ? (
-                <>Loading {total > 0 ? total : 'videos'}...</>
-              ) : (
-                <>
-                  <span className="font-semibold text-white">{total}</span> {total === 1 ? 'video' : 'videos'} available
-                  {hasMore && <span className="mx-1">·</span>}
-                  {hasMore && <span>Page {page}</span>}
-                </>
-              )}
-            </p>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="max-w-[1400px] mx-auto px-4 py-5 space-y-4">
-          {/* Filters */}
-          <VideoFilters onFilterChange={handleFilterChange} brands={brands} />
+          )}
 
           {isLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
-              {[...Array(24)].map((_, i) => (
-                <div key={i} className="aspect-video bg-[#121212] rounded-xl animate-pulse border border-white/5" />
-              ))}
+            <div className="space-y-8">
+              <div className="h-[560px] animate-pulse rounded-[2rem] border border-white/10 bg-white/[0.035]" />
+              <div className="grid gap-5 md:grid-cols-3">
+                {[...Array(6)].map((_, i) => <div key={i} className="aspect-video animate-pulse rounded-2xl bg-white/[0.035]" />)}
+              </div>
             </div>
           ) : videos.length > 0 ? (
             <>
-              {/* First row emphasis */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
-                {videos.map((video, idx) => (
-                  <div key={video.id} className={idx < 6 ? "ring-1 ring-white/5 rounded-2xl" : ""}>
-                    <VideoCard video={video} brands={brands} />
-                  </div>
-                ))}
-              </div>
-              {hasMore && (
-                <div className="text-center pt-5 pb-3">
-                  <Button
-                    onClick={() => setPage(p => p + 1)}
-                    className="px-8 py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-semibold text-sm rounded-lg shadow-lg shadow-rose-600/30 transition-all hover:scale-[1.02]"
-                    size="lg"
-                  >
-                    {t('videos.loadMore')}
-                    {total - page * VIDEOS_PER_PAGE > 0 && (
-                      <span className="ml-2 text-xs opacity-70">
-                        ({total - page * VIDEOS_PER_PAGE} left)
-                      </span>
-                    )}
-                  </Button>
+              <CinematicFeaturedProduction video={featuredVideo} />
+
+              <div id="collections" className="space-y-10">
+                <div className="max-w-2xl">
+                  <p className="text-[10px] font-black uppercase tracking-[0.32em] text-[#f0183d]">Browse by world</p>
+                  <h2 className="fl-condensed mt-2 text-[58px] uppercase leading-none tracking-[-0.02em]">Collections, not categories.</h2>
+                  <p className="mt-3 text-base leading-7 text-white/52">Each rail is built like a series: fewer choices, stronger artwork and a clearer reason to watch.</p>
                 </div>
-              )}
+                {collections.map((collection) => <CollectionRail key={collection.title} {...collection} />)}
+              </div>
+
+              <CreatorHeroRail performers={performers} />
+
+              <section className="space-y-5">
+                <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.32em] text-[#f0183d]">All productions</p>
+                    <h2 className="fl-condensed mt-2 text-[52px] uppercase leading-none tracking-[-0.02em]">Let the artwork breathe.</h2>
+                  </div>
+                  <p className="text-sm text-white/46"><span className="font-semibold text-white">{total}</span> productions available</p>
+                </div>
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {videos.map((video) => <VideoCard key={video.id} video={video} brands={brands} performers={performers} />)}
+                </div>
+                {hasMore && (
+                  <div className="text-center pt-5 pb-3">
+                    <Button onClick={() => setPage(p => p + 1)} className="rounded bg-[#f0183d] px-8 py-3 text-[10px] font-black uppercase tracking-wide text-white shadow-lg shadow-[#f0183d]/25 transition hover:-translate-y-0.5 hover:bg-[#ff3152]" size="lg">
+                      {t('videos.loadMore')}
+                      {total - page * VIDEOS_PER_PAGE > 0 && <span className="ml-2 text-xs opacity-70">({total - page * VIDEOS_PER_PAGE} left)</span>}
+                    </Button>
+                  </div>
+                )}
+              </section>
             </>
           ) : (
             <div className="text-center py-20 bg-[#121212] rounded-xl border border-white/10">
               <Film className="w-16 h-16 mx-auto mb-4 text-white/40 opacity-50" />
               <h2 className="text-xl font-semibold mb-2 text-white">{t('videos.noResults')}</h2>
-              <p className="text-white/60 mb-4">
-                Try another search term or clear filters.
-              </p>
-              <Button variant="outline" onClick={handleClearFilters} className="border-white/20 text-white hover:bg-white/10">
-                Clear All Filters
-              </Button>
+              <p className="text-white/60 mb-4">Try another search term or clear filters.</p>
+              <Button variant="outline" onClick={handleClearFilters} className="border-white/20 text-white hover:bg-white/10">Clear Search</Button>
             </div>
           )}
         </div>
