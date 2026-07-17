@@ -25,10 +25,10 @@ const productions = [
   ["Home Made", "Personal, direct and authentically lived-in moments.", images.home]
 ];
 
-const fallbackCreators = [
-  ["Kevin", "Philippines", "Hi, I'm Kevin. I started filming with nothing more than my smartphone.", images.creator],
-  ["Kraken", "Thailand", "I wanted my first release to feel real, not staged.", images.hotel],
-  ["Alex", "Vietnam", "FLESHLAB helped me turn private confidence into creator income.", images.beach]
+const featuredCreators = [
+  ["jameson", "Jameson", "Philippines", "Hi, I'm Jameson. I started with simple, real moments and turned them into my first FLESHLAB releases.", "https://video.fleshlab.online/performers/jameson/profile.png"],
+  ["the-fitmaster", "TheFitmaster", "Filipino", "Hi, I'm TheFitmaster. Fitness, confidence and real personality are what I bring on camera.", "https://video.fleshlab.online/performers/the-fitmaster/profile.jpg"],
+  ["zed", "ZED", "Manila, Philippines", "Hi, I'm ZED. I like when a production feels honest, direct and close to real life.", "https://video.fleshlab.online/performers/zed/profile.jpg"]
 ];
 
 function Title({ eyebrow, title, body }) {
@@ -45,7 +45,10 @@ function FeaturedProductions() {
 }
 
 function MeetCreators({ performers }) {
-  const creators = performers?.length ? performers.slice(0, 3).map((p, i) => [p.display_name || p.name || fallbackCreators[i][0], p.nationality || fallbackCreators[i][1], fallbackCreators[i][2], buildPublicAssetUrl(p.profile_image_url || p.cover_image_url) || fallbackCreators[i][3]]) : fallbackCreators;
+  const creators = featuredCreators.map(([slug, name, country, intro, image]) => {
+    const match = performers?.find((p) => String(p.slug || p.display_name || "").toLowerCase().replace(/[_\s]/g, "-").includes(slug));
+    return [name, match?.nationality || country, intro, buildPublicAssetUrl(match?.profile_image_url || match?.cover_image_url) || image];
+  });
   return <section className="border-y border-white/8 bg-[#080d10] px-5 py-20 lg:px-7"><div className="mx-auto max-w-[1360px]"><Title eyebrow="MEET THE CREATORS" title="REAL PEOPLE. REAL FIRST STEPS." body="Friendly portraits, personal stories and creators you can actually follow." /><div className="mt-10 grid gap-5 md:grid-cols-3">{creators.map(([name, country, intro, image], index) => <motion.div key={name} initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.25 }} transition={{ duration: 0.5, delay: index * 0.08 }} className="overflow-hidden rounded-[1.5rem] border border-white/12 bg-black/28"><MediaImage src={image} alt={name} className="h-[360px] w-full object-cover object-[center_35%]" /><div className="p-6"><p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#f0183d]">{country}</p><h3 className="fl-condensed mt-2 text-[42px] uppercase leading-none">{name}</h3><p className="mt-4 text-sm leading-6 text-white/68">“{intro}”</p></div></motion.div>)}</div></div></section>;
 }
 
