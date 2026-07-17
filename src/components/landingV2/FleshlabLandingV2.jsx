@@ -7,11 +7,11 @@ import AnimatedCounter from "@/components/landingV2/AnimatedCounter";
 import HumanMomentsSection from "@/components/landingV2/HumanMomentsSection";
 import { buildPublicAssetUrl } from "@/lib/videoAssetResolver";
 
-const HERO_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/898c686a4_generated_image.png";
-const SELFIE_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/0164af277_generated_image.png";
-const PRODUCTION_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/2a831d36b_generated_image.png";
-const FAN_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/98a1350da_generated_image.png";
-const WORLD_IMAGES = ["https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/163a2a7d8_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/796dad163_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/ea215cf66_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/f69c784e2_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/6bdb7d2a9_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/f90afa875_generated_image.png"];
+const HERO_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/091dafc52_generated_image.png";
+const SELFIE_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a3babcb65_generated_image.png";
+const PRODUCTION_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/4b2a370cb_generated_image.png";
+const FAN_IMAGE = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/4ecf7441b_generated_image.png";
+const WORLD_IMAGES = ["https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/18d836f0f_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/6501e2841_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/82081f135_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/0ea9d5d34_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/8d12cc6b6_generated_image.png", "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/da7d6e64b_generated_image.png"];
 
 const navItems = [["WHO WE ARE", "#who"], ["HOW IT WORKS", "#journey"], ["EARN MONEY", "#paths"], ["VIDEOS", "/videos"], ["FAN PRODUCTIONS", "#fan-productions"], ["BLOG", "/news"], ["TRUST CENTER", "#trust"]];
 const trustItems = [[Users, "100% AMATEUR", "Real people. No actors."], [ShieldCheck, "SAFE & PRIVATE", "Your privacy is protected."], [CreditCard, "FAIR PAY", "Clear payouts and records."], [Headphones, "FULL SUPPORT", "Guidance from day one."], [Globe2, "GLOBAL COMMUNITY", "Fans across 120+ countries."]];
