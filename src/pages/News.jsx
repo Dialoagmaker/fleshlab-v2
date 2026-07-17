@@ -4,6 +4,7 @@ import { callPublicFunction } from "@/lib/publicApi";
 import { appParams } from "@/lib/app-params";
 import SEOMeta from "@/components/SEOMeta";
 import NewsCard from "@/components/public/NewsCard";
+import NewsFooter from "@/components/public/NewsFooter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Newspaper, RadioTower, Rss, Search } from "lucide-react";
@@ -51,6 +52,9 @@ export default function News({ initialCategory = "all", archiveLabel = "" }) {
   const orderedArticles = [...articles].sort((a, b) => new Date(b.published_at || b.created_date || 0) - new Date(a.published_at || a.created_date || 0));
   const featuredArticle = orderedArticles[0] || null;
   const regularArticles = orderedArticles.slice(1);
+  const editorPicks = regularArticles.slice(0, 2);
+  const largeStories = regularArticles.slice(2, 4);
+  const compactStories = regularArticles.slice(4);
   const years = data?.filters?.years || [];
   const hasMore = data?.hasMore;
   const activeLabel = archiveLabel || categories.find((item) => item.value === category)?.label || "All Updates";
@@ -116,7 +120,7 @@ export default function News({ initialCategory = "all", archiveLabel = "" }) {
           </div>
         </section>
 
-        <main className="mx-auto max-w-7xl px-4 py-12">
+        <main className="mx-auto max-w-7xl px-4 py-12 md:py-16">
           {isLoading ? (
             <div className="flex min-h-[260px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-[#f0183d]" /></div>
           ) : error ? (
@@ -124,20 +128,17 @@ export default function News({ initialCategory = "all", archiveLabel = "" }) {
           ) : orderedArticles.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-12 text-center text-white/56"><Newspaper className="mx-auto mb-4 h-14 w-14 opacity-20" /><h2 className="text-2xl font-black text-white">No updates found</h2><p className="mt-2">Try adjusting your filters.</p></div>
           ) : (
-            <div className="space-y-12">
-              {featuredArticle && <section className="space-y-5"><div><p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#f0183d]">Featured Update</p><h2 className="mt-2 text-2xl font-black tracking-[-0.03em] text-white">Most important announcement</h2></div><NewsCard article={featuredArticle} featured /></section>}
-              <section className="space-y-5"><div><p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#f0183d]">Latest News</p><h2 className="mt-2 text-2xl font-black tracking-[-0.03em] text-white">Chronological updates</h2></div><div className="grid gap-4">{regularArticles.map((article) => <NewsCard key={article.id} article={article} />)}</div></section>
+            <div className="space-y-14">
+              {featuredArticle && <section className="space-y-5"><div><p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#f0183d]">Featured Story</p><h2 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white">Lead editorial</h2></div><NewsCard article={featuredArticle} featured /></section>}
+              {editorPicks.length > 0 && <section className="space-y-5"><div><p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#f0183d]">Editor Picks</p><h2 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white">Stories worth opening first</h2></div><div className="grid gap-5 md:grid-cols-2">{editorPicks.map((article) => <NewsCard key={article.id} article={article} variant="large" />)}</div></section>}
+              {largeStories.length > 0 && <section className="grid gap-5 lg:grid-cols-2">{largeStories.map((article) => <NewsCard key={article.id} article={article} variant="large" />)}</section>}
+              {compactStories.length > 0 && <section className="space-y-5"><div><p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#f0183d]">Latest Briefing</p><h2 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white">More from the network</h2></div><div className="grid gap-4 lg:grid-cols-2">{compactStories.map((article) => <NewsCard key={article.id} article={article} variant="compact" />)}</div></section>}
               {hasMore && <div className="flex justify-center pt-2"><Button onClick={() => setPage((p) => p + 1)} className="bg-[#f0183d] px-8 text-white hover:bg-[#ff3152]" size="lg">Load More Updates</Button></div>}
             </div>
           )}
         </main>
 
-        <section className="border-t border-white/10 bg-[#05080a]">
-          <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-8 md:flex-row md:items-center md:justify-between">
-            <div><p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#f0183d]">Follow Updates</p><p className="mt-2 text-sm text-white/52">Newsletter, RSS and social channels for official FLESHLAB announcements.</p></div>
-            <div className="flex flex-wrap gap-2 text-[10px] font-black uppercase tracking-wide"><a href={rssBase} className="rounded-full border border-white/10 px-4 py-2 text-white/60 hover:text-[#f0183d]">All News RSS</a><a href={`${rssBase}?feed=platform-updates`} className="rounded-full border border-white/10 px-4 py-2 text-white/60 hover:text-[#f0183d]">Platform RSS</a><a href={`${rssBase}?feed=new-releases`} className="rounded-full border border-white/10 px-4 py-2 text-white/60 hover:text-[#f0183d]">Releases RSS</a><a href={`${rssBase}?feed=creator-news`} className="rounded-full border border-white/10 px-4 py-2 text-white/60 hover:text-[#f0183d]">Creator RSS</a><a href={`${rssBase}?feed=press-releases`} className="rounded-full border border-white/10 px-4 py-2 text-white/60 hover:text-[#f0183d]">Press RSS</a><a href="#" className="rounded-full border border-white/10 px-4 py-2 text-white/60 hover:text-[#f0183d]">X</a><a href="#" className="rounded-full border border-white/10 px-4 py-2 text-white/60 hover:text-[#f0183d]">Facebook</a><a href="#" className="rounded-full border border-white/10 px-4 py-2 text-white/60 hover:text-[#f0183d]">Telegram</a></div>
-          </div>
-        </section>
+        <NewsFooter rssBase={rssBase} />
       </div>
     </>
   );
