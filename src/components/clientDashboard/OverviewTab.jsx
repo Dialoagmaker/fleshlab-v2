@@ -61,19 +61,22 @@ function PersonalSignal({ icon: Icon, label, value }) {
 export default function OverviewTab({ requests, subscriptions, payments, user, loading, setActiveTab }) {
   const [latestVideos, setLatestVideos] = useState([]);
   const [trendingVideos, setTrendingVideos] = useState([]);
+  const [fallbackVideos, setFallbackVideos] = useState([]);
   const [performers, setPerformers] = useState([]);
   const [news, setNews] = useState([]);
 
   useEffect(() => {
     trackDashboardViewed(window.location.pathname.includes("onboarding") ? "onboarding" : "direct");
     Promise.all([
-      base44.entities.Video.filter({ status: "published" }, "-published_at", 12),
-      base44.entities.Video.filter({ status: "published" }, "-view_count", 12),
+      base44.entities.Video.filter({ status: "published" }, "-published_at", 18),
+      base44.entities.Video.filter({ status: "published" }, "-view_count", 18),
+      base44.entities.Video.list("-updated_date", 60),
       base44.entities.Performer.filter({ status: "active" }, "-video_count", 10),
       base44.entities.NewsArticle.filter({ status: "published" }, "-published_at", 6),
-    ]).then(([latest, trending, creators, articles]) => {
+    ]).then(([latest, trending, fallback, creators, articles]) => {
       setLatestVideos(latest || []);
       setTrendingVideos(trending || []);
+      setFallbackVideos(fallback || []);
       setPerformers(creators || []);
       setNews(articles || []);
     });
@@ -83,23 +86,52 @@ export default function OverviewTab({ requests, subscriptions, payments, user, l
   const activeRequests = requests.filter((r) => ACTIVE_STATUSES.has(r.status));
   const latestRequest = activeRequests[0];
 
+  const dashboardVideos = useMemo(() => {
+    const used = new Set();
+    const canUse = (video) => video?.slug && !used.has(video.id) && !used.has(video.slug);
+    const markUsed = (video) => {
+      if (video.id) used.add(video.id);
+      if (video.slug) used.add(video.slug);
+    };
+    const take = (sources, count) => {
+      const result = [];
+      for (const source of sources) {
+        for (const video of source || []) {
+          if (!canUse(video)) continue;
+          markUsed(video);
+          result.push(video);
+          if (result.length >= count) return result;
+        }
+      }
+      return result;
+    };
+
+    const featured = take([latestVideos, trendingVideos, fallbackVideos], 1)[0] || null;
+
+    return {
+      featured,
+      continueWatching: take([latestVideos, fallbackVideos], 6),
+      trending: take([trendingVideos, fallbackVideos], 8),
+      recommended: take([latestVideos, trendingVideos, fallbackVideos], 8),
+      latest: take([latestVideos, fallbackVideos], 8),
+      collections: take([fallbackVideos, trendingVideos, latestVideos], 6),
+    };
+  }, [latestVideos, trendingVideos, fallbackVideos]);
+
   const notifications = useMemo(() => {
     const status = latestRequest ? STATUS_CONFIG[latestRequest.status] || STATUS_CONFIG.pending : null;
     return [
-      latestVideos[0] && { type: "release", title: "New release", body: `${latestVideos[0].title} is now available to watch.`, href: `/videos/${latestVideos[0].slug}` },
+      dashboardVideos.featured && { type: "release", title: "New release", body: `${dashboardVideos.featured.title} is now available to watch.`, href: `/videos/${dashboardVideos.featured.slug}` },
       { type: "live", title: "Upcoming live show", body: "FLESHLAB Live has sessions and special drops ready to explore.", href: "/live" },
       news[0] && { type: "update", title: "Platform update", body: news[0].title, href: `/news/${news[0].slug}` },
       latestRequest && { type: "message", title: "Fan Production update", body: status?.label || "Your request has a new studio status.", href: "#" },
       payments[0] && { type: "payment", title: "Payment confirmation", body: "Your latest payment activity is saved in your account.", href: "#" },
     ].filter(Boolean);
-  }, [latestVideos, news, latestRequest, payments]);
-
-  const recommended = latestVideos.slice(2, 8);
-  const continueWatching = latestVideos.slice(0, 6);
+  }, [dashboardVideos.featured, news, latestRequest, payments]);
 
   return (
     <div className="space-y-10 pb-12">
-      <Hero user={user} video={latestVideos[0]} newCount={Math.min(3, latestVideos.length || 3)} />
+      <Hero user={user} video={dashboardVideos.featured} newCount={Math.min(3, latestVideos.length || fallbackVideos.length || 3)} />
 
       <div className="grid gap-3 md:grid-cols-4">
         <PersonalSignal icon={Heart} label="Favourite creators" value={performers.length ? performers.slice(0, 3).length : "—"} />
@@ -110,15 +142,15 @@ export default function OverviewTab({ requests, subscriptions, payments, user, l
 
       <DashboardNotificationCenter items={notifications} />
 
-      <EntertainmentRail title="Continue Watching" subtitle="Pick up where your next FLESHLAB session begins." items={continueWatching} />
+      <EntertainmentRail title="Continue Watching" subtitle="Pick up where your next FLESHLAB session begins." items={dashboardVideos.continueWatching} />
       <EntertainmentRail title="New From Favourite Creators" subtitle="Creator-led releases and profiles selected for you." items={performers.slice(0, 8)} type="creator" />
-      <EntertainmentRail title="Recommended For You" subtitle="Based on your activity, country, collections and recent visits." items={recommended.length ? recommended : latestVideos.slice(0, 6)} />
-      <EntertainmentRail title="Trending" subtitle="What the FLESHLAB audience is watching now." items={trendingVideos.slice(0, 8)} />
-      <EntertainmentRail title="Latest Releases" subtitle="Fresh productions from the FLESHLAB ecosystem." items={latestVideos.slice(0, 8)} />
+      <EntertainmentRail title="Trending" subtitle="What the FLESHLAB audience is watching now." items={dashboardVideos.trending} />
+      <EntertainmentRail title="Recommended For You" subtitle="Based on your activity, country, collections and recent visits." items={dashboardVideos.recommended} />
+      <EntertainmentRail title="Latest Releases" subtitle="Fresh productions from the FLESHLAB ecosystem." items={dashboardVideos.latest} />
       <EntertainmentRail title="Upcoming Live Shows" subtitle="Live sessions and special creator events." items={liveShows} type="live" />
-      <EntertainmentRail title="News" subtitle="Official updates, platform drops and creator announcements." items={news.slice(0, 6)} type="news" />
-      <EntertainmentRail title="Collections" subtitle="Curated worlds for your next click." items={collections} type="collection" />
+      <EntertainmentRail title="Collections" subtitle="Curated worlds for your next click." items={dashboardVideos.collections.length ? dashboardVideos.collections : collections} type={dashboardVideos.collections.length ? "video" : "collection"} />
       <EntertainmentRail title="Suggested Creators" subtitle="Discover performers connected to your FLESHLAB journey." items={performers.slice(2, 10)} type="creator" />
+      <EntertainmentRail title="News" subtitle="Official updates, platform drops and creator announcements." items={news.slice(0, 6)} type="news" />
 
       <section className="rounded-[2rem] border border-[#f0183d]/25 bg-[#12060a] p-6 md:p-8">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
