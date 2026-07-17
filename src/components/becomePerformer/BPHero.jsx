@@ -82,11 +82,11 @@ export default function BPHero({ onApplyClick, onEarnClick }) {
             BODY.
           </h1>
 
-          <p className="text-lg md:text-xl text-white/65 leading-relaxed mb-3 max-w-[540px]">
-            You bring the body, the performance and the sexual energy. FLESHLAB helps you turn it into paid adult content, fanclub access, PPV sales, livecam opportunities and platform distribution.
+          <p className="text-lg md:text-xl text-white/70 leading-relaxed mb-3 max-w-[560px]">
+            Turn your body, confidence and sexual energy into paid scenes, fanclub access, PPV sales, livecam opportunities and platform distribution — with a studio behind you.
           </p>
-          <p className="text-base text-white/40 leading-relaxed mb-8 max-w-[480px]">
-            Start with your first published video. Grow with every scene, fan and subscriber.
+          <p className="text-base text-white/45 leading-relaxed mb-8 max-w-[480px]">
+            Your first video can become the start of a performer brand.
           </p>
 
           {/* Earnings animation */}
