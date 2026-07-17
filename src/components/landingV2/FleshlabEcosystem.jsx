@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Camera, Clapperboard, ExternalLink, Radio, Send, ShieldCheck, Smartphone, Sparkles, Users, Wifi } from "lucide-react";
 import MediaImage from "@/components/homeTube/MediaImage";
 
-const fanImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/afb9e605d_generated_image.png";
+const fanImage = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/21f88df13_generated_image.png";
 
 const nodes = ["CREATE", "DISTRIBUTE", "GO LIVE", "COMMUNITY", "FAN PRODUCTIONS"];
 const createSources = [[Smartphone, "Homemade Productions", "Phone-first uploads"], [Camera, "Studio Productions", "Crew-supported shoots"], [Radio, "Live Cam", "Daily live earning"]];
