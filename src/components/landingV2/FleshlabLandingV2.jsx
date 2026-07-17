@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Users, ShieldCheck, CreditCard, Headphones, Globe2, Wallet, Play, Clapperboard, Handshake, UserPlus, Lock, CloudUpload, CheckCircle2, DollarSign, Camera, Crown, BadgeCheck, ChevronRight, Dumbbell, BedDouble, Plane, GraduationCap, Home, Sparkles, FileText, EyeOff, RotateCcw } from "lucide-react";
 import LanguageSwitcher from "@/components/public/LanguageSwitcher";
@@ -16,7 +17,7 @@ const WORLD_IMAGES = ["https://media.base44.com/images/public/6a1bc26018a7bec38b
 const navItems = [["WHO WE ARE", "#who"], ["HOW IT WORKS", "#journey"], ["EARN MONEY", "#paths"], ["VIDEOS", "/videos"], ["FAN PRODUCTIONS", "#fan-productions"], ["BLOG", "/news"], ["TRUST CENTER", "#trust"]];
 const trustItems = [[Users, "100% AMATEUR", "Real people. No actors."], [ShieldCheck, "SAFE & PRIVATE", "Your privacy is protected."], [CreditCard, "FAIR PAY", "Clear payouts and records."], [Headphones, "FULL SUPPORT", "Guidance from day one."], [Globe2, "GLOBAL COMMUNITY", "Fans across 120+ countries."]];
 const paths = [[Wallet, "Earn Money", "Start from your phone. Build a real creator income.", "/become-performer", SELFIE_IMAGE], [Play, "Watch Videos", "Explore real amateur stories with studio-quality curation.", "/videos", HERO_IMAGE], [Clapperboard, "Fan Productions", "Apply to film a real production with a favourite performer.", "/fan-productions", FAN_IMAGE], [Handshake, "Partner Network", "Distribution, studio alliances and creator monetization.", "#partners", PRODUCTION_IMAGE]];
-const journey = [[UserPlus, "Join", "Create your performer account."], [Lock, "Verify", "Age, identity and consent are confirmed."], [CloudUpload, "Upload", "Files go directly to Cloudflare R2."], [CheckCircle2, "Admin Review", "Every upload is manually checked."], [Clapperboard, "Published", "Approved content becomes a FLESHLAB release."], [DollarSign, "Earn", "Track income and grow over time."]];
+const journey = [[UserPlus, "Join", "Create your free performer account and take the first step toward earning from your own content."], [Lock, "Verify", "Confirm your age and identity safely. Verification protects you, your viewers and the trust behind every FLESHLAB release."], [CloudUpload, "Upload", "Add your first photos or videos in a simple, private and secure space built for new creators."], [CheckCircle2, "Team Review", "Our team personally reviews every submission for quality, authenticity and compliance, so you can publish with confidence."], [Clapperboard, "Go Live", "Your content becomes available across FLESHLAB and selected partner channels, helping more fans discover and support you."], [DollarSign, "Earn", "Track your earnings from your Creator Dashboard and receive regular payouts according to the current payout schedule."]];
 const worlds = [[BedDouble, "Hotel Sessions", "A private room. A phone. The first night."], [Plane, "Beach Escape", "Travel, heat and vacation freedom."], [Sparkles, "Massage", "Warm rooms and slow cinematic tension."], [Dumbbell, "Gym", "Fitness energy and after-hours confidence."], [GraduationCap, "Student Life", "Young adult city life, privacy and ambition."], [Home, "Home Made", "Personal, direct and authentically lived-in."]];
 const trustQuestions = [[EyeOff, "Identity Protection", "Your legal identity, documents and public creator presence are handled separately so you stay in control of what appears on screen."], [BadgeCheck, "Verification Process", "Every creator is confirmed 18+, consent is documented and nothing goes live before review."], [FileText, "Contracts", "Clear agreements explain usage, rights and revenue before production begins."], [Wallet, "Transparent Payouts", "Know exactly when and how you get paid through a clear monthly payout workflow."], [Lock, "Privacy", "Private information stays private, with creator-facing support before and after publication."], [CloudUpload, "Content Ownership", "Uploads, approvals and release decisions stay documented so creators understand what they are approving."], [CreditCard, "Secure Payments", "Payments and platform records are structured for clean, auditable creator income."], [RotateCcw, "Can I stop anytime?", "Creators can pause, ask questions and contact the studio about future work, privacy or content status."]];
 
@@ -38,6 +39,38 @@ function ThumbStack({ performers }) {
 }
 
 export default function FleshlabLandingV2({ performers = [] }) {
+  const journeyStepRefs = useRef([]);
+  const [activeJourneyStep, setActiveJourneyStep] = useState(0);
+
+  useEffect(() => {
+    const updateActiveStep = () => {
+      const targetY = window.innerHeight * 0.46;
+      let nextIndex = 0;
+      let closestDistance = Number.POSITIVE_INFINITY;
+
+      journeyStepRefs.current.forEach((node, index) => {
+        if (!node) return;
+        const rect = node.getBoundingClientRect();
+        const center = rect.top + rect.height / 2;
+        const distance = Math.abs(center - targetY);
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          nextIndex = index;
+        }
+      });
+
+      setActiveJourneyStep(nextIndex);
+    };
+
+    updateActiveStep();
+    window.addEventListener("scroll", updateActiveStep, { passive: true });
+    window.addEventListener("resize", updateActiveStep);
+    return () => {
+      window.removeEventListener("scroll", updateActiveStep);
+      window.removeEventListener("resize", updateActiveStep);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#030608] text-white">
       <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#030608]/86 backdrop-blur-xl">
@@ -84,8 +117,50 @@ export default function FleshlabLandingV2({ performers = [] }) {
         <HumanMomentsSection />
 
         <SectionReveal id="journey" className="relative border-y border-white/8 bg-[#05090c] px-5 py-18 lg:px-7">
-          <div className="mx-auto max-w-[1180px]"><div className="mb-10 max-w-3xl"><p className="text-[10px] font-black uppercase tracking-[0.32em] text-[#f0183d]">CREATOR JOURNEY</p><h2 className="fl-condensed mt-3 text-[58px] uppercase leading-none tracking-[-0.02em] text-white/92">FROM HOTEL ROOM TO PUBLISHED RELEASE.</h2><p className="mt-4 text-base leading-7 text-white/60">A simple path designed for real amateur performers: upload securely, get reviewed by the studio, publish only when approved, then grow your income.</p></div>
-            <div className="grid gap-10 lg:grid-cols-[1fr_360px]"><div className="relative space-y-5 before:absolute before:left-8 before:top-10 before:h-[calc(100%-5rem)] before:w-px before:bg-gradient-to-b before:from-[#f0183d] before:via-[#f0183d]/50 before:to-transparent">{journey.map(([Icon, title, body], index) => <motion.div key={title} initial={{ opacity: 1, x: 0 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, amount: 0.45 }} transition={{ duration: 0.56, delay: index * 0.06 }} className="relative grid gap-5 rounded-xl border border-white/10 bg-black/24 p-5 pl-24 backdrop-blur md:grid-cols-[180px_1fr]"><div className="absolute left-0 top-1/2 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-full border border-[#f0183d] bg-[#07090b] text-[#f0183d]"><Icon className="h-7 w-7" /></div><div><div className="text-[10px] font-black text-[#f0183d]">0{index + 1}</div><h3 className="fl-condensed text-[32px] uppercase leading-none">{title}</h3></div><p className="text-sm leading-6 text-white/62">{body}</p></motion.div>)}</div><div className="space-y-5"><div className="rounded-2xl border border-[#f0183d]/35 bg-[#12060a] p-6"><CloudUpload className="mb-5 h-9 w-9 text-[#f0183d]" /><h3 className="text-lg font-black uppercase">Direct to Cloudflare R2</h3><p className="mt-3 text-sm leading-6 text-white/62">Creator uploads are routed to secure object storage, built for scale and reliable media handling.</p></div><div className="rounded-2xl border border-white/12 bg-white/[0.035] p-6"><CheckCircle2 className="mb-5 h-9 w-9 text-[#f0183d]" /><h3 className="text-lg font-black uppercase">Manual review before publishing</h3><p className="mt-3 text-sm leading-6 text-white/62">FLESHLAB reviews every upload before it becomes public, protecting performers, fans and the platform.</p></div><div className="rounded-2xl border border-white/12 bg-black/26 p-6"><p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#f0183d]">What creators tell us</p><p className="mt-3 text-lg font-semibold leading-7 text-white/78">“The verification process was much easier than expected.”</p></div></div></div></div>
+          <div className="mx-auto max-w-[1180px]">
+            <div className="mb-10 max-w-3xl">
+              <p className="text-[10px] font-black uppercase tracking-[0.32em] text-[#f0183d]">CREATOR JOURNEY</p>
+              <h2 className="fl-condensed mt-3 text-[58px] uppercase leading-none tracking-[-0.02em] text-white/92">YOUR FIRST STEPS AS A CREATOR.</h2>
+              <p className="mt-4 text-base leading-7 text-white/60">A simple, guided path from joining FLESHLAB to publishing your first work, growing your audience and getting paid.</p>
+            </div>
+            <div className="grid gap-10 lg:grid-cols-[1fr_360px]">
+              <div className="relative space-y-5">
+                <div className="absolute left-8 top-10 h-[calc(100%-5rem)] w-px bg-white/10" />
+                <motion.div animate={{ height: `${Math.min(100, ((activeJourneyStep + 1) / journey.length) * 100)}%` }} transition={{ duration: 0.45, ease: "easeOut" }} className="absolute left-8 top-10 w-px bg-gradient-to-b from-[#f0183d] via-[#f0183d] to-[#f0183d]/20 shadow-[0_0_18px_rgba(240,24,61,0.65)]" />
+                {journey.map(([Icon, title, body], index) => {
+                  const isActive = activeJourneyStep === index;
+                  return (
+                    <motion.div key={title} ref={(node) => { journeyStepRefs.current[index] = node; }} initial={{ opacity: 0.45, x: -18 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false, amount: 0.55 }} transition={{ duration: 0.5, delay: index * 0.03 }} className={`relative grid gap-5 rounded-xl border p-5 pl-24 backdrop-blur transition duration-500 md:grid-cols-[180px_1fr] ${isActive ? "border-[#f0183d]/80 bg-[#16070b] shadow-[0_0_42px_rgba(240,24,61,0.16)]" : "border-white/10 bg-black/24"}`}>
+                      <motion.div animate={isActive ? { scale: [1, 1.1, 1], rotate: [0, -3, 3, 0] } : { scale: 1, rotate: 0 }} transition={{ duration: 0.7, ease: "easeOut" }} className={`absolute left-0 top-1/2 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-full border bg-[#07090b] transition duration-500 ${isActive ? "border-[#f0183d] text-[#f0183d] shadow-[0_0_26px_rgba(240,24,61,0.38)]" : "border-white/18 text-white/42"}`}>
+                        <Icon className="h-7 w-7" />
+                      </motion.div>
+                      <div>
+                        <div className={`text-[10px] font-black transition ${isActive ? "text-[#f0183d]" : "text-white/35"}`}>0{index + 1}</div>
+                        <h3 className="fl-condensed text-[32px] uppercase leading-none">{title}</h3>
+                      </div>
+                      <p className={`text-sm leading-6 transition ${isActive ? "text-white/82" : "text-white/56"}`}>{body}</p>
+                    </motion.div>
+                  );
+                })}
+              </div>
+              <div className="space-y-5 lg:sticky lg:top-24 lg:self-start">
+                <div className="rounded-2xl border border-[#f0183d]/35 bg-[#12060a] p-6">
+                  <Sparkles className="mb-5 h-9 w-9 text-[#f0183d]" />
+                  <h3 className="text-lg font-black uppercase">Start with confidence</h3>
+                  <p className="mt-3 text-sm leading-6 text-white/62">You do not need to have everything figured out. FLESHLAB guides you from your first account to your first audience.</p>
+                </div>
+                <div className="rounded-2xl border border-white/12 bg-white/[0.035] p-6">
+                  <CheckCircle2 className="mb-5 h-9 w-9 text-[#f0183d]" />
+                  <h3 className="text-lg font-black uppercase">Real people review your work</h3>
+                  <p className="mt-3 text-sm leading-6 text-white/62">Personal review helps protect your reputation, keeps the platform trusted and gives every release a stronger chance to succeed.</p>
+                </div>
+                <div className="rounded-2xl border border-white/12 bg-black/26 p-6">
+                  <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#f0183d]">What creators tell us</p>
+                  <p className="mt-3 text-lg font-semibold leading-7 text-white/78">“I knew what would happen next at every step.”</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </SectionReveal>
 
         <FleshlabEcosystem />
