@@ -139,3 +139,43 @@
     transform: scale(1.08) translate3d(-1.2%, -0.8%, 0);
   }
 }
+
+.fl-live-pulse {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 9999px;
+  background: #f0183d;
+  box-shadow: 0 0 0 rgba(240, 24, 61, 0.7);
+  animation: flLivePulse 1.5s infinite;
+}
+
+.fl-flow-dot {
+  position: absolute;
+  right: -0.4rem;
+  top: 50%;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: #f0183d;
+  box-shadow: 0 0 16px rgba(240,24,61,0.8);
+  animation: flFlowDot 2.6s ease-in-out infinite;
+}
+
+.fl-flow-dot-2 {
+  animation-delay: 0.38s;
+}
+
+.fl-flow-dot-3 {
+  animation-delay: 0.76s;
+}
+
+@keyframes flLivePulse {
+  0% { box-shadow: 0 0 0 0 rgba(240, 24, 61, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(240, 24, 61, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(240, 24, 61, 0); }
+}
+
+@keyframes flFlowDot {
+  0%, 100% { transform: translate3d(0, -50%, 0); opacity: 0.25; }
+  50% { transform: translate3d(2.5rem, -50%, 0); opacity: 1; }
+}
