@@ -20,6 +20,7 @@ const NAV_GROUPS = [
       { href: "/admin/growth", label: "Marketing", icon: TrendingUp },
       { href: "/admin/revenue", label: "Business", icon: DollarSign },
       { href: "/admin/ai-text-generator", label: "AI", icon: Sparkles },
+      { href: "/admin/ai-media-studio", label: "Cover Designer", icon: Sparkles },
       { href: "/admin/live-activity", label: "Automation", icon: Activity },
       { href: "/admin/payment-providers", label: "Settings", icon: Settings },
     ],
