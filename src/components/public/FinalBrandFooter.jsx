@@ -50,6 +50,26 @@ export default function FinalBrandFooter() {
           </nav>
         </section>
 
+        <section className="border-t border-white/10 py-8">
+          <div className="rounded-[1.5rem] border border-white/10 bg-black/35 p-6 md:p-8">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#E51D2A]">Trust & Compliance</p>
+            <div className="mt-5 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+                <a href="https://www.rtalabel.org/" target="_blank" rel="noopener noreferrer" aria-label="FLESHLAB is labeled Restricted to Adults by RTA" className="inline-flex min-h-11 w-fit rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E51D2A] focus-visible:ring-offset-2 focus-visible:ring-offset-black">
+                  <img src="/images/compliance/rta-120x60-black.gif" alt="RTA Restricted to Adults" width="120" height="60" loading="lazy" className="h-auto max-h-[60px] w-[120px] max-w-full object-contain" />
+                </a>
+                <div>
+                  <a href="/compliance" className="text-sm font-black uppercase tracking-wide text-white transition hover:text-[#E51D2A]">Restricted to Adults</a>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-white/54">FLESHLAB is intended exclusively for adults aged 18 or older.</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 text-[10px] font-black uppercase tracking-wide text-white/54">
+                {['Adults Only · 18+', 'Verified Creators', 'Consent Documentation', 'DMCA Policy', 'Privacy & Security'].map((item) => <span key={item} className="rounded-full border border-white/10 px-3 py-2">{item}</span>)}
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="flex flex-col gap-8 border-t border-white/10 pt-8 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">{socials.map(({ href, label, Icon }) => <a key={label} href={href} target={href === "#" ? undefined : "_blank"} rel={href === "#" ? undefined : "noopener noreferrer"} aria-label={label} className="grid h-10 w-10 place-items-center rounded-full border border-white/10 text-white/46 transition hover:-translate-y-1 hover:border-[#E51D2A]/60 hover:text-white"><Icon className="h-4 w-4" /></a>)}</div>
           <p className="max-w-3xl text-xs leading-relaxed text-white/32">18 U.S.C. 2257: All performers depicted on this website were 18 years of age or older at the time of production. © 2026 FLESHLAB. All rights reserved.</p>
