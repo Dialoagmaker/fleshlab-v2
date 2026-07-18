@@ -65,13 +65,14 @@ function buildEvidence(performer, bundle, lineItems, submissions, fanApplication
   const statsByVideo = {};
   for (const s of stats) {
     const id = s.video_id || `external:${s.external_title || s.id}`;
-    if (!statsByVideo[id]) statsByVideo[id] = { revenue_usd: 0, views: 0, likes: 0, favourites: 0, sales_count: 0, title: videoMap[id]?.title || s.external_title || id };
+    if (!statsByVideo[id]) statsByVideo[id] = { revenue_usd: 0, views: 0, likes: 0, favourites: 0, sales_count: 0, title: videoMap[id]?.title || s.external_title || id, thumbnail_url: videoMap[id]?.primary_thumbnail_url || videoMap[id]?.cover_image_url || videoMap[id]?.preview_gif_url || null };
     statsByVideo[id].revenue_usd += firstNumber(s.revenue_usd);
     statsByVideo[id].views += firstNumber(s.views);
     statsByVideo[id].likes += firstNumber(s.likes);
     statsByVideo[id].favourites += firstNumber(s.favourites);
     statsByVideo[id].sales_count += firstNumber(s.sales_count);
   }
+  const topVideoCards = Object.entries(statsByVideo).sort((a,b) => (b[1].revenue_usd + b[1].views + b[1].likes + b[1].sales_count * 25) - (a[1].revenue_usd + a[1].views + a[1].likes + a[1].sales_count * 25)).slice(0, 8).map(([id, v]) => ({ id, title: v.title, thumbnail_url: v.thumbnail_url, revenue_usd: v.revenue_usd, views: v.views, likes: v.likes, favourites: v.favourites, sales_count: v.sales_count }));
   const recentVideos = [...videos].sort((a,b) => new Date(b.published_at || b.created_date || 0) - new Date(a.published_at || a.created_date || 0)).slice(0, 12);
   const series = detectSeries(videos);
   const revenueTotal = sum(stats, 'revenue_usd') + sum(lineItems, 'gross_amount_usd') + sum(purchases, 'amount_usd');
@@ -88,10 +89,10 @@ function buildEvidence(performer, bundle, lineItems, submissions, fanApplication
   return {
     performer: { id: performer.id, display_name: performer.display_name, revenue_split_pct: performer.revenue_split_pct || 40 },
     library: { video_count: videos.length, published_count: videos.filter(v => v.status === 'published').length, draft_count: videos.filter(v => v.status !== 'published').length, avg_duration_seconds: videos.length ? Math.round(sum(videos, 'duration_seconds') / videos.length) : 0, latest_upload: recentVideos[0]?.published_at || recentVideos[0]?.created_date || null, upload_count_30d: videos.filter(v => new Date(v.created_date || v.published_at || 0) > new Date(Date.now() - 30*86400000)).length },
-    performance: { gross_revenue_usd: revenueTotal, revenue_last_24h_usd: revenue24h, revenue_last_7d_usd: revenue7d, stat_revenue_usd: sum(stats, 'revenue_usd'), purchase_revenue_usd: sum(purchases, 'amount_usd'), views: sum(stats, 'views') + views.length, likes: sum(stats, 'likes'), favourites: sum(stats, 'favourites'), sales_count: sum(stats, 'sales_count') + purchases.length, sales_last_24h: sales24h, avg_watch_seconds: avgWatchSeconds, top_videos: topEntries(statsByVideo, 8) },
+    performance: { gross_revenue_usd: revenueTotal, revenue_last_24h_usd: revenue24h, revenue_last_7d_usd: revenue7d, stat_revenue_usd: sum(stats, 'revenue_usd'), purchase_revenue_usd: sum(purchases, 'amount_usd'), views: sum(stats, 'views') + views.length, likes: sum(stats, 'likes'), favourites: sum(stats, 'favourites'), sales_count: sum(stats, 'sales_count') + purchases.length, sales_last_24h: sales24h, avg_watch_seconds: avgWatchSeconds, top_videos: topEntries(statsByVideo, 8), top_video_cards: topVideoCards },
     taxonomy: { top_categories: topEntries(categories), top_tags: topEntries(tags), locations: topEntries(locations), series },
     activity: { submissions_30d: submissions.filter(s => new Date(s.created_date || 0) > new Date(Date.now() - 30*86400000)).length, fan_requests_total: fanApplications.length, fan_requests_7d: fanRequests7d, fan_request_text_sample: applicationsText.slice(0, 900) },
-    recent_videos: recentVideos.map(v => ({ id: v.id, title: v.title, status: v.status, categories: v.categories || [], tags: v.tags || [], duration_seconds: v.duration_seconds || 0, published_at: v.published_at || v.created_date }))
+    recent_videos: recentVideos.map(v => ({ id: v.id, title: v.title, status: v.status, categories: v.categories || [], tags: v.tags || [], duration_seconds: v.duration_seconds || 0, thumbnail_url: v.primary_thumbnail_url || v.cover_image_url || v.preview_gif_url || null, published_at: v.published_at || v.created_date }))
   };
 }
 

@@ -11,6 +11,6 @@ import { useCreatorOSData } from "./useCreatorOSData";
 
 export default function CreatorOSWorkspace({ performer, careerStats, performerToken }) {
   const { data, isLoading } = useCreatorOSData(performer?.id, performerToken);
-  const os = data?.os || {};
-  return <main className="flos-app"><CreatorOSSidebar performer={performer} stats={careerStats} /><section className="flos-main"><CreatorOSHeader performer={performer} />{isLoading && <div className="flos-loading">Preparing today’s studio…</div>}<MissionFocusCard mission={os.mission} briefing={os.briefing} /><div className="flos-mid"><MomentumPanel /><TodaysPlan /></div><div className="flos-bottom"><TrendingPanel /><SeriesPanel /><RevenueOutlook briefing={os.briefing} payout={data?.payout} /></div></section><ProducerPanel recommendations={os.recommendations} /></main>;
+  const live = data?.live || {};
+  return <main className="flos-app"><CreatorOSSidebar performer={performer} stats={careerStats} /><section className="flos-main"><CreatorOSHeader performer={performer} briefing={live.briefing} />{isLoading && <div className="flos-loading">Reading creator signals…</div>}<MissionFocusCard mission={live.mission} /><div className="flos-mid"><MomentumPanel momentum={live.momentum} /><TodaysPlan plan={live.plan} /></div><div className="flos-bottom"><TrendingPanel trends={live.trends} /><SeriesPanel series={live.series} /><RevenueOutlook revenue={live.revenue} /></div></section><ProducerPanel recommendations={live.recommendations} briefing={live.briefing} mission={live.mission} library={live.library} /></main>;
 }

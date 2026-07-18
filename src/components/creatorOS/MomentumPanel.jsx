@@ -1,7 +1,8 @@
 import { BadgeDollarSign, BatteryCharging, Heart, Video } from "lucide-react";
 import MomentumRing from "./MomentumRing";
 
-export default function MomentumPanel() {
-  const items = [[Video,"Production",80,"#ff2433"],[Heart,"Fans",72,"#ff5d66"],[BadgeDollarSign,"Revenue",90,"#ff9f1a"],[BatteryCharging,"Consistency",60,"#8b5cf6"]];
-  return <section className="flos-momentum"><h3>Momentum</h3><div>{items.map(([Icon,label,value,tone]) => <MomentumRing key={label} icon={Icon} label={label} value={value} tone={tone} />)}</div></section>;
+export default function MomentumPanel({ momentum = [] }) {
+  const icons = { Production: Video, Fans: Heart, Revenue: BadgeDollarSign, Consistency: BatteryCharging };
+  const tones = { Production: "#ff2433", Fans: "#ff5d66", Revenue: "#ff9f1a", Consistency: "#8b5cf6" };
+  return <section className="flos-momentum"><h3>Momentum</h3><div>{momentum.map(item => <MomentumRing key={item.label} icon={icons[item.label]} label={item.label} value={item.value} tone={tones[item.label]} reason={item.reason} />)}</div></section>;
 }
