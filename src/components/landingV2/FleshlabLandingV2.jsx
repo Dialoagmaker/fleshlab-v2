@@ -7,6 +7,7 @@ import AudienceExpansion from "@/components/landingV2/AudienceExpansion";
 import PartnerDistribution from "@/components/landingV2/PartnerDistribution";
 import AnimatedCounter from "@/components/landingV2/AnimatedCounter";
 import HumanMomentsSection from "@/components/landingV2/HumanMomentsSection";
+import CreatorStoriesSection from "@/components/landingV2/CreatorStoriesSection";
 import { buildPublicAssetUrl } from "@/lib/videoAssetResolver";
 import rtaBadgeUrl from "@/assets/compliance/rta-120x60-black.gif";
 
@@ -89,9 +90,9 @@ export default function FleshlabLandingV2({ performers = [] }) {
           <div className="relative mx-auto grid min-h-[650px] max-w-[1360px] grid-cols-1 px-5 py-12 lg:grid-cols-[1fr_280px] lg:px-7">
             <div className="flex max-w-[520px] flex-col justify-center">
               <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="mb-4 text-[10px] font-black uppercase tracking-[0.36em] text-[#f0183d]">THIS IS WHERE CREATORS BEGIN</motion.p>
-              <motion.h1 initial={{ opacity: 1, y: 0 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.86, delay: 0.08 }} className="fl-condensed text-[66px] uppercase leading-[0.85] tracking-[-0.035em] md:text-[88px] lg:text-[104px]">YOUR STORY.<br /><span className="text-[#f0183d]">YOUR INCOME.</span></motion.h1>
-              <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.75, delay: 0.2 }} className="mt-6 max-w-[360px] text-[18px] font-semibold leading-7 text-white/88">Start earning with your smartphone.<br />Safe.<br />Private.<br />Professional.</motion.p>
-              <motion.div initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.32 }} className="mt-8 flex gap-3"><a href="/become-performer" className="w-[182px] rounded bg-[#f0183d] py-3.5 text-center text-[10px] font-black uppercase tracking-wide transition hover:-translate-y-0.5 hover:bg-[#ff3152]">BECOME PERFORMER</a><a href="/videos" className="w-[182px] rounded border border-white/45 bg-black/25 py-3.5 text-center text-[10px] font-black uppercase tracking-wide transition hover:-translate-y-0.5 hover:border-[#f0183d]">EXPLORE VIDEOS</a></motion.div>
+              <motion.h1 initial={{ opacity: 1, y: 0 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.86, delay: 0.08 }} className="fl-condensed text-[66px] uppercase leading-[0.85] tracking-[-0.035em] md:text-[88px] lg:text-[104px]">REAL PEOPLE.<br /><span className="text-[#f0183d]">REAL DESIRE.</span></motion.h1>
+              <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.75, delay: 0.2 }} className="mt-6 max-w-[390px] text-[18px] font-semibold leading-7 text-white/88">Every creator has a story. Every production starts with a real person. Meet the people behind authentic amateur productions.</motion.p>
+              <motion.div initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.32 }} className="mt-8 flex gap-3"><a href="#creator-stories" className="w-[182px] rounded bg-[#f0183d] py-3.5 text-center text-[10px] font-black uppercase tracking-wide transition hover:-translate-y-0.5 hover:bg-[#ff3152]">MEET CREATORS</a><a href="/become-performer" className="w-[182px] rounded border border-white/45 bg-black/25 py-3.5 text-center text-[10px] font-black uppercase tracking-wide transition hover:-translate-y-0.5 hover:border-[#f0183d]">BECOME CREATOR</a></motion.div>
               <div className="mt-16"><ThumbStack performers={performers} /></div>
               <div className="mt-7 grid max-w-[360px] grid-cols-2 gap-3">
                 <AnimatedCounter value={17} label="performers" className="rounded-xl border border-white/12 bg-black/26 p-4 backdrop-blur" />
@@ -110,6 +111,8 @@ export default function FleshlabLandingV2({ performers = [] }) {
         </section>
 
         <section className="border-b border-white/8 bg-[#080e11]"><div className="mx-auto grid max-w-[1360px] gap-4 px-5 py-4 md:grid-cols-5 lg:px-7">{trustItems.map(([Icon, title, body], index) => <div key={title} className="flex gap-3"><Icon className="h-6 w-6 shrink-0 text-[#f0183d]" /><div><h3 className="text-[10px] font-black uppercase">{title}</h3><p className="mt-1 text-[9px] leading-4 text-white/54">{body}</p>{index === 0 && <p className="mt-2 text-[10px] font-black uppercase tracking-wide text-white/82">300+ videos</p>}{index === 2 && <p className="mt-2 text-[10px] font-black uppercase tracking-wide text-white/82">4K productions</p>}{index === 4 && <p className="mt-2 text-[10px] font-black uppercase tracking-wide text-white/82">5 countries</p>}</div></div>)}</div></section>
+
+        <CreatorStoriesSection performers={performers} />
 
         <SectionReveal id="paths" className="mx-auto max-w-[1360px] px-5 py-14 lg:px-7">
           <div className="mb-8 max-w-xl"><h2 className="fl-condensed text-[48px] uppercase leading-none tracking-[-0.02em] text-white/90">CHOOSE <span className="text-[#f0183d]">YOUR</span> PATH</h2><p className="mt-2 text-sm text-white/50">Four entrances into the FLESHLAB creator ecosystem.</p></div>
