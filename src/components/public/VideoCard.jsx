@@ -8,10 +8,14 @@ import { PRICING } from "@/lib/useAccessControl";
 export default function VideoCard({ video, brands = [], performers = [] }) {
   const [isHovered, setIsHovered] = useState(false);
   const brand = brands.find(b => b.id === video.brand_id);
-  const primaryPerformer = performers.find(p => p.id === video.performer_id);
-  const hasValidDuration = video.duration_seconds && video.duration_seconds > 0;
-  const mins = hasValidDuration ? Math.floor(video.duration_seconds / 60) : null;
-  const secs = hasValidDuration ? String(video.duration_seconds % 60).padStart(2, '0') : null;
+  const primaryPerformerId = video.performer_id || (Array.isArray(video.performer_ids) ? video.performer_ids[0] : null);
+  const primaryPerformer = performers.find(p => p.id === primaryPerformerId) || (video.performer_names?.[0] ? { display_name: video.performer_names[0] } : null);
+  const durationValue = video.duration_seconds || video.duration;
+  const hasValidDuration = durationValue && durationValue > 0;
+  const mins = hasValidDuration ? Math.floor(durationValue / 60) : null;
+  const secs = hasValidDuration ? String(durationValue % 60).padStart(2, '0') : null;
+  const isArchive = video.release_status === "archived" || Boolean(video.v1_id);
+  const isNew = video.published_at && Date.now() - new Date(video.published_at).getTime() < 1000 * 60 * 60 * 24 * 45;
   
   const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
@@ -48,17 +52,9 @@ export default function VideoCard({ video, brands = [], performers = [] }) {
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
           )}
 
-          {/* Top-left badge - single status badge max (exclusive takes priority over featured) */}
-          <div className="absolute top-2 left-2">
-            {video.is_exclusive ? (
-              <span className="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-lg shadow-purple-600/30">
-                <Zap className="w-3 h-3" /> EXCLUSIVE
-              </span>
-            ) : video.featured && (
-              <span className="flex items-center gap-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-lg shadow-amber-600/30">
-                <Crown className="w-3 h-3" /> FEATURED
-              </span>
-            )}
+          <div className="absolute top-2 left-2 flex max-w-[80%] flex-wrap gap-1.5">
+            {isNew ? <span className="bg-[#f0183d] text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-lg">NEW</span> : isArchive ? <span className="bg-white/12 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg backdrop-blur">ARCHIVE</span> : video.featured ? <span className="bg-amber-500 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg">FEATURED</span> : null}
+            {video.episode_number ? <span className="bg-black/70 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg backdrop-blur">EP {video.episode_number}</span> : null}
           </div>
 
           {/* Access tier — top right - always clear: Preview / PPV / Fanclub */}
@@ -91,29 +87,14 @@ export default function VideoCard({ video, brands = [], performers = [] }) {
             {video.title}
           </h3>
 
-          {/* Purchase type — always clear at a glance */}
-          <p className="text-[11px] font-semibold">
-            {video.access_tier === 'fanclub' ? (
-              <span className="text-purple-400">Included with Fanclub · ${PRICING.fanclub.monthly.price}/mo</span>
-            ) : video.access_tier === 'ppv' ? (
-              <span className="text-rose-400">${video.download_price || PRICING.ppv.standard.price} · Lifetime Access</span>
-            ) : (
-              <span className="text-emerald-400">Free Preview</span>
-            )}
-            {video.is_exclusive && <span className="text-purple-300"> · Exclusive to FleshLab</span>}
+          <p className="text-[11px] font-semibold text-white/56">
+            {primaryPerformer?.display_name || brand?.name || "FLESHLAB"}
+            {video.series_title && <span className="text-[#f0183d]"> · {video.series_title}</span>}
           </p>
 
           <div className="flex items-center justify-between gap-2 text-[11px] text-white/40">
-            {brand ? (
-              <span className="bg-white/[0.08] text-white/60 font-semibold px-2.5 py-1 rounded-md border border-white/10">
-                {brand.name}
-              </span>
-            ) : <span />}
-            {video.release_date && (
-              <span className="text-white/30">
-                {new Date(video.release_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              </span>
-            )}
+            <span className="truncate">{video.primary_category || video.production_type || "Production"}</span>
+            {(video.published_at || video.release_date) && <span className="text-white/30">{new Date(video.published_at || video.release_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
           </div>
         </div>
       </div>

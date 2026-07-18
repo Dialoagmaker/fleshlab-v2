@@ -1,0 +1,72 @@
+{
+  "name": "Series",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "Title"
+    },
+    "slug": {
+      "type": "string",
+      "title": "Slug"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "format": "textarea"
+    },
+    "cover_image": {
+      "type": "string",
+      "title": "Cover Image"
+    },
+    "category_id": {
+      "type": "string",
+      "title": "Category ID"
+    },
+    "performer_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Performer IDs"
+    },
+    "episode_count": {
+      "type": "integer",
+      "title": "Episode Count",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "hidden",
+        "completed",
+        "draft"
+      ],
+      "title": "Status",
+      "default": "active"
+    },
+    "display_order": {
+      "type": "integer",
+      "title": "Display Order",
+      "default": 0
+    },
+    "featured": {
+      "type": "boolean",
+      "title": "Featured",
+      "default": false
+    },
+    "seo_title": {
+      "type": "string",
+      "title": "SEO Title"
+    },
+    "seo_description": {
+      "type": "string",
+      "title": "SEO Description"
+    }
+  },
+  "required": [
+    "title",
+    "slug"
+  ]
+}

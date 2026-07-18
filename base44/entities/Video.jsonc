@@ -31,12 +31,79 @@
       "type": "string",
       "title": "Brand ID"
     },
+    "primary_category": {
+      "type": "string",
+      "title": "Primary Category"
+    },
+    "secondary_categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Secondary Categories"
+    },
+    "series_id": {
+      "type": "string",
+      "title": "Series ID"
+    },
+    "series_title": {
+      "type": "string",
+      "title": "Series Title"
+    },
+    "episode_number": {
+      "type": "integer",
+      "title": "Episode Number"
+    },
+    "performer_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Performer IDs"
+    },
+    "production_type": {
+      "type": "string",
+      "title": "Production Type"
+    },
+    "location_type": {
+      "type": "string",
+      "title": "Location Type"
+    },
+    "release_status": {
+      "type": "string",
+      "enum": [
+        "public",
+        "private",
+        "draft",
+        "unlisted",
+        "archived"
+      ],
+      "title": "Release Status",
+      "default": "public"
+    },
+    "thumbnail": {
+      "type": "string",
+      "title": "Thumbnail"
+    },
+    "teaser": {
+      "type": "string",
+      "title": "Teaser"
+    },
+    "duration": {
+      "type": "integer",
+      "title": "Duration"
+    },
+    "trending": {
+      "type": "boolean",
+      "title": "Trending",
+      "default": false
+    },
     "categories": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "title": "Categories"
+      "title": "Legacy Categories"
     },
     "tags": {
       "type": "array",

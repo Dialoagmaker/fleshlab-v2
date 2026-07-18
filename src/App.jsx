@@ -105,6 +105,8 @@ import PhilippinesRecruitment from './pages/PhilippinesRecruitment';
 import Live from './pages/Live';
 import LiveFitmaster from './pages/LiveFitmaster';
 import GoRedirect from './pages/GoRedirect';
+import CollectionDetail from './pages/CollectionDetail';
+import ContentOrganization from './pages/admin/ContentOrganization';
 
 import GayTwinkPerformerRecruitment from './pages/GayTwinkPerformerRecruitment';
 import ChaturbateRecruitment from './pages/ChaturbateRecruitment';
@@ -183,6 +185,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
                 <Route path="/admin/dashboard" element={<Dashboard />} />
                 <Route path="/admin/videos" element={<Videos />} />
+                <Route path="/admin/content-organization" element={<ContentOrganization />} />
                 <Route path="/admin/videos/:id" element={<VideoEdit />} />
                 <Route path="/admin/video-performer-match" element={<VideoPerformerMatch />} />
                 <Route path="/admin/video-metadata-completion" element={<VideoMetadataCompletion />} />
@@ -470,6 +473,7 @@ const AuthenticatedApp = () => {
       <Route path="/AdminSEOReport" element={<GhostRoute />} />
       <Route path="/AdminPerformers" element={<GhostRoute />} />
       {/* Dynamic detail pages — use PublicPageShell + React Router so useParams() works */}
+      <Route path="/watch/collections/:slug" element={<PublicPageShell><CollectionDetail /></PublicPageShell>} />
       <Route path="/videos/:slug" element={<PublicPageShell><VideoDetail /></PublicPageShell>} />
       <Route path="/performers/:slug" element={<PublicPageShell><PerformerDetail /></PublicPageShell>} />
       <Route path="/news/category/:categorySlug" element={<PublicPageShell><NewsCategory /></PublicPageShell>} />

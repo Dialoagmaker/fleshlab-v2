@@ -1,0 +1,64 @@
+{
+  "name": "Category",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Name"
+    },
+    "slug": {
+      "type": "string",
+      "title": "Slug"
+    },
+    "short_description": {
+      "type": "string",
+      "title": "Short Description"
+    },
+    "full_description": {
+      "type": "string",
+      "title": "Full Description",
+      "format": "textarea"
+    },
+    "cover_image": {
+      "type": "string",
+      "title": "Cover Image"
+    },
+    "display_order": {
+      "type": "integer",
+      "title": "Display Order",
+      "default": 0
+    },
+    "active": {
+      "type": "boolean",
+      "title": "Active",
+      "default": true
+    },
+    "featured": {
+      "type": "boolean",
+      "title": "Featured",
+      "default": false
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "public",
+        "hidden",
+        "admin_only"
+      ],
+      "title": "Visibility",
+      "default": "public"
+    },
+    "seo_title": {
+      "type": "string",
+      "title": "SEO Title"
+    },
+    "seo_description": {
+      "type": "string",
+      "title": "SEO Description"
+    }
+  },
+  "required": [
+    "name",
+    "slug"
+  ]
+}
