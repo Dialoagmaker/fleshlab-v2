@@ -517,13 +517,25 @@ const AuthenticatedApp = () => {
       </Route>
       
       {/* Performer dashboard - uses PerformerRouteHandler (independent from Base44 auth) — noindex */}
-      <Route path="/performer/dashboard" element={
-        <><SEOMeta title="Performer Dashboard" description="Manage your performer profile" canonical="/performer/dashboard" noIndex={true} />
-        <PerformerRouteHandler>
-          <PerformerDashboard />
-        </PerformerRouteHandler>
-        </>
-      } />
+      {[
+        ["/performer/dashboard", "/performer/dashboard"],
+        ["/performer/creator-os", "/performer/creator-os"],
+        ["/performer/create", "/performer/create"],
+        ["/performer/library", "/performer/library"],
+        ["/performer/fans", "/performer/fans"],
+        ["/performer/money", "/performer/money"],
+        ["/performer/ai-producer", "/performer/ai-producer"],
+        ["/performer/calendar", "/performer/calendar"],
+        ["/performer/profile", "/performer/profile"]
+      ].map(([route, canonical]) => (
+        <Route key={route} path={route} element={
+          <><SEOMeta title="Performer Dashboard" description="Manage your performer profile" canonical={canonical} noIndex={true} />
+          <PerformerRouteHandler>
+            <PerformerDashboard />
+          </PerformerRouteHandler>
+          </>
+        } />
+      ))}
       {/* Admin routes are now handled by manual dispatch above to prevent public route interception */}
       {/* Wildcard route */}
       <Route path="*" element={<PageNotFound />} />

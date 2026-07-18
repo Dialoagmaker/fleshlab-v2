@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import CreatorOSSidebar from "./CreatorOSSidebar";
@@ -12,14 +12,18 @@ import RevenueOutlook from "./RevenueOutlook";
 import ProducerPanel from "./ProducerPanel";
 import CreatorOSDetailWorkspace from "./CreatorOSDetailWorkspace";
 import { useCreatorOSData } from "./useCreatorOSData";
+import { creatorRoutes, routeSpaces } from "./creatorOSTokens";
+
+const emptyLive = { plan: [], momentum: [], recommendations: [], library: [], series: [], trends: [], revenue: {}, evidence: null, mission: null, briefing: null };
+const messageKey = (performerId) => `creator_os_ai_messages_${performerId || "guest"}`;
 
 export default function CreatorOSWorkspace({ performer, careerStats, performerToken }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const params = new URLSearchParams(location.search);
-  const activeSpace = params.get("space") || "today";
+  const profilePanel = location.pathname === "/performer/profile" ? new URLSearchParams(location.search).get("panel") : null;
+  const activeSpace = profilePanel || routeSpaces[location.pathname] || "today";
   const { data, isLoading, refetch } = useCreatorOSData(performer?.id, performerToken);
-  const live = data?.live || { plan: [], momentum: [], recommendations: [], library: [], series: [], trends: [], revenue: {} };
+  const live = data?.live || emptyLive;
   const [busy, setBusy] = useState(null);
   const [toast, setToast] = useState(null);
   const [detail, setDetail] = useState(null);
@@ -27,11 +31,19 @@ export default function CreatorOSWorkspace({ performer, careerStats, performerTo
   const [aiBusy, setAiBusy] = useState(false);
   const [producerHidden, setProducerHidden] = useState(false);
 
+  useEffect(() => {
+    if (!performer?.id) return;
+    const saved = sessionStorage.getItem(messageKey(performer.id));
+    if (saved) setMessages(JSON.parse(saved));
+  }, [performer?.id]);
+
+  useEffect(() => {
+    if (performer?.id) sessionStorage.setItem(messageKey(performer.id), JSON.stringify(messages));
+  }, [messages, performer?.id]);
+
   const go = (space, selected = null) => {
     setDetail(selected);
-    const next = new URLSearchParams(location.search);
-    next.set("space", space);
-    navigate(`${location.pathname}?${next.toString()}`);
+    navigate(creatorRoutes[space] || creatorRoutes.today);
   };
 
   const callCreatorOS = async (payload, successText) => {
@@ -46,30 +58,42 @@ export default function CreatorOSWorkspace({ performer, careerStats, performerTo
   };
 
   const safeAction = async (payload, successText) => {
-    try { await callCreatorOS(payload, successText); }
-    catch (error) { setBusy(null); setToast(error.message || "Action failed. Please retry."); }
+    try { return await callCreatorOS(payload, successText); }
+    catch (error) { setBusy(null); setToast(error.message || "Action failed. Please retry."); return null; }
   };
 
-  const missionAction = (mission_action) => safeAction({ action: "mission_action", mission_id: live.mission?.id, mission_action }, mission_action === "complete" ? "Mission completed. Creator OS refreshed." : "Mission updated.").then(() => { if (["start","resume"].includes(mission_action)) go("create"); });
+  const missionAction = async (mission_action) => {
+    if (!live.mission?.id) { setToast("No active mission is available yet."); return; }
+    const result = await safeAction({ action: "mission_action", mission_id: live.mission.id, mission_action }, mission_action === "complete" ? "Mission completed. Creator OS refreshed." : mission_action === "skip" ? "Mission skipped." : "Mission updated.");
+    if (result && ["start", "resume"].includes(mission_action)) go("create");
+    if (result && mission_action === "skip") go("today");
+  };
 
   const planAction = (row, plan_action, time) => safeAction({ action: "plan_item_action", plan_item_id: row.id, plan_action, time }, "Plan updated.");
 
-  const recommendationAction = (recommendation_action, rec) => safeAction({ action: "recommendation_action", recommendation_id: rec.id, recommendation_action }, "Recommendation updated.");
+  const recommendationAction = async (recommendation_action, rec) => {
+    if (!rec?.id) { setToast("No recommendation is selected."); return; }
+    if (recommendation_action === "view") {
+      setDetail(rec);
+      go("ai", rec);
+    }
+    await safeAction({ action: "recommendation_action", recommendation_id: rec.id, recommendation_action }, "Recommendation updated.");
+  };
 
   const askAI = async (message) => {
     setMessages(prev => [...prev, { role: "user", text: message }]);
     setAiBusy(true);
     try {
-      const res = await base44.functions.invoke("creatorOSService", { action: "ask_ai", performer_id: performer.id, performer_token: performerToken, message });
+      const res = await base44.functions.invoke("creatorOSService", { action: "ask_ai", performer_id: performer.id, performer_token: performerToken, message, workspace: activeSpace });
       if (res.data?.error) throw new Error(res.data.error);
       setMessages(prev => [...prev, { role: "assistant", text: res.data.answer }]);
     } catch (error) {
-      setMessages(prev => [...prev, { role: "assistant", text: error.message || "AI Producer could not answer. Retry after refreshing Creator OS." }]);
+      setMessages(prev => [...prev, { role: "error", text: error.message || "AI Producer could not answer. Retry after refreshing Creator OS.", retry: message }]);
     }
     setAiBusy(false);
   };
 
   const selectedMomentum = useMemo(() => live.momentum.find(x => x.label === detail?.label), [live.momentum, detail]);
 
-  return <main className="flos-app"><CreatorOSSidebar performer={performer} stats={careerStats} activeSpace={activeSpace} onNavigate={go} onProfileAction={(action) => go(action)} /><section className="flos-main"><CreatorOSHeader performer={performer} briefing={live.briefing} />{isLoading && <div className="flos-loading">Reading creator signals…</div>}{toast && <div className="flos-toast">{toast}</div>}<MissionFocusCard mission={live.mission} busy={!!busy} onMissionAction={missionAction} onOpenMission={() => go("create")} /><div className="flos-mid"><MomentumPanel momentum={live.momentum} onOpen={(item) => go(item.label === "Revenue" ? "money" : item.label === "Fans" ? "fans" : "create", item)} /><TodaysPlan plan={live.plan} busyId={busy} onPlanAction={planAction} onOpen={(item) => go("calendar", item)} /></div><div className="flos-bottom"><TrendingPanel trends={live.trends} onOpenFans={() => go("fans")} onOpenTrend={(item) => go("fans", item)} /><SeriesPanel series={live.series} onOpenLibrary={() => go("library")} onOpenSeries={(item) => go("library", item)} /><RevenueOutlook revenue={live.revenue} onOpen={() => go("money", live.revenue.details)} /></div>{selectedMomentum && <div className="flos-momentum-detail"><b>{selectedMomentum.label} momentum</b><p>{selectedMomentum.reason}</p>{selectedMomentum.breakdown?.map(x => <span key={x}>{x}</span>)}</div>}<CreatorOSDetailWorkspace space={activeSpace} detail={detail} live={live} performer={performer} onNavigate={go} onMissionAction={missionAction} onRecommendationAction={recommendationAction} /></section><ProducerPanel hidden={producerHidden} recommendations={live.recommendations} briefing={live.briefing} mission={live.mission} library={live.library} messages={messages} busy={aiBusy} onAsk={askAI} onAction={recommendationAction} onExpand={() => { setProducerHidden(false); go("ai"); }} onClose={() => setProducerHidden(true)} /></main>;
+  return <main className="flos-app"><CreatorOSSidebar performer={performer} stats={careerStats} activeSpace={activeSpace} onNavigate={go} onProfileAction={(action) => go(action)} /><section className="flos-main"><CreatorOSHeader performer={performer} briefing={live.briefing} />{isLoading && <div className="flos-loading">Reading creator signals…</div>}{toast && <div className="flos-toast">{toast}</div>}<MissionFocusCard mission={live.mission} busy={!!busy} onMissionAction={missionAction} onOpenMission={() => go("create")} /><div className="flos-mid"><MomentumPanel momentum={live.momentum} onOpen={(item) => go(item.label === "Revenue" ? "money" : item.label === "Fans" ? "fans" : "create", item)} /><TodaysPlan plan={live.plan} busyId={busy} onPlanAction={planAction} onOpen={(item) => go("calendar", item)} /></div><div className="flos-bottom"><TrendingPanel trends={live.trends} onOpenFans={() => go("fans")} onOpenTrend={(item) => go("fans", item)} /><SeriesPanel series={live.series} onOpenLibrary={() => go("library")} onOpenSeries={(item) => go("library", item)} /><RevenueOutlook revenue={live.revenue} onOpen={() => go("money", live.revenue?.details)} /></div>{selectedMomentum && <div className="flos-momentum-detail"><b>{selectedMomentum.label} momentum</b><p>{selectedMomentum.reason}</p>{selectedMomentum.breakdown?.map(x => <span key={x}>{x}</span>)}</div>}<CreatorOSDetailWorkspace space={activeSpace} detail={detail} live={live} performer={performer} onNavigate={go} onMissionAction={missionAction} onRecommendationAction={recommendationAction} /></section><ProducerPanel hidden={producerHidden} recommendations={live.recommendations} briefing={live.briefing} mission={live.mission} library={live.library} messages={messages} busy={aiBusy} onAsk={askAI} onAction={recommendationAction} onExpand={() => { setProducerHidden(false); go("ai"); }} onClose={() => setProducerHidden(true)} /></main>;
 }

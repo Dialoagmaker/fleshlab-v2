@@ -285,6 +285,11 @@ async function updateMissionState(base44, performerId, body) {
     await generateForPerformer(base44, performerId, 'mission_completed');
     return { success: true, xp_awarded: Number(mission.xp_awarded || 0) || 25 };
   }
+  if (action === 'skip') {
+    if (mission.status === 'completed') return { error: 'Completed missions cannot be skipped', status: 400 };
+    await base44.asServiceRole.entities.CreatorProductionMission.update(mission.id, { status: 'ignored', paused_at: now });
+    return { success: true, skipped: true };
+  }
   return { error: 'Unknown mission action', status: 400 };
 }
 
@@ -329,7 +334,7 @@ async function askCreatorAI(base44, performerId, body) {
   const evidence = parseJson(context.briefing?.evidence_json, null) || parseJson(context.mission?.evidence_json, null) || parseJson(context.library?.evidence_json, null) || {};
   const answer = await base44.asServiceRole.integrations.Core.InvokeLLM({
     model: 'automatic',
-    prompt: `You are the FLESHLAB Creator OS AI Producer. Answer only from the supplied creator context and evidence. If a data point is unavailable, say what is missing and give the next useful action. Keep it operational and concise. Performer ID: ${performerId}\nQuestion: ${message}\nCreator OS Context: ${JSON.stringify({ briefing: context.briefing, mission: context.mission, recommendations: context.recommendations, library: context.library, plan_items: context.plan_items, evidence }).slice(0, 18000)}`
+    prompt: `You are the FLESHLAB Creator OS AI Producer. Always answer in English. Answer only from the supplied creator context and evidence. If a data point is unavailable, say what is missing and give the next useful action. Keep it operational and concise. Performer ID: ${performerId}\nCurrent workspace: ${body.workspace || 'today'}\nQuestion: ${message}\nCreator OS Context: ${JSON.stringify({ briefing: context.briefing, mission: context.mission, recommendations: context.recommendations, library: context.library, plan_items: context.plan_items, evidence }).slice(0, 18000)}`
   });
   return { success: true, answer };
 }
