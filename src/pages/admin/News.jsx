@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Eye, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { Eye, ImagePlus, Loader2, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 
 const emptyArticle = { title: "", slug: "", excerpt: "", content: "", cover_image_url: "", category: "behindTheScenes", status: "draft", tagsText: "", meta_title: "", meta_description: "" };
 const categories = [
@@ -50,6 +50,7 @@ export default function AdminNews() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyArticle);
   const [search, setSearch] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const { data: articles = [], isLoading } = useQuery({ queryKey: ["admin-news"], queryFn: () => base44.entities.NewsArticle.list("-created_date", 200) });
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin-news"] });
@@ -64,6 +65,16 @@ export default function AdminNews() {
 
   const startEdit = (article) => { setEditing(article); setForm(toForm(article)); };
   const update = (key, value) => setForm((current) => ({ ...current, [key]: key === "title" && !editing ? value : value, ...(key === "title" && !editing ? { slug: slugify(value) } : {}) }));
+  const uploadCoverImage = async (file) => {
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      update("cover_image_url", file_url);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -79,7 +90,10 @@ export default function AdminNews() {
             <Input value={form.title} onChange={(e) => update("title", e.target.value)} placeholder="Title" />
             <Input value={form.slug} onChange={(e) => update("slug", slugify(e.target.value))} placeholder="slug" />
             <div className="grid gap-3 sm:grid-cols-2"><select value={form.category} onChange={(e) => update("category", e.target.value)} className="h-9 rounded-md border bg-background px-3 text-sm">{categories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select><select value={form.status} onChange={(e) => update("status", e.target.value)} className="h-9 rounded-md border bg-background px-3 text-sm"><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></div>
-            <Input value={form.cover_image_url} onChange={(e) => update("cover_image_url", e.target.value)} placeholder="Cover image URL" />
+            <div className="grid gap-2 rounded-lg border bg-muted/20 p-3">
+              <div className="flex gap-2"><Input value={form.cover_image_url} onChange={(e) => update("cover_image_url", e.target.value)} placeholder="Cover image URL" /><label className="inline-flex h-9 shrink-0 cursor-pointer items-center justify-center rounded-md border px-3 text-sm font-medium hover:bg-muted"><input type="file" accept="image/*" className="hidden" onChange={(e) => uploadCoverImage(e.target.files?.[0])} />{uploadingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImagePlus className="mr-2 h-4 w-4" />}Upload</label></div>
+              {form.cover_image_url && <img src={form.cover_image_url} alt="News cover preview" className="aspect-video w-full rounded-md object-cover" />}
+            </div>
             <Textarea value={form.excerpt} onChange={(e) => update("excerpt", e.target.value)} placeholder="Short excerpt" className="min-h-20" />
             <Textarea value={form.content} onChange={(e) => update("content", e.target.value)} placeholder="Article content" className="min-h-52" />
             <Input value={form.tagsText} onChange={(e) => update("tagsText", e.target.value)} placeholder="Tags, separated by commas" />
