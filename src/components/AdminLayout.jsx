@@ -10,64 +10,18 @@ import { base44 } from "@/api/base44Client";
 
 const NAV_GROUPS = [
   {
-    label: "Overview",
+    label: "FLESHLAB HQ",
     items: [
-      { href: "/admin",              label: "Dashboard",  icon: LayoutDashboard, exact: true },
-      { href: "/admin/executive-dashboard", label: "Executive Dashboard", icon: TrendingUp },
-      { href: "/admin/live-activity", label: "Live Activity", icon: Activity },
+      { href: "/admin", label: "HQ", icon: LayoutDashboard, exact: true },
+      { href: "/admin/performers", label: "Creator", icon: Users },
+      { href: "/admin/videos", label: "Library", icon: Video },
+      { href: "/admin/applications", label: "Discovery", icon: Search },
+      { href: "/admin/growth", label: "Marketing", icon: TrendingUp },
+      { href: "/admin/revenue", label: "Business", icon: DollarSign },
+      { href: "/admin/ai-text-generator", label: "AI", icon: Sparkles },
+      { href: "/admin/live-activity", label: "Automation", icon: Activity },
+      { href: "/admin/payment-providers", label: "Settings", icon: Settings },
     ],
-  },
-  {
-    label: "Content",
-    items: [
-      { href: "/admin/videos",       label: "Videos",     icon: Video },
-      { href: "/admin/performers",   label: "Performers", icon: Users },
-      { href: "/admin/brands",       label: "Brands",     icon: Tag },
-      { href: "/admin/news",         label: "News",       icon: Newspaper },
-    ],
-  },
-  {
-    label: "Customers",
-    items: [
-      { href: "/admin/users", label: "Users & Customers", icon: Users },
-    ],
-  },
-  {
-    label: "Operations",
-    items: [
-      { href: "/admin/applications",                  label: "Applications",    icon: FileText },
-      { href: "/admin/unlinked-performers",           label: "Unlinked Perf.",  icon: UserX },
-      { href: "/admin/content-review",                label: "Content Review",  icon: ClipboardList },
-      { href: "/admin/performer-submissions",         label: "Performer Submissions", icon: Users },
-      { href: "/admin/missing-performer-assignments", label: "Missing Assign.", icon: AlertCircle },
-      { href: "/admin/video-upload",                  label: "Video Upload",    icon: Upload },
-      { href: "/admin/video-performer-match",         label: "Quick Match",     icon: Link2 },
-      { href: "/admin/video-metadata-completion",     label: "Metadata Fill",   icon: FileText },
-      { href: "/admin/monthly-closeout",              label: "Monthly Closeout", icon: DollarSign },
-      { href: "/admin/performer-support",             label: "Performer Support", icon: MessageSquare },
-      { href: "/admin/ai-text-generator",             label: "AI Text Generator", icon: Sparkles },
-      { href: "/admin/ai-media-studio",               label: "AI Media Studio", icon: Sparkles },
-      { href: "/admin/cover-engine/visual-attention", label: "Cover Engine Lab", icon: Eye },
-    ],
-  },
-  {
-    label: "Finance",
-    items: [
-      { href: "/admin/revenue",                      label: "Revenue Dashboard",     icon: TrendingUp },
-      { href: "/admin/payments",                     label: "Payments",              icon: DollarSign },
-      { href: "/admin/monthly-payout-summary",       label: "Monthly Payout Summary", icon: CalendarCheck },
-      { href: "/admin/monthly-closeout-preview",     label: "Closeout Preview",      icon: Eye },
-      { href: "/admin/payout-requests",              label: "Payout Requests",       icon: ListChecks },
-      { href: "/admin/payout-closeouts",             label: "Payout Closeouts",      icon: ListChecks },
-    ],
-  },
-  {
-    label: "System",
-    items: [
-       { href: "/admin/growth",     label: "SEO",       icon: Settings },
-       { href: "/admin/migration", label: "Migration", icon: Database },
-       { href: "/admin/tracking-test", label: "Tracking Test", icon: FlaskConical },
-     ],
   },
 ];
 
@@ -84,7 +38,7 @@ function DesktopSidebar() {
         </div>
         <div>
           <p className="text-xs font-black tracking-[0.2em] text-foreground uppercase leading-none">Fleshlab</p>
-          <p className="text-[10px] text-muted-foreground tracking-widest uppercase mt-0.5">Admin</p>
+          <p className="text-[10px] text-muted-foreground tracking-widest uppercase mt-0.5">HQ</p>
         </div>
       </div>
 
@@ -167,7 +121,7 @@ function MobileDrawer({ onClose }) {
         <div className="w-7 h-7 bg-primary rounded flex items-center justify-center flex-shrink-0">
           <Play className="w-3.5 h-3.5 text-primary-foreground fill-current" />
         </div>
-        <span className="text-sm font-bold tracking-widest uppercase text-foreground flex-1">Fleshlab Admin</span>
+        <span className="text-sm font-bold tracking-widest uppercase text-foreground flex-1">Fleshlab HQ</span>
         <button
           onClick={onClose}
           className="h-10 w-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -283,7 +237,7 @@ export default function AdminLayout() {
             <div className="w-5 h-5 bg-primary rounded flex items-center justify-center">
               <Play className="w-2.5 h-2.5 text-primary-foreground fill-current" />
             </div>
-            <span className="text-sm font-bold tracking-widest uppercase text-foreground">Fleshlab Admin</span>
+            <span className="text-sm font-bold tracking-widest uppercase text-foreground">Fleshlab HQ</span>
           </div>
         </div>
         <main className="flex-1 p-4 md:p-6 overflow-x-hidden overflow-y-auto">
