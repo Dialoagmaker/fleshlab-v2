@@ -138,7 +138,6 @@ export default function PerformerDashboard() {
       performer={performer?.performer}
       careerStats={performer?.career_stats}
       performerToken={localStorage.getItem("performer_session_token")}
-      onLogout={() => { localStorage.removeItem("performer_session_token"); localStorage.removeItem("performer_data"); navigate("/performer/login"); }}
     />
   );
 }
