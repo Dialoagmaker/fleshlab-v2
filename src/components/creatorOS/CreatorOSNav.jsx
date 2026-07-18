@@ -1,6 +1,6 @@
 import { Brain, Home, Sparkles, Users, Wallet, UserRound, LogOut } from "lucide-react";
 
-const items = [[Home,"HOME","top"],[Sparkles,"CREATE","create"],[Users,"FANS","fans"],[Wallet,"MONEY","money"],[Brain,"AI","ai"],[UserRound,"PROFILE","profile"]];
+const items = [[Home,"STUDIO","studio"],[Sparkles,"CREATE","create"],[Users,"FANS","fans"],[Wallet,"MONEY","money"],[Brain,"LIBRARY","library"],[UserRound,"PROFILE","profile"]];
 
 export default function CreatorOSNav({ onLogout }) {
   const jump = (id) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
