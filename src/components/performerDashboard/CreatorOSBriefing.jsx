@@ -23,7 +23,7 @@ function Intelligence({ library }) {
 export default function CreatorOSBriefing({ performerId, performerToken }) {
   const queryClient = useQueryClient();
   const [running, setRunning] = useState(false);
-  const { data, isLoading } = useQuery({ queryKey: ["creator-os", performerId], queryFn: async () => (await base44.functions.invoke("creatorOSService", { action: "get_creator_os", performer_id: performerId, performer_token: performerToken })).data, enabled: !!performerId && !!performerToken });
+  const { data, isLoading } = useQuery({ queryKey: ["creator-os", performerId], queryFn: async () => (await base44.functions.invoke("creatorOSService", { action: "get_creator_os", performer_id: performerId, performer_token: performerToken, auto_generate: true })).data, enabled: !!performerId && !!performerToken, staleTime: 5 * 60 * 1000 });
   const statusMutation = useMutation({ mutationFn: async ({ id, status }) => base44.functions.invoke("creatorOSService", { action: "set_recommendation_status", performer_id: performerId, performer_token: performerToken, recommendation_id: id, status }), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["creator-os", performerId] }) });
   const generate = async () => { setRunning(true); await base44.functions.invoke("creatorOSService", { action: "generate_for_performer", performer_id: performerId, performer_token: performerToken, reason: "performer_requested" }); await queryClient.invalidateQueries({ queryKey: ["creator-os", performerId] }); setRunning(false); };
   if (isLoading) return <Card><CardContent className="p-6 text-sm text-muted-foreground">Loading Creator OS briefing...</CardContent></Card>;

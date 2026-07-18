@@ -26,14 +26,15 @@ async function assertAdmin(base44) {
 async function getPerformerVideoBundle(base44, performerId) {
   const credits = await base44.asServiceRole.entities.VideoPerformer.filter({ performer_id: performerId });
   const videoIds = [...new Set((credits || []).map(c => c.video_id).filter(Boolean))];
-  const [videosRaw, statSets, viewsSets, purchasesSets] = await Promise.all([
+  const [videosRaw, statSets, externalStats, viewsSets, purchasesSets] = await Promise.all([
     Promise.all(videoIds.map(id => base44.asServiceRole.entities.Video.get(id).catch(() => null))),
     Promise.all(videoIds.map(id => base44.asServiceRole.entities.VideoStatSnapshot.filter({ video_id: id }).catch(() => []))),
+    base44.asServiceRole.entities.VideoStatSnapshot.filter({ performer_id: performerId, source_type: 'external_manual' }).catch(() => []),
     Promise.all(videoIds.map(id => base44.asServiceRole.entities.VideoView.filter({ video_id: id }).catch(() => []))),
     Promise.all(videoIds.map(id => base44.asServiceRole.entities.FleshPayPurchase.filter({ video_id: id, status: 'completed' }).catch(() => [])))
   ]);
   const videos = videosRaw.filter(Boolean);
-  const stats = statSets.flat();
+  const stats = [...statSets.flat(), ...(externalStats || [])];
   const views = viewsSets.flat();
   const purchases = purchasesSets.flat();
   const videoMap = Object.fromEntries(videos.map(v => [v.id, v]));
@@ -261,7 +262,11 @@ Deno.serve(async (req) => {
     if (action === 'get_creator_os') {
       const performer = await validatePerformerSession(base44, body.performer_id, body.performer_token);
       if (!performer) return Response.json({ error: 'Invalid performer session' }, { status: 401 });
-      const data = await getCreatorOS(base44, performer.id);
+      let data = await getCreatorOS(base44, performer.id);
+      if (body.auto_generate === true && !data.briefing) {
+        await generateForPerformer(base44, performer.id, 'first_dashboard_view');
+        data = await getCreatorOS(base44, performer.id);
+      }
       return Response.json({ success: true, ...data });
     }
 
