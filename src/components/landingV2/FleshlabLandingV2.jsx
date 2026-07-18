@@ -8,6 +8,7 @@ import PartnerDistribution from "@/components/landingV2/PartnerDistribution";
 import AnimatedCounter from "@/components/landingV2/AnimatedCounter";
 import HumanMomentsSection from "@/components/landingV2/HumanMomentsSection";
 import CreatorStoriesSection from "@/components/landingV2/CreatorStoriesSection";
+import FinalBrandFooter from "@/components/public/FinalBrandFooter";
 import { buildPublicAssetUrl } from "@/lib/videoAssetResolver";
 import rtaBadgeUrl from "@/assets/compliance/rta-120x60-black.gif";
 
@@ -194,43 +195,9 @@ export default function FleshlabLandingV2({ performers = [] }) {
         </SectionReveal>
 
 
-        <footer id="partners" className="relative overflow-hidden bg-[#040506] text-white">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(240,24,61,0.24),transparent_30%),radial-gradient(circle_at_10%_64%,rgba(255,255,255,0.07),transparent_24%),linear-gradient(180deg,#040506_0%,#090b0d_50%,#030303_100%)]" />
-          <section className="relative mx-auto max-w-[1360px] px-5 py-20 lg:px-7 lg:py-32">
-            <p className="mb-6 text-[10px] font-black uppercase tracking-[0.36em] text-[#f0183d]">THE FINAL CUT</p>
-            <h2 className="fl-condensed max-w-5xl text-[72px] uppercase leading-[0.82] tracking-[-0.035em] md:text-[120px] lg:text-[150px]">REAL PEOPLE.<br />REAL HEAT.<br /><span className="text-[#f0183d]">REAL CHANCE.</span></h2>
-            <p className="mt-8 max-w-2xl text-lg font-semibold leading-8 text-white/68 md:text-2xl md:leading-9">Join the studio built around amateur authenticity, creator ambition and fans who want something that feels alive.</p>
-            <a href="/become-performer" className="group mt-10 inline-flex items-center gap-4 rounded-full bg-[#f0183d] px-8 py-4 text-[10px] font-black uppercase tracking-[0.18em] shadow-[0_24px_80px_rgba(240,24,61,0.28)] transition duration-300 hover:-translate-y-1 hover:bg-[#ff3152] hover:shadow-[0_30px_100px_rgba(240,24,61,0.42)]">Become a Creator <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></a>
-          </section>
-
-          <section className="relative border-y border-white/10">
-            <div className="mx-auto grid max-w-[1360px] gap-14 px-5 py-14 md:py-20 lg:grid-cols-[0.86fr_1.14fr] lg:px-7">
-              <div>
-                <Logo />
-                <p className="mt-8 text-[48px] font-black uppercase leading-none tracking-[-0.07em] md:text-[72px]">AMATEUR WINS.</p>
-                <p className="mt-6 max-w-xl text-base leading-7 text-white/58 md:text-lg">Premium amateur productions. Built for creators. Built for fans. Made to feel less polished, more human and impossible to fake.</p>
-                <div className="mt-9 flex items-center gap-3">
-                  {[["https://x.com/fleshlabstudios", "X", Twitter], ["https://www.instagram.com/fleshlabstudios/", "Instagram", Instagram], ["https://www.facebook.com/fleshlab/", "Facebook", Facebook], ["#", "Telegram coming soon", Send], ["#", "Discord coming soon", UsersRound]].map(([href, label, Icon], index) => <a key={label} href={href} target={index < 3 ? "_blank" : undefined} rel={index < 3 ? "noopener noreferrer" : undefined} aria-label={label} title={label} className={`grid h-11 w-11 place-items-center rounded-full border border-white/12 text-white/52 transition duration-300 hover:-translate-y-1 hover:border-[#f0183d]/70 hover:text-white hover:shadow-[0_0_30px_rgba(240,24,61,0.24)] ${index > 2 ? "opacity-45" : ""}`}><Icon className="h-4 w-4" /></a>)}
-                </div>
-              </div>
-              <nav className="grid grid-cols-2 gap-x-8 gap-y-10 md:grid-cols-4" aria-label="Footer navigation">
-                {[["Creators", [["Become a Creator", "/become-performer"], ["Join in Asia", "/gay-performer-recruitment-philippines"], ["How It Works", "/how-it-works"], ["Creator FAQ", "/faq"]]], ["Fans", [["Watch", "/videos"], ["Creators", "/performers"], ["Fan Productions", "/fan-productions"], ["Fanclub", "/fanclub"]]], ["Studio", [["Brands", "/brands"], ["Studio Notes", "/news"], ["Live", "/live"], ["Guest Production", "/guest-production"]]], ["Company", [["Compliance", "/compliance"], ["DMCA", "/dmca"], ["Privacy", "/privacy"], ["Terms", "/terms"], ["Imprint", "/imprint"]]]].map(([title, links]) => <div key={title}><h3 className="mb-5 text-[10px] font-black uppercase tracking-[0.28em] text-white">{title}</h3><div className="flex flex-col">{links.map(([label, href]) => <a key={label} href={href} className="group relative inline-flex w-fit py-1.5 text-sm text-white/52 transition duration-300 hover:translate-x-1 hover:text-white"><span>{label}</span><span className="absolute bottom-1 left-0 h-px w-0 bg-[#f0183d] transition-all duration-300 group-hover:w-full" /></a>)}</div></div>)}
-              </nav>
-            </div>
-          </section>
-
-          <section className="relative mx-auto flex max-w-[1360px] flex-col gap-6 px-5 py-7 text-[10px] font-black uppercase tracking-[0.16em] text-white/46 lg:flex-row lg:items-center lg:justify-between lg:px-7">
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-              <span className="text-white">18+</span>
-              <a href="https://www.rtalabel.org/" target="_blank" rel="noopener noreferrer" aria-label="RTA Restricted to Adults" className="inline-flex items-center gap-2 transition hover:text-white"><img src={rtaBadgeUrl} alt="RTA" width="42" height="21" loading="lazy" className="h-[21px] w-[42px] object-contain opacity-75" /> RTA</a>
-              <a href="/dmca" className="inline-flex items-center gap-2 transition hover:text-white"><ShieldCheck className="h-3.5 w-3.5 text-[#f0183d]" /> DMCA Protected</a>
-              <a href="/privacy" className="transition hover:text-white">Privacy</a>
-              <a href="/terms" className="transition hover:text-white">Terms</a>
-              <a href="/client/dashboard?tab=wallet" className="transition hover:text-white">Secure Payments</a>
-            </div>
-            <p className="text-white/34">Copyright © 2026 FLESHLAB Studios. All performers are 18+.</p>
-          </section>
-        </footer>
+        <div id="partners">
+          <FinalBrandFooter />
+        </div>
       </main>
     </div>
   );
