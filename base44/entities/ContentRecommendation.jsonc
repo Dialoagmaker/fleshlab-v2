@@ -1,0 +1,153 @@
+{
+  "name": "ContentRecommendation",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "scope": {
+      "type": "string",
+      "enum": [
+        "performer",
+        "studio"
+      ],
+      "title": "Scope",
+      "default": "performer"
+    },
+    "recommendation_type": {
+      "type": "string",
+      "enum": [
+        "content_strategy",
+        "production_plan",
+        "creative_director",
+        "revenue",
+        "chemistry",
+        "opportunity",
+        "academy",
+        "fan_intelligence",
+        "library",
+        "series"
+      ],
+      "title": "Recommendation Type"
+    },
+    "title": {
+      "type": "string",
+      "title": "Title"
+    },
+    "recommendation": {
+      "type": "string",
+      "title": "Recommendation",
+      "format": "textarea"
+    },
+    "revenue_impact_label": {
+      "type": "string",
+      "title": "Revenue Impact Label"
+    },
+    "revenue_impact_usd": {
+      "type": "number",
+      "title": "Estimated Revenue Impact USD",
+      "default": 0
+    },
+    "confidence": {
+      "type": "number",
+      "title": "Confidence",
+      "default": 0
+    },
+    "reason": {
+      "type": "string",
+      "title": "Reason",
+      "format": "textarea"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "critical",
+        "high",
+        "medium",
+        "low"
+      ],
+      "title": "Priority",
+      "default": "medium"
+    },
+    "expiration_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Expiration Date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "accepted",
+        "ignored",
+        "hidden",
+        "expired"
+      ],
+      "title": "Status",
+      "default": "active"
+    },
+    "source_run_id": {
+      "type": "string",
+      "title": "Source Run ID"
+    },
+    "source_data_json": {
+      "type": "string",
+      "title": "Source Data JSON",
+      "format": "textarea"
+    },
+    "evidence_json": {
+      "type": "string",
+      "title": "Evidence JSON",
+      "format": "textarea"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Generated At"
+    },
+    "accepted_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Accepted At"
+    },
+    "ignored_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Ignored At"
+    },
+    "studio_override": {
+      "type": "string",
+      "title": "Studio Override",
+      "format": "textarea"
+    },
+    "studio_priority_override": {
+      "type": "string",
+      "enum": [
+        "critical",
+        "high",
+        "medium",
+        "low"
+      ],
+      "title": "Studio Priority Override"
+    },
+    "hidden_by_admin": {
+      "type": "boolean",
+      "title": "Hidden By Admin",
+      "default": false
+    },
+    "hidden_reason": {
+      "type": "string",
+      "title": "Hidden Reason"
+    }
+  },
+  "required": [
+    "performer_id",
+    "recommendation_type",
+    "title",
+    "recommendation",
+    "priority",
+    "status",
+    "generated_at"
+  ]
+}

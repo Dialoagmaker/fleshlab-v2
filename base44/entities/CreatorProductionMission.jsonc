@@ -1,0 +1,106 @@
+{
+  "name": "CreatorProductionMission",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "run_id": {
+      "type": "string",
+      "title": "Run ID"
+    },
+    "mission_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Mission Date"
+    },
+    "mission_type": {
+      "type": "string",
+      "enum": [
+        "film",
+        "continue_series",
+        "record_bts",
+        "improve_asset",
+        "collaborate",
+        "restock_fanclub"
+      ],
+      "title": "Mission Type"
+    },
+    "title": {
+      "type": "string",
+      "title": "Title"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "format": "textarea"
+    },
+    "expected_revenue_usd": {
+      "type": "number",
+      "title": "Expected Revenue USD",
+      "default": 0
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "easy",
+        "medium",
+        "hard"
+      ],
+      "title": "Difficulty",
+      "default": "medium"
+    },
+    "production_time_hours": {
+      "type": "number",
+      "title": "Production Time Hours",
+      "default": 0
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "critical",
+        "high",
+        "medium",
+        "low"
+      ],
+      "title": "Priority",
+      "default": "medium"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "accepted",
+        "completed",
+        "ignored",
+        "expired"
+      ],
+      "title": "Status",
+      "default": "active"
+    },
+    "reason": {
+      "type": "string",
+      "title": "Reason",
+      "format": "textarea"
+    },
+    "evidence_json": {
+      "type": "string",
+      "title": "Evidence JSON",
+      "format": "textarea"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Generated At"
+    }
+  },
+  "required": [
+    "performer_id",
+    "mission_date",
+    "mission_type",
+    "title",
+    "description",
+    "generated_at"
+  ]
+}

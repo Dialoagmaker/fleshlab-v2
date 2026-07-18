@@ -9,6 +9,8 @@ import { LogOut, User, MapPin, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function DashboardHeader({ performer, onLogout }) {
   const navigate = useNavigate();
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
 
@@ -64,7 +66,7 @@ export default function DashboardHeader({ performer, onLogout }) {
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold text-foreground">
-                  Welcome back, {displayName}
+                  {greeting}, {displayName}
                 </h1>
                 {verified && (
                   <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">

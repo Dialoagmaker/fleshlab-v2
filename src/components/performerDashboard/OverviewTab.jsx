@@ -9,6 +9,7 @@ import ComplianceSummaryCard from "./ComplianceSummaryCard";
 import CareerStatisticsCard from "./CareerStatisticsCard";
 import EarningsBreakdownTable from "./EarningsBreakdownTable";
 import PayoutSummaryCard from "./PayoutSummaryCard";
+import CreatorOSBriefing from "./CreatorOSBriefing";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
@@ -57,6 +58,8 @@ export default function OverviewTab({ performer, career_stats, performerToken, i
 
   return (
     <div className="space-y-6">
+      <CreatorOSBriefing performerId={performer.id} performerToken={performerToken} />
+
       {/* Payout summary with available balance, paid, next payout */}
       <PayoutSummaryCard
         performerId={performer.id}
