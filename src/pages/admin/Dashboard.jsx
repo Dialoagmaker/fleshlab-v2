@@ -128,7 +128,7 @@ function AdviceCard({ advice, onIgnore }) {
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
         <Link to={advice.reviewHref} className="rounded-full bg-[#f0183d] px-4 py-2 text-[10px] font-black uppercase tracking-wide text-white">Review</Link>
-        <Link to="/admin/ai-text-generator" className="rounded-full border border-white/12 px-4 py-2 text-[10px] font-black uppercase tracking-wide text-white/70 transition hover:border-[#f0183d]/60 hover:text-white">Generate Campaign</Link>
+        <Link to="/admin/ai-media-studio" className="rounded-full border border-white/12 px-4 py-2 text-[10px] font-black uppercase tracking-wide text-white/70 transition hover:border-[#f0183d]/60 hover:text-white">Generate Campaign</Link>
         <button onClick={() => setExpanded(!expanded)} className="rounded-full border border-white/12 px-4 py-2 text-[10px] font-black uppercase tracking-wide text-white/70 transition hover:border-white/30 hover:text-white">Explain</button>
         <button onClick={onIgnore} className="rounded-full border border-white/10 px-4 py-2 text-[10px] font-black uppercase tracking-wide text-white/38 transition hover:text-white/70">Ignore</button>
       </div>
@@ -154,12 +154,13 @@ function FeedItem({ item }) {
 
 function HQAIPanel({ priorities }) {
   const prompts = [
-    "What should we focus on today?",
-    "Show me underperforming content.",
-    "Generate Hotel campaign.",
-    "Why is revenue down?",
-    "Prepare tomorrow.",
+    { label: "What should we focus on today?", answer: priorities[0]?.title || "Start with the production queue, then move to discovery and library optimization.", href: priorities[0]?.href || "/admin/videos", cta: "Open Priority" },
+    { label: "Show me underperforming content.", answer: "Open the metadata and SEO queue. Those assets are the fastest path from dead library value to promotable releases.", href: "/admin/video-metadata-completion", cta: "Open Content Queue" },
+    { label: "Generate Hotel campaign.", answer: "Use AI Media Studio for the Hotel Sessions campaign so the output becomes production and promo assets, not generic video copy.", href: "/admin/ai-media-studio", cta: "Open AI Media Studio" },
+    { label: "Why is revenue down?", answer: "Check revenue, then compare it against recent releases and promotion gaps. The HQ view should connect money to actions, not charts.", href: "/admin/revenue", cta: "Open Business" },
+    { label: "Prepare tomorrow.", answer: "Review automation activity and today’s unfinished priorities, then choose one production action, one library action and one discovery action for tomorrow.", href: "/admin/live-activity", cta: "Open Automation" },
   ];
+  const [activePrompt, setActivePrompt] = useState(prompts[0]);
   return (
     <aside className="sticky top-6 h-[calc(100vh-3rem)] rounded-[30px] border border-white/10 bg-black/46 p-5 shadow-[0_34px_110px_rgba(0,0,0,0.46)] backdrop-blur-2xl">
       <div className="flex items-center gap-3">
@@ -175,7 +176,12 @@ function HQAIPanel({ priorities }) {
         <p className="mt-3 text-sm font-semibold leading-6 text-white/82">{priorities[0]?.title || "Review today’s production queue before opening analytics."}</p>
       </div>
       <div className="mt-6 space-y-2">
-        {prompts.map((prompt) => <Link key={prompt} to="/admin/ai-text-generator" className="block rounded-2xl border border-white/10 bg-black/24 p-3 text-xs font-semibold leading-5 text-white/64 transition hover:border-[#f0183d]/55 hover:text-white">{prompt}</Link>)}
+        {prompts.map((prompt) => <button key={prompt.label} onClick={() => setActivePrompt(prompt)} className={`block w-full rounded-2xl border p-3 text-left text-xs font-semibold leading-5 transition ${activePrompt.label === prompt.label ? "border-[#f0183d]/70 bg-[#140609] text-white" : "border-white/10 bg-black/24 text-white/64 hover:border-[#f0183d]/55 hover:text-white"}`}>{prompt.label}</button>)}
+      </div>
+      <div className="mt-6 rounded-2xl border border-[#f0183d]/25 bg-[#120609] p-4">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#f0183d]">HQ response</p>
+        <p className="mt-3 text-sm font-semibold leading-6 text-white/78">{activePrompt.answer}</p>
+        <Link to={activePrompt.href} className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#f0183d] px-4 py-2 text-[10px] font-black uppercase tracking-wide text-white">{activePrompt.cta} <ArrowRight className="h-3.5 w-3.5" /></Link>
       </div>
     </aside>
   );
