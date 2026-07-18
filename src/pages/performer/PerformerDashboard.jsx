@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
-import DashboardHeader from "@/components/performerDashboard/DashboardHeader";
-import PerformerDashboardTabs from "@/components/performerDashboard/PerformerDashboardTabs";
+import CreatorOSWorkspace from "@/components/creatorOS/CreatorOSWorkspace";
 
 export default function PerformerDashboard() {
   const navigate = useNavigate();
@@ -62,7 +61,7 @@ export default function PerformerDashboard() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto"></div>
-          <p className="text-muted-foreground">Loading your dashboard...</p>
+          <p className="text-muted-foreground">Building your Creator OS...</p>
         </div>
       </div>
     );
@@ -135,15 +134,11 @@ export default function PerformerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardHeader 
-        performer={performer?.performer} 
-        onLogout={() => { localStorage.removeItem("performer_session_token"); localStorage.removeItem("performer_data"); navigate("/performer/login"); }} 
-      />
-      <PerformerDashboardTabs 
-        performer={performer} 
-        performerToken={localStorage.getItem("performer_session_token")}
-      />
-    </div>
+    <CreatorOSWorkspace
+      performer={performer?.performer}
+      careerStats={performer?.career_stats}
+      performerToken={localStorage.getItem("performer_session_token")}
+      onLogout={() => { localStorage.removeItem("performer_session_token"); localStorage.removeItem("performer_data"); navigate("/performer/login"); }}
+    />
   );
 }
