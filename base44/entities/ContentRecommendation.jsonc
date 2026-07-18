@@ -79,7 +79,12 @@
       "type": "string",
       "enum": [
         "active",
+        "viewed",
         "accepted",
+        "dismissed",
+        "snoozed",
+        "saved",
+        "completed",
         "ignored",
         "hidden",
         "expired"
@@ -106,6 +111,11 @@
       "format": "date-time",
       "title": "Generated At"
     },
+    "viewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Viewed At"
+    },
     "accepted_at": {
       "type": "string",
       "format": "date-time",
@@ -115,6 +125,35 @@
       "type": "string",
       "format": "date-time",
       "title": "Ignored At"
+    },
+    "dismissed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Dismissed At"
+    },
+    "snoozed_until": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Snoozed Until"
+    },
+    "saved_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Saved At"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Completed At"
+    },
+    "acted_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Acted At"
+    },
+    "created_mission_id": {
+      "type": "string",
+      "title": "Created Mission ID"
     },
     "studio_override": {
       "type": "string",

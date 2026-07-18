@@ -208,20 +208,130 @@ async function generateForPerformer(base44, performerId, reason) {
   return { run_id: runId, briefing_id: briefing.id, mission_id: mission.id, library_id: lib.id, recommendation_count: recs.length, evidence_summary: evidence };
 }
 
+function missionDefaults(mission) {
+  const type = mission?.mission_type || 'film';
+  const steps = parseJson(mission?.steps_json, null) || [
+    'Confirm the content goal and evidence behind this mission',
+    'Prepare the set, lighting and creator-safe capture device',
+    'Record the planned content block',
+    'Review the strongest take and upload the draft for studio review'
+  ];
+  const equipment = parseJson(mission?.equipment_json, null) || ['Phone or camera', 'Stable lighting', 'Clean audio path', 'Upload connection'];
+  const contentGoal = mission?.content_goal || (type === 'continue_series' ? 'Continue the detected series with a consistent next episode.' : mission?.description || 'Produce the recommended content asset.');
+  const aiGuidance = mission?.ai_guidance || mission?.reason || 'Follow the evidence attached to this mission and prioritize clarity, consistency and publishable assets.';
+  return { steps, equipment, content_goal: contentGoal, ai_guidance: aiGuidance };
+}
+
+async function ensurePlanItems(base44, performerId, briefing, mission) {
+  const planDate = today();
+  let items = await base44.asServiceRole.entities.CreatorPlanItem.filter({ performer_id: performerId, plan_date: planDate }).catch(() => []);
+  if (!items?.length) {
+    const rawTasks = parseJson(briefing?.open_tasks_json, []);
+    const labels = rawTasks.length ? rawTasks.slice(0, 4).map(t => typeof t === 'string' ? t : t.label || t.title).filter(Boolean) : (mission ? [`Open mission: ${mission.title}`, 'Prepare production setup', 'Record mission assets', 'Review and upload draft'] : []);
+    const times = ['09:00','11:30','14:00','18:00'];
+    if (labels.length) {
+      items = await base44.asServiceRole.entities.CreatorPlanItem.bulkCreate(labels.map((label, i) => ({ performer_id: performerId, briefing_id: briefing?.id || null, mission_id: mission?.id || null, plan_date: planDate, time: times[i] || '18:00', label, status: 'open', order: i })));
+    }
+  }
+  return [...(items || [])].sort((a,b) => (a.order || 0) - (b.order || 0) || String(a.time || '').localeCompare(String(b.time || '')));
+}
+
 async function getCreatorOS(base44, performerId) {
   const [briefings, recs, libs, missions] = await Promise.all([
     base44.asServiceRole.entities.CreatorDailyBriefing.filter({ performer_id: performerId }).catch(() => []),
-    base44.asServiceRole.entities.ContentRecommendation.filter({ performer_id: performerId, status: 'active' }).catch(() => []),
+    base44.asServiceRole.entities.ContentRecommendation.filter({ performer_id: performerId }).catch(() => []),
     base44.asServiceRole.entities.CreatorLibraryIntelligence.filter({ performer_id: performerId }).catch(() => []),
-    base44.asServiceRole.entities.CreatorProductionMission.filter({ performer_id: performerId, status: 'active' }).catch(() => [])
+    base44.asServiceRole.entities.CreatorProductionMission.filter({ performer_id: performerId }).catch(() => [])
   ]);
   const sortNew = arr => [...(arr || [])].sort((a,b) => new Date(b.generated_at || b.created_date || 0) - new Date(a.generated_at || a.created_date || 0));
+  const visibleRecommendations = sortNew(recs).filter(r => !['hidden','expired','dismissed','ignored'].includes(r.status) && !(r.status === 'snoozed' && r.snoozed_until && new Date(r.snoozed_until) > new Date())).slice(0, 8);
+  const activeMissions = sortNew(missions).filter(m => ['active','accepted','in_progress','paused'].includes(m.status || 'active'));
+  const briefing = sortNew(briefings)[0] || null;
+  const mission = activeMissions[0] || null;
+  const plan_items = await ensurePlanItems(base44, performerId, briefing, mission);
   return {
-    briefing: sortNew(briefings)[0] || null,
-    recommendations: sortNew(recs).slice(0, 8),
+    briefing,
+    recommendations: visibleRecommendations,
     library: sortNew(libs)[0] || null,
-    mission: sortNew(missions)[0] || null
+    mission,
+    plan_items
   };
+}
+
+async function updateMissionState(base44, performerId, body) {
+  const mission = await base44.asServiceRole.entities.CreatorProductionMission.get(body.mission_id).catch(() => null);
+  if (!mission || mission.performer_id !== performerId) return { error: 'Mission not found', status: 404 };
+  const now = new Date().toISOString();
+  const action = body.mission_action;
+  if (action === 'start') {
+    if (!['active','accepted','paused'].includes(mission.status || 'active')) return { error: `Mission cannot be started from ${mission.status}`, status: 400 };
+    const defaults = missionDefaults(mission);
+    await base44.asServiceRole.entities.CreatorProductionMission.update(mission.id, { status: 'in_progress', started_at: mission.started_at || now, resumed_at: now, ...defaults });
+    return { success: true };
+  }
+  if (action === 'pause') {
+    if (mission.status !== 'in_progress') return { error: 'Only an in-progress mission can be paused', status: 400 };
+    await base44.asServiceRole.entities.CreatorProductionMission.update(mission.id, { status: 'paused', paused_at: now });
+    return { success: true };
+  }
+  if (action === 'resume') {
+    if (mission.status !== 'paused') return { error: 'Only a paused mission can be resumed', status: 400 };
+    await base44.asServiceRole.entities.CreatorProductionMission.update(mission.id, { status: 'in_progress', resumed_at: now });
+    return { success: true };
+  }
+  if (action === 'complete') {
+    if (!['in_progress','paused'].includes(mission.status)) return { error: 'Start the mission before completing it', status: 400 };
+    await base44.asServiceRole.entities.CreatorProductionMission.update(mission.id, { status: 'completed', completed_at: now, xp_awarded: Number(mission.xp_awarded || 0) || 25 });
+    await generateForPerformer(base44, performerId, 'mission_completed');
+    return { success: true, xp_awarded: Number(mission.xp_awarded || 0) || 25 };
+  }
+  return { error: 'Unknown mission action', status: 400 };
+}
+
+async function updatePlanItem(base44, performerId, body) {
+  const item = await base44.asServiceRole.entities.CreatorPlanItem.get(body.plan_item_id).catch(() => null);
+  if (!item || item.performer_id !== performerId) return { error: 'Plan item not found', status: 404 };
+  const now = new Date().toISOString();
+  const action = body.plan_action;
+  const patch = {};
+  if (action === 'complete') { patch.status = 'completed'; patch.completed_at = now; }
+  else if (action === 'undo') { patch.status = 'open'; patch.completed_at = null; patch.skipped_at = null; }
+  else if (action === 'skip') { patch.status = 'skipped'; patch.skipped_at = now; }
+  else if (action === 'reschedule' || action === 'edit_time') { patch.time = String(body.time || item.time); patch.rescheduled_from = item.time; patch.status = 'open'; }
+  else return { error: 'Unknown plan action', status: 400 };
+  await base44.asServiceRole.entities.CreatorPlanItem.update(item.id, patch);
+  return { success: true };
+}
+
+async function recommendationAction(base44, performerId, body) {
+  const rec = await base44.asServiceRole.entities.ContentRecommendation.get(body.recommendation_id).catch(() => null);
+  if (!rec || rec.performer_id !== performerId) return { error: 'Recommendation not found', status: 404 };
+  const now = new Date().toISOString();
+  const action = body.recommendation_action;
+  if (action === 'view') await base44.asServiceRole.entities.ContentRecommendation.update(rec.id, { status: rec.status === 'active' ? 'viewed' : rec.status, viewed_at: now });
+  else if (action === 'accept') await base44.asServiceRole.entities.ContentRecommendation.update(rec.id, { status: 'accepted', accepted_at: now, acted_at: now });
+  else if (action === 'dismiss') await base44.asServiceRole.entities.ContentRecommendation.update(rec.id, { status: 'dismissed', dismissed_at: now, ignored_at: now });
+  else if (action === 'snooze') await base44.asServiceRole.entities.ContentRecommendation.update(rec.id, { status: 'snoozed', snoozed_until: new Date(Date.now() + 86400000).toISOString() });
+  else if (action === 'save') await base44.asServiceRole.entities.ContentRecommendation.update(rec.id, { status: 'saved', saved_at: now });
+  else if (action === 'complete') await base44.asServiceRole.entities.ContentRecommendation.update(rec.id, { status: 'completed', completed_at: now, acted_at: now });
+  else if (action === 'convert_to_mission') {
+    const mission = await base44.asServiceRole.entities.CreatorProductionMission.create({ performer_id: performerId, run_id: rec.source_run_id || `${performerId}-${Date.now()}`, mission_date: today(), mission_type: rec.recommendation_type === 'series' ? 'continue_series' : 'film', title: rec.title, description: rec.recommendation, expected_revenue_usd: firstNumber(rec.revenue_impact_usd), difficulty: 'medium', production_time_hours: 1.5, priority: rec.priority || 'medium', status: 'active', source_recommendation_id: rec.id, reason: rec.reason, evidence_json: rec.source_data_json || rec.evidence_json, generated_at: now });
+    await base44.asServiceRole.entities.ContentRecommendation.update(rec.id, { status: 'accepted', accepted_at: now, acted_at: now, created_mission_id: mission.id });
+    return { success: true, mission_id: mission.id };
+  } else return { error: 'Unknown recommendation action', status: 400 };
+  return { success: true };
+}
+
+async function askCreatorAI(base44, performerId, body) {
+  const message = String(body.message || '').trim();
+  if (!message) return { error: 'Ask a question first', status: 400 };
+  const context = await getCreatorOS(base44, performerId);
+  const evidence = parseJson(context.briefing?.evidence_json, null) || parseJson(context.mission?.evidence_json, null) || parseJson(context.library?.evidence_json, null) || {};
+  const answer = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    model: 'automatic',
+    prompt: `You are the FLESHLAB Creator OS AI Producer. Answer only from the supplied creator context and evidence. If a data point is unavailable, say what is missing and give the next useful action. Keep it operational and concise. Performer ID: ${performerId}\nQuestion: ${message}\nCreator OS Context: ${JSON.stringify({ briefing: context.briefing, mission: context.mission, recommendations: context.recommendations, library: context.library, plan_items: context.plan_items, evidence }).slice(0, 18000)}`
+  });
+  return { success: true, answer };
 }
 
 async function analyzeVideo(base44, videoId, reason) {
@@ -274,12 +384,42 @@ Deno.serve(async (req) => {
     if (action === 'set_recommendation_status') {
       const performer = await validatePerformerSession(base44, body.performer_id, body.performer_token);
       if (!performer) return Response.json({ error: 'Invalid performer session' }, { status: 401 });
-      if (!['accepted','ignored'].includes(body.status)) return Response.json({ error: 'Invalid status' }, { status: 400 });
-      const rec = await base44.asServiceRole.entities.ContentRecommendation.get(body.recommendation_id);
-      if (!rec || rec.performer_id !== performer.id) return Response.json({ error: 'Recommendation not found' }, { status: 404 });
-      const patch = body.status === 'accepted' ? { status: 'accepted', accepted_at: new Date().toISOString() } : { status: 'ignored', ignored_at: new Date().toISOString() };
-      await base44.asServiceRole.entities.ContentRecommendation.update(rec.id, patch);
-      return Response.json({ success: true });
+      const mapped = body.status === 'ignored' ? 'dismiss' : body.status === 'accepted' ? 'accept' : body.status;
+      const result = await recommendationAction(base44, performer.id, { ...body, recommendation_action: mapped });
+      if (result.error) return Response.json({ error: result.error }, { status: result.status || 400 });
+      return Response.json(result);
+    }
+
+    if (action === 'mission_action') {
+      const performer = await validatePerformerSession(base44, body.performer_id, body.performer_token);
+      if (!performer) return Response.json({ error: 'Invalid performer session' }, { status: 401 });
+      const result = await updateMissionState(base44, performer.id, body);
+      if (result.error) return Response.json({ error: result.error }, { status: result.status || 400 });
+      return Response.json(result);
+    }
+
+    if (action === 'plan_item_action') {
+      const performer = await validatePerformerSession(base44, body.performer_id, body.performer_token);
+      if (!performer) return Response.json({ error: 'Invalid performer session' }, { status: 401 });
+      const result = await updatePlanItem(base44, performer.id, body);
+      if (result.error) return Response.json({ error: result.error }, { status: result.status || 400 });
+      return Response.json(result);
+    }
+
+    if (action === 'recommendation_action') {
+      const performer = await validatePerformerSession(base44, body.performer_id, body.performer_token);
+      if (!performer) return Response.json({ error: 'Invalid performer session' }, { status: 401 });
+      const result = await recommendationAction(base44, performer.id, body);
+      if (result.error) return Response.json({ error: result.error }, { status: result.status || 400 });
+      return Response.json(result);
+    }
+
+    if (action === 'ask_ai') {
+      const performer = await validatePerformerSession(base44, body.performer_id, body.performer_token);
+      if (!performer) return Response.json({ error: 'Invalid performer session' }, { status: 401 });
+      const result = await askCreatorAI(base44, performer.id, body);
+      if (result.error) return Response.json({ error: result.error }, { status: result.status || 400 });
+      return Response.json(result);
     }
 
     if (action === 'generate_for_performer') {

@@ -72,6 +72,8 @@
       "enum": [
         "active",
         "accepted",
+        "in_progress",
+        "paused",
         "completed",
         "ignored",
         "expired"
@@ -79,9 +81,58 @@
       "title": "Status",
       "default": "active"
     },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Started At"
+    },
+    "paused_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Paused At"
+    },
+    "resumed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Resumed At"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Completed At"
+    },
+    "xp_awarded": {
+      "type": "integer",
+      "title": "XP Awarded",
+      "default": 0
+    },
+    "source_recommendation_id": {
+      "type": "string",
+      "title": "Source Recommendation ID"
+    },
     "reason": {
       "type": "string",
       "title": "Reason",
+      "format": "textarea"
+    },
+    "steps_json": {
+      "type": "string",
+      "title": "Steps JSON",
+      "format": "textarea"
+    },
+    "equipment_json": {
+      "type": "string",
+      "title": "Equipment JSON",
+      "format": "textarea"
+    },
+    "content_goal": {
+      "type": "string",
+      "title": "Content Goal",
+      "format": "textarea"
+    },
+    "ai_guidance": {
+      "type": "string",
+      "title": "AI Guidance",
       "format": "textarea"
     },
     "evidence_json": {

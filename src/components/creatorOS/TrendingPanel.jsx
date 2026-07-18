@@ -5,6 +5,6 @@ function TrendMedia({ item }) {
   return <div className="flos-abstract-thumb"><span>{item.title?.slice(0, 2) || "OS"}</span></div>;
 }
 
-export default function TrendingPanel({ trends = [] }) {
-  return <section id="fans" className="flos-panel flos-trending"><h3><Flame /> Trending with your fans</h3>{trends.length ? <div>{trends.map(item => <article key={item.title}><TrendMedia item={item} /><i>#{item.rank}</i><b>{item.title}</b><span>{item.metric}</span></article>)}</div> : <p className="flos-empty">Collecting engagement, purchase and request data from your creator library.</p>}<button>View fan intelligence →</button></section>;
+export default function TrendingPanel({ trends = [], onOpenFans, onOpenTrend }) {
+  return <section id="fans" className="flos-panel flos-trending"><h3><Flame /> Trending with your fans</h3>{trends.length ? <div>{trends.map(item => <button type="button" className="flos-trend-card" key={item.title} onClick={() => onOpenTrend?.(item)}><TrendMedia item={item} /><i>#{item.rank}</i><b>{item.title}</b><span>{item.metric}</span></button>)}</div> : <p className="flos-empty">Not enough fan signals yet. Open Fan Intelligence to review available requests, purchases and engagement sources.</p>}<button type="button" onClick={onOpenFans}>View fan intelligence →</button></section>;
 }
