@@ -19,6 +19,7 @@ import AdminWallets from './pages/admin/Wallets';
 import AdminPaymentProviders from './pages/admin/PaymentProviders';
 import TrackingTest from './pages/admin/TrackingTest';
 import LiveActivity from './pages/admin/LiveActivity';
+import AdminNews from './pages/admin/News';
 // Add page imports here
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
@@ -204,7 +205,7 @@ const AuthenticatedApp = () => {
                 } />
                 <Route path="/admin/brands" element={<Brands />} />
                 <Route path="/admin/brands/:id" element={<BrandEdit />} />
-                <Route path="/admin/news" element={<ComingSoon title="News Management" />} />
+                <Route path="/admin/news" element={<AdminNews />} />
                 <Route path="/admin/seo" element={<ComingSoon title="SEO Management" />} />
                 <Route path="/admin/migration" element={<ComingSoon title="Migration Tools" />} />
                 <Route path="/admin/monthly-closeout" element={<MonthlyCloseout />} />

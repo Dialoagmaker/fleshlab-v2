@@ -11,7 +11,7 @@ const navLinks = [
   { href: "/performers", label: "Performers" },
   { href: "/videos?category=collections", label: "Collections" },
   { href: "/videos?search=photos", label: "Photos" },
-  { href: "/news", label: "Blog" },
+  { href: "/news", label: "News" },
   { href: "/become-performer", label: "Become a Performer", strong: true },
 ];
 

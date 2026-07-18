@@ -5,7 +5,7 @@ import rtaBadgeUrl from "@/assets/compliance/rta-120x60-black.gif";
 const navGroups = [
   { title: "Creators", links: [{ href: "/become-performer", label: "Become a Creator" }, { href: "/gay-performer-recruitment-philippines", label: "Join in Asia" }, { href: "/how-it-works", label: "How It Works" }, { href: "/faq", label: "Creator FAQ" }] },
   { title: "Fans", links: [{ href: "/videos", label: "Watch" }, { href: "/performers", label: "Creators" }, { href: "/fan-productions", label: "Fan Productions" }, { href: "/fanclub", label: "Fanclub" }] },
-  { title: "Studio", links: [{ href: "/brands", label: "Brands" }, { href: "/news", label: "Studio Notes" }, { href: "/live", label: "Live" }, { href: "/guest-production", label: "Guest Production" }] },
+  { title: "Studio", links: [{ href: "/brands", label: "Brands" }, { href: "/news", label: "News" }, { href: "/live", label: "Live" }, { href: "/guest-production", label: "Guest Production" }] },
   { title: "Company", links: [{ href: "/compliance", label: "Compliance" }, { href: "/dmca", label: "DMCA" }, { href: "/privacy", label: "Privacy" }, { href: "/terms", label: "Terms" }, { href: "/imprint", label: "Imprint" }] },
 ];
 

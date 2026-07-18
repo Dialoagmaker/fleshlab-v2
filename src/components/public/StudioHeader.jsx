@@ -56,7 +56,7 @@ export default function StudioHeader({ scrolled }) {
                   : 'text-[#F5F5F5]/80 hover:text-white'
               }`}
             >
-              Studio Journal
+              News
             </Link>
             <Link
               to="/videos"
@@ -119,7 +119,7 @@ export default function StudioHeader({ scrolled }) {
               className="text-lg font-medium text-[#F5F5F5]/80 hover:text-white py-2"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Studio Journal
+              News
             </Link>
             <Link
               to="/videos"

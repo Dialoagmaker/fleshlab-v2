@@ -18,6 +18,21 @@
       "title": "Legacy Slugs",
       "description": "Array of old slugs that should redirect to this article's current slug"
     },
+    "category": {
+      "type": "string",
+      "enum": [
+        "studioUpdates",
+        "behindTheScenes",
+        "creatorStories",
+        "production",
+        "fanclub",
+        "pressRelease",
+        "partnerships",
+        "events"
+      ],
+      "title": "Category",
+      "default": "behindTheScenes"
+    },
     "content": {
       "type": "string",
       "title": "Content",
