@@ -1,6 +1,7 @@
 import { useState } from "react";
 import BrandLogo from "@/components/BrandLogo";
 import { ArrowRight, Facebook, Instagram, Twitter } from "lucide-react";
+import rtaBadgeUrl from "@/assets/compliance/rta-120x60-black.gif";
 
 const linkGroups = [
   { title: "Explore", links: [{ href: "/videos", label: "Videos" }, { href: "/performers", label: "Creators" }, { href: "/videos", label: "Collections" }, { href: "/news", label: "News" }] },
@@ -56,7 +57,7 @@ export default function FinalBrandFooter() {
             <div className="mt-5 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
                 <a href="https://www.rtalabel.org/" target="_blank" rel="noopener noreferrer" aria-label="FLESHLAB is labeled Restricted to Adults by RTA" className="inline-flex min-h-11 w-fit rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E51D2A] focus-visible:ring-offset-2 focus-visible:ring-offset-black">
-                  <img src="/images/compliance/rta-120x60-black.gif" alt="RTA Restricted to Adults" width="120" height="60" loading="lazy" className="h-auto max-h-[60px] w-[120px] max-w-full object-contain" />
+                  <img src={rtaBadgeUrl} alt="RTA Restricted to Adults" width="120" height="60" loading="lazy" className="h-auto max-h-[60px] w-[120px] max-w-full object-contain" />
                 </a>
                 <div>
                   <a href="/compliance" className="text-sm font-black uppercase tracking-wide text-white transition hover:text-[#E51D2A]">Restricted to Adults</a>
