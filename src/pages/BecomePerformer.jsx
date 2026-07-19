@@ -4,6 +4,7 @@ import SEOMeta from "@/components/SEOMeta";
 import BPHero from "@/components/becomePerformer/BPHero";
 import BPChapterSection from "@/components/becomePerformer/BPChapterSection";
 import BPApplicationForm from "@/components/becomePerformer/BPApplicationForm";
+import PrivateCreatorIntake from "@/components/becomePerformer/PrivateCreatorIntake";
 import BPSuccessScreen from "@/components/becomePerformer/BPSuccessScreen";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BarChart2, CheckCircle2, Crown, FileText, Film, Globe, Lock, Shield, Users, Video } from "lucide-react";
@@ -35,6 +36,7 @@ const APPLICATION_STEPS = ["Apply privately", "Upload review media", "Verify 18+
 
 export default function BecomePerformer() {
   const formRef = useRef(null);
+  const intakeRef = useRef(null);
   const earnRef = useRef(null);
   const navigate = useNavigate();
   const [submitted, setSubmitted] = useState(false);
@@ -42,6 +44,10 @@ export default function BecomePerformer() {
 
   const scrollToForm = () => {
     trackBecomePerformerCtaClick('hero_apply');
+    intakeRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+  const scrollToVerification = () => {
+    trackBecomePerformerCtaClick('intake_continue_verification');
     formRef.current?.scrollIntoView({ behavior: "smooth" });
   };
   const scrollToEarn = () => {
@@ -134,7 +140,9 @@ export default function BecomePerformer() {
               <button type="button" aria-label="Learn more about the cam model partnership" onClick={() => navigate("/chaturbate-model-join-studio")} className="rounded-3xl border border-border bg-secondary/35 p-6 text-left transition hover:-translate-y-1 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-primary/30 bg-primary/10"><Video className="h-5 w-5 text-primary" /></div><h3 className="mb-2 font-black text-foreground">Cam Model Partnership</h3><p className="mb-4 text-sm leading-relaxed text-muted-foreground">Already camming? Add studio content, fanclub income and the 70% network split.</p><span className="inline-flex items-center gap-2 text-xs font-bold text-primary">Learn more <ArrowRight className="h-3.5 w-3.5" /></span></button>
             </div>
 
-            <div className="mx-auto mt-14 max-w-3xl text-center"><p className="mb-5 text-2xl font-black text-foreground md:text-3xl">This is where you start.</p><Button onClick={scrollToForm} className="h-auto min-h-14 rounded-xl bg-primary px-10 py-5 text-base font-black uppercase tracking-wide text-primary-foreground shadow-xl shadow-primary/35 hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary">Start Private Application</Button><p className="mt-3 text-xs text-muted-foreground">Private review · 48-hour response · No obligation</p></div>
+            <div ref={intakeRef} className="mx-auto mt-14 max-w-5xl">
+              <PrivateCreatorIntake onVerifyClick={scrollToVerification} />
+            </div>
             <BPApplicationForm ref={formRef} onSuccess={handleSuccess} embedded />
           </div>
         </BPChapterSection>

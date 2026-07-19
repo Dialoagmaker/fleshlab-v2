@@ -102,7 +102,7 @@ export default function BPHero({ onApplyClick, onEarnClick }) {
 
           <div className="mb-8 flex flex-wrap gap-3">
             <Button size="lg" onClick={handleApplyClick} className="h-auto min-h-14 rounded-xl bg-primary px-10 py-5 text-base font-black uppercase tracking-wide text-primary-foreground shadow-xl shadow-primary/35 hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary">
-              Start application
+              Start private intake
             </Button>
             <Button size="lg" variant="outline" onClick={onEarnClick} className="h-auto min-h-14 rounded-xl border-border px-8 py-5 text-base font-semibold text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary/50">
               See how you earn
