@@ -10,9 +10,9 @@
       "type": "string",
       "title": "Application ID"
     },
-    "upload_token": {
+    "upload_token_hash": {
       "type": "string",
-      "title": "Upload Token"
+      "title": "Upload Token Hash"
     },
     "r2_key": {
       "type": "string",
@@ -40,7 +40,9 @@
         "issued",
         "finalized",
         "expired",
-        "rejected"
+        "rejected",
+        "purged",
+        "purge_failed"
       ],
       "default": "issued",
       "title": "Status"
@@ -59,9 +61,19 @@
       "format": "date-time",
       "title": "Finalized At"
     },
+    "purged_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Purged At"
+    },
     "rejected_reason": {
       "type": "string",
       "title": "Rejected Reason"
+    },
+    "cleanup_attempt_count": {
+      "type": "integer",
+      "default": 0,
+      "title": "Cleanup Attempt Count"
     }
   },
   "required": [

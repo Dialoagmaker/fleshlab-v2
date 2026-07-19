@@ -91,6 +91,10 @@
       "type": "string",
       "title": "ID Document R2 Key"
     },
+    "id_document_front_r2_key": {
+      "type": "string",
+      "title": "ID Document Front R2 Key"
+    },
     "id_document_url": {
       "type": "string",
       "title": "ID Document URL (Legacy)"
@@ -165,6 +169,45 @@
       "format": "date-time",
       "title": "Submitted At"
     },
+    "last_activity_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last Applicant Activity At"
+    },
+    "applicant_withdrawn_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Applicant Withdrawn At"
+    },
+    "withdrawal_requested_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Withdrawal Requested At"
+    },
+    "privacy_cleanup_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "dry_run_candidate",
+        "purged",
+        "purge_failed"
+      ],
+      "title": "Privacy Cleanup Status",
+      "default": "none"
+    },
+    "privacy_cleanup_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Privacy Cleanup At"
+    },
+    "privacy_cleanup_error": {
+      "type": "string",
+      "title": "Privacy Cleanup Error"
+    },
+    "privacy_retention_category": {
+      "type": "string",
+      "title": "Privacy Retention Category"
+    },
     "assigned_admin": {
       "type": "string",
       "title": "Assigned Admin ID"
@@ -224,6 +267,7 @@
       "type": "string",
       "enum": [
         "pending",
+        "draft",
         "sent",
         "signed",
         "negotiating"

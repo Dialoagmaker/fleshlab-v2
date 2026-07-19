@@ -1,0 +1,71 @@
+{
+  "name": "ApplicationUploadToken",
+  "type": "object",
+  "properties": {
+    "application_id": {
+      "type": "string",
+      "title": "Application ID"
+    },
+    "token_hash": {
+      "type": "string",
+      "title": "Token Hash"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "issued",
+        "revoked",
+        "expired"
+      ],
+      "default": "issued",
+      "title": "Status"
+    },
+    "allowed_upload_scope": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Allowed Upload Scope"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Expires At"
+    },
+    "revoked_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Revoked At"
+    },
+    "revoked_by": {
+      "type": "string",
+      "title": "Revoked By"
+    },
+    "last_validated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last Validated At"
+    },
+    "validation_count": {
+      "type": "integer",
+      "default": 0,
+      "title": "Validation Count"
+    },
+    "last_rejection_reason": {
+      "type": "string",
+      "title": "Last Rejection Reason"
+    }
+  },
+  "required": [
+    "application_id",
+    "token_hash",
+    "status",
+    "created_at",
+    "expires_at"
+  ]
+}
