@@ -12,8 +12,9 @@ import { base44 } from "@/api/base44Client";
 import toast from "react-hot-toast";
 import FileUploadField from "@/components/application/FileUploadField";
 import MultiPhotoUpload from "@/components/application/MultiPhotoUpload";
+import RecruitmentTrustCard from "@/components/becomePerformer/RecruitmentTrustCard";
 
-const STEP_LABELS = ["Your profile", "Your media", "Verify 18+"];
+const STEP_LABELS = ["Creator profile", "Private review media", "Secure verification"];
 
 function StepIndicator({ current }) {
   return (
@@ -185,9 +186,9 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-10">
           <h2 className="text-4xl md:text-5xl font-black mb-3 text-white">
-            START YOUR <span className="text-primary">APPLICATION</span>
+            CONTINUE YOUR <span className="text-primary">CREATOR VERIFICATION</span>
           </h2>
-          <p className="text-white/45 text-base">Private review · 48-hour response · Confidential uploads</p>
+          <p className="text-white/45 text-base">Secure review · 48-hour response · Nothing published without approval</p>
         </div>
 
         <div className="bg-card border border-primary/20 rounded-[1.75rem] p-6 shadow-2xl shadow-primary/10 md:p-10">
@@ -283,11 +284,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
           {/* ── STEP 1 — Show us something of you ── */}
           {step === 1 && (
             <div className="space-y-6">
-              <div className="bg-secondary/45 border border-border rounded-xl px-5 py-4">
-                <p className="text-white/45 text-sm leading-relaxed">
-                Private review material only. Nothing is published without contract and consent.
-                </p>
-              </div>
+              <RecruitmentTrustCard type="approval" />
 
               <MultiPhotoUpload
                 sessionId={sessionId}
@@ -344,11 +341,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
           {/* ── STEP 2 — Are you real? ── */}
           {step === 2 && (
             <div className="space-y-6">
-              <div className="bg-secondary/45 border border-border rounded-xl px-5 py-4">
-                <p className="text-white/45 text-sm leading-relaxed">
-                Your ID is used for age verification, compliance and contracts. It is never published.
-                </p>
-              </div>
+              <div className="grid gap-3 sm:grid-cols-2"><RecruitmentTrustCard type="id" /><RecruitmentTrustCard type="contracts" /></div>
 
               <div>
                 <Label className="text-white/60 text-xs uppercase tracking-widest block mb-2">ID document type *</Label>
@@ -413,7 +406,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
               {submitMutation.isError && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>Something went wrong submitting your application. Please try again.</AlertDescription>
+                  <AlertDescription>We couldn’t complete your verification submission just now. Please check your connection and try again — your completed fields and uploads remain on this screen.</AlertDescription>
                 </Alert>
               )}
             </div>
@@ -437,7 +430,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
                 disabled={step === 0 ? !step0Valid : step === 1 ? !step1Valid : false}
                 className="min-h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 focus-visible:ring-2 focus-visible:ring-primary"
               >
-                Continue
+                {step === 0 ? "Continue to private review" : "Continue to secure verification"}
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             ) : (
@@ -446,7 +439,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
                 onClick={() => submitMutation.mutate()}
                 className="min-h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-black px-10 py-5 h-auto text-base shadow-xl shadow-primary/30 focus-visible:ring-2 focus-visible:ring-primary"
               >
-                {submitMutation.isPending ? "Submitting..." : "Submit application"}
+                {submitMutation.isPending ? "Creating your next milestone..." : "Unlock your next milestone"}
               </Button>
             )}
           </div>
