@@ -112,6 +112,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
       const id_document_r2_key = p3.id_document_r2_key;
 
       const payload = {
+        application_session_id: sessionId,
         applicant_name: `${p1.first_name} ${p1.last_name}`.trim(),
         legal_name: `${p1.first_name} ${p1.last_name}`.trim(),
         email: p1.email,
@@ -130,6 +131,10 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
         id_document_r2_key,
         id_document_back_r2_key: p3.id_back_r2_key,
         selfie_with_id_r2_key: p3.selfie_r2_key,
+        confirmed_18_plus: !!p1.age_confirmed,
+        confirmed_contact_consent: true,
+        consent_review_materials: !!p3.consent3,
+        consent_version: "recruitment-2026-07",
         request_type: "performer_application",
         message: [
           p1.sexual_identity ? `Sexual identity: ${p1.sexual_identity}` : "",

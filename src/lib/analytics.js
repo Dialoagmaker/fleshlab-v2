@@ -776,8 +776,8 @@ export function trackLoginSuccess(role) {
 /**
  * Track failed login attempt
  */
-export function trackLoginFailed(reason, email) {
-  trackEvent("login_failed", { reason: reason || "invalid_credentials", email: email || null });
+export function trackLoginFailed(reason) {
+  trackEvent("login_failed", { reason: reason || "invalid_credentials" });
 }
 
 /**

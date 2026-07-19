@@ -8,7 +8,6 @@ import ApplicantTimeline from "@/components/admin/recruitment/ApplicantTimeline"
 import RecruiterCopilotPanel from "@/components/admin/recruitment/RecruiterCopilotPanel";
 import PipelineHealth from "@/components/admin/recruitment/PipelineHealth";
 import LearningFramework from "@/components/admin/recruitment/LearningFramework";
-import { buildRecruitmentWorkspace, parseEventMeta } from "@/lib/recruiterIntelligence";
 import { AlertCircle, Brain, Loader2 } from "lucide-react";
 
 export default function RecruitmentIntelligence() {
@@ -18,24 +17,16 @@ export default function RecruitmentIntelligence() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["recruiter-command-center", days],
     queryFn: async () => {
-      const cutoff = new Date(Date.now() - days * 86400000).toISOString();
-      const [eventsRaw, applicationsRaw, performersRaw] = await Promise.all([
-        base44.asServiceRole.entities.ConversionEvent.list("-created_date", 5000),
-        base44.asServiceRole.entities.GuestProductionApplication.list("-created_date", 1000),
-        base44.asServiceRole.entities.Performer.list("-created_date", 1000),
-      ]);
-      const events = eventsRaw.filter(e => e.created_date >= cutoff && (e.event_name?.startsWith("recruitment_") || e.event_name?.startsWith("application_"))).map(e => ({ ...e, meta: parseEventMeta(e) }));
-      const applications = applicationsRaw.filter(a => a.created_date >= cutoff && (a.request_type === "performer_application" || String(a.source_page || "").includes("performer") || String(a.source_page || "").includes("creator")));
-      const performers = performersRaw.filter(p => p.created_date >= cutoff || p.updated_date >= cutoff);
-      return { workspace: buildRecruitmentWorkspace(applications, events, performers), dateRange: `${new Date(cutoff).toLocaleDateString()} → ${new Date().toLocaleDateString()}` };
+      const response = await base44.functions.invoke("adminRecruiterIntelligence", { days, skip: 0, limit: 50 });
+      return response.data || response;
     },
     refetchInterval: 60000,
   });
 
   const workspace = data?.workspace;
   const selectedProfile = useMemo(() => {
-    if (!workspace?.profiles?.length) return null;
-    return workspace.profiles.find(p => p.id === selectedId) || workspace.attention[0] || workspace.profiles[0];
+    if (!workspace?.profiles?.length && !workspace?.attention?.length) return null;
+    return [...(workspace.attention || []), ...(workspace.profiles || [])].find(p => p.id === selectedId) || workspace.attention?.[0] || workspace.profiles?.[0];
   }, [workspace, selectedId]);
 
   return (

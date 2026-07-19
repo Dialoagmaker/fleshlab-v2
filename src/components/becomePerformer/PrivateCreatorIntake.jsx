@@ -47,6 +47,11 @@ export default function PrivateCreatorIntake({ onVerifyClick }) {
         interests: form.interests,
         package_interest: form.path || "not_sure",
         experience: form.experience || null,
+        age_confirmed: !!form.age,
+        confirmed_18_plus: !!form.age,
+        confirmed_contact_consent: true,
+        consent_review_materials: true,
+        consent_version: "recruitment-2026-07",
         source_page: "become_performer_private_intake",
         message: [`Creator path: ${form.path || "unsure"}`, `Interests: ${form.interests.join(", ") || "Not specified"}`, form.experience ? `Notes: ${form.experience}` : ""].filter(Boolean).join("\n"),
       };

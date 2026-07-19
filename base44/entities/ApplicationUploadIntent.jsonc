@@ -1,0 +1,75 @@
+{
+  "name": "ApplicationUploadIntent",
+  "type": "object",
+  "properties": {
+    "application_session_id": {
+      "type": "string",
+      "title": "Application Session ID"
+    },
+    "application_id": {
+      "type": "string",
+      "title": "Application ID"
+    },
+    "upload_token": {
+      "type": "string",
+      "title": "Upload Token"
+    },
+    "r2_key": {
+      "type": "string",
+      "title": "R2 Key"
+    },
+    "file_type": {
+      "type": "string",
+      "title": "File Type"
+    },
+    "file_name": {
+      "type": "string",
+      "title": "Original File Name"
+    },
+    "mime_type": {
+      "type": "string",
+      "title": "MIME Type"
+    },
+    "file_size_bytes": {
+      "type": "integer",
+      "title": "File Size Bytes"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "issued",
+        "finalized",
+        "expired",
+        "rejected"
+      ],
+      "default": "issued",
+      "title": "Status"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Expires At"
+    },
+    "issued_ip_hash": {
+      "type": "string",
+      "title": "Issued IP Hash"
+    },
+    "finalized_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Finalized At"
+    },
+    "rejected_reason": {
+      "type": "string",
+      "title": "Rejected Reason"
+    }
+  },
+  "required": [
+    "r2_key",
+    "file_type",
+    "mime_type",
+    "file_size_bytes",
+    "status",
+    "expires_at"
+  ]
+}

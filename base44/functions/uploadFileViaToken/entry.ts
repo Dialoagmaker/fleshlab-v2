@@ -1,104 +1,48 @@
-/**
- * uploadFileViaToken
- * Allows applicants to upload files using a secure token (no login required).
- * Validates token, checks expiration, and uploads directly to private R2.
- * Updates the same GuestProductionApplication record with new file keys.
- */
-import { S3Client, PutObjectCommand } from 'npm:@aws-sdk/client-s3';
-import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner';
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { S3Client, PutObjectCommand } from 'npm:@aws-sdk/client-s3@3.1057.0';
+import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner@3.1057.0';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
 const ALLOWED_FILE_TYPES = {
-  photo: { mimes: ['image/jpeg', 'image/png', 'image/webp'], maxBytes: 20 * 1024 * 1024, prefix: 'photos' },
-  intro_video: { mimes: ['video/mp4', 'video/quicktime', 'video/webm'], maxBytes: 2 * 1024 * 1024 * 1024, prefix: 'videos' },
-  hardcore_video: { mimes: ['video/mp4', 'video/quicktime', 'video/webm'], maxBytes: 2 * 1024 * 1024 * 1024, prefix: 'videos' },
-  id_document_front: { mimes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'], maxBytes: 20 * 1024 * 1024, prefix: 'id_docs' },
-  id_document_back: { mimes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'], maxBytes: 20 * 1024 * 1024, prefix: 'id_docs' },
-  selfie_with_id: { mimes: ['image/jpeg', 'image/png', 'image/webp'], maxBytes: 20 * 1024 * 1024, prefix: 'id_docs' },
+  photo: { mimes: ['image/jpeg', 'image/png', 'image/webp'], maxBytes: 20 * 1024 * 1024, prefix: 'photos', maxPerHour: 12 },
+  intro_video: { mimes: ['video/mp4', 'video/quicktime', 'video/webm'], maxBytes: 2 * 1024 * 1024 * 1024, prefix: 'videos', maxPerHour: 3 },
+  hardcore_video: { mimes: ['video/mp4', 'video/quicktime', 'video/webm'], maxBytes: 2 * 1024 * 1024 * 1024, prefix: 'videos', maxPerHour: 3 },
+  id_document_front: { mimes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'], maxBytes: 20 * 1024 * 1024, prefix: 'id_docs', maxPerHour: 3 },
+  id_document_back: { mimes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'], maxBytes: 20 * 1024 * 1024, prefix: 'id_docs', maxPerHour: 3 },
+  selfie_with_id: { mimes: ['image/jpeg', 'image/png', 'image/webp'], maxBytes: 20 * 1024 * 1024, prefix: 'id_docs', maxPerHour: 3 },
 };
+async function sha(value) { const data = new TextEncoder().encode(value || 'unknown'); const digest = await crypto.subtle.digest('SHA-256', data); return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('').slice(0,32); }
+function hourWindow() { return new Date(Math.floor(Date.now() / 3600000) * 3600000).toISOString(); }
+async function rateLimit(base44, key, max) { const window_start = hourWindow(); const found = await base44.asServiceRole.entities.RecruitmentRateLimit.filter({ rate_key: key, window_start }); if (found?.length) { const row = found[0]; if ((row.count || 0) >= max) return false; await base44.asServiceRole.entities.RecruitmentRateLimit.update(row.id, { count: (row.count || 0) + 1, last_seen_at: new Date().toISOString() }); return true; } await base44.asServiceRole.entities.RecruitmentRateLimit.create({ rate_key: key, window_start, count: 1, last_seen_at: new Date().toISOString() }); return true; }
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    const body = await req.json();
-    const { token, file_type, file_name, file_size_bytes, mime_type, photo_index } = body;
-
-    if (!token || !file_type || !file_name || !file_size_bytes || !mime_type) {
-      return Response.json({ error: 'Missing required fields: token, file_type, file_name, file_size_bytes, mime_type' }, { status: 400 });
-    }
-
-    // Find application by token
-    const applications = await base44.asServiceRole.entities.GuestProductionApplication.filter({
-      application_upload_token: token,
-    });
-
-    if (!applications || applications.length === 0) {
-      return Response.json({ error: 'Invalid or expired upload token' }, { status: 403 });
-    }
-
+    const { token, file_type, file_name, file_size_bytes, mime_type, photo_index, validate_only } = await req.json();
+    if (!token) return Response.json({ error: 'Missing upload token' }, { status: 400 });
+    if (!validate_only && (!file_type || !file_name || !file_size_bytes || !mime_type)) return Response.json({ error: 'Missing required upload fields' }, { status: 400 });
+    const applications = await base44.asServiceRole.entities.GuestProductionApplication.filter({ application_upload_token: token });
+    if (!applications?.length) return Response.json({ error: 'Invalid or expired upload token' }, { status: 403 });
     const application = applications[0];
-
-    // Check expiration
-    if (application.application_upload_token_expires_at) {
-      const expiresAt = new Date(application.application_upload_token_expires_at);
-      if (expiresAt < new Date()) {
-        return Response.json({ error: 'Upload token has expired' }, { status: 403 });
-      }
-    }
-
+    if (application.application_upload_token_expires_at && new Date(application.application_upload_token_expires_at) < new Date()) return Response.json({ error: 'Upload token has expired' }, { status: 403 });
+    if (validate_only) return Response.json({ success: true, application_id: application.id, token_expires_at: application.application_upload_token_expires_at });
     const config = ALLOWED_FILE_TYPES[file_type];
-    if (!config) {
-      return Response.json({ error: `Invalid file_type. Allowed: ${Object.keys(ALLOWED_FILE_TYPES).join(', ')}` }, { status: 400 });
-    }
-    if (!config.mimes.includes(mime_type)) {
-      return Response.json({ error: `Invalid MIME type for ${file_type}` }, { status: 400 });
-    }
-    if (file_size_bytes > config.maxBytes) {
-      return Response.json({ error: `File too large for ${file_type}` }, { status: 400 });
-    }
+    if (!config || !config.mimes.includes(mime_type) || file_size_bytes <= 0 || file_size_bytes > config.maxBytes) return Response.json({ error: 'Invalid upload request' }, { status: 400 });
+    const ipHash = await sha(req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || 'unknown');
+    const tokenHash = await sha(token);
+    if (!(await rateLimit(base44, `token-upload:ip:${ipHash}`, 80))) return Response.json({ error: 'Upload rate limit exceeded' }, { status: 429 });
+    if (!(await rateLimit(base44, `token-upload:token:${tokenHash}`, 25))) return Response.json({ error: 'Token upload limit exceeded' }, { status: 429 });
+    if (!(await rateLimit(base44, `token-upload:type:${tokenHash}:${file_type}`, config.maxPerHour))) return Response.json({ error: 'Upload type limit exceeded' }, { status: 429 });
 
-    const accountId = Deno.env.get('R2_ACCOUNT_ID');
-    const accessKeyId = Deno.env.get('R2_ACCESS_KEY_ID');
-    const secretAccessKey = Deno.env.get('R2_SECRET_ACCESS_KEY');
-    const bucketName = Deno.env.get('R2_BUCKET_NAME');
-
-    const r2Client = new S3Client({
-      region: 'auto',
-      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-      credentials: { accessKeyId, secretAccessKey },
-    });
-
-    // Build R2 key path
-    const ext = file_name.split('.').pop() || 'bin';
-    const timestamp = Date.now();
+    const accountId = Deno.env.get('R2_ACCOUNT_ID'); const accessKeyId = Deno.env.get('R2_ACCESS_KEY_ID'); const secretAccessKey = Deno.env.get('R2_SECRET_ACCESS_KEY'); const bucketName = Deno.env.get('R2_BUCKET_NAME');
+    const r2Client = new S3Client({ region: 'auto', endpoint: `https://${accountId}.r2.cloudflarestorage.com`, credentials: { accessKeyId, secretAccessKey } });
+    const ext = String(file_name).split('.').pop()?.replace(/[^a-zA-Z0-9]/g,'').slice(0,8) || 'bin';
     const appId = application.id.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40);
-    
-    let r2Key;
-    if (file_type === 'photo') {
-      const idx = photo_index !== undefined ? photo_index : application.profile_photo_r2_keys?.length || 0;
-      r2Key = `applications/private/${appId}/${config.prefix}/${timestamp}_photo_${idx}.${ext}`;
-    } else {
-      r2Key = `applications/private/${appId}/${config.prefix}/${timestamp}_${file_type}.${ext}`;
-    }
-
-    const putCommand = new PutObjectCommand({
-      Bucket: bucketName,
-      Key: r2Key,
-      ContentType: mime_type,
-      ContentLength: file_size_bytes,
-    });
-
-    const uploadUrl = await getSignedUrl(r2Client, putCommand, { expiresIn: 3600 });
-
-    return Response.json({ 
-      upload_url: uploadUrl, 
-      r2_key: r2Key, 
-      expires_in: 3600,
-      application_id: application.id,
-      file_type,
-    });
+    const suffix = file_type === 'photo' ? `photo_${photo_index ?? 0}` : file_type;
+    const r2Key = `applications/private/${appId}/${config.prefix}/${Date.now()}_${crypto.randomUUID()}_${suffix}.${ext}`;
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    const intent = await base44.asServiceRole.entities.ApplicationUploadIntent.create({ application_id: application.id, upload_token: token, r2_key: r2Key, file_type, file_name: String(file_name).slice(0,180), mime_type, file_size_bytes, status: 'issued', expires_at: expiresAt, issued_ip_hash: ipHash });
+    const uploadUrl = await getSignedUrl(r2Client, new PutObjectCommand({ Bucket: bucketName, Key: r2Key, ContentType: mime_type, ContentLength: file_size_bytes }), { expiresIn: 900 });
+    return Response.json({ upload_url: uploadUrl, r2_key: r2Key, intent_id: intent.id, expires_in: 900, application_id: application.id, file_type });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

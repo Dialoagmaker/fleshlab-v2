@@ -39,16 +39,14 @@ export default function ApplicationUpload() {
       token_expired: false,
     });
 
-    // Fetch application details using token
+    // Validate token without creating an upload intent
     base44.functions.invoke("uploadFileViaToken", {
       token,
-      file_type: "photo",
-      file_name: "test.jpg",
-      file_size_bytes: 1000,
-      mime_type: "image/jpeg",
+      validate_only: true,
     })
-      .then(() => {
-        // Token is valid (we'll get a real upload URL in the actual upload)
+      .then((res) => {
+        const data = res.data || res;
+        setApplication({ id: data.application_id });
         setLoading(false);
       })
       .catch((err) => {
@@ -77,9 +75,10 @@ export default function ApplicationUpload() {
         mime_type: file.type,
         photo_index,
       });
+      const uploadData = uploadRes.data || uploadRes;
 
       // Step 2: Upload to R2
-      const uploadUrl = uploadRes.upload_url;
+      const uploadUrl = uploadData.upload_url;
       const putRes = await fetch(uploadUrl, {
         method: "PUT",
         body: file,
@@ -95,7 +94,8 @@ export default function ApplicationUpload() {
       // Step 3: Finalize (update application record)
       const finalizeRes = await base44.functions.invoke("finalizeTokenUpload", {
         token,
-        r2_key: uploadRes.r2_key,
+        intent_id: uploadData.intent_id,
+        r2_key: uploadData.r2_key,
         file_type,
         photo_index,
       });

@@ -10,7 +10,7 @@ import NotesTab from "./tabs/NotesTab";
 import ContactTab from "./tabs/ContactTab";
 import ApplicationReadinessSummary from "./ApplicationReadinessSummary";
 
-export default function ApplicationDetailDialog({ isOpen, onClose, selectedApp, updateMutation, handleStatusUpdate }) {
+export default function ApplicationDetailDialog({ isOpen, onClose, selectedApp, updateMutation, handleStatusUpdate, handleApprove }) {
   if (!selectedApp) return null;
 
   const canApprove = ['reviewing', 'contacted', 'more_info_requested'].includes(selectedApp.status);
@@ -47,7 +47,7 @@ export default function ApplicationDetailDialog({ isOpen, onClose, selectedApp, 
               {canApprove && (
                 <Button
                   size="sm"
-                  onClick={() => handleStatusUpdate(selectedApp.id, 'approved')}
+                  onClick={handleApprove}
                 >
                   Approve
                 </Button>

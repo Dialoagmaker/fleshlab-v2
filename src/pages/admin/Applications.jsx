@@ -176,151 +176,29 @@ export default function Applications() {
 
   const handleApprove = async () => {
     if (!selectedApp) return;
-    
-    // Validate before approval
-    const missing = validateApproval(selectedApp);
-    
-    if (missing.length > 0) {
-      toast.error(`Cannot approve yet. Missing: ${missing.join(', ')}`);
-      return;
-    }
-    
-    // Auto-create performer, profile private, and compliance records
     try {
-      // Check if performer already exists
-      if (selectedApp.performer_id) {
-        toast.error("Performer already exists for this application.");
+      const response = await base44.functions.invoke('approveRecruitmentApplication', {
+        application_id: selectedApp.id,
+      });
+      const data = response.data || response;
+      if (data.validation_errors?.length) {
+        toast.error(`Cannot approve yet. Missing: ${data.validation_errors.map(e => e.message).join(', ')}`);
         return;
       }
-      
-      // Create Performer
-      const slug = `${selectedApp.applicant_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}-${Date.now()}`;
-      const revenueModel = selectedApp.preferred_revenue_model;
-      const isNetwork = revenueModel === 'network_performer_70_studio_30';
-      
-      const performer = await base44.entities.Performer.create({
-        display_name: selectedApp.applicant_name,
-        slug,
-        bio: selectedApp.experience || selectedApp.message || "",
-        nationality: selectedApp.nationality,
-        status: "pending_contract",
-        verified: false,
-        internal_notes: `Created from application: ${selectedApp.id}`,
-        revenue_model: isNetwork ? 'established_network' : 'studio_managed',
-        revenue_split_pct: isNetwork ? 70 : 40,
-      });
-      
-      // Create or update PerformerProfilePrivate
-      const legalNameParts = (selectedApp.legal_name || selectedApp.applicant_name).trim().split(' ');
-      const legalFirstName = legalNameParts[0] || '';
-      const legalLastName = legalNameParts.slice(1).join(' ') || '';
-      
-      // Check if profile already exists
-      const existingProfiles = await base44.entities.PerformerProfilePrivate.filter({ performer_id: performer.id });
-      
-      if (existingProfiles && existingProfiles.length > 0) {
-        // Update existing profile
-        await base44.entities.PerformerProfilePrivate.update(existingProfiles[0].id, {
-          legal_first_name: legalFirstName,
-          legal_last_name: legalLastName,
-          city: selectedApp.city || '',
-          country: selectedApp.nationality || '',
-          phone: selectedApp.phone || '',
-          updated_at: new Date().toISOString(),
-        });
-      } else {
-        // Create new profile
-        await base44.entities.PerformerProfilePrivate.create({
-          performer_id: performer.id,
-          legal_first_name: legalFirstName,
-          legal_last_name: legalLastName,
-          city: selectedApp.city || '',
-          country: selectedApp.nationality || '',
-          phone: selectedApp.phone || '',
-          payout_method: 'pending',
-          payout_status: 'not_set',
-        });
+      if (!data.success) {
+        toast.error(data.error || 'Approval failed');
+        return;
       }
-      
-      // Create or update ComplianceRecords for ID and Selfie
-      const idDocKey = selectedApp.id_document_front_r2_key || selectedApp.id_document_r2_key;
-      
-      // Check for existing compliance records
-      const existingRecords = await base44.entities.ComplianceRecord.filter({ performer_id: performer.id });
-      const existingIdRecord = existingRecords?.find(r => r.document_type === 'id');
-      const existingSelfieRecord = existingRecords?.find(r => r.document_type === 'other' && r.notes?.includes('Selfie'));
-      
-      if (idDocKey) {
-        if (existingIdRecord) {
-          // Update existing ID record
-          await base44.entities.ComplianceRecord.update(existingIdRecord.id, {
-            document_url: idDocKey,
-            verification_status: 'pending_review',
-            notes: `Updated from application: ${selectedApp.id}`,
-            updated_date: new Date().toISOString(),
-          });
-        } else {
-          // Create new ID record
-          await base44.entities.ComplianceRecord.create({
-            performer_id: performer.id,
-            document_type: 'id',
-            document_url: idDocKey,
-            verification_method: 'manual',
-            verification_status: 'pending_review',
-            notes: `Imported from application: ${selectedApp.id}`,
-          });
-        }
-      }
-      
-      if (selectedApp.selfie_with_id_r2_key) {
-        if (existingSelfieRecord) {
-          // Update existing selfie record
-          await base44.entities.ComplianceRecord.update(existingSelfieRecord.id, {
-            document_url: selectedApp.selfie_with_id_r2_key,
-            verification_status: 'pending_review',
-            notes: `Updated from application: ${selectedApp.id}`,
-            updated_date: new Date().toISOString(),
-          });
-        } else {
-          // Create new selfie record
-          await base44.entities.ComplianceRecord.create({
-            performer_id: performer.id,
-            document_type: 'other',
-            document_url: selectedApp.selfie_with_id_r2_key,
-            verification_method: 'manual',
-            verification_status: 'pending_review',
-            notes: `Selfie with ID from application: ${selectedApp.id}`,
-          });
-        }
-      }
-      
-      // Update application with performer link and approval
-      const updates = {
-        performer_id: performer.id,
-        performer_created_at: new Date().toISOString(),
-        status: 'performer_created',
-        approved_at: new Date().toISOString(),
-      };
-      
-      const logEntry = {
-        timestamp: new Date().toISOString(),
-        action: `Application approved - Performer created: ${performer.id}`,
-        performer_id: performer.id,
-        old_status: selectedApp.status,
-        new_status: 'performer_created',
-      };
-      updates.status_history = [...(selectedApp.status_history || []), JSON.stringify(logEntry)];
-      
-      await base44.entities.GuestProductionApplication.update(selectedApp.id, updates);
       await queryClient.invalidateQueries({ queryKey: ['applications'] });
-      
-      toast.success(`Application approved! Performer "${selectedApp.applicant_name}" created with ${isNetwork ? '70/30' : '60/40'} revenue split.`);
-      setIsDetailOpen(false);
-      setSelectedApp(null);
-      
+      setSelectedApp(prev => prev ? { ...prev, status: data.status || prev.status, approved_at: data.approved_at || prev.approved_at } : prev);
+      toast.success(data.already_approved ? 'Application was already approved' : 'Application approved after validation');
     } catch (err) {
-      console.error('Approval error:', err);
-      toast.error(`Failed to approve application: ${err.message}`);
+      const errors = err?.response?.data?.validation_errors;
+      if (errors?.length) {
+        toast.error(`Cannot approve yet. Missing: ${errors.map(e => e.message).join(', ')}`);
+      } else {
+        toast.error(`Failed to approve application: ${err.message}`);
+      }
     }
   };
 
@@ -651,6 +529,7 @@ export default function Applications() {
           selectedApp={selectedApp}
           updateMutation={updateMutation}
           handleStatusUpdate={handleStatusUpdate}
+          handleApprove={handleApprove}
         />
       )}
 

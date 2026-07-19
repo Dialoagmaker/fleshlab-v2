@@ -1,0 +1,29 @@
+{
+  "name": "RecruitmentRateLimit",
+  "type": "object",
+  "properties": {
+    "rate_key": {
+      "type": "string",
+      "title": "Rate Key"
+    },
+    "window_start": {
+      "type": "string",
+      "title": "Window Start"
+    },
+    "count": {
+      "type": "integer",
+      "title": "Count",
+      "default": 0
+    },
+    "last_seen_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last Seen At"
+    }
+  },
+  "required": [
+    "rate_key",
+    "window_start",
+    "count"
+  ]
+}
