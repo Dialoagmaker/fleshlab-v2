@@ -5,6 +5,7 @@ import BPHero from "@/components/becomePerformer/BPHero";
 import BPChapterSection from "@/components/becomePerformer/BPChapterSection";
 import BPApplicationForm from "@/components/becomePerformer/BPApplicationForm";
 import PrivateCreatorIntake from "@/components/becomePerformer/PrivateCreatorIntake";
+import RecruitmentCredibilitySection from "@/components/becomePerformer/RecruitmentCredibilitySection";
 import BPSuccessScreen from "@/components/becomePerformer/BPSuccessScreen";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BarChart2, CheckCircle2, Crown, FileText, Film, Globe, Lock, Shield, Users, Video } from "lucide-react";
@@ -122,7 +123,11 @@ export default function BecomePerformer() {
           <p className="mx-auto mt-8 max-w-3xl text-center text-xs leading-relaxed text-muted-foreground/70">Revenue models are reviewed during application. Splits apply to eligible gross revenue and may vary by product type or contract. Your boundaries still matter.</p>
         </BPChapterSection>
 
-        <BPChapterSection number="04" eyebrow="Apply" question="Apply today" answer="You have seen the path. Start privately, verify safely, and let the team review your fit for FLESHLAB.">
+        <BPChapterSection number="04" eyebrow="Proof" question="Why should you believe FLESHLAB?" answer="The process is visible before you commit: review stages, verification, publishing approval and the tools creators use after approval.">
+          <RecruitmentCredibilitySection />
+        </BPChapterSection>
+
+        <BPChapterSection number="05" eyebrow="Apply" question="Apply today" answer="You have seen the path. Start privately, verify safely, and let the team review your fit for FLESHLAB.">
           <div className="rounded-[2.2rem] border border-primary/25 bg-gradient-to-b from-primary/12 to-card p-7 shadow-2xl shadow-primary/10 md:p-10">
             <div className="grid gap-7 lg:grid-cols-[0.9fr_1.1fr]">
               <div className="rounded-[1.7rem] border border-border bg-background/35 p-6">
