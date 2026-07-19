@@ -33,6 +33,20 @@ const ALLOWED_EVENTS = new Set([
   'wallet_purchase_failed',
   'wallet_abandoned',
   'topup_before_purchase',
+  'recruitment_landing_viewed',
+  'recruitment_hero_interaction',
+  'recruitment_section_viewed',
+  'recruitment_why_viewed',
+  'recruitment_proof_viewed',
+  'recruitment_experiment_exposed',
+  'recruitment_creator_path_selected',
+  'recruitment_private_intake_started',
+  'recruitment_private_intake_completed',
+  'recruitment_private_intake_error',
+  'recruitment_verification_started',
+  'recruitment_verification_completed',
+  'recruitment_application_submitted',
+  'recruitment_credibility_faq_opened',
 ]);
 
 // Lightweight User-Agent parser — best-effort browser/OS/device detection.

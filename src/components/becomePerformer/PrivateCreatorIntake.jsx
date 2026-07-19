@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { trackEvent } from "@/lib/analytics";
+import { trackRecruitmentFunnelStage } from "@/lib/recruitmentOptimization";
 import { AlertCircle, ArrowRight, Loader2, Lock, ShieldCheck } from "lucide-react";
 import IntakeOptionButton from "@/components/becomePerformer/IntakeOptionButton";
 import CreatorPathResult from "@/components/becomePerformer/CreatorPathResult";
@@ -25,7 +26,14 @@ const INTERESTS = ["Homemade", "Studio Productions", "Fanclub", "Live Shows", "P
 
 export default function PrivateCreatorIntake({ onVerifyClick }) {
   const [form, setForm] = useState({ name: "", email: "", contact: "", country: "", path: "", interests: [], experience: "", age: false });
+  const [started, setStarted] = useState(false);
   const [startedAt] = useState(Date.now());
+  const markStarted = () => {
+    if (!started) {
+      setStarted(true);
+      trackRecruitmentFunnelStage('private_intake_started');
+    }
+  };
   const selectedPath = useMemo(() => form.path || "unsure", [form.path]);
   const toggleInterest = (value) => setForm((f) => ({ ...f, interests: f.interests.includes(value) ? f.interests.filter((item) => item !== value) : [...f.interests, value] }));
 
@@ -45,7 +53,10 @@ export default function PrivateCreatorIntake({ onVerifyClick }) {
       const response = await base44.functions.invoke("submitPerformerApplication", payload);
       return response.data;
     },
-    onMutate: () => trackEvent("recruitment_private_intake_submit", { creator_path: selectedPath, interests_count: form.interests.length, seconds_to_submit: Math.round((Date.now() - startedAt) / 1000) }),
+    onMutate: () => {
+      const payload = { creator_path: selectedPath, interests_count: form.interests.length, seconds_to_submit: Math.round((Date.now() - startedAt) / 1000) };
+      trackRecruitmentFunnelStage('private_intake_completed', payload);
+    },
     onError: () => trackEvent("recruitment_private_intake_error", { creator_path: selectedPath }),
   });
 
@@ -60,15 +71,15 @@ export default function PrivateCreatorIntake({ onVerifyClick }) {
 
       {submit.isSuccess ? <CreatorPathResult path={selectedPath} onVerifyClick={onVerifyClick} /> : <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2"><div><Label className="text-xs uppercase tracking-widest text-muted-foreground">Name / stage name *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1 bg-background" /></div><div><Label className="text-xs uppercase tracking-widest text-muted-foreground">Country *</Label><Input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} className="mt-1 bg-background" /></div></div>
-          <div><Label className="text-xs uppercase tracking-widest text-muted-foreground">Email *</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="mt-1 bg-background" /></div>
+          <div className="grid gap-4 sm:grid-cols-2"><div><Label className="text-xs uppercase tracking-widest text-muted-foreground">Name / stage name *</Label><Input value={form.name} onFocus={markStarted} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1 bg-background" /></div><div><Label className="text-xs uppercase tracking-widest text-muted-foreground">Country *</Label><Input value={form.country} onFocus={markStarted} onChange={(e) => setForm({ ...form, country: e.target.value })} className="mt-1 bg-background" /></div></div>
+          <div><Label className="text-xs uppercase tracking-widest text-muted-foreground">Email *</Label><Input type="email" value={form.email} onFocus={markStarted} onChange={(e) => setForm({ ...form, email: e.target.value })} className="mt-1 bg-background" /></div>
           <div><Label className="text-xs uppercase tracking-widest text-muted-foreground">WhatsApp / Telegram</Label><Input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} className="mt-1 bg-background" /></div>
           <div className="rounded-2xl border border-primary/20 bg-primary/10 p-4"><label className="flex items-start gap-3"><Checkbox checked={form.age} onCheckedChange={(age) => setForm({ ...form, age: !!age })} /><span className="text-sm leading-6 text-muted-foreground">I confirm I am 18 years or older and understand FLESHLAB is adult creator work, not escorting, dating or private pressure. *</span></label></div>
           <div className="grid gap-3 sm:grid-cols-2"><RecruitmentTrustCard type="privacy" compact /><RecruitmentTrustCard type="control" compact /></div>
         </div>
 
         <div className="space-y-5">
-          <div><Label className="mb-2 block text-xs uppercase tracking-widest text-muted-foreground">Which sounds most like you?</Label>{!form.path && <p className="mb-3 rounded-xl border border-border bg-secondary/30 px-4 py-3 text-xs leading-5 text-muted-foreground">Choose the closest path so we can prepare a roadmap that fits your experience level. You can choose “not sure yet” if you want FLESHLAB to guide you.</p>}<div className="grid gap-2 sm:grid-cols-2">{PATHS.map(([value, label, description]) => <IntakeOptionButton key={value} label={label} description={description} selected={form.path === value} onClick={() => { setForm({ ...form, path: value }); trackEvent("recruitment_creator_path_selected", { creator_path: value, changed_from: form.path || null }); }} />)}</div></div>
+          <div><Label className="mb-2 block text-xs uppercase tracking-widest text-muted-foreground">Which sounds most like you?</Label>{!form.path && <p className="mb-3 rounded-xl border border-border bg-secondary/30 px-4 py-3 text-xs leading-5 text-muted-foreground">Choose the closest path so we can prepare a roadmap that fits your experience level. You can choose “not sure yet” if you want FLESHLAB to guide you.</p>}<div className="grid gap-2 sm:grid-cols-2">{PATHS.map(([value, label, description]) => <IntakeOptionButton key={value} label={label} description={description} selected={form.path === value} onClick={() => { markStarted(); setForm({ ...form, path: value }); trackRecruitmentFunnelStage('creator_path_selected', { creator_path: value, changed_from: form.path || null }); }} />)}</div></div>
           <div><Label className="mb-2 block text-xs uppercase tracking-widest text-muted-foreground">What are you interested in?</Label><div className="flex flex-wrap gap-2">{INTERESTS.map((item) => <button key={item} type="button" onClick={() => toggleInterest(item)} className={`rounded-full border px-3 py-2 text-xs font-bold transition ${form.interests.includes(item) ? "border-primary bg-primary text-primary-foreground" : "border-border bg-secondary/35 text-muted-foreground hover:text-foreground"}`}>{item}</button>)}</div></div>
           <Textarea value={form.experience} onChange={(e) => setForm({ ...form, experience: e.target.value })} placeholder="Optional: tell us about your experience, goals, privacy concerns, or what kind of creator you want to become." className="min-h-[112px] bg-background" />
         </div>

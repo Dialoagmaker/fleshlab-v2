@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, ChevronRight, ChevronLeft } from "lucide-react";
 import { trackPhilippinesApplicationStart, trackApplicationStart, trackApplicationSubmit, trackApplicationStepComplete } from "@/lib/analytics";
+import { trackRecruitmentFunnelStage } from "@/lib/recruitmentOptimization";
 import { base44 } from "@/api/base44Client";
 import toast from "react-hot-toast";
 import FileUploadField from "@/components/application/FileUploadField";
@@ -156,7 +157,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
       const selfieUploaded = !!p3.selfie_r2_key;
       const missingCount = Math.max(0, 5 - photosCount) + Math.max(0, 2 - videosCount) + (idUploaded ? 0 : 1) + (selfieUploaded ? 0 : 1);
       
-      trackApplicationSubmit({
+      const submissionMetrics = {
         application_type: 'performer_application',
         source_page: sourcePage,
         source_country: sourceCountry,
@@ -167,7 +168,10 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
         selfie_uploaded: selfieUploaded,
         missing_count: missingCount,
         upload_status: missingCount === 0 ? 'complete' : 'partial',
-      });
+      };
+      trackApplicationSubmit(submissionMetrics);
+      trackRecruitmentFunnelStage('verification_completed', submissionMetrics);
+      trackRecruitmentFunnelStage('application_submitted', submissionMetrics);
       
       onSuccess({ first_name: p1.first_name, last_name: p1.last_name, email: p1.email });
     },
@@ -178,6 +182,12 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
   const step0Valid = p1.first_name && p1.last_name && p1.email && p1.age_confirmed && p1.country;
   const step1Valid = mediaKeys.profile_photo_r2_keys.length >= 5 && mediaKeys.intro_video_r2_key && mediaKeys.hardcore_video_r2_key;
   const step2Valid = p3.id_document_r2_key && p3.selfie_r2_key && p3.consent1 && p3.consent2 && p3.consent3 && p3.consent4 && p3.consent5;
+
+  const handleNext = () => {
+    if (step === 0) trackRecruitmentFunnelStage('verification_started', { verification_step: 'creator_profile_complete' });
+    if (step === 1) trackRecruitmentFunnelStage('verification_started', { verification_step: 'review_media_complete' });
+    setStep(s => s + 1);
+  };
 
   const Wrapper = embedded ? "div" : "section";
 
@@ -426,7 +436,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
 
             {step < 2 ? (
               <Button
-                onClick={() => setStep(s => s + 1)}
+                onClick={handleNext}
                 disabled={step === 0 ? !step0Valid : step === 1 ? !step1Valid : false}
                 className="min-h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 focus-visible:ring-2 focus-visible:ring-primary"
               >

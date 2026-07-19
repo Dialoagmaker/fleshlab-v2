@@ -57,6 +57,7 @@ import VisualAttentionMapLab from './pages/admin/VisualAttentionMapLab';
 import AdminUsers from './pages/admin/Users';
 import AdminUserDetail from './pages/admin/UserDetail';
 import FunnelAnalytics from './pages/admin/FunnelAnalytics';
+import RecruitmentIntelligence from './pages/admin/RecruitmentIntelligence';
 import GrowthDashboard from './pages/admin/GrowthDashboard';
 import ExecutiveDashboard from './pages/admin/ExecutiveDashboard';
 import AdminPayments from './pages/admin/Payments';
@@ -232,6 +233,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/users" element={<AdminUsers />} />
                 <Route path="/admin/users/:id" element={<AdminUserDetail />} />
                 <Route path="/admin/funnel" element={<FunnelAnalytics />} />
+                <Route path="/admin/recruitment-intelligence" element={<RecruitmentIntelligence />} />
                 <Route path="/admin/wallets" element={<AdminWallets />} />
                 <Route path="/admin/payment-providers" element={<AdminPaymentProviders />} />
                 <Route path="/admin/tracking-test" element={<TrackingTest />} />

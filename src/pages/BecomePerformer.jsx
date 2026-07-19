@@ -5,11 +5,13 @@ import BPHero from "@/components/becomePerformer/BPHero";
 import BPChapterSection from "@/components/becomePerformer/BPChapterSection";
 import BPApplicationForm from "@/components/becomePerformer/BPApplicationForm";
 import PrivateCreatorIntake from "@/components/becomePerformer/PrivateCreatorIntake";
+import RecruitmentMeasurement from "@/components/becomePerformer/RecruitmentMeasurement";
 import RecruitmentCredibilitySection from "@/components/becomePerformer/RecruitmentCredibilitySection";
 import BPSuccessScreen from "@/components/becomePerformer/BPSuccessScreen";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BarChart2, CheckCircle2, Crown, FileText, Film, Globe, Lock, Shield, Users, Video } from "lucide-react";
 import { trackBecomePerformerCtaClick } from "@/lib/analytics";
+import { trackRecruitmentFunnelStage } from "@/lib/recruitmentOptimization";
 
 const FAQ_JSON_LD = [
   { q: "Can I really make money with this?", a: "Yes, but not automatically. You can earn through views, video sales, fanclub subscriptions, PPV, partner platforms and livecam tokens." },
@@ -45,10 +47,12 @@ export default function BecomePerformer() {
 
   const scrollToForm = () => {
     trackBecomePerformerCtaClick('hero_apply');
+    trackRecruitmentFunnelStage('hero_interaction', { cta_location: 'hero_apply' });
     intakeRef.current?.scrollIntoView({ behavior: "smooth" });
   };
   const scrollToVerification = () => {
     trackBecomePerformerCtaClick('intake_continue_verification');
+    trackRecruitmentFunnelStage('verification_started', { cta_location: 'intake_continue_verification' });
     formRef.current?.scrollIntoView({ behavior: "smooth" });
   };
   const scrollToEarn = () => {
@@ -57,6 +61,7 @@ export default function BecomePerformer() {
   };
 
   const handleSuccess = (data) => {
+    trackRecruitmentFunnelStage('application_submitted');
     setSubmittedData(data);
     setSubmitted(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -77,8 +82,12 @@ export default function BecomePerformer() {
       />
 
       <div className="min-h-screen bg-fl-background text-foreground">
-        <BPHero onApplyClick={scrollToForm} onEarnClick={scrollToEarn} />
+        <RecruitmentMeasurement />
+        <div data-recruitment-section="hero">
+          <BPHero onApplyClick={scrollToForm} onEarnClick={scrollToEarn} />
+        </div>
 
+        <div data-recruitment-section="why_fleshlab">
         <BPChapterSection number="01" eyebrow="Why FLESHLAB" question="Why build with FLESHLAB?" answer="Start with what you already have: body, confidence and energy. We add production, publishing, compliance, sales and support.">
           <div className="grid gap-7 lg:grid-cols-[0.95fr_1.05fr]">
             <div className="rounded-[2rem] border border-primary/25 bg-gradient-to-br from-primary/12 to-card p-8 md:p-10">
@@ -95,8 +104,9 @@ export default function BecomePerformer() {
             </div>
           </div>
         </BPChapterSection>
+        </div>
 
-        <div ref={earnRef}>
+        <div ref={earnRef} data-recruitment-section="earnings">
           <BPChapterSection number="02" eyebrow="How You Earn" question="How can this make money?" answer="Scenes create income opportunities. A catalog, fanclub, livecam schedule and partner distribution create momentum." tone="amber">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               {INCOME.map(({ Icon, title, text }) => <div key={title} className="rounded-[1.6rem] border border-border bg-card p-5 transition hover:-translate-y-0.5 hover:border-primary/30"><Icon className="mb-5 h-7 w-7 text-primary" /><h3 className="mb-2 text-lg font-black text-foreground">{title}</h3><p className="text-sm leading-relaxed text-muted-foreground">{text}</p></div>)}
@@ -115,6 +125,7 @@ export default function BecomePerformer() {
           </BPChapterSection>
         </div>
 
+        <div data-recruitment-section="creator_models">
         <BPChapterSection number="03" eyebrow="Choose Your Model" question="Which model fits you?" answer="New performers usually need studio management. Established creators usually need reach, infrastructure and smarter monetization.">
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="rounded-[2rem] border-2 border-primary/45 bg-gradient-to-br from-primary/12 to-card p-8 md:p-10"><span className="rounded-full bg-primary px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary-foreground">New Performers</span><h3 className="mt-7 text-2xl font-black text-foreground">Managed Performer</h3><div className="mt-4 flex items-end gap-3"><span className="text-6xl font-black text-primary">40%</span><span className="pb-2 text-sm text-muted-foreground">performer share</span></div><ul className="mt-6 space-y-3 text-sm text-muted-foreground"><li>• For beginners or performers starting from scratch</li><li>• Studio support for planning, setup, promo and compliance</li><li>• We help build the performer brand around you</li></ul></div>
@@ -122,11 +133,15 @@ export default function BecomePerformer() {
           </div>
           <p className="mx-auto mt-8 max-w-3xl text-center text-xs leading-relaxed text-muted-foreground/70">Revenue models are reviewed during application. Splits apply to eligible gross revenue and may vary by product type or contract. Your boundaries still matter.</p>
         </BPChapterSection>
+        </div>
 
+        <div data-recruitment-section="credibility_proof">
         <BPChapterSection number="04" eyebrow="Proof" question="Why should you believe FLESHLAB?" answer="The process is visible before you commit: review stages, verification, publishing approval and the tools creators use after approval.">
           <RecruitmentCredibilitySection />
         </BPChapterSection>
+        </div>
 
+        <div data-recruitment-section="apply">
         <BPChapterSection number="05" eyebrow="Apply" question="Apply today" answer="You have seen the path. Start privately, verify safely, and let the team review your fit for FLESHLAB.">
           <div className="rounded-[2.2rem] border border-primary/25 bg-gradient-to-b from-primary/12 to-card p-7 shadow-2xl shadow-primary/10 md:p-10">
             <div className="grid gap-7 lg:grid-cols-[0.9fr_1.1fr]">
@@ -151,6 +166,7 @@ export default function BecomePerformer() {
             <BPApplicationForm ref={formRef} onSuccess={handleSuccess} embedded />
           </div>
         </BPChapterSection>
+        </div>
       </div>
     </>
   );
