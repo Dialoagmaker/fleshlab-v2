@@ -3,28 +3,15 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
 const SECRET_NAME = 'KIMI_API_KEY';
 const EXISTING_TEXT_MODEL_SECRET = 'KIMI_MODEL';
-const PRIMARY_MODEL = 'black-forest-labs/flux.2-pro';
-const QUALITY_MODEL = 'black-forest-labs/flux.2-max';
-const AI_PHOTOGRAPHER_PROVIDERS = [
-  {
-    id: 'openrouter_flux',
-    type: 'openrouter',
-    label: 'AI Photographer',
-    secret_name: SECRET_NAME,
-    candidates: [
-      { model: QUALITY_MODEL, role: 'premium commercial detail pass' },
-      { model: PRIMARY_MODEL, role: 'fast photoreal campaign pass' }
-    ]
-  }
+const PREFERRED_IMAGE_MODELS = [
+  'black-forest-labs/flux.2-max',
+  'black-forest-labs/flux.2-pro',
+  'google/gemini-2.5-flash-image',
+  'openai/gpt-image-1'
 ];
-const AI_PHOTOGRAPHER_CANDIDATES = AI_PHOTOGRAPHER_PROVIDERS.flatMap(provider => provider.candidates.map(candidate => ({ ...candidate, provider_id: provider.id })));
-
-function getConfiguredPhotographerProviders(apiKey) {
-  return AI_PHOTOGRAPHER_PROVIDERS
-    .map(provider => provider.type === 'openrouter' ? { ...provider, apiKey } : provider)
-    .filter(provider => provider.type !== 'openrouter' || Boolean(provider.apiKey));
-}
 const MAX_DATA_URL_CHARS = 12_000_000;
+const MAX_REFERENCE_BYTES = 9_000_000;
+const MAX_AUTOMATIC_ATTEMPTS = 4;
 
 const KEY_ART_DIRECTOR_PROMPT = `You are the FLESHLAB AI Photographer Engine.
 
@@ -36,15 +23,6 @@ Internal role:
 Use two separate visual references when provided:
 - Identity Reference: preserve the same performer, face, body, tattoos, hairstyle, proportions, and recognisable appearance.
 - Story Reference: preserve the same action, location, room, emotional tone, scene logic, and visual story.
-
-Creative Director analysis to perform before generation:
-- what is happening
-- why this moment matters
-- who is the hero
-- what emotion sells the video
-- what visual story should be communicated
-- what should dominate
-- what should disappear
 
 AI Photographer instructions:
 - do NOT create fantasy art
@@ -58,8 +36,8 @@ AI Photographer instructions:
 - the editorial title must influence composition, mood, negative space, and where the title should naturally live later
 
 Maintain:
-- same performer
-- same body and proportions
+- same performer where technically possible
+- same body and proportions where visible
 - same tattoos and hairstyle when visible
 - same room/location
 - same action and emotional tone
@@ -74,14 +52,16 @@ Improve photography only:
 - controlled contrast
 - natural skin and realistic environment
 - premium 16:9 framing
-
-Acceptance standard:
-The output must plausibly look like a professionally photographed promotional still that could sit beside Netflix artwork, Prime Video artwork, AAA game key art, premium entertainment marketing, and approved FLESHLAB covers.
+- useful negative space for later typography
 
 Output ONLY the professional 16:9 hero photograph. Branding and typography will be applied locally after this image is approved.`;
 
 function json(data, status = 200) {
   return Response.json(data, { status });
+}
+
+function safeJson(value) {
+  try { return JSON.stringify(value || null); } catch (_) { return '{}'; }
 }
 
 function isAllowedStaff(user) {
@@ -91,6 +71,13 @@ function isAllowedStaff(user) {
 function estimateBytesFromDataUrl(dataUrl) {
   const base64 = String(dataUrl || '').split(',')[1] || '';
   return Math.floor(base64.length * 0.75);
+}
+
+function parseDataUrlInfo(dataUrl) {
+  const match = String(dataUrl || '').match(/^data:(image\/(png|jpeg|jpg|webp));base64,([A-Za-z0-9+/=]+)$/i);
+  if (!match) return { ok: false, mime_type: null, byte_length: 0 };
+  const mime = match[1].toLowerCase().replace('image/jpg', 'image/jpeg');
+  return { ok: true, mime_type: mime, byte_length: estimateBytesFromDataUrl(dataUrl) };
 }
 
 function extractProviderMessage(bodyText) {
@@ -106,41 +93,75 @@ function extractProviderMessage(bodyText) {
   }
 }
 
-function buildProviderErrorDetails(status, bodyText) {
-  const rawResponse = String(bodyText || '');
+function parseOpenRouterError(status, bodyText, headers = null, payloadSummary = null) {
+  let parsed = null;
+  try { parsed = JSON.parse(String(bodyText || '{}')); } catch (_) { parsed = null; }
+  const error = parsed?.error || {};
+  const metadata = error?.metadata || parsed?.metadata || null;
+  const openrouterMetadata = parsed?.openrouter_metadata || null;
+  const code = String(error?.code ?? status ?? 'openrouter_error');
+  const message = error?.message || extractProviderMessage(bodyText);
+  const category = categorizeOpenRouterError(status, code, message, metadata);
+  const retryable = ['RATE_LIMIT', 'PROVIDER_FAILURE', 'MODEL_UNAVAILABLE', 'TIMEOUT'].includes(category);
   return {
     http_status: status,
-    provider_message: extractProviderMessage(rawResponse),
-    raw_response: rawResponse.slice(0, 6000)
+    openrouter_code: code,
+    message,
+    metadata,
+    openrouter_metadata: openrouterMetadata,
+    provider: metadata?.provider_name || openrouterMetadata?.provider_name || openrouterMetadata?.provider || null,
+    request_id: headers?.get('x-request-id') || headers?.get('x-openrouter-request-id') || openrouterMetadata?.request_id || null,
+    generation_id: parsed?.id || parsed?.generation_id || parsed?.data?.id || null,
+    processing_began: status === 200,
+    category,
+    retryable,
+    raw_response: String(bodyText || '').slice(0, 6000),
+    payload_summary: payloadSummary
   };
 }
 
-function normalizeError(status, bodyText) {
-  const lower = String(bodyText || '').toLowerCase();
-  const provider_error = buildProviderErrorDetails(status, bodyText);
-  const raw = provider_error.raw_response;
-  if (status === 401 || status === 403) return { code: 'api_authentication_failure', message: 'OpenRouter API authentication failed.', raw, provider_error };
-  if (status === 402 || lower.includes('credit') || lower.includes('insufficient')) return { code: 'credit_exhausted', message: 'OpenRouter credit is exhausted or insufficient.', raw, provider_error };
-  if (status === 404 || lower.includes('not found') || lower.includes('unsupported')) return { code: 'unsupported_model', message: 'The requested OpenRouter image model is unavailable or unsupported.', raw, provider_error };
-  if (status === 422 && (lower.includes('invalid') || lower.includes('corrupted image'))) return { code: 'invalid_reference_image', message: 'The AI Photographer rejected the reference image as invalid or corrupted.', raw, provider_error };
-  if (status === 429) return { code: 'rate_limit', message: 'OpenRouter rate limit reached.', raw, provider_error };
-  if (lower.includes('refus') || lower.includes('policy') || lower.includes('moderation')) return { code: 'provider_refusal', message: provider_error.provider_message || 'Provider rejected the image request.', raw, provider_error };
-  if (lower.includes('image') && lower.includes('unavailable')) return { code: 'image_generation_unavailable', message: provider_error.provider_message || 'Image generation is unavailable for this model/provider.', raw, provider_error };
-  return { code: 'openrouter_error', message: provider_error.provider_message || `OpenRouter request failed with status ${status}.`, raw, provider_error };
+function categorizeOpenRouterError(status, code, message, metadata) {
+  const lower = String(message || '').toLowerCase();
+  const errorType = String(metadata?.error_type || metadata?.provider_code || '').toLowerCase();
+  if (status === 400) {
+    if (lower.includes('image') || lower.includes('input_reference') || lower.includes('input reference') || lower.includes('base64')) return 'UNSUPPORTED_IMAGE_INPUT';
+    return 'INVALID_PAYLOAD';
+  }
+  if (status === 401 || status === 403 && lower.includes('key')) return 'AUTH_ERROR';
+  if (status === 402 || lower.includes('credit') || lower.includes('insufficient')) return 'NO_CREDITS';
+  if (status === 403 || lower.includes('moderation') || lower.includes('policy') || lower.includes('guardrail') || lower.includes('flagged')) return 'CONTENT_POLICY';
+  if (status === 408 || status === 524 || lower.includes('timeout')) return 'TIMEOUT';
+  if (status === 429 || errorType.includes('rate_limit')) return 'RATE_LIMIT';
+  if (status === 502 || status === 503 || status === 529) return 'PROVIDER_FAILURE';
+  if (status === 404 || lower.includes('not found') || lower.includes('unavailable')) return 'MODEL_UNAVAILABLE';
+  return 'PROVIDER_FAILURE';
 }
 
-function logProviderRejection(provider, model, parsed) {
-  const details = parsed?.provider_error || {};
-  console.error('AI Photographer provider rejection', JSON.stringify({
-    provider_id: provider?.id,
-    provider_type: provider?.type,
-    model,
-    code: parsed?.code,
-    http_status: details.http_status ?? parsed?.status ?? null,
-    provider_message: details.provider_message ?? parsed?.message ?? '',
-    raw_response: details.raw_response ?? parsed?.raw ?? '',
-    failed_stage: parsed?.failed_stage || null,
-    payload_summary: parsed?.payload_summary || null
+function publicFailureMessage(diagnostic) {
+  if (!diagnostic) return 'The professional hero photograph could not be generated. Try another frame or retry later.';
+  if (diagnostic.category === 'NO_CREDITS') return 'OpenRouter credits are not available for this application key.';
+  if (diagnostic.category === 'UNSUPPORTED_IMAGE_INPUT') return 'This model did not accept the reference-image request. Try a compatible image-editing model.';
+  if (diagnostic.category === 'INVALID_PAYLOAD') return 'The reference-image request was not accepted. The technical details show the exact OpenRouter response.';
+  if (diagnostic.category === 'CONTENT_POLICY') return 'The provider declined this content under its policy. Trying another compatible route is not guaranteed to succeed.';
+  if (diagnostic.category === 'RATE_LIMIT') return 'OpenRouter rate limits were reached. Retry after a short wait.';
+  return 'The selected OpenRouter route failed. Try another frame or retry later.';
+}
+
+function logProviderDiagnostic(label, diagnostic) {
+  console.error(label, safeJson({
+    http_status: diagnostic?.http_status,
+    openrouter_code: diagnostic?.openrouter_code,
+    message: diagnostic?.message,
+    category: diagnostic?.category,
+    retryable: diagnostic?.retryable,
+    provider: diagnostic?.provider,
+    request_id: diagnostic?.request_id,
+    generation_id: diagnostic?.generation_id,
+    processing_began: diagnostic?.processing_began,
+    metadata: diagnostic?.metadata,
+    openrouter_metadata: diagnostic?.openrouter_metadata,
+    payload_summary: diagnostic?.payload_summary,
+    raw_response: diagnostic?.raw_response
   }));
 }
 
@@ -155,7 +176,9 @@ async function openRouterFetch(path, apiKey, options = {}, timeoutMs = 120000) {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': Deno.env.get('APP_BASE_URL') || 'https://fleshlab.online',
-        'X-Title': 'FLESHLAB AI Media Studio',
+        'X-Title': 'FLESHLAB AI Photographer',
+        'X-OpenRouter-Metadata': 'enabled',
+        'X-OpenRouter-Experimental-Metadata': 'enabled',
         ...(options.headers || {})
       }
     });
@@ -167,72 +190,102 @@ async function openRouterFetch(path, apiKey, options = {}, timeoutMs = 120000) {
   }
 }
 
+async function readJsonResponse(res) {
+  const text = await res.text();
+  let data = null;
+  try { data = JSON.parse(text); } catch (_) { data = null; }
+  return { text, data };
+}
+
 async function fetchCredits(apiKey) {
   const res = await openRouterFetch('/credits', apiKey, { method: 'GET' }, 30000);
-  const text = await res.text();
-  if (!res.ok) return { ok: false, error: normalizeError(res.status, text), raw_status: res.status };
-  const data = JSON.parse(text);
+  const { text, data } = await readJsonResponse(res);
+  if (!res.ok) return { ok: false, diagnostic: parseOpenRouterError(res.status, text, res.headers) };
   const totalCredits = Number(data?.data?.total_credits ?? data?.total_credits ?? 0);
   const totalUsage = Number(data?.data?.total_usage ?? data?.total_usage ?? 0);
   const remaining = Number((totalCredits - totalUsage).toFixed(6));
-  return { ok: true, total_credits: totalCredits, total_usage: totalUsage, remaining_credit: remaining, sufficient_credit: remaining > 0 };
+  return { ok: true, total_credits: totalCredits, total_usage: totalUsage, remaining_credit: remaining, sufficient_credit: remaining > 0.01, low_credit_warning: remaining <= 2 };
 }
 
-async function fetchImageModelSupport(apiKey, model) {
+async function fetchImageModelCatalog(apiKey) {
+  const res = await openRouterFetch('/images/models', apiKey, { method: 'GET' }, 30000);
+  const { text, data } = await readJsonResponse(res);
+  if (!res.ok) throw new Error(safeJson(parseOpenRouterError(res.status, text, res.headers)));
+  return Array.isArray(data?.data) ? data.data : [];
+}
+
+async function fetchImageModelEndpoints(apiKey, model) {
   const res = await openRouterFetch(`/images/models/${model}/endpoints`, apiKey, { method: 'GET' }, 30000);
-  const text = await res.text();
-  if (!res.ok) return { ok: false, model, error: normalizeError(res.status, text), raw_status: res.status };
-  const data = JSON.parse(text);
-  const endpoints = data?.endpoints || [];
-  return {
-    ok: true,
-    model,
-    endpoint: '/api/v1/images',
-    endpoint_count: endpoints.length,
-    supports_image_generation: endpoints.length > 0,
-    supports_image_reference: true,
-    pricing: endpoints[0]?.pricing || []
-  };
+  const { text, data } = await readJsonResponse(res);
+  if (!res.ok) return { ok: false, model, diagnostic: parseOpenRouterError(res.status, text, res.headers) };
+  return { ok: true, model, endpoints: Array.isArray(data?.endpoints) ? data.endpoints : [] };
 }
 
-async function getAvailablePhotographersForProvider(provider) {
-  if (provider.type !== 'openrouter') return [];
-  const checked = await Promise.all(provider.candidates.map(candidate =>
-    fetchImageModelSupport(provider.apiKey, candidate.model)
-      .then(support => ({ ...candidate, provider_id: provider.id, support }))
-      .catch(error => ({ ...candidate, provider_id: provider.id, support: { ok: false, model: candidate.model, error: { code: error.message === 'timeout' ? 'timeout' : 'model_check_failed', message: error.message } } }))
-  ));
-  const available = checked.filter(item => item.support?.supports_image_generation);
-  return available.length ? available : checked;
+function descriptorAllows(descriptor, desired) {
+  if (!descriptor) return false;
+  if (descriptor.type === 'enum') return Array.isArray(descriptor.values) && descriptor.values.includes(desired);
+  return true;
 }
 
-async function getAvailablePhotographers(apiKey) {
-  const providers = getConfiguredPhotographerProviders(apiKey);
-  const providerPhotographers = await Promise.all(providers.map(provider => getAvailablePhotographersForProvider(provider)));
-  return providerPhotographers.flat();
+function endpointSupports(endpoint, key) {
+  return Boolean(endpoint?.supported_parameters?.[key]);
 }
 
-async function auditOpenRouter(apiKey) {
-  const [credits, photographers] = await Promise.all([
-    fetchCredits(apiKey).catch(error => ({ ok: false, error: { code: error.message === 'timeout' ? 'timeout' : 'credit_check_failed', message: error.message } })),
-    getAvailablePhotographers(apiKey)
-  ]);
+function estimateEndpointCost(endpoint) {
+  const lines = Array.isArray(endpoint?.pricing) ? endpoint.pricing : [];
+  const output = lines.find(line => line.billable === 'output_image') || lines[0];
+  return output ? Number(output.cost_usd || 0) : null;
+}
 
-  return {
-    ok: true,
-    secret_name_used: SECRET_NAME,
-    model_secret_name: EXISTING_TEXT_MODEL_SECRET,
-    existing_openrouter_functions: [
-      { name: 'generateVideoTextFromIdea', endpoint: '/api/v1/chat/completions', purpose: 'Kimi/OpenRouter adult SEO metadata text generation' }
-    ],
-    current_openrouter_endpoint_used: 'https://openrouter.ai/api/v1/images',
-    image_generation_endpoint_to_use: 'https://openrouter.ai/api/v1/images',
-    credits,
-    image_generation_support: photographers.reduce((map, item) => ({ ...map, [item.model]: item.support }), {}),
-    ai_photographer_router: photographers.map(item => ({ model: item.model, role: item.role, available: Boolean(item.support?.supports_image_generation) })),
-    current_integration_supports_image_generation: false,
-    note: 'OpenRouter is used as the FLESHLAB AI Photographer: selected frames are reference material only, a professional hero photograph is generated first, and final typography/branding are added locally after approval.'
-  };
+function isReferenceCompatible(modelRecord, endpoint) {
+  const input = modelRecord?.architecture?.input_modalities || [];
+  const output = modelRecord?.architecture?.output_modalities || [];
+  const modelAcceptsImage = input.includes('image') || endpointSupports(endpoint, 'input_references');
+  const modelOutputsImage = output.includes('image');
+  const aspect = endpoint?.supported_parameters?.aspect_ratio || modelRecord?.supported_parameters?.aspect_ratio;
+  const format = endpoint?.supported_parameters?.output_format || modelRecord?.supported_parameters?.output_format;
+  return modelAcceptsImage && modelOutputsImage && descriptorAllows(aspect, '16:9') && (!format || descriptorAllows(format, 'png'));
+}
+
+async function discoverCompatibleImageRoutes(apiKey) {
+  const catalog = await fetchImageModelCatalog(apiKey);
+  const imageModels = catalog.filter(model => {
+    const input = model?.architecture?.input_modalities || [];
+    const output = model?.architecture?.output_modalities || [];
+    return output.includes('image') && (input.includes('image') || model?.supported_parameters?.input_references);
+  });
+  const sorted = imageModels.sort((a, b) => {
+    const ai = PREFERRED_IMAGE_MODELS.indexOf(a.id);
+    const bi = PREFERRED_IMAGE_MODELS.indexOf(b.id);
+    const ar = ai === -1 ? 999 : ai;
+    const br = bi === -1 ? 999 : bi;
+    return ar - br || String(a.id).localeCompare(String(b.id));
+  });
+  const limited = sorted.slice(0, 12);
+  const inspected = [];
+  for (const model of limited) {
+    const endpointResult = await fetchImageModelEndpoints(apiKey, model.id);
+    const endpoints = endpointResult.ok ? endpointResult.endpoints : [];
+    const compatibleEndpoints = endpoints.filter(endpoint => isReferenceCompatible(model, endpoint));
+    inspected.push({
+      id: model.id,
+      name: model.name || model.id,
+      description: model.description || '',
+      architecture: model.architecture || {},
+      supported_parameters: model.supported_parameters || {},
+      endpoint_count: endpoints.length,
+      compatible_endpoint_count: compatibleEndpoints.length,
+      compatible_endpoints: compatibleEndpoints.map(endpoint => ({
+        provider_name: endpoint.provider_name || endpoint.provider_slug || endpoint.provider_tag,
+        provider_slug: endpoint.provider_slug || endpoint.provider_tag,
+        provider_tag: endpoint.provider_tag || endpoint.provider_slug,
+        pricing: endpoint.pricing || [],
+        supported_parameters: endpoint.supported_parameters || {},
+        estimated_cost_usd: estimateEndpointCost(endpoint)
+      }))
+    });
+  }
+  return inspected.filter(model => model.compatible_endpoint_count > 0);
 }
 
 function buildPhotographicBrief(metadata = {}) {
@@ -252,145 +305,396 @@ function buildPhotographicBrief(metadata = {}) {
     '',
     'PHOTOGRAPHIC BRIEF',
     'Create the exact scene as a professional promotional still, not as cover art.',
-    'Same performer, same action, same room/location, same story, same emotional tone.',
-    'Improve only camera, lighting, lens, depth, color science, contrast, composition, and cinematic realism.',
+    'Same performer where technically possible, same action, same room/location, same story, same emotional tone.',
+    'Improve only camera, lighting, lens, depth, color science, contrast, composition, and cinematic realism.'
   ].filter(Boolean).join('\n');
 }
 
 function buildKeyArtPrompt(metadata = {}) {
   const referenceMode = metadata.identityReferenceProvided
-    ? 'Reference order: image 1 is IDENTITY ONLY; image 2 is STORY/MOMENT ONLY. Preserve identity from image 1 and story from image 2.'
-    : 'Only a Story Reference was supplied. Generate anyway, but identity preservation may be weaker.';
+    ? 'Reference order: image 1 is IDENTITY ONLY; image 2 is STORY/MOMENT ONLY. Preserve identity from image 1 and story from image 2 where technically possible.'
+    : 'Only a Story Reference was supplied. Preserve scene, action, emotion, and visual context.';
   const loopNote = metadata.regenerationDirective ? `\n\nPrevious creative review directive to fix:\n${metadata.regenerationDirective}` : '';
   return `${KEY_ART_DIRECTOR_PROMPT}\n\n${referenceMode}\n\n${buildPhotographicBrief(metadata)}${loopNote}`;
 }
 
-async function callImageGeneration(apiKey, model, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata = {}) {
-  const inputReferences = identityReferenceDataUrl
+function chooseResolution(route, params) {
+  if (String(route?.id || '').includes('seedream') && descriptorAllows(params.resolution, '4K')) return '4K';
+  if (descriptorAllows(params.resolution, '2K')) return '2K';
+  if (descriptorAllows(params.resolution, '1K')) return '1K';
+  return null;
+}
+
+function buildImagePayload(route, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata, generationJobId) {
+  const refs = identityReferenceDataUrl
     ? [
       { type: 'image_url', image_url: { url: identityReferenceDataUrl } },
       { type: 'image_url', image_url: { url: storyReferenceDataUrl } }
     ]
     : [{ type: 'image_url', image_url: { url: storyReferenceDataUrl } }];
+  const endpoint = route.compatible_endpoints[0] || {};
+  const params = endpoint.supported_parameters || route.supported_parameters || {};
+  const providerOrder = route.compatible_endpoints.map(item => item.provider_tag || item.provider_slug).filter(Boolean);
   const payload = {
-    model,
+    model: route.id,
     prompt: buildKeyArtPrompt({ ...metadata, identityReferenceProvided: Boolean(identityReferenceDataUrl) }),
-    input_references: inputReferences,
-    aspect_ratio: aspectRatio || '16:9',
-    resolution: '1K',
-    output_format: 'png',
-    n: 1,
-    provider: { allow_fallbacks: false }
+    input_references: refs,
+    provider: {
+      order: [...new Set(providerOrder)],
+      allow_fallbacks: true
+    },
+    metadata: {
+      generation_job_id: generationJobId,
+      app: 'fleshlab_ai_photographer'
+    }
   };
-  const payloadSummary = {
-    model,
+  const resolution = chooseResolution(route, params);
+  if (descriptorAllows(params.aspect_ratio, aspectRatio || '16:9')) payload.aspect_ratio = aspectRatio || '16:9';
+  if (descriptorAllows(params.output_format, 'png')) payload.output_format = 'png';
+  if (resolution) payload.resolution = resolution;
+  if (endpointSupports({ supported_parameters: params }, 'n')) payload.n = 1;
+  if (!payload.provider.order.length) delete payload.provider.order;
+  return { payload, reference_count: refs.length };
+}
+
+function buildPayloadSummary(route, payload, storyReferenceDataUrl, identityReferenceDataUrl) {
+  return {
     endpoint: '/api/v1/images',
-    aspect_ratio: payload.aspect_ratio,
-    resolution: payload.resolution,
-    output_format: payload.output_format,
-    reference_count: inputReferences.length,
+    model: route.id,
+    provider_order: payload.provider?.order || [],
+    aspect_ratio: payload.aspect_ratio || 'provider-default',
+    resolution: payload.resolution || 'provider-default',
+    output_format: payload.output_format || 'provider-default',
+    reference_count: payload.input_references.length,
     story_reference_bytes_estimate: estimateBytesFromDataUrl(storyReferenceDataUrl),
     identity_reference_bytes_estimate: identityReferenceDataUrl ? estimateBytesFromDataUrl(identityReferenceDataUrl) : 0
   };
+}
 
+async function fetchGenerationMetadata(apiKey, generationId) {
+  if (!generationId) return null;
+  const res = await openRouterFetch(`/generation?id=${encodeURIComponent(generationId)}`, apiKey, { method: 'GET' }, 30000);
+  const { data } = await readJsonResponse(res);
+  return res.ok ? data?.data || null : null;
+}
+
+async function saveGenerationLog(base44, record) {
+  try {
+    await base44.asServiceRole.entities.OpenRouterImageGenerationLog.create(record);
+  } catch (error) {
+    console.warn('OpenRouter generation log save failed', error.message);
+  }
+}
+
+async function callOpenRouterImage(apiKey, route, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata, generationJobId) {
+  const { payload } = buildImagePayload(route, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata, generationJobId);
+  const payloadSummary = buildPayloadSummary(route, payload, storyReferenceDataUrl, identityReferenceDataUrl);
   let res;
   try {
-    res = await openRouterFetch('/images', apiKey, { method: 'POST', body: JSON.stringify(payload) }, 180000);
+    res = await openRouterFetch('/images', apiKey, {
+      method: 'POST',
+      headers: { 'Idempotency-Key': generationJobId },
+      body: JSON.stringify(payload)
+    }, 180000);
   } catch (error) {
-    throw new Error(JSON.stringify({ code: error.message === 'timeout' ? 'timeout' : 'request_failed', message: error.message, failed_stage: 'request_sent', payload_summary: payloadSummary }));
+    const diagnostic = {
+      http_status: null,
+      openrouter_code: error.message === 'timeout' ? 'timeout' : 'request_failed',
+      message: error.message,
+      category: error.message === 'timeout' ? 'TIMEOUT' : 'PROVIDER_FAILURE',
+      retryable: true,
+      provider: null,
+      request_id: null,
+      generation_id: null,
+      processing_began: false,
+      payload_summary: payloadSummary
+    };
+    throw new Error(safeJson(diagnostic));
   }
-  const text = await res.text();
+  const { text, data } = await readJsonResponse(res);
   if (!res.ok) {
-    const normalized = normalizeError(res.status, text);
-    throw new Error(JSON.stringify({ ...normalized, status: res.status, failed_stage: 'response_received', payload_summary: payloadSummary }));
-  }
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch (_) {
-    throw new Error(JSON.stringify({ code: 'malformed_json_response', message: 'OpenRouter response was not valid JSON.', failed_stage: 'response_received', payload_summary: payloadSummary, raw: text.slice(0, 1200) }));
+    const diagnostic = parseOpenRouterError(res.status, text, res.headers, payloadSummary);
+    throw new Error(safeJson(diagnostic));
   }
   const first = data?.data?.[0];
-  if (!first?.b64_json) throw new Error(JSON.stringify({ code: 'malformed_image_response', message: 'OpenRouter returned no image data.', failed_stage: 'response_received', payload_summary: payloadSummary, raw: JSON.stringify(data).slice(0, 1200) }));
-  const mediaType = first.media_type || 'image/png';
-  return { image_data_url: `data:${mediaType};base64,${first.b64_json}`, media_type: mediaType, usage: data?.usage || null, payload_summary: payloadSummary };
-}
-
-async function runPhotographerProvider(provider, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata) {
-  if (provider.type !== 'openrouter') throw new Error(JSON.stringify({ code: 'unsupported_provider', message: 'Provider is not compatible with reference-image promotional still generation.' }));
-  const photographers = await getAvailablePhotographersForProvider(provider);
-  const models = photographers.map(item => item.model);
-  const errors = [];
-  const photographerAttempts = [];
-
-  for (const model of models) {
-    try {
-      const result = await callImageGeneration(provider.apiKey, model, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata);
-      photographerAttempts.push({ provider_id: provider.id, model, status: 'accepted' });
-      return { provider, model, result, photographers, photographerAttempts };
-    } catch (error) {
-      let parsed;
-      try { parsed = JSON.parse(error.message); } catch (_) { parsed = { code: error.message === 'timeout' ? 'timeout' : 'provider_error', message: error.message, failed_stage: 'request_sent' }; }
-      logProviderRejection(provider, model, parsed);
-      errors.push({ provider_id: provider.id, model, ...parsed });
-      photographerAttempts.push({ provider_id: provider.id, model, status: 'failed', code: parsed.code });
-      if (parsed.code === 'api_authentication_failure' || parsed.code === 'credit_exhausted' || parsed.code === 'rate_limit' || parsed.code === 'invalid_reference_image') break;
-    }
+  if (!first?.b64_json) {
+    const diagnostic = {
+      http_status: res.status,
+      openrouter_code: 'malformed_image_response',
+      message: 'OpenRouter returned no image data.',
+      category: 'PROVIDER_FAILURE',
+      retryable: true,
+      provider: data?.openrouter_metadata?.provider_name || null,
+      request_id: res.headers.get('x-request-id') || res.headers.get('x-openrouter-request-id') || data?.openrouter_metadata?.request_id || null,
+      generation_id: data?.id || data?.generation_id || null,
+      processing_began: true,
+      raw_response: text.slice(0, 6000),
+      payload_summary: payloadSummary
+    };
+    throw new Error(safeJson(diagnostic));
   }
-
-  throw new Error(JSON.stringify({ code: 'provider_declined', message: 'Provider could not produce the promotional still.', provider_id: provider.id, errors, photographerAttempts }));
+  const mediaType = first.media_type || 'image/png';
+  const generationId = data?.id || data?.generation_id || data?.data?.id || null;
+  const requestId = res.headers.get('x-request-id') || res.headers.get('x-openrouter-request-id') || data?.openrouter_metadata?.request_id || null;
+  const generationMetadata = await fetchGenerationMetadata(apiKey, generationId).catch(() => null);
+  return {
+    image_data_url: `data:${mediaType};base64,${first.b64_json}`,
+    media_type: mediaType,
+    usage: data?.usage || null,
+    cost: Number(data?.usage?.cost ?? generationMetadata?.total_cost ?? generationMetadata?.usage ?? 0),
+    request_id: requestId || generationMetadata?.request_id || null,
+    generation_id: generationId || generationMetadata?.id || null,
+    resolved_provider: generationMetadata?.provider_name || data?.openrouter_metadata?.provider_name || route.compatible_endpoints[0]?.provider_name || null,
+    generation_metadata: generationMetadata,
+    payload_summary: payloadSummary,
+    raw_response_summary: {
+      created: data?.created || null,
+      data_count: Array.isArray(data?.data) ? data.data.length : 0,
+      usage: data?.usage || null,
+      openrouter_metadata: data?.openrouter_metadata || null
+    }
+  };
 }
 
-async function generateCover(apiKey, body) {
+async function getMonthlyOpenRouterSpend(base44) {
+  const month = new Date().toISOString().slice(0, 7);
+  try {
+    const records = await base44.asServiceRole.entities.OpenRouterImageGenerationLog.filter({ month, status: 'succeeded' }, '-created_date', 500);
+    return Number(records.reduce((sum, record) => sum + Number(record.cost_usd || 0), 0).toFixed(6));
+  } catch (_) {
+    return null;
+  }
+}
+
+async function auditOpenRouter(base44, apiKey) {
+  const [credits, routes, monthlySpend] = await Promise.all([
+    fetchCredits(apiKey).catch(error => ({ ok: false, diagnostic: { message: error.message } })),
+    discoverCompatibleImageRoutes(apiKey).catch(error => {
+      let diagnostic;
+      try { diagnostic = JSON.parse(error.message); } catch (_) { diagnostic = { message: error.message }; }
+      return { error: diagnostic };
+    }),
+    getMonthlyOpenRouterSpend(base44)
+  ]);
+  const compatibleRoutes = Array.isArray(routes) ? routes : [];
+  const preferred = compatibleRoutes[0] || null;
+  const estimatedCost = preferred?.compatible_endpoints?.[0]?.estimated_cost_usd ?? null;
+  return {
+    ok: true,
+    openrouter_connected: Boolean(credits.ok),
+    paid_credits_available: Boolean(credits.ok && credits.sufficient_credit),
+    image_generation_available: compatibleRoutes.length > 0,
+    credits: credits.ok ? {
+      remaining_credit: credits.remaining_credit,
+      sufficient_credit: credits.sufficient_credit,
+      low_credit_warning: credits.low_credit_warning
+    } : { sufficient_credit: false },
+    selected_model: preferred ? preferred.id : null,
+    selected_model_capability: preferred ? {
+      id: preferred.id,
+      name: preferred.name,
+      input_modalities: preferred.architecture?.input_modalities || [],
+      output_modalities: preferred.architecture?.output_modalities || [],
+      compatible_provider_count: preferred.compatible_endpoint_count,
+      providers: preferred.compatible_endpoints.map(item => ({
+        provider_name: item.provider_name,
+        provider_slug: item.provider_slug,
+        provider_tag: item.provider_tag,
+        estimated_cost_usd: item.estimated_cost_usd,
+        pricing: item.pricing
+      }))
+    } : null,
+    compatible_models: compatibleRoutes.slice(0, 8).map(route => ({
+      id: route.id,
+      name: route.name,
+      compatible_provider_count: route.compatible_endpoint_count,
+      providers: route.compatible_endpoints.map(item => item.provider_name).filter(Boolean),
+      estimated_cost_usd: route.compatible_endpoints[0]?.estimated_cost_usd ?? null
+    })),
+    estimated_generation_cost: estimatedCost,
+    monthly_openrouter_spend_usd: monthlySpend,
+    endpoint_used: 'https://openrouter.ai/api/v1/images',
+    catalog_endpoint_used: 'https://openrouter.ai/api/v1/images/models',
+    endpoint_capability_source: '/api/v1/images/models/{model}/endpoints',
+    secret_name_used: SECRET_NAME,
+    model_secret_name: EXISTING_TEXT_MODEL_SECRET
+  };
+}
+
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+async function runOpenRouterSelfTest(base44, apiKey, user) {
+  const testImageUrl = 'https://picsum.photos/seed/fleshlab-openrouter-pipeline/1280/720.jpg';
+  const imageRes = await fetch(testImageUrl);
+  if (!imageRes.ok) return json({ ok: false, error: 'Could not fetch the self-test reference image.', status: imageRes.status }, 502);
+  const buffer = await imageRes.arrayBuffer();
+  const dataUrl = `data:image/jpeg;base64,${arrayBufferToBase64(buffer)}`;
+  return await generateCover(base44, apiKey, {
+    action: 'generate',
+    consent: true,
+    generation_job_id: `self-test-${crypto.randomUUID()}`,
+    story_reference_data_url: dataUrl,
+    aspect_ratio: '16:9',
+    metadata: {
+      videoTitle: 'OpenRouter paid pipeline self-test',
+      optionalSubtitle: 'Server-side JPEG reference validation',
+      performerName: 'studio subject',
+      contentType: 'professional promotional still',
+      campaignName: 'technical pipeline validation'
+    }
+  }, user);
+}
+
+async function generateCover(base44, apiKey, body, user) {
+  const generationJobId = body?.generation_job_id || crypto.randomUUID();
   const { frame_data_url, story_reference_data_url, identity_reference_data_url, consent, aspect_ratio = '16:9', metadata = {} } = body || {};
   const storyReferenceDataUrl = story_reference_data_url || frame_data_url;
   const identityReferenceDataUrl = identity_reference_data_url || null;
-  if (!consent) return json({ ok: false, error: 'The promotional still could not be produced yet.', code: 'consent_required' }, 400);
-  if (!storyReferenceDataUrl || !String(storyReferenceDataUrl).startsWith('data:image/')) return json({ ok: false, error: 'Choose a story frame before producing the promotional still.', code: 'missing_frame' }, 400);
-  if (String(storyReferenceDataUrl).length > MAX_DATA_URL_CHARS || estimateBytesFromDataUrl(storyReferenceDataUrl) > 9_000_000) return json({ ok: false, error: 'Choose a smaller story frame before producing the promotional still.', code: 'image_too_large' }, 413);
-  if (identityReferenceDataUrl && (!String(identityReferenceDataUrl).startsWith('data:image/') || String(identityReferenceDataUrl).length > MAX_DATA_URL_CHARS || estimateBytesFromDataUrl(identityReferenceDataUrl) > 9_000_000)) return json({ ok: false, error: 'Choose a different story frame before producing the promotional still.', code: 'identity_image_too_large' }, 413);
+  const now = new Date();
+  const month = now.toISOString().slice(0, 7);
+  const storyInfo = parseDataUrlInfo(storyReferenceDataUrl);
+  const identityInfo = identityReferenceDataUrl ? parseDataUrlInfo(identityReferenceDataUrl) : { ok: true, byte_length: 0 };
+  if (!consent) return json({ ok: false, error: 'The professional hero photograph could not be produced yet.', code: 'consent_required' }, 400);
+  if (!storyInfo.ok || storyInfo.byte_length <= 0) return json({ ok: false, error: 'Story frame encoding failed. Choose another frame and try again.', code: 'invalid_story_frame', diagnostics: { category: 'INVALID_PAYLOAD', message: 'Story reference is not a valid base64 image data URL or has zero bytes.' } }, 400);
+  if (storyInfo.byte_length > MAX_REFERENCE_BYTES || String(storyReferenceDataUrl).length > MAX_DATA_URL_CHARS) return json({ ok: false, error: 'Choose a smaller story frame before producing the professional hero photograph.', code: 'image_too_large' }, 413);
+  if (!identityInfo.ok || identityInfo.byte_length > MAX_REFERENCE_BYTES) return json({ ok: false, error: 'Choose a different identity reference before producing the professional hero photograph.', code: 'identity_image_invalid' }, 413);
 
-  const providers = getConfiguredPhotographerProviders(apiKey);
-  const allErrors = [];
-  const allAttempts = [];
-  for (const provider of providers) {
+  const credits = await fetchCredits(apiKey);
+  if (!credits.ok || !credits.sufficient_credit) {
+    const diagnostic = credits.diagnostic || { category: 'NO_CREDITS', message: 'OpenRouter credits are unavailable.', retryable: false };
+    logProviderDiagnostic('OpenRouter health check failed before generation', diagnostic);
+    return json({ ok: false, error: publicFailureMessage(diagnostic), code: 'openrouter_health_check_failed', diagnostics: diagnostic }, 402);
+  }
+
+  const compatibleRoutes = await discoverCompatibleImageRoutes(apiKey);
+  if (!compatibleRoutes.length) {
+    const diagnostic = { category: 'UNSUPPORTED_IMAGE_INPUT', message: 'No discovered OpenRouter image model currently accepts image input, image output, and 16:9 generation.', retryable: false };
+    logProviderDiagnostic('OpenRouter model discovery failed', diagnostic);
+    return json({ ok: false, error: publicFailureMessage(diagnostic), code: 'no_compatible_image_model', diagnostics: diagnostic }, 503);
+  }
+
+  const attempts = [];
+  let finalDiagnostic = null;
+  for (const route of compatibleRoutes.slice(0, MAX_AUTOMATIC_ATTEMPTS)) {
     try {
-      const { model, result, photographers, photographerAttempts } = await runPhotographerProvider(provider, storyReferenceDataUrl, identityReferenceDataUrl, aspect_ratio, metadata);
+      const result = await callOpenRouterImage(apiKey, route, storyReferenceDataUrl, identityReferenceDataUrl, aspect_ratio, metadata, generationJobId);
+      await saveGenerationLog(base44, {
+        generation_job_id: generationJobId,
+        openrouter_request_id: result.request_id || '',
+        openrouter_generation_id: result.generation_id || '',
+        model: route.id,
+        provider: result.resolved_provider || '',
+        status: 'succeeded',
+        http_status: 200,
+        processing_began: true,
+        cost_usd: result.cost || 0,
+        usage_json: safeJson(result.usage),
+        diagnostic_json: safeJson(result.raw_response_summary),
+        payload_summary_json: safeJson(result.payload_summary),
+        month
+      });
+      console.info('OpenRouter AI Photographer success', safeJson({
+        endpoint: 'POST /api/v1/images',
+        model: route.id,
+        provider: result.resolved_provider,
+        request_id: result.request_id,
+        generation_id: result.generation_id,
+        cost_usd: result.cost,
+        payload_summary: result.payload_summary
+      }));
       return json({
         ok: true,
         generated_image_data_url: result.image_data_url,
         media_type: result.media_type,
-        provider_used: provider.id,
-        model_used: model,
-        fallback_used: allErrors.length > 0 || model !== photographers[0]?.model,
-        photographer_attempts: [...allAttempts, ...photographerAttempts],
-        ai_photographer_router: photographers.map(item => ({ provider_id: provider.id, model: item.model, role: item.role })),
+        provider_used: result.resolved_provider,
+        model_used: route.id,
+        openrouter_request_id: result.request_id,
+        openrouter_generation_id: result.generation_id,
+        generation_job_id: generationJobId,
+        cost_reported: result.cost,
         usage: result.usage,
-        cost_reported: result.usage?.cost ?? null,
+        fallback_used: attempts.length > 0,
+        photographer_attempts: [...attempts, { model: route.id, provider: result.resolved_provider, status: 'accepted' }],
+        stage_trace: {
+          frame_extracted: true,
+          image_encoded: true,
+          payload_created: true,
+          request_sent: true,
+          response_received: true,
+          hero_image_decoded: true,
+          preview_rendered: false
+        },
+        selected_model_capability: {
+          id: route.id,
+          providers: route.compatible_endpoints.map(item => item.provider_name).filter(Boolean),
+          estimated_cost_usd: route.compatible_endpoints[0]?.estimated_cost_usd ?? null
+        },
         creative_brief: buildPhotographicBrief(metadata),
-        pipeline: ['Video', 'Moment Selection', 'Creative Director', 'Photographic Brief', 'AI Photographer', 'Professional Hero Image', 'Art Director', 'Typography', 'Branding', 'Quality Review', 'Export'],
+        pipeline: ['Video', 'Story Frame', 'Base64 Reference Image', 'OpenRouter Image API', 'Professional Hero Photograph', 'Local Art Direction', 'Typography', 'Export'],
         privacy: {
           original_video_transmitted: false,
           story_reference_transmitted: true,
           identity_reference_transmitted: Boolean(identityReferenceDataUrl),
           generated_image_received_from_provider: true,
-          ai_role: 'professional_promotional_photographer',
-          ai_generates_cover_base_artwork: true,
-          ai_generates_typography_or_logo: false,
-          original_frame_is_reference_only: true,
+          api_key_exposed_to_client: false,
           final_branding_and_typography_added_locally_after_hero_approval: true
         }
       });
     } catch (error) {
-      let parsed;
-      try { parsed = JSON.parse(error.message); } catch (_) { parsed = { code: 'provider_error', message: error.message, provider_id: provider.id }; }
-      console.warn('AI Photographer provider exhausted', JSON.stringify({ provider_id: provider.id, code: parsed.code, errors: parsed.errors || [] }));
-      allErrors.push(parsed);
-      allAttempts.push(...(parsed.photographerAttempts || []));
+      let diagnostic;
+      try { diagnostic = JSON.parse(error.message); } catch (_) { diagnostic = { message: error.message, category: 'PROVIDER_FAILURE', retryable: true }; }
+      diagnostic.model = route.id;
+      diagnostic.provider = diagnostic.provider || route.compatible_endpoints?.[0]?.provider_name || null;
+      finalDiagnostic = diagnostic;
+      attempts.push({ model: route.id, provider: diagnostic.provider, status: 'failed', category: diagnostic.category, retryable: diagnostic.retryable });
+      logProviderDiagnostic('OpenRouter AI Photographer failed route', diagnostic);
+      await saveGenerationLog(base44, {
+        generation_job_id: generationJobId,
+        openrouter_request_id: diagnostic.request_id || '',
+        openrouter_generation_id: diagnostic.generation_id || '',
+        model: route.id,
+        provider: diagnostic.provider || '',
+        status: 'failed',
+        http_status: Number(diagnostic.http_status || 0),
+        error_code: String(diagnostic.openrouter_code || ''),
+        error_message: diagnostic.message || '',
+        error_category: diagnostic.category || '',
+        retryable: Boolean(diagnostic.retryable),
+        processing_began: Boolean(diagnostic.processing_began),
+        cost_usd: 0,
+        diagnostic_json: safeJson(diagnostic),
+        payload_summary_json: safeJson(diagnostic.payload_summary),
+        month
+      });
+      if (['CONTENT_POLICY', 'NO_CREDITS', 'AUTH_ERROR', 'INVALID_PAYLOAD'].includes(diagnostic.category)) break;
     }
   }
-  console.error('AI Photographer all providers failed', JSON.stringify(allErrors));
-  return json({ ok: false, error: 'The promotional still could not be produced with the configured photographers. Try another frame or adjust the editorial information.', code: 'all_photographer_providers_failed' }, 502);
+
+  return json({
+    ok: false,
+    error: publicFailureMessage(finalDiagnostic),
+    code: 'all_openrouter_routes_failed',
+    generation_job_id: generationJobId,
+    diagnostics: finalDiagnostic,
+    photographer_attempts: attempts,
+    stage_trace: {
+      frame_extracted: true,
+      image_encoded: true,
+      payload_created: Boolean(finalDiagnostic?.payload_summary),
+      request_sent: Boolean(finalDiagnostic?.payload_summary),
+      response_received: Boolean(finalDiagnostic?.http_status),
+      hero_image_decoded: false,
+      preview_rendered: false
+    }
+  }, 502);
 }
 
 Deno.serve(async (req) => {
@@ -400,15 +704,16 @@ Deno.serve(async (req) => {
     if (!isAllowedStaff(user)) return json({ ok: false, error: 'Unauthorized: staff access required' }, 403);
 
     const apiKey = Deno.env.get(SECRET_NAME);
-    if (!apiKey) return json({ ok: false, error: `${SECRET_NAME} is not configured`, code: 'missing_secret' }, 500);
+    if (!apiKey) return json({ ok: false, error: 'OpenRouter is not configured.', code: 'missing_secret' }, 500);
 
     const body = await req.json().catch(() => ({}));
     const action = body.action || 'audit';
-    if (action === 'audit') return json(await auditOpenRouter(apiKey));
-    if (action === 'generate') return await generateCover(apiKey, body);
+    if (action === 'audit' || action === 'health') return json(await auditOpenRouter(base44, apiKey));
+    if (action === 'self_test') return await runOpenRouterSelfTest(base44, apiKey, user);
+    if (action === 'generate') return await generateCover(base44, apiKey, body, user);
     return json({ ok: false, error: 'Invalid action' }, 400);
   } catch (error) {
     console.error('openRouterAICover error:', error.message);
-    return json({ ok: false, error: error.message === 'timeout' ? 'OpenRouter request timed out.' : error.message, code: error.message === 'timeout' ? 'timeout' : 'server_error' }, 500);
+    return json({ ok: false, error: 'The OpenRouter AI Photographer service failed before the request could complete.', code: error.message === 'timeout' ? 'timeout' : 'server_error' }, 500);
   }
 });

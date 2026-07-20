@@ -54,7 +54,7 @@ export default function CoverGeneratorPanel({ item }) {
       {creativeReady ? (
         <OpenRouterCoverMode frame={frame} identityReferenceFrame={identityReference?.frame || null} metadata={{ ...metadata, lockUserText: true }} settings={settings} />
       ) : (
-        <Card><CardContent className="p-6 text-sm text-muted-foreground">Enter the video title and choose a story frame to produce the promotional still.</CardContent></Card>
+        <Card><CardContent className="p-6 text-sm text-muted-foreground">Enter the video title and choose a story frame to generate the professional hero photograph.</CardContent></Card>
       )}
     </div>
   );

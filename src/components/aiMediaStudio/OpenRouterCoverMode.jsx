@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Wand2 } from "lucide-react";
@@ -19,15 +19,18 @@ function imageElementFromBlob(blob) {
 
 async function frameToDataUrl(frame) {
   const sourceBlob = frame?.blob || (frame?.url ? await (await fetch(frame.url)).blob() : null);
-  if (!sourceBlob) throw new Error("Selected frame has no image payload.");
+  if (!sourceBlob || sourceBlob.size <= 0) throw new Error("Selected frame has no image payload.");
   const image = await imageElementFromBlob(sourceBlob);
-  const maxSide = 1344;
+  const maxSide = 2048;
   const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
   const canvas = document.createElement("canvas");
-  canvas.width = Math.round(image.width * scale);
-  canvas.height = Math.round(image.height * scale);
+  canvas.width = Math.max(1, Math.round(image.width * scale));
+  canvas.height = Math.max(1, Math.round(image.height * scale));
   canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL("image/jpeg", 0.92);
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+  const byteLength = Math.floor(((dataUrl.split(",")[1] || "").length * 3) / 4);
+  if (!dataUrl.startsWith("data:image/jpeg;base64,") || byteLength <= 0) throw new Error("Story frame encoding failed.");
+  return { dataUrl, mimeType: "image/jpeg", byteLength, width: canvas.width, height: canvas.height };
 }
 
 function dataUrlToBlob(dataUrl) {
@@ -39,62 +42,139 @@ function dataUrlToBlob(dataUrl) {
   return new Blob([bytes], { type: mime });
 }
 
+function TechnicalDetails({ details }) {
+  if (!details) return null;
+  return (
+    <div className="rounded-lg border border-border bg-secondary/20 p-3 text-xs text-muted-foreground">
+      <pre className="max-h-72 overflow-auto whitespace-pre-wrap">{JSON.stringify(details, null, 2)}</pre>
+    </div>
+  );
+}
+
 export default function OpenRouterCoverMode({ frame, identityReferenceFrame, metadata, settings }) {
   const [loading, setLoading] = useState(false);
+  const [healthLoading, setHealthLoading] = useState(true);
+  const [health, setHealth] = useState(null);
   const [heroImage, setHeroImage] = useState(null);
   const [designCover, setDesignCover] = useState(false);
-  const [status, setStatus] = useState("Ready to produce the promotional still.");
+  const [status, setStatus] = useState("Ready to produce the professional hero photograph.");
   const [error, setError] = useState("");
+  const [frameStatus, setFrameStatus] = useState({ extracted: false, encoded: false });
+  const [technicalDetails, setTechnicalDetails] = useState(null);
+  const [showTechnical, setShowTechnical] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setHealthLoading(true);
+    base44.functions.invoke("openRouterAICover", { action: "audit" })
+      .then(response => { if (active) setHealth(response.data); })
+      .catch(err => { if (active) setTechnicalDetails({ health_check_error: err.response?.data || err.message }); })
+      .finally(() => { if (active) setHealthLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const estimatedCost = useMemo(() => {
+    const value = health?.estimated_generation_cost;
+    return typeof value === "number" ? `$${value.toFixed(4)}` : "Checking";
+  }, [health]);
 
   const generate = async () => {
-    if (!frame || !metadata?.videoTitle?.trim()) return;
+    if (!frame || !metadata?.videoTitle?.trim() || loading) return;
     setLoading(true);
     setError("");
     setHeroImage(null);
     setDesignCover(false);
-    setStatus("Creative Director is preparing the promotional still...");
+    setFrameStatus({ extracted: false, encoded: false });
+    setTechnicalDetails(null);
+    setStatus("Extracting the selected story frame...");
 
     try {
-      const storyDataUrl = await frameToDataUrl(frame);
-      const identityDataUrl = identityReferenceFrame ? await frameToDataUrl(identityReferenceFrame) : null;
+      const story = await frameToDataUrl(frame);
+      setFrameStatus({ extracted: true, encoded: false });
+      setStatus("Encoding the private story frame...");
+      if (!story.dataUrl || story.byteLength <= 0 || story.mimeType !== "image/jpeg") throw new Error("Story frame encoding failed.");
+      setFrameStatus({ extracted: true, encoded: true });
+
+      const identity = identityReferenceFrame ? await frameToDataUrl(identityReferenceFrame) : null;
       let best = null;
       let repairDirective = "";
+      const generationJobId = crypto.randomUUID();
 
-      for (let attempt = 1; attempt <= 3; attempt += 1) {
-        setStatus(attempt === 1 ? "Producing the promotional still..." : "Refining the promotional still...");
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        setStatus(attempt === 1 ? "Generating the professional hero photograph..." : "Running one quality refinement pass...");
         const response = await base44.functions.invoke("openRouterAICover", {
           action: "generate",
           consent: true,
-          story_reference_data_url: storyDataUrl,
-          identity_reference_data_url: identityDataUrl,
+          generation_job_id: generationJobId,
+          story_reference_data_url: story.dataUrl,
+          identity_reference_data_url: identity?.dataUrl || null,
           aspect_ratio: "16:9",
           metadata: { ...metadata, identityReferenceTime: identityReferenceFrame ? formatTime(identityReferenceFrame.time) : "none", regenerationDirective: repairDirective },
         });
         const data = response.data;
-        if (!data?.ok) throw new Error(data?.error || "The hero image could not be generated.");
+        setTechnicalDetails({
+          endpoint_used: "POST https://openrouter.ai/api/v1/images",
+          model: data?.model_used,
+          provider: data?.provider_used,
+          request_id: data?.openrouter_request_id,
+          generation_id: data?.openrouter_generation_id,
+          generation_job_id: data?.generation_job_id,
+          cost_reported: data?.cost_reported,
+          usage: data?.usage,
+          stage_trace: data?.stage_trace,
+          selected_model_capability: data?.selected_model_capability,
+        });
+        if (!data?.ok) throw new Error(data?.error || "The professional hero photograph could not be generated.");
         const blob = dataUrlToBlob(data.generated_image_data_url);
         const validation = identityReferenceFrame?.blob ? await validateIdentityPreservation(identityReferenceFrame.blob, blob, identityReferenceFrame) : { accepted: true, identityConfidence: 88 };
         const candidate = { blob, url: URL.createObjectURL(blob), score: Number(validation.identityConfidence || validation.checks?.overall || 0), aiReconstructed: true };
         if (!best || candidate.score > best.score) best = candidate;
-        if (validation.accepted || attempt === 3) break;
+        if (validation.accepted || attempt === 2) break;
         repairDirective = "Preserve the performer, pose, action, emotion, and location more accurately while keeping the image a new 16:9 advertising photograph.";
       }
 
       setHeroImage(best);
-      setStatus("Promotional still ready.");
+      setTechnicalDetails(previous => ({
+        ...(previous || {}),
+        stage_trace: { ...((previous || {}).stage_trace || {}), preview_rendered: true }
+      }));
+      setStatus("Professional hero photograph ready.");
     } catch (err) {
-      console.warn("Promotional still production failed", err.response?.data || err.message || err);
-      setStatus("Ready to produce the promotional still.");
-      setError("The promotional still could not be produced. Try another frame or adjust the editorial information.");
+      const diagnostic = err.response?.data || { message: err.message };
+      console.warn("OpenRouter hero photograph failed", diagnostic);
+      setTechnicalDetails(previous => ({ ...(previous || {}), failure: diagnostic }));
+      setStatus("Ready to retry or continue locally.");
+      setError(diagnostic?.error || "The professional hero photograph could not be generated. The local cover workflow is still available.");
     } finally {
       setLoading(false);
     }
   };
 
+  const useLocalStoryFrame = async () => {
+    const local = await frameToDataUrl(frame);
+    const blob = dataUrlToBlob(local.dataUrl);
+    setHeroImage({ blob, url: URL.createObjectURL(blob), score: 0, aiReconstructed: false });
+    setDesignCover(true);
+    setError("");
+    setStatus("Using the selected story frame for local cover design.");
+  };
+
+  const connected = Boolean(health?.openrouter_connected);
+  const creditsAvailable = Boolean(health?.paid_credits_available);
+  const imageAvailable = Boolean(health?.image_generation_available);
+
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-primary/25 bg-primary/10 p-4">
-        <div className="flex items-start gap-3"><Camera className="mt-0.5 h-5 w-5 text-primary" /><div className="space-y-1 text-sm"><p className="font-semibold text-foreground">3. Produce Promotional Still</p><p className="text-muted-foreground">The selected smartphone frame is used only as reference for a new 16:9 advertising photograph.</p></div></div>
+        <div className="flex items-start gap-3"><Camera className="mt-0.5 h-5 w-5 text-primary" /><div className="space-y-1 text-sm"><p className="font-semibold text-foreground">3. Generate Professional Hero Photograph</p><p className="text-muted-foreground">OpenRouter receives only the selected still as a private base64 reference image. Branding and typography stay local until the photograph is approved.</p></div></div>
+      </div>
+
+      <div className="grid gap-3 rounded-xl border border-border bg-card p-4 text-sm md:grid-cols-5">
+        <div><p className="text-xs font-bold text-muted-foreground">OpenRouter status</p><Badge variant={connected ? "outline" : "secondary"}>{healthLoading ? "Checking" : connected ? "Connected" : "Unavailable"}</Badge></div>
+        <div><p className="text-xs font-bold text-muted-foreground">Credits</p><Badge variant={creditsAvailable ? "outline" : "secondary"}>{creditsAvailable ? "Available" : "Unavailable"}</Badge></div>
+        <div><p className="text-xs font-bold text-muted-foreground">Photography engine</p><Badge variant={imageAvailable ? "outline" : "secondary"}>{imageAvailable ? "Auto" : "No compatible route"}</Badge></div>
+        <div><p className="text-xs font-bold text-muted-foreground">Estimated generation cost</p><p className="font-semibold text-foreground">{estimatedCost}</p></div>
+        <div><p className="text-xs font-bold text-muted-foreground">Monthly OpenRouter spend</p><p className="font-semibold text-foreground">{typeof health?.monthly_openrouter_spend_usd === "number" ? `$${health.monthly_openrouter_spend_usd.toFixed(4)}` : "Checking"}</p></div>
       </div>
 
       <div className="space-y-4 rounded-xl border border-border bg-card p-4">
@@ -102,24 +182,38 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
           <div className="space-y-2">
             <p className="text-xs font-bold text-muted-foreground">Selected story frame · {formatTime(frame.time)}</p>
             <img src={frame.url} alt="Selected story frame" className="h-32 w-56 rounded-lg border border-border bg-black object-contain" />
+            <div className="flex flex-wrap gap-2 text-xs">
+              <Badge variant={frameStatus.extracted ? "outline" : "secondary"}>Story frame extracted {frameStatus.extracted ? "✓" : ""}</Badge>
+              <Badge variant={frameStatus.encoded ? "outline" : "secondary"}>Story frame encoded {frameStatus.encoded ? "✓" : ""}</Badge>
+            </div>
           </div>
-          <div className="flex flex-col gap-2 md:min-w-72">
-            <Button disabled={!frame || loading || !metadata?.videoTitle?.trim()} onClick={generate} className="gap-2"><Wand2 className="h-4 w-4" />{loading ? "Producing..." : "Produce Promotional Still"}</Button>
+          <div className="flex flex-col gap-2 md:min-w-80">
+            <Button disabled={!frame || loading || !metadata?.videoTitle?.trim() || healthLoading || !connected || !creditsAvailable || !imageAvailable} onClick={generate} className="gap-2"><Wand2 className="h-4 w-4" />{loading ? "Generating..." : "Generate Professional Hero Photograph"}</Button>
             <p className="text-sm text-muted-foreground">{status}</p>
           </div>
         </div>
-        {error && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+        {error && (
+          <div className="space-y-3 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+            <p>{error}</p>
+            <Button variant="outline" onClick={useLocalStoryFrame}>Continue with local cover workflow</Button>
+          </div>
+        )}
         {heroImage ? (
           <div className="space-y-3">
-            <div className="flex items-center justify-between gap-3"><Badge variant="outline">Promotional still ready</Badge><Button onClick={() => setDesignCover(true)} disabled={designCover}>Design Cover</Button></div>
-            <img src={heroImage.url} alt="Generated promotional still" className="w-full rounded-xl border border-border bg-black object-contain" />
+            <div className="flex items-center justify-between gap-3"><Badge variant="outline">Professional hero photograph ready</Badge><Button onClick={() => setDesignCover(true)} disabled={designCover}>Design Cover</Button></div>
+            <img src={heroImage.url} alt="Generated professional hero photograph" className="w-full rounded-xl border border-border bg-black object-contain" />
           </div>
-        ) : <div className="flex min-h-[360px] items-center justify-center rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">The promotional still will appear here.</div>}
+        ) : <div className="flex min-h-[360px] items-center justify-center rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">The professional hero photograph will appear here. If OpenRouter fails, the selected story frame remains available for local cover export.</div>}
+      </div>
+
+      <div className="space-y-2">
+        <Button variant="outline" onClick={() => setShowTechnical(value => !value)}>View technical details</Button>
+        {showTechnical && <TechnicalDetails details={{ health, frame_status: frameStatus, ...technicalDetails }} />}
       </div>
 
       {designCover && heroImage && (
         <div className="rounded-xl border border-border bg-card p-4">
-          <div className="mb-4"><p className="text-sm font-semibold text-foreground">4. Design Cover</p><p className="text-xs text-muted-foreground">Typography is designed around the generated promotional still.</p></div>
+          <div className="mb-4"><p className="text-sm font-semibold text-foreground">4. Design Cover</p><p className="text-xs text-muted-foreground">Typography is designed around the approved photograph or the selected local story frame.</p></div>
           <CoverPreviewEditor frame={heroImage} metadata={{ ...metadata, aiReconstructed: true }} settings={settings} fileSuffix="official-cover" />
         </div>
       )}
