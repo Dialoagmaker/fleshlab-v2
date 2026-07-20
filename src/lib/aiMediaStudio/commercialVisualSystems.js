@@ -46,6 +46,132 @@ function fillImage(ctx, image, crop, x, y, width, height) {
   ctx.drawImage(image, sx, sy, sw, sh, x, y, width, height);
 }
 
+function outpaintClip(ctx, map, width, height) {
+  ctx.beginPath();
+  ctx.rect(0, 0, Math.max(0, map.renderBox.x), height);
+  ctx.rect(map.renderBox.x + map.renderBox.w, 0, Math.max(0, width - map.renderBox.x - map.renderBox.w), height);
+  ctx.clip();
+}
+
+function paintSceneExtensionSide(ctx, image, map, width, height, direction, side) {
+  const gutterW = side === "left" ? map.renderBox.x : width - map.renderBox.x - map.renderBox.w;
+  if (gutterW <= 1) return;
+  const x = side === "left" ? 0 : map.renderBox.x + map.renderBox.w;
+  const stripW = Math.max(12, map.crop.sw * 0.18);
+  const sx = side === "left" ? map.crop.sx : map.crop.sx + map.crop.sw - stripW;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, 0, gutterW, height);
+  ctx.clip();
+  ctx.filter = `blur(${Math.round(width * 0.018)}px) brightness(74%) contrast(128%) saturate(92%)`;
+  if (side === "left") {
+    ctx.translate(gutterW, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(image, sx, map.crop.sy, stripW, map.crop.sh, 0, map.renderBox.y - height * 0.015, gutterW * 1.14, map.renderBox.h + height * 0.03);
+  } else {
+    ctx.drawImage(image, sx, map.crop.sy, stripW, map.crop.sh, x - gutterW * 0.14, map.renderBox.y - height * 0.015, gutterW * 1.14, map.renderBox.h + height * 0.03);
+  }
+  ctx.restore();
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, 0, gutterW, height);
+  ctx.clip();
+  const depth = ctx.createLinearGradient(side === "left" ? gutterW : x, 0, side === "left" ? 0 : width, height);
+  depth.addColorStop(0, "rgba(255,255,255,0.04)");
+  depth.addColorStop(0.44, `rgba(${direction.accent},0.08)`);
+  depth.addColorStop(1, "rgba(0,0,0,0.58)");
+  ctx.fillStyle = depth;
+  ctx.fillRect(x, 0, gutterW, height);
+  ctx.restore();
+}
+
+function paintSceneArchitecture(ctx, map, width, height, direction) {
+  ctx.save();
+  outpaintClip(ctx, map, width, height);
+  const lineAlpha = direction.environment === "bathroom" ? 0.16 : 0.09;
+  ctx.strokeStyle = `rgba(${direction.secondary},${lineAlpha})`;
+  ctx.lineWidth = Math.max(1, width * 0.0012);
+  if (direction.environment === "bathroom") {
+    const tile = height * 0.115;
+    for (let y = height * 0.08; y < height; y += tile) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y + height * 0.012);
+      ctx.stroke();
+    }
+    for (let x = -width * 0.1; x < width * 1.1; x += tile * 1.35) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x + width * 0.08, height);
+      ctx.stroke();
+    }
+  } else if (direction.environment === "hotel") {
+    for (let x = 0; x < width; x += width * 0.085) {
+      ctx.fillStyle = "rgba(255,205,130,0.035)";
+      ctx.fillRect(x, 0, width * 0.018, height);
+    }
+    const lamp = ctx.createRadialGradient(map.titleX, height * 0.26, 0, map.titleX, height * 0.26, width * 0.25);
+    lamp.addColorStop(0, "rgba(255,180,90,0.22)");
+    lamp.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = lamp;
+    ctx.fillRect(0, 0, width, height);
+  } else {
+    for (let i = 0; i < 12; i += 1) {
+      const x = width * ((i * 0.137 + direction.seed) % 1);
+      ctx.beginPath();
+      ctx.moveTo(x, height * 0.02);
+      ctx.lineTo(x + width * 0.06, height * 0.95);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function paintSceneAtmosphere(ctx, map, width, height, direction) {
+  ctx.save();
+  outpaintClip(ctx, map, width, height);
+  ctx.globalCompositeOperation = "screen";
+  for (let i = 0; i < 42; i += 1) {
+    const x = width * (((i * 41 + Math.round(direction.seed * 100)) % 100) / 100);
+    const y = height * (((i * 67 + 13) % 100) / 100);
+    const r = width * (0.01 + (i % 4) * 0.006);
+    const haze = ctx.createRadialGradient(x, y, 0, x, y, r);
+    haze.addColorStop(0, `rgba(${direction.secondary},${direction.environment === "bathroom" ? 0.075 : 0.045})`);
+    haze.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = haze;
+    ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  ctx.restore();
+}
+
+function paintOriginalFrameUntouched(ctx, image, map) {
+  ctx.save();
+  ctx.filter = "none";
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
+  ctx.drawImage(image, map.crop.sx, map.crop.sy, map.crop.sw, map.crop.sh, map.renderBox.x, map.renderBox.y, map.renderBox.w, map.renderBox.h);
+  ctx.restore();
+}
+
+function paintCinematicCanvasExtension(ctx, image, map, width, height, direction) {
+  ctx.fillStyle = direction.bg;
+  ctx.fillRect(0, 0, width, height);
+  paintSceneExtensionSide(ctx, image, map, width, height, direction, "left");
+  paintSceneExtensionSide(ctx, image, map, width, height, direction, "right");
+  paintSceneArchitecture(ctx, map, width, height, direction);
+  paintSceneAtmosphere(ctx, map, width, height, direction);
+  ctx.save();
+  outpaintClip(ctx, map, width, height);
+  const floorShadow = ctx.createRadialGradient(map.hero.x + map.hero.w * 0.5, height * 0.86, 0, map.hero.x + map.hero.w * 0.5, height * 0.86, width * 0.42);
+  floorShadow.addColorStop(0, "rgba(0,0,0,0.42)");
+  floorShadow.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = floorShadow;
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
+  paintOriginalFrameUntouched(ctx, image, map);
+}
+
 function manualValue(settings, key, fallback) {
   return settings?.manualOverrides?.[key] ? Number(settings[key]) : fallback;
 }
@@ -234,6 +360,10 @@ async function paintLogo(ctx, map, width, direction, settings = {}) {
 }
 
 function paintBackgroundLayer(ctx, image, map, width, height, direction, settings = {}) {
+  if (map.protectComposition) {
+    paintCinematicCanvasExtension(ctx, image, map, width, height, direction);
+    return;
+  }
   ctx.fillStyle = direction.bg;
   ctx.fillRect(0, 0, width, height);
   ctx.save();
@@ -248,6 +378,8 @@ function paintBackgroundLayer(ctx, image, map, width, height, direction, setting
 }
 
 function paintLightShaping(ctx, map, width, height, direction) {
+  ctx.save();
+  if (map.protectComposition) outpaintClip(ctx, map, width, height);
   const heroGlow = ctx.createRadialGradient(map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.28, 0, map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.28, Math.max(map.hero.w, map.hero.h) * 0.78);
   heroGlow.addColorStop(0, `rgba(${direction.secondary},${direction.editorial ? 0.13 : 0.22})`);
   heroGlow.addColorStop(0.42, `rgba(${direction.accent},${direction.editorial ? 0.08 : 0.18})`);
@@ -268,6 +400,7 @@ function paintLightShaping(ctx, map, width, height, direction) {
   edge.addColorStop(1, "rgba(0,0,0,0.7)");
   ctx.fillStyle = edge;
   ctx.fillRect(0, 0, width, height);
+  ctx.restore();
 }
 
 function paintDepthLayer(ctx, map, width, height, direction) {
@@ -296,6 +429,7 @@ function paintDepthLayer(ctx, map, width, height, direction) {
 }
 
 function paintHeroEnhancement(ctx, image, map, width, height, direction, settings = {}) {
+  if (map.protectComposition) return;
   ctx.save();
   if (!map.protectComposition) {
     ctx.beginPath();
@@ -317,6 +451,7 @@ function paintHeroEnhancement(ctx, image, map, width, height, direction, setting
 }
 
 function paintAtmosphere(ctx, map, width, height, direction) {
+  if (map.protectComposition) return;
   ctx.save();
   ctx.globalCompositeOperation = "screen";
   for (let i = 0; i < Math.round(28 + direction.density * 76); i += 1) {
@@ -460,7 +595,9 @@ function paintCTA(ctx, map, width, height, plan, direction) {
   ctx.restore();
 }
 
-function finalGrade(ctx, width, height, direction) {
+function finalGrade(ctx, width, height, direction, map = null) {
+  ctx.save();
+  if (map?.protectComposition) outpaintClip(ctx, map, width, height);
   const vignette = ctx.createRadialGradient(width * 0.5, height * 0.46, height * 0.08, width * 0.5, height * 0.46, width * 0.78);
   vignette.addColorStop(0, "rgba(0,0,0,0)");
   vignette.addColorStop(1, `rgba(0,0,0,${direction.editorial ? 0.42 : 0.66})`);
@@ -469,10 +606,12 @@ function finalGrade(ctx, width, height, direction) {
   ctx.strokeStyle = `rgba(${direction.accent},0.36)`;
   ctx.lineWidth = Math.max(2, width * 0.002);
   ctx.strokeRect(width * 0.018, width * 0.018, width - width * 0.036, height - width * 0.036);
+  ctx.restore();
 }
 
-function paintCommercialColorGrade(ctx, width, height, direction) {
+function paintCommercialColorGrade(ctx, width, height, direction, map = null) {
   ctx.save();
+  if (map?.protectComposition) outpaintClip(ctx, map, width, height);
   ctx.globalCompositeOperation = "multiply";
   const coolShadows = ctx.createLinearGradient(0, 0, width, height);
   coolShadows.addColorStop(0, "rgba(10,18,34,0.48)");
@@ -491,14 +630,7 @@ function paintCommercialColorGrade(ctx, width, height, direction) {
 }
 
 function paintBackgroundSuppression(ctx, image, map, width, height, direction, settings = {}) {
-  if (map.protectComposition) {
-    ctx.save();
-    ctx.fillStyle = "rgba(0,0,0,0.28)";
-    ctx.fillRect(0, 0, Math.max(0, map.renderBox.x), height);
-    ctx.fillRect(map.renderBox.x + map.renderBox.w, 0, Math.max(0, width - map.renderBox.x - map.renderBox.w), height);
-    ctx.restore();
-    return;
-  }
+  if (map.protectComposition) return;
   ctx.save();
   ctx.globalAlpha = 0.58;
   ctx.filter = `blur(${Math.round(width * 0.018)}px) brightness(${Math.round(manualValue(settings, "brightness", 48))}%) contrast(${Math.round(manualValue(settings, "contrast", 118))}%) saturate(${Math.round(manualValue(settings, "saturation", 74))}%)`;
@@ -515,6 +647,7 @@ function paintBackgroundSuppression(ctx, image, map, width, height, direction, s
 }
 
 function paintLocalHeroContrast(ctx, image, map, width, height, direction, settings = {}) {
+  if (map.protectComposition) return;
   ctx.save();
   if (!map.protectComposition) {
     ctx.beginPath();
@@ -535,8 +668,9 @@ function paintLocalHeroContrast(ctx, image, map, width, height, direction, setti
   ctx.restore();
 }
 
-function paintPremiumMaterials(ctx, width, height, direction) {
+function paintPremiumMaterials(ctx, width, height, direction, map = null) {
   ctx.save();
+  if (map?.protectComposition) outpaintClip(ctx, map, width, height);
   ctx.globalCompositeOperation = "overlay";
   for (let i = 0; i < 260; i += 1) {
     const x = width * (((i * 29 + Math.round(direction.seed * 91)) % 100) / 100);
@@ -624,15 +758,15 @@ function selectValidatedArtwork(plan, image, width, height, settings = {}) {
 
 function paintPremiumArtworkOnly(ctx, image, map, width, height, direction, settings = {}) {
   paintBackgroundLayer(ctx, image, map, width, height, direction, settings);
-  paintCommercialColorGrade(ctx, width, height, direction);
+  paintCommercialColorGrade(ctx, width, height, direction, map);
   paintBackgroundSuppression(ctx, image, map, width, height, direction, settings);
   paintLightShaping(ctx, map, width, height, direction);
   paintDepthLayer(ctx, map, width, height, direction);
   paintHeroEnhancement(ctx, image, map, width, height, direction, settings);
   paintLocalHeroContrast(ctx, image, map, width, height, direction, settings);
   paintAtmosphere(ctx, map, width, height, direction);
-  paintPremiumMaterials(ctx, width, height, direction);
-  finalGrade(ctx, width, height, direction);
+  paintPremiumMaterials(ctx, width, height, direction, map);
+  finalGrade(ctx, width, height, direction, map);
 }
 
 export async function paintCommercialVisualSystem(canvas, image, plan, settings, width, height) {
@@ -647,5 +781,5 @@ export async function paintCommercialVisualSystem(canvas, image, plan, settings,
   paintTitleBlock(ctx, map, width, height, plan, direction, settings);
   paintPerformerBlock(ctx, map, width, height, plan, direction);
   paintFooter(ctx, width, height, plan, settings, direction, map);
-  return { logoHeight: width * 0.06, compositionMode: map.tension, visualSystemId: map.visualSystemId, renderedRenderPlanHash: map.renderPlanHash, renderMap: map, renderDirection: direction, commercialAdvertisingScore: commercialScore.total, commercialScore, artworkValidation: commercialScore.passed ? "passed" : "best_available", compositionProtection: map.protectComposition ? "full_source_preserved" : "standard_safe_crop", artDirectorVersion: "FLESHLAB AI ART DIRECTOR v3.0" };
+  return { logoHeight: width * 0.06, compositionMode: map.tension, visualSystemId: map.visualSystemId, renderedRenderPlanHash: map.renderPlanHash, renderMap: map, renderDirection: direction, commercialAdvertisingScore: commercialScore.total, commercialScore, artworkValidation: commercialScore.passed ? "passed" : "best_available", compositionProtection: map.protectComposition ? "ai_canvas_extension_original_frame_untouched" : "standard_safe_crop", artDirectorVersion: "FLESHLAB AI ART DIRECTOR v3.0" };
 }
