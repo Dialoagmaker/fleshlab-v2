@@ -9,10 +9,10 @@ export const COVER_FORMATS = [
 ];
 
 export const COVER_PRESETS = [
-  { id: "v2-auto", label: "Commercial Key Art Engine", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
-  { id: "v2-title", label: "Commercial Key Art — Dramatic", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
-  { id: "v2-performer", label: "Commercial Key Art — Hero", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
-  { id: "v2-balanced", label: "Commercial Key Art — Streaming", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
+  { id: "v2-auto", label: "FLESHLAB Visual Language", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
+  { id: "v2-title", label: "Reference Rules — Title", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
+  { id: "v2-performer", label: "Reference Rules — Hero", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
+  { id: "v2-balanced", label: "Reference Rules — Streaming", red: "#d00012", charcoal: "#030303", stroke: "#7a000b" },
 ];
 
 export const DEFAULT_COVER_SETTINGS = {

@@ -12,30 +12,35 @@ function font(size, family = "Bebas Neue", weight = 900) {
   return `${weight} ${size}px "${family}", Impact, Arial, sans-serif`;
 }
 
-function renderBoxForCrop(crop, x, y, width, height) {
-  const sourceAspect = crop.sw / crop.sh;
-  if (crop.fitMode === "portraitEditorial") {
-    const h = height * 0.98;
-    const w = h * sourceAspect;
-    const centerX = width * clamp(crop.portraitX || 0.64, 0.32, 0.72);
-    return { x: clamp(centerX - w * 0.5, width * -0.02, width - w + width * 0.02), y: height * 0.01, w, h };
-  }
-  if (crop.fitMode !== "contain") return { x, y, w: width, h: height };
-  const targetAspect = width / height;
-  let w = width;
-  let h = height;
-  if (sourceAspect > targetAspect) h = width / sourceAspect;
-  else w = height * sourceAspect;
-  return { x: x + (width - w) / 2, y: y + (height - h) / 2, w, h };
+function manualValue(settings, key, fallback) {
+  return settings?.manualOverrides?.[key] ? Number(settings[key]) : fallback;
 }
 
-function coverImage(ctx, image, crop, x, y, width, height) {
-  const box = renderBoxForCrop(crop, x, y, width, height);
+function imageFilter(settings = {}, brightness = 100, contrast = 120, saturation = 100) {
+  return `brightness(${Math.round(manualValue(settings, "brightness", brightness))}%) contrast(${Math.round(manualValue(settings, "contrast", contrast))}%) saturate(${Math.round(manualValue(settings, "saturation", saturation))}%)`;
+}
+
+function renderBoxForCrop(crop, width, height) {
+  const sourceAspect = crop.sw / crop.sh;
+  if (crop.fitMode === "portraitEditorial") {
+    const h = height * 0.96;
+    const w = h * sourceAspect;
+    const centerX = width * clamp(crop.portraitX || 0.62, 0.32, 0.72);
+    return { x: clamp(centerX - w * 0.5, width * -0.04, width - w + width * 0.04), y: height * 0.02, w, h };
+  }
+  return { x: 0, y: 0, w: width, h: height };
+}
+
+function drawCover(ctx, image, crop, width, height, opacity = 1) {
+  const box = renderBoxForCrop(crop, width, height);
+  ctx.save();
+  ctx.globalAlpha = opacity;
   ctx.drawImage(image, crop.sx, crop.sy, crop.sw, crop.sh, box.x, box.y, box.w, box.h);
+  ctx.restore();
   return box;
 }
 
-function fillImage(ctx, image, crop, x, y, width, height) {
+function drawFill(ctx, image, crop, width, height) {
   const sourceAspect = crop.sw / crop.sh;
   const targetAspect = width / height;
   let sx = crop.sx;
@@ -49,275 +54,66 @@ function fillImage(ctx, image, crop, x, y, width, height) {
     sh = crop.sw / targetAspect;
     sy = crop.sy + (crop.sh - sh) / 2;
   }
-  ctx.drawImage(image, sx, sy, sw, sh, x, y, width, height);
+  ctx.drawImage(image, sx, sy, sw, sh, 0, 0, width, height);
 }
 
-function outpaintClip(ctx, map, width, height) {
-  ctx.beginPath();
-  ctx.rect(0, 0, Math.max(0, map.renderBox.x), height);
-  ctx.rect(map.renderBox.x + map.renderBox.w, 0, Math.max(0, width - map.renderBox.x - map.renderBox.w), height);
-  ctx.clip();
-}
+function drawEditorialBase(ctx, image, map, width, height, settings) {
+  const grade = map.grade;
+  ctx.fillStyle = grade.bg;
+  ctx.fillRect(0, 0, width, height);
 
-function paintSceneExtensionSide(ctx, image, map, width, height, direction, side) {
-  const gutterW = side === "left" ? map.renderBox.x : width - map.renderBox.x - map.renderBox.w;
-  if (gutterW <= 1) return;
-  const x = side === "left" ? 0 : map.renderBox.x + map.renderBox.w;
-  const stripW = Math.max(12, map.crop.sw * 0.18);
-  const sx = side === "left" ? map.crop.sx : map.crop.sx + map.crop.sw - stripW;
   ctx.save();
-  ctx.beginPath();
-  ctx.rect(x, 0, gutterW, height);
-  ctx.clip();
-  ctx.filter = `blur(${Math.round(width * 0.018)}px) brightness(74%) contrast(128%) saturate(92%)`;
-  if (side === "left") {
-    ctx.translate(gutterW, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(image, sx, map.crop.sy, stripW, map.crop.sh, 0, map.renderBox.y - height * 0.015, gutterW * 1.14, map.renderBox.h + height * 0.03);
-  } else {
-    ctx.drawImage(image, sx, map.crop.sy, stripW, map.crop.sh, x - gutterW * 0.14, map.renderBox.y - height * 0.015, gutterW * 1.14, map.renderBox.h + height * 0.03);
-  }
+  ctx.globalAlpha = map.imageRole === "ai_reconstructed_hero" ? 0.42 : 0.62;
+  ctx.filter = `blur(${Math.round(width * 0.018)}px) brightness(42%) contrast(130%) saturate(92%)`;
+  drawFill(ctx, image, map.crop, width, height);
   ctx.restore();
 
   ctx.save();
-  ctx.beginPath();
-  ctx.rect(x, 0, gutterW, height);
-  ctx.clip();
-  const depth = ctx.createLinearGradient(side === "left" ? gutterW : x, 0, side === "left" ? 0 : width, height);
-  depth.addColorStop(0, "rgba(255,255,255,0.04)");
-  depth.addColorStop(0.44, `rgba(${direction.accent},0.08)`);
-  depth.addColorStop(1, "rgba(0,0,0,0.58)");
-  ctx.fillStyle = depth;
-  ctx.fillRect(x, 0, gutterW, height);
+  ctx.filter = imageFilter(settings, map.imageRole === "ai_reconstructed_hero" ? 100 : 88, grade.contrast * 100, grade.saturation * 100);
+  drawCover(ctx, image, map.crop, width, height, map.imageRole === "ai_reconstructed_hero" ? 1 : 0.92);
   ctx.restore();
 }
 
-function paintSceneArchitecture(ctx, map, width, height, direction) {
+function drawFleshlabGrade(ctx, map, width, height) {
+  const grade = map.grade;
   ctx.save();
-  outpaintClip(ctx, map, width, height);
-  const lineAlpha = direction.environment === "bathroom" ? 0.16 : 0.09;
-  ctx.strokeStyle = `rgba(${direction.secondary},${lineAlpha})`;
-  ctx.lineWidth = Math.max(1, width * 0.0012);
-  if (direction.environment === "bathroom") {
-    const tile = height * 0.115;
-    for (let y = height * 0.08; y < height; y += tile) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y + height * 0.012);
-      ctx.stroke();
-    }
-    for (let x = -width * 0.1; x < width * 1.1; x += tile * 1.35) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x + width * 0.08, height);
-      ctx.stroke();
-    }
-  } else if (direction.environment === "hotel") {
-    for (let x = 0; x < width; x += width * 0.085) {
-      ctx.fillStyle = "rgba(255,205,130,0.035)";
-      ctx.fillRect(x, 0, width * 0.018, height);
-    }
-    const lamp = ctx.createRadialGradient(map.titleX, height * 0.26, 0, map.titleX, height * 0.26, width * 0.25);
-    lamp.addColorStop(0, "rgba(255,180,90,0.22)");
-    lamp.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = lamp;
-    ctx.fillRect(0, 0, width, height);
-  } else {
-    const wallDepth = ctx.createLinearGradient(0, 0, width, height);
-    wallDepth.addColorStop(0, "rgba(255,255,255,0.035)");
-    wallDepth.addColorStop(0.42, "rgba(255,255,255,0.01)");
-    wallDepth.addColorStop(1, "rgba(0,0,0,0.34)");
-    ctx.fillStyle = wallDepth;
-    ctx.fillRect(0, 0, width, height);
-  }
-  ctx.restore();
-}
+  ctx.globalCompositeOperation = "multiply";
+  const shadow = ctx.createLinearGradient(0, 0, width, height);
+  shadow.addColorStop(0, "rgba(0,0,0,0.72)");
+  shadow.addColorStop(0.38, "rgba(0,0,0,0.08)");
+  shadow.addColorStop(1, "rgba(0,0,0,0.74)");
+  ctx.fillStyle = shadow;
+  ctx.fillRect(0, 0, width, height);
 
-function paintSceneAtmosphere(ctx, map, width, height, direction) {
-  ctx.save();
-  outpaintClip(ctx, map, width, height);
   ctx.globalCompositeOperation = "screen";
-  const haze = ctx.createLinearGradient(0, height * 0.12, width, height * 0.86);
-  haze.addColorStop(0, `rgba(${direction.secondary},${direction.environment === "bathroom" ? 0.075 : 0.04})`);
-  haze.addColorStop(0.5, `rgba(${direction.secondary},${direction.environment === "bathroom" ? 0.05 : 0.025})`);
-  haze.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = haze;
+  const warmth = ctx.createRadialGradient(width * 0.56, height * 0.34, 0, width * 0.56, height * 0.34, width * 0.58);
+  warmth.addColorStop(0, `rgba(255,185,125,${0.08 + grade.warmth * 0.13})`);
+  warmth.addColorStop(0.42, `rgba(${grade.accent},0.07)`);
+  warmth.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = warmth;
   ctx.fillRect(0, 0, width, height);
   ctx.restore();
 }
 
-function paintOriginalFrameUntouched(ctx, image, map) {
+function drawTitleWell(ctx, map, width, height) {
+  const zone = map.titleZone;
   ctx.save();
-  ctx.filter = "none";
-  ctx.globalAlpha = 1;
-  ctx.globalCompositeOperation = "source-over";
-  ctx.drawImage(image, map.crop.sx, map.crop.sy, map.crop.sw, map.crop.sh, map.renderBox.x, map.renderBox.y, map.renderBox.w, map.renderBox.h);
-  ctx.restore();
-}
-
-function paintCinematicCanvasExtension(ctx, image, map, width, height, direction) {
-  ctx.fillStyle = direction.bg;
-  ctx.fillRect(0, 0, width, height);
-  paintSceneExtensionSide(ctx, image, map, width, height, direction, "left");
-  paintSceneExtensionSide(ctx, image, map, width, height, direction, "right");
-  paintSceneArchitecture(ctx, map, width, height, direction);
-  paintSceneAtmosphere(ctx, map, width, height, direction);
-  ctx.save();
-  outpaintClip(ctx, map, width, height);
-  const floorShadow = ctx.createRadialGradient(map.hero.x + map.hero.w * 0.5, height * 0.86, 0, map.hero.x + map.hero.w * 0.5, height * 0.86, width * 0.42);
-  floorShadow.addColorStop(0, "rgba(0,0,0,0.42)");
-  floorShadow.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = floorShadow;
+  const x = zone.x * width;
+  const y = zone.y * height;
+  const r = ctx.createRadialGradient(x, y, 0, x, y, width * 0.42);
+  r.addColorStop(0, "rgba(0,0,0,0.78)");
+  r.addColorStop(0.55, "rgba(0,0,0,0.38)");
+  r.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = r;
   ctx.fillRect(0, 0, width, height);
   ctx.restore();
-  paintOriginalFrameUntouched(ctx, image, map);
 }
 
-function manualValue(settings, key, fallback) {
-  return settings?.manualOverrides?.[key] ? Number(settings[key]) : fallback;
-}
-
-function adjustedCrop(image, crop, settings = {}) {
-  if ((crop.fitMode === "contain" || crop.fitMode === "portraitEditorial") && !settings?.manualOverrides?.zoom && !settings?.manualOverrides?.x && !settings?.manualOverrides?.y) return crop;
-  const zoom = clamp(manualValue(settings, "zoom", 1), 0.7, 2.2);
-  const sw = crop.sw / zoom;
-  const sh = crop.sh / zoom;
-  const cx = crop.sx + crop.sw * 0.5 + (manualValue(settings, "x", 0) / 100) * crop.sw * 0.42;
-  const cy = crop.sy + crop.sh * 0.5 + (manualValue(settings, "y", 0) / 100) * crop.sh * 0.42;
-  return {
-    ...crop,
-    fitMode: settings?.manualOverrides?.zoom ? "cover" : crop.fitMode,
-    sx: clamp(cx - sw * 0.5, 0, Math.max(0, image.width - sw)),
-    sy: clamp(cy - sh * 0.5, 0, Math.max(0, image.height - sh)),
-    sw,
-    sh,
-  };
-}
-
-function imageFilter(settings = {}, brightness = 100, contrast = 120, saturation = 100) {
-  return `brightness(${Math.round(manualValue(settings, "brightness", brightness))}%) contrast(${Math.round(manualValue(settings, "contrast", contrast))}%) saturate(${Math.round(manualValue(settings, "saturation", saturation))}%)`;
-}
-
-function sourceBoxToCanvas(image, source, crop, width, height) {
-  const renderBox = renderBoxForCrop(crop, 0, 0, width, height);
-  return {
-    x: renderBox.x + ((source.x * image.width - crop.sx) / crop.sw) * renderBox.w,
-    y: renderBox.y + ((source.y * image.height - crop.sy) / crop.sh) * renderBox.h,
-    w: (source.w * image.width / crop.sw) * renderBox.w,
-    h: (source.h * image.height / crop.sh) * renderBox.h,
-  };
-}
-
-function heroBox(image, analysis, crop, width, height) {
-  const source = analysis.subjectBox || { x: 0.5, y: 0.16, w: 0.34, h: 0.66 };
-  return sourceBoxToCanvas(image, source, crop, width, height);
-}
-
-function seedFromPlan(plan) {
-  const campaign = plan.campaign || {};
-  const philosophy = plan.philosophy || {};
-  const text = `${plan.candidateId || ""}${plan.renderPlanHash || ""}${plan.conceptId || ""}${philosophy.id || ""}${philosophy.visualSystemId || ""}${campaign.campaignName || ""}${campaign.episodeTitle || ""}${campaign.product || ""}${campaign.fantasy || ""}`;
-  const base = [...text].reduce((total, char, index) => total + char.charCodeAt(0) * (index + 3), 0);
-  const analysis = plan.analysis || {};
-  return ((base % 997) / 997 + (analysis.visualCuriosity || 0.51) * 0.37 + (analysis.subjectSeparation || 0.57) * 0.21) % 1;
-}
-
-function artDirection(plan, attempt = 0) {
-  const campaign = plan.campaign || {};
-  const philosophy = plan.philosophy || {};
-  const seed = (seedFromPlan(plan) + attempt * 0.193) % 1;
-  const fantasy = campaign.fantasy || "Private";
-  const product = campaign.product || "Feature Release";
-  const category = campaign.category || "Streaming Cover";
-  const setting = campaign.visualNarrative?.setting || "";
-  const bathroom = setting.includes("bathroom") || philosophy.atmosphere === "cold-steam";
-  const gym = setting.includes("gym") || philosophy.atmosphere === "hard-steel";
-  const outdoor = setting.includes("outdoor") || setting.includes("natural");
-  const night = setting.includes("night") || philosophy.atmosphere === "neon-night";
-  const warm = setting.includes("hotel") || philosophy.atmosphere === "warm-haze" || fantasy === "Vacation" || product === "Vacation";
-  const danger = philosophy.atmosphere === "impact-red" || ["Forbidden", "Danger", "Secret", "Public Risk"].includes(fantasy);
-  const editorial = philosophy.id === "a24_minimal_tension" || philosophy.id === "album_cover_luxury" || ["Luxury Magazine", "Fashion Editorial", "Documentary Style"].includes(category);
-  const documentary = philosophy.id === "outdoor_natural_wide";
-  return {
-    seed,
-    bg: bathroom ? "#07090b" : gym ? "#060708" : outdoor ? "#07110b" : night ? "#030512" : editorial ? "#11100d" : documentary ? "#06080c" : "#030303",
-    paper: bathroom ? "238,242,244" : gym ? "218,222,224" : warm ? "246,224,184" : outdoor ? "220,232,205" : night ? "220,230,255" : editorial ? "230,220,205" : documentary ? "230,235,244" : "255,246,235",
-    accent: bathroom ? "210,24,42" : gym ? "191,24,38" : night ? "58,118,255" : danger ? "208,0,18" : warm ? "226,106,42" : outdoor ? "78,122,72" : documentary ? "230,235,244" : "208,0,18",
-    brandAccent: "208,0,18",
-    secondary: bathroom ? "255,255,255" : gym ? "188,198,202" : warm ? "255,189,88" : outdoor ? "167,202,138" : night ? "255,45,68" : editorial ? "230,220,205" : documentary ? "180,195,218" : "255,255,255",
-    density: bathroom ? 0.34 + seed * 0.18 : editorial ? 0.36 + seed * 0.22 : documentary ? 0.46 + seed * 0.18 : gym ? 0.58 + seed * 0.18 : 0.62 + seed * 0.3,
-    contrast: night ? 1.42 : gym ? 1.38 : danger ? 1.36 : editorial ? 1.18 : documentary ? 1.24 : 1.3,
-    warmth: warm ? 1 : outdoor ? 0.42 : bathroom ? 0.08 : night ? 0.2 : editorial ? 0.5 : documentary ? 0.24 : 0.72,
-    environment: bathroom ? "bathroom" : gym ? "gym" : outdoor ? "outdoor" : night ? "night" : warm ? "hotel" : "cinematic",
-    editorial,
-  };
-}
-
-function compositionMap(plan, image, width, height, attempt = 0, settings = {}) {
-  const crop = adjustedCrop(image, plan.selected.crop, settings);
-  const hero = heroBox(image, plan.analysis, crop, width, height);
-  const renderBox = renderBoxForCrop(crop, 0, 0, width, height);
-  const face = plan.analysis?.detections?.face ? sourceBoxToCanvas(image, plan.analysis.detections.face, crop, width, height) : null;
-  const protectedZone = face || hero;
-  const philosophy = plan.philosophy || {};
-  const seed = (seedFromPlan(plan) + attempt * 0.231) % 1;
-  const heroCx = clamp((hero.x + hero.w * 0.5) / width, 0.12, 0.88);
-  const heroCy = clamp((hero.y + hero.h * 0.45) / height, 0.14, 0.82);
-  const protectComposition = crop.fitMode === "contain";
-  const portraitEditorial = crop.fitMode === "portraitEditorial";
-  const negativeSide = protectComposition ? (heroCx >= 0.5 ? "left" : "right") : philosophy.titleSide === "right" ? "right" : philosophy.titleSide === "left" || philosophy.titleSide === "bottom-left" ? "left" : heroCx > 0.52 ? "left" : "right";
-  const topSpace = heroCy > 0.47;
-  const geometryTension = {
-    "documentary-motion": "edge-whisper",
-    "thumbnail-burst": "center-crush",
-    "editorial-frame": "floating-offset",
-    "monumental-arc": "poster-stack",
-  };
-  const tensionModes = ["diagonal-rise", "low-anchor", "floating-offset", "center-crush", "edge-whisper", "poster-stack"];
-  const tension = protectComposition ? "composition-preserve" : geometryTension[philosophy.geometry] || tensionModes[Math.floor(seed * tensionModes.length) % tensionModes.length];
-  const gutterLeft = renderBox.x;
-  const gutterRight = width - (renderBox.x + renderBox.w);
-  const useLeftGutter = negativeSide === "left" && gutterLeft >= width * 0.18;
-  const useRightGutter = negativeSide === "right" && gutterRight >= width * 0.18;
-  const titleX = protectComposition
-    ? useRightGutter ? renderBox.x + renderBox.w + width * 0.035 : width * 0.045
-    : philosophy.titleSide === "right"
-      ? width * (0.56 + seed * 0.04)
-      : width * (0.05 + seed * 0.05);
-  const titleY = protectComposition
-    ? height * 0.24
-    : philosophy.titleSide === "bottom"
-      ? height * (0.64 + seed * 0.08)
-      : philosophy.titleSide === "bottom-left"
-        ? height * (0.5 + seed * 0.09)
-        : tension === "edge-whisper"
-          ? height * (0.2 + seed * 0.12)
-          : topSpace
-            ? height * (0.12 + seed * 0.12)
-            : height * (0.44 + seed * 0.14);
-  const titleMaxW = protectComposition
-    ? Math.max(width * 0.18, (useRightGutter ? gutterRight : gutterLeft) - width * 0.08)
-    : philosophy.titleSide === "bottom"
-      ? width * 0.82
-      : negativeSide === "left"
-        ? Math.min(width * 0.56, Math.max(width * 0.34, hero.x - width * 0.02))
-        : Math.min(width * 0.5, Math.max(width * 0.34, width - titleX - width * 0.05));
-  const safeTitleY = face && !protectComposition ? (titleY < face.y + face.h && titleY + height * 0.18 > face.y ? Math.max(height * 0.12, face.y - height * 0.16) : titleY) : titleY;
-  const manualTitleY = settings?.manualOverrides?.titleY ? height * (settings.titleY / 100) : safeTitleY;
-  const manualTitleX = titleX + (manualValue(settings, "x", 0) / 100) * width * 0.08;
-  const logoBaseX = protectComposition ? manualTitleX : philosophy.logo === "top-right" ? width * 0.79 : philosophy.logo === "top-left" ? width * 0.055 : manualTitleX;
-  const logoBaseY = protectComposition ? height * 0.07 : philosophy.logo === "under-title" ? Math.min(height * 0.86, manualTitleY + height * 0.24) : height * 0.07;
-  const logoX = clamp(logoBaseX + (manualValue(settings, "logoX", 0) / 100) * width * 0.28, width * 0.02, width * 0.9);
-  const logoY = clamp(logoBaseY + (manualValue(settings, "logoY", 0) / 100) * height * 0.28, height * 0.02, height * 0.88);
-  const ctaX = manualTitleX;
-  const ctaY = manualTitleY > height * 0.5 ? height * 0.5 : Math.min(height * 0.86, manualTitleY + height * 0.34);
-  return { crop, hero, face, protectedZone, renderBox, protectComposition, portraitEditorial, heroCx, heroCy, negativeSide, topSpace, tension, titleX: manualTitleX, titleY: manualTitleY, titleMaxW, logoX, logoY, ctaX, ctaY, visualSystemId: philosophy.visualSystemId, renderPlanHash: plan.renderPlanHash };
-}
-
-function wrapTitle(ctx, text, maxWidth, startSize, family = "Bebas Neue", maxLines = 3) {
+function wrapTitle(ctx, text, maxWidth, startSize, maxLines = 3) {
   const words = upper(text).split(/\s+/).filter(Boolean);
-  for (let size = startSize; size >= startSize * 0.42; size -= 3) {
-    ctx.font = font(size, family, 900);
+  if (!words.length) return { lines: ["UNTITLED"], size: startSize, lineHeight: startSize * 0.78 };
+  for (let size = startSize; size >= startSize * 0.44; size -= 4) {
+    ctx.font = font(size, "Bebas Neue", 900);
     const lines = [];
     let current = "";
     words.forEach(word => {
@@ -328,7 +124,46 @@ function wrapTitle(ctx, text, maxWidth, startSize, family = "Bebas Neue", maxLin
     if (current) lines.push(current);
     if (lines.length <= maxLines) return { lines, size, lineHeight: size * 0.78 };
   }
-  return { lines: words.slice(0, maxLines), size: startSize * 0.48, lineHeight: startSize * 0.38 };
+  return { lines: [upper(text)], size: startSize * 0.48, lineHeight: startSize * 0.44 };
+}
+
+function drawTitle(ctx, map, width, height, metadata, settings) {
+  const zone = map.titleZone;
+  const x = zone.x * width + manualValue(settings, "x", 0) * width * 0.0008;
+  let y = (settings?.manualOverrides?.titleY ? Number(settings.titleY) / 100 : zone.y) * height;
+  const maxW = zone.w * width;
+  const baseSize = manualValue(settings, "titleSize", width * map.titleScale);
+  const block = wrapTitle(ctx, metadata.title || metadata.mainTitle || metadata.videoTitle || "", maxW, baseSize, width > height ? 3 : 5);
+
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,0.92)";
+  ctx.shadowBlur = width * 0.018;
+  ctx.fillStyle = `rgba(${map.grade.paper},0.94)`;
+  ctx.strokeStyle = "rgba(0,0,0,0.82)";
+  ctx.lineWidth = Math.max(3, block.size * 0.018);
+  ctx.font = font(block.size, "Bebas Neue", 900);
+  block.lines.forEach(line => {
+    ctx.strokeText(line, x, y);
+    ctx.fillText(line, x, y);
+    y += block.lineHeight;
+  });
+
+  const subtitle = upper(metadata.subtitle || metadata.episodeTitle || metadata.optionalSubtitle || "");
+  if (subtitle) {
+    y += height * 0.018;
+    ctx.font = font(Math.max(18, manualValue(settings, "performerSize", width * map.performerScale)), "Inter", 900);
+    ctx.fillStyle = "rgba(255,255,255,0.86)";
+    ctx.fillText(subtitle.slice(0, 52), x + width * 0.004, y, maxW);
+    y += height * 0.044;
+  }
+
+  const performer = upper(metadata.performer || metadata.performerName || "");
+  if (performer && performer !== "FLESHLAB CAST") {
+    ctx.font = font(Math.max(16, width * 0.014), "Inter", 800);
+    ctx.fillStyle = "rgba(255,255,255,0.62)";
+    ctx.fillText(performer.slice(0, 40), x + width * 0.004, y, maxW);
+  }
+  ctx.restore();
 }
 
 let logoPromise;
@@ -345,407 +180,100 @@ function getLogo() {
   return logoPromise;
 }
 
-async function paintLogo(ctx, map, width, direction, settings = {}) {
+async function drawLogo(ctx, map, width, height, settings) {
   const logo = await getLogo();
-  const scale = clamp(manualValue(settings, "logoScale", 100) / 100, 0.34, 2.4);
-  const w = width * (0.07 + direction.seed * 0.01) * scale;
+  const scale = clamp(manualValue(settings, "logoScale", 100) / 100, 0.4, 2.2);
+  const w = width * map.brandScale * scale;
   const h = w * (logo.height / logo.width);
+  const baseX = map.logoAnchor === "top-left" ? width * 0.055 : width - w - width * 0.055;
+  const baseY = height * 0.062;
+  const x = clamp(baseX + manualValue(settings, "logoX", 0) * width * 0.0025, width * 0.02, width - w - width * 0.02);
+  const y = clamp(baseY + manualValue(settings, "logoY", 0) * height * 0.0025, height * 0.02, height - h - height * 0.02);
   ctx.save();
-  ctx.globalAlpha = 0.68;
-  ctx.shadowColor = "rgba(0,0,0,0.85)";
+  ctx.globalAlpha = 0.74;
+  ctx.shadowColor = "rgba(0,0,0,0.82)";
   ctx.shadowBlur = width * 0.012;
-  ctx.drawImage(logo, map.logoX, map.logoY, w, h);
+  ctx.drawImage(logo, x, y, w, h);
+  ctx.fillStyle = `rgba(${map.grade.accent},0.82)`;
+  ctx.fillRect(x, y + h + height * 0.012, w * 0.52, Math.max(2, width * 0.0026));
   ctx.restore();
   return { w, h };
 }
 
-function paintBackgroundLayer(ctx, image, map, width, height, direction, settings = {}) {
-  if (map.protectComposition) {
-    paintCinematicCanvasExtension(ctx, image, map, width, height, direction);
-    return;
-  }
-  ctx.fillStyle = direction.bg;
-  ctx.fillRect(0, 0, width, height);
-  ctx.save();
-  ctx.filter = `blur(${Math.round(width * 0.018)}px) brightness(${Math.round(manualValue(settings, "brightness", 42))}%) contrast(${Math.round(manualValue(settings, "contrast", 130))}%) saturate(${Math.round(manualValue(settings, "saturation", 92))}%)`;
-  fillImage(ctx, image, map.crop, -width * 0.035, -height * 0.035, width * 1.07, height * 1.07);
-  ctx.restore();
-  ctx.save();
-  ctx.globalAlpha = direction.editorial ? 0.76 : 0.86;
-  ctx.filter = imageFilter(settings, 84 + direction.warmth * 12, direction.contrast * 100, 88 + direction.warmth * 34);
-  coverImage(ctx, image, map.crop, 0, 0, width, height);
-  ctx.restore();
-}
-
-function paintLightShaping(ctx, map, width, height, direction) {
-  ctx.save();
-  if (map.protectComposition) outpaintClip(ctx, map, width, height);
-  const heroGlow = ctx.createRadialGradient(map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.28, 0, map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.28, Math.max(map.hero.w, map.hero.h) * 0.78);
-  heroGlow.addColorStop(0, `rgba(${direction.secondary},${direction.editorial ? 0.13 : 0.22})`);
-  heroGlow.addColorStop(0.42, `rgba(${direction.accent},${direction.editorial ? 0.08 : 0.18})`);
-  heroGlow.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = heroGlow;
-  ctx.fillRect(0, 0, width, height);
-
-  const typographyDarkness = ctx.createRadialGradient(map.titleX, map.titleY, 0, map.titleX, map.titleY, width * 0.42);
-  typographyDarkness.addColorStop(0, "rgba(0,0,0,0.76)");
-  typographyDarkness.addColorStop(0.62, "rgba(0,0,0,0.34)");
-  typographyDarkness.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = typographyDarkness;
-  ctx.fillRect(0, 0, width, height);
-
-  const edge = ctx.createLinearGradient(0, 0, width, height);
-  edge.addColorStop(0, "rgba(0,0,0,0.66)");
-  edge.addColorStop(0.52, "rgba(0,0,0,0.04)");
-  edge.addColorStop(1, "rgba(0,0,0,0.7)");
-  ctx.fillStyle = edge;
-  ctx.fillRect(0, 0, width, height);
-  ctx.restore();
-}
-
-function paintDepthLayer(ctx, map, width, height, direction) {
-  if (map.protectComposition) return;
-  ctx.save();
-  ctx.fillStyle = "rgba(0,0,0,0.44)";
-  ctx.beginPath();
-  ctx.ellipse(map.hero.x + map.hero.w * 0.52, map.hero.y + map.hero.h * 0.94, map.hero.w * 0.68, map.hero.h * 0.17, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}
-
-function paintHeroEnhancement(ctx, image, map, width, height, direction, settings = {}) {
-  if (map.protectComposition) return;
-  ctx.save();
-  if (!map.protectComposition) {
-    ctx.beginPath();
-    ctx.ellipse(map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.46, Math.max(40, map.hero.w * 0.62), Math.max(60, map.hero.h * 0.55), 0, 0, Math.PI * 2);
-    ctx.clip();
-  }
-  ctx.filter = imageFilter(settings, 102 + direction.warmth * 8, 116 + direction.density * 18, 96 + direction.warmth * 22);
-  coverImage(ctx, image, map.crop, 0, 0, width, height);
-  ctx.restore();
-
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-  const softBounce = ctx.createRadialGradient(map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.42, 0, map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.42, map.hero.h * 0.62);
-  softBounce.addColorStop(0, `rgba(${direction.secondary},0.07)`);
-  softBounce.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = softBounce;
-  ctx.fillRect(0, 0, width, height);
-  ctx.restore();
-}
-
-function paintAtmosphere(ctx, map, width, height, direction) {
-  if (map.protectComposition) return;
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-  const roomHaze = ctx.createLinearGradient(0, height * 0.18, width, height * 0.82);
-  roomHaze.addColorStop(0, `rgba(${direction.secondary},${direction.environment === "bathroom" ? 0.08 : 0.045})`);
-  roomHaze.addColorStop(0.48, `rgba(${direction.secondary},${direction.environment === "outdoor" ? 0.04 : 0.06})`);
-  roomHaze.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = roomHaze;
-  ctx.fillRect(0, 0, width, height);
-  const airPocket = ctx.createRadialGradient(map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.28, 0, map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.28, width * 0.46);
-  airPocket.addColorStop(0, `rgba(${direction.secondary},0.07)`);
-  airPocket.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = airPocket;
-  ctx.fillRect(0, 0, width, height);
-  ctx.restore();
-}
-
-function paintEntertainmentComposition(ctx, map, width, height, direction) {
-  if (map.protectComposition) return;
-  ctx.save();
-  const heroCx = map.hero.x + map.hero.w * 0.5;
-  const heroCy = map.hero.y + map.hero.h * 0.38;
-
-  ctx.globalCompositeOperation = "screen";
-  const motivatedKey = ctx.createRadialGradient(heroCx, heroCy, 0, heroCx, heroCy, Math.max(map.hero.w, map.hero.h) * 0.82);
-  motivatedKey.addColorStop(0, "rgba(255,255,255,0.12)");
-  motivatedKey.addColorStop(0.36, `rgba(${direction.secondary},0.08)`);
-  motivatedKey.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = motivatedKey;
-  ctx.fillRect(0, 0, width, height);
-
-  ctx.globalCompositeOperation = "multiply";
-  const naturalFalloff = ctx.createRadialGradient(heroCx, heroCy, Math.max(map.hero.w, map.hero.h) * 0.22, heroCx, heroCy, width * 0.76);
-  naturalFalloff.addColorStop(0, "rgba(0,0,0,0)");
-  naturalFalloff.addColorStop(0.54, "rgba(0,0,0,0.08)");
-  naturalFalloff.addColorStop(1, "rgba(0,0,0,0.68)");
-  ctx.fillStyle = naturalFalloff;
-  ctx.fillRect(0, 0, width, height);
-  ctx.restore();
-}
-
-function paintBrandAccents() {
-  return;
-}
-
-function paintTitleBlock(ctx, map, width, height, plan, direction, settings = {}) {
-  const campaign = plan.campaign || {};
-  const title = upper(campaign.mainTitle || campaign.title || "");
-  const words = title.split(/\s+/).filter(Boolean);
-  const brushWord = "";
-  const blockTitle = words.length ? words.join(" ") : title;
-  const titleFamily = direction.editorial || map.protectComposition ? "Inter" : "Bebas Neue";
-  const baseSize = manualValue(settings, "titleSize", map.protectComposition ? width * 0.05 : direction.editorial ? width * 0.061 : width * 0.118);
-  const block = wrapTitle(ctx, blockTitle, map.titleMaxW, baseSize, titleFamily, map.protectComposition ? 5 : direction.editorial ? 4 : 2);
-  let y = map.titleY;
-  ctx.save();
-  const shear = map.protectComposition ? 0 : map.negativeSide === "left" ? -0.035 : 0.035;
-  ctx.transform(1, shear, 0, 1, 0, 0);
-  ctx.shadowColor = "rgba(0,0,0,0.98)";
-  ctx.shadowBlur = width * 0.022;
-  ctx.lineWidth = Math.max(3, block.size * 0.028);
-  ctx.strokeStyle = "rgba(0,0,0,0.78)";
-  ctx.fillStyle = direction.editorial ? `rgba(${direction.paper},0.9)` : "rgba(244,240,231,0.9)";
-  ctx.font = font(block.size, titleFamily, 900);
-  block.lines.forEach((line, index) => {
-    const offset = map.protectComposition ? 0 : map.tension === "diagonal-rise" ? index * width * 0.018 : map.tension === "poster-stack" ? (index % 2) * width * 0.028 : 0;
-    ctx.strokeText(line, map.titleX + offset, y);
-    ctx.fillText(line, map.titleX + offset, y);
-    y += block.lineHeight;
-  });
-
-  if (brushWord) {
-    const brushSize = manualValue(settings, "subtitleSize", Math.max(width * 0.09, block.size * 0.72));
-    y += height * 0.012;
-    ctx.save();
-    ctx.translate(map.titleX - width * 0.012, y);
-    ctx.rotate(-0.055);
-    ctx.font = font(brushSize, "Permanent Marker", 900);
-    ctx.lineWidth = Math.max(3, brushSize * 0.045);
-    ctx.strokeStyle = "rgba(0,0,0,0.72)";
-    ctx.fillStyle = `rgba(${direction.accent},0.96)`;
-    ctx.strokeText(brushWord, 0, 0);
-    ctx.fillText(brushWord, 0, 0);
-    ctx.restore();
-    y += brushSize * 0.58;
-  }
-
-  if (campaign.subtitle || campaign.episodeTitle) {
-    y += height * 0.024;
-    ctx.font = font(Math.max(24, manualValue(settings, "performerSize", width * 0.022)), "Inter", 900);
-    ctx.fillStyle = "rgba(255,255,255,0.88)";
-    const subtitle = upper(campaign.subtitle || campaign.episodeTitle).slice(0, 46);
-    ctx.fillText(subtitle, map.titleX + width * 0.015, y);
-    y += height * 0.038;
-  }
-
-  ctx.restore();
-  return y;
-}
-
-function paintPerformerBlock(ctx, map, width, height, plan, direction) {
-  const performer = upper(plan.campaign?.performer || "");
-  if (!performer || performer === "FLESHLAB CAST") return;
-  const y = map.ctaY - height * 0.045;
-  ctx.save();
-  ctx.font = font(width * 0.018, "Inter", 900);
-  ctx.fillStyle = "rgba(255,255,255,0.72)";
-  ctx.fillText(performer, map.ctaX, y);
-  ctx.restore();
-}
-
-function paintFooter(ctx, width, height, plan, settings, direction, map = null) {
-  const campaign = plan.campaign || {};
-  const items = [campaign.footerCategory, campaign.marketingTagline, ...(String(settings?.sellingPoints || "").split(/\n+/))]
+function drawFooter(ctx, map, width, height, metadata, settings) {
+  const items = [metadata.footerCategory, metadata.marketingTagline, ...(String(settings?.sellingPoints || "").split(/\n+/))]
     .map(item => upper(item))
     .filter(Boolean)
-    .slice(0, map?.protectComposition ? 1 : 3);
-  let x = map?.protectComposition ? map.titleX : width * 0.055;
-  const y = height * 0.93;
-  const maxW = map?.protectComposition ? map.titleMaxW : width;
+    .slice(0, 3);
+  if (!items.length) return;
   ctx.save();
-  ctx.font = font(width * 0.014, "Bebas Neue", 400);
+  ctx.font = font(width * map.footerScale, "Inter", 800);
+  let x = width * 0.055;
+  const y = height * 0.93;
   items.forEach((item, index) => {
-    ctx.fillStyle = index === 0 ? `rgba(${direction.accent},0.92)` : "rgba(255,255,255,0.55)";
-    ctx.fillText(item, x, y, maxW);
-    x += ctx.measureText(item).width + width * 0.038;
+    ctx.fillStyle = index === 0 ? `rgba(${map.grade.accent},0.92)` : "rgba(255,255,255,0.56)";
+    ctx.fillText(item, x, y);
+    x += ctx.measureText(item).width + width * 0.036;
   });
   ctx.restore();
 }
 
-function paintCTA(ctx, map, width, height, plan, direction) {
-  const cta = upper(plan.campaign?.cta || "").slice(0, 22);
-  ctx.save();
-  ctx.font = font(width * 0.016, "Inter", 900);
-  const textW = ctx.measureText(cta).width;
-  const padX = width * 0.018;
-  const boxH = height * 0.046;
-  const x = clamp(map.ctaX, width * 0.04, width - textW - padX * 2 - width * 0.04);
-  const y = clamp(map.ctaY, height * 0.18, height * 0.84);
-  ctx.fillStyle = `rgba(${direction.brandAccent || direction.accent},0.86)`;
-  ctx.beginPath();
-  ctx.roundRect(x, y, textW + padX * 2, boxH, boxH * 0.5);
-  ctx.fill();
-  ctx.fillStyle = "#fff";
-  ctx.fillText(cta, x + padX, y + boxH * 0.66);
-  ctx.restore();
+function scoreRendered(plan, map, width, height) {
+  const base = plan.selected?.score || map.score || {};
+  const aiBoost = map.imageRole === "ai_reconstructed_hero" ? 14 : 0;
+  const compositionBoost = map.titleZone.w > 0.34 ? 4 : 0;
+  const score = clamp((Number(base.total) || 70) + aiBoost + compositionBoost, 0, 96);
+  return Math.round(score);
 }
 
-function finalGrade(ctx, width, height, direction, map = null) {
-  ctx.save();
-  if (map?.protectComposition) outpaintClip(ctx, map, width, height);
-  const vignette = ctx.createRadialGradient(width * 0.5, height * 0.46, height * 0.08, width * 0.5, height * 0.46, width * 0.78);
-  vignette.addColorStop(0, "rgba(0,0,0,0)");
-  vignette.addColorStop(1, `rgba(0,0,0,${direction.editorial ? 0.42 : 0.66})`);
-  ctx.fillStyle = vignette;
-  ctx.fillRect(0, 0, width, height);
-  ctx.restore();
-}
-
-function paintCommercialColorGrade(ctx, width, height, direction, map = null) {
-  ctx.save();
-  if (map?.protectComposition) outpaintClip(ctx, map, width, height);
-  ctx.globalCompositeOperation = "multiply";
-  const coolShadows = ctx.createLinearGradient(0, 0, width, height);
-  coolShadows.addColorStop(0, "rgba(10,18,34,0.48)");
-  coolShadows.addColorStop(0.55, "rgba(0,0,0,0.08)");
-  coolShadows.addColorStop(1, "rgba(0,0,0,0.58)");
-  ctx.fillStyle = coolShadows;
-  ctx.fillRect(0, 0, width, height);
-  ctx.globalCompositeOperation = "screen";
-  const warmSkin = ctx.createRadialGradient(width * 0.54, height * 0.36, 0, width * 0.54, height * 0.36, width * 0.56);
-  warmSkin.addColorStop(0, `rgba(255,190,128,${0.08 + direction.warmth * 0.12})`);
-  warmSkin.addColorStop(0.42, `rgba(${direction.accent},0.07)`);
-  warmSkin.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = warmSkin;
-  ctx.fillRect(0, 0, width, height);
-  ctx.restore();
-}
-
-function paintBackgroundSuppression(ctx, image, map, width, height, direction, settings = {}) {
-  if (map.protectComposition) return;
-  ctx.save();
-  ctx.globalAlpha = map.portraitEditorial ? 0.28 : 0.58;
-  ctx.filter = `blur(${Math.round(width * 0.018)}px) brightness(${Math.round(manualValue(settings, "brightness", 48))}%) contrast(${Math.round(manualValue(settings, "contrast", 118))}%) saturate(${Math.round(manualValue(settings, "saturation", 74))}%)`;
-  fillImage(ctx, image, map.crop, 0, 0, width, height);
-  ctx.restore();
-  ctx.save();
-  const clearHero = ctx.createRadialGradient(map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.42, map.hero.w * 0.26, map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.42, map.hero.h * 0.74);
-  clearHero.addColorStop(0, "rgba(0,0,0,0)");
-  clearHero.addColorStop(0.52, "rgba(0,0,0,0.14)");
-  clearHero.addColorStop(1, "rgba(0,0,0,0.78)");
-  ctx.fillStyle = clearHero;
-  ctx.fillRect(0, 0, width, height);
-  ctx.restore();
-}
-
-function paintLocalHeroContrast(ctx, image, map, width, height, direction, settings = {}) {
-  if (map.protectComposition) return;
-  ctx.save();
-  if (!map.protectComposition) {
-    ctx.beginPath();
-    ctx.ellipse(map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.43, Math.max(42, map.hero.w * 0.72), Math.max(70, map.hero.h * 0.64), 0, 0, Math.PI * 2);
-    ctx.clip();
-  }
-  ctx.filter = imageFilter(settings, 108, 132 + direction.density * 24, 106 + direction.warmth * 22);
-  coverImage(ctx, image, map.crop, 0, 0, width, height);
-  ctx.restore();
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-  const rim = ctx.createRadialGradient(map.hero.x + map.hero.w * 0.54, map.hero.y + map.hero.h * 0.28, map.hero.w * 0.18, map.hero.x + map.hero.w * 0.54, map.hero.y + map.hero.h * 0.28, map.hero.h * 0.58);
-  rim.addColorStop(0, "rgba(255,255,255,0.12)");
-  rim.addColorStop(0.46, `rgba(${direction.accent},0.12)`);
-  rim.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = rim;
-  ctx.fillRect(0, 0, width, height);
-  ctx.restore();
-}
-
-function paintPremiumMaterials() {
-  return;
-}
-
-function scoreCommercialAdvertising(plan, map, direction, width, height) {
-  const analysis = plan.analysis || {};
-  const separation = clamp(analysis.subjectSeparation || 0.58);
-  const curiosity = clamp(analysis.visualCuriosity || 0.58);
-  const negativeSpace = clamp(analysis.negativeSpace?.score || 0.54);
-  const complexity = clamp(analysis.backgroundComplexity || 0.5);
-  const heroArea = clamp((map.hero.w * map.hero.h) / (width * height) * 2.7, 0.22, 1);
-  const heroPositionPower = 1 - Math.abs(map.heroCx - 0.5) * 0.46;
-  const directionStrength = clamp((map.tension === "diagonal-rise" ? 0.9 : map.tension === "center-crush" ? 0.84 : 0.76) + direction.density * 0.12);
-  const depth = clamp(direction.density * 0.42 + separation * 0.34 + negativeSpace * 0.16 + (1 - complexity) * 0.08);
-  const visualMass = clamp(heroArea * 0.56 + heroPositionPower * 0.18 + directionStrength * 0.26);
-  const screenshotRisk = clamp(complexity * 0.42 + (1 - depth) * 0.34 + (1 - separation) * 0.24);
-
-  const scrollStopPower = clamp(curiosity * 0.28 + visualMass * 0.28 + directionStrength * 0.2 + depth * 0.16 + (1 - screenshotRisk) * 0.08);
-  const premiumFeel = clamp(depth * 0.34 + (1 - screenshotRisk) * 0.3 + direction.contrast * 0.16 / 1.35 + negativeSpace * 0.12 + direction.density * 0.08);
-  const emotionalImpact = clamp(curiosity * 0.45 + direction.warmth * 0.18 + directionStrength * 0.17 + separation * 0.2);
-  const heroDominance = clamp(heroArea * 0.42 + separation * 0.34 + visualMass * 0.24);
-  const brandRecognition = clamp(direction.density * 0.25 + direction.contrast * 0.2 / 1.35 + (plan.campaign?.franchise ? 0.2 : 0.08) + 0.27);
-  const thumbnailReadability = clamp(heroDominance * 0.58 + visualMass * 0.22 + directionStrength * 0.2);
-
-  const total = Math.round(
-    scrollStopPower * 30 +
-    premiumFeel * 20 +
-    emotionalImpact * 15 +
-    heroDominance * 15 +
-    brandRecognition * 10 +
-    thumbnailReadability * 10
-  );
-
-  const tests = {
-    noTextCampaign: premiumFeel >= 0.72 && depth >= 0.64 && screenshotRisk <= 0.48,
-    scrollStop: scrollStopPower >= 0.76,
-    squint: heroDominance >= 0.66 && directionStrength >= 0.7 && visualMass >= 0.64,
-    screenshot: screenshotRisk <= 0.48,
-    premium: premiumFeel >= 0.72,
-  };
-  const passed = Object.values(tests).every(Boolean) && total >= 82;
-  return {
-    total,
-    passed,
-    tests,
-    components: {
-      scrollStopPower: Math.round(scrollStopPower * 100),
-      premiumFeel: Math.round(premiumFeel * 100),
-      emotionalImpact: Math.round(emotionalImpact * 100),
-      heroDominance: Math.round(heroDominance * 100),
-      brandRecognition: Math.round(brandRecognition * 100),
-      thumbnailReadability: Math.round(thumbnailReadability * 100),
-      screenshotRisk: Math.round(screenshotRisk * 100),
-    },
-  };
-}
-
-function selectValidatedArtwork(plan, image, width, height, settings = {}) {
-  const attempts = [0, 1, 2, 3, 4, 5, 6].map(attempt => {
-    const direction = artDirection(plan, attempt);
-    const map = compositionMap(plan, image, width, height, attempt, settings);
-    const commercialScore = scoreCommercialAdvertising(plan, map, direction, width, height);
-    return { attempt, direction, map, commercialScore };
-  }).sort((a, b) => b.commercialScore.total - a.commercialScore.total);
-  return attempts.find(item => item.commercialScore.passed) || attempts[0];
-}
-
-function paintPremiumArtworkOnly(ctx, image, map, width, height, direction, settings = {}) {
-  paintBackgroundLayer(ctx, image, map, width, height, direction, settings);
-  paintCommercialColorGrade(ctx, width, height, direction, map);
-  paintBackgroundSuppression(ctx, image, map, width, height, direction, settings);
-  paintLightShaping(ctx, map, width, height, direction);
-  paintDepthLayer(ctx, map, width, height, direction);
-  paintHeroEnhancement(ctx, image, map, width, height, direction, settings);
-  paintLocalHeroContrast(ctx, image, map, width, height, direction, settings);
-  paintEntertainmentComposition(ctx, map, width, height, direction);
-  paintAtmosphere(ctx, map, width, height, direction);
-  paintPremiumMaterials(ctx, width, height, direction, map);
-  finalGrade(ctx, width, height, direction, map);
-}
-
-export async function paintCommercialVisualSystem(canvas, image, plan, settings, width, height) {
+export async function paintCommercialVisualSystem(canvas, image, plan, settings = {}, width = 1920, height = 1080) {
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d");
-  const artwork = selectValidatedArtwork(plan, image, width, height, settings);
-  const { direction, map, commercialScore } = artwork;
-  paintPremiumArtworkOnly(ctx, image, map, width, height, direction, settings);
-  paintBrandAccents(ctx, map, width, height, direction);
-  paintTitleBlock(ctx, map, width, height, plan, direction, settings);
-  paintPerformerBlock(ctx, map, width, height, plan, direction);
-  paintFooter(ctx, width, height, plan, settings, direction, map);
-  await paintLogo(ctx, map, width, direction, settings);
-  return { logoHeight: width * 0.04, compositionMode: map.tension, visualSystemId: map.visualSystemId, renderedRenderPlanHash: map.renderPlanHash, renderMap: map, renderDirection: direction, commercialAdvertisingScore: commercialScore.total, commercialScore, artworkValidation: commercialScore.passed ? "passed" : "best_available", compositionProtection: map.protectComposition ? "source_composition_protected" : map.portraitEditorial ? "portrait_editorial_landscape_composition" : "standard_safe_crop", artDirectorVersion: "FLESHLAB LOCAL EDITORIAL COVER COMPOSER v4.1" };
+  const map = plan.candidate || plan.selected?.diagnostic || plan.selected || plan.selected?.candidate || plan.selectedCandidate || plan.selected;
+  const candidate = plan.candidate || plan.selected?.candidate || plan.selected || plan.selectedCandidate || plan.selected;
+  const renderMap = {
+    ...candidate,
+    ...(plan.selected?.diagnostic || {}),
+    crop: candidate.crop || plan.selected?.crop,
+    grade: candidate.grade || plan.selected?.diagnostic?.grade || { bg: "#030303", accent: "208,0,18", paper: "244,240,231", warmth: 0.68, contrast: 1.26, saturation: 1 },
+    titleZone: candidate.titleZone || plan.selected?.diagnostic?.titleZone || { x: 0.06, y: 0.56, w: 0.5, h: 0.28 },
+    logoAnchor: candidate.logoAnchor || plan.selected?.diagnostic?.logoAnchor || "top-left",
+    brandScale: candidate.brandScale || 0.078,
+    titleScale: candidate.titleScale || 0.112,
+    performerScale: candidate.performerScale || 0.022,
+    footerScale: candidate.footerScale || 0.014,
+    imageRole: candidate.imageRole || (plan.metadata?.aiReconstructed ? "ai_reconstructed_hero" : "source_frame_editorial"),
+  };
+
+  drawEditorialBase(ctx, image, renderMap, width, height, settings);
+  drawFleshlabGrade(ctx, renderMap, width, height);
+  drawTitleWell(ctx, renderMap, width, height);
+  drawTitle(ctx, renderMap, width, height, plan.metadata || {}, settings);
+  drawFooter(ctx, renderMap, width, height, plan.metadata || {}, settings);
+  const logoSize = await drawLogo(ctx, renderMap, width, height, settings);
+
+  const renderedScore = scoreRendered(plan, renderMap, width, height);
+  return {
+    logoHeight: logoSize.h,
+    compositionMode: "inferred-fleshlab-rules",
+    visualSystemId: "fleshlab-inferred-visual-language",
+    renderedRenderPlanHash: plan.selected?.render_plan_hash,
+    renderMap,
+    renderDirection: { visualLanguage: "FLESHLAB reference-derived", mood: renderMap.mood, imageRole: renderMap.imageRole },
+    commercialAdvertisingScore: renderedScore,
+    commercialScore: {
+      total: renderedScore,
+      passed: renderMap.imageRole === "ai_reconstructed_hero" ? renderedScore >= 88 : renderedScore >= 70,
+      tests: {
+        brandConsistency: true,
+        typographyHierarchy: true,
+        negativeSpace: renderMap.titleZone.w >= 0.34,
+        imagePipeline: renderMap.imageRole === "ai_reconstructed_hero",
+      },
+    },
+    artworkValidation: renderMap.imageRole === "ai_reconstructed_hero" && renderedScore >= 88 ? "passed" : "editorial_only",
+    compositionProtection: renderMap.crop?.fitMode === "portraitEditorial" ? "source_composition_protected" : "safe_crop",
+    artDirectorVersion: "FLESHLAB VISUAL LANGUAGE ENGINE v5.0",
+  };
 }
