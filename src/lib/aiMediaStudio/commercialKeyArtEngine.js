@@ -67,6 +67,7 @@ function buildVariant(plan, candidate, index, width, height) {
       critique: candidate.critique,
       compositionBrief: candidate.compositionBrief,
       artDirectorApproval: candidate.artDirector,
+      studioBenchmark: candidate.score.studioBenchmarkReport,
       rootArchitectureLimit: plan.audit.rootLimitation,
     },
   };

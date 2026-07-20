@@ -1,8 +1,10 @@
-const ENGINE_NAME = "FLESHLAB Visual Language Engine v5.0";
+import { FLESHLAB_REFERENCE_COVERS, FLESHLAB_VISUAL_GRAMMAR_RULES, benchmarkAgainstFleshlabReferences } from "./fleshlabReferenceGrammar";
+
+const ENGINE_NAME = "FLESHLAB Visual Language Engine v5.1";
 
 export const FLESHLAB_VISUAL_LANGUAGE = {
   engineName: ENGINE_NAME,
-  references: ["Kraken Into The Wild", "Beach Escape", "premium streaming key art"],
+  references: FLESHLAB_REFERENCE_COVERS,
   color: {
     black: "#030303",
     deepBlack: "#000000",
@@ -18,15 +20,7 @@ export const FLESHLAB_VISUAL_LANGUAGE = {
     titleTracking: "tight",
     hierarchy: "title first, performer second, brand quiet but constant",
   },
-  rules: [
-    "Performer or hero moment owns the frame; design supports it.",
-    "Negative space is selected from the image, not preassigned by a template.",
-    "Titles sit in naturally dark image zones and never cover face or key body silhouette.",
-    "FLESHLAB mark is consistent, small, and premium; it never becomes decoration.",
-    "Color balance stays black, warm skin, controlled bone-white typography, and one red accent.",
-    "Local mode can grade, crop, and compose; it cannot invent cinematic production value.",
-    "Premium key art requires an AI reconstructed hero image before branding and typography.",
-  ],
+  rules: FLESHLAB_VISUAL_GRAMMAR_RULES,
 };
 
 function clamp(value, min = 0, max = 1) {
@@ -221,8 +215,9 @@ function buildCandidate({ image, metadata, analysis, width, height, index }) {
   return { ...withCrop, compositionBrief, artDirector };
 }
 
-function scoreCandidate(candidate, analysis = {}) {
+function scoreCandidate(candidate, analysis = {}, metadata = {}) {
   const hero = heroBox(analysis);
+  const benchmark = benchmarkAgainstFleshlabReferences(candidate, analysis, metadata);
   const titleAvoidsHero = candidate.negativeSide === "left" ? candidate.titleZone.x + candidate.titleZone.w < hero.x + 0.08 : candidate.titleZone.x > hero.x + hero.w - 0.08;
   const negativeSpace = clamp(analysis.negativeSpace?.score || 0.55);
   const heroStrength = clamp((analysis.subjectSeparation || 0.56) * 0.48 + (analysis.visualCuriosity || 0.56) * 0.32 + candidate.heroEmphasis * 0.2);
@@ -230,13 +225,14 @@ function scoreCandidate(candidate, analysis = {}) {
   const typographySafety = titleAvoidsHero ? 0.9 : 0.62;
   const brandConsistency = 0.92;
   const localCeiling = candidate.imageRole === "ai_reconstructed_hero" ? 0.96 : 0.8;
-  const totalRaw = heroStrength * 0.28 + negativeSpace * 0.18 + colorConsistency * 0.18 + typographySafety * 0.2 + brandConsistency * 0.16;
+  const totalRaw = heroStrength * 0.22 + negativeSpace * 0.14 + colorConsistency * 0.14 + typographySafety * 0.16 + brandConsistency * 0.12 + (benchmark.score / 100) * 0.22;
   const total = Math.round(clamp(totalRaw * localCeiling, 0, 1) * 100);
   const weaknesses = [];
   if (candidate.imageRole !== "ai_reconstructed_hero") weaknesses.push("Local source-frame layout cannot reach premium streaming-image quality without AI reconstruction.");
   if (!candidate.artDirector?.approved) weaknesses.push("Art-director brief is not strong enough to justify rendering.");
   if (!titleAvoidsHero) weaknesses.push("Title zone is close to the performer; manual review recommended.");
   if (negativeSpace < 0.48) weaknesses.push("Limited natural negative space in the source frame.");
+  benchmark.failures.forEach(failure => weaknesses.push(failure));
   return {
     total,
     hero: Math.round(heroStrength * 100),
@@ -245,17 +241,19 @@ function scoreCandidate(candidate, analysis = {}) {
     brand: Math.round(brandConsistency * 100),
     negativeSpace: Math.round(negativeSpace * 100),
     artDirector: candidate.artDirector?.score || 0,
+    studioBenchmark: benchmark.score,
     imageQualityCeiling: Math.round(localCeiling * 100),
-    passesQualityGate: candidate.artDirector?.approved && total >= (candidate.imageRole === "ai_reconstructed_hero" ? 88 : 70),
-    qualityFailures: weaknesses,
+    passesQualityGate: candidate.artDirector?.approved && benchmark.passesStudioParity && total >= (candidate.imageRole === "ai_reconstructed_hero" ? 88 : 70),
+    qualityFailures: [...new Set(weaknesses)],
     compositionBrief: candidate.compositionBrief,
+    studioBenchmarkReport: benchmark,
   };
 }
 
 export function buildFleshlabCoverPlan({ image, metadata = {}, analysis = {}, width, height }) {
   const candidates = [0, 1, 2, 3].map(index => {
     const candidate = buildCandidate({ image, metadata, analysis, width, height, index });
-    return { ...candidate, score: scoreCandidate(candidate, analysis) };
+    return { ...candidate, score: scoreCandidate(candidate, analysis, metadata) };
   }).sort((a, b) => Number(b.artDirector?.approved) - Number(a.artDirector?.approved) || b.score.total - a.score.total);
   const selected = candidates[0];
   return {

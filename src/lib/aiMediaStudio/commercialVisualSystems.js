@@ -274,6 +274,6 @@ export async function paintCommercialVisualSystem(canvas, image, plan, settings 
     },
     artworkValidation: renderMap.imageRole === "ai_reconstructed_hero" && renderedScore >= 88 ? "passed" : "editorial_only",
     compositionProtection: renderMap.crop?.fitMode === "portraitEditorial" ? "source_composition_protected" : "safe_crop",
-    artDirectorVersion: "FLESHLAB VISUAL LANGUAGE ENGINE v5.0",
+    artDirectorVersion: "FLESHLAB VISUAL LANGUAGE ENGINE v5.1",
   };
 }
