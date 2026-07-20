@@ -1,6 +1,7 @@
 import { analyzePosterImage } from "./posterAnalysis";
 import { paintCommercialVisualSystem } from "./commercialVisualSystems";
 import { buildFleshlabCoverPlan, stablePlanHash } from "./fleshlabVisualLanguage";
+import { recordCreativeLesson } from "./creativeIntelligenceEngine";
 
 const TARGET_STREAMING_SCORE = 88;
 
@@ -66,6 +67,7 @@ function buildVariant(plan, candidate, index, width, height) {
       imageRole: candidate.imageRole,
       critique: candidate.critique,
       compositionBrief: candidate.compositionBrief,
+      creativeIntelligence: candidate.creativeIntelligence,
       artDirectorApproval: candidate.artDirector,
       studioBenchmark: candidate.score.studioBenchmarkReport,
       rootArchitectureLimit: plan.audit.rootLimitation,
@@ -90,9 +92,7 @@ export async function generateCommercialKeyArtPlan(image, metadata = {}, setting
     variants,
     family: { id: "fleshlab_inferred_language", label: languagePlan.selected.label },
     artDirection: {
-      pipeline: normalizedMetadata.aiReconstructed
-        ? ["AI Hero Reconstruction", "FLESHLAB Visual-Language Rules", "Brand Typography", "Review", "Export"]
-        : ["Frame Analysis", "Editorial Crop", "Negative Space", "Brand Typography", "Review", "Export"],
+      pipeline: ["World Knowledge", "Design Knowledge", "Creative Direction", "Composition", "Photography", "Typography", "Branding", "Critique", "Automatic redesign", "Export"],
       visualSystemId: "fleshlab-inferred-visual-language",
       compositionProtection: languagePlan.selected.crop.compositionProtection || null,
     },
@@ -142,8 +142,10 @@ async function paintPlan(canvas, image, plan, settings, width, height) {
         ...plan.selected.score,
         renderedComposition: renderedScore,
         total: Math.round(plan.selected.score.total * 0.45 + renderedScore * 0.55),
-        passesQualityGate: result.artworkValidation === "passed" || plan.selected.score.passesQualityGate,
+        passesQualityGate: result.artworkValidation === "passed" && result.internalCritic?.approved,
+        qualityFailures: result.internalCritic?.approved ? plan.selected.score.qualityFailures : [...new Set([...(plan.selected.score.qualityFailures || []), ...(result.internalCritic?.redesignDirectives || [])])],
       },
+      internalCritic: result.internalCritic,
     },
   };
 }
@@ -168,12 +170,14 @@ export async function renderCommercialKeyArtToCanvas(canvas, image, metadata = {
       rejectedBecause: renderedPlan.selected.score.qualityFailures,
       designActions: renderedPlan.selected.design_actions,
     });
-    if (!bestPlan || renderedPlan.selected.score.total > bestPlan.selected.score.total) {
+    const shouldReplace = !bestPlan || (renderedPlan.selected.score.passesQualityGate && !bestPlan.selected.score.passesQualityGate) || (renderedPlan.selected.score.passesQualityGate === bestPlan.selected.score.passesQualityGate && renderedPlan.selected.score.total > bestPlan.selected.score.total);
+    if (shouldReplace) {
       bestPlan = renderedPlan;
       bestCanvas = scratch;
     }
   }
 
+  recordCreativeLesson({ plan: bestPlan, critic: bestPlan?.selected?.internalCritic });
   if (bestCanvas) copyCanvas(bestCanvas, canvas);
   canvas.__fleshlabPosterPlan = {
     ...bestPlan,

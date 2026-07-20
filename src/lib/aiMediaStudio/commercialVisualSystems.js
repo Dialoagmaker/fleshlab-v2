@@ -1,3 +1,5 @@
+import { critiqueRenderedCover } from "./creativeIntelligenceEngine";
+
 const OFFICIAL_LOGO_URL = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a1f9333f9_ChatGPTImageJul14202612_16_43AM.png";
 
 function clamp(value, min = 0, max = 1) {
@@ -254,6 +256,7 @@ export async function paintCommercialVisualSystem(canvas, image, plan, settings 
   const logoSize = await drawLogo(ctx, renderMap, width, height, settings);
 
   const renderedScore = scoreRendered(plan, renderMap, width, height);
+  const internalCritic = critiqueRenderedCover({ plan, renderMap, renderedScore });
   return {
     logoHeight: logoSize.h,
     compositionMode: "inferred-fleshlab-rules",
@@ -272,7 +275,8 @@ export async function paintCommercialVisualSystem(canvas, image, plan, settings 
         imagePipeline: renderMap.imageRole === "ai_reconstructed_hero",
       },
     },
-    artworkValidation: renderMap.imageRole === "ai_reconstructed_hero" && renderedScore >= 88 ? "passed" : "editorial_only",
+    artworkValidation: internalCritic.approved ? "passed" : "critic_rejected",
+    internalCritic,
     compositionProtection: renderMap.crop?.fitMode === "portraitEditorial" ? "source_composition_protected" : "safe_crop",
     artDirectorVersion: "FLESHLAB VISUAL LANGUAGE ENGINE v5.1",
   };

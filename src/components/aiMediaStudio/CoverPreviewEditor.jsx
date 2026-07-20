@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download } from "lucide-react";
 import { blobToCanvasImage, canvasToBlob, getCoverDimensions } from "@/lib/aiMediaStudio/coverRenderer";
-import { generatePosterPlan, renderPosterVariantToCanvas, selectPosterVariant } from "@/lib/aiMediaStudio/commercialKeyArtEngine";
+import { generatePosterPlan, renderCommercialKeyArtToCanvas, selectPosterVariant } from "@/lib/aiMediaStudio/commercialKeyArtEngine";
 
 async function frameToBlob(frame) {
   if (frame?.blob) return frame.blob;
@@ -38,6 +38,24 @@ function ReferenceBenchmark({ benchmark }) {
   );
 }
 
+function InternalCriticPanel({ critic }) {
+  if (!critic) return null;
+  return (
+    <div className="rounded-lg border border-border bg-secondary/20 p-3 text-xs text-muted-foreground">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <b className="text-foreground">Internal Critic</b>
+        <Badge variant={critic.approved ? "outline" : "secondary"}>{critic.approved ? "Approved" : "Rejected"}</Badge>
+      </div>
+      <p>{critic.verdict}</p>
+      {critic.redesignDirectives?.length > 0 && (
+        <ul className="mt-2 list-disc space-y-1 pl-4">
+          {critic.redesignDirectives.slice(0, 5).map(item => <li key={item}>{item}</li>)}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function CoverPreviewEditor({ frame, metadata, settings, fileSuffix = "cover" }) {
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
@@ -45,18 +63,22 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
   const renderTokenRef = useRef(0);
   const [rendered, setRendered] = useState(false);
   const [plan, setPlan] = useState(null);
+  const [renderedPlan, setRenderedPlan] = useState(null);
   const [error, setError] = useState("");
   const [warning, setWarning] = useState("");
   const dims = getCoverDimensions(settings);
   const metadataKey = JSON.stringify(metadata || {});
   const planSettingsKey = `${dims.width}x${dims.height}`;
-  const selectedPlan = useMemo(() => selectPosterVariant(plan, settings), [plan, settings]);
+  const selectedPlan = useMemo(() => renderedPlan?.selected || selectPosterVariant(plan, settings), [plan, renderedPlan, settings]);
   const benchmark = selectedPlan?.diagnostic?.studioBenchmark;
+  const critic = renderedPlan?.selected?.internalCritic;
+  const canExport = rendered && Boolean(critic?.approved) && renderedPlan?.approvalStatus === "approved";
 
   useEffect(() => {
     let active = true;
     setRendered(false);
     setPlan(null);
+    setRenderedPlan(null);
     setError("");
     setWarning("");
     if (!frame || !canvasRef.current) return;
@@ -87,12 +109,12 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
     const renderToken = renderTokenRef.current + 1;
     renderTokenRef.current = renderToken;
     setRendered(false);
+    setRenderedPlan(null);
 
     const frameId = window.requestAnimationFrame(async () => {
       try {
-        const chosen = selectPosterVariant(plan, settings);
         const scratchCanvas = document.createElement("canvas");
-        const nextPlan = await renderPosterVariantToCanvas(scratchCanvas, imageRef.current, plan, chosen, settings, dims.width, dims.height);
+        const nextPlan = await renderCommercialKeyArtToCanvas(scratchCanvas, imageRef.current, metadata, settings, dims.width, dims.height, plan);
         if (renderTokenRef.current !== renderToken || !canvasRef.current) return;
 
         canvasRef.current.width = scratchCanvas.width;
@@ -102,8 +124,9 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
         visibleCtx.drawImage(scratchCanvas, 0, 0);
         canvasRef.current.__fleshlabPosterPlan = nextPlan;
 
-        const failures = chosen?.score?.qualityFailures || [];
-        setWarning(failures.length ? `Manual preview allowed. ${failures.join(", ")}.` : "");
+        const failures = nextPlan?.selected?.score?.qualityFailures || [];
+        setRenderedPlan(nextPlan);
+        setWarning(failures.length ? `Export blocked until redesign passes critique. ${failures.join(", ")}.` : "");
         setRendered(true);
         setError("");
       } catch (err) {
@@ -113,10 +136,10 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
 
     rafRef.current = frameId;
     return () => window.cancelAnimationFrame(frameId);
-  }, [plan, settings, dims.width, dims.height]);
+  }, [plan, metadata, settings, dims.width, dims.height]);
 
   const download = async (type) => {
-    if (!rendered || !canvasRef.current) return;
+    if (!canExport || !canvasRef.current) return;
     const ext = type === "image/png" ? "png" : "jpg";
     const blob = await canvasToBlob(canvasRef.current, type, 0.92);
     const url = URL.createObjectURL(blob);
@@ -131,22 +154,23 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 className="font-bold text-foreground">FLESHLAB Visual Language Engine</h3>
+          <h3 className="font-bold text-foreground">FLESHLAB Creative Intelligence Engine</h3>
           <p className="text-xs text-muted-foreground">
             {selectedPlan ? `${plan.family.label} · ${selectedPlan.variant} · Quality ${selectedPlan.score.total}/100` : `Exact output size: ${dims.width} × ${dims.height}px`}
           </p>
         </div>
-        {rendered ? <Badge variant="outline">Live preview</Badge> : <Badge variant="secondary">Painting artwork</Badge>}
+        {canExport ? <Badge variant="outline">Approved for export</Badge> : rendered ? <Badge variant="secondary">Critic reviewing</Badge> : <Badge variant="secondary">Thinking before render</Badge>}
       </div>
 
       {selectedPlan?.diagnostic?.compositionBrief && (
         <div className="whitespace-pre-line rounded-lg border border-border bg-secondary/25 p-3 text-xs leading-relaxed text-muted-foreground">
-          <b className="mb-1 block text-foreground">Art Director composition brief</b>
+          <b className="mb-1 block text-foreground">Creative Brief</b>
           {selectedPlan.diagnostic.compositionBrief}
         </div>
       )}
 
       <ReferenceBenchmark benchmark={benchmark} />
+      <InternalCriticPanel critic={critic} />
 
       {warning && <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm text-yellow-300">{warning}</div>}
       {error && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
@@ -157,8 +181,8 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2">
-        <Button disabled={!rendered} onClick={() => download("image/png")} className="gap-2"><Download className="h-4 w-4" />Download PNG</Button>
-        <Button disabled={!rendered} onClick={() => download("image/jpeg")} variant="outline" className="gap-2"><Download className="h-4 w-4" />Download JPG</Button>
+        <Button disabled={!canExport} onClick={() => download("image/png")} className="gap-2"><Download className="h-4 w-4" />Download PNG</Button>
+        <Button disabled={!canExport} onClick={() => download("image/jpeg")} variant="outline" className="gap-2"><Download className="h-4 w-4" />Download JPG</Button>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { FLESHLAB_REFERENCE_COVERS, FLESHLAB_VISUAL_GRAMMAR_RULES, benchmarkAgainstFleshlabReferences } from "./fleshlabReferenceGrammar";
+import { consultCreativeIntelligence } from "./creativeIntelligenceEngine";
 
-const ENGINE_NAME = "FLESHLAB Visual Language Engine v5.1";
+const ENGINE_NAME = "FLESHLAB Creative Intelligence Engine v6.0";
 
 export const FLESHLAB_VISUAL_LANGUAGE = {
   engineName: ENGINE_NAME,
@@ -210,9 +211,21 @@ function buildCandidate({ image, metadata, analysis, width, height, index }) {
     critique,
   };
   const withCrop = { ...candidate, crop: cropFor(image, analysis, width, height, candidate) };
-  const compositionBrief = artDirectorBrief(withCrop, critique, metadata);
+  const initialBrief = artDirectorBrief(withCrop, critique, metadata);
+  const creativeIntelligence = consultCreativeIntelligence({ candidate: { ...withCrop, compositionBrief: initialBrief }, metadata, analysis });
+  const compositionBrief = creativeIntelligence.creativeBrief.text;
   const artDirector = artDirectorApproval(withCrop, critique, compositionBrief);
-  return { ...withCrop, compositionBrief, artDirector };
+  return {
+    ...withCrop,
+    compositionBrief,
+    creativeIntelligence,
+    artDirector: {
+      ...artDirector,
+      approved: artDirector.approved && creativeIntelligence.approved,
+      score: Math.round((artDirector.score + creativeIntelligence.overallScore) / 2),
+      checks: { ...artDirector.checks, creativeBriefApproved: creativeIntelligence.creativeBrief.approved, tasteApproved: creativeIntelligence.taste.approved },
+    },
+  };
 }
 
 function scoreCandidate(candidate, analysis = {}, metadata = {}) {
@@ -224,12 +237,14 @@ function scoreCandidate(candidate, analysis = {}, metadata = {}) {
   const colorConsistency = candidate.mood ? 0.88 : 0.72;
   const typographySafety = titleAvoidsHero ? 0.9 : 0.62;
   const brandConsistency = 0.92;
+  const intelligenceScore = (candidate.creativeIntelligence?.overallScore || 70) / 100;
   const localCeiling = candidate.imageRole === "ai_reconstructed_hero" ? 0.96 : 0.8;
-  const totalRaw = heroStrength * 0.22 + negativeSpace * 0.14 + colorConsistency * 0.14 + typographySafety * 0.16 + brandConsistency * 0.12 + (benchmark.score / 100) * 0.22;
+  const totalRaw = heroStrength * 0.18 + negativeSpace * 0.11 + colorConsistency * 0.11 + typographySafety * 0.13 + brandConsistency * 0.1 + (benchmark.score / 100) * 0.17 + intelligenceScore * 0.2;
   const total = Math.round(clamp(totalRaw * localCeiling, 0, 1) * 100);
   const weaknesses = [];
   if (candidate.imageRole !== "ai_reconstructed_hero") weaknesses.push("Local source-frame layout cannot reach premium streaming-image quality without AI reconstruction.");
   if (!candidate.artDirector?.approved) weaknesses.push("Art-director brief is not strong enough to justify rendering.");
+  (candidate.creativeIntelligence?.failures || []).forEach(failure => weaknesses.push(failure));
   if (!titleAvoidsHero) weaknesses.push("Title zone is close to the performer; manual review recommended.");
   if (negativeSpace < 0.48) weaknesses.push("Limited natural negative space in the source frame.");
   benchmark.failures.forEach(failure => weaknesses.push(failure));
@@ -243,10 +258,11 @@ function scoreCandidate(candidate, analysis = {}, metadata = {}) {
     artDirector: candidate.artDirector?.score || 0,
     studioBenchmark: benchmark.score,
     imageQualityCeiling: Math.round(localCeiling * 100),
-    passesQualityGate: candidate.artDirector?.approved && benchmark.passesStudioParity && total >= (candidate.imageRole === "ai_reconstructed_hero" ? 88 : 70),
+    passesQualityGate: candidate.artDirector?.approved && candidate.creativeIntelligence?.approved && benchmark.passesStudioParity && total >= (candidate.imageRole === "ai_reconstructed_hero" ? 88 : 70),
     qualityFailures: [...new Set(weaknesses)],
     compositionBrief: candidate.compositionBrief,
     studioBenchmarkReport: benchmark,
+    creativeIntelligence: candidate.creativeIntelligence,
   };
 }
 
@@ -263,6 +279,8 @@ export function buildFleshlabCoverPlan({ image, metadata = {}, analysis = {}, wi
     selected,
     audit: {
       rootLimitation: metadata?.aiReconstructed ? "AI hero base image supplied; local renderer is now decoration and brand system." : "Source frame only; local renderer is limited to editorial layout and cannot create premium key art photography.",
+      reasoningPipeline: selected.creativeIntelligence?.reasoningPipeline || [],
+      permanentEngines: ["World Knowledge", "Design Knowledge", "Creative Director", "Internal Critic", "Taste Engine", "FLESHLAB DNA", "Explainability"],
       replacedSubsystems: ["static philosophy templates", "template-like title sides", "environment fabrication", "premium scoring for source frames"],
       preservedSubsystems: ["frame analysis", "manual controls", "review", "export"],
     },
