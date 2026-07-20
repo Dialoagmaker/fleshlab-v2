@@ -64,6 +64,9 @@ function buildVariant(plan, candidate, index, width, height) {
       titleZone: candidate.titleZone,
       logoAnchor: candidate.logoAnchor,
       imageRole: candidate.imageRole,
+      critique: candidate.critique,
+      compositionBrief: candidate.compositionBrief,
+      artDirectorApproval: candidate.artDirector,
       rootArchitectureLimit: plan.audit.rootLimitation,
     },
   };

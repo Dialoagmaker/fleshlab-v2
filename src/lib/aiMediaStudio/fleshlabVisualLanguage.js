@@ -73,6 +73,51 @@ function moodFrom(metadata = {}, analysis = {}) {
   return "black-red-editorial";
 }
 
+function critiqueStill(metadata = {}, analysis = {}) {
+  const hero = heroBox(analysis);
+  const face = faceBox(analysis);
+  const heroCenter = hero.x + hero.w * 0.5;
+  const eyeTarget = face ? "the performer's face" : heroCenter < 0.45 ? "the performer on the left side" : heroCenter > 0.55 ? "the performer on the right side" : "the central body silhouette";
+  const emotion = moodFrom(metadata, analysis) === "sunset-wilderness" ? "escape and sun-warmed desire" : moodFrom(metadata, analysis) === "dark-mythic" ? "danger, appetite, and mystery" : moodFrom(metadata, analysis) === "warm-premium" ? "private intimacy and luxury" : "direct physical tension";
+  const shouldDisappear = (analysis.backgroundComplexity || 0) > 0.55 ? "busy background detail and accidental smartphone clutter" : "anything that competes with the performer";
+  const shouldDarken = heroCenter > 0.5 ? "the left side of the frame, so the eye can travel from performer to title" : "the right side of the frame, so the title does not fight the performer";
+  const shouldGrow = (analysis.subjectSeparation || 0) < 0.58 ? "the performer silhouette and face separation" : "the emotional contrast already present in the performer";
+  return {
+    strongestVisualElement: eyeTarget,
+    naturalEyePath: face ? "face first, then shoulder/body line, then title, then the quiet FLESHLAB mark" : "body silhouette first, then title, then brand mark",
+    emotion,
+    story: metadata.videoTitle || metadata.campaignName || "a charged FLESHLAB moment that should feel discovered, not decorated",
+    shouldBecomeLarger: shouldGrow,
+    shouldBecomeDarker: shouldDarken,
+    shouldDisappear,
+    heroDecision: "the performer remains the actor; typography must orbit the emotional gaze, not occupy empty space",
+  };
+}
+
+function artDirectorBrief(candidate, critique, metadata = {}) {
+  const sideName = candidate.negativeSide === "left" ? "left" : "right";
+  const performerSide = candidate.negativeSide === "left" ? "right" : "left";
+  const imageMode = candidate.imageRole === "ai_reconstructed_hero" ? "The base image is an AI reconstructed hero photograph, so the composition can aim for premium streaming key art." : "The base image is still the original frame, so the composition stays editorial and does not pretend to be full cinematic key art.";
+  return [
+    `The strongest visual element is ${critique.strongestVisualElement}.`,
+    `The performer occupies the ${performerSide} emotional weight of the stage while the ${sideName} side is reserved for negative space and title tension.`,
+    `The eye should travel ${critique.naturalEyePath}.`,
+    `${critique.emotion} is the emotional hook, so the cover darkens ${critique.shouldBecomeDarker} and suppresses ${critique.shouldDisappear}.`,
+    `The title is not information; it is placed where it reinforces the gaze and increases the desire to click ${metadata.videoTitle ? `on “${metadata.videoTitle}”` : "on the scene"}.`,
+    imageMode,
+  ].join("\n");
+}
+
+function artDirectorApproval(candidate, critique, brief) {
+  const hasHero = Boolean(candidate.heroEmphasis > 0.42);
+  const hasEyePath = /face|body|silhouette|performer/i.test(brief) && /title/i.test(brief);
+  const hasDesireReason = /desire|tension|intimacy|danger|escape|click/i.test(brief);
+  const avoidsDecoration = !/decorate|fill space|red line for/i.test(brief);
+  const emotionalClarity = critique.emotion.length > 8;
+  const score = [hasHero, hasEyePath, hasDesireReason, avoidsDecoration, emotionalClarity].filter(Boolean).length;
+  return { approved: score >= 4, score: score * 20, checks: { hasHero, hasEyePath, hasDesireReason, avoidsDecoration, emotionalClarity } };
+}
+
 function colorGradeFor(mood) {
   const grades = {
     "sunset-wilderness": { bg: "#050403", warmth: 0.86, contrast: 1.2, saturation: 1.04, accent: "208,0,18", paper: "250,238,216" },
@@ -152,6 +197,7 @@ function buildCandidate({ image, metadata, analysis, width, height, index }) {
   const titleZone = protectTitleFromFace({ x: titleX, y: titleYBase, w: titleW, h: 0.28 }, face);
   const logoAnchor = seed > 0.5 ? "top-left" : "top-right";
   const heroEmphasis = clamp((analysis.subjectSeparation || 0.56) * 0.6 + (analysis.visualCuriosity || 0.54) * 0.4 + index * 0.025, 0.42, 0.9);
+  const critique = critiqueStill(metadata, analysis);
   const candidate = {
     id: `fleshlab_rule_${index + 1}_${hashText({ metadata, mood, negativeSide, seed }).slice(0, 6)}`,
     label: ["FLESHLAB Editorial", "Negative Space", "Streaming Crop", "Hero Lock"][index] || "FLESHLAB Editorial",
@@ -167,8 +213,12 @@ function buildCandidate({ image, metadata, analysis, width, height, index }) {
     footerScale: aspect > 1.2 ? 0.014 : 0.017,
     brandScale: aspect > 1.2 ? 0.078 : 0.11,
     imageRole: metadata?.aiReconstructed ? "ai_reconstructed_hero" : "source_frame_editorial",
+    critique,
   };
-  return { ...candidate, crop: cropFor(image, analysis, width, height, candidate) };
+  const withCrop = { ...candidate, crop: cropFor(image, analysis, width, height, candidate) };
+  const compositionBrief = artDirectorBrief(withCrop, critique, metadata);
+  const artDirector = artDirectorApproval(withCrop, critique, compositionBrief);
+  return { ...withCrop, compositionBrief, artDirector };
 }
 
 function scoreCandidate(candidate, analysis = {}) {
@@ -184,6 +234,7 @@ function scoreCandidate(candidate, analysis = {}) {
   const total = Math.round(clamp(totalRaw * localCeiling, 0, 1) * 100);
   const weaknesses = [];
   if (candidate.imageRole !== "ai_reconstructed_hero") weaknesses.push("Local source-frame layout cannot reach premium streaming-image quality without AI reconstruction.");
+  if (!candidate.artDirector?.approved) weaknesses.push("Art-director brief is not strong enough to justify rendering.");
   if (!titleAvoidsHero) weaknesses.push("Title zone is close to the performer; manual review recommended.");
   if (negativeSpace < 0.48) weaknesses.push("Limited natural negative space in the source frame.");
   return {
@@ -193,9 +244,11 @@ function scoreCandidate(candidate, analysis = {}) {
     polish: Math.round(colorConsistency * 100),
     brand: Math.round(brandConsistency * 100),
     negativeSpace: Math.round(negativeSpace * 100),
+    artDirector: candidate.artDirector?.score || 0,
     imageQualityCeiling: Math.round(localCeiling * 100),
-    passesQualityGate: total >= (candidate.imageRole === "ai_reconstructed_hero" ? 88 : 70),
+    passesQualityGate: candidate.artDirector?.approved && total >= (candidate.imageRole === "ai_reconstructed_hero" ? 88 : 70),
     qualityFailures: weaknesses,
+    compositionBrief: candidate.compositionBrief,
   };
 }
 
@@ -203,7 +256,7 @@ export function buildFleshlabCoverPlan({ image, metadata = {}, analysis = {}, wi
   const candidates = [0, 1, 2, 3].map(index => {
     const candidate = buildCandidate({ image, metadata, analysis, width, height, index });
     return { ...candidate, score: scoreCandidate(candidate, analysis) };
-  }).sort((a, b) => b.score.total - a.score.total);
+  }).sort((a, b) => Number(b.artDirector?.approved) - Number(a.artDirector?.approved) || b.score.total - a.score.total);
   const selected = candidates[0];
   return {
     engine: ENGINE_NAME,
