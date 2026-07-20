@@ -1,0 +1,48 @@
+{
+  "name": "HumanVisionReportFramework",
+  "type": "object",
+  "properties": {
+    "module_slug": {
+      "type": "string",
+      "default": "human-vision",
+      "title": "Module Slug"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "missing",
+        "training",
+        "ready",
+        "certified"
+      ],
+      "default": "training",
+      "title": "Status"
+    },
+    "version": {
+      "type": "string",
+      "default": "1.0",
+      "title": "Version"
+    },
+    "report_sections_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Report Sections JSON"
+    },
+    "problem_taxonomy_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Problem Taxonomy JSON"
+    },
+    "explanation_required": {
+      "type": "boolean",
+      "default": true,
+      "title": "Explanation Required"
+    }
+  },
+  "required": [
+    "module_slug",
+    "status",
+    "version",
+    "explanation_required"
+  ]
+}

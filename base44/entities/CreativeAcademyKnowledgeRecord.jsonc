@@ -1,0 +1,120 @@
+{
+  "name": "CreativeAcademyKnowledgeRecord",
+  "type": "object",
+  "properties": {
+    "module_slug": {
+      "type": "string",
+      "title": "Module Slug"
+    },
+    "category_slug": {
+      "type": "string",
+      "title": "Category Slug"
+    },
+    "record_slug": {
+      "type": "string",
+      "title": "Record Slug"
+    },
+    "title": {
+      "type": "string",
+      "title": "Title"
+    },
+    "description": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Description"
+    },
+    "reason": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Reason"
+    },
+    "practical_effect": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Practical Effect"
+    },
+    "examples_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Examples JSON"
+    },
+    "exceptions_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Exceptions JSON"
+    },
+    "confidence": {
+      "type": "number",
+      "default": 0,
+      "title": "Confidence"
+    },
+    "sources_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Sources JSON"
+    },
+    "revision_history_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Revision History JSON"
+    },
+    "approved": {
+      "type": "boolean",
+      "default": false,
+      "title": "Approved"
+    },
+    "rejected": {
+      "type": "boolean",
+      "default": false,
+      "title": "Rejected"
+    },
+    "what": {
+      "type": "string",
+      "format": "textarea",
+      "title": "WHAT"
+    },
+    "why": {
+      "type": "string",
+      "format": "textarea",
+      "title": "WHY"
+    },
+    "when_relevant": {
+      "type": "string",
+      "format": "textarea",
+      "title": "WHEN"
+    },
+    "when_not": {
+      "type": "string",
+      "format": "textarea",
+      "title": "WHEN NOT"
+    },
+    "attention_effect": {
+      "type": "string",
+      "format": "textarea",
+      "title": "HOW IT AFFECTS HUMAN ATTENTION"
+    },
+    "editable": {
+      "type": "boolean",
+      "default": true,
+      "title": "Editable"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "training",
+        "approved",
+        "rejected"
+      ],
+      "default": "draft",
+      "title": "Status"
+    }
+  },
+  "required": [
+    "module_slug",
+    "category_slug",
+    "record_slug",
+    "title",
+    "status"
+  ]
+}

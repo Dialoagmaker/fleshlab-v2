@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CREATIVE_ACADEMY_SYSTEMS } from "@/lib/aiMediaStudio/creativeAcademy";
 import { useCreativeAcademy } from "@/hooks/useCreativeAcademy";
+import HumanVisionBrainPanel from "./HumanVisionBrainPanel";
 
 const statusIcons = {
   installed: CheckCircle2,
@@ -40,6 +41,8 @@ export default function CreativeAcademyPanel() {
             <Badge variant="secondary">Certified {counts.certified || 0}</Badge>
           </div>
         </div>
+
+        <HumanVisionBrainPanel />
 
         <div className="grid gap-3 lg:grid-cols-[1fr_280px]">
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
