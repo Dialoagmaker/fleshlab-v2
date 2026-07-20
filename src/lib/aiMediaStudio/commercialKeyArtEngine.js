@@ -2,17 +2,20 @@ import { analyzePosterImage } from "./posterAnalysis";
 import { inferGraphicLanguage } from "./graphicLanguage";
 import { paintCommercialVisualSystem } from "./commercialVisualSystems";
 import { createCommercialCampaign } from "./commercialCreativeDirector";
-import { renderFleshlabKrakenKeyArt } from "./fleshlabKrakenKeyArtRenderer";
 
-const ENGINE_NAME = "Commercial Key Art Engine";
-const TARGET_COMMERCIAL_AD_SCORE = 84;
+const ENGINE_NAME = "FLESHLAB AI Art Director v3.0";
+const TARGET_COMMERCIAL_AD_SCORE = 88;
 const OFFICIAL_LOGO_URL = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a1f9333f9_ChatGPTImageJul14202612_16_43AM.png";
 
 const COMMERCIAL_PHILOSOPHIES = [
-  { id: "dark_documentary", label: "Dark Documentary", geometry: "documentary-motion", titleSide: "bottom-left", heroBias: 0.56, titleScale: 0.98, logo: "top-left", graphicRatio: 0.66, depth: 0.82, titleDominance: 0.74, brand: 0.8, believability: 0.88, typographyFamily: "documentary-minimal", colorLanguage: "natural-shadow-white", hierarchy: "truth-first", logoStrategy: "quiet-authority", atmosphere: "documentary-air", visualSystemId: "truth-first-documentary" },
-  { id: "aggressive_campaign", label: "Aggressive Campaign", geometry: "thumbnail-burst", titleSide: "left", heroBias: 0.64, titleScale: 1.28, logo: "under-title", graphicRatio: 0.78, depth: 0.86, titleDominance: 0.92, brand: 0.74, believability: 0.8, typographyFamily: "loud-campaign", colorLanguage: "high-click-red-white", hierarchy: "instant-hook", logoStrategy: "small-proof", atmosphere: "impact-red", visualSystemId: "high-impact-campaign" },
-  { id: "minimal_editorial", label: "Minimal Editorial", geometry: "editorial-frame", titleSide: "right", heroBias: 0.44, titleScale: 0.9, logo: "top-right", graphicRatio: 0.62, depth: 0.76, titleDominance: 0.66, brand: 0.86, believability: 0.82, typographyFamily: "magazine-stack", colorLanguage: "cream-black-red", hierarchy: "masthead-editorial", logoStrategy: "masthead", atmosphere: "soft-bloom", visualSystemId: "quiet-editorial" },
-  { id: "performer_hero", label: "Performer Hero", geometry: "monumental-arc", titleSide: "bottom", heroBias: 0.54, titleScale: 1.1, logo: "top-left", graphicRatio: 0.68, depth: 0.9, titleDominance: 0.8, brand: 0.82, believability: 0.86, typographyFamily: "cinema-title", colorLanguage: "cinematic-red-shadow", hierarchy: "character-first", logoStrategy: "studio-mark", atmosphere: "warm-haze", visualSystemId: "hero-character-poster" },
+  { id: "bathroom_cold_steam", label: "Cold Steam Bathroom", geometry: "editorial-frame", titleSide: "bottom-left", heroBias: 0.52, titleScale: 0.9, logo: "top-left", graphicRatio: 0.7, depth: 0.88, titleDominance: 0.78, brand: 0.9, believability: 0.9, typographyFamily: "minimal-ceramic", colorLanguage: "cold-white-steam-red", hierarchy: "atmosphere-first", logoStrategy: "quiet-authority", atmosphere: "cold-steam", visualSystemId: "environment-bathroom-cinema" },
+  { id: "hotel_gold_premium", label: "Hotel Gold Premium", geometry: "monumental-arc", titleSide: "bottom", heroBias: 0.56, titleScale: 1.12, logo: "top-left", graphicRatio: 0.74, depth: 0.92, titleDominance: 0.84, brand: 0.88, believability: 0.92, typographyFamily: "cinema-title", colorLanguage: "warm-gold-black-red", hierarchy: "luxury-fantasy", logoStrategy: "studio-mark", atmosphere: "warm-haze", visualSystemId: "environment-hotel-luxury" },
+  { id: "outdoor_natural_wide", label: "Natural Wide Outdoor", geometry: "documentary-motion", titleSide: "right", heroBias: 0.48, titleScale: 0.86, logo: "top-right", graphicRatio: 0.68, depth: 0.84, titleDominance: 0.72, brand: 0.84, believability: 0.9, typographyFamily: "documentary-minimal", colorLanguage: "green-natural-black-red", hierarchy: "place-first", logoStrategy: "quiet-authority", atmosphere: "natural-air", visualSystemId: "environment-outdoor-wide" },
+  { id: "night_neon_contrast", label: "Night Neon Contrast", geometry: "thumbnail-burst", titleSide: "left", heroBias: 0.62, titleScale: 1.18, logo: "under-title", graphicRatio: 0.8, depth: 0.9, titleDominance: 0.88, brand: 0.82, believability: 0.86, typographyFamily: "loud-campaign", colorLanguage: "blue-neon-red-black", hierarchy: "mystery-impact", logoStrategy: "small-proof", atmosphere: "neon-night", visualSystemId: "environment-night-neon" },
+  { id: "gym_industrial_steel", label: "Industrial Gym Steel", geometry: "diagonal-power", titleSide: "bottom-left", heroBias: 0.6, titleScale: 1.05, logo: "top-left", graphicRatio: 0.76, depth: 0.9, titleDominance: 0.82, brand: 0.86, believability: 0.88, typographyFamily: "compressed-industrial", colorLanguage: "steel-concrete-red", hierarchy: "body-power", logoStrategy: "studio-mark", atmosphere: "hard-steel", visualSystemId: "environment-gym-industrial" },
+  { id: "a24_minimal_tension", label: "A24 Minimal Tension", geometry: "floating-offset", titleSide: "right", heroBias: 0.45, titleScale: 0.78, logo: "top-right", graphicRatio: 0.64, depth: 0.82, titleDominance: 0.7, brand: 0.9, believability: 0.92, typographyFamily: "magazine-stack", colorLanguage: "cream-black-red", hierarchy: "negative-space-story", logoStrategy: "masthead", atmosphere: "soft-bloom", visualSystemId: "a24-minimal-key-art" },
+  { id: "aaa_character_cover", label: "AAA Character Cover", geometry: "center-crush", titleSide: "bottom", heroBias: 0.58, titleScale: 1.2, logo: "top-left", graphicRatio: 0.82, depth: 0.96, titleDominance: 0.9, brand: 0.86, believability: 0.88, typographyFamily: "cinema-title", colorLanguage: "cinematic-red-shadow", hierarchy: "character-first", logoStrategy: "studio-mark", atmosphere: "impact-red", visualSystemId: "aaa-character-key-art" },
+  { id: "album_cover_luxury", label: "Luxury Album Cover", geometry: "floating-offset", titleSide: "bottom-left", heroBias: 0.5, titleScale: 0.92, logo: "top-left", graphicRatio: 0.7, depth: 0.86, titleDominance: 0.76, brand: 0.9, believability: 0.92, typographyFamily: "magazine-stack", colorLanguage: "luxury-black-gold-red", hierarchy: "mood-first", logoStrategy: "quiet-authority", atmosphere: "soft-bloom", visualSystemId: "luxury-album-key-art" },
 ];
 
 function clamp(value, min = 0, max = 1) {
@@ -182,8 +185,11 @@ function buildPlanScore(analysis, language, philosophy, attemptIndex) {
   };
 }
 
-function orderedPhilosophies() {
-  return COMMERCIAL_PHILOSOPHIES.map(item => ({ ...item }));
+function orderedPhilosophies(campaign = {}) {
+  const setting = campaign?.visualNarrative?.setting || "";
+  const preferred = COMMERCIAL_PHILOSOPHIES.filter(item => setting.includes(item.id.split("_")[0]) || setting.includes(item.visualSystemId.split("-")[1] || ""));
+  const rest = COMMERCIAL_PHILOSOPHIES.filter(item => !preferred.includes(item));
+  return [...preferred, ...rest].map(item => ({ ...item }));
 }
 
 function tuneCommercialConcept(concept, failures = [], score = {}, iteration = 1) {
@@ -364,7 +370,7 @@ function buildAttemptPlan(image, metadata, settings, width, height, analysis, ba
     diagnostic,
     family: { id: philosophy.id, label: philosophy.label },
     visualStory: { emotionalCenter: graphicLanguage.thumbnail_priority, viewerFeeling: graphicLanguage.energy },
-    artDirection: { graphicDesignRatio: 0.92, pipeline: ["Advertising Photographer Frame", "KRAKEN Split Canvas", "Left Brand Environment", "Large Upper-Left Logo", "White Metallic Title Mass", "Red Brush Title", "Subtitle Strip", "Right-Dominant Hero", "Three-Icon Footer", "Export Validation"], visualSystemId: "fleshlab_kraken_key_art" },
+    artDirection: { graphicDesignRatio: philosophy.graphicRatio, pipeline: ["Story Diagnosis", "Environment-Specific Visual Language", "Performer-Hero Crop", "Dynamic Negative Space", "Official Logo Placement", "Architectural Typography", "Premium Color Grade", "Commercial Validation"], visualSystemId: philosophy.visualSystemId },
     selected,
     best: selected,
     variants: [selected],
@@ -395,7 +401,7 @@ export async function generateCommercialKeyArtPlan(image, metadata = {}, setting
   const analysis = await analyzePosterImage(image);
   const baseLanguage = inferGraphicLanguage(metadata, analysis);
   const campaign = createCommercialCampaign({ analysis, metadata });
-  const conceptPhilosophies = orderedPhilosophies().slice(0, 4).map((philosophy, index) => ({
+  const conceptPhilosophies = orderedPhilosophies(campaign).slice(0, 6).map((philosophy, index) => ({
     ...philosophy,
     baseId: philosophy.id,
     optimizationDirectives: [
@@ -419,7 +425,7 @@ export async function generateCommercialKeyArtPlan(image, metadata = {}, setting
     diagnostics: planned.map(plan => plan.diagnostic),
     uniquenessAssertions: { passed: true, checkedFields: ["candidateId", "conceptId", "renderPlanId", "renderPlanHash", "canvasCacheKey", "philosophyName"] },
     attempts: planned.map(plan => ({ candidateId: plan.candidateId, philosophy: plan.philosophy.label, renderPlanHash: plan.renderPlanHash, score: plan.selected.score, accepted: plan.selected.score.passesQualityGate && plan.selected.score.total >= TARGET_COMMERCIAL_AD_SCORE, designActions: plan.selected.design_actions, optimizationDirectives: plan.selected.optimization_directives })),
-    winner_reason: `fleshlab_kraken_key_art selected: KRAKEN-family split composition with left brand environment and right-dominant hero.`, 
+    winner_reason: `${selectedPlan.philosophy.label} selected by AI Art Director v3.0 after comparing environment-specific commercial key-art concepts.`, 
   };
 }
 
@@ -673,7 +679,7 @@ function commercialPolish(ctx, width, height, language) {
 }
 
 async function paintCommercialPipeline(canvas, image, plan, settings, width, height) {
-  const systemResult = await renderFleshlabKrakenKeyArt(canvas, image, plan, settings, width, height);
+  const systemResult = await paintCommercialVisualSystem(canvas, image, plan, settings, width, height);
   return { ...plan, selected: { ...plan.selected, ...systemResult } };
 }
 

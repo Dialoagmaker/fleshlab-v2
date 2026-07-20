@@ -65,19 +65,26 @@ function artDirection(plan, attempt = 0) {
   const fantasy = campaign.fantasy || "Private";
   const product = campaign.product || "Feature Release";
   const category = campaign.category || "Streaming Cover";
-  const warm = philosophy.atmosphere === "warm-haze" || fantasy === "Vacation" || product === "Vacation";
+  const setting = campaign.visualNarrative?.setting || "";
+  const bathroom = setting.includes("bathroom") || philosophy.atmosphere === "cold-steam";
+  const gym = setting.includes("gym") || philosophy.atmosphere === "hard-steel";
+  const outdoor = setting.includes("outdoor") || setting.includes("natural");
+  const night = setting.includes("night") || philosophy.atmosphere === "neon-night";
+  const warm = setting.includes("hotel") || philosophy.atmosphere === "warm-haze" || fantasy === "Vacation" || product === "Vacation";
   const danger = philosophy.atmosphere === "impact-red" || ["Forbidden", "Danger", "Secret", "Public Risk"].includes(fantasy);
-  const editorial = philosophy.id === "minimal_editorial" || ["Luxury Magazine", "Fashion Editorial", "Documentary Style"].includes(category);
-  const documentary = philosophy.id === "dark_documentary";
+  const editorial = philosophy.id === "a24_minimal_tension" || philosophy.id === "album_cover_luxury" || ["Luxury Magazine", "Fashion Editorial", "Documentary Style"].includes(category);
+  const documentary = philosophy.id === "outdoor_natural_wide";
   return {
     seed,
-    bg: editorial ? "#11100d" : documentary ? "#06080c" : "#030303",
-    paper: warm ? "246,224,184" : editorial ? "230,220,205" : documentary ? "230,235,244" : "255,246,235",
-    accent: danger ? "208,0,18" : warm ? "226,106,42" : documentary ? "230,235,244" : "208,0,18",
-    secondary: warm ? "255,189,88" : editorial ? "230,220,205" : documentary ? "180,195,218" : "255,255,255",
-    density: editorial ? 0.36 + seed * 0.22 : documentary ? 0.46 + seed * 0.18 : 0.62 + seed * 0.3,
-    contrast: danger ? 1.36 : editorial ? 1.18 : documentary ? 1.24 : 1.3,
-    warmth: warm ? 1 : editorial ? 0.5 : documentary ? 0.24 : 0.72,
+    bg: bathroom ? "#07090b" : gym ? "#060708" : outdoor ? "#07110b" : night ? "#030512" : editorial ? "#11100d" : documentary ? "#06080c" : "#030303",
+    paper: bathroom ? "238,242,244" : gym ? "218,222,224" : warm ? "246,224,184" : outdoor ? "220,232,205" : night ? "220,230,255" : editorial ? "230,220,205" : documentary ? "230,235,244" : "255,246,235",
+    accent: bathroom ? "210,24,42" : gym ? "191,24,38" : night ? "58,118,255" : danger ? "208,0,18" : warm ? "226,106,42" : outdoor ? "78,122,72" : documentary ? "230,235,244" : "208,0,18",
+    brandAccent: "208,0,18",
+    secondary: bathroom ? "255,255,255" : gym ? "188,198,202" : warm ? "255,189,88" : outdoor ? "167,202,138" : night ? "255,45,68" : editorial ? "230,220,205" : documentary ? "180,195,218" : "255,255,255",
+    density: bathroom ? 0.34 + seed * 0.18 : editorial ? 0.36 + seed * 0.22 : documentary ? 0.46 + seed * 0.18 : gym ? 0.58 + seed * 0.18 : 0.62 + seed * 0.3,
+    contrast: night ? 1.42 : gym ? 1.38 : danger ? 1.36 : editorial ? 1.18 : documentary ? 1.24 : 1.3,
+    warmth: warm ? 1 : outdoor ? 0.42 : bathroom ? 0.08 : night ? 0.2 : editorial ? 0.5 : documentary ? 0.24 : 0.72,
+    environment: bathroom ? "bathroom" : gym ? "gym" : outdoor ? "outdoor" : night ? "night" : warm ? "hotel" : "cinematic",
     editorial,
   };
 }
@@ -168,7 +175,7 @@ async function paintLogo(ctx, map, width, direction, settings = {}) {
   ctx.shadowColor = "rgba(0,0,0,0.85)";
   ctx.shadowBlur = width * 0.012;
   ctx.drawImage(logo, map.logoX, map.logoY, w, h);
-  ctx.fillStyle = `rgba(${direction.accent},0.78)`;
+  ctx.fillStyle = `rgba(${direction.brandAccent || direction.accent},0.78)`;
   ctx.fillRect(map.logoX, map.logoY + h + width * 0.01, w * (0.42 + direction.seed * 0.28), Math.max(2, width * 0.003));
   ctx.restore();
   return { w, h };
@@ -260,7 +267,8 @@ function paintAtmosphere(ctx, map, width, height, direction) {
   for (let i = 0; i < Math.round(28 + direction.density * 76); i += 1) {
     const x = width * (((i * 37 + Math.round(direction.seed * 100)) % 100) / 100);
     const y = height * (((i * 61 + Math.round(direction.seed * 73)) % 100) / 100);
-    ctx.fillStyle = i % 5 === 0 ? `rgba(${direction.accent},0.18)` : `rgba(${direction.secondary},0.08)`;
+    const atmosphereAlpha = direction.environment === "bathroom" ? 0.05 : direction.environment === "outdoor" ? 0.045 : 0.08;
+    ctx.fillStyle = i % 5 === 0 ? `rgba(${direction.accent},0.18)` : `rgba(${direction.secondary},${atmosphereAlpha})`;
     ctx.fillRect(x, y, width * (0.001 + (i % 3) * 0.0007), width * (0.001 + (i % 3) * 0.0007));
   }
   const haze = ctx.createRadialGradient(map.titleX, map.titleY, 0, map.titleX, map.titleY, width * 0.36);
@@ -273,7 +281,7 @@ function paintAtmosphere(ctx, map, width, height, direction) {
 
 function paintBrandAccents(ctx, map, width, height, direction) {
   ctx.save();
-  ctx.fillStyle = `rgba(${direction.accent},0.86)`;
+  ctx.fillStyle = `rgba(${direction.brandAccent || direction.accent},0.86)`;
   const markW = width * (0.006 + direction.seed * 0.006);
   if (map.tension === "edge-whisper") {
     ctx.fillRect(width * 0.045, height * 0.12, markW, height * 0.62);
@@ -385,7 +393,7 @@ function paintCTA(ctx, map, width, height, plan, direction) {
   const boxH = height * 0.046;
   const x = clamp(map.ctaX, width * 0.04, width - textW - padX * 2 - width * 0.04);
   const y = clamp(map.ctaY, height * 0.18, height * 0.84);
-  ctx.fillStyle = `rgba(${direction.accent},0.86)`;
+  ctx.fillStyle = `rgba(${direction.brandAccent || direction.accent},0.86)`;
   ctx.beginPath();
   ctx.roundRect(x, y, textW + padX * 2, boxH, boxH * 0.5);
   ctx.fill();
@@ -570,7 +578,6 @@ export async function paintCommercialVisualSystem(canvas, image, plan, settings,
   await paintLogo(ctx, map, width, direction, settings);
   paintTitleBlock(ctx, map, width, height, plan, direction, settings);
   paintPerformerBlock(ctx, map, width, height, plan, direction);
-  paintCTA(ctx, map, width, height, plan, direction);
   paintFooter(ctx, width, height, plan, settings, direction);
-  return { logoHeight: width * 0.06, compositionMode: map.tension, visualSystemId: map.visualSystemId, renderedRenderPlanHash: map.renderPlanHash, renderMap: map, renderDirection: direction, commercialAdvertisingScore: commercialScore.total, commercialScore, artworkValidation: commercialScore.passed ? "passed" : "best_available" };
+  return { logoHeight: width * 0.06, compositionMode: map.tension, visualSystemId: map.visualSystemId, renderedRenderPlanHash: map.renderPlanHash, renderMap: map, renderDirection: direction, commercialAdvertisingScore: commercialScore.total, commercialScore, artworkValidation: commercialScore.passed ? "passed" : "best_available", artDirectorVersion: "FLESHLAB AI ART DIRECTOR v3.0" };
 }

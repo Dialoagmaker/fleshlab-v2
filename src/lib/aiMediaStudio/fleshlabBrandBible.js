@@ -1,6 +1,6 @@
 export const COMMERCIAL_PRODUCTS = [
   "Solo", "Couple", "Twink", "Hotel Session", "Outdoor", "POV", "Massage", "First Time",
-  "Vacation", "Behind The Scenes", "Series Episode", "Trailer", "Feature Release"
+  "Vacation", "Bathroom", "Gym", "Night", "Behind The Scenes", "Series Episode", "Trailer", "Feature Release"
 ];
 
 export const EMOTIONAL_FANTASIES = [
@@ -10,12 +10,12 @@ export const EMOTIONAL_FANTASIES = [
 
 export const VISUAL_ELEMENTS = [
   "Face", "Eyes", "Body", "Silhouette", "Interaction", "Landscape", "Room", "Water",
-  "Nature", "Hotel", "Bedroom"
+  "Nature", "Hotel", "Bedroom", "Bathroom", "Gym", "Neon", "Ceramic", "Steel"
 ];
 
 export const COMMERCIAL_CATEGORIES = [
   "Netflix Poster", "Streaming Cover", "Premium Thumbnail", "Luxury Magazine", "YouTube Hero",
-  "Cinematic Movie Poster", "Documentary Style", "Reality TV", "Fashion Editorial"
+  "Cinematic Movie Poster", "Documentary Style", "Reality TV", "Fashion Editorial", "A24 Minimal Tension", "AAA Character Cover", "Luxury Album Cover"
 ];
 
 export const FLESHLAB_FRANCHISE_LIBRARY = [

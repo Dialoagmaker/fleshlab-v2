@@ -39,9 +39,11 @@ function narrativeFromAnalysis(analysis = {}, metadata = {}) {
   const outdoor = contains(text, ["outdoor", "forest", "nature", "trail", "park", "outside", "public"]);
   const water = contains(text, ["beach", "pool", "sea", "ocean", "water", "shore", "island"]);
   const hotel = contains(text, ["hotel", "motel", "suite", "check in", "room service"]);
+  const bathroom = contains(text, ["bathroom", "shower", "steam", "ceramic", "tile", "mirror"]);
+  const gym = contains(text, ["gym", "fitness", "locker", "steel", "concrete", "workout"]);
   const closeEncounter = interaction > 0.52 || contains(text, ["couple", "duo", "two", "pair", "encounter"]);
   const premium = subject > 0.56 && curiosity > 0.5;
-  return { text, brightness, curiosity, interaction, background, subject, night, privateRoom, outdoor, water, hotel, closeEncounter, premium };
+  return { text, brightness, curiosity, interaction, background, subject, night, privateRoom, outdoor, water, hotel, bathroom, gym, closeEncounter, premium };
 }
 
 function classifyProduct(narrative) {
@@ -49,6 +51,9 @@ function classifyProduct(narrative) {
   if (contains(t, ["trailer", "teaser", "preview"])) return "Trailer";
   if (contains(t, ["behind the scenes", "bts", "backstage", "making of"])) return "Behind The Scenes";
   if (contains(t, ["massage", "spa", "service"])) return "Massage";
+  if (narrative.bathroom) return "Bathroom";
+  if (narrative.gym) return "Gym";
+  if (narrative.night) return "Night";
   if (narrative.hotel) return "Hotel Session";
   if (narrative.water || contains(t, ["vacation", "holiday", "resort", "escape"])) return "Vacation";
   if (narrative.outdoor) return "Outdoor";
@@ -77,6 +82,8 @@ function classifyFantasy(narrative, product) {
 function classifyVisualElement(narrative) {
   if (narrative.water) return "Water";
   if (narrative.outdoor) return "Nature";
+  if (narrative.bathroom) return "Bathroom";
+  if (narrative.gym) return "Gym";
   if (narrative.hotel) return "Hotel";
   if (narrative.privateRoom) return narrative.closeEncounter ? "Interaction" : "Room";
   if (narrative.subject > 0.66) return "Face";
@@ -86,6 +93,9 @@ function classifyVisualElement(narrative) {
 
 function classifyCommercialCategory(product, fantasy, visualElement) {
   if (product === "Vacation" || visualElement === "Water") return "Luxury Magazine";
+  if (product === "Bathroom") return "A24 Minimal Tension";
+  if (product === "Gym") return "AAA Character Cover";
+  if (product === "Night") return "Cinematic Movie Poster";
   if (product === "Outdoor") return fantasy === "Public Risk" ? "Documentary Style" : "Cinematic Movie Poster";
   if (product === "Behind The Scenes") return "Reality TV";
   if (product === "Trailer") return "YouTube Hero";
@@ -152,13 +162,22 @@ export function createCommercialCampaign({ analysis = {}, metadata = {} } = {}) 
       commercialCategory: category,
     },
     visualNarrative: {
-      subjects: narrative.closeEncounter ? "two-person encounter" : "human-led private scene",
-      setting: narrative.hotel ? "hotel" : narrative.water ? "water / vacation" : narrative.outdoor ? "outdoor" : narrative.privateRoom ? "private room" : "undisclosed location",
+      subjects: narrative.closeEncounter ? "two-person encounter" : "performer-led private scene",
+      setting: narrative.bathroom ? "bathroom cold steam ceramic" : narrative.gym ? "gym industrial steel concrete" : narrative.hotel ? "hotel warm luxury" : narrative.water ? "water vacation natural light" : narrative.outdoor ? "outdoor natural wide" : narrative.night ? "night blue neon contrast" : narrative.privateRoom ? "private room cinematic darkness" : "undisclosed cinematic location",
       emotionalHook: fantasy,
+      dominantEmotion: fantasy,
+      fantasy,
       strongestVisualElement: visualElement,
-      commercialPromise: "a recognizable FLESHLAB franchise concept, not a filename-derived title",
+      commercialPromise: "award-level entertainment key art: unique composition, performer as hero, official FLESHLAB brand recognition",
     },
-    hierarchy: ["campaign name", "episode title", "performer", "hook line", "brand anchor", "CTA"],
+    artDirectorDoctrine: {
+      role: "Creative Director, not cover composer",
+      mandate: "commercial entertainment key art, not template filling or generic AI poster decoration",
+      brandDNA: ["raw", "authentic", "premium", "Asian", "modern", "dark", "cinematic", "luxury", "minimal", "confident"],
+      logoRule: "official logo only; never redraw or reinterpret",
+      finalTest: "ten covers must feel different, belong to one brand, and communicate story before the title is read",
+    },
+    hierarchy: ["performer", "story atmosphere", "title as design", "official brand anchor", "premium negative space"],
     clickScore: Math.round((0.46 + narrative.curiosity * 0.22 + narrative.interaction * 0.17 + narrative.subject * 0.15) * 100),
     titleSource: explicitTitle === franchise.campaignName ? "franchise" : "user_input",
   };
