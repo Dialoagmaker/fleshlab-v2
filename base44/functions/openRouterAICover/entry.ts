@@ -73,13 +73,15 @@ function estimateBytesFromDataUrl(dataUrl) {
 
 function normalizeError(status, bodyText) {
   const lower = String(bodyText || '').toLowerCase();
-  if (status === 401 || status === 403) return { code: 'api_authentication_failure', message: 'OpenRouter API authentication failed.' };
-  if (status === 402 || lower.includes('credit') || lower.includes('insufficient')) return { code: 'credit_exhausted', message: 'OpenRouter credit is exhausted or insufficient.' };
-  if (status === 404 || lower.includes('not found') || lower.includes('unsupported')) return { code: 'unsupported_model', message: 'The requested OpenRouter image model is unavailable or unsupported.' };
-  if (status === 429) return { code: 'rate_limit', message: 'OpenRouter rate limit reached.' };
-  if (lower.includes('refus') || lower.includes('policy') || lower.includes('moderation')) return { code: 'provider_refusal', message: 'The provider refused this image request.' };
-  if (lower.includes('image') && lower.includes('unavailable')) return { code: 'image_generation_unavailable', message: 'OpenRouter image generation is unavailable for this model/provider.' };
-  return { code: 'openrouter_error', message: `OpenRouter request failed with status ${status}.` };
+  const raw = String(bodyText || '').slice(0, 1200);
+  if (status === 401 || status === 403) return { code: 'api_authentication_failure', message: 'OpenRouter API authentication failed.', raw };
+  if (status === 402 || lower.includes('credit') || lower.includes('insufficient')) return { code: 'credit_exhausted', message: 'OpenRouter credit is exhausted or insufficient.', raw };
+  if (status === 404 || lower.includes('not found') || lower.includes('unsupported')) return { code: 'unsupported_model', message: 'The requested OpenRouter image model is unavailable or unsupported.', raw };
+  if (status === 422 && (lower.includes('invalid') || lower.includes('corrupted image'))) return { code: 'invalid_reference_image', message: 'FLUX rejected the reference image as invalid or corrupted.', raw };
+  if (status === 429) return { code: 'rate_limit', message: 'OpenRouter rate limit reached.', raw };
+  if (lower.includes('refus') || lower.includes('policy') || lower.includes('moderation')) return { code: 'provider_refusal', message: 'The provider refused this image request.', raw };
+  if (lower.includes('image') && lower.includes('unavailable')) return { code: 'image_generation_unavailable', message: 'OpenRouter image generation is unavailable for this model/provider.', raw };
+  return { code: 'openrouter_error', message: `OpenRouter request failed with status ${status}.`, raw };
 }
 
 async function openRouterFetch(path, apiKey, options = {}, timeoutMs = 120000) {
@@ -203,18 +205,38 @@ async function callImageGeneration(apiKey, model, storyReferenceDataUrl, identit
     n: 1,
     provider: { allow_fallbacks: false }
   };
+  const payloadSummary = {
+    model,
+    endpoint: '/api/v1/images',
+    aspect_ratio: payload.aspect_ratio,
+    resolution: payload.resolution,
+    output_format: payload.output_format,
+    reference_count: inputReferences.length,
+    story_reference_bytes_estimate: estimateBytesFromDataUrl(storyReferenceDataUrl),
+    identity_reference_bytes_estimate: identityReferenceDataUrl ? estimateBytesFromDataUrl(identityReferenceDataUrl) : 0
+  };
 
-  const res = await openRouterFetch('/images', apiKey, { method: 'POST', body: JSON.stringify(payload) }, 180000);
+  let res;
+  try {
+    res = await openRouterFetch('/images', apiKey, { method: 'POST', body: JSON.stringify(payload) }, 180000);
+  } catch (error) {
+    throw new Error(JSON.stringify({ code: error.message === 'timeout' ? 'timeout' : 'request_failed', message: error.message, failed_stage: 'request_sent', payload_summary: payloadSummary }));
+  }
   const text = await res.text();
   if (!res.ok) {
     const normalized = normalizeError(res.status, text);
-    throw new Error(JSON.stringify({ ...normalized, status: res.status }));
+    throw new Error(JSON.stringify({ ...normalized, status: res.status, failed_stage: 'response_received', payload_summary: payloadSummary }));
   }
-  const data = JSON.parse(text);
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (_) {
+    throw new Error(JSON.stringify({ code: 'malformed_json_response', message: 'OpenRouter response was not valid JSON.', failed_stage: 'response_received', payload_summary: payloadSummary, raw: text.slice(0, 1200) }));
+  }
   const first = data?.data?.[0];
-  if (!first?.b64_json) throw new Error(JSON.stringify({ code: 'malformed_image_response', message: 'OpenRouter returned no image data.' }));
+  if (!first?.b64_json) throw new Error(JSON.stringify({ code: 'malformed_image_response', message: 'OpenRouter returned no image data.', failed_stage: 'response_received', payload_summary: payloadSummary, raw: JSON.stringify(data).slice(0, 1200) }));
   const mediaType = first.media_type || 'image/png';
-  return { image_data_url: `data:${mediaType};base64,${first.b64_json}`, media_type: mediaType, usage: data?.usage || null };
+  return { image_data_url: `data:${mediaType};base64,${first.b64_json}`, media_type: mediaType, usage: data?.usage || null, payload_summary: payloadSummary };
 }
 
 async function generateCover(apiKey, body) {
@@ -239,6 +261,13 @@ async function generateCover(apiKey, body) {
         fallback_used: model !== models[0],
         usage: result.usage,
         cost_reported: result.usage?.cost ?? null,
+        payload_summary: result.payload_summary,
+        stage_trace: {
+          payload_created: true,
+          request_sent: true,
+          response_received: true,
+          hero_image_decoded: true
+        },
         creative_brief: buildPhotographicBrief(metadata),
         pipeline: ['Video', 'Moment Selection', 'Creative Director', 'Photographic Brief', 'AI Photographer', 'Professional Hero Image', 'Art Director', 'Typography', 'Branding', 'Quality Review', 'Export'],
         privacy: {
@@ -255,12 +284,12 @@ async function generateCover(apiKey, body) {
       });
     } catch (error) {
       let parsed;
-      try { parsed = JSON.parse(error.message); } catch (_) { parsed = { code: error.message === 'timeout' ? 'timeout' : 'openrouter_error', message: error.message }; }
+      try { parsed = JSON.parse(error.message); } catch (_) { parsed = { code: error.message === 'timeout' ? 'timeout' : 'openrouter_error', message: error.message, failed_stage: 'request_sent' }; }
       errors.push({ model, ...parsed });
-      if (parsed.code === 'api_authentication_failure' || parsed.code === 'credit_exhausted' || parsed.code === 'rate_limit') break;
+      if (parsed.code === 'api_authentication_failure' || parsed.code === 'credit_exhausted' || parsed.code === 'rate_limit' || parsed.code === 'invalid_reference_image') break;
     }
   }
-  return json({ ok: false, error: errors[0]?.message || 'OpenRouter image generation failed.', errors }, 502);
+  return json({ ok: false, error: errors[0]?.message || 'OpenRouter image generation failed.', code: errors[0]?.code || 'openrouter_error', failed_stage: errors[0]?.failed_stage || 'response_received', payload_summary: errors[0]?.payload_summary || null, raw: errors[0]?.raw || null, errors }, 502);
 }
 
 Deno.serve(async (req) => {
