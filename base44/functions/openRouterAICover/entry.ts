@@ -103,21 +103,35 @@ function parseOpenRouterError(status, bodyText, headers = null, payloadSummary =
   const message = error?.message || extractProviderMessage(bodyText);
   const category = categorizeOpenRouterError(status, code, message, metadata);
   const retryable = ['RATE_LIMIT', 'PROVIDER_FAILURE', 'MODEL_UNAVAILABLE', 'TIMEOUT'].includes(category);
+  const provider = metadata?.provider_name || openrouterMetadata?.provider_name || openrouterMetadata?.provider || null;
+  const rejectionType = classifyProviderRejection(message, metadata);
   return {
     http_status: status,
     openrouter_code: code,
+    openrouter_error_message: message,
     message,
     metadata,
     openrouter_metadata: openrouterMetadata,
-    provider: metadata?.provider_name || openrouterMetadata?.provider_name || openrouterMetadata?.provider || null,
+    provider,
+    resolved_provider: provider,
     request_id: headers?.get('x-request-id') || headers?.get('x-openrouter-request-id') || openrouterMetadata?.request_id || null,
     generation_id: parsed?.id || parsed?.generation_id || parsed?.data?.id || null,
     processing_began: status === 200,
+    request_reached_provider: Boolean(provider),
+    rejection_type: rejectionType,
     category,
     retryable,
     raw_response: String(bodyText || '').slice(0, 6000),
     payload_summary: payloadSummary
   };
+}
+
+function classifyProviderRejection(message, metadata) {
+  const lower = `${message || ''} ${metadata?.block_reason || ''} ${metadata?.finish_reason || ''}`.toLowerCase();
+  if (lower.includes('prohibited') || lower.includes('blocked') || lower.includes('moderation') || lower.includes('policy') || lower.includes('guardrail') || lower.includes('flagged')) return 'content';
+  if (lower.includes('image') || lower.includes('input_reference') || lower.includes('input reference') || lower.includes('base64') || lower.includes('parse')) return 'reference_image';
+  if (lower.includes('payload') || lower.includes('parameter')) return 'payload';
+  return 'unknown';
 }
 
 function categorizeOpenRouterError(status, code, message, metadata) {
@@ -139,13 +153,15 @@ function categorizeOpenRouterError(status, code, message, metadata) {
 }
 
 function publicFailureMessage(diagnostic) {
-  if (!diagnostic) return 'The professional hero photograph could not be generated. Try another frame or retry later.';
-  if (diagnostic.category === 'NO_CREDITS') return 'OpenRouter credits are not available for this application key.';
-  if (diagnostic.category === 'UNSUPPORTED_IMAGE_INPUT') return 'This model did not accept the reference-image request. Try a compatible image-editing model.';
-  if (diagnostic.category === 'INVALID_PAYLOAD') return 'The reference-image request was not accepted. The technical details show the exact OpenRouter response.';
-  if (diagnostic.category === 'CONTENT_POLICY') return 'The provider declined this content under its policy. Trying another compatible route is not guaranteed to succeed.';
-  if (diagnostic.category === 'RATE_LIMIT') return 'OpenRouter rate limits were reached. Retry after a short wait.';
-  return 'The selected OpenRouter route failed. Try another frame or retry later.';
+  if (!diagnostic) return 'TEMPORARY_PROVIDER_FAILURE: The professional hero photograph could not be generated. Try another frame or retry later.';
+  if (diagnostic.category === 'NO_CREDITS') return 'NO_APPROVED_ADULT_PROVIDER: OpenRouter credits are not available for this application key.';
+  if (diagnostic.category === 'VERIFICATION_REQUIRED') return 'VERIFICATION_REQUIRED: Verified adult, consent, rights, and source checks are required before external processing.';
+  if (diagnostic.category === 'NO_APPROVED_ADULT_PROVIDER') return 'NO_APPROVED_ADULT_PROVIDER: No enabled provider is documented as permitting lawful explicit adult reference-image editing.';
+  if (diagnostic.category === 'UNSUPPORTED_REFERENCE_IMAGE' || diagnostic.category === 'UNSUPPORTED_IMAGE_INPUT') return 'UNSUPPORTED_REFERENCE_IMAGE: This model did not accept the reference-image request.';
+  if (diagnostic.category === 'INVALID_PAYLOAD') return 'INVALID_IMAGE: The reference-image payload was not accepted. Technical Details show the exact response.';
+  if (diagnostic.category === 'CONTENT_POLICY') return 'PROVIDER_POLICY_RESTRICTION: The provider rejected this request under its content policy.';
+  if (diagnostic.category === 'RATE_LIMIT' || diagnostic.category === 'TIMEOUT' || diagnostic.category === 'PROVIDER_FAILURE') return 'TEMPORARY_PROVIDER_FAILURE: The provider route failed temporarily.';
+  return 'TEMPORARY_PROVIDER_FAILURE: The selected route failed. Try another frame or continue locally.';
 }
 
 function logProviderDiagnostic(label, diagnostic) {
@@ -161,6 +177,8 @@ function logProviderDiagnostic(label, diagnostic) {
     processing_began: diagnostic?.processing_began,
     metadata: diagnostic?.metadata,
     openrouter_metadata: diagnostic?.openrouter_metadata,
+    request_reached_provider: diagnostic?.request_reached_provider,
+    rejection_type: diagnostic?.rejection_type,
     payload_summary: diagnostic?.payload_summary,
     raw_response: diagnostic?.raw_response
   }));
@@ -387,6 +405,70 @@ async function saveGenerationLog(base44, record) {
   }
 }
 
+async function saveRoutingAudit(base44, record) {
+  try {
+    await base44.asServiceRole.entities.AdultImageRoutingAudit.create({ ...record, created_at: new Date().toISOString() });
+  } catch (error) {
+    console.warn('Adult image routing audit save failed', error.message);
+  }
+}
+
+function getContentClassification(metadata = {}) {
+  return ['SAFE_MARKETING', 'SUGGESTIVE_ADULT', 'EXPLICIT_VERIFIED_ADULT', 'BLOCKED_OR_UNVERIFIED'].includes(metadata.referenceContentClass)
+    ? metadata.referenceContentClass
+    : 'BLOCKED_OR_UNVERIFIED';
+}
+
+function verificationPassed(metadata = {}) {
+  const verification = metadata.adultVerification || {};
+  return Boolean(verification.allPeopleVerified18Plus && verification.performerConsentConfirmed && verification.mediaRightsConfirmed && verification.platformSourceConfirmed && String(verification.verificationReference || '').trim());
+}
+
+async function getApprovedAdultProviders(base44) {
+  try {
+    const providers = await base44.asServiceRole.entities.AdultImageProviderRegistry.filter({ enabled: true, explicit_adult_image_processing_permitted: 'yes' }, 'priority', 100);
+    return providers || [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function routeMatchesApprovedProvider(route, approvedProviders) {
+  return route.compatible_endpoints.some(endpoint => approvedProviders.some(provider => {
+    const slugs = [endpoint.provider_slug, endpoint.provider_tag, endpoint.provider_name].filter(Boolean).map(value => String(value).toLowerCase());
+    const registrySlug = String(provider.openrouter_provider_slug || '').toLowerCase();
+    const modelMatches = !provider.model_id || provider.model_id === route.id || provider.model_id === '*';
+    return modelMatches && slugs.some(value => value.includes(registrySlug));
+  }));
+}
+
+async function filterRoutesForPolicy(base44, routes, classification, generationJobId, metadata) {
+  if (classification === 'BLOCKED_OR_UNVERIFIED') {
+    return { ok: false, status: 409, code: 'VERIFICATION_REQUIRED', routes: [], policyCompatible: 'no', reason: 'Selected frame is blocked or unverified. No external provider request was sent.' };
+  }
+  if (['SUGGESTIVE_ADULT', 'EXPLICIT_VERIFIED_ADULT'].includes(classification) && !verificationPassed(metadata)) {
+    return { ok: false, status: 409, code: 'VERIFICATION_REQUIRED', routes: [], policyCompatible: 'no', reason: 'Verified adult, consent, media-rights, platform-source, and evidence reference are required before external adult image routing.' };
+  }
+  if (classification === 'SAFE_MARKETING') return { ok: true, routes, policyCompatible: 'unknown', reason: 'Safe marketing route; mainstream technical providers may be used.' };
+  const approvedProviders = await getApprovedAdultProviders(base44);
+  const approvedRoutes = routes.filter(route => routeMatchesApprovedProvider(route, approvedProviders));
+  if (!approvedRoutes.length) {
+    await saveRoutingAudit(base44, {
+      generation_job_id: generationJobId,
+      content_classification: classification,
+      verification_status: 'passed',
+      verification_reference: metadata.adultVerification?.verificationReference || '',
+      routing_decision: 'NO_APPROVED_ADULT_PROVIDER',
+      policy_compatible: 'no',
+      request_sent: false,
+      output_received: false,
+      reason: 'No enabled provider has documented YES permission for lawful explicit adult reference-image processing.'
+    });
+    return { ok: false, status: 409, code: 'NO_APPROVED_ADULT_PROVIDER', routes: [], policyCompatible: 'no', reason: 'No enabled provider is documented as permitting lawful explicit adult reference-image editing. External request was not sent.' };
+  }
+  return { ok: true, routes: approvedRoutes, policyCompatible: 'yes', reason: 'Adult route restricted to enabled providers with documented YES permission.' };
+}
+
 async function callOpenRouterImage(apiKey, route, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata, generationJobId) {
   const { payload } = buildImagePayload(route, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata, generationJobId);
   const payloadSummary = buildPayloadSummary(route, payload, storyReferenceDataUrl, identityReferenceDataUrl);
@@ -563,6 +645,7 @@ async function generateCover(base44, apiKey, body, user) {
   const month = now.toISOString().slice(0, 7);
   const storyInfo = parseDataUrlInfo(storyReferenceDataUrl);
   const identityInfo = identityReferenceDataUrl ? parseDataUrlInfo(identityReferenceDataUrl) : { ok: true, byte_length: 0 };
+  const contentClassification = getContentClassification(metadata);
   if (!consent) return json({ ok: false, error: 'The professional hero photograph could not be produced yet.', code: 'consent_required' }, 400);
   if (!storyInfo.ok || storyInfo.byte_length <= 0) return json({ ok: false, error: 'Story frame encoding failed. Choose another frame and try again.', code: 'invalid_story_frame', diagnostics: { category: 'INVALID_PAYLOAD', message: 'Story reference is not a valid base64 image data URL or has zero bytes.' } }, 400);
   if (storyInfo.byte_length > MAX_REFERENCE_BYTES || String(storyReferenceDataUrl).length > MAX_DATA_URL_CHARS) return json({ ok: false, error: 'Choose a smaller story frame before producing the professional hero photograph.', code: 'image_too_large' }, 413);
@@ -577,12 +660,55 @@ async function generateCover(base44, apiKey, body, user) {
 
   const compatibleRoutes = await discoverCompatibleImageRoutes(apiKey);
   if (!compatibleRoutes.length) {
-    const diagnostic = { category: 'UNSUPPORTED_IMAGE_INPUT', message: 'No discovered OpenRouter image model currently accepts image input, image output, and 16:9 generation.', retryable: false };
+    const diagnostic = { category: 'UNSUPPORTED_REFERENCE_IMAGE', message: 'No discovered OpenRouter image model currently accepts image input, image output, and 16:9 generation.', retryable: false };
     logProviderDiagnostic('OpenRouter model discovery failed', diagnostic);
-    return json({ ok: false, error: publicFailureMessage(diagnostic), code: 'no_compatible_image_model', diagnostics: diagnostic }, 503);
+    return json({ ok: false, error: publicFailureMessage(diagnostic), code: 'UNSUPPORTED_REFERENCE_IMAGE', diagnostics: diagnostic }, 503);
   }
 
+  const policyRouting = await filterRoutesForPolicy(base44, compatibleRoutes, contentClassification, generationJobId, metadata);
+  if (!policyRouting.ok) {
+    return json({
+      ok: false,
+      error: policyRouting.reason,
+      code: policyRouting.code,
+      generation_job_id: generationJobId,
+      content_classification: contentClassification,
+      policy_compatible: policyRouting.policyCompatible,
+      request_sent: false,
+      output_received: false,
+      diagnostics: {
+        category: policyRouting.code,
+        http_status: null,
+        openrouter_code: null,
+        openrouter_error_message: policyRouting.reason,
+        message: policyRouting.reason,
+        model: null,
+        provider: null,
+        request_reached_provider: false,
+        rejection_type: 'verification_or_policy_gate',
+        policy_compatible: policyRouting.policyCompatible,
+        retryable: false
+      },
+      photographer_attempts: [],
+      attempt_diagnostics: [],
+      stage_trace: { frame_extracted: true, image_encoded: true, payload_created: false, request_sent: false, response_received: false, hero_image_decoded: false, preview_rendered: false }
+    }, policyRouting.status);
+  }
+
+  await saveRoutingAudit(base44, {
+    generation_job_id: generationJobId,
+    content_classification: contentClassification,
+    verification_status: contentClassification === 'SAFE_MARKETING' ? 'not_required' : 'passed',
+    verification_reference: metadata.adultVerification?.verificationReference || '',
+    routing_decision: policyRouting.reason,
+    policy_compatible: policyRouting.policyCompatible,
+    request_sent: true,
+    output_received: false,
+    reason: policyRouting.reason
+  });
+
   const attempts = [];
+  const attemptDiagnostics = [];
   let finalDiagnostic = null;
   for (const route of compatibleRoutes.slice(0, MAX_AUTOMATIC_ATTEMPTS)) {
     try {
@@ -611,6 +737,20 @@ async function generateCover(base44, apiKey, body, user) {
         cost_usd: result.cost,
         payload_summary: result.payload_summary
       }));
+      await saveRoutingAudit(base44, {
+        generation_job_id: generationJobId,
+        content_classification: contentClassification,
+        verification_status: contentClassification === 'SAFE_MARKETING' ? 'not_required' : 'passed',
+        verification_reference: metadata.adultVerification?.verificationReference || '',
+        routing_decision: 'OUTPUT_RECEIVED',
+        selected_provider: result.resolved_provider || '',
+        selected_model: route.id,
+        policy_compatible: policyRouting.policyCompatible,
+        request_sent: true,
+        output_received: true,
+        reason: 'Generated hero photograph returned successfully.',
+        attempts_json: safeJson([...attemptDiagnostics, { model: route.id, provider: result.resolved_provider, http_status: 200, output_received: true }])
+      });
       return json({
         ok: true,
         generated_image_data_url: result.image_data_url,
@@ -624,6 +764,22 @@ async function generateCover(base44, apiKey, body, user) {
         usage: result.usage,
         fallback_used: attempts.length > 0,
         photographer_attempts: [...attempts, { model: route.id, provider: result.resolved_provider, status: 'accepted' }],
+        attempt_diagnostics: [...attemptDiagnostics, {
+          model: route.id,
+          provider: result.resolved_provider,
+          endpoint: 'POST /api/v1/images',
+          http_status: 200,
+          openrouter_code: null,
+          openrouter_error_message: null,
+          request_reached_provider: true,
+          rejection_type: null,
+          policy_compatible: policyRouting.policyCompatible,
+          retryable: false,
+          cost: result.cost || 0,
+          output_received: true
+        }],
+        content_classification: contentClassification,
+        policy_compatible: policyRouting.policyCompatible,
         stage_trace: {
           frame_extracted: true,
           image_encoded: true,
@@ -654,8 +810,27 @@ async function generateCover(base44, apiKey, body, user) {
       try { diagnostic = JSON.parse(error.message); } catch (_) { diagnostic = { message: error.message, category: 'PROVIDER_FAILURE', retryable: true }; }
       diagnostic.model = route.id;
       diagnostic.provider = diagnostic.provider || route.compatible_endpoints?.[0]?.provider_name || null;
+      diagnostic.endpoint = 'POST /api/v1/images';
+      diagnostic.policy_compatible = policyRouting.policyCompatible;
       finalDiagnostic = diagnostic;
+      const attemptDetail = {
+        model: route.id,
+        provider: diagnostic.provider,
+        endpoint: diagnostic.endpoint,
+        http_status: diagnostic.http_status,
+        openrouter_code: diagnostic.openrouter_code,
+        openrouter_error_message: diagnostic.openrouter_error_message || diagnostic.message,
+        raw_response: diagnostic.raw_response,
+        request_reached_provider: Boolean(diagnostic.request_reached_provider),
+        rejection_type: diagnostic.rejection_type || 'unknown',
+        category: diagnostic.category,
+        policy_compatible: diagnostic.policy_compatible,
+        retryable: Boolean(diagnostic.retryable),
+        cost: 0,
+        output_received: false
+      };
       attempts.push({ model: route.id, provider: diagnostic.provider, status: 'failed', category: diagnostic.category, retryable: diagnostic.retryable });
+      attemptDiagnostics.push(attemptDetail);
       logProviderDiagnostic('OpenRouter AI Photographer failed route', diagnostic);
       await saveGenerationLog(base44, {
         generation_job_id: generationJobId,
@@ -685,7 +860,12 @@ async function generateCover(base44, apiKey, body, user) {
     code: 'all_openrouter_routes_failed',
     generation_job_id: generationJobId,
     diagnostics: finalDiagnostic,
+    content_classification: contentClassification,
+    policy_compatible: policyRouting.policyCompatible,
+    request_sent: attempts.length > 0,
+    output_received: false,
     photographer_attempts: attempts,
+    attempt_diagnostics: attemptDiagnostics,
     stage_trace: {
       frame_extracted: true,
       image_encoded: true,

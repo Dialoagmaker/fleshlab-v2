@@ -62,6 +62,14 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
   const [frameStatus, setFrameStatus] = useState({ extracted: false, encoded: false });
   const [technicalDetails, setTechnicalDetails] = useState(null);
   const [showTechnical, setShowTechnical] = useState(false);
+  const [routingGate, setRoutingGate] = useState({
+    referenceContentClass: "BLOCKED_OR_UNVERIFIED",
+    allPeopleVerified18Plus: false,
+    performerConsentConfirmed: false,
+    mediaRightsConfirmed: false,
+    platformSourceConfirmed: false,
+    verificationReference: ""
+  });
 
   useEffect(() => {
     let active = true;
@@ -78,8 +86,20 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
     return typeof value === "number" ? `$${value.toFixed(4)}` : "Checking";
   }, [health]);
 
+  const adultVerificationRequired = ["SUGGESTIVE_ADULT", "EXPLICIT_VERIFIED_ADULT"].includes(routingGate.referenceContentClass);
+  const routingGateComplete = routingGate.referenceContentClass === "SAFE_MARKETING" || (
+    adultVerificationRequired &&
+    routingGate.allPeopleVerified18Plus &&
+    routingGate.performerConsentConfirmed &&
+    routingGate.mediaRightsConfirmed &&
+    routingGate.platformSourceConfirmed &&
+    routingGate.verificationReference.trim()
+  );
+
+  const updateGate = (patch) => setRoutingGate(previous => ({ ...previous, ...patch }));
+
   const generate = async () => {
-    if (!frame || !metadata?.videoTitle?.trim() || loading) return;
+    if (!frame || !metadata?.videoTitle?.trim() || loading || !routingGateComplete) return;
     setLoading(true);
     setError("");
     setHeroImage(null);
@@ -109,7 +129,19 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
           story_reference_data_url: story.dataUrl,
           identity_reference_data_url: identity?.dataUrl || null,
           aspect_ratio: "16:9",
-          metadata: { ...metadata, identityReferenceTime: identityReferenceFrame ? formatTime(identityReferenceFrame.time) : "none", regenerationDirective: repairDirective },
+          metadata: {
+            ...metadata,
+            identityReferenceTime: identityReferenceFrame ? formatTime(identityReferenceFrame.time) : "none",
+            regenerationDirective: repairDirective,
+            referenceContentClass: routingGate.referenceContentClass,
+            adultVerification: {
+              allPeopleVerified18Plus: routingGate.allPeopleVerified18Plus,
+              performerConsentConfirmed: routingGate.performerConsentConfirmed,
+              mediaRightsConfirmed: routingGate.mediaRightsConfirmed,
+              platformSourceConfirmed: routingGate.platformSourceConfirmed,
+              verificationReference: routingGate.verificationReference.trim()
+            }
+          },
         });
         const data = response.data;
         setTechnicalDetails({
@@ -122,7 +154,12 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
           cost_reported: data?.cost_reported,
           usage: data?.usage,
           stage_trace: data?.stage_trace,
+          content_classification: data?.content_classification,
+          policy_compatible: data?.policy_compatible,
+          request_sent: data?.request_sent,
+          output_received: data?.output_received,
           selected_model_capability: data?.selected_model_capability,
+          attempt_diagnostics: data?.attempt_diagnostics,
         });
         if (!data?.ok) throw new Error(data?.error || "The professional hero photograph could not be generated.");
         const blob = dataUrlToBlob(data.generated_image_data_url);
@@ -142,7 +179,12 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
     } catch (err) {
       const diagnostic = err.response?.data || { message: err.message };
       console.warn("OpenRouter hero photograph failed", diagnostic);
-      setTechnicalDetails(previous => ({ ...(previous || {}), failure: diagnostic }));
+      setTechnicalDetails(previous => ({
+        ...(previous || {}),
+        failure: diagnostic,
+        exact_openrouter_response: diagnostic?.diagnostics || diagnostic,
+        attempt_diagnostics: diagnostic?.attempt_diagnostics || diagnostic?.diagnostics?.attempt_diagnostics || []
+      }));
       setStatus("Ready to retry or continue locally.");
       setError(diagnostic?.error || "The professional hero photograph could not be generated. The local cover workflow is still available.");
     } finally {
@@ -162,6 +204,12 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
   const connected = Boolean(health?.openrouter_connected);
   const creditsAvailable = Boolean(health?.paid_credits_available);
   const imageAvailable = Boolean(health?.image_generation_available);
+  const gateOptions = [
+    ["BLOCKED_OR_UNVERIFIED", "Blocked / unverified"],
+    ["SAFE_MARKETING", "Safe marketing"],
+    ["SUGGESTIVE_ADULT", "Suggestive adult"],
+    ["EXPLICIT_VERIFIED_ADULT", "Explicit verified adult"]
+  ];
 
   return (
     <div className="space-y-4">
@@ -188,10 +236,27 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
             </div>
           </div>
           <div className="flex flex-col gap-2 md:min-w-80">
-            <Button disabled={!frame || loading || !metadata?.videoTitle?.trim() || healthLoading || !connected || !creditsAvailable || !imageAvailable} onClick={generate} className="gap-2"><Wand2 className="h-4 w-4" />{loading ? "Generating..." : "Generate Professional Hero Photograph"}</Button>
+            <Button disabled={!frame || loading || !metadata?.videoTitle?.trim() || healthLoading || !connected || !creditsAvailable || !imageAvailable || !routingGateComplete} onClick={generate} className="gap-2"><Wand2 className="h-4 w-4" />{loading ? "Generating..." : "Generate Professional Hero Photograph"}</Button>
             <p className="text-sm text-muted-foreground">{status}</p>
           </div>
         </div>
+        <div className="rounded-lg border border-border bg-secondary/20 p-3 text-sm">
+          <p className="mb-2 text-xs font-bold text-muted-foreground">Adult-content routing gate</p>
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="space-y-1"><span className="text-xs text-muted-foreground">Reference classification</span><select value={routingGate.referenceContentClass} onChange={e => updateGate({ referenceContentClass: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">{gateOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            <label className="space-y-1"><span className="text-xs text-muted-foreground">Verification / rights reference</span><input value={routingGate.verificationReference} onChange={e => updateGate({ verificationReference: e.target.value })} placeholder="Performer ID, contract, release, or internal proof reference" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></label>
+          </div>
+          <div className="mt-3 grid gap-2 text-xs md:grid-cols-2">
+            {[
+              ["allPeopleVerified18Plus", "Every depicted person is verified 18+"],
+              ["performerConsentConfirmed", "Consent is confirmed"],
+              ["mediaRightsConfirmed", "Media rights are confirmed"],
+              ["platformSourceConfirmed", "Source belongs to the platform"]
+            ].map(([key, label]) => <label key={key} className="flex items-center gap-2"><input type="checkbox" checked={routingGate[key]} onChange={e => updateGate({ [key]: e.target.checked })} />{label}</label>)}
+          </div>
+          {!routingGateComplete && <p className="mt-3 text-xs text-destructive">External AI routing is blocked until the selected frame is classified and required verification checks are complete.</p>}
+        </div>
+
         {error && (
           <div className="space-y-3 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
             <p>{error}</p>

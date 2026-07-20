@@ -1,0 +1,144 @@
+{
+  "name": "AdultImageProviderRegistry",
+  "type": "object",
+  "properties": {
+    "provider_name": {
+      "type": "string",
+      "title": "Provider Name"
+    },
+    "openrouter_provider_slug": {
+      "type": "string",
+      "title": "OpenRouter Provider Slug"
+    },
+    "model_id": {
+      "type": "string",
+      "title": "Model ID"
+    },
+    "endpoint_id": {
+      "type": "string",
+      "title": "Endpoint ID"
+    },
+    "text_to_image_support": {
+      "type": "boolean",
+      "title": "Text-to-image Support",
+      "default": false
+    },
+    "image_to_image_support": {
+      "type": "boolean",
+      "title": "Image-to-image Support",
+      "default": false
+    },
+    "multi_reference_support": {
+      "type": "boolean",
+      "title": "Multi-reference Support",
+      "default": false
+    },
+    "maximum_input_resolution": {
+      "type": "string",
+      "title": "Maximum Input Resolution"
+    },
+    "supports_16_9": {
+      "type": "boolean",
+      "title": "16:9 Support",
+      "default": false
+    },
+    "documented_adult_content_policy": {
+      "type": "string",
+      "title": "Documented Adult-content Policy",
+      "format": "textarea"
+    },
+    "explicit_adult_image_processing_permitted": {
+      "type": "string",
+      "enum": [
+        "yes",
+        "no",
+        "unknown"
+      ],
+      "title": "Explicit Adult Image Processing Permitted",
+      "default": "unknown"
+    },
+    "verified_adults_only_requirement": {
+      "type": "string",
+      "title": "Verified Adults-only Requirement",
+      "format": "textarea"
+    },
+    "prohibited_categories": {
+      "type": "string",
+      "title": "Prohibited Categories",
+      "format": "textarea"
+    },
+    "policy_source_url": {
+      "type": "string",
+      "title": "Policy Source URL"
+    },
+    "policy_last_verified_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Policy Last Verified Date"
+    },
+    "successful_production_test_date": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Successful Production Test Date"
+    },
+    "enabled": {
+      "type": "boolean",
+      "title": "Enabled",
+      "default": false
+    },
+    "priority": {
+      "type": "integer",
+      "title": "Priority",
+      "default": 100
+    },
+    "cost": {
+      "type": "number",
+      "title": "Cost Per Image",
+      "default": 0
+    },
+    "zero_data_retention_status": {
+      "type": "string",
+      "enum": [
+        "yes",
+        "no",
+        "unknown",
+        "configurable"
+      ],
+      "title": "Zero Data Retention Status",
+      "default": "unknown"
+    },
+    "technical_status": {
+      "type": "string",
+      "enum": [
+        "compatible",
+        "not_compatible",
+        "unknown"
+      ],
+      "title": "Technical Status",
+      "default": "unknown"
+    },
+    "last_discovered_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last Discovered At"
+    },
+    "last_failure_reason": {
+      "type": "string",
+      "title": "Last Failure Reason",
+      "format": "textarea"
+    },
+    "admin_notes": {
+      "type": "string",
+      "title": "Admin Notes",
+      "format": "textarea"
+    }
+  },
+  "required": [
+    "provider_name",
+    "openrouter_provider_slug",
+    "model_id",
+    "explicit_adult_image_processing_permitted",
+    "enabled",
+    "priority"
+  ]
+}
