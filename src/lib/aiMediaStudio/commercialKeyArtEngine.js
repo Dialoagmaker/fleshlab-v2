@@ -241,20 +241,44 @@ function tuneCommercialConcept(concept, failures = [], score = {}, iteration = 1
 function cropForHero(image, analysis, language, width, height, settings = {}) {
   const philosophy = language.activePhilosophy || COMMERCIAL_PHILOSOPHIES[0];
   const outputAspect = width / height;
+  const sourceAspect = image.width / image.height;
+  const isPortraitSource = sourceAspect < 0.9;
+  const landscapeOutput = outputAspect > 1.15;
+  const cropRisk = analysis.subjectCropRisk || 0;
+  const mustPreserveComposition = (isPortraitSource && landscapeOutput) || cropRisk > 0.34;
+
+  if (mustPreserveComposition) {
+    return {
+      sx: 0,
+      sy: 0,
+      sw: image.width,
+      sh: image.height,
+      zoom: 1,
+      fitMode: "contain",
+      compositionProtection: {
+        rule: "source image is sacred",
+        sourceAspect,
+        outputAspect,
+        preservesFullPerformer: true,
+        protectedZones: ["head", "face", "eyes", "hair", "shoulders", "chest", "hands", "primary action", "body silhouette"],
+      },
+    };
+  }
+
   let sw = image.width;
   let sh = image.height;
-  if (image.width / image.height > outputAspect) sw = image.height * outputAspect;
+  if (sourceAspect > outputAspect) sw = image.height * outputAspect;
   else sh = image.width / outputAspect;
   const hero = analysis.subjectBox || { x: 0.52, y: 0.14, w: 0.34, h: 0.72 };
   const cx = (hero.x + hero.w * 0.52) * image.width;
   const cy = (hero.y + hero.h * 0.48) * image.height;
-  const zoom = clamp((Number(settings.zoom) || 1) * (1.08 + philosophy.depth * 0.18), 0.9, 1.9);
+  const zoom = clamp((Number(settings.zoom) || 1) * (1.01 + philosophy.depth * 0.035), 0.95, 1.12);
   sw /= zoom;
   sh /= zoom;
   const horizontalBias = philosophy.titleSide === "right" ? 0.42 : philosophy.titleSide === "bottom" ? 0.52 : philosophy.heroBias;
   const sx = clamp(cx - sw * horizontalBias, 0, Math.max(0, image.width - sw));
   const sy = clamp(cy - sh * 0.48, 0, Math.max(0, image.height - sh));
-  return { sx, sy, sw, sh, zoom };
+  return { sx, sy, sw, sh, zoom, fitMode: "cover" };
 }
 
 function heroOnCanvas(image, analysis, crop, width, height) {
@@ -370,7 +394,7 @@ function buildAttemptPlan(image, metadata, settings, width, height, analysis, ba
     diagnostic,
     family: { id: philosophy.id, label: philosophy.label },
     visualStory: { emotionalCenter: graphicLanguage.thumbnail_priority, viewerFeeling: graphicLanguage.energy },
-    artDirection: { graphicDesignRatio: philosophy.graphicRatio, pipeline: ["Story Diagnosis", "Environment-Specific Visual Language", "Performer-Hero Crop", "Dynamic Negative Space", "Official Logo Placement", "Architectural Typography", "Premium Color Grade", "Commercial Validation"], visualSystemId: philosophy.visualSystemId },
+    artDirection: { graphicDesignRatio: philosophy.graphicRatio, pipeline: ["Source Image", "Composition Analysis", "Story Analysis", "Negative Space Detection", "Art Direction", "Typography", "Brand Elements", "Final Cover"], visualSystemId: philosophy.visualSystemId, compositionProtection: crop.compositionProtection || null },
     selected,
     best: selected,
     variants: [selected],
