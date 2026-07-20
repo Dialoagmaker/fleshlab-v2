@@ -48,6 +48,7 @@ export default function OpenRouterCoverMode({ frame, metadata, settings }) {
       frame_data_url: frameDataUrl,
       model_quality: quality,
       aspect_ratio: "16:9",
+      metadata,
     });
     const data = response.data;
     if (!data?.ok) throw new Error(data?.error || "OpenRouter generation failed");
@@ -55,7 +56,7 @@ export default function OpenRouterCoverMode({ frame, metadata, settings }) {
     const identityValidation = await validateIdentityPreservation(frame.blob, blob);
     setValidation(identityValidation);
     if (!identityValidation.accepted) {
-      setResult({ blob: frame.blob, url: frame.url, model: data.model_used, cost: data.cost_reported, usage: data.usage, fallback: true });
+      setError("AI key art was rejected because the performer was not recognisable enough. Generate again with a stronger reference frame.");
       setLoading(false);
       return;
     }
@@ -65,31 +66,30 @@ export default function OpenRouterCoverMode({ frame, metadata, settings }) {
 
   const handleGenerate = () => generate().catch(err => {
     setLoading(false);
-    setError(`${err.response?.data?.error || err.message} Original frame fallback is active.`);
-    if (frame?.blob) setResult({ blob: frame.blob, url: frame.url, model: "OpenRouter unavailable", cost: null, usage: null, fallback: true });
+    setError(`${err.response?.data?.error || err.message} No original-frame cover fallback will be used.`);
   });
 
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-primary/35 bg-primary/10 p-4">
-        <div className="flex items-start gap-3"><AlertTriangle className="mt-0.5 h-5 w-5 text-primary" /><div className="space-y-2 text-sm"><p className="font-semibold text-foreground">OpenRouter only retouches the selected still. It does not create the cover, performer, logo, titles, layout, or typography.</p><p className="text-muted-foreground">If identity validation is below 95%, the AI result is discarded and the original frame is used with the local FLESHLAB template.</p></div></div>
+        <div className="flex items-start gap-3"><AlertTriangle className="mt-0.5 h-5 w-5 text-primary" /><div className="space-y-2 text-sm"><p className="font-semibold text-foreground">OpenRouter recreates the selected moment as cinematic 16:9 key art, not a frame retouch.</p><p className="text-muted-foreground">If recognisability is too low, the AI result is discarded and no original-frame fallback is used.</p></div></div>
       </div>
       <div className="grid gap-4 xl:grid-cols-[340px_1fr]">
         <div className="space-y-4 rounded-xl border border-border bg-card p-4">
-          <div><h3 className="font-bold text-foreground">Approved still before upload</h3><p className="text-xs text-muted-foreground">Frame {frame ? formatTime(frame.time) : "not selected"}</p></div>
+          <div><h3 className="font-bold text-foreground">Story reference still</h3><p className="text-xs text-muted-foreground">Frame {frame ? formatTime(frame.time) : "not selected"}</p></div>
           {frame?.url && <img src={frame.url} alt="Selected approved still" className="aspect-video w-full rounded-lg border border-border object-cover" />}
           <div className="space-y-1"><Label className="text-xs">OpenRouter image model</Label><Select value={quality} onValueChange={setQuality}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="pro">black-forest-labs/flux.2-pro</SelectItem><SelectItem value="max">black-forest-labs/flux.2-max quality mode</SelectItem></SelectContent></Select></div>
-          <label className="flex items-start gap-3 rounded-lg border border-border p-3 text-sm text-muted-foreground"><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} className="mt-1 accent-primary" /><span>I approve sending only this selected still image to OpenRouter for photo retouching. I understand the original video will not be uploaded and all cover branding is rendered locally.</span></label>
-          <Button disabled={!frame || !consent || loading} onClick={handleGenerate} className="w-full gap-2"><Wand2 className="h-4 w-4" />{loading ? "Enhancing selected frame..." : "Enhance Frame Only"}</Button>
+          <label className="flex items-start gap-3 rounded-lg border border-border p-3 text-sm text-muted-foreground"><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} className="mt-1 accent-primary" /><span>I approve sending only this selected still image to OpenRouter for cinematic key-art reconstruction. The original video is not uploaded and all FLESHLAB branding remains local.</span></label>
+          <Button disabled={!frame || !consent || loading} onClick={handleGenerate} className="w-full gap-2"><Wand2 className="h-4 w-4" />{loading ? "Producing cinematic key art..." : "Generate Key Art"}</Button>
           {validation && (
             <div className={`rounded-lg border p-3 text-xs ${validation.accepted ? "border-primary/35 bg-primary/10 text-muted-foreground" : "border-destructive/40 bg-destructive/10 text-destructive"}`}>
               <p className="font-semibold">Identity confidence: {validation.identityConfidence}%</p>
-              <p>{validation.accepted ? "AI retouch accepted. Local canvas is building the FLESHLAB cover." : "AI retouch rejected. Original frame is being used instead."}</p>
+              <p>{validation.accepted ? "AI key art accepted. Local canvas is adding FLESHLAB typography and branding." : "AI key art rejected. No original-frame fallback will be used."}</p>
             </div>
           )}
           {result && (
             <div className="space-y-1 text-xs text-muted-foreground">
-              <Badge variant="outline">{result.fallback ? "Original frame fallback" : "Enhanced photo accepted"}</Badge>
+              <Badge variant="outline">Cinematic key art accepted</Badge>
               <p>Model: {result.model}</p>
               <p>Cost reported: {result.cost ?? "not reported"}</p>
             </div>
@@ -97,7 +97,7 @@ export default function OpenRouterCoverMode({ frame, metadata, settings }) {
           {error && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
-          {result ? <CoverPreviewEditor frame={result} metadata={metadata} settings={settings} /> : <div className="flex min-h-[360px] items-center justify-center rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No AI retouch has been accepted yet. OpenRouter can only improve the photo; the final FLESHLAB cover is always built locally here.</div>}
+          {result ? <CoverPreviewEditor frame={result} metadata={metadata} settings={settings} /> : <div className="flex min-h-[360px] items-center justify-center rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No cinematic key art has been accepted yet. Generate a reconstructed 16:9 base image first, then FLESHLAB typography is added locally.</div>}
         </div>
       </div>
     </div>

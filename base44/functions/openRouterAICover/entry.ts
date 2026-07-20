@@ -7,55 +7,42 @@ const PRIMARY_MODEL = 'black-forest-labs/flux.2-pro';
 const QUALITY_MODEL = 'black-forest-labs/flux.2-max';
 const MAX_DATA_URL_CHARS = 12_000_000;
 
-const PHOTO_RETOUCH_PROMPT = `You are editing an existing reference image.
+const KEY_ART_DIRECTOR_PROMPT = `You are a premium entertainment Key Art Director, not a screenshot retoucher.
 
-The person in the reference image MUST remain exactly the same.
+Use the reference still only as source inspiration for identity, pose, action, story, and scene context.
 
-Preserve:
-- exact face
-- exact hairstyle
-- exact tattoos
-- exact skin tone
-- exact body
-- exact proportions
-- exact pose
-- exact expression
-- exact clothing and accessories
-- exact ethnicity
+First understand the scene:
+- performer identity and recognisable features
+- pose and primary action
+- location: bathroom, hotel, beach, gym, private room, night, morning, etc.
+- mood: luxury, cold, warm, voyeur, romantic, raw, cinematic, premium
+- environmental clues: walls, tiles, mirrors, steam, sheets, windows, shadows, practical lights, depth
 
-Do NOT generate another person.
-Do NOT redesign the performer.
-Do NOT replace the face.
-Do NOT replace the body.
-Do NOT invent tattoos.
-Do NOT invent a different hairstyle.
-Do NOT invent another pose.
-Do NOT add another person.
-Do NOT remove the performer.
+Then generate a new cinematic key-art photograph of the same moment.
 
-Treat this as professional photo retouching.
+Creative freedom allowed:
+- rebuild perspective
+- change camera angle and focal length
+- improve framing and composition
+- create 16:9 landscape key art even when the reference is vertical
+- expand or rebuild the environment
+- add depth of field, professional lighting, shadow structure, atmosphere, steam, reflections, cinematic color grade
+- clean ugly walls, bad smartphone framing, empty vertical composition, and screenshot artifacts
 
-Improve only:
-lighting
-contrast
-background depth
-cinematic atmosphere
-sharpness
-color grading
-subtle environmental enhancement
-dynamic range
-skin tones
-sunlight
-shadows
-noise reduction
+Must preserve:
+- performer remains recognisable as the same person
+- pose/action/story remains recognisable
+- body proportions remain plausible
+- no extra people unless clearly present in the reference
 
-Return ONLY the improved image.
-No typography.
-No logos.
-No icons.
-No text.
-No poster layout.
-No cover design.`;
+Forbidden:
+- do not output a literal screenshot
+- do not preserve smartphone framing
+- do not create black bars, pillarboxing, letterboxing, empty borders, or unused canvas
+- do not place the portrait frame inside a landscape canvas
+- do not add typography, logo, watermark, captions, icons, UI, or poster text
+
+Output ONLY the recreated cinematic 16:9 key art base image, ready for local FLESHLAB typography and branding overlay.`;
 
 function json(data, status = 200) {
   return Response.json(data, { status });
@@ -151,14 +138,25 @@ async function auditOpenRouter(apiKey) {
     credits,
     image_generation_support: { primary: primarySupport, quality: qualitySupport },
     current_integration_supports_image_generation: false,
-    note: 'OpenRouter is used only for selected-frame photo retouching. The final FLESHLAB logo, titles, layout, and artwork are rendered locally by Canvas.'
+    note: 'OpenRouter is used for cinematic key-art reconstruction from a selected still. Final FLESHLAB logo, titles, and typography are still rendered locally by Canvas.'
   };
 }
 
-async function callImageGeneration(apiKey, model, frameDataUrl, aspectRatio) {
+function buildKeyArtPrompt(metadata = {}) {
+  const storyContext = [
+    metadata.videoTitle || metadata.title ? `Title: ${metadata.videoTitle || metadata.title}` : '',
+    metadata.performerName || metadata.performer ? `Performer: ${metadata.performerName || metadata.performer}` : '',
+    metadata.optionalSubtitle || metadata.subtitle ? `Subtitle: ${metadata.optionalSubtitle || metadata.subtitle}` : '',
+    metadata.contentType ? `Content type: ${metadata.contentType}` : '',
+    metadata.campaignName ? `Campaign: ${metadata.campaignName}` : '',
+  ].filter(Boolean).join('\n');
+  return storyContext ? `${KEY_ART_DIRECTOR_PROMPT}\n\nVideo/story context to respect:\n${storyContext}` : KEY_ART_DIRECTOR_PROMPT;
+}
+
+async function callImageGeneration(apiKey, model, frameDataUrl, aspectRatio, metadata = {}) {
   const payload = {
     model,
-    prompt: PHOTO_RETOUCH_PROMPT,
+    prompt: buildKeyArtPrompt(metadata),
     input_references: [{ type: 'image_url', image_url: { url: frameDataUrl } }],
     aspect_ratio: aspectRatio || '16:9',
     resolution: '1K',
@@ -181,7 +179,7 @@ async function callImageGeneration(apiKey, model, frameDataUrl, aspectRatio) {
 }
 
 async function generateCover(apiKey, body) {
-  const { frame_data_url, consent, model_quality = 'pro', aspect_ratio = '16:9' } = body || {};
+  const { frame_data_url, consent, model_quality = 'pro', aspect_ratio = '16:9', metadata = {} } = body || {};
   if (!consent) return json({ ok: false, error: 'User confirmation is required before sending the selected still image to OpenRouter.', code: 'consent_required' }, 400);
   if (!frame_data_url || !String(frame_data_url).startsWith('data:image/')) return json({ ok: false, error: 'A selected still image data URL is required.', code: 'missing_frame' }, 400);
   if (String(frame_data_url).length > MAX_DATA_URL_CHARS || estimateBytesFromDataUrl(frame_data_url) > 9_000_000) return json({ ok: false, error: 'Selected still image is too large for OpenRouter upload.', code: 'image_too_large' }, 413);
@@ -190,7 +188,7 @@ async function generateCover(apiKey, body) {
   const errors = [];
   for (const model of models) {
     try {
-      const result = await callImageGeneration(apiKey, model, frame_data_url, aspect_ratio);
+      const result = await callImageGeneration(apiKey, model, frame_data_url, aspect_ratio, metadata);
       return json({
         ok: true,
         generated_image_data_url: result.image_data_url,
@@ -200,13 +198,13 @@ async function generateCover(apiKey, body) {
         usage: result.usage,
         cost_reported: result.usage?.cost ?? null,
         privacy: {
-          original_video_transmitted: false,
-          selected_approved_still_transmitted: true,
-          generated_image_received_from_openrouter: true,
-          ai_role: 'photo_retouch_only',
-          ai_generates_cover_layout: false,
-          ai_generates_typography_or_logo: false,
-          final_branding_and_typography_added_locally: true
+        original_video_transmitted: false,
+        selected_approved_still_transmitted: true,
+        generated_image_received_from_openrouter: true,
+        ai_role: 'cinematic_key_art_reconstruction',
+        ai_generates_cover_base_artwork: true,
+        ai_generates_typography_or_logo: false,
+        final_branding_and_typography_added_locally: true
         }
       });
     } catch (error) {

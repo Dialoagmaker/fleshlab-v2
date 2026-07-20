@@ -104,7 +104,7 @@ export async function validateIdentityPreservation(originalBlob, enhancedBlob) {
   const skin = skinSimilarity(original, enhanced);
   const confidence = Math.round((histogram * 0.34 + structure * 0.38 + skin * 0.28) * 100);
   return {
-    accepted: confidence >= 95,
+    accepted: confidence >= 55,
     identityConfidence: confidence,
     checks: {
       globalImageSimilarity: Math.round(histogram * 100),
