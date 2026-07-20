@@ -28,8 +28,11 @@ function isApprovedOpenRouterCoverInvoke(args) {
   const [functionName, payload] = args;
   if (functionName !== "openRouterAICover") return false;
   if (payload?.action !== "generate" || payload?.consent !== true) return false;
-  if (typeof payload.frame_data_url !== "string" || !payload.frame_data_url.startsWith("data:image/")) return false;
-  const { frame_data_url, ...rest } = payload;
+  const storyReference = payload.story_reference_data_url || payload.frame_data_url;
+  const identityReference = payload.identity_reference_data_url;
+  if (typeof storyReference !== "string" || !storyReference.startsWith("data:image/")) return false;
+  if (identityReference && (typeof identityReference !== "string" || !identityReference.startsWith("data:image/"))) return false;
+  const { frame_data_url, story_reference_data_url, identity_reference_data_url, ...rest } = payload;
   return !isBlockedPayload(rest);
 }
 

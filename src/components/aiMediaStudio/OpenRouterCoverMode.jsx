@@ -49,6 +49,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
   const [validation, setValidation] = useState(null);
   const [reviewStatus, setReviewStatus] = useState("idle");
   const [error, setError] = useState("");
+  const [debugStages, setDebugStages] = useState({});
   const referenceScore = identityReferenceFrame ? scoreIdentityReferenceFrame(identityReferenceFrame) : null;
 
   const generate = async () => {
@@ -58,9 +59,11 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
     setResult(null);
     setValidation(null);
     setReviewStatus("idle");
+    setDebugStages({ frameExtracted: true });
     const storyDataUrl = await blobToDataUrl(frame.blob);
     const identityDataUrl = identityReferenceFrame?.blob ? await blobToDataUrl(identityReferenceFrame.blob) : null;
-    const response = await base44.functions.invoke("openRouterAICover", {
+    setDebugStages(stage => ({ ...stage, imageEncoded: storyDataUrl?.startsWith("data:image/") && (!identityDataUrl || identityDataUrl.startsWith("data:image/")) }));
+    const payload = {
       action: "generate",
       consent: true,
       story_reference_data_url: storyDataUrl,
@@ -68,12 +71,17 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
       model_quality: quality,
       aspect_ratio: "16:9",
       metadata: { ...metadata, identityReferenceTime: identityReferenceFrame ? formatTime(identityReferenceFrame.time) : "none" },
-    });
+    };
+    setDebugStages(stage => ({ ...stage, payloadCreated: true, privacyValidation: true }));
+    const response = await base44.functions.invoke("openRouterAICover", payload);
+    setDebugStages(stage => ({ ...stage, requestSent: true }));
     const data = response.data;
+    setDebugStages(stage => ({ ...stage, responseReceived: Boolean(data) }));
     if (!data?.ok) throw new Error(data?.error || "OpenRouter generation failed");
     const blob = dataUrlToBlob(data.generated_image_data_url);
     const generated = { blob, url: URL.createObjectURL(blob), model: data.model_used, cost: data.cost_reported, usage: data.usage, fallback: false };
     setResult(generated);
+    setDebugStages(stage => ({ ...stage, previewRendered: true }));
     const identityValidation = identityReferenceFrame?.blob
       ? await validateIdentityPreservation(identityReferenceFrame.blob, blob, identityReferenceFrame)
       : { accepted: false, identityConfidence: 0, checks: { face: 0, hair: 0, body: 0, pose: 0, overall: 0 }, reference: null };
@@ -84,12 +92,32 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
 
   const handleGenerate = () => generate().catch(err => {
     setLoading(false);
-    setError(`${err.response?.data?.error || err.message} The workflow remains review-based; no frame fallback will be used.`);
+    const message = err.response?.data?.error || err.message;
+    const privacyBlocked = String(message || "").includes("Privacy guard blocked");
+    setDebugStages(stage => ({
+      frameExtracted: Boolean(stage.frameExtracted),
+      imageEncoded: Boolean(stage.imageEncoded),
+      payloadCreated: Boolean(stage.payloadCreated),
+      privacyValidation: !privacyBlocked && Boolean(stage.payloadCreated),
+      requestSent: Boolean(stage.requestSent),
+      responseReceived: Boolean(stage.responseReceived),
+      previewRendered: Boolean(stage.previewRendered),
+    }));
+    setError(`${message} The workflow remains review-based; no frame fallback will be used.`);
   });
 
   const approved = reviewStatus === "approved";
   const rejected = reviewStatus === "rejected";
   const lowIdentity = validation && !validation.accepted;
+  const stageItems = [
+    ["Frame extracted", debugStages.frameExtracted],
+    ["Image encoded", debugStages.imageEncoded],
+    ["Payload created", debugStages.payloadCreated],
+    ["Privacy validation", debugStages.privacyValidation],
+    ["Request sent", debugStages.requestSent],
+    ["Response received", debugStages.responseReceived],
+    ["Preview rendered", debugStages.previewRendered],
+  ];
 
   return (
     <div className="space-y-4">
@@ -108,6 +136,12 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
           <div className="space-y-1"><Label className="text-xs">OpenRouter image model</Label><Select value={quality} onValueChange={setQuality}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="pro">black-forest-labs/flux.2-pro</SelectItem><SelectItem value="max">black-forest-labs/flux.2-max quality mode</SelectItem></SelectContent></Select></div>
           <label className="flex items-start gap-3 rounded-lg border border-border p-3 text-sm text-muted-foreground"><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} className="mt-1 accent-primary" /><span>I approve sending the story frame and, when found, the auto-selected identity frame to OpenRouter for cinematic key-art reconstruction. The original video is not uploaded and FLESHLAB branding remains local.</span></label>
           <Button disabled={!frame || !consent || loading} onClick={handleGenerate} className="w-full gap-2"><Wand2 className="h-4 w-4" />{loading ? "Producing cinematic key art..." : "Generate Key Art"}</Button>
+          <div className="rounded-lg border border-border bg-secondary/25 p-3 text-xs">
+            <p className="mb-2 font-semibold text-foreground">Generation status</p>
+            <div className="grid gap-1">
+              {stageItems.map(([label, ok]) => <div key={label} className="flex items-center justify-between"><span className="text-muted-foreground">{label}</span><span>{ok ? "✅" : "❌"}</span></div>)}
+            </div>
+          </div>
           {!identityReferenceFrame && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">No suitable identity frame exists in this video scan. Generation will continue, but the result will be marked LOW IDENTITY for your review.</div>}
           {validation && (
             <div className={`rounded-lg border p-3 ${validation.accepted ? "border-primary/35 bg-primary/10" : "border-destructive/40 bg-destructive/10"}`}>
