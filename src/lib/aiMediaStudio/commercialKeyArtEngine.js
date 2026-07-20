@@ -58,7 +58,7 @@ function automaticCandidateSettings(settings = {}) {
 }
 
 function splitTitle(metadata = {}) {
-  const raw = upper(metadata.videoTitle || metadata.title || "FLESHLAB ORIGINAL");
+  const raw = upper(metadata.videoTitle || metadata.title || "");
   const explicit = upper(metadata.optionalSubtitle || metadata.campaignName || "");
   if (raw.includes("|")) {
     const [title, subtitle] = raw.split("|").map(item => item.trim()).filter(Boolean);
@@ -312,8 +312,8 @@ function buildAttemptPlan(image, metadata, settings, width, height, analysis, ba
   const graphicLanguage = buildDirectedLanguage(baseLanguage, philosophy, attemptIndex);
   const crop = cropForHero(image, analysis, graphicLanguage, width, height, automaticCandidateSettings(settings));
   const score = buildPlanScore(analysis, graphicLanguage, philosophy, attemptIndex);
-  const campaignTitle = metadata.videoTitle || metadata.campaignName || campaign.mainTitle || campaign.title || campaign.campaignName || "FLESHLAB ORIGINAL";
-  const emotionalHook = metadata.optionalSubtitle || metadata.contentType || campaign.hookLine || campaign.marketingTagline || campaign.fantasy || graphicLanguage.energy || "Authentic commercial moment";
+  const campaignTitle = metadata.videoTitle || metadata.title || metadata.campaignName || "";
+  const emotionalHook = metadata.optionalSubtitle || metadata.contentType || metadata.campaignName || "";
   const candidateId = `candidate_${attemptIndex + 1}_${philosophy.id}`;
   const iterationId = `concept_iteration_${attemptIndex + 1}`;
   const conceptId = `concept_${philosophy.id}_${stableHash({ campaignTitle, emotionalHook })}`;
@@ -424,7 +424,22 @@ function assertCandidateUniqueness(plans) {
 export async function generateCommercialKeyArtPlan(image, metadata = {}, settings = {}, width = 1920, height = 1080) {
   const analysis = await analyzePosterImage(image);
   const baseLanguage = inferGraphicLanguage(metadata, analysis);
-  const campaign = createCommercialCampaign({ analysis, metadata });
+  const rawCampaign = createCommercialCampaign({ analysis, metadata });
+  const exactTitle = metadata.videoTitle || metadata.title || "";
+  const exactSubtitle = metadata.optionalSubtitle || metadata.subtitle || "";
+  const exactPerformer = metadata.performerName || metadata.performer || "";
+  const exactCategory = metadata.contentType || "";
+  const exactCampaign = metadata.campaignName || metadata.series || "";
+  const campaign = {
+    ...rawCampaign,
+    mainTitle: exactTitle,
+    title: exactTitle,
+    subtitle: exactSubtitle,
+    episodeTitle: exactSubtitle,
+    performer: exactPerformer,
+    footerCategory: exactCategory || exactCampaign,
+    marketingTagline: exactCampaign || exactCategory,
+  };
   const conceptPhilosophies = orderedPhilosophies(campaign).slice(0, 6).map((philosophy, index) => ({
     ...philosophy,
     baseId: philosophy.id,
@@ -642,7 +657,7 @@ function typographyLayer(ctx, width, height, metadata, language) {
     ctx.fillText(line, anchor.x, y + block.size);
     y += block.lineHeight;
   });
-  const brush = subtitle || block.lines[0] || "ORIGINAL";
+  const brush = subtitle || "";
   ctx.globalAlpha = 0.78;
   ctx.fillStyle = `rgba(${tone.core},0.86)`;
   ctx.font = font(Math.max(width * 0.05, block.size * 0.32), "Permanent Marker", 900);

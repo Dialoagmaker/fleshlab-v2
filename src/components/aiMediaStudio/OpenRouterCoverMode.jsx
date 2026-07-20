@@ -150,7 +150,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
           </div>
           <div className="space-y-1"><Label className="text-xs">OpenRouter image model</Label><Select value={quality} onValueChange={setQuality}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="pro">black-forest-labs/flux.2-pro</SelectItem><SelectItem value="max">black-forest-labs/flux.2-max quality mode</SelectItem></SelectContent></Select></div>
           <label className="flex items-start gap-3 rounded-lg border border-border p-3 text-sm text-muted-foreground"><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} className="mt-1 accent-primary" /><span>I approve sending the story frame and, when found, the auto-selected identity frame to OpenRouter for cinematic key-art reconstruction. The original video is not uploaded and FLESHLAB branding remains local.</span></label>
-          <Button disabled={!frame || !consent || loading} onClick={handleGenerate} className="w-full gap-2"><Wand2 className="h-4 w-4" />{loading ? "Producing cinematic key art..." : "Generate Key Art"}</Button>
+          <Button disabled={!frame || !consent || loading} onClick={handleGenerate} className="w-full gap-2"><Wand2 className="h-4 w-4" />{loading ? "Enhancing background..." : "Generate cinematic alternative"}</Button>
           <div className="rounded-lg border border-border bg-secondary/25 p-3 text-xs">
             <p className="mb-2 font-semibold text-foreground">Generation status</p>
             <div className="grid gap-1">
@@ -182,7 +182,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
         <div className="rounded-xl border border-border bg-card p-4">
           {result ? (
             approved ? <CoverPreviewEditor frame={result} metadata={metadata} settings={settings} /> : <div className="space-y-4"><div className="flex items-center justify-between gap-3"><h3 className="font-bold text-foreground">Generated Key Art</h3>{validation && <Badge variant={lowIdentity ? "destructive" : "outline"}>{lowIdentity ? "LOW IDENTITY" : `Identity ${validation.identityConfidence}%`}</Badge>}</div><img src={result.url} alt="Generated key art awaiting review" className="w-full rounded-xl border border-border object-contain" /><div className={`rounded-lg border p-3 text-sm ${rejected ? "border-destructive/40 bg-destructive/10 text-destructive" : "border-primary/30 bg-primary/10 text-muted-foreground"}`}>{rejected ? "Artwork rejected. It remains visible here for review; generate again when ready." : "Generated Key Art is visible for review. Approve it to add local FLESHLAB typography and branding."}</div></div>
-          ) : <div className="flex min-h-[360px] items-center justify-center rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No cinematic key art has been generated yet. The AI will use the story frame plus the strongest identity frame it found, or continue with LOW IDENTITY if none exists.</div>}
+          ) : <div className="flex min-h-[360px] items-center justify-center rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">Optional AI enhancement preview appears here. The complete local cover remains available above for editing and export.</div>}
         </div>
       </div>
     </div>

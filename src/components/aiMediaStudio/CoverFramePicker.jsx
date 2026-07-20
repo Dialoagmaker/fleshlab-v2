@@ -43,7 +43,10 @@ function MiniPosterPreview({ frame }) {
 export default function CoverFramePicker({ frames, selectedIndex, identityReferenceIndex, rejectedIndexes = [], favoriteIndexes = [], compareIndexes = [], lockedHero, onSelect, onBestFrame, onReject, onToggleFavorite, onToggleCompare, onToggleLock }) {
   const [previewFrame, setPreviewFrame] = useState(null);
   const rejected = useMemo(() => new Set(rejectedIndexes), [rejectedIndexes]);
-  const candidates = useMemo(() => rankEmotionalCommercialFrames(frames || [], 20, 45).filter(frame => !rejected.has(frame.index)), [frames, rejected]);
+  const candidates = useMemo(() => {
+    const ranked = rankEmotionalCommercialFrames(frames || [], 20, 45).filter(frame => !rejected.has(frame.index));
+    return ranked.length ? ranked : (frames || []).filter(frame => !rejected.has(frame.index)).slice(0, 20);
+  }, [frames, rejected]);
   const favoriteFrames = candidates.filter(frame => favoriteIndexes.includes(frame.index));
 
   if (!frames?.length) return <p className="text-sm text-muted-foreground">Analyze a video first to create covers from real frames.</p>;

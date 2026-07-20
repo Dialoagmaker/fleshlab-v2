@@ -5,6 +5,12 @@ import { Download } from "lucide-react";
 import { blobToCanvasImage, canvasToBlob, getCoverDimensions } from "@/lib/aiMediaStudio/coverRenderer";
 import { generatePosterPlan, renderPosterVariantToCanvas, selectPosterVariant } from "@/lib/aiMediaStudio/commercialKeyArtEngine";
 
+async function frameToBlob(frame) {
+  if (frame?.blob) return frame.blob;
+  if (frame?.url) return await (await fetch(frame.url)).blob();
+  return null;
+}
+
 export default function CoverPreviewEditor({ frame, metadata, settings, fileSuffix = "cover" }) {
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
@@ -25,11 +31,13 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
     setPlan(null);
     setError("");
     setWarning("");
-    if (!frame?.blob || !canvasRef.current) return;
+    if (!frame || !canvasRef.current) return;
 
     (async () => {
       try {
-        const image = await blobToCanvasImage(frame.blob);
+        const frameBlob = await frameToBlob(frame);
+        if (!frameBlob) throw new Error("A selected poster frame is required");
+        const image = await blobToCanvasImage(frameBlob);
         if (!active) return;
         imageRef.current = image;
         const nextPlan = await generatePosterPlan(image, metadata, settings, dims.width, dims.height);
@@ -45,7 +53,7 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
       if (imageRef.current?.close) imageRef.current.close();
       imageRef.current = null;
     };
-  }, [frame?.index, frame?.blob, metadataKey, planSettingsKey]);
+  }, [frame?.index, frame?.blob, frame?.url, metadataKey, planSettingsKey]);
 
   useEffect(() => {
     if (!plan || !imageRef.current || !canvasRef.current) return;

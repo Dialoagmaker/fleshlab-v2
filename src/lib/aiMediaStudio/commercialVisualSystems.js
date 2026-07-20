@@ -492,7 +492,7 @@ function paintBrandAccents(ctx, map, width, height, direction) {
 
 function paintTitleBlock(ctx, map, width, height, plan, direction, settings = {}) {
   const campaign = plan.campaign || {};
-  const title = upper(campaign.mainTitle || campaign.title || "FLESHLAB ORIGINAL");
+  const title = upper(campaign.mainTitle || campaign.title || "");
   const words = title.split(/\s+/).filter(Boolean);
   const brushWord = !map.protectComposition && !direction.editorial && words.length > 1 ? words.pop() : "";
   const blockTitle = words.length ? words.join(" ") : title;
@@ -578,7 +578,7 @@ function paintFooter(ctx, width, height, plan, settings, direction, map = null) 
 }
 
 function paintCTA(ctx, map, width, height, plan, direction) {
-  const cta = upper(plan.campaign?.cta || "WATCH NOW").slice(0, 22);
+  const cta = upper(plan.campaign?.cta || "").slice(0, 22);
   ctx.save();
   ctx.font = font(width * 0.016, "Inter", 900);
   const textW = ctx.measureText(cta).width;
