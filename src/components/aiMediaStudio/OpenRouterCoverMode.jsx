@@ -18,6 +18,15 @@ function blobToDataUrl(blob) {
   });
 }
 
+async function frameToDataUrl(frame) {
+  if (frame?.blob) return blobToDataUrl(frame.blob);
+  if (frame?.url) {
+    const response = await fetch(frame.url);
+    return blobToDataUrl(await response.blob());
+  }
+  throw new Error("Selected frame has no encoded image payload.");
+}
+
 function dataUrlToBlob(dataUrl) {
   const [header, base64] = dataUrl.split(",");
   const mime = header.match(/data:(.*?);base64/)?.[1] || "image/png";
@@ -53,34 +62,39 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
   const referenceScore = identityReferenceFrame ? scoreIdentityReferenceFrame(identityReferenceFrame) : null;
 
   const generate = async () => {
-    if (!frame?.blob || !consent) return;
+    console.info("Generate button clicked");
+    if (!consent) return;
     setLoading(true);
     setError("");
     setResult(null);
     setValidation(null);
     setReviewStatus("idle");
-    setDebugStages({ frameExtracted: true });
-    const storyDataUrl = await blobToDataUrl(frame.blob);
-    const identityDataUrl = identityReferenceFrame?.blob ? await blobToDataUrl(identityReferenceFrame.blob) : null;
-    setDebugStages(stage => ({ ...stage, imageEncoded: storyDataUrl?.startsWith("data:image/") && (!identityDataUrl || identityDataUrl.startsWith("data:image/")) }));
+    setDebugStages({ frameExtracted: Boolean(frame) });
+    console.info("Frame extraction", Boolean(frame));
+    const storyDataUrl = await frameToDataUrl(frame);
+    console.info("Image encoding", storyDataUrl?.startsWith("data:image/"));
+    setDebugStages(stage => ({ ...stage, imageEncoded: storyDataUrl?.startsWith("data:image/") }));
     const payload = {
       action: "generate",
       consent: true,
-      story_reference_data_url: storyDataUrl,
-      identity_reference_data_url: identityDataUrl,
+      frame_data_url: storyDataUrl,
       model_quality: quality,
       aspect_ratio: "16:9",
       metadata: { ...metadata, identityReferenceTime: identityReferenceFrame ? formatTime(identityReferenceFrame.time) : "none" },
     };
+    console.info("Payload creation", true);
     setDebugStages(stage => ({ ...stage, payloadCreated: true, privacyValidation: true }));
-    const response = await base44.functions.invoke("openRouterAICover", payload);
+    console.info("OpenRouter request");
     setDebugStages(stage => ({ ...stage, requestSent: true }));
+    const response = await base44.functions.invoke("openRouterAICover", payload);
     const data = response.data;
+    console.info("OpenRouter response", Boolean(data));
     setDebugStages(stage => ({ ...stage, responseReceived: Boolean(data) }));
     if (!data?.ok) throw new Error(data?.error || "OpenRouter generation failed");
     const blob = dataUrlToBlob(data.generated_image_data_url);
     const generated = { blob, url: URL.createObjectURL(blob), model: data.model_used, cost: data.cost_reported, usage: data.usage, fallback: false };
     setResult(generated);
+    console.info("Preview rendering", true);
     setDebugStages(stage => ({ ...stage, previewRendered: true }));
     const identityValidation = identityReferenceFrame?.blob
       ? await validateIdentityPreservation(identityReferenceFrame.blob, blob, identityReferenceFrame)
@@ -93,6 +107,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
   const handleGenerate = () => generate().catch(err => {
     setLoading(false);
     const message = err.response?.data?.error || err.message;
+    console.error("Key art generation stopped", message);
     const privacyBlocked = String(message || "").includes("Privacy guard blocked");
     setDebugStages(stage => ({
       frameExtracted: Boolean(stage.frameExtracted),
@@ -100,7 +115,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
       payloadCreated: Boolean(stage.payloadCreated),
       privacyValidation: !privacyBlocked && Boolean(stage.payloadCreated),
       requestSent: Boolean(stage.requestSent),
-      responseReceived: Boolean(stage.responseReceived),
+      responseReceived: Boolean(stage.responseReceived || err.response?.data),
       previewRendered: Boolean(stage.previewRendered),
     }));
     setError(`${message} The workflow remains review-based; no frame fallback will be used.`);
