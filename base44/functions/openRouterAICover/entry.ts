@@ -5,6 +5,10 @@ const SECRET_NAME = 'KIMI_API_KEY';
 const EXISTING_TEXT_MODEL_SECRET = 'KIMI_MODEL';
 const PRIMARY_MODEL = 'black-forest-labs/flux.2-pro';
 const QUALITY_MODEL = 'black-forest-labs/flux.2-max';
+const AI_PHOTOGRAPHER_CANDIDATES = [
+  { model: QUALITY_MODEL, role: 'premium commercial detail pass' },
+  { model: PRIMARY_MODEL, role: 'fast photoreal campaign pass' }
+];
 const MAX_DATA_URL_CHARS = 12_000_000;
 
 const KEY_ART_DIRECTOR_PROMPT = `You are the FLESHLAB AI Photographer Engine.
@@ -77,7 +81,7 @@ function normalizeError(status, bodyText) {
   if (status === 401 || status === 403) return { code: 'api_authentication_failure', message: 'OpenRouter API authentication failed.', raw };
   if (status === 402 || lower.includes('credit') || lower.includes('insufficient')) return { code: 'credit_exhausted', message: 'OpenRouter credit is exhausted or insufficient.', raw };
   if (status === 404 || lower.includes('not found') || lower.includes('unsupported')) return { code: 'unsupported_model', message: 'The requested OpenRouter image model is unavailable or unsupported.', raw };
-  if (status === 422 && (lower.includes('invalid') || lower.includes('corrupted image'))) return { code: 'invalid_reference_image', message: 'FLUX rejected the reference image as invalid or corrupted.', raw };
+  if (status === 422 && (lower.includes('invalid') || lower.includes('corrupted image'))) return { code: 'invalid_reference_image', message: 'The AI Photographer rejected the reference image as invalid or corrupted.', raw };
   if (status === 429) return { code: 'rate_limit', message: 'OpenRouter rate limit reached.', raw };
   if (lower.includes('refus') || lower.includes('policy') || lower.includes('moderation')) return { code: 'provider_refusal', message: 'The provider refused this image request.', raw };
   if (lower.includes('image') && lower.includes('unavailable')) return { code: 'image_generation_unavailable', message: 'OpenRouter image generation is unavailable for this model/provider.', raw };
@@ -135,11 +139,20 @@ async function fetchImageModelSupport(apiKey, model) {
   };
 }
 
+async function getAvailablePhotographers(apiKey) {
+  const checked = await Promise.all(AI_PHOTOGRAPHER_CANDIDATES.map(candidate =>
+    fetchImageModelSupport(apiKey, candidate.model)
+      .then(support => ({ ...candidate, support }))
+      .catch(error => ({ ...candidate, support: { ok: false, model: candidate.model, error: { code: error.message === 'timeout' ? 'timeout' : 'model_check_failed', message: error.message } } }))
+  ));
+  const available = checked.filter(item => item.support?.supports_image_generation);
+  return available.length ? available : checked;
+}
+
 async function auditOpenRouter(apiKey) {
-  const [credits, primarySupport, qualitySupport] = await Promise.all([
+  const [credits, photographers] = await Promise.all([
     fetchCredits(apiKey).catch(error => ({ ok: false, error: { code: error.message === 'timeout' ? 'timeout' : 'credit_check_failed', message: error.message } })),
-    fetchImageModelSupport(apiKey, PRIMARY_MODEL).catch(error => ({ ok: false, model: PRIMARY_MODEL, error: { code: error.message === 'timeout' ? 'timeout' : 'model_check_failed', message: error.message } })),
-    fetchImageModelSupport(apiKey, QUALITY_MODEL).catch(error => ({ ok: false, model: QUALITY_MODEL, error: { code: error.message === 'timeout' ? 'timeout' : 'model_check_failed', message: error.message } }))
+    getAvailablePhotographers(apiKey)
   ]);
 
   return {
@@ -152,7 +165,8 @@ async function auditOpenRouter(apiKey) {
     current_openrouter_endpoint_used: 'https://openrouter.ai/api/v1/images',
     image_generation_endpoint_to_use: 'https://openrouter.ai/api/v1/images',
     credits,
-    image_generation_support: { primary: primarySupport, quality: qualitySupport },
+    image_generation_support: photographers.reduce((map, item) => ({ ...map, [item.model]: item.support }), {}),
+    ai_photographer_router: photographers.map(item => ({ model: item.model, role: item.role, available: Boolean(item.support?.supports_image_generation) })),
     current_integration_supports_image_generation: false,
     note: 'OpenRouter is used as the FLESHLAB AI Photographer: selected frames are reference material only, a professional hero photograph is generated first, and final typography/branding are added locally after approval.'
   };
@@ -240,7 +254,7 @@ async function callImageGeneration(apiKey, model, storyReferenceDataUrl, identit
 }
 
 async function generateCover(apiKey, body) {
-  const { frame_data_url, story_reference_data_url, identity_reference_data_url, consent, model_quality = 'pro', aspect_ratio = '16:9', metadata = {} } = body || {};
+  const { frame_data_url, story_reference_data_url, identity_reference_data_url, consent, aspect_ratio = '16:9', metadata = {} } = body || {};
   const storyReferenceDataUrl = story_reference_data_url || frame_data_url;
   const identityReferenceDataUrl = identity_reference_data_url || null;
   if (!consent) return json({ ok: false, error: 'User confirmation is required before sending reference still images to OpenRouter.', code: 'consent_required' }, 400);
@@ -248,17 +262,22 @@ async function generateCover(apiKey, body) {
   if (String(storyReferenceDataUrl).length > MAX_DATA_URL_CHARS || estimateBytesFromDataUrl(storyReferenceDataUrl) > 9_000_000) return json({ ok: false, error: 'Story reference still image is too large for OpenRouter upload.', code: 'image_too_large' }, 413);
   if (identityReferenceDataUrl && (!String(identityReferenceDataUrl).startsWith('data:image/') || String(identityReferenceDataUrl).length > MAX_DATA_URL_CHARS || estimateBytesFromDataUrl(identityReferenceDataUrl) > 9_000_000)) return json({ ok: false, error: 'Identity reference still image is invalid or too large for OpenRouter upload.', code: 'identity_image_too_large' }, 413);
 
-  const models = model_quality === 'max' ? [QUALITY_MODEL] : [PRIMARY_MODEL, QUALITY_MODEL];
+  const photographers = await getAvailablePhotographers(apiKey);
+  const models = photographers.map(item => item.model);
   const errors = [];
+  const photographerAttempts = [];
   for (const model of models) {
     try {
       const result = await callImageGeneration(apiKey, model, storyReferenceDataUrl, identityReferenceDataUrl, aspect_ratio, metadata);
+      photographerAttempts.push({ model, status: 'accepted' });
       return json({
         ok: true,
         generated_image_data_url: result.image_data_url,
         media_type: result.media_type,
         model_used: model,
         fallback_used: model !== models[0],
+        photographer_attempts: photographerAttempts,
+        ai_photographer_router: photographers.map(item => ({ model: item.model, role: item.role })),
         usage: result.usage,
         cost_reported: result.usage?.cost ?? null,
         payload_summary: result.payload_summary,
@@ -286,6 +305,7 @@ async function generateCover(apiKey, body) {
       let parsed;
       try { parsed = JSON.parse(error.message); } catch (_) { parsed = { code: error.message === 'timeout' ? 'timeout' : 'openrouter_error', message: error.message, failed_stage: 'request_sent' }; }
       errors.push({ model, ...parsed });
+      photographerAttempts.push({ model, status: 'failed', code: parsed.code });
       if (parsed.code === 'api_authentication_failure' || parsed.code === 'credit_exhausted' || parsed.code === 'rate_limit' || parsed.code === 'invalid_reference_image') break;
     }
   }

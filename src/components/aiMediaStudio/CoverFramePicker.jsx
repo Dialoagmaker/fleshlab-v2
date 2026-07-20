@@ -56,14 +56,11 @@ export default function CoverFramePicker({ frames, selectedIndex, identityRefere
     <div className="space-y-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h3 className="font-bold text-foreground">Creative Director Hero Frame Gallery</h3>
-          <p className="text-xs text-muted-foreground">Top 20 from the completed frame search. Click any frame to lock it and regenerate the cover candidates from that exact photograph only.</p>
+          <h3 className="font-bold text-foreground">Story frame gallery</h3>
+          <p className="text-xs text-muted-foreground">Choose the moment that should become the official promotional still.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-bold text-foreground">
-            <input type="checkbox" checked={lockedHero} onChange={event => onToggleLock(event.target.checked)} /> Lock Hero Frame
-          </label>
-          <Button size="sm" onClick={() => onBestFrame(candidates[0]?.index)}>Use Best Ranked Frame</Button>
+          <Button size="sm" onClick={() => onBestFrame(candidates[0]?.index)}>Use recommended frame</Button>
         </div>
       </div>
 
@@ -87,8 +84,7 @@ export default function CoverFramePicker({ frames, selectedIndex, identityRefere
               <MiniPosterPreview frame={frame} />
               <button type="button" onClick={() => onSelect(frame.index)} className="block w-full text-left">
                 <img src={frame.url} alt={`Frame at ${formatTime(frame.time)}`} className="aspect-video w-full object-cover" />
-                {selected && <Badge className="absolute left-2 top-2 gap-1"><Pin className="h-3 w-3" />Story Ref</Badge>}
-                {identityReference && <Badge variant="outline" className="absolute right-2 top-2 bg-background/80">Identity Ref</Badge>}
+                {selected && <Badge className="absolute left-2 top-2 gap-1"><Pin className="h-3 w-3" />Selected</Badge>}
               </button>
               <div className="space-y-3 p-3">
                 <div className="flex items-center justify-between gap-2 text-xs">
@@ -102,7 +98,7 @@ export default function CoverFramePicker({ frames, selectedIndex, identityRefere
                   <Button size="sm" variant={favorite ? "default" : "outline"} onClick={() => onToggleFavorite(frame.index)} title="Favorite"><Star className="h-3 w-3" /></Button>
                   <Button size="sm" variant={compared ? "default" : "outline"} onClick={() => onToggleCompare(frame.index)} title="Compare">{compareIndexes.indexOf(frame.index) + 1 || "+"}</Button>
                   <Button size="sm" variant="outline" onClick={() => setPreviewFrame(frame)} title="Fullscreen"><Maximize2 className="h-3 w-3" /></Button>
-                  <Button size="sm" variant="outline" onClick={() => onSelect(frame.index)} title="Generate Covers"><Palette className="h-3 w-3" /></Button>
+                  <Button size="sm" variant="outline" onClick={() => onSelect(frame.index)} title="Create promotional still"><Palette className="h-3 w-3" /></Button>
                   <Button size="sm" variant="outline" onClick={() => onReject(frame.index)} title="Reject"><X className="h-3 w-3" /></Button>
                 </div>
               </div>
@@ -113,8 +109,8 @@ export default function CoverFramePicker({ frames, selectedIndex, identityRefere
 
       <Dialog open={!!previewFrame} onOpenChange={() => setPreviewFrame(null)}>
         <DialogContent className="max-w-5xl">
-          <DialogHeader><DialogTitle>Hero Frame Preview · {previewFrame ? formatTime(previewFrame.time) : ""}</DialogTitle></DialogHeader>
-          {previewFrame && <img src={previewFrame.url} alt="Fullscreen hero frame preview" className="max-h-[78vh] w-full rounded-lg object-contain" />}
+          <DialogHeader><DialogTitle>Story frame preview · {previewFrame ? formatTime(previewFrame.time) : ""}</DialogTitle></DialogHeader>
+          {previewFrame && <img src={previewFrame.url} alt="Story frame preview" className="max-h-[78vh] w-full rounded-lg object-contain" />}
         </DialogContent>
       </Dialog>
     </div>

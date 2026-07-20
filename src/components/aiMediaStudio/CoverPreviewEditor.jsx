@@ -70,7 +70,6 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
   const metadataKey = JSON.stringify(metadata || {});
   const planSettingsKey = `${dims.width}x${dims.height}`;
   const selectedPlan = useMemo(() => renderedPlan?.selected || selectPosterVariant(plan, settings), [plan, renderedPlan, settings]);
-  const benchmark = selectedPlan?.diagnostic?.studioBenchmark;
   const critic = renderedPlan?.selected?.internalCritic;
   const canExport = rendered && Boolean(critic?.approved) && renderedPlan?.approvalStatus === "approved";
 
@@ -154,25 +153,15 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 className="font-bold text-foreground">FLESHLAB Creative Intelligence Engine</h3>
+          <h3 className="font-bold text-foreground">Official promotional cover</h3>
           <p className="text-xs text-muted-foreground">
-            {selectedPlan ? `${plan.family.label} · ${selectedPlan.variant} · Quality ${selectedPlan.score.total}/100` : `Exact output size: ${dims.width} × ${dims.height}px`}
+            {selectedPlan ? `Cover design ready · ${dims.width} × ${dims.height}px` : `Designing ${dims.width} × ${dims.height}px export`}
           </p>
         </div>
-        {canExport ? <Badge variant="outline">Approved for export</Badge> : rendered ? <Badge variant="secondary">Critic reviewing</Badge> : <Badge variant="secondary">Thinking before render</Badge>}
+        {canExport ? <Badge variant="outline">Ready for export</Badge> : rendered ? <Badge variant="secondary">Design needs another pass</Badge> : <Badge variant="secondary">Designing</Badge>}
       </div>
 
-      {selectedPlan?.diagnostic?.compositionBrief && (
-        <div className="whitespace-pre-line rounded-lg border border-border bg-secondary/25 p-3 text-xs leading-relaxed text-muted-foreground">
-          <b className="mb-1 block text-foreground">Creative Brief</b>
-          {selectedPlan.diagnostic.compositionBrief}
-        </div>
-      )}
-
-      <ReferenceBenchmark benchmark={benchmark} />
-      <InternalCriticPanel critic={critic} />
-
-      {warning && <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm text-yellow-300">{warning}</div>}
+      {warning && <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm text-yellow-300">The cover design needs another pass before export. Create the promotional still again to refine it.</div>}
       {error && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
       <div className="relative overflow-auto rounded-xl border border-border bg-black p-3">
