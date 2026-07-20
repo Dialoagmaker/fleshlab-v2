@@ -93,17 +93,55 @@ function estimateBytesFromDataUrl(dataUrl) {
   return Math.floor(base64.length * 0.75);
 }
 
+function extractProviderMessage(bodyText) {
+  const raw = String(bodyText || '');
+  try {
+    const data = JSON.parse(raw);
+    const direct = data?.error?.message || data?.error_description || data?.message || data?.detail || data?.details;
+    if (typeof direct === 'string') return direct;
+    if (data?.error && typeof data.error === 'string') return data.error;
+    return JSON.stringify(data);
+  } catch (_) {
+    return raw;
+  }
+}
+
+function buildProviderErrorDetails(status, bodyText) {
+  const rawResponse = String(bodyText || '');
+  return {
+    http_status: status,
+    provider_message: extractProviderMessage(rawResponse),
+    raw_response: rawResponse.slice(0, 6000)
+  };
+}
+
 function normalizeError(status, bodyText) {
   const lower = String(bodyText || '').toLowerCase();
-  const raw = String(bodyText || '').slice(0, 1200);
-  if (status === 401 || status === 403) return { code: 'api_authentication_failure', message: 'OpenRouter API authentication failed.', raw };
-  if (status === 402 || lower.includes('credit') || lower.includes('insufficient')) return { code: 'credit_exhausted', message: 'OpenRouter credit is exhausted or insufficient.', raw };
-  if (status === 404 || lower.includes('not found') || lower.includes('unsupported')) return { code: 'unsupported_model', message: 'The requested OpenRouter image model is unavailable or unsupported.', raw };
-  if (status === 422 && (lower.includes('invalid') || lower.includes('corrupted image'))) return { code: 'invalid_reference_image', message: 'The AI Photographer rejected the reference image as invalid or corrupted.', raw };
-  if (status === 429) return { code: 'rate_limit', message: 'OpenRouter rate limit reached.', raw };
-  if (lower.includes('refus') || lower.includes('policy') || lower.includes('moderation')) return { code: 'provider_refusal', message: 'The provider refused this image request.', raw };
-  if (lower.includes('image') && lower.includes('unavailable')) return { code: 'image_generation_unavailable', message: 'OpenRouter image generation is unavailable for this model/provider.', raw };
-  return { code: 'openrouter_error', message: `OpenRouter request failed with status ${status}.`, raw };
+  const provider_error = buildProviderErrorDetails(status, bodyText);
+  const raw = provider_error.raw_response;
+  if (status === 401 || status === 403) return { code: 'api_authentication_failure', message: 'OpenRouter API authentication failed.', raw, provider_error };
+  if (status === 402 || lower.includes('credit') || lower.includes('insufficient')) return { code: 'credit_exhausted', message: 'OpenRouter credit is exhausted or insufficient.', raw, provider_error };
+  if (status === 404 || lower.includes('not found') || lower.includes('unsupported')) return { code: 'unsupported_model', message: 'The requested OpenRouter image model is unavailable or unsupported.', raw, provider_error };
+  if (status === 422 && (lower.includes('invalid') || lower.includes('corrupted image'))) return { code: 'invalid_reference_image', message: 'The AI Photographer rejected the reference image as invalid or corrupted.', raw, provider_error };
+  if (status === 429) return { code: 'rate_limit', message: 'OpenRouter rate limit reached.', raw, provider_error };
+  if (lower.includes('refus') || lower.includes('policy') || lower.includes('moderation')) return { code: 'provider_refusal', message: provider_error.provider_message || 'Provider rejected the image request.', raw, provider_error };
+  if (lower.includes('image') && lower.includes('unavailable')) return { code: 'image_generation_unavailable', message: provider_error.provider_message || 'Image generation is unavailable for this model/provider.', raw, provider_error };
+  return { code: 'openrouter_error', message: provider_error.provider_message || `OpenRouter request failed with status ${status}.`, raw, provider_error };
+}
+
+function logProviderRejection(provider, model, parsed) {
+  const details = parsed?.provider_error || {};
+  console.error('AI Photographer provider rejection', JSON.stringify({
+    provider_id: provider?.id,
+    provider_type: provider?.type,
+    model,
+    code: parsed?.code,
+    http_status: details.http_status ?? parsed?.status ?? null,
+    provider_message: details.provider_message ?? parsed?.message ?? '',
+    raw_response: details.raw_response ?? parsed?.raw ?? '',
+    failed_stage: parsed?.failed_stage || null,
+    payload_summary: parsed?.payload_summary || null
+  }));
 }
 
 async function openRouterFetch(path, apiKey, options = {}, timeoutMs = 120000) {
@@ -293,6 +331,7 @@ async function runPhotographerProvider(provider, storyReferenceDataUrl, identity
     } catch (error) {
       let parsed;
       try { parsed = JSON.parse(error.message); } catch (_) { parsed = { code: error.message === 'timeout' ? 'timeout' : 'provider_error', message: error.message, failed_stage: 'request_sent' }; }
+      logProviderRejection(provider, model, parsed);
       errors.push({ provider_id: provider.id, model, ...parsed });
       photographerAttempts.push({ provider_id: provider.id, model, status: 'failed', code: parsed.code });
       if (parsed.code === 'api_authentication_failure' || parsed.code === 'credit_exhausted' || parsed.code === 'rate_limit' || parsed.code === 'invalid_reference_image') break;
@@ -345,7 +384,7 @@ async function generateCover(apiKey, body) {
     } catch (error) {
       let parsed;
       try { parsed = JSON.parse(error.message); } catch (_) { parsed = { code: 'provider_error', message: error.message, provider_id: provider.id }; }
-      console.warn('AI Photographer provider failed', JSON.stringify(parsed));
+      console.warn('AI Photographer provider exhausted', JSON.stringify({ provider_id: provider.id, code: parsed.code, errors: parsed.errors || [] }));
       allErrors.push(parsed);
       allAttempts.push(...(parsed.photographerAttempts || []));
     }
