@@ -123,13 +123,12 @@ function paintSceneArchitecture(ctx, map, width, height, direction) {
     ctx.fillStyle = lamp;
     ctx.fillRect(0, 0, width, height);
   } else {
-    for (let i = 0; i < 12; i += 1) {
-      const x = width * ((i * 0.137 + direction.seed) % 1);
-      ctx.beginPath();
-      ctx.moveTo(x, height * 0.02);
-      ctx.lineTo(x + width * 0.06, height * 0.95);
-      ctx.stroke();
-    }
+    const wallDepth = ctx.createLinearGradient(0, 0, width, height);
+    wallDepth.addColorStop(0, "rgba(255,255,255,0.035)");
+    wallDepth.addColorStop(0.42, "rgba(255,255,255,0.01)");
+    wallDepth.addColorStop(1, "rgba(0,0,0,0.34)");
+    ctx.fillStyle = wallDepth;
+    ctx.fillRect(0, 0, width, height);
   }
   ctx.restore();
 }
@@ -138,16 +137,12 @@ function paintSceneAtmosphere(ctx, map, width, height, direction) {
   ctx.save();
   outpaintClip(ctx, map, width, height);
   ctx.globalCompositeOperation = "screen";
-  for (let i = 0; i < 42; i += 1) {
-    const x = width * (((i * 41 + Math.round(direction.seed * 100)) % 100) / 100);
-    const y = height * (((i * 67 + 13) % 100) / 100);
-    const r = width * (0.01 + (i % 4) * 0.006);
-    const haze = ctx.createRadialGradient(x, y, 0, x, y, r);
-    haze.addColorStop(0, `rgba(${direction.secondary},${direction.environment === "bathroom" ? 0.075 : 0.045})`);
-    haze.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = haze;
-    ctx.fillRect(x - r, y - r, r * 2, r * 2);
-  }
+  const haze = ctx.createLinearGradient(0, height * 0.12, width, height * 0.86);
+  haze.addColorStop(0, `rgba(${direction.secondary},${direction.environment === "bathroom" ? 0.075 : 0.04})`);
+  haze.addColorStop(0.5, `rgba(${direction.secondary},${direction.environment === "bathroom" ? 0.05 : 0.025})`);
+  haze.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = haze;
+  ctx.fillRect(0, 0, width, height);
   ctx.restore();
 }
 
@@ -353,15 +348,13 @@ function getLogo() {
 async function paintLogo(ctx, map, width, direction, settings = {}) {
   const logo = await getLogo();
   const scale = clamp(manualValue(settings, "logoScale", 100) / 100, 0.34, 2.4);
-  const w = width * (0.078 + direction.seed * 0.018) * scale;
+  const w = width * (0.07 + direction.seed * 0.01) * scale;
   const h = w * (logo.height / logo.width);
   ctx.save();
-  ctx.globalAlpha = 0.74;
-  ctx.shadowColor = "rgba(0,0,0,0.9)";
-  ctx.shadowBlur = width * 0.01;
+  ctx.globalAlpha = 0.68;
+  ctx.shadowColor = "rgba(0,0,0,0.85)";
+  ctx.shadowBlur = width * 0.012;
   ctx.drawImage(logo, map.logoX, map.logoY, w, h);
-  ctx.fillStyle = `rgba(${direction.brandAccent || direction.accent},0.52)`;
-  ctx.fillRect(map.logoX, map.logoY + h + width * 0.007, w * (0.34 + direction.seed * 0.22), Math.max(1.5, width * 0.002));
   ctx.restore();
   return { w, h };
 }
@@ -413,25 +406,10 @@ function paintLightShaping(ctx, map, width, height, direction) {
 function paintDepthLayer(ctx, map, width, height, direction) {
   if (map.protectComposition) return;
   ctx.save();
-  ctx.fillStyle = "rgba(0,0,0,0.42)";
+  ctx.fillStyle = "rgba(0,0,0,0.44)";
   ctx.beginPath();
-  ctx.ellipse(map.hero.x + map.hero.w * 0.52, map.hero.y + map.hero.h * 0.93, map.hero.w * 0.58, map.hero.h * 0.16, 0, 0, Math.PI * 2);
+  ctx.ellipse(map.hero.x + map.hero.w * 0.52, map.hero.y + map.hero.h * 0.94, map.hero.w * 0.68, map.hero.h * 0.17, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.globalCompositeOperation = "screen";
-  ctx.strokeStyle = `rgba(${direction.accent},${0.16 + direction.density * 0.18})`;
-  ctx.lineWidth = width * (0.002 + direction.seed * 0.004);
-  ctx.beginPath();
-  if (map.tension === "diagonal-rise") {
-    ctx.moveTo(width * -0.05, height * 0.78);
-    ctx.bezierCurveTo(width * 0.26, height * 0.48, width * 0.58, height * 0.6, width * 1.05, height * 0.16);
-  } else if (map.tension === "floating-offset") {
-    ctx.moveTo(width * 0.08, height * 0.18);
-    ctx.bezierCurveTo(width * 0.42, height * 0.08, width * 0.68, height * 0.34, width * 0.92, height * 0.78);
-  } else {
-    ctx.moveTo(width * 0.06, height * 0.52);
-    ctx.bezierCurveTo(width * 0.28, height * 0.36, width * 0.72, height * 0.66, width * 0.95, height * 0.44);
-  }
-  ctx.stroke();
   ctx.restore();
 }
 
@@ -449,11 +427,11 @@ function paintHeroEnhancement(ctx, image, map, width, height, direction, setting
 
   ctx.save();
   ctx.globalCompositeOperation = "screen";
-  ctx.strokeStyle = `rgba(${direction.secondary},${0.12 + direction.density * 0.12})`;
-  ctx.lineWidth = width * 0.003;
-  ctx.beginPath();
-  ctx.ellipse(map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.46, Math.max(40, map.hero.w * 0.67), Math.max(60, map.hero.h * 0.59), 0, Math.PI * 0.72, Math.PI * 1.55);
-  ctx.stroke();
+  const softBounce = ctx.createRadialGradient(map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.42, 0, map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.42, map.hero.h * 0.62);
+  softBounce.addColorStop(0, `rgba(${direction.secondary},0.07)`);
+  softBounce.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = softBounce;
+  ctx.fillRect(0, 0, width, height);
   ctx.restore();
 }
 
@@ -461,17 +439,16 @@ function paintAtmosphere(ctx, map, width, height, direction) {
   if (map.protectComposition) return;
   ctx.save();
   ctx.globalCompositeOperation = "screen";
-  for (let i = 0; i < Math.round(28 + direction.density * 76); i += 1) {
-    const x = width * (((i * 37 + Math.round(direction.seed * 100)) % 100) / 100);
-    const y = height * (((i * 61 + Math.round(direction.seed * 73)) % 100) / 100);
-    const atmosphereAlpha = direction.environment === "bathroom" ? 0.05 : direction.environment === "outdoor" ? 0.045 : 0.08;
-    ctx.fillStyle = i % 5 === 0 ? `rgba(${direction.accent},0.18)` : `rgba(${direction.secondary},${atmosphereAlpha})`;
-    ctx.fillRect(x, y, width * (0.001 + (i % 3) * 0.0007), width * (0.001 + (i % 3) * 0.0007));
-  }
-  const haze = ctx.createRadialGradient(map.titleX, map.titleY, 0, map.titleX, map.titleY, width * 0.36);
-  haze.addColorStop(0, `rgba(${direction.accent},0.12)`);
-  haze.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = haze;
+  const roomHaze = ctx.createLinearGradient(0, height * 0.18, width, height * 0.82);
+  roomHaze.addColorStop(0, `rgba(${direction.secondary},${direction.environment === "bathroom" ? 0.08 : 0.045})`);
+  roomHaze.addColorStop(0.48, `rgba(${direction.secondary},${direction.environment === "outdoor" ? 0.04 : 0.06})`);
+  roomHaze.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = roomHaze;
+  ctx.fillRect(0, 0, width, height);
+  const airPocket = ctx.createRadialGradient(map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.28, 0, map.hero.x + map.hero.w * 0.5, map.hero.y + map.hero.h * 0.28, width * 0.46);
+  airPocket.addColorStop(0, `rgba(${direction.secondary},0.07)`);
+  airPocket.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = airPocket;
   ctx.fillRect(0, 0, width, height);
   ctx.restore();
 }
@@ -481,82 +458,34 @@ function paintEntertainmentComposition(ctx, map, width, height, direction) {
   ctx.save();
   const heroCx = map.hero.x + map.hero.w * 0.5;
   const heroCy = map.hero.y + map.hero.h * 0.38;
-  const titleCx = map.titleX + map.titleMaxW * 0.42;
-  const titleCy = map.titleY + height * 0.12;
 
   ctx.globalCompositeOperation = "screen";
-  const heroKey = ctx.createRadialGradient(heroCx, heroCy, 0, heroCx, heroCy, Math.max(map.hero.w, map.hero.h) * 0.82);
-  heroKey.addColorStop(0, "rgba(255,255,255,0.18)");
-  heroKey.addColorStop(0.32, `rgba(${direction.secondary},0.14)`);
-  heroKey.addColorStop(0.72, `rgba(${direction.accent},0.08)`);
-  heroKey.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = heroKey;
+  const motivatedKey = ctx.createRadialGradient(heroCx, heroCy, 0, heroCx, heroCy, Math.max(map.hero.w, map.hero.h) * 0.82);
+  motivatedKey.addColorStop(0, "rgba(255,255,255,0.12)");
+  motivatedKey.addColorStop(0.36, `rgba(${direction.secondary},0.08)`);
+  motivatedKey.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = motivatedKey;
   ctx.fillRect(0, 0, width, height);
-
-  const eyeLine = ctx.createLinearGradient(heroCx, heroCy, titleCx, titleCy);
-  eyeLine.addColorStop(0, `rgba(${direction.secondary},0.0)`);
-  eyeLine.addColorStop(0.42, `rgba(${direction.secondary},0.11)`);
-  eyeLine.addColorStop(1, `rgba(${direction.accent},0.16)`);
-  ctx.strokeStyle = eyeLine;
-  ctx.lineWidth = width * 0.018;
-  ctx.beginPath();
-  ctx.moveTo(heroCx, heroCy);
-  ctx.bezierCurveTo(width * (map.negativeSide === "left" ? 0.34 : 0.66), height * 0.28, width * (map.negativeSide === "left" ? 0.22 : 0.78), height * 0.62, titleCx, titleCy);
-  ctx.stroke();
 
   ctx.globalCompositeOperation = "multiply";
-  const storyMask = ctx.createRadialGradient(heroCx, heroCy, Math.max(map.hero.w, map.hero.h) * 0.2, heroCx, heroCy, width * 0.72);
-  storyMask.addColorStop(0, "rgba(0,0,0,0)");
-  storyMask.addColorStop(0.48, "rgba(0,0,0,0.1)");
-  storyMask.addColorStop(1, "rgba(0,0,0,0.74)");
-  ctx.fillStyle = storyMask;
+  const naturalFalloff = ctx.createRadialGradient(heroCx, heroCy, Math.max(map.hero.w, map.hero.h) * 0.22, heroCx, heroCy, width * 0.76);
+  naturalFalloff.addColorStop(0, "rgba(0,0,0,0)");
+  naturalFalloff.addColorStop(0.54, "rgba(0,0,0,0.08)");
+  naturalFalloff.addColorStop(1, "rgba(0,0,0,0.68)");
+  ctx.fillStyle = naturalFalloff;
   ctx.fillRect(0, 0, width, height);
-  ctx.restore();
-
-  ctx.save();
-  ctx.globalCompositeOperation = "source-over";
-  ctx.fillStyle = "rgba(0,0,0,0.34)";
-  ctx.beginPath();
-  if (map.negativeSide === "left") {
-    ctx.moveTo(0, height);
-    ctx.lineTo(width * 0.42, height);
-    ctx.bezierCurveTo(width * 0.24, height * 0.62, width * 0.18, height * 0.34, 0, height * 0.18);
-  } else {
-    ctx.moveTo(width, height);
-    ctx.lineTo(width * 0.58, height);
-    ctx.bezierCurveTo(width * 0.76, height * 0.62, width * 0.82, height * 0.34, width, height * 0.18);
-  }
-  ctx.closePath();
-  ctx.fill();
   ctx.restore();
 }
 
-function paintBrandAccents(ctx, map, width, height, direction) {
-  ctx.save();
-  ctx.fillStyle = `rgba(${direction.brandAccent || direction.accent},0.58)`;
-  const markW = width * (0.006 + direction.seed * 0.006);
-  if (map.protectComposition) {
-    ctx.fillRect(map.titleX, height * 0.16, Math.min(map.titleMaxW, width * 0.2), markW);
-  } else if (map.tension === "edge-whisper") {
-    ctx.fillRect(width * 0.045, height * 0.12, markW, height * 0.62);
-    ctx.fillRect(width * 0.045, height * 0.12, width * 0.13, markW);
-  } else if (map.tension === "center-crush") {
-    ctx.translate(width * 0.5, height * 0.5);
-    ctx.rotate(-0.18 - direction.seed * 0.1);
-    ctx.fillRect(-width * 0.36, -height * 0.006, width * 0.72, height * 0.012);
-  } else {
-    ctx.translate(map.titleX, map.titleY - height * 0.055);
-    ctx.rotate(map.negativeSide === "left" ? -0.12 : 0.12);
-    ctx.fillRect(0, 0, width * (0.16 + direction.seed * 0.13), markW);
-  }
-  ctx.restore();
+function paintBrandAccents() {
+  return;
 }
 
 function paintTitleBlock(ctx, map, width, height, plan, direction, settings = {}) {
   const campaign = plan.campaign || {};
   const title = upper(campaign.mainTitle || campaign.title || "");
   const words = title.split(/\s+/).filter(Boolean);
-  const brushWord = !map.protectComposition && !direction.editorial && words.length > 1 ? words.pop() : "";
+  const brushWord = "";
   const blockTitle = words.length ? words.join(" ") : title;
   const titleFamily = direction.editorial || map.protectComposition ? "Inter" : "Bebas Neue";
   const baseSize = manualValue(settings, "titleSize", map.protectComposition ? width * 0.05 : direction.editorial ? width * 0.061 : width * 0.118);
@@ -573,11 +502,6 @@ function paintTitleBlock(ctx, map, width, height, plan, direction, settings = {}
   ctx.font = font(block.size, titleFamily, 900);
   block.lines.forEach((line, index) => {
     const offset = map.protectComposition ? 0 : map.tension === "diagonal-rise" ? index * width * 0.018 : map.tension === "poster-stack" ? (index % 2) * width * 0.028 : 0;
-    ctx.save();
-    ctx.globalAlpha = 0.22;
-    ctx.fillStyle = `rgba(${direction.accent},0.9)`;
-    ctx.fillText(line, map.titleX + offset + width * 0.012, y + height * 0.012);
-    ctx.restore();
     ctx.strokeText(line, map.titleX + offset, y);
     ctx.fillText(line, map.titleX + offset, y);
     y += block.lineHeight;
@@ -605,8 +529,6 @@ function paintTitleBlock(ctx, map, width, height, plan, direction, settings = {}
     ctx.fillStyle = "rgba(255,255,255,0.88)";
     const subtitle = upper(campaign.subtitle || campaign.episodeTitle).slice(0, 46);
     ctx.fillText(subtitle, map.titleX + width * 0.015, y);
-    ctx.fillStyle = `rgba(${direction.accent},0.95)`;
-    ctx.fillRect(map.titleX, y - width * 0.016, width * 0.006, width * 0.012);
     y += height * 0.038;
   }
 
@@ -622,8 +544,6 @@ function paintPerformerBlock(ctx, map, width, height, plan, direction) {
   ctx.font = font(width * 0.018, "Inter", 900);
   ctx.fillStyle = "rgba(255,255,255,0.72)";
   ctx.fillText(performer, map.ctaX, y);
-  ctx.fillStyle = `rgba(${direction.accent},0.8)`;
-  ctx.fillRect(map.ctaX, y + height * 0.012, Math.min(width * 0.18, ctx.measureText(performer).width), 2);
   ctx.restore();
 }
 
@@ -672,9 +592,6 @@ function finalGrade(ctx, width, height, direction, map = null) {
   vignette.addColorStop(1, `rgba(0,0,0,${direction.editorial ? 0.42 : 0.66})`);
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, width, height);
-  ctx.strokeStyle = `rgba(${direction.accent},0.36)`;
-  ctx.lineWidth = Math.max(2, width * 0.002);
-  ctx.strokeRect(width * 0.018, width * 0.018, width - width * 0.036, height - width * 0.036);
   ctx.restore();
 }
 
@@ -737,29 +654,8 @@ function paintLocalHeroContrast(ctx, image, map, width, height, direction, setti
   ctx.restore();
 }
 
-function paintPremiumMaterials(ctx, width, height, direction, map = null) {
-  ctx.save();
-  if (map?.protectComposition) outpaintClip(ctx, map, width, height);
-  ctx.globalCompositeOperation = "overlay";
-  for (let i = 0; i < 260; i += 1) {
-    const x = width * (((i * 29 + Math.round(direction.seed * 91)) % 100) / 100);
-    const y = height * (((i * 47 + Math.round(direction.seed * 67)) % 100) / 100);
-    const alpha = i % 2 ? 0.035 : 0.02;
-    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-    ctx.fillRect(x, y, Math.max(1, width * 0.001), Math.max(1, width * 0.001));
-  }
-  ctx.globalCompositeOperation = "screen";
-  ctx.globalAlpha = 0.16;
-  ctx.strokeStyle = `rgba(${direction.secondary},1)`;
-  ctx.lineWidth = Math.max(1, width * 0.0008);
-  for (let i = 0; i < 14; i += 1) {
-    const x = width * (((i * 53) % 100) / 100);
-    ctx.beginPath();
-    ctx.moveTo(x, height * 0.08);
-    ctx.lineTo(x + width * (0.018 + (i % 4) * 0.01), height * 0.88);
-    ctx.stroke();
-  }
-  ctx.restore();
+function paintPremiumMaterials() {
+  return;
 }
 
 function scoreCommercialAdvertising(plan, map, direction, width, height) {
