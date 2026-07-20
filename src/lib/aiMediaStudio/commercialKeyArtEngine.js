@@ -92,8 +92,8 @@ export async function generateCommercialKeyArtPlan(image, metadata = {}, setting
     variants,
     family: { id: "fleshlab_inferred_language", label: languagePlan.selected.label },
     artDirection: {
-      pipeline: ["World Knowledge", "Design Knowledge", "Creative Direction", "Composition", "Photography", "Typography", "Branding", "Critique", "Automatic redesign", "Export"],
-      visualSystemId: "fleshlab-inferred-visual-language",
+      pipeline: ["Video", "Moment Selection", "Creative Director", "Photographic Brief", "AI Photographer", "Professional Hero Image", "Art Director", "Typography", "Branding", "Quality Review", "Export"],
+      visualSystemId: "fleshlab-ai-photographer-cover-system",
       compositionProtection: languagePlan.selected.crop.compositionProtection || null,
     },
     preparedIterations: languagePlan.candidates.map((candidate, index) => ({

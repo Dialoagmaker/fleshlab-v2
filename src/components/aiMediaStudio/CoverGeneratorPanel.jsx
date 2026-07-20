@@ -6,7 +6,6 @@ import CoverFramePicker from "./CoverFramePicker";
 import CoverMetadataForm from "./CoverMetadataForm";
 import CoverPresetControls from "./CoverPresetControls";
 import OpenRouterCoverMode from "./OpenRouterCoverMode";
-import CoverPreviewEditor from "./CoverPreviewEditor";
 import { DEFAULT_COVER_SETTINGS } from "@/lib/aiMediaStudio/coverRenderer";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
@@ -61,8 +60,9 @@ export default function CoverGeneratorPanel({ item }) {
   const toggleCompare = (index) => setCompareFrameIndexes(current => current.includes(index) ? current.filter(itemIndex => itemIndex !== index) : current.length >= 4 ? current : [...current, index]);
   const rendererMetadata = { ...metadata, lockUserText };
 
-  const generateAutomaticCover = () => {
+  const startAiPhotographer = () => {
     lockAndGenerateFromFrame(bestIndex);
+    setGenerationStarted(true);
   };
 
   if (!item?.analysis) {
@@ -83,9 +83,8 @@ export default function CoverGeneratorPanel({ item }) {
 
   return (
     <div className="space-y-4">
-      <Card><CardHeader><CardTitle className="flex items-center justify-between gap-3 text-sm">Production cover workflow <Badge variant="outline">Local Editorial</Badge></CardTitle></CardHeader><CardContent className="space-y-5"><Button onClick={generateAutomaticCover} disabled={bestIndex === null} className="h-12 w-full gap-2 text-sm font-black md:w-auto"><Sparkles className="h-4 w-4" />Create Local Editorial Covers</Button><div className="rounded-lg border border-border bg-secondary/30 p-3 text-xs text-muted-foreground">Local mode creates clean editorial layouts from the selected frame. Premium FLESHLAB key art requires AI image reconstruction first; after approval, local typography and branding are applied.</div><div className="grid gap-2 lg:grid-cols-1"><Button variant="outline" onClick={() => setGenerationStarted(true)}>Generate premium key art with AI reconstruction</Button></div><CoverFramePicker frames={item.frames} selectedIndex={actualIndex} identityReferenceIndex={identityReferenceFrame?.index} rejectedIndexes={rejectedFrameIndexes} favoriteIndexes={favoriteFrameIndexes} compareIndexes={compareFrameIndexes} lockedHero={lockedHeroFrame} onSelect={lockAndGenerateFromFrame} onBestFrame={lockAndGenerateFromFrame} onReject={rejectFrame} onToggleFavorite={toggleFavorite} onToggleCompare={toggleCompare} onToggleLock={setLockedHeroFrame} /><CoverMetadataForm metadata={metadata} onChange={setMetadata} lockUserText={lockUserText} onLockUserTextChange={setLockUserText} /><CoverPresetControls settings={settings} onChange={updateSettings} /><CoverAdjustmentControls settings={settings} onChange={updateSettings} onReset={resetSettings} /></CardContent></Card>
-      {!frame ? <Card><CardContent className="p-6 text-sm font-semibold text-destructive">No available hero frame is selected. Choose a ranked frame from the Creative Director gallery.</CardContent></Card> : <Card><CardHeader><CardTitle className="flex items-center justify-between gap-3 text-sm">Local editorial preview <Badge variant="outline">Frame-based layout</Badge></CardTitle></CardHeader><CardContent><CoverPreviewEditor frame={frame} metadata={rendererMetadata} settings={settings} fileSuffix="local-cover" /></CardContent></Card>}
-      {frame && generationStarted && <OpenRouterCoverMode frame={frame} identityReferenceFrame={identityReferenceFrame} metadata={rendererMetadata} settings={settings} />}
+      <Card><CardHeader><CardTitle className="flex items-center justify-between gap-3 text-sm">FLESHLAB AI Photographer workflow <Badge variant="outline">Photo first</Badge></CardTitle></CardHeader><CardContent className="space-y-5"><Button onClick={startAiPhotographer} disabled={bestIndex === null} className="h-12 w-full gap-2 text-sm font-black md:w-auto"><Sparkles className="h-4 w-4" />Start AI Photographer</Button><div className="rounded-lg border border-border bg-secondary/30 p-3 text-xs text-muted-foreground">The selected frame now serves only as moment reference. FLESHLAB generates a professional hero photograph first, then applies typography and branding after approval.</div><CoverFramePicker frames={item.frames} selectedIndex={actualIndex} identityReferenceIndex={identityReferenceFrame?.index} rejectedIndexes={rejectedFrameIndexes} favoriteIndexes={favoriteFrameIndexes} compareIndexes={compareFrameIndexes} lockedHero={lockedHeroFrame} onSelect={lockAndGenerateFromFrame} onBestFrame={lockAndGenerateFromFrame} onReject={rejectFrame} onToggleFavorite={toggleFavorite} onToggleCompare={toggleCompare} onToggleLock={setLockedHeroFrame} /><CoverMetadataForm metadata={metadata} onChange={setMetadata} lockUserText={lockUserText} onLockUserTextChange={setLockUserText} /><CoverPresetControls settings={settings} onChange={updateSettings} /><CoverAdjustmentControls settings={settings} onChange={updateSettings} onReset={resetSettings} /></CardContent></Card>
+      {!frame ? <Card><CardContent className="p-6 text-sm font-semibold text-destructive">No available moment is selected. Choose a ranked frame for the AI Photographer.</CardContent></Card> : generationStarted ? <OpenRouterCoverMode frame={frame} identityReferenceFrame={identityReferenceFrame} metadata={rendererMetadata} settings={settings} /> : <Card><CardContent className="p-6 text-sm text-muted-foreground">Select a moment and start the AI Photographer. Smartphone-frame decoration is no longer a production export path.</CardContent></Card>}
     </div>
   );
 }

@@ -72,34 +72,43 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
     setDebugStages({ frameExtracted: Boolean(frame) });
     console.info("Frame extraction", Boolean(frame));
     const storyDataUrl = await frameToDataUrl(frame);
+    const identityDataUrl = identityReferenceFrame ? await frameToDataUrl(identityReferenceFrame) : null;
     console.info("Image encoding", storyDataUrl?.startsWith("data:image/"));
-    setDebugStages(stage => ({ ...stage, imageEncoded: storyDataUrl?.startsWith("data:image/") }));
-    const payload = {
-      action: "generate",
-      consent: true,
-      frame_data_url: storyDataUrl,
-      model_quality: quality,
-      aspect_ratio: "16:9",
-      metadata: { ...metadata, identityReferenceTime: identityReferenceFrame ? formatTime(identityReferenceFrame.time) : "none" },
-    };
-    console.info("Payload creation", true);
-    setDebugStages(stage => ({ ...stage, payloadCreated: true, privacyValidation: true }));
-    console.info("OpenRouter request");
-    setDebugStages(stage => ({ ...stage, requestSent: true }));
-    const response = await base44.functions.invoke("openRouterAICover", payload);
-    const data = response.data;
-    console.info("OpenRouter response", Boolean(data));
-    setDebugStages(stage => ({ ...stage, responseReceived: Boolean(data) }));
-    if (!data?.ok) throw new Error(data?.error || "OpenRouter generation failed");
-    const blob = dataUrlToBlob(data.generated_image_data_url);
-    const generated = { blob, url: URL.createObjectURL(blob), model: data.model_used, cost: data.cost_reported, usage: data.usage, fallback: false };
-    setResult(generated);
+    setDebugStages(stage => ({ ...stage, imageEncoded: storyDataUrl?.startsWith("data:image/"), identityEncoded: identityDataUrl?.startsWith("data:image/") }));
+    let bestGenerated = null;
+    let bestValidation = null;
+    let reviewDirective = "";
+    const maxAttempts = identityReferenceFrame?.blob ? 2 : 1;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      const payload = {
+        action: "generate",
+        consent: true,
+        story_reference_data_url: storyDataUrl,
+        identity_reference_data_url: identityDataUrl,
+        model_quality: quality,
+        aspect_ratio: "16:9",
+        metadata: { ...metadata, identityReferenceTime: identityReferenceFrame ? formatTime(identityReferenceFrame.time) : "none", regenerationDirective: reviewDirective },
+      };
+      console.info("Payload creation", true);
+      setDebugStages(stage => ({ ...stage, payloadCreated: true, privacyValidation: true, requestSent: true }));
+      const response = await base44.functions.invoke("openRouterAICover", payload);
+      const data = response.data;
+      console.info("OpenRouter response", Boolean(data));
+      setDebugStages(stage => ({ ...stage, responseReceived: Boolean(data), aiPhotographerAttempts: attempt }));
+      if (!data?.ok) throw new Error(data?.error || "OpenRouter generation failed");
+      const blob = dataUrlToBlob(data.generated_image_data_url);
+      const identityValidation = identityReferenceFrame?.blob
+        ? await validateIdentityPreservation(identityReferenceFrame.blob, blob, identityReferenceFrame)
+        : { accepted: false, identityConfidence: 0, checks: { face: 0, hair: 0, body: 0, pose: 0, overall: 0 }, reference: null };
+      bestGenerated = { blob, url: URL.createObjectURL(blob), model: data.model_used, cost: data.cost_reported, usage: data.usage, fallback: data.fallback_used, creativeBrief: data.creative_brief, pipeline: data.pipeline, attempt };
+      bestValidation = identityValidation;
+      if (identityValidation.accepted || attempt === maxAttempts) break;
+      reviewDirective = `Regenerate as a more faithful professional photograph: identity confidence was ${identityValidation.identityConfidence}%. Preserve the same face, hair, body, pose, and action more accurately while improving only camera, lighting, lens, depth, color, contrast, and cinematic realism.`;
+    }
+    setResult(bestGenerated);
     console.info("Preview rendering", true);
     setDebugStages(stage => ({ ...stage, previewRendered: true }));
-    const identityValidation = identityReferenceFrame?.blob
-      ? await validateIdentityPreservation(identityReferenceFrame.blob, blob, identityReferenceFrame)
-      : { accepted: false, identityConfidence: 0, checks: { face: 0, hair: 0, body: 0, pose: 0, overall: 0 }, reference: null };
-    setValidation(identityValidation);
+    setValidation(bestValidation);
     setReviewStatus("pending");
     setLoading(false);
   };
@@ -126,7 +135,8 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
   const lowIdentity = validation && !validation.accepted;
   const stageItems = [
     ["Frame extracted", debugStages.frameExtracted],
-    ["Image encoded", debugStages.imageEncoded],
+    ["Story image encoded", debugStages.imageEncoded],
+    ["Identity image encoded", debugStages.identityEncoded || !identityReferenceFrame],
     ["Payload created", debugStages.payloadCreated],
     ["Privacy validation", debugStages.privacyValidation],
     ["Request sent", debugStages.requestSent],
@@ -137,7 +147,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-primary/35 bg-primary/10 p-4">
-        <div className="flex items-start gap-3"><AlertTriangle className="mt-0.5 h-5 w-5 text-primary" /><div className="space-y-2 text-sm"><p className="font-semibold text-foreground">Premium key art starts with AI hero reconstruction.</p><p className="text-muted-foreground">The selected frame directs the story, the identity frame protects likeness, and local layout is applied only after you approve the reconstructed hero image.</p></div></div>
+        <div className="flex items-start gap-3"><AlertTriangle className="mt-0.5 h-5 w-5 text-primary" /><div className="space-y-2 text-sm"><p className="font-semibold text-foreground">FLESHLAB AI Photographer Engine</p><p className="text-muted-foreground">The smartphone frame is reference material only. The system first creates a professional 16:9 promotional photograph; only after approval does the Art Director add typography and branding.</p></div></div>
       </div>
       <div className="grid gap-4 xl:grid-cols-[340px_1fr]">
         <div className="space-y-4 rounded-xl border border-border bg-card p-4">
@@ -150,7 +160,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
           </div>
           <div className="space-y-1"><Label className="text-xs">OpenRouter image model</Label><Select value={quality} onValueChange={setQuality}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="pro">black-forest-labs/flux.2-pro</SelectItem><SelectItem value="max">black-forest-labs/flux.2-max quality mode</SelectItem></SelectContent></Select></div>
           <label className="flex items-start gap-3 rounded-lg border border-border p-3 text-sm text-muted-foreground"><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} className="mt-1 accent-primary" /><span>I approve sending the story frame and, when found, the auto-selected identity frame to OpenRouter for premium hero-image reconstruction. The original video is not uploaded and FLESHLAB branding remains local.</span></label>
-          <Button disabled={!frame || !consent || loading} onClick={handleGenerate} className="w-full gap-2"><Wand2 className="h-4 w-4" />{loading ? "Reconstructing hero image..." : "Generate premium hero image"}</Button>
+          <Button disabled={!frame || !consent || loading} onClick={handleGenerate} className="w-full gap-2"><Wand2 className="h-4 w-4" />{loading ? "AI Photographer shooting hero image..." : "Generate professional hero photograph"}</Button>
           <div className="rounded-lg border border-border bg-secondary/25 p-3 text-xs">
             <p className="mb-2 font-semibold text-foreground">Generation status</p>
             <div className="grid gap-1">
@@ -169,7 +179,9 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
             <div className="space-y-3 rounded-lg border border-border p-3 text-xs text-muted-foreground">
               <Badge variant={lowIdentity ? "destructive" : "outline"}>{approved ? "Manually approved" : rejected ? "Manually rejected" : lowIdentity ? "LOW IDENTITY" : "Awaiting review"}</Badge>
               <p>Model: {result.model}</p>
+              <p>AI Photographer attempts: {result.attempt || 1}</p>
               <p>Cost reported: {result.cost ?? "not reported"}</p>
+              {result.creativeBrief && <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded bg-secondary/30 p-2 text-[10px] text-muted-foreground">{result.creativeBrief}</pre>}
               <div className="grid grid-cols-3 gap-2">
                 <Button size="sm" onClick={() => setReviewStatus("approved")} className="gap-1"><CheckCircle2 className="h-3 w-3" />Approve</Button>
                 <Button size="sm" variant="outline" onClick={() => setReviewStatus("rejected")} className="gap-1"><XCircle className="h-3 w-3" />Reject</Button>
@@ -182,7 +194,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
         <div className="rounded-xl border border-border bg-card p-4">
           {result ? (
             approved ? <CoverPreviewEditor frame={{ ...result, aiReconstructed: true }} metadata={{ ...metadata, aiReconstructed: true }} settings={settings} fileSuffix="premium-ai-key-art" /> : <div className="space-y-4"><div className="flex items-center justify-between gap-3"><h3 className="font-bold text-foreground">Reconstructed Hero Image</h3>{validation && <Badge variant={lowIdentity ? "destructive" : "outline"}>{lowIdentity ? "LOW IDENTITY" : `Identity ${validation.identityConfidence}%`}</Badge>}</div><img src={result.url} alt="Reconstructed hero image awaiting review" className="w-full rounded-xl border border-border object-contain" /><div className={`rounded-lg border p-3 text-sm ${rejected ? "border-destructive/40 bg-destructive/10 text-destructive" : "border-primary/30 bg-primary/10 text-muted-foreground"}`}>{rejected ? "Hero image rejected. It remains visible here for review; generate again when ready." : "Reconstructed hero image is visible for review. Approve it to add local FLESHLAB typography and branding."}</div></div>
-          ) : <div className="flex min-h-[360px] items-center justify-center rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">Premium AI reconstruction preview appears here. Local editorial covers remain available above for quick frame-based export.</div>}
+          ) : <div className="flex min-h-[360px] items-center justify-center rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">The AI Photographer output appears here. No smartphone-frame cover is exported from this workflow.</div>}
         </div>
       </div>
     </div>

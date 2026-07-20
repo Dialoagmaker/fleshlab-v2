@@ -7,44 +7,56 @@ const PRIMARY_MODEL = 'black-forest-labs/flux.2-pro';
 const QUALITY_MODEL = 'black-forest-labs/flux.2-max';
 const MAX_DATA_URL_CHARS = 12_000_000;
 
-const KEY_ART_DIRECTOR_PROMPT = `You are a premium entertainment Key Art Director, not a screenshot retoucher.
+const KEY_ART_DIRECTOR_PROMPT = `You are the FLESHLAB AI Photographer Engine.
+
+Core principle: FLESHLAB covers are not layouts. They are professional advertising photographs with branding applied afterwards.
+
+Internal role:
+"Imagine I am a senior commercial photographer hired to capture this exact scene for a premium streaming service."
 
 Use two separate visual references when provided:
-- Identity Reference: preserves the performer's recognizable face, hair, and appearance.
-- Story Reference: preserves pose, action, location, emotion, lighting, and moment.
+- Identity Reference: preserve the same performer, face, body, tattoos, hairstyle, proportions, and recognisable appearance.
+- Story Reference: preserve the same action, location, room, emotional tone, scene logic, and visual story.
 
-First understand the scene:
-- performer identity from the Identity Reference
-- pose and primary action from the Story Reference
-- location: bathroom, hotel, beach, gym, private room, night, morning, etc.
-- mood: luxury, cold, warm, voyeur, romantic, raw, cinematic, premium
-- environmental clues: walls, tiles, mirrors, steam, sheets, windows, shadows, practical lights, depth
+Creative Director analysis to perform before generation:
+- what is happening
+- why this moment matters
+- who is the hero
+- what emotion sells the video
+- what visual story should be communicated
+- what should dominate
+- what should disappear
 
-Then generate a new cinematic key-art photograph of the same moment.
+AI Photographer instructions:
+- do NOT create fantasy art
+- do NOT stylize, cartoonize, paint, posterize, or illustrate
+- do NOT invent a different story, different clothing, another performer, or unrelated environment
+- do NOT add typography, logo, watermark, captions, UI, or poster text
+- do NOT decorate the smartphone frame
+- the smartphone frame is reference material only, never the finished artwork
 
-Creative freedom allowed:
-- rebuild perspective
-- change camera angle and focal length
-- improve framing and composition
-- create 16:9 landscape key art even when the reference is vertical
-- expand or rebuild the environment
-- add depth of field, professional lighting, shadow structure, atmosphere, steam, reflections, cinematic color grade
-- clean ugly walls, bad smartphone framing, empty vertical composition, and screenshot artifacts
+Maintain:
+- same performer
+- same body and proportions
+- same tattoos and hairstyle when visible
+- same room/location
+- same action and emotional tone
+- same story
 
-Must preserve:
-- performer remains recognisable as the same person
-- pose/action/story remains recognisable
-- body proportions remain plausible
-- no extra people unless clearly present in the reference
+Improve photography only:
+- professional cinema camera
+- professional lighting
+- premium commercial composition
+- professional color science
+- cinematic lenses and depth
+- controlled contrast
+- natural skin and realistic environment
+- premium 16:9 framing
 
-Forbidden:
-- do not output a literal screenshot
-- do not preserve smartphone framing
-- do not create black bars, pillarboxing, letterboxing, empty borders, or unused canvas
-- do not place the portrait frame inside a landscape canvas
-- do not add typography, logo, watermark, captions, icons, UI, or poster text
+Acceptance standard:
+The output must plausibly look like a professionally photographed promotional still that could sit beside Netflix artwork, Prime Video artwork, AAA game key art, premium entertainment marketing, and approved FLESHLAB covers.
 
-Output ONLY the recreated cinematic 16:9 key art base image, ready for local FLESHLAB typography and branding overlay.`;
+Output ONLY the professional 16:9 hero photograph. Branding and typography will be applied locally after this image is approved.`;
 
 function json(data, status = 200) {
   return Response.json(data, { status });
@@ -140,23 +152,38 @@ async function auditOpenRouter(apiKey) {
     credits,
     image_generation_support: { primary: primarySupport, quality: qualitySupport },
     current_integration_supports_image_generation: false,
-    note: 'OpenRouter is used for cinematic key-art reconstruction from separate story and identity references when available. Final FLESHLAB logo, titles, and typography are still rendered locally by Canvas.'
+    note: 'OpenRouter is used as the FLESHLAB AI Photographer: selected frames are reference material only, a professional hero photograph is generated first, and final typography/branding are added locally after approval.'
   };
 }
 
-function buildKeyArtPrompt(metadata = {}) {
-  const storyContext = [
-    metadata.videoTitle || metadata.title ? `Title: ${metadata.videoTitle || metadata.title}` : '',
-    metadata.performerName || metadata.performer ? `Performer: ${metadata.performerName || metadata.performer}` : '',
-    metadata.optionalSubtitle || metadata.subtitle ? `Subtitle: ${metadata.optionalSubtitle || metadata.subtitle}` : '',
-    metadata.contentType ? `Content type: ${metadata.contentType}` : '',
-    metadata.campaignName ? `Campaign: ${metadata.campaignName}` : '',
+function buildPhotographicBrief(metadata = {}) {
+  const title = metadata.videoTitle || metadata.title || 'Untitled FLESHLAB scene';
+  const performer = metadata.performerName || metadata.performer || 'the selected performer';
+  const subtitle = metadata.optionalSubtitle || metadata.subtitle || '';
+  const contentType = metadata.contentType || 'premium entertainment scene';
+  const campaign = metadata.campaignName || '';
+  return [
+    'CREATIVE DIRECTOR BRIEF',
+    `Story: ${title}`,
+    `Hero: ${performer}`,
+    subtitle ? `Secondary story: ${subtitle}` : '',
+    `Emotion to sell: ${campaign || contentType}`,
+    'Dominant read: performer and emotional action, not graphic decoration.',
+    'Must disappear: smartphone framing, ugly compression, accidental clutter, amateur lighting, unused canvas.',
+    '',
+    'PHOTOGRAPHIC BRIEF',
+    'Create the exact scene as a professional promotional still, not as cover art.',
+    'Same performer, same action, same room/location, same story, same emotional tone.',
+    'Improve only camera, lighting, lens, depth, color science, contrast, composition, and cinematic realism.',
   ].filter(Boolean).join('\n');
+}
+
+function buildKeyArtPrompt(metadata = {}) {
   const referenceMode = metadata.identityReferenceProvided
     ? 'Reference order: image 1 is IDENTITY ONLY; image 2 is STORY/MOMENT ONLY. Preserve identity from image 1 and story from image 2.'
     : 'Only a Story Reference was supplied. Generate anyway, but identity preservation may be weaker.';
-  const basePrompt = `${KEY_ART_DIRECTOR_PROMPT}\n\n${referenceMode}`;
-  return storyContext ? `${basePrompt}\n\nVideo/story context to respect:\n${storyContext}` : basePrompt;
+  const loopNote = metadata.regenerationDirective ? `\n\nPrevious creative review directive to fix:\n${metadata.regenerationDirective}` : '';
+  return `${KEY_ART_DIRECTOR_PROMPT}\n\n${referenceMode}\n\n${buildPhotographicBrief(metadata)}${loopNote}`;
 }
 
 async function callImageGeneration(apiKey, model, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata = {}) {
@@ -212,15 +239,18 @@ async function generateCover(apiKey, body) {
         fallback_used: model !== models[0],
         usage: result.usage,
         cost_reported: result.usage?.cost ?? null,
+        creative_brief: buildPhotographicBrief(metadata),
+        pipeline: ['Video', 'Moment Selection', 'Creative Director', 'Photographic Brief', 'AI Photographer', 'Professional Hero Image', 'Art Director', 'Typography', 'Branding', 'Quality Review', 'Export'],
         privacy: {
         original_video_transmitted: false,
         story_reference_transmitted: true,
         identity_reference_transmitted: Boolean(identityReferenceDataUrl),
         generated_image_received_from_openrouter: true,
-        ai_role: 'cinematic_key_art_reconstruction',
+        ai_role: 'professional_promotional_photographer',
         ai_generates_cover_base_artwork: true,
         ai_generates_typography_or_logo: false,
-        final_branding_and_typography_added_locally: true
+        original_frame_is_reference_only: true,
+        final_branding_and_typography_added_locally_after_hero_approval: true
         }
       });
     } catch (error) {
