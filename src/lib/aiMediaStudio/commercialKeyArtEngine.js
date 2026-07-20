@@ -248,15 +248,17 @@ function cropForHero(image, analysis, language, width, height, settings = {}) {
   const mustPreserveComposition = (isPortraitSource && landscapeOutput) || cropRisk > 0.34;
 
   if (mustPreserveComposition) {
+    const heroSide = philosophy.titleSide === "right" ? 0.36 : 0.64;
     return {
       sx: 0,
       sy: 0,
       sw: image.width,
       sh: image.height,
       zoom: 1,
-      fitMode: "contain",
+      fitMode: "portraitEditorial",
+      portraitX: heroSide,
       compositionProtection: {
-        rule: "source image is sacred",
+        rule: "portrait source becomes editorial hero layer over atmospheric landscape extension",
         sourceAspect,
         outputAspect,
         preservesFullPerformer: true,

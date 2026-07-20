@@ -13,8 +13,14 @@ function font(size, family = "Bebas Neue", weight = 900) {
 }
 
 function renderBoxForCrop(crop, x, y, width, height) {
-  if (crop.fitMode !== "contain") return { x, y, w: width, h: height };
   const sourceAspect = crop.sw / crop.sh;
+  if (crop.fitMode === "portraitEditorial") {
+    const h = height * 0.98;
+    const w = h * sourceAspect;
+    const centerX = width * clamp(crop.portraitX || 0.64, 0.32, 0.72);
+    return { x: clamp(centerX - w * 0.5, width * -0.02, width - w + width * 0.02), y: height * 0.01, w, h };
+  }
+  if (crop.fitMode !== "contain") return { x, y, w: width, h: height };
   const targetAspect = width / height;
   let w = width;
   let h = height;
@@ -177,7 +183,7 @@ function manualValue(settings, key, fallback) {
 }
 
 function adjustedCrop(image, crop, settings = {}) {
-  if (crop.fitMode === "contain" && !settings?.manualOverrides?.zoom && !settings?.manualOverrides?.x && !settings?.manualOverrides?.y) return crop;
+  if ((crop.fitMode === "contain" || crop.fitMode === "portraitEditorial") && !settings?.manualOverrides?.zoom && !settings?.manualOverrides?.x && !settings?.manualOverrides?.y) return crop;
   const zoom = clamp(manualValue(settings, "zoom", 1), 0.7, 2.2);
   const sw = crop.sw / zoom;
   const sh = crop.sh / zoom;
@@ -263,6 +269,7 @@ function compositionMap(plan, image, width, height, attempt = 0, settings = {}) 
   const heroCx = clamp((hero.x + hero.w * 0.5) / width, 0.12, 0.88);
   const heroCy = clamp((hero.y + hero.h * 0.45) / height, 0.14, 0.82);
   const protectComposition = crop.fitMode === "contain";
+  const portraitEditorial = crop.fitMode === "portraitEditorial";
   const negativeSide = protectComposition ? (heroCx >= 0.5 ? "left" : "right") : philosophy.titleSide === "right" ? "right" : philosophy.titleSide === "left" || philosophy.titleSide === "bottom-left" ? "left" : heroCx > 0.52 ? "left" : "right";
   const topSpace = heroCy > 0.47;
   const geometryTension = {
@@ -309,7 +316,7 @@ function compositionMap(plan, image, width, height, attempt = 0, settings = {}) 
   const logoY = clamp(logoBaseY + (manualValue(settings, "logoY", 0) / 100) * height * 0.28, height * 0.02, height * 0.88);
   const ctaX = manualTitleX;
   const ctaY = manualTitleY > height * 0.5 ? height * 0.5 : Math.min(height * 0.86, manualTitleY + height * 0.34);
-  return { crop, hero, face, protectedZone, renderBox, protectComposition, heroCx, heroCy, negativeSide, topSpace, tension, titleX: manualTitleX, titleY: manualTitleY, titleMaxW, logoX, logoY, ctaX, ctaY, visualSystemId: philosophy.visualSystemId, renderPlanHash: plan.renderPlanHash };
+  return { crop, hero, face, protectedZone, renderBox, protectComposition, portraitEditorial, heroCx, heroCy, negativeSide, topSpace, tension, titleX: manualTitleX, titleY: manualTitleY, titleMaxW, logoX, logoY, ctaX, ctaY, visualSystemId: philosophy.visualSystemId, renderPlanHash: plan.renderPlanHash };
 }
 
 function wrapTitle(ctx, text, maxWidth, startSize, family = "Bebas Neue", maxLines = 3) {
@@ -694,7 +701,7 @@ function paintCommercialColorGrade(ctx, width, height, direction, map = null) {
 function paintBackgroundSuppression(ctx, image, map, width, height, direction, settings = {}) {
   if (map.protectComposition) return;
   ctx.save();
-  ctx.globalAlpha = 0.58;
+  ctx.globalAlpha = map.portraitEditorial ? 0.28 : 0.58;
   ctx.filter = `blur(${Math.round(width * 0.018)}px) brightness(${Math.round(manualValue(settings, "brightness", 48))}%) contrast(${Math.round(manualValue(settings, "contrast", 118))}%) saturate(${Math.round(manualValue(settings, "saturation", 74))}%)`;
   fillImage(ctx, image, map.crop, 0, 0, width, height);
   ctx.restore();
@@ -844,5 +851,5 @@ export async function paintCommercialVisualSystem(canvas, image, plan, settings,
   paintPerformerBlock(ctx, map, width, height, plan, direction);
   paintFooter(ctx, width, height, plan, settings, direction, map);
   await paintLogo(ctx, map, width, direction, settings);
-  return { logoHeight: width * 0.04, compositionMode: map.tension, visualSystemId: map.visualSystemId, renderedRenderPlanHash: map.renderPlanHash, renderMap: map, renderDirection: direction, commercialAdvertisingScore: commercialScore.total, commercialScore, artworkValidation: commercialScore.passed ? "passed" : "best_available", compositionProtection: map.protectComposition ? "ai_canvas_extension_original_frame_untouched" : "standard_safe_crop", artDirectorVersion: "FLESHLAB ENTERTAINMENT KEY ART DIRECTOR v4.0" };
+  return { logoHeight: width * 0.04, compositionMode: map.tension, visualSystemId: map.visualSystemId, renderedRenderPlanHash: map.renderPlanHash, renderMap: map, renderDirection: direction, commercialAdvertisingScore: commercialScore.total, commercialScore, artworkValidation: commercialScore.passed ? "passed" : "best_available", compositionProtection: map.protectComposition ? "source_composition_protected" : map.portraitEditorial ? "portrait_editorial_landscape_composition" : "standard_safe_crop", artDirectorVersion: "FLESHLAB ENTERTAINMENT KEY ART DIRECTOR v4.0" };
 }
