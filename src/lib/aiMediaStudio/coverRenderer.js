@@ -39,7 +39,7 @@ export const DEFAULT_COVER_SETTINGS = {
   logoY: 0,
   borderTexture: 42,
   safeMargin: 7,
-  sellingPoints: "REAL MOMENTS\nRAW CHEMISTRY\nAMATEUR WINS",
+  sellingPoints: "",
   showSafeMargins: false,
 };
 

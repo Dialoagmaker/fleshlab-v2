@@ -3,7 +3,7 @@ import { inferGraphicLanguage } from "./graphicLanguage";
 import { paintCommercialVisualSystem } from "./commercialVisualSystems";
 import { createCommercialCampaign } from "./commercialCreativeDirector";
 
-const ENGINE_NAME = "FLESHLAB AI Art Director v3.0";
+const ENGINE_NAME = "FLESHLAB Entertainment Key Art Director v4.0";
 const TARGET_COMMERCIAL_AD_SCORE = 88;
 const OFFICIAL_LOGO_URL = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a1f9333f9_ChatGPTImageJul14202612_16_43AM.png";
 
@@ -719,7 +719,14 @@ function commercialPolish(ctx, width, height, language) {
 
 async function paintCommercialPipeline(canvas, image, plan, settings, width, height) {
   const systemResult = await paintCommercialVisualSystem(canvas, image, plan, settings, width, height);
-  return { ...plan, selected: { ...plan.selected, ...systemResult } };
+  const visualScore = Number(systemResult.commercialAdvertisingScore) || plan.selected.score.total;
+  const score = {
+    ...plan.selected.score,
+    total: Math.round(plan.selected.score.total * 0.42 + visualScore * 0.58),
+    renderedComposition: visualScore,
+    passesQualityGate: plan.selected.score.passesQualityGate || systemResult.artworkValidation === "passed",
+  };
+  return { ...plan, selected: { ...plan.selected, ...systemResult, score } };
 }
 
 function copyCanvas(source, target) {

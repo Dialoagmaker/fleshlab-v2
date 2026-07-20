@@ -345,16 +345,16 @@ function getLogo() {
 
 async function paintLogo(ctx, map, width, direction, settings = {}) {
   const logo = await getLogo();
-  const scale = clamp(manualValue(settings, "logoScale", 100) / 100, 0.4, 3.2);
-  const w = width * (0.12 + direction.seed * 0.045) * scale;
+  const scale = clamp(manualValue(settings, "logoScale", 100) / 100, 0.34, 2.4);
+  const w = width * (0.078 + direction.seed * 0.018) * scale;
   const h = w * (logo.height / logo.width);
   ctx.save();
-  ctx.globalAlpha = 0.92;
-  ctx.shadowColor = "rgba(0,0,0,0.85)";
-  ctx.shadowBlur = width * 0.012;
+  ctx.globalAlpha = 0.74;
+  ctx.shadowColor = "rgba(0,0,0,0.9)";
+  ctx.shadowBlur = width * 0.01;
   ctx.drawImage(logo, map.logoX, map.logoY, w, h);
-  ctx.fillStyle = `rgba(${direction.brandAccent || direction.accent},0.78)`;
-  ctx.fillRect(map.logoX, map.logoY + h + width * 0.01, w * (0.42 + direction.seed * 0.28), Math.max(2, width * 0.003));
+  ctx.fillStyle = `rgba(${direction.brandAccent || direction.accent},0.52)`;
+  ctx.fillRect(map.logoX, map.logoY + h + width * 0.007, w * (0.34 + direction.seed * 0.22), Math.max(1.5, width * 0.002));
   ctx.restore();
   return { w, h };
 }
@@ -469,9 +469,64 @@ function paintAtmosphere(ctx, map, width, height, direction) {
   ctx.restore();
 }
 
+function paintEntertainmentComposition(ctx, map, width, height, direction) {
+  if (map.protectComposition) return;
+  ctx.save();
+  const heroCx = map.hero.x + map.hero.w * 0.5;
+  const heroCy = map.hero.y + map.hero.h * 0.38;
+  const titleCx = map.titleX + map.titleMaxW * 0.42;
+  const titleCy = map.titleY + height * 0.12;
+
+  ctx.globalCompositeOperation = "screen";
+  const heroKey = ctx.createRadialGradient(heroCx, heroCy, 0, heroCx, heroCy, Math.max(map.hero.w, map.hero.h) * 0.82);
+  heroKey.addColorStop(0, "rgba(255,255,255,0.18)");
+  heroKey.addColorStop(0.32, `rgba(${direction.secondary},0.14)`);
+  heroKey.addColorStop(0.72, `rgba(${direction.accent},0.08)`);
+  heroKey.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = heroKey;
+  ctx.fillRect(0, 0, width, height);
+
+  const eyeLine = ctx.createLinearGradient(heroCx, heroCy, titleCx, titleCy);
+  eyeLine.addColorStop(0, `rgba(${direction.secondary},0.0)`);
+  eyeLine.addColorStop(0.42, `rgba(${direction.secondary},0.11)`);
+  eyeLine.addColorStop(1, `rgba(${direction.accent},0.16)`);
+  ctx.strokeStyle = eyeLine;
+  ctx.lineWidth = width * 0.018;
+  ctx.beginPath();
+  ctx.moveTo(heroCx, heroCy);
+  ctx.bezierCurveTo(width * (map.negativeSide === "left" ? 0.34 : 0.66), height * 0.28, width * (map.negativeSide === "left" ? 0.22 : 0.78), height * 0.62, titleCx, titleCy);
+  ctx.stroke();
+
+  ctx.globalCompositeOperation = "multiply";
+  const storyMask = ctx.createRadialGradient(heroCx, heroCy, Math.max(map.hero.w, map.hero.h) * 0.2, heroCx, heroCy, width * 0.72);
+  storyMask.addColorStop(0, "rgba(0,0,0,0)");
+  storyMask.addColorStop(0.48, "rgba(0,0,0,0.1)");
+  storyMask.addColorStop(1, "rgba(0,0,0,0.74)");
+  ctx.fillStyle = storyMask;
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalCompositeOperation = "source-over";
+  ctx.fillStyle = "rgba(0,0,0,0.34)";
+  ctx.beginPath();
+  if (map.negativeSide === "left") {
+    ctx.moveTo(0, height);
+    ctx.lineTo(width * 0.42, height);
+    ctx.bezierCurveTo(width * 0.24, height * 0.62, width * 0.18, height * 0.34, 0, height * 0.18);
+  } else {
+    ctx.moveTo(width, height);
+    ctx.lineTo(width * 0.58, height);
+    ctx.bezierCurveTo(width * 0.76, height * 0.62, width * 0.82, height * 0.34, width, height * 0.18);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
 function paintBrandAccents(ctx, map, width, height, direction) {
   ctx.save();
-  ctx.fillStyle = `rgba(${direction.brandAccent || direction.accent},0.86)`;
+  ctx.fillStyle = `rgba(${direction.brandAccent || direction.accent},0.58)`;
   const markW = width * (0.006 + direction.seed * 0.006);
   if (map.protectComposition) {
     ctx.fillRect(map.titleX, height * 0.16, Math.min(map.titleMaxW, width * 0.2), markW);
@@ -497,18 +552,25 @@ function paintTitleBlock(ctx, map, width, height, plan, direction, settings = {}
   const brushWord = !map.protectComposition && !direction.editorial && words.length > 1 ? words.pop() : "";
   const blockTitle = words.length ? words.join(" ") : title;
   const titleFamily = direction.editorial || map.protectComposition ? "Inter" : "Bebas Neue";
-  const baseSize = manualValue(settings, "titleSize", map.protectComposition ? width * 0.05 : direction.editorial ? width * 0.07 : width * 0.145);
+  const baseSize = manualValue(settings, "titleSize", map.protectComposition ? width * 0.05 : direction.editorial ? width * 0.061 : width * 0.118);
   const block = wrapTitle(ctx, blockTitle, map.titleMaxW, baseSize, titleFamily, map.protectComposition ? 5 : direction.editorial ? 4 : 2);
   let y = map.titleY;
   ctx.save();
+  const shear = map.protectComposition ? 0 : map.negativeSide === "left" ? -0.035 : 0.035;
+  ctx.transform(1, shear, 0, 1, 0, 0);
   ctx.shadowColor = "rgba(0,0,0,0.98)";
-  ctx.shadowBlur = width * 0.018;
-  ctx.lineWidth = Math.max(3, block.size * 0.032);
-  ctx.strokeStyle = "rgba(0,0,0,0.82)";
-  ctx.fillStyle = direction.editorial ? `rgb(${direction.paper})` : "#f4f0e7";
+  ctx.shadowBlur = width * 0.022;
+  ctx.lineWidth = Math.max(3, block.size * 0.028);
+  ctx.strokeStyle = "rgba(0,0,0,0.78)";
+  ctx.fillStyle = direction.editorial ? `rgba(${direction.paper},0.9)` : "rgba(244,240,231,0.9)";
   ctx.font = font(block.size, titleFamily, 900);
   block.lines.forEach((line, index) => {
-    const offset = map.protectComposition ? 0 : map.tension === "diagonal-rise" ? index * width * 0.012 : map.tension === "poster-stack" ? (index % 2) * width * 0.025 : 0;
+    const offset = map.protectComposition ? 0 : map.tension === "diagonal-rise" ? index * width * 0.018 : map.tension === "poster-stack" ? (index % 2) * width * 0.028 : 0;
+    ctx.save();
+    ctx.globalAlpha = 0.22;
+    ctx.fillStyle = `rgba(${direction.accent},0.9)`;
+    ctx.fillText(line, map.titleX + offset + width * 0.012, y + height * 0.012);
+    ctx.restore();
     ctx.strokeText(line, map.titleX + offset, y);
     ctx.fillText(line, map.titleX + offset, y);
     y += block.lineHeight;
@@ -764,6 +826,7 @@ function paintPremiumArtworkOnly(ctx, image, map, width, height, direction, sett
   paintDepthLayer(ctx, map, width, height, direction);
   paintHeroEnhancement(ctx, image, map, width, height, direction, settings);
   paintLocalHeroContrast(ctx, image, map, width, height, direction, settings);
+  paintEntertainmentComposition(ctx, map, width, height, direction);
   paintAtmosphere(ctx, map, width, height, direction);
   paintPremiumMaterials(ctx, width, height, direction, map);
   finalGrade(ctx, width, height, direction, map);
@@ -777,9 +840,9 @@ export async function paintCommercialVisualSystem(canvas, image, plan, settings,
   const { direction, map, commercialScore } = artwork;
   paintPremiumArtworkOnly(ctx, image, map, width, height, direction, settings);
   paintBrandAccents(ctx, map, width, height, direction);
-  await paintLogo(ctx, map, width, direction, settings);
   paintTitleBlock(ctx, map, width, height, plan, direction, settings);
   paintPerformerBlock(ctx, map, width, height, plan, direction);
   paintFooter(ctx, width, height, plan, settings, direction, map);
-  return { logoHeight: width * 0.06, compositionMode: map.tension, visualSystemId: map.visualSystemId, renderedRenderPlanHash: map.renderPlanHash, renderMap: map, renderDirection: direction, commercialAdvertisingScore: commercialScore.total, commercialScore, artworkValidation: commercialScore.passed ? "passed" : "best_available", compositionProtection: map.protectComposition ? "ai_canvas_extension_original_frame_untouched" : "standard_safe_crop", artDirectorVersion: "FLESHLAB AI ART DIRECTOR v3.0" };
+  await paintLogo(ctx, map, width, direction, settings);
+  return { logoHeight: width * 0.04, compositionMode: map.tension, visualSystemId: map.visualSystemId, renderedRenderPlanHash: map.renderPlanHash, renderMap: map, renderDirection: direction, commercialAdvertisingScore: commercialScore.total, commercialScore, artworkValidation: commercialScore.passed ? "passed" : "best_available", compositionProtection: map.protectComposition ? "ai_canvas_extension_original_frame_untouched" : "standard_safe_crop", artDirectorVersion: "FLESHLAB ENTERTAINMENT KEY ART DIRECTOR v4.0" };
 }
