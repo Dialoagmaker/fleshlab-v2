@@ -43,7 +43,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
   const [loading, setLoading] = useState(false);
   const [heroImage, setHeroImage] = useState(null);
   const [designCover, setDesignCover] = useState(false);
-  const [status, setStatus] = useState("Ready to generate the hero image.");
+  const [status, setStatus] = useState("Ready to produce the promotional still.");
   const [error, setError] = useState("");
 
   const generate = async () => {
@@ -52,7 +52,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
     setError("");
     setHeroImage(null);
     setDesignCover(false);
-    setStatus("Creative Director is preparing the shoot...");
+    setStatus("Creative Director is preparing the promotional still...");
 
     try {
       const storyDataUrl = await frameToDataUrl(frame);
@@ -61,7 +61,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
       let repairDirective = "";
 
       for (let attempt = 1; attempt <= 3; attempt += 1) {
-        setStatus(attempt === 1 ? "Generating the hero image..." : "Refining the hero image...");
+        setStatus(attempt === 1 ? "Producing the promotional still..." : "Refining the promotional still...");
         const response = await base44.functions.invoke("openRouterAICover", {
           action: "generate",
           consent: true,
@@ -81,10 +81,11 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
       }
 
       setHeroImage(best);
-      setStatus("Hero image ready.");
+      setStatus("Promotional still ready.");
     } catch (err) {
-      setStatus("Ready to generate the hero image.");
-      setError(err.response?.data?.error || err.message || "The hero image could not be generated.");
+      console.warn("Promotional still production failed", err.response?.data || err.message || err);
+      setStatus("Ready to produce the promotional still.");
+      setError("The promotional still could not be produced. Try another frame or adjust the editorial information.");
     } finally {
       setLoading(false);
     }
@@ -93,7 +94,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-primary/25 bg-primary/10 p-4">
-        <div className="flex items-start gap-3"><Camera className="mt-0.5 h-5 w-5 text-primary" /><div className="space-y-1 text-sm"><p className="font-semibold text-foreground">3. Generate Hero Image</p><p className="text-muted-foreground">The selected smartphone frame is used only as reference for a new 16:9 advertising photograph.</p></div></div>
+        <div className="flex items-start gap-3"><Camera className="mt-0.5 h-5 w-5 text-primary" /><div className="space-y-1 text-sm"><p className="font-semibold text-foreground">3. Produce Promotional Still</p><p className="text-muted-foreground">The selected smartphone frame is used only as reference for a new 16:9 advertising photograph.</p></div></div>
       </div>
 
       <div className="space-y-4 rounded-xl border border-border bg-card p-4">
@@ -103,22 +104,22 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
             <img src={frame.url} alt="Selected story frame" className="h-32 w-56 rounded-lg border border-border bg-black object-contain" />
           </div>
           <div className="flex flex-col gap-2 md:min-w-72">
-            <Button disabled={!frame || loading || !metadata?.videoTitle?.trim()} onClick={generate} className="gap-2"><Wand2 className="h-4 w-4" />{loading ? "Generating..." : "Generate Hero Image"}</Button>
+            <Button disabled={!frame || loading || !metadata?.videoTitle?.trim()} onClick={generate} className="gap-2"><Wand2 className="h-4 w-4" />{loading ? "Producing..." : "Produce Promotional Still"}</Button>
             <p className="text-sm text-muted-foreground">{status}</p>
           </div>
         </div>
         {error && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
         {heroImage ? (
           <div className="space-y-3">
-            <div className="flex items-center justify-between gap-3"><Badge variant="outline">Hero image ready</Badge><Button onClick={() => setDesignCover(true)} disabled={designCover}>Design Cover</Button></div>
-            <img src={heroImage.url} alt="Generated hero image" className="w-full rounded-xl border border-border bg-black object-contain" />
+            <div className="flex items-center justify-between gap-3"><Badge variant="outline">Promotional still ready</Badge><Button onClick={() => setDesignCover(true)} disabled={designCover}>Design Cover</Button></div>
+            <img src={heroImage.url} alt="Generated promotional still" className="w-full rounded-xl border border-border bg-black object-contain" />
           </div>
-        ) : <div className="flex min-h-[360px] items-center justify-center rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">The generated hero image will appear here.</div>}
+        ) : <div className="flex min-h-[360px] items-center justify-center rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">The promotional still will appear here.</div>}
       </div>
 
       {designCover && heroImage && (
         <div className="rounded-xl border border-border bg-card p-4">
-          <div className="mb-4"><p className="text-sm font-semibold text-foreground">4. Design Cover</p><p className="text-xs text-muted-foreground">Typography is designed around the generated hero image.</p></div>
+          <div className="mb-4"><p className="text-sm font-semibold text-foreground">4. Design Cover</p><p className="text-xs text-muted-foreground">Typography is designed around the generated promotional still.</p></div>
           <CoverPreviewEditor frame={heroImage} metadata={{ ...metadata, aiReconstructed: true }} settings={settings} fileSuffix="official-cover" />
         </div>
       )}

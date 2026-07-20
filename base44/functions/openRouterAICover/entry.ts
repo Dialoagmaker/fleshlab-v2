@@ -5,10 +5,25 @@ const SECRET_NAME = 'KIMI_API_KEY';
 const EXISTING_TEXT_MODEL_SECRET = 'KIMI_MODEL';
 const PRIMARY_MODEL = 'black-forest-labs/flux.2-pro';
 const QUALITY_MODEL = 'black-forest-labs/flux.2-max';
-const AI_PHOTOGRAPHER_CANDIDATES = [
-  { model: QUALITY_MODEL, role: 'premium commercial detail pass' },
-  { model: PRIMARY_MODEL, role: 'fast photoreal campaign pass' }
+const AI_PHOTOGRAPHER_PROVIDERS = [
+  {
+    id: 'openrouter_flux',
+    type: 'openrouter',
+    label: 'AI Photographer',
+    secret_name: SECRET_NAME,
+    candidates: [
+      { model: QUALITY_MODEL, role: 'premium commercial detail pass' },
+      { model: PRIMARY_MODEL, role: 'fast photoreal campaign pass' }
+    ]
+  }
 ];
+const AI_PHOTOGRAPHER_CANDIDATES = AI_PHOTOGRAPHER_PROVIDERS.flatMap(provider => provider.candidates.map(candidate => ({ ...candidate, provider_id: provider.id })));
+
+function getConfiguredPhotographerProviders(apiKey) {
+  return AI_PHOTOGRAPHER_PROVIDERS
+    .map(provider => provider.type === 'openrouter' ? { ...provider, apiKey } : provider)
+    .filter(provider => provider.type !== 'openrouter' || Boolean(provider.apiKey));
+}
 const MAX_DATA_URL_CHARS = 12_000_000;
 
 const KEY_ART_DIRECTOR_PROMPT = `You are the FLESHLAB AI Photographer Engine.
@@ -142,14 +157,21 @@ async function fetchImageModelSupport(apiKey, model) {
   };
 }
 
-async function getAvailablePhotographers(apiKey) {
-  const checked = await Promise.all(AI_PHOTOGRAPHER_CANDIDATES.map(candidate =>
-    fetchImageModelSupport(apiKey, candidate.model)
-      .then(support => ({ ...candidate, support }))
-      .catch(error => ({ ...candidate, support: { ok: false, model: candidate.model, error: { code: error.message === 'timeout' ? 'timeout' : 'model_check_failed', message: error.message } } }))
+async function getAvailablePhotographersForProvider(provider) {
+  if (provider.type !== 'openrouter') return [];
+  const checked = await Promise.all(provider.candidates.map(candidate =>
+    fetchImageModelSupport(provider.apiKey, candidate.model)
+      .then(support => ({ ...candidate, provider_id: provider.id, support }))
+      .catch(error => ({ ...candidate, provider_id: provider.id, support: { ok: false, model: candidate.model, error: { code: error.message === 'timeout' ? 'timeout' : 'model_check_failed', message: error.message } } }))
   ));
   const available = checked.filter(item => item.support?.supports_image_generation);
   return available.length ? available : checked;
+}
+
+async function getAvailablePhotographers(apiKey) {
+  const providers = getConfiguredPhotographerProviders(apiKey);
+  const providerPhotographers = await Promise.all(providers.map(provider => getAvailablePhotographersForProvider(provider)));
+  return providerPhotographers.flat();
 }
 
 async function auditOpenRouter(apiKey) {
@@ -256,63 +278,80 @@ async function callImageGeneration(apiKey, model, storyReferenceDataUrl, identit
   return { image_data_url: `data:${mediaType};base64,${first.b64_json}`, media_type: mediaType, usage: data?.usage || null, payload_summary: payloadSummary };
 }
 
+async function runPhotographerProvider(provider, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata) {
+  if (provider.type !== 'openrouter') throw new Error(JSON.stringify({ code: 'unsupported_provider', message: 'Provider is not compatible with reference-image promotional still generation.' }));
+  const photographers = await getAvailablePhotographersForProvider(provider);
+  const models = photographers.map(item => item.model);
+  const errors = [];
+  const photographerAttempts = [];
+
+  for (const model of models) {
+    try {
+      const result = await callImageGeneration(provider.apiKey, model, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata);
+      photographerAttempts.push({ provider_id: provider.id, model, status: 'accepted' });
+      return { provider, model, result, photographers, photographerAttempts };
+    } catch (error) {
+      let parsed;
+      try { parsed = JSON.parse(error.message); } catch (_) { parsed = { code: error.message === 'timeout' ? 'timeout' : 'provider_error', message: error.message, failed_stage: 'request_sent' }; }
+      errors.push({ provider_id: provider.id, model, ...parsed });
+      photographerAttempts.push({ provider_id: provider.id, model, status: 'failed', code: parsed.code });
+      if (parsed.code === 'api_authentication_failure' || parsed.code === 'credit_exhausted' || parsed.code === 'rate_limit' || parsed.code === 'invalid_reference_image') break;
+    }
+  }
+
+  throw new Error(JSON.stringify({ code: 'provider_declined', message: 'Provider could not produce the promotional still.', provider_id: provider.id, errors, photographerAttempts }));
+}
+
 async function generateCover(apiKey, body) {
   const { frame_data_url, story_reference_data_url, identity_reference_data_url, consent, aspect_ratio = '16:9', metadata = {} } = body || {};
   const storyReferenceDataUrl = story_reference_data_url || frame_data_url;
   const identityReferenceDataUrl = identity_reference_data_url || null;
-  if (!consent) return json({ ok: false, error: 'User confirmation is required before sending reference still images to OpenRouter.', code: 'consent_required' }, 400);
-  if (!storyReferenceDataUrl || !String(storyReferenceDataUrl).startsWith('data:image/')) return json({ ok: false, error: 'A story reference still image data URL is required.', code: 'missing_frame' }, 400);
-  if (String(storyReferenceDataUrl).length > MAX_DATA_URL_CHARS || estimateBytesFromDataUrl(storyReferenceDataUrl) > 9_000_000) return json({ ok: false, error: 'Story reference still image is too large for OpenRouter upload.', code: 'image_too_large' }, 413);
-  if (identityReferenceDataUrl && (!String(identityReferenceDataUrl).startsWith('data:image/') || String(identityReferenceDataUrl).length > MAX_DATA_URL_CHARS || estimateBytesFromDataUrl(identityReferenceDataUrl) > 9_000_000)) return json({ ok: false, error: 'Identity reference still image is invalid or too large for OpenRouter upload.', code: 'identity_image_too_large' }, 413);
+  if (!consent) return json({ ok: false, error: 'The promotional still could not be produced yet.', code: 'consent_required' }, 400);
+  if (!storyReferenceDataUrl || !String(storyReferenceDataUrl).startsWith('data:image/')) return json({ ok: false, error: 'Choose a story frame before producing the promotional still.', code: 'missing_frame' }, 400);
+  if (String(storyReferenceDataUrl).length > MAX_DATA_URL_CHARS || estimateBytesFromDataUrl(storyReferenceDataUrl) > 9_000_000) return json({ ok: false, error: 'Choose a smaller story frame before producing the promotional still.', code: 'image_too_large' }, 413);
+  if (identityReferenceDataUrl && (!String(identityReferenceDataUrl).startsWith('data:image/') || String(identityReferenceDataUrl).length > MAX_DATA_URL_CHARS || estimateBytesFromDataUrl(identityReferenceDataUrl) > 9_000_000)) return json({ ok: false, error: 'Choose a different story frame before producing the promotional still.', code: 'identity_image_too_large' }, 413);
 
-  const photographers = await getAvailablePhotographers(apiKey);
-  const models = photographers.map(item => item.model);
-  const errors = [];
-  const photographerAttempts = [];
-  for (const model of models) {
+  const providers = getConfiguredPhotographerProviders(apiKey);
+  const allErrors = [];
+  const allAttempts = [];
+  for (const provider of providers) {
     try {
-      const result = await callImageGeneration(apiKey, model, storyReferenceDataUrl, identityReferenceDataUrl, aspect_ratio, metadata);
-      photographerAttempts.push({ model, status: 'accepted' });
+      const { model, result, photographers, photographerAttempts } = await runPhotographerProvider(provider, storyReferenceDataUrl, identityReferenceDataUrl, aspect_ratio, metadata);
       return json({
         ok: true,
         generated_image_data_url: result.image_data_url,
         media_type: result.media_type,
+        provider_used: provider.id,
         model_used: model,
-        fallback_used: model !== models[0],
-        photographer_attempts: photographerAttempts,
-        ai_photographer_router: photographers.map(item => ({ model: item.model, role: item.role })),
+        fallback_used: allErrors.length > 0 || model !== photographers[0]?.model,
+        photographer_attempts: [...allAttempts, ...photographerAttempts],
+        ai_photographer_router: photographers.map(item => ({ provider_id: provider.id, model: item.model, role: item.role })),
         usage: result.usage,
         cost_reported: result.usage?.cost ?? null,
-        payload_summary: result.payload_summary,
-        stage_trace: {
-          payload_created: true,
-          request_sent: true,
-          response_received: true,
-          hero_image_decoded: true
-        },
         creative_brief: buildPhotographicBrief(metadata),
         pipeline: ['Video', 'Moment Selection', 'Creative Director', 'Photographic Brief', 'AI Photographer', 'Professional Hero Image', 'Art Director', 'Typography', 'Branding', 'Quality Review', 'Export'],
         privacy: {
-        original_video_transmitted: false,
-        story_reference_transmitted: true,
-        identity_reference_transmitted: Boolean(identityReferenceDataUrl),
-        generated_image_received_from_openrouter: true,
-        ai_role: 'professional_promotional_photographer',
-        ai_generates_cover_base_artwork: true,
-        ai_generates_typography_or_logo: false,
-        original_frame_is_reference_only: true,
-        final_branding_and_typography_added_locally_after_hero_approval: true
+          original_video_transmitted: false,
+          story_reference_transmitted: true,
+          identity_reference_transmitted: Boolean(identityReferenceDataUrl),
+          generated_image_received_from_provider: true,
+          ai_role: 'professional_promotional_photographer',
+          ai_generates_cover_base_artwork: true,
+          ai_generates_typography_or_logo: false,
+          original_frame_is_reference_only: true,
+          final_branding_and_typography_added_locally_after_hero_approval: true
         }
       });
     } catch (error) {
       let parsed;
-      try { parsed = JSON.parse(error.message); } catch (_) { parsed = { code: error.message === 'timeout' ? 'timeout' : 'openrouter_error', message: error.message, failed_stage: 'request_sent' }; }
-      errors.push({ model, ...parsed });
-      photographerAttempts.push({ model, status: 'failed', code: parsed.code });
-      if (parsed.code === 'api_authentication_failure' || parsed.code === 'credit_exhausted' || parsed.code === 'rate_limit' || parsed.code === 'invalid_reference_image') break;
+      try { parsed = JSON.parse(error.message); } catch (_) { parsed = { code: 'provider_error', message: error.message, provider_id: provider.id }; }
+      console.warn('AI Photographer provider failed', JSON.stringify(parsed));
+      allErrors.push(parsed);
+      allAttempts.push(...(parsed.photographerAttempts || []));
     }
   }
-  return json({ ok: false, error: errors[0]?.message || 'OpenRouter image generation failed.', code: errors[0]?.code || 'openrouter_error', failed_stage: errors[0]?.failed_stage || 'response_received', payload_summary: errors[0]?.payload_summary || null, raw: errors[0]?.raw || null, errors }, 502);
+  console.error('AI Photographer all providers failed', JSON.stringify(allErrors));
+  return json({ ok: false, error: 'The promotional still could not be produced with the configured photographers. Try another frame or adjust the editorial information.', code: 'all_photographer_providers_failed' }, 502);
 }
 
 Deno.serve(async (req) => {
