@@ -55,6 +55,18 @@ export default function Applications() {
     queryFn: () => base44.entities.GuestProductionApplication.filter({ request_type: "performer_application" }, '-submitted_at', 200),
   });
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const applicationId = params.get("application_id");
+    if (!applicationId || !applications.length || selectedApp?.id === applicationId) return;
+    const target = applications.find(app => app.id === applicationId);
+    if (target) {
+      setSelectedApp(target);
+      setIsDetailOpen(true);
+      setSearchQuery(target.applicant_name || target.email || "");
+    }
+  }, [applications, selectedApp?.id]);
+
   // Listen for custom events from dialog to open modals
   useEffect(() => {
     const handleOpenMoreInfo = () => setIsMoreInfoOpen(true);

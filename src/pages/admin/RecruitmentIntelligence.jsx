@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import SEOMeta from "@/components/SEOMeta";
@@ -52,6 +53,16 @@ export default function RecruitmentIntelligence() {
               <RecruiterCommandCenter profiles={workspace.attention.length ? workspace.attention : workspace.profiles.slice(0, 10)} selectedId={selectedProfile?.id} onSelect={setSelectedId} />
               <RecruiterCopilotPanel profile={selectedProfile} />
             </div>
+            {selectedProfile && (
+              <section className="rounded-2xl border border-primary/40 bg-primary/10 p-5">
+                <p className="text-xs font-black uppercase tracking-wider text-primary">Kontakt, Medien, Telefon, ID</p>
+                <h2 className="mt-1 text-xl font-black text-foreground">Hier sind die vollständigen Bewerbungsdaten für {selectedProfile.name}</h2>
+                <p className="mt-2 text-sm text-muted-foreground">Öffnet die echte Bewerbung direkt mit Tabs für Info, Media, ID Documents, Workflow, Notes und Contact.</p>
+                <Link to={`/admin/applications?application_id=${selectedProfile.id}`} className="mt-4 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-black text-primary-foreground hover:bg-primary/90">
+                  Vollständige Bewerbung öffnen
+                </Link>
+              </section>
+            )}
             <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
               <ApplicantTimeline profile={selectedProfile} />
               <PipelineHealth workspace={workspace} />
