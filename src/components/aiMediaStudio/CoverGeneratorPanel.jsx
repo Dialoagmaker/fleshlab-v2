@@ -5,6 +5,7 @@ import CoverFramePicker from "./CoverFramePicker";
 import CoverMetadataForm from "./CoverMetadataForm";
 import OpenRouterCoverMode from "./OpenRouterCoverMode";
 import CoverPreviewEditor from "./CoverPreviewEditor";
+import CreativeAcademyPanel from "./CreativeAcademyPanel";
 import { DEFAULT_COVER_SETTINGS } from "@/lib/aiMediaStudio/coverRenderer";
 import { selectAdvertisingHeroFrames } from "@/lib/aiMediaStudio/advertisingPhotographer";
 import { selectStrongestIdentityReferenceFrame } from "@/lib/aiMediaStudio/imageIdentityValidation";
@@ -39,6 +40,8 @@ export default function CoverGeneratorPanel({ item }) {
 
   return (
     <div className="space-y-4">
+      <CreativeAcademyPanel />
+
       <Card>
         <CardHeader><CardTitle className="text-sm">1. Videoinformationen eingeben</CardTitle></CardHeader>
         <CardContent className="space-y-3">

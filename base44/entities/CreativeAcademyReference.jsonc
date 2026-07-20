@@ -1,0 +1,58 @@
+{
+  "name": "CreativeAcademyReference",
+  "type": "object",
+  "properties": {
+    "module_slug": {
+      "type": "string",
+      "title": "Module Slug"
+    },
+    "reference_slug": {
+      "type": "string",
+      "title": "Reference Slug"
+    },
+    "title": {
+      "type": "string",
+      "title": "Reference Title"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "trained"
+      ],
+      "default": "pending",
+      "title": "Status"
+    },
+    "source_type": {
+      "type": "string",
+      "title": "Source Type"
+    },
+    "source_url": {
+      "type": "string",
+      "title": "Source URL"
+    },
+    "explanation_contract_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Explanation Contract JSON"
+    },
+    "learned_principles_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Learned Principles JSON"
+    },
+    "quality_score": {
+      "type": "number",
+      "default": 0,
+      "title": "Quality Score"
+    }
+  },
+  "required": [
+    "module_slug",
+    "reference_slug",
+    "title",
+    "status"
+  ]
+}

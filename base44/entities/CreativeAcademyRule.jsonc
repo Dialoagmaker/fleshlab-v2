@@ -1,0 +1,50 @@
+{
+  "name": "CreativeAcademyRule",
+  "type": "object",
+  "properties": {
+    "module_slug": {
+      "type": "string",
+      "title": "Module Slug"
+    },
+    "rule_slug": {
+      "type": "string",
+      "title": "Rule Slug"
+    },
+    "title": {
+      "type": "string",
+      "title": "Rule Title"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "training",
+        "active",
+        "retired"
+      ],
+      "default": "draft",
+      "title": "Status"
+    },
+    "rule_text": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Rule Text"
+    },
+    "evidence_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Evidence JSON"
+    },
+    "test_cases_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Test Cases JSON"
+    }
+  },
+  "required": [
+    "module_slug",
+    "rule_slug",
+    "title",
+    "status"
+  ]
+}

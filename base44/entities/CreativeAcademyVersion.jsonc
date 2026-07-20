@@ -1,0 +1,51 @@
+{
+  "name": "CreativeAcademyVersion",
+  "type": "object",
+  "properties": {
+    "module_slug": {
+      "type": "string",
+      "title": "Module Slug"
+    },
+    "version": {
+      "type": "string",
+      "title": "Version"
+    },
+    "change_type": {
+      "type": "string",
+      "enum": [
+        "lesson_install",
+        "rule_update",
+        "reference_update",
+        "exam_update",
+        "certification"
+      ],
+      "title": "Change Type"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "archived"
+      ],
+      "default": "draft",
+      "title": "Status"
+    },
+    "summary": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Summary"
+    },
+    "payload_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Payload JSON"
+    }
+  },
+  "required": [
+    "module_slug",
+    "version",
+    "change_type",
+    "status"
+  ]
+}

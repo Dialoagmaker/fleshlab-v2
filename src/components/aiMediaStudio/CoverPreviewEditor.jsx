@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download } from "lucide-react";
+import { AlertTriangle, Download, GraduationCap } from "lucide-react";
 import { blobToCanvasImage, canvasToBlob, getCoverDimensions } from "@/lib/aiMediaStudio/coverRenderer";
 import { generatePosterPlan, renderCommercialKeyArtToCanvas, renderPosterVariantToCanvas, selectPosterVariant } from "@/lib/aiMediaStudio/commercialKeyArtEngine";
+import { useCreativeAcademy } from "@/hooks/useCreativeAcademy";
 
 async function frameToBlob(frame) {
   if (frame?.blob) return frame.blob;
@@ -67,6 +68,7 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
   const [error, setError] = useState("");
   const [warning, setWarning] = useState("");
   const [selectedConceptId, setSelectedConceptId] = useState(null);
+  const { loading: academyLoading, renderingGate } = useCreativeAcademy();
   const dims = getCoverDimensions(settings);
   const metadataKey = JSON.stringify(metadata || {});
   const planSettingsKey = `${dims.width}x${dims.height}`;
@@ -82,7 +84,7 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
     setRenderedPlan(null);
     setError("");
     setWarning("");
-    if (!frame || !canvasRef.current) return;
+    if (!renderingGate.ready || !frame || !canvasRef.current) return;
 
     (async () => {
       const frameBlob = await frameToBlob(frame);
@@ -103,10 +105,10 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
       if (imageRef.current?.close) imageRef.current.close();
       imageRef.current = null;
     };
-  }, [frame?.index, frame?.blob, frame?.url, metadataKey, planSettingsKey]);
+  }, [frame?.index, frame?.blob, frame?.url, metadataKey, planSettingsKey, renderingGate.ready]);
 
   useEffect(() => {
-    if (!plan || !imageRef.current || !canvasRef.current) return;
+    if (!renderingGate.ready || !plan || !imageRef.current || !canvasRef.current) return;
     window.cancelAnimationFrame(rafRef.current);
     const renderToken = renderTokenRef.current + 1;
     renderTokenRef.current = renderToken;
@@ -141,10 +143,10 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
 
     rafRef.current = frameId;
     return () => window.cancelAnimationFrame(frameId);
-  }, [plan, metadata, settings, dims.width, dims.height, selectedConceptId]);
+  }, [plan, metadata, settings, dims.width, dims.height, selectedConceptId, renderingGate.ready]);
 
   const download = async (type) => {
-    if (!canExport || !canvasRef.current) return;
+    if (!renderingGate.ready || !canExport || !canvasRef.current) return;
     const ext = type === "image/png" ? "png" : "jpg";
     const blob = await canvasToBlob(canvasRef.current, type, 0.92);
     const url = URL.createObjectURL(blob);
@@ -154,6 +156,27 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  if (academyLoading) {
+    return <div className="rounded-xl border border-border bg-secondary/20 p-6 text-sm text-muted-foreground">Checking Creative Academy certification before rendering...</div>;
+  }
+
+  if (!renderingGate.ready) {
+    return (
+      <div className="space-y-3 rounded-xl border border-destructive/40 bg-destructive/10 p-5 text-sm">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="mt-0.5 h-5 w-5 text-destructive" />
+          <div>
+            <p className="font-black text-destructive">KNOWLEDGE NOT INSTALLED</p>
+            <p className="mt-1 text-muted-foreground">Rendering is forbidden until the Creative Academy installs, trains, examines, and certifies the required knowledge modules.</p>
+          </div>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {renderingGate.missing.slice(0, 8).map(module => <Badge key={module.slug} variant="secondary" className="justify-start"><GraduationCap className="mr-1 h-3 w-3" />{module.title}: {module.status}</Badge>)}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
