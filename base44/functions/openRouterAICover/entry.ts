@@ -123,6 +123,7 @@ function parseOpenRouterError(status, bodyText, headers = null, payloadSummary =
 function categorizeOpenRouterError(status, code, message, metadata) {
   const lower = String(message || '').toLowerCase();
   const errorType = String(metadata?.error_type || metadata?.provider_code || '').toLowerCase();
+  if (lower.includes('prohibited') || lower.includes('blocked') || lower.includes('moderation') || lower.includes('policy') || lower.includes('guardrail') || lower.includes('flagged')) return 'CONTENT_POLICY';
   if (status === 400) {
     if (lower.includes('image') || lower.includes('input_reference') || lower.includes('input reference') || lower.includes('base64')) return 'UNSUPPORTED_IMAGE_INPUT';
     return 'INVALID_PAYLOAD';
@@ -674,7 +675,7 @@ async function generateCover(base44, apiKey, body, user) {
         payload_summary_json: safeJson(diagnostic.payload_summary),
         month
       });
-      if (['CONTENT_POLICY', 'NO_CREDITS', 'AUTH_ERROR', 'INVALID_PAYLOAD'].includes(diagnostic.category)) break;
+      if (['NO_CREDITS', 'AUTH_ERROR'].includes(diagnostic.category)) break;
     }
   }
 
