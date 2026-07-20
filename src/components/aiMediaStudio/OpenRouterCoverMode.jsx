@@ -214,7 +214,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-primary/25 bg-primary/10 p-4">
-        <div className="flex items-start gap-3"><Camera className="mt-0.5 h-5 w-5 text-primary" /><div className="space-y-1 text-sm"><p className="font-semibold text-foreground">3. Generate Professional Hero Photograph</p><p className="text-muted-foreground">OpenRouter receives only the selected still as a private base64 reference image. Branding and typography stay local until the photograph is approved.</p></div></div>
+        <div className="flex items-start gap-3"><Camera className="mt-0.5 h-5 w-5 text-primary" /><div className="space-y-1 text-sm"><p className="font-semibold text-foreground">4. Optional AI Hero Photography Enhancement</p><p className="text-muted-foreground">The Editorial Art Direction cover works without this step. OpenRouter receives only the selected still if you choose to request an enhanced hero photograph.</p></div></div>
       </div>
 
       <div className="grid gap-3 rounded-xl border border-border bg-card p-4 text-sm md:grid-cols-5">
@@ -278,7 +278,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
 
       {designCover && heroImage && (
         <div className="rounded-xl border border-border bg-card p-4">
-          <div className="mb-4"><p className="text-sm font-semibold text-foreground">4. Design Cover</p><p className="text-xs text-muted-foreground">Typography is designed around the approved photograph or the selected local story frame.</p></div>
+          <div className="mb-4"><p className="text-sm font-semibold text-foreground">5. Design AI-enhanced Cover</p><p className="text-xs text-muted-foreground">Typography is designed around the approved AI-enhanced photograph.</p></div>
           <CoverPreviewEditor frame={heroImage} metadata={{ ...metadata, aiReconstructed: true }} settings={settings} fileSuffix="official-cover" />
         </div>
       )}

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import CoverFramePicker from "./CoverFramePicker";
 import CoverMetadataForm from "./CoverMetadataForm";
 import OpenRouterCoverMode from "./OpenRouterCoverMode";
+import CoverPreviewEditor from "./CoverPreviewEditor";
 import { DEFAULT_COVER_SETTINGS } from "@/lib/aiMediaStudio/coverRenderer";
 import { selectAdvertisingHeroFrames } from "@/lib/aiMediaStudio/advertisingPhotographer";
 import { selectStrongestIdentityReferenceFrame } from "@/lib/aiMediaStudio/imageIdentityValidation";
@@ -52,9 +53,22 @@ export default function CoverGeneratorPanel({ item }) {
       </Card>
 
       {creativeReady ? (
-        <OpenRouterCoverMode frame={frame} identityReferenceFrame={identityReference?.frame || null} metadata={{ ...metadata, lockUserText: true }} settings={settings} />
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between gap-3 text-sm">
+                3. Editorial Art Direction Engine
+                <Badge variant="outline">AI not required</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CoverPreviewEditor frame={frame} metadata={{ ...metadata, lockUserText: true, aiReconstructed: false }} settings={settings} fileSuffix="editorial-cover" />
+            </CardContent>
+          </Card>
+          <OpenRouterCoverMode frame={frame} identityReferenceFrame={identityReference?.frame || null} metadata={{ ...metadata, lockUserText: true }} settings={settings} />
+        </>
       ) : (
-        <Card><CardContent className="p-6 text-sm text-muted-foreground">Enter the video title and choose a story frame to generate the professional hero photograph.</CardContent></Card>
+        <Card><CardContent className="p-6 text-sm text-muted-foreground">Enter the video title and choose a story frame to create the editorial cover.</CardContent></Card>
       )}
     </div>
   );

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download } from "lucide-react";
 import { blobToCanvasImage, canvasToBlob, getCoverDimensions } from "@/lib/aiMediaStudio/coverRenderer";
-import { generatePosterPlan, renderCommercialKeyArtToCanvas, selectPosterVariant } from "@/lib/aiMediaStudio/commercialKeyArtEngine";
+import { generatePosterPlan, renderCommercialKeyArtToCanvas, renderPosterVariantToCanvas, selectPosterVariant } from "@/lib/aiMediaStudio/commercialKeyArtEngine";
 
 async function frameToBlob(frame) {
   if (frame?.blob) return frame.blob;
@@ -66,12 +66,14 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
   const [renderedPlan, setRenderedPlan] = useState(null);
   const [error, setError] = useState("");
   const [warning, setWarning] = useState("");
+  const [selectedConceptId, setSelectedConceptId] = useState(null);
   const dims = getCoverDimensions(settings);
   const metadataKey = JSON.stringify(metadata || {});
   const planSettingsKey = `${dims.width}x${dims.height}`;
-  const selectedPlan = useMemo(() => renderedPlan?.selected || selectPosterVariant(plan, settings), [plan, renderedPlan, settings]);
+  const conceptOptions = plan?.variants || [];
+  const selectedPlan = useMemo(() => renderedPlan?.selected || conceptOptions.find(item => item.candidate_id === selectedConceptId) || selectPosterVariant(plan, settings), [plan, renderedPlan, settings, selectedConceptId, conceptOptions]);
   const critic = renderedPlan?.selected?.internalCritic;
-  const canExport = rendered && Boolean(critic?.approved) && renderedPlan?.approvalStatus === "approved";
+  const canExport = rendered && Boolean(critic?.approved) && renderedPlan?.approvalStatus !== "needs_review";
 
   useEffect(() => {
     let active = true;
@@ -91,6 +93,7 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
       const nextPlan = await generatePosterPlan(image, metadata, settings, dims.width, dims.height);
       if (!active) return;
       setPlan(nextPlan);
+      setSelectedConceptId(nextPlan?.variants?.[0]?.candidate_id || null);
     })().catch(err => {
       if (active) setError(err.message || "Cover plan failed");
     });
@@ -113,7 +116,10 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
     const frameId = window.requestAnimationFrame(async () => {
       try {
         const scratchCanvas = document.createElement("canvas");
-        const nextPlan = await renderCommercialKeyArtToCanvas(scratchCanvas, imageRef.current, metadata, settings, dims.width, dims.height, plan);
+        const variant = (plan?.variants || []).find(item => item.candidate_id === selectedConceptId);
+        const nextPlan = variant
+          ? await renderPosterVariantToCanvas(scratchCanvas, imageRef.current, plan, variant, settings, dims.width, dims.height)
+          : await renderCommercialKeyArtToCanvas(scratchCanvas, imageRef.current, metadata, settings, dims.width, dims.height, plan);
         if (renderTokenRef.current !== renderToken || !canvasRef.current) return;
 
         canvasRef.current.width = scratchCanvas.width;
@@ -124,8 +130,8 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
         canvasRef.current.__fleshlabPosterPlan = nextPlan;
 
         const failures = nextPlan?.selected?.score?.qualityFailures || [];
-        setRenderedPlan(nextPlan);
-        setWarning(failures.length ? `Export blocked until redesign passes critique. ${failures.join(", ")}.` : "");
+        setRenderedPlan(nextPlan?.approvalStatus ? nextPlan : { ...nextPlan, approvalStatus: nextPlan?.selected?.score?.passesQualityGate ? "approved" : "needs_review" });
+        setWarning(failures.length ? `This concept has review notes: ${failures.join(", ")}.` : "");
         setRendered(true);
         setError("");
       } catch (err) {
@@ -135,7 +141,7 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
 
     rafRef.current = frameId;
     return () => window.cancelAnimationFrame(frameId);
-  }, [plan, metadata, settings, dims.width, dims.height]);
+  }, [plan, metadata, settings, dims.width, dims.height, selectedConceptId]);
 
   const download = async (type) => {
     if (!canExport || !canvasRef.current) return;
@@ -153,15 +159,25 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 className="font-bold text-foreground">Official promotional cover</h3>
+          <h3 className="font-bold text-foreground">Editorial Art Direction Cover</h3>
           <p className="text-xs text-muted-foreground">
-            {selectedPlan ? `Cover design ready · ${dims.width} × ${dims.height}px` : `Designing ${dims.width} × ${dims.height}px export`}
+            {selectedPlan ? `${selectedPlan.variant || "Cover concept"} · ${selectedPlan.diagnostic?.visualSystemLabel || plan?.designSystem?.label || "Editorial system"} · ${dims.width} × ${dims.height}px` : `Designing ${dims.width} × ${dims.height}px export`}
           </p>
         </div>
-        {canExport ? <Badge variant="outline">Ready for export</Badge> : rendered ? <Badge variant="secondary">Design needs another pass</Badge> : <Badge variant="secondary">Designing</Badge>}
+        {canExport ? <Badge variant="outline">Ready for export</Badge> : rendered ? <Badge variant="secondary">Review concept</Badge> : <Badge variant="secondary">Designing</Badge>}
       </div>
 
-      {warning && <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm text-yellow-300">The cover design needs another pass before export. Create the promotional still again to refine it.</div>}
+      {conceptOptions.length > 0 && (
+        <div className="grid gap-2 sm:grid-cols-3">
+          {conceptOptions.slice(0, 3).map(option => (
+            <Button key={option.candidate_id} type="button" variant={selectedConceptId === option.candidate_id ? "default" : "outline"} onClick={() => setSelectedConceptId(option.candidate_id)} className="h-auto justify-start p-3 text-left">
+              <span><b className="block text-xs">{option.variant}</b><small className="block opacity-70">{option.diagnostic?.compositionMode || option.diagnostic?.typographyStyle}</small></span>
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {warning && <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm text-yellow-300">{warning}</div>}
       {error && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
       <div className="relative overflow-auto rounded-xl border border-border bg-black p-3">

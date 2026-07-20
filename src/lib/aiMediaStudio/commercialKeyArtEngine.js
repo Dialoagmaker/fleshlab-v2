@@ -1,6 +1,7 @@
 import { analyzePosterImage } from "./posterAnalysis";
 import { paintCommercialVisualSystem } from "./commercialVisualSystems";
-import { buildFleshlabCoverPlan, stablePlanHash } from "./fleshlabVisualLanguage";
+import { stablePlanHash } from "./fleshlabVisualLanguage";
+import { buildEditorialArtDirectionPlan } from "./editorialArtDirectionEngine";
 import { recordCreativeLesson } from "./creativeIntelligenceEngine";
 
 const TARGET_STREAMING_SCORE = 88;
@@ -37,7 +38,7 @@ function buildVariant(plan, candidate, index, width, height) {
     candidate_id: candidate.id,
     iteration_id: `rule_pass_${index + 1}`,
     concept_id: `fleshlab_language_${stablePlanHash(plan.metadata).slice(0, 8)}`,
-    visual_system_id: "fleshlab-inferred-visual-language",
+    visual_system_id: candidate.visual_system_id || "fleshlab-editorial-art-direction",
     render_plan_id: `render_${hash}`,
     render_plan_hash: hash,
     canvas_cache_key: `${candidate.id}_${hash}_${width}x${height}`,
@@ -47,7 +48,7 @@ function buildVariant(plan, candidate, index, width, height) {
     poster_family_label: candidate.label,
     philosophy: candidate.imageRole === "ai_reconstructed_hero"
       ? "AI reconstructed hero image supplied; local engine applies FLESHLAB brand, typography, grading, and export only."
-      : "Source-frame editorial layout only; premium streaming key art requires AI hero-image reconstruction first.",
+      : "Editorial art direction uses the selected Story Frame as the preserved hero asset and finishes the cover locally.",
     impact_score: candidate.score.total,
     hero_score: candidate.score.hero,
     thumbnail_score: candidate.score.title,
@@ -65,6 +66,11 @@ function buildVariant(plan, candidate, index, width, height) {
       titleZone: candidate.titleZone,
       logoAnchor: candidate.logoAnchor,
       imageRole: candidate.imageRole,
+      visualSystemId: candidate.visual_system_id,
+      visualSystemLabel: candidate.visual_system_label,
+      typographyStyle: candidate.typographyStyle,
+      compositionMode: candidate.compositionMode,
+      grade: candidate.grade,
       critique: candidate.critique,
       compositionBrief: candidate.compositionBrief,
       creativeIntelligence: candidate.creativeIntelligence,
@@ -78,7 +84,7 @@ function buildVariant(plan, candidate, index, width, height) {
 export async function generateCommercialKeyArtPlan(image, metadata = {}, settings = {}, width = 1920, height = 1080) {
   const analysis = await analyzePosterImage(image);
   const normalizedMetadata = normalizeMetadata(metadata, image);
-  const languagePlan = buildFleshlabCoverPlan({ image, metadata: normalizedMetadata, analysis, width, height });
+  const languagePlan = buildEditorialArtDirectionPlan({ image, metadata: normalizedMetadata, analysis, width, height });
   const variants = languagePlan.candidates.map((candidate, index) => buildVariant({ ...languagePlan, metadata: normalizedMetadata }, candidate, index, width, height));
   const selectedIndex = Math.max(0, languagePlan.candidates.findIndex(candidate => candidate.id === languagePlan.selected.id));
   const selected = variants[selectedIndex] || variants[0];
@@ -90,10 +96,10 @@ export async function generateCommercialKeyArtPlan(image, metadata = {}, setting
     selected,
     best: selected,
     variants,
-    family: { id: "fleshlab_inferred_language", label: languagePlan.selected.label },
+    family: { id: languagePlan.designSystem?.id || "editorial_art_direction", label: languagePlan.designSystem?.label || languagePlan.selected.label },
     artDirection: {
-      pipeline: ["Video", "Moment Selection", "Creative Director", "Photographic Brief", "AI Photographer", "Professional Hero Image", "Art Director", "Typography", "Branding", "Quality Review", "Export"],
-      visualSystemId: "fleshlab-ai-photographer-cover-system",
+      pipeline: ["Video", "Story Frame", "Design System Classification", "Editorial Crop", "Background Extension", "Film Grade", "Designed Typography", "Branding", "Export"],
+      visualSystemId: languagePlan.designSystem?.id || "fleshlab-editorial-art-direction-system",
       compositionProtection: languagePlan.selected.crop.compositionProtection || null,
     },
     preparedIterations: languagePlan.candidates.map((candidate, index) => ({
@@ -118,7 +124,7 @@ export async function generateCommercialKeyArtPlan(image, metadata = {}, setting
     })),
     winner_reason: normalizedMetadata.aiReconstructed
       ? `${languagePlan.selected.label} selected after applying inferred FLESHLAB rules to the reconstructed hero image.`
-      : `${languagePlan.selected.label} selected as the strongest local editorial layout; premium key art still requires AI reconstruction.`,
+      : `${languagePlan.selected.label} selected by the Editorial Art Direction Engine as a final local cover concept.`,
   };
 }
 
@@ -182,10 +188,10 @@ export async function renderCommercialKeyArtToCanvas(canvas, image, metadata = {
   canvas.__fleshlabPosterPlan = {
     ...bestPlan,
     attempts,
-    approvalStatus: bestPlan?.selected?.score?.passesQualityGate ? "approved" : "needs_ai_reconstruction_or_review",
+    approvalStatus: bestPlan?.selected?.score?.passesQualityGate ? "approved" : "needs_review",
     winner_reason: bestPlan?.metadata?.aiReconstructed
       ? `${bestPlan.selected.variant} passed the reconstructed-hero branding pass.`
-      : `${bestPlan.selected.variant} is a local editorial layout, not final premium key art.`,
+      : `${bestPlan.selected.variant} passed as a final local editorial cover.`,
   };
   return canvas.__fleshlabPosterPlan;
 }

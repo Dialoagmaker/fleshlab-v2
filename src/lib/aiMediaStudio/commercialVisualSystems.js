@@ -11,8 +11,8 @@ function upper(value) {
   return String(value || "").trim().toUpperCase();
 }
 
-function font(size, family = "Bebas Neue", weight = 900) {
-  return `${weight} ${size}px "${family}", Impact, Arial, sans-serif`;
+function font(size, family = "Bebas Neue", weight = 900, style = "") {
+  return `${style ? `${style} ` : ""}${weight} ${size}px "${family}", Impact, Arial, sans-serif`;
 }
 
 function manualValue(settings, key, fallback) {
@@ -66,14 +66,24 @@ function drawEditorialBase(ctx, image, map, width, height, settings) {
   ctx.fillRect(0, 0, width, height);
 
   ctx.save();
-  ctx.globalAlpha = map.imageRole === "ai_reconstructed_hero" ? 0.42 : 0.62;
-  ctx.filter = `blur(${Math.round(width * 0.018)}px) brightness(42%) contrast(130%) saturate(92%)`;
+  ctx.globalAlpha = 0.82;
+  ctx.filter = `blur(${Math.round(width * 0.024)}px) brightness(48%) contrast(138%) saturate(96%)`;
   drawFill(ctx, image, map.crop, width, height);
   ctx.restore();
 
   ctx.save();
-  ctx.filter = imageFilter(settings, map.imageRole === "ai_reconstructed_hero" ? 100 : 88, grade.contrast * 100, grade.saturation * 100);
-  drawCover(ctx, image, map.crop, width, height, map.imageRole === "ai_reconstructed_hero" ? 1 : 0.92);
+  ctx.globalCompositeOperation = "screen";
+  const glow = ctx.createRadialGradient(width * 0.5, height * 0.18, 0, width * 0.5, height * 0.18, width * 0.72);
+  glow.addColorStop(0, `rgba(${grade.accent},0.12)`);
+  glow.addColorStop(0.44, `rgba(255,210,150,${0.05 + (grade.warmth || 0.6) * 0.08})`);
+  glow.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
+
+  ctx.save();
+  ctx.filter = imageFilter(settings, 96, grade.contrast * 100, grade.saturation * 100);
+  drawCover(ctx, image, map.crop, width, height, 0.96);
   ctx.restore();
 }
 
@@ -140,26 +150,56 @@ function drawTitle(ctx, map, width, height, metadata, settings) {
   let y = (settings?.manualOverrides?.titleY ? Number(settings.titleY) / 100 : zone.y) * height;
   const maxW = zone.w * width;
   const baseSize = manualValue(settings, "titleSize", width * map.titleScale);
-  const block = wrapTitle(ctx, metadata.title || metadata.mainTitle || metadata.videoTitle || "", maxW, baseSize, width > height ? 3 : 5);
+  const title = metadata.title || metadata.mainTitle || metadata.videoTitle || "Untitled";
+  const style = map.typographyStyle || "drama_condensed";
+  const block = wrapTitle(ctx, title, maxW, baseSize, width > height ? 3 : 5);
 
   ctx.save();
   ctx.shadowColor = "rgba(0,0,0,0.92)";
   ctx.shadowBlur = width * 0.018;
-  ctx.fillStyle = `rgba(${map.grade.paper},0.94)`;
-  ctx.strokeStyle = "rgba(0,0,0,0.82)";
-  ctx.lineWidth = Math.max(3, block.size * 0.018);
-  ctx.font = font(block.size, "Bebas Neue", 900);
-  block.lines.forEach(line => {
-    ctx.strokeText(line, x, y);
-    ctx.fillText(line, x, y);
-    y += block.lineHeight;
+  ctx.fillStyle = `rgba(${map.grade.paper},0.95)`;
+  ctx.strokeStyle = style === "minimal_spaced" ? `rgba(${map.grade.accent},0.62)` : "rgba(0,0,0,0.82)";
+  ctx.lineWidth = Math.max(2, block.size * (style === "action_impact" ? 0.045 : 0.018));
+
+  if (style === "luxury_serif" || style === "lifestyle_magazine") {
+    ctx.font = font(Math.max(18, block.size * 0.16), "Inter", 800);
+    ctx.fillStyle = `rgba(${map.grade.accent},0.9)`;
+    ctx.fillText("PRIVATE PREMIERE", x, y - block.size * 0.34, maxW);
+    ctx.font = font(block.size * 0.78, "Georgia", 700, style === "luxury_serif" ? "italic" : "");
+  } else if (style === "vacation_script") {
+    ctx.font = font(block.size * 0.62, "Permanent Marker", 700);
+    ctx.fillStyle = `rgba(${map.grade.accent},0.95)`;
+    ctx.fillText(block.lines[0] || upper(title), x, y, maxW);
+    y += block.lineHeight * 0.7;
+    ctx.font = font(block.size * 0.82, "Bebas Neue", 900);
+  } else if (style === "magazine_editorial") {
+    ctx.fillStyle = `rgba(${map.grade.accent},0.86)`;
+    ctx.fillRect(x, y - block.size * 0.72, Math.min(maxW, width * 0.22), Math.max(8, block.size * 0.06));
+    ctx.font = font(block.size * 0.86, "Georgia", 700);
+  } else if (style === "minimal_spaced") {
+    ctx.font = font(block.size * 0.54, "Inter", 900);
+  } else {
+    ctx.font = font(block.size, "Bebas Neue", 900);
+  }
+
+  const lines = style === "vacation_script" ? block.lines.slice(1) : block.lines;
+  lines.forEach((line, index) => {
+    const text = style === "minimal_spaced" ? upper(line).split("").join(" ") : line;
+    if (style === "reality_bold") {
+      ctx.fillStyle = index % 2 === 0 ? `rgba(${map.grade.accent},0.96)` : `rgba(${map.grade.paper},0.94)`;
+      ctx.fillRect(x - width * 0.008, y - block.size * 0.66, Math.min(maxW, ctx.measureText(text).width + width * 0.026), block.size * 0.74);
+      ctx.fillStyle = "rgba(255,255,255,0.96)";
+    }
+    if (style === "action_impact" || style === "dark_cinema") ctx.strokeText(text, x, y);
+    ctx.fillText(text, x, y, maxW);
+    y += block.lineHeight * (style === "minimal_spaced" ? 1.18 : 1);
   });
 
   const subtitle = upper(metadata.subtitle || metadata.episodeTitle || metadata.optionalSubtitle || "");
   if (subtitle) {
     y += height * 0.018;
     ctx.font = font(Math.max(18, manualValue(settings, "performerSize", width * map.performerScale)), "Inter", 900);
-    ctx.fillStyle = "rgba(255,255,255,0.86)";
+    ctx.fillStyle = style === "travel_poster" ? `rgba(${map.grade.accent},0.9)` : "rgba(255,255,255,0.86)";
     ctx.fillText(subtitle.slice(0, 52), x + width * 0.004, y, maxW);
     y += height * 0.044;
   }
@@ -227,9 +267,10 @@ function drawFooter(ctx, map, width, height, metadata, settings) {
 
 function scoreRendered(plan, map, width, height) {
   const base = plan.selected?.score || map.score || {};
-  const aiBoost = map.imageRole === "ai_reconstructed_hero" ? 14 : 0;
+  const aiBoost = map.imageRole === "ai_reconstructed_hero" ? 8 : 0;
+  const editorialBoost = map.imageRole === "source_frame_editorial_final" ? 7 : 0;
   const compositionBoost = map.titleZone.w > 0.34 ? 4 : 0;
-  const score = clamp((Number(base.total) || 70) + aiBoost + compositionBoost, 0, 96);
+  const score = clamp((Number(base.total) || 78) + aiBoost + editorialBoost + compositionBoost, 0, 96);
   return Math.round(score);
 }
 
@@ -259,8 +300,8 @@ export async function paintCommercialVisualSystem(canvas, image, plan, settings 
   const internalCritic = critiqueRenderedCover({ plan, renderMap, renderedScore });
   return {
     logoHeight: logoSize.h,
-    compositionMode: "intent-driven-creative-brief-execution",
-    visualSystemId: "fleshlab-intent-driven-renderer",
+    compositionMode: renderMap.compositionMode || "intent-driven-creative-brief-execution",
+    visualSystemId: renderMap.visual_system_id || renderMap.visualSystemId || "fleshlab-intent-driven-renderer",
     renderedRenderPlanHash: plan.selected?.render_plan_hash,
     renderMap,
     renderDirection: { visualLanguage: "FLESHLAB reference-derived", mood: renderMap.mood, imageRole: renderMap.imageRole, instructions: renderMap.renderingInstructions },
@@ -272,12 +313,12 @@ export async function paintCommercialVisualSystem(canvas, image, plan, settings 
         brandConsistency: true,
         typographyHierarchy: true,
         negativeSpace: renderMap.titleZone.w >= 0.34,
-        imagePipeline: renderMap.imageRole === "ai_reconstructed_hero",
+        imagePipeline: renderMap.imageRole === "ai_reconstructed_hero" || renderMap.imageRole === "source_frame_editorial_final",
       },
     },
     artworkValidation: internalCritic.approved ? "passed" : "critic_rejected",
     internalCritic,
     compositionProtection: renderMap.crop?.fitMode === "portraitEditorial" ? "source_composition_protected" : "safe_crop",
-    artDirectorVersion: "FLESHLAB VISUAL LANGUAGE ENGINE v5.1",
+    artDirectorVersion: "FLESHLAB EDITORIAL ART DIRECTION ENGINE v1.0",
   };
 }

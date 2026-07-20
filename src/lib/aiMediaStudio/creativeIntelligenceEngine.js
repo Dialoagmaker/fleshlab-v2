@@ -229,7 +229,8 @@ export function critiqueRenderedCover({ plan, renderMap, renderedScore }) {
   const failures = Object.entries(questions)
     .filter(([key, value]) => key === "distracts" ? value : !value)
     .map(([key]) => key);
-  const approved = failures.length === 0 && renderMap.imageRole === "ai_reconstructed_hero";
+  const isFinalEditorialSource = renderMap.imageRole === "source_frame_editorial_final";
+  const approved = isFinalEditorialSource ? score >= 78 && questions.performerDominates && questions.typographyEmotionallyCorrect : failures.length === 0 && renderMap.imageRole === "ai_reconstructed_hero";
   return {
     engine: "Internal Critic",
     approved,
