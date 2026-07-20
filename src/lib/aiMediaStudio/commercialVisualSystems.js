@@ -1,4 +1,5 @@
 import { critiqueRenderedCover } from "./creativeIntelligenceEngine";
+import { solveIntentDrivenRenderMap } from "./intentDrivenRenderPlanner";
 
 const OFFICIAL_LOGO_URL = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a1f9333f9_ChatGPTImageJul14202612_16_43AM.png";
 
@@ -80,15 +81,18 @@ function drawFleshlabGrade(ctx, map, width, height) {
   const grade = map.grade;
   ctx.save();
   ctx.globalCompositeOperation = "multiply";
-  const shadow = ctx.createLinearGradient(0, 0, width, height);
-  shadow.addColorStop(0, "rgba(0,0,0,0.72)");
+  const shadowDirection = map.performerSide === "right" ? [0, 0, width, height] : [width, 0, 0, height];
+  const shadow = ctx.createLinearGradient(...shadowDirection);
+  shadow.addColorStop(0, map.emotionFamily === "danger" ? "rgba(0,0,0,0.82)" : "rgba(0,0,0,0.68)");
   shadow.addColorStop(0.38, "rgba(0,0,0,0.08)");
-  shadow.addColorStop(1, "rgba(0,0,0,0.74)");
+  shadow.addColorStop(1, map.emotionFamily === "luxury" ? "rgba(0,0,0,0.66)" : "rgba(0,0,0,0.76)");
   ctx.fillStyle = shadow;
   ctx.fillRect(0, 0, width, height);
 
   ctx.globalCompositeOperation = "screen";
-  const warmth = ctx.createRadialGradient(width * 0.56, height * 0.34, 0, width * 0.56, height * 0.34, width * 0.58);
+  const lightX = map.performerSide === "right" ? width * 0.62 : width * 0.38;
+  const lightY = map.emotionFamily === "escape" ? height * 0.26 : height * 0.38;
+  const warmth = ctx.createRadialGradient(lightX, lightY, 0, lightX, lightY, width * (0.48 + (map.visualTension || 0.7) * 0.16));
   warmth.addColorStop(0, `rgba(255,185,125,${0.08 + grade.warmth * 0.13})`);
   warmth.addColorStop(0.42, `rgba(${grade.accent},0.07)`);
   warmth.addColorStop(1, "rgba(0,0,0,0)");
@@ -102,9 +106,10 @@ function drawTitleWell(ctx, map, width, height) {
   ctx.save();
   const x = zone.x * width;
   const y = zone.y * height;
-  const r = ctx.createRadialGradient(x, y, 0, x, y, width * 0.42);
-  r.addColorStop(0, "rgba(0,0,0,0.78)");
-  r.addColorStop(0.55, "rgba(0,0,0,0.38)");
+  const radius = width * (0.32 + (map.visualTension || 0.7) * 0.18);
+  const r = ctx.createRadialGradient(x, y, 0, x, y, radius);
+  r.addColorStop(0, map.emotionFamily === "luxury" ? "rgba(0,0,0,0.66)" : "rgba(0,0,0,0.8)");
+  r.addColorStop(0.55, "rgba(0,0,0,0.36)");
   r.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = r;
   ctx.fillRect(0, 0, width, height);
@@ -234,19 +239,14 @@ export async function paintCommercialVisualSystem(canvas, image, plan, settings 
   const ctx = canvas.getContext("2d");
   const map = plan.candidate || plan.selected?.diagnostic || plan.selected || plan.selected?.candidate || plan.selectedCandidate || plan.selected;
   const candidate = plan.candidate || plan.selected?.candidate || plan.selected || plan.selectedCandidate || plan.selected;
-  const renderMap = {
+  const baseMap = {
     ...candidate,
     ...(plan.selected?.diagnostic || {}),
     crop: candidate.crop || plan.selected?.crop,
     grade: candidate.grade || plan.selected?.diagnostic?.grade || { bg: "#030303", accent: "208,0,18", paper: "244,240,231", warmth: 0.68, contrast: 1.26, saturation: 1 },
-    titleZone: candidate.titleZone || plan.selected?.diagnostic?.titleZone || { x: 0.06, y: 0.56, w: 0.5, h: 0.28 },
-    logoAnchor: candidate.logoAnchor || plan.selected?.diagnostic?.logoAnchor || "top-left",
-    brandScale: candidate.brandScale || 0.078,
-    titleScale: candidate.titleScale || 0.112,
-    performerScale: candidate.performerScale || 0.022,
-    footerScale: candidate.footerScale || 0.014,
     imageRole: candidate.imageRole || (plan.metadata?.aiReconstructed ? "ai_reconstructed_hero" : "source_frame_editorial"),
   };
+  const renderMap = solveIntentDrivenRenderMap({ baseMap, plan, metadata: plan.metadata || {}, width, height });
 
   drawEditorialBase(ctx, image, renderMap, width, height, settings);
   drawFleshlabGrade(ctx, renderMap, width, height);
@@ -259,11 +259,11 @@ export async function paintCommercialVisualSystem(canvas, image, plan, settings 
   const internalCritic = critiqueRenderedCover({ plan, renderMap, renderedScore });
   return {
     logoHeight: logoSize.h,
-    compositionMode: "inferred-fleshlab-rules",
-    visualSystemId: "fleshlab-inferred-visual-language",
+    compositionMode: "intent-driven-creative-brief-execution",
+    visualSystemId: "fleshlab-intent-driven-renderer",
     renderedRenderPlanHash: plan.selected?.render_plan_hash,
     renderMap,
-    renderDirection: { visualLanguage: "FLESHLAB reference-derived", mood: renderMap.mood, imageRole: renderMap.imageRole },
+    renderDirection: { visualLanguage: "FLESHLAB reference-derived", mood: renderMap.mood, imageRole: renderMap.imageRole, instructions: renderMap.renderingInstructions },
     commercialAdvertisingScore: renderedScore,
     commercialScore: {
       total: renderedScore,
