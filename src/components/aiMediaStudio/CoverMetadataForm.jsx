@@ -2,28 +2,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const fields = [
-  ["performerName", "Performer name"],
-  ["videoTitle", "Video title"],
-  ["optionalSubtitle", "Optional subtitle"],
-  ["contentType", "Content type"],
-  ["campaignName", "Campaign name"],
+  ["videoTitle", "Video Title", "Required"],
+  ["optionalSubtitle", "Subtitle / Tagline", "Optional"],
+  ["performerName", "Performer", "Optional"],
+  ["seriesName", "Series", "Optional"],
+  ["contentType", "Content Type", "Optional"],
+  ["campaignName", "Campaign", "Optional"],
 ];
 
-export default function CoverMetadataForm({ metadata, onChange, lockUserText = true, onLockUserTextChange }) {
+export default function CoverMetadataForm({ metadata, onChange }) {
   return (
-    <div className="space-y-3">
-      <label className="inline-flex items-center gap-2 rounded-md border border-border bg-secondary/30 px-3 py-2 text-xs font-bold text-foreground">
-        <input type="checkbox" checked={lockUserText} onChange={event => onLockUserTextChange?.(event.target.checked)} />
-        Lock User Text
-      </label>
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-        {fields.map(([key, label]) => (
-          <div key={key} className="space-y-1">
-            <Label className="text-xs">{label}</Label>
-            <Input value={metadata[key] || ""} onChange={event => onChange({ ...metadata, [key]: event.target.value })} placeholder={label} />
-          </div>
-        ))}
-      </div>
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      {fields.map(([key, label, hint]) => (
+        <div key={key} className="space-y-1.5">
+          <Label className="flex items-center justify-between text-xs font-bold">
+            <span>{label}</span>
+            <span className="text-[10px] font-medium text-muted-foreground">{hint}</span>
+          </Label>
+          <Input
+            value={metadata[key] || ""}
+            onChange={event => onChange({ ...metadata, [key]: event.target.value })}
+            placeholder={label}
+          />
+        </div>
+      ))}
     </div>
   );
 }

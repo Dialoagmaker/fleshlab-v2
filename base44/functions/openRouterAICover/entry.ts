@@ -38,6 +38,9 @@ AI Photographer instructions:
 - do NOT add typography, logo, watermark, captions, UI, or poster text
 - do NOT decorate the smartphone frame
 - the smartphone frame is reference material only, never the finished artwork
+- do NOT crop a portrait or smartphone frame into a landscape image
+- re-photograph the scene as a new 16:9 advertising still that naturally expands the environment beyond the original crop
+- the editorial title must influence composition, mood, negative space, and where the title should naturally live later
 
 Maintain:
 - same performer
