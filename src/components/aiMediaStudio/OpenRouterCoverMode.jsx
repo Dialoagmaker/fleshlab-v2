@@ -53,30 +53,30 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
 
   const generate = async () => {
     if (!frame?.blob || !consent) return;
-    if (!identityReferenceFrame?.blob || !referenceScore?.hasClearFace) {
-      setError("No suitable identity frame was found with a clearly visible face. Choose another frame with visible eyes, good light, and a frontal or three-quarter view, then generate again.");
-      return;
-    }
     setLoading(true);
     setError("");
     setResult(null);
     setValidation(null);
     setReviewStatus("idle");
-    const frameDataUrl = await blobToDataUrl(frame.blob);
+    const storyDataUrl = await blobToDataUrl(frame.blob);
+    const identityDataUrl = identityReferenceFrame?.blob ? await blobToDataUrl(identityReferenceFrame.blob) : null;
     const response = await base44.functions.invoke("openRouterAICover", {
       action: "generate",
       consent: true,
-      frame_data_url: frameDataUrl,
+      story_reference_data_url: storyDataUrl,
+      identity_reference_data_url: identityDataUrl,
       model_quality: quality,
       aspect_ratio: "16:9",
-      metadata: { ...metadata, identityReferenceTime: formatTime(identityReferenceFrame.time) },
+      metadata: { ...metadata, identityReferenceTime: identityReferenceFrame ? formatTime(identityReferenceFrame.time) : "none" },
     });
     const data = response.data;
     if (!data?.ok) throw new Error(data?.error || "OpenRouter generation failed");
     const blob = dataUrlToBlob(data.generated_image_data_url);
     const generated = { blob, url: URL.createObjectURL(blob), model: data.model_used, cost: data.cost_reported, usage: data.usage, fallback: false };
     setResult(generated);
-    const identityValidation = await validateIdentityPreservation(identityReferenceFrame.blob, blob, identityReferenceFrame);
+    const identityValidation = identityReferenceFrame?.blob
+      ? await validateIdentityPreservation(identityReferenceFrame.blob, blob, identityReferenceFrame)
+      : { accepted: false, identityConfidence: 0, checks: { face: 0, hair: 0, body: 0, pose: 0, overall: 0 }, reference: null };
     setValidation(identityValidation);
     setReviewStatus("pending");
     setLoading(false);
@@ -84,45 +84,47 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
 
   const handleGenerate = () => generate().catch(err => {
     setLoading(false);
-    setError(`${err.response?.data?.error || err.message} No original-frame cover fallback will be used.`);
+    setError(`${err.response?.data?.error || err.message} The workflow remains review-based; no frame fallback will be used.`);
   });
 
   const approved = reviewStatus === "approved";
   const rejected = reviewStatus === "rejected";
+  const lowIdentity = validation && !validation.accepted;
 
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-primary/35 bg-primary/10 p-4">
-        <div className="flex items-start gap-3"><AlertTriangle className="mt-0.5 h-5 w-5 text-primary" /><div className="space-y-2 text-sm"><p className="font-semibold text-foreground">OpenRouter recreates the selected story moment as cinematic 16:9 key art.</p><p className="text-muted-foreground">Identity validation now opens a review workflow. Generated artwork is always shown, and you manually approve or reject it.</p></div></div>
+        <div className="flex items-start gap-3"><AlertTriangle className="mt-0.5 h-5 w-5 text-primary" /><div className="space-y-2 text-sm"><p className="font-semibold text-foreground">Identity and story are now separate inputs.</p><p className="text-muted-foreground">The AI automatically selects identity from the full video scan while your selected frame directs the story moment. Generation is never blocked.</p></div></div>
       </div>
       <div className="grid gap-4 xl:grid-cols-[340px_1fr]">
         <div className="space-y-4 rounded-xl border border-border bg-card p-4">
-          <div><h3 className="font-bold text-foreground">Story reference still</h3><p className="text-xs text-muted-foreground">Frame {frame ? formatTime(frame.time) : "not selected"}</p></div>
+          <div><h3 className="font-bold text-foreground">Story Frame</h3><p className="text-xs text-muted-foreground">Frame {frame ? formatTime(frame.time) : "not selected"}</p></div>
           {frame?.url && <img src={frame.url} alt="Selected story reference still" className="aspect-video w-full rounded-lg border border-border object-cover" />}
           <div className="rounded-lg border border-border bg-secondary/25 p-3">
-            <div className="flex items-center justify-between gap-2"><h4 className="text-sm font-bold text-foreground">Identity reference</h4>{referenceScore?.hasClearFace ? <Badge variant="outline">Auto-selected</Badge> : <Badge variant="destructive">No clear face</Badge>}</div>
-            {identityReferenceFrame?.url ? <img src={identityReferenceFrame.url} alt="Auto-selected identity reference" className="mt-2 aspect-video w-full rounded border border-border object-cover" /> : <p className="mt-2 text-xs text-destructive">No suitable face-visible identity frame found.</p>}
-            {identityReferenceFrame && <p className="mt-2 text-xs text-muted-foreground">Frame {formatTime(identityReferenceFrame.time)} · Overall {referenceScore?.overall}% · Face {referenceScore?.face}%</p>}
+            <div className="flex items-center justify-between gap-2"><h4 className="text-sm font-bold text-foreground">Identity Frame</h4>{referenceScore?.hasClearFace ? <Badge variant="outline">Auto-selected</Badge> : <Badge variant="destructive">LOW IDENTITY</Badge>}</div>
+            {identityReferenceFrame?.url ? <img src={identityReferenceFrame.url} alt="Auto-selected identity reference" className="mt-2 aspect-video w-full rounded border border-border object-cover" /> : <p className="mt-2 text-xs text-muted-foreground">No strong face was found in the full video scan. Generation will continue and be marked LOW IDENTITY.</p>}
+            {identityReferenceFrame && <p className="mt-2 text-xs text-muted-foreground">Frame {formatTime(identityReferenceFrame.time)} · Face {referenceScore?.face}% · Eyes {referenceScore?.eyes}% · Hair {referenceScore?.hair}% · Size {referenceScore?.faceSize}%</p>}
           </div>
           <div className="space-y-1"><Label className="text-xs">OpenRouter image model</Label><Select value={quality} onValueChange={setQuality}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="pro">black-forest-labs/flux.2-pro</SelectItem><SelectItem value="max">black-forest-labs/flux.2-max quality mode</SelectItem></SelectContent></Select></div>
-          <label className="flex items-start gap-3 rounded-lg border border-border p-3 text-sm text-muted-foreground"><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} className="mt-1 accent-primary" /><span>I approve sending only the selected story still to OpenRouter for cinematic key-art reconstruction. The original video is not uploaded and FLESHLAB branding remains local.</span></label>
-          <Button disabled={!frame || !identityReferenceFrame || !referenceScore?.hasClearFace || !consent || loading} onClick={handleGenerate} className="w-full gap-2"><Wand2 className="h-4 w-4" />{loading ? "Producing cinematic key art..." : "Generate Key Art"}</Button>
-          {!identityReferenceFrame && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">No suitable identity frame exists in this video scan. Select another story frame with a clearer face or analyze a better source.</div>}
+          <label className="flex items-start gap-3 rounded-lg border border-border p-3 text-sm text-muted-foreground"><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} className="mt-1 accent-primary" /><span>I approve sending the story frame and, when found, the auto-selected identity frame to OpenRouter for cinematic key-art reconstruction. The original video is not uploaded and FLESHLAB branding remains local.</span></label>
+          <Button disabled={!frame || !consent || loading} onClick={handleGenerate} className="w-full gap-2"><Wand2 className="h-4 w-4" />{loading ? "Producing cinematic key art..." : "Generate Key Art"}</Button>
+          {!identityReferenceFrame && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">No suitable identity frame exists in this video scan. Generation will continue, but the result will be marked LOW IDENTITY for your review.</div>}
           {validation && (
             <div className={`rounded-lg border p-3 ${validation.accepted ? "border-primary/35 bg-primary/10" : "border-destructive/40 bg-destructive/10"}`}>
-              <p className="text-xs font-semibold text-foreground">Identity validation breakdown</p>
+              <p className="text-xs font-semibold text-foreground">Similarity Breakdown</p>
               <BreakdownRows checks={validation.checks} />
-              <p className="mt-2 text-xs text-muted-foreground">{validation.accepted ? "Automated check considers this usable, but manual approval is still required." : "Automated check is cautious. Review the artwork visually before deciding."}</p>
+              <p className="mt-2 text-xs text-muted-foreground">{validation.accepted ? "Identity confidence is usable, but final approval is yours." : "LOW IDENTITY — the artwork is still shown for your decision."}</p>
             </div>
           )}
           {result && (
             <div className="space-y-3 rounded-lg border border-border p-3 text-xs text-muted-foreground">
-              <Badge variant="outline">{approved ? "Manually approved" : rejected ? "Manually rejected" : "Awaiting review"}</Badge>
+              <Badge variant={lowIdentity ? "destructive" : "outline"}>{approved ? "Manually approved" : rejected ? "Manually rejected" : lowIdentity ? "LOW IDENTITY" : "Awaiting review"}</Badge>
               <p>Model: {result.model}</p>
               <p>Cost reported: {result.cost ?? "not reported"}</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <Button size="sm" onClick={() => setReviewStatus("approved")} className="gap-1"><CheckCircle2 className="h-3 w-3" />Approve</Button>
                 <Button size="sm" variant="outline" onClick={() => setReviewStatus("rejected")} className="gap-1"><XCircle className="h-3 w-3" />Reject</Button>
+                <Button size="sm" variant="outline" onClick={handleGenerate} disabled={loading} className="gap-1"><Wand2 className="h-3 w-3" />Regenerate</Button>
               </div>
             </div>
           )}
@@ -130,8 +132,8 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           {result ? (
-            approved ? <CoverPreviewEditor frame={result} metadata={metadata} settings={settings} /> : <div className="space-y-4"><img src={result.url} alt="Generated key art awaiting review" className="w-full rounded-xl border border-border object-contain" /><div className={`rounded-lg border p-3 text-sm ${rejected ? "border-destructive/40 bg-destructive/10 text-destructive" : "border-primary/30 bg-primary/10 text-muted-foreground"}`}>{rejected ? "Artwork rejected. It remains visible here for review; generate again when ready." : "Generated key art is visible. Approve it to add local FLESHLAB typography and branding."}</div></div>
-          ) : <div className="flex min-h-[360px] items-center justify-center rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No cinematic key art has been generated yet. The strongest face-visible identity frame will be used for local identity review.</div>}
+            approved ? <CoverPreviewEditor frame={result} metadata={metadata} settings={settings} /> : <div className="space-y-4"><div className="flex items-center justify-between gap-3"><h3 className="font-bold text-foreground">Generated Key Art</h3>{validation && <Badge variant={lowIdentity ? "destructive" : "outline"}>{lowIdentity ? "LOW IDENTITY" : `Identity ${validation.identityConfidence}%`}</Badge>}</div><img src={result.url} alt="Generated key art awaiting review" className="w-full rounded-xl border border-border object-contain" /><div className={`rounded-lg border p-3 text-sm ${rejected ? "border-destructive/40 bg-destructive/10 text-destructive" : "border-primary/30 bg-primary/10 text-muted-foreground"}`}>{rejected ? "Artwork rejected. It remains visible here for review; generate again when ready." : "Generated Key Art is visible for review. Approve it to add local FLESHLAB typography and branding."}</div></div>
+          ) : <div className="flex min-h-[360px] items-center justify-center rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No cinematic key art has been generated yet. The AI will use the story frame plus the strongest identity frame it found, or continue with LOW IDENTITY if none exists.</div>}
         </div>
       </div>
     </div>

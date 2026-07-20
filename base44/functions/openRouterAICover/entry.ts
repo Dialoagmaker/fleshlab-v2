@@ -9,11 +9,13 @@ const MAX_DATA_URL_CHARS = 12_000_000;
 
 const KEY_ART_DIRECTOR_PROMPT = `You are a premium entertainment Key Art Director, not a screenshot retoucher.
 
-Use the reference still only as source inspiration for identity, pose, action, story, and scene context.
+Use two separate visual references when provided:
+- Identity Reference: preserves the performer's recognizable face, hair, and appearance.
+- Story Reference: preserves pose, action, location, emotion, lighting, and moment.
 
 First understand the scene:
-- performer identity and recognisable features
-- pose and primary action
+- performer identity from the Identity Reference
+- pose and primary action from the Story Reference
 - location: bathroom, hotel, beach, gym, private room, night, morning, etc.
 - mood: luxury, cold, warm, voyeur, romantic, raw, cinematic, premium
 - environmental clues: walls, tiles, mirrors, steam, sheets, windows, shadows, practical lights, depth
@@ -138,7 +140,7 @@ async function auditOpenRouter(apiKey) {
     credits,
     image_generation_support: { primary: primarySupport, quality: qualitySupport },
     current_integration_supports_image_generation: false,
-    note: 'OpenRouter is used for cinematic key-art reconstruction from a selected still. Final FLESHLAB logo, titles, and typography are still rendered locally by Canvas.'
+    note: 'OpenRouter is used for cinematic key-art reconstruction from separate story and identity references when available. Final FLESHLAB logo, titles, and typography are still rendered locally by Canvas.'
   };
 }
 
@@ -150,14 +152,24 @@ function buildKeyArtPrompt(metadata = {}) {
     metadata.contentType ? `Content type: ${metadata.contentType}` : '',
     metadata.campaignName ? `Campaign: ${metadata.campaignName}` : '',
   ].filter(Boolean).join('\n');
-  return storyContext ? `${KEY_ART_DIRECTOR_PROMPT}\n\nVideo/story context to respect:\n${storyContext}` : KEY_ART_DIRECTOR_PROMPT;
+  const referenceMode = metadata.identityReferenceProvided
+    ? 'Reference order: image 1 is IDENTITY ONLY; image 2 is STORY/MOMENT ONLY. Preserve identity from image 1 and story from image 2.'
+    : 'Only a Story Reference was supplied. Generate anyway, but identity preservation may be weaker.';
+  const basePrompt = `${KEY_ART_DIRECTOR_PROMPT}\n\n${referenceMode}`;
+  return storyContext ? `${basePrompt}\n\nVideo/story context to respect:\n${storyContext}` : basePrompt;
 }
 
-async function callImageGeneration(apiKey, model, frameDataUrl, aspectRatio, metadata = {}) {
+async function callImageGeneration(apiKey, model, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata = {}) {
+  const inputReferences = identityReferenceDataUrl
+    ? [
+      { type: 'image_url', image_url: { url: identityReferenceDataUrl } },
+      { type: 'image_url', image_url: { url: storyReferenceDataUrl } }
+    ]
+    : [{ type: 'image_url', image_url: { url: storyReferenceDataUrl } }];
   const payload = {
     model,
-    prompt: buildKeyArtPrompt(metadata),
-    input_references: [{ type: 'image_url', image_url: { url: frameDataUrl } }],
+    prompt: buildKeyArtPrompt({ ...metadata, identityReferenceProvided: Boolean(identityReferenceDataUrl) }),
+    input_references: inputReferences,
     aspect_ratio: aspectRatio || '16:9',
     resolution: '1K',
     output_format: 'png',
@@ -179,16 +191,19 @@ async function callImageGeneration(apiKey, model, frameDataUrl, aspectRatio, met
 }
 
 async function generateCover(apiKey, body) {
-  const { frame_data_url, consent, model_quality = 'pro', aspect_ratio = '16:9', metadata = {} } = body || {};
-  if (!consent) return json({ ok: false, error: 'User confirmation is required before sending the selected still image to OpenRouter.', code: 'consent_required' }, 400);
-  if (!frame_data_url || !String(frame_data_url).startsWith('data:image/')) return json({ ok: false, error: 'A selected still image data URL is required.', code: 'missing_frame' }, 400);
-  if (String(frame_data_url).length > MAX_DATA_URL_CHARS || estimateBytesFromDataUrl(frame_data_url) > 9_000_000) return json({ ok: false, error: 'Selected still image is too large for OpenRouter upload.', code: 'image_too_large' }, 413);
+  const { frame_data_url, story_reference_data_url, identity_reference_data_url, consent, model_quality = 'pro', aspect_ratio = '16:9', metadata = {} } = body || {};
+  const storyReferenceDataUrl = story_reference_data_url || frame_data_url;
+  const identityReferenceDataUrl = identity_reference_data_url || null;
+  if (!consent) return json({ ok: false, error: 'User confirmation is required before sending reference still images to OpenRouter.', code: 'consent_required' }, 400);
+  if (!storyReferenceDataUrl || !String(storyReferenceDataUrl).startsWith('data:image/')) return json({ ok: false, error: 'A story reference still image data URL is required.', code: 'missing_frame' }, 400);
+  if (String(storyReferenceDataUrl).length > MAX_DATA_URL_CHARS || estimateBytesFromDataUrl(storyReferenceDataUrl) > 9_000_000) return json({ ok: false, error: 'Story reference still image is too large for OpenRouter upload.', code: 'image_too_large' }, 413);
+  if (identityReferenceDataUrl && (!String(identityReferenceDataUrl).startsWith('data:image/') || String(identityReferenceDataUrl).length > MAX_DATA_URL_CHARS || estimateBytesFromDataUrl(identityReferenceDataUrl) > 9_000_000)) return json({ ok: false, error: 'Identity reference still image is invalid or too large for OpenRouter upload.', code: 'identity_image_too_large' }, 413);
 
   const models = model_quality === 'max' ? [QUALITY_MODEL] : [PRIMARY_MODEL, QUALITY_MODEL];
   const errors = [];
   for (const model of models) {
     try {
-      const result = await callImageGeneration(apiKey, model, frame_data_url, aspect_ratio, metadata);
+      const result = await callImageGeneration(apiKey, model, storyReferenceDataUrl, identityReferenceDataUrl, aspect_ratio, metadata);
       return json({
         ok: true,
         generated_image_data_url: result.image_data_url,
@@ -199,7 +214,8 @@ async function generateCover(apiKey, body) {
         cost_reported: result.usage?.cost ?? null,
         privacy: {
         original_video_transmitted: false,
-        selected_approved_still_transmitted: true,
+        story_reference_transmitted: true,
+        identity_reference_transmitted: Boolean(identityReferenceDataUrl),
         generated_image_received_from_openrouter: true,
         ai_role: 'cinematic_key_art_reconstruction',
         ai_generates_cover_base_artwork: true,

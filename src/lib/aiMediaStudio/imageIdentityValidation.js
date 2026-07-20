@@ -107,18 +107,23 @@ export function scoreIdentityReferenceFrame(frame) {
   const sharp = clamp(Number(metrics.sharpness || 0) / 75);
   const lit = clamp(1 - Math.abs(Number(metrics.brightness || 128) - 132) / 105);
   const exposure = clamp(1 - (Number(metrics.overexposure || 0) + Number(metrics.underexposure || 0)) / 80);
-  const frontal = clamp((1 - Number(hero.cropRisk || 0.48)) * 0.65 + (Number(hero.subjectDominance || 0) >= 0.12 ? 0.35 : 0));
-  const face = faceVisible ? toScore(0.34 + sharp * 0.2 + lit * 0.18 + exposure * 0.12 + frontal * 0.16) : 0;
-  const hair = faceVisible ? toScore(0.28 + sharp * 0.24 + clamp(Number(metrics.contrast || 0) / 80) * 0.22 + frontal * 0.26) : 0;
+  const faceSize = clamp(Number(hero.subjectDominance || 0) * 2.8);
+  const frontal = clamp((1 - Number(hero.cropRisk || 0.48)) * 0.65 + (faceSize >= 0.34 ? 0.35 : 0));
+  const eyes = faceVisible ? clamp(sharp * 0.38 + lit * 0.28 + frontal * 0.34) : 0;
+  const face = faceVisible ? toScore(0.24 + eyes * 0.26 + sharp * 0.16 + lit * 0.12 + exposure * 0.1 + frontal * 0.12) : 0;
+  const hair = faceVisible ? toScore(0.24 + sharp * 0.2 + clamp(Number(metrics.contrast || 0) / 80) * 0.22 + frontal * 0.18 + faceSize * 0.16) : 0;
   const body = toScore(clamp(Number(hero.upperBodyRatio || 0)) * 0.36 + clamp(Number(hero.subjectDominance || 0) * 2.4) * 0.32 + clamp(Number(hero.subjectSeparation || hero.compositionScore || 0)) * 0.32);
   const pose = toScore(clamp(Number(hero.bodyLanguage || 0)) * 0.36 + clamp(Number(hero.compositionScore || 0)) * 0.26 + frontal * 0.2 + clamp(Number(hero.sceneReadability || 0)) * 0.18);
   const overall = Math.round(face * 0.42 + hair * 0.12 + body * 0.18 + pose * 0.18 + toScore(lit * exposure) * 0.1);
   const reasons = [];
   if (!faceVisible) reasons.push("face not clearly visible");
+  if (eyes < 0.48) reasons.push("eyes not clear enough");
+  if (hair < 52) reasons.push("hair not clear enough");
+  if (faceSize < 0.28) reasons.push("face is too small");
   if (sharp < 0.38) reasons.push("soft frame");
   if (lit * exposure < 0.42) reasons.push("weak lighting");
   if (frontal < 0.42) reasons.push("face angle/crop is weak");
-  return { face, hair, body, pose, overall, hasClearFace: face >= 58 && overall >= 52, reasons };
+  return { face, hair, body, pose, overall, eyes: toScore(eyes), faceSize: toScore(faceSize), hasClearFace: face >= 58 && overall >= 52, reasons };
 }
 
 export function selectStrongestIdentityReferenceFrame(frames = []) {
