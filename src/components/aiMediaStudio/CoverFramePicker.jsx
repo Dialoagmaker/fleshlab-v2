@@ -40,7 +40,7 @@ function MiniPosterPreview({ frame }) {
   );
 }
 
-export default function CoverFramePicker({ frames, selectedIndex, rejectedIndexes = [], favoriteIndexes = [], compareIndexes = [], lockedHero, onSelect, onBestFrame, onReject, onToggleFavorite, onToggleCompare, onToggleLock }) {
+export default function CoverFramePicker({ frames, selectedIndex, identityReferenceIndex, rejectedIndexes = [], favoriteIndexes = [], compareIndexes = [], lockedHero, onSelect, onBestFrame, onReject, onToggleFavorite, onToggleCompare, onToggleLock }) {
   const [previewFrame, setPreviewFrame] = useState(null);
   const rejected = useMemo(() => new Set(rejectedIndexes), [rejectedIndexes]);
   const candidates = useMemo(() => rankEmotionalCommercialFrames(frames || [], 20, 45).filter(frame => !rejected.has(frame.index)), [frames, rejected]);
@@ -78,12 +78,14 @@ export default function CoverFramePicker({ frames, selectedIndex, rejectedIndexe
           const selected = selectedIndex === frame.index;
           const favorite = favoriteIndexes.includes(frame.index);
           const compared = compareIndexes.includes(frame.index);
+          const identityReference = identityReferenceIndex === frame.index;
           return (
             <div key={frame.index} className={`group relative overflow-hidden rounded-xl border bg-secondary/20 ${selected ? "border-primary ring-2 ring-primary/40" : "border-border"}`}>
               <MiniPosterPreview frame={frame} />
               <button type="button" onClick={() => onSelect(frame.index)} className="block w-full text-left">
                 <img src={frame.url} alt={`Frame at ${formatTime(frame.time)}`} className="aspect-video w-full object-cover" />
-                {selected && <Badge className="absolute left-2 top-2 gap-1"><Pin className="h-3 w-3" />Locked Hero</Badge>}
+                {selected && <Badge className="absolute left-2 top-2 gap-1"><Pin className="h-3 w-3" />Story Ref</Badge>}
+                {identityReference && <Badge variant="outline" className="absolute right-2 top-2 bg-background/80">Identity Ref</Badge>}
               </button>
               <div className="space-y-3 p-3">
                 <div className="flex items-center justify-between gap-2 text-xs">

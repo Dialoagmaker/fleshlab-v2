@@ -2,6 +2,10 @@ function clamp(value, min = 0, max = 1) {
   return Math.max(min, Math.min(max, value));
 }
 
+function toScore(value) {
+  return Math.round(clamp(value) * 100);
+}
+
 async function blobToBitmap(blob) {
   if (window.createImageBitmap) return createImageBitmap(blob);
   return new Promise((resolve, reject) => {
@@ -96,20 +100,50 @@ function skinSimilarity(original, enhanced) {
   return tone * 0.45 + ratio * 0.25 + layout * 0.3;
 }
 
-export async function validateIdentityPreservation(originalBlob, enhancedBlob) {
+export function scoreIdentityReferenceFrame(frame) {
+  const hero = frame?.hero || {};
+  const metrics = frame?.metrics || {};
+  const faceVisible = Boolean(hero.faceVisible || hero.faceZoneRatio >= 0.8);
+  const sharp = clamp(Number(metrics.sharpness || 0) / 75);
+  const lit = clamp(1 - Math.abs(Number(metrics.brightness || 128) - 132) / 105);
+  const exposure = clamp(1 - (Number(metrics.overexposure || 0) + Number(metrics.underexposure || 0)) / 80);
+  const frontal = clamp((1 - Number(hero.cropRisk || 0.48)) * 0.65 + (Number(hero.subjectDominance || 0) >= 0.12 ? 0.35 : 0));
+  const face = faceVisible ? toScore(0.34 + sharp * 0.2 + lit * 0.18 + exposure * 0.12 + frontal * 0.16) : 0;
+  const hair = faceVisible ? toScore(0.28 + sharp * 0.24 + clamp(Number(metrics.contrast || 0) / 80) * 0.22 + frontal * 0.26) : 0;
+  const body = toScore(clamp(Number(hero.upperBodyRatio || 0)) * 0.36 + clamp(Number(hero.subjectDominance || 0) * 2.4) * 0.32 + clamp(Number(hero.subjectSeparation || hero.compositionScore || 0)) * 0.32);
+  const pose = toScore(clamp(Number(hero.bodyLanguage || 0)) * 0.36 + clamp(Number(hero.compositionScore || 0)) * 0.26 + frontal * 0.2 + clamp(Number(hero.sceneReadability || 0)) * 0.18);
+  const overall = Math.round(face * 0.42 + hair * 0.12 + body * 0.18 + pose * 0.18 + toScore(lit * exposure) * 0.1);
+  const reasons = [];
+  if (!faceVisible) reasons.push("face not clearly visible");
+  if (sharp < 0.38) reasons.push("soft frame");
+  if (lit * exposure < 0.42) reasons.push("weak lighting");
+  if (frontal < 0.42) reasons.push("face angle/crop is weak");
+  return { face, hair, body, pose, overall, hasClearFace: face >= 58 && overall >= 52, reasons };
+}
+
+export function selectStrongestIdentityReferenceFrame(frames = []) {
+  return [...frames]
+    .map(frame => ({ frame, identityReference: scoreIdentityReferenceFrame(frame) }))
+    .filter(item => item.identityReference.hasClearFace)
+    .sort((a, b) => b.identityReference.overall - a.identityReference.overall || b.identityReference.face - a.identityReference.face)[0] || null;
+}
+
+export async function validateIdentityPreservation(originalBlob, enhancedBlob, referenceFrame = null) {
   const original = await imageStats(originalBlob);
   const enhanced = await imageStats(enhancedBlob);
   const histogram = histogramSimilarity(original.histogram, enhanced.histogram);
   const structure = lumaCorrelation(original.luma, enhanced.luma);
   const skin = skinSimilarity(original, enhanced);
-  const confidence = Math.round((histogram * 0.34 + structure * 0.38 + skin * 0.28) * 100);
+  const reference = referenceFrame ? scoreIdentityReferenceFrame(referenceFrame) : null;
+  const face = toScore(structure * 0.38 + skin * 0.28 + histogram * 0.16 + ((reference?.face || 55) / 100) * 0.18);
+  const hair = toScore(histogram * 0.58 + structure * 0.26 + ((reference?.hair || 55) / 100) * 0.16);
+  const body = toScore(skin * 0.46 + structure * 0.24 + histogram * 0.1 + ((reference?.body || 55) / 100) * 0.2);
+  const pose = toScore(structure * 0.52 + skin * 0.12 + histogram * 0.12 + ((reference?.pose || 55) / 100) * 0.24);
+  const overall = Math.round(face * 0.34 + hair * 0.14 + body * 0.18 + pose * 0.22 + Math.round((histogram * 0.4 + structure * 0.4 + skin * 0.2) * 100) * 0.12);
   return {
-    accepted: confidence >= 55,
-    identityConfidence: confidence,
-    checks: {
-      globalImageSimilarity: Math.round(histogram * 100),
-      structureSimilarity: Math.round(structure * 100),
-      performerSkinAndPlacementSimilarity: Math.round(skin * 100),
-    },
+    accepted: overall >= 50,
+    identityConfidence: overall,
+    checks: { face, hair, body, pose, overall },
+    reference,
   };
 }
