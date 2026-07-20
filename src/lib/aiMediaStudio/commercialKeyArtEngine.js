@@ -3,8 +3,8 @@ import { inferGraphicLanguage } from "./graphicLanguage";
 import { paintCommercialVisualSystem } from "./commercialVisualSystems";
 import { createCommercialCampaign } from "./commercialCreativeDirector";
 
-const ENGINE_NAME = "FLESHLAB Entertainment Key Art Director v4.0";
-const TARGET_COMMERCIAL_AD_SCORE = 88;
+const ENGINE_NAME = "FLESHLAB Local Editorial Cover Composer v4.1";
+const TARGET_COMMERCIAL_AD_SCORE = 78;
 const OFFICIAL_LOGO_URL = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a1f9333f9_ChatGPTImageJul14202612_16_43AM.png";
 
 const COMMERCIAL_PHILOSOPHIES = [
@@ -368,7 +368,7 @@ function buildAttemptPlan(image, metadata, settings, width, height, analysis, ba
     variant: philosophy.id,
     poster_family_id: philosophy.id,
     poster_family_label: philosophy.label,
-    philosophy: `Commercial philosophy: ${philosophy.label}. Rebuild the source frame into painted marketing artwork, not a layout.`,
+    philosophy: `Local editorial layout: ${philosophy.label}. Use the source frame cleanly; premium cinematic key art requires AI hero-image reconstruction.`, 
     impact_score: score.total,
     hero_score: score.hero,
     thumbnail_score: score.polish,
@@ -396,7 +396,7 @@ function buildAttemptPlan(image, metadata, settings, width, height, analysis, ba
     diagnostic,
     family: { id: philosophy.id, label: philosophy.label },
     visualStory: { emotionalCenter: graphicLanguage.thumbnail_priority, viewerFeeling: graphicLanguage.energy },
-    artDirection: { graphicDesignRatio: philosophy.graphicRatio, pipeline: ["Source Image", "Composition Analysis", "Story Analysis", "Negative Space Detection", "Art Direction", "Typography", "Brand Elements", "Final Cover"], visualSystemId: philosophy.visualSystemId, compositionProtection: crop.compositionProtection || null },
+    artDirection: { graphicDesignRatio: philosophy.graphicRatio, pipeline: ["Source Frame", "Editorial Crop", "Negative Space", "Typography", "Brand Elements", "Local Editorial Cover"], visualSystemId: philosophy.visualSystemId, compositionProtection: crop.compositionProtection || null }, 
     selected,
     best: selected,
     variants: [selected],
@@ -466,7 +466,7 @@ export async function generateCommercialKeyArtPlan(image, metadata = {}, setting
     diagnostics: planned.map(plan => plan.diagnostic),
     uniquenessAssertions: { passed: true, checkedFields: ["candidateId", "conceptId", "renderPlanId", "renderPlanHash", "canvasCacheKey", "philosophyName"] },
     attempts: planned.map(plan => ({ candidateId: plan.candidateId, philosophy: plan.philosophy.label, renderPlanHash: plan.renderPlanHash, score: plan.selected.score, accepted: plan.selected.score.passesQualityGate && plan.selected.score.total >= TARGET_COMMERCIAL_AD_SCORE, designActions: plan.selected.design_actions, optimizationDirectives: plan.selected.optimization_directives })),
-    winner_reason: `${selectedPlan.philosophy.label} selected by AI Art Director v3.0 after comparing environment-specific commercial key-art concepts.`, 
+    winner_reason: `${selectedPlan.philosophy.label} selected by the Local Editorial Cover Composer after comparing clean frame-based layouts.`, 
   };
 }
 
@@ -773,7 +773,7 @@ export async function renderCommercialKeyArtToCanvas(canvas, image, metadata = {
     ...bestPlan,
     attempts,
     approvalStatus: bestPlan?.selected?.score?.passesQualityGate ? "approved" : "best_attempt_not_approved",
-    winner_reason: bestPlan?.selected?.score?.passesQualityGate ? `${bestPlan.philosophy.label} selected after comparing ${attempts.length} unique RenderPlans.` : `Best attempt — not approved: ${(bestPlan?.selected?.score?.qualityFailures || []).join(", ")}`,
+    winner_reason: bestPlan?.selected?.score?.passesQualityGate ? `${bestPlan.philosophy.label} selected after comparing ${attempts.length} local editorial layouts.` : `Best local editorial layout: ${(bestPlan?.selected?.score?.qualityFailures || []).join(", ")}`, 
   };
   return canvas.__fleshlabPosterPlan;
 }
