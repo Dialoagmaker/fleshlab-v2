@@ -68,6 +68,16 @@ Deno.serve(async (req) => {
     if (!executiveApproved) errors.push('Executive approval is required before publishing');
     if (!governanceValid) errors.push('Governance validation is required before publishing');
 
+    let studioAudit = null;
+    try {
+      const auditResponse = await base44.functions.invoke('studioAuditSystem', { action: 'run', trigger: 'before_publishing', video_id });
+      studioAudit = auditResponse.data;
+      if (!studioAudit?.ok) errors.push('Studio Audit could not complete before publishing');
+      if (studioAudit?.production_readiness === 'BLOCKED') errors.push('Studio Audit blocked publishing due to critical platform risk');
+    } catch (auditError) {
+      errors.push('Studio Audit could not complete before publishing');
+    }
+
     // WARNING CHECKS (non-blocking)
     if (!video.description || video.description.trim().length < 50) {
       warnings.push('Description is short (recommended: at least 50 characters)');
@@ -104,6 +114,12 @@ Deno.serve(async (req) => {
           production_qa_approval: productionQaApproved,
           executive_approval: executiveApproved,
           governance_valid: governanceValid
+        } : null,
+        studio_audit: studioAudit ? {
+          studio_health_score: studioAudit.studio_health_score,
+          production_readiness: studioAudit.production_readiness,
+          critical_issue_count: studioAudit.critical_issues?.length || 0,
+          warning_count: studioAudit.warnings?.length || 0
         } : null,
       }, { status: 400 });
     }

@@ -1,0 +1,134 @@
+{
+  "name": "StudioAuditResult",
+  "type": "object",
+  "properties": {
+    "audit_id": {
+      "type": "string",
+      "title": "Audit ID"
+    },
+    "trigger": {
+      "type": "string",
+      "title": "Audit Trigger"
+    },
+    "audit_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Audit Timestamp"
+    },
+    "duration_ms": {
+      "type": "number",
+      "title": "Audit Duration MS"
+    },
+    "overall_health_score": {
+      "type": "number",
+      "title": "Overall Studio Health"
+    },
+    "production_readiness": {
+      "type": "string",
+      "enum": [
+        "READY",
+        "READY WITH WARNINGS",
+        "LIMITED",
+        "BLOCKED"
+      ],
+      "title": "Production Readiness"
+    },
+    "category_reports_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Category Reports JSON"
+    },
+    "critical_issues_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Critical Issues JSON"
+    },
+    "warnings_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Warnings JSON"
+    },
+    "recommendations_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Recommendations JSON"
+    },
+    "detected_problems_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Detected Problems JSON"
+    },
+    "resolved_problems_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Resolved Problems JSON"
+    },
+    "system_changes_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "System Changes JSON"
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "title": "Risk Level"
+    },
+    "confidence": {
+      "type": "number",
+      "title": "Confidence"
+    },
+    "last_successful_validation_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Last Successful Validation JSON"
+    },
+    "publishing_gate_active": {
+      "type": "boolean",
+      "default": false,
+      "title": "Publishing Gate Active"
+    },
+    "qa_engine_active": {
+      "type": "boolean",
+      "default": false,
+      "title": "QA Engine Active"
+    },
+    "rendering_router_active": {
+      "type": "boolean",
+      "default": false,
+      "title": "Rendering Router Active"
+    },
+    "provider_registry_valid": {
+      "type": "boolean",
+      "default": false,
+      "title": "Provider Registry Valid"
+    },
+    "benchmark_suite_available": {
+      "type": "boolean",
+      "default": false,
+      "title": "Benchmark Suite Available"
+    },
+    "audit_trail_complete": {
+      "type": "boolean",
+      "default": false,
+      "title": "Audit Trail Complete"
+    },
+    "public_summary": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Public Summary"
+    }
+  },
+  "required": [
+    "audit_id",
+    "trigger",
+    "audit_timestamp",
+    "overall_health_score",
+    "production_readiness",
+    "risk_level"
+  ]
+}
