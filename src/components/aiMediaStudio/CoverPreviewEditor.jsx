@@ -107,7 +107,7 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
       const nextPlan = await generatePosterPlan(image, metadata, settings, dims.width, dims.height);
       if (!active) return;
       setPlan(nextPlan);
-      setSelectedConceptId(nextPlan?.variants?.[0]?.candidate_id || null);
+      setSelectedConceptId(nextPlan?.selected?.candidate_id || nextPlan?.variants?.[0]?.candidate_id || null);
       setProductionRecord(null);
       persistKeyRef.current = "";
     })().catch(err => {
@@ -278,7 +278,7 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
         <div className="grid gap-2 sm:grid-cols-3">
           {conceptOptions.slice(0, 3).map(option => (
             <Button key={option.candidate_id} type="button" variant={selectedConceptId === option.candidate_id ? "default" : "outline"} onClick={() => setSelectedConceptId(option.candidate_id)} className="h-auto justify-start p-3 text-left">
-              <span><b className="block text-xs">{option.variant}</b><small className="block opacity-70">{option.diagnostic?.compositionMode || option.diagnostic?.typographyStyle}</small></span>
+              <span><b className="block text-xs">{option.variant}</b><small className="block opacity-70">{option.creative_director_outcome || "REVIEW"} · {option.score?.total || 0}/100 · {option.diagnostic?.creativeTitle || option.diagnostic?.compositionMode}</small></span>
             </Button>
           ))}
         </div>
@@ -291,6 +291,8 @@ export default function CoverPreviewEditor({ frame, metadata, settings, fileSuff
         <canvas ref={canvasRef} className="mx-auto h-auto max-h-[72vh] max-w-full rounded-lg" />
         {settings.showSafeMargins && rendered && <div className="pointer-events-none absolute rounded-lg border border-dashed border-white/35" style={{ inset: `${Number(settings.safeMargin) || 7}%` }} />}
       </div>
+
+      <InternalCriticPanel critic={critic} />
 
       {productionRecord && (
         <div className="rounded-lg border border-border bg-secondary/20 p-3 text-sm">

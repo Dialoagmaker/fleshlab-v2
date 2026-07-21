@@ -215,28 +215,34 @@ export function consultCreativeIntelligence({ candidate, metadata = {}, analysis
 
 export function critiqueRenderedCover({ plan, renderMap, renderedScore }) {
   const intelligence = plan?.candidate?.creativeIntelligence || plan?.selected?.diagnostic?.creativeIntelligence;
+  const director = plan?.candidate?.artDirector || plan?.selected?.diagnostic?.artDirectorApproval;
+  const reviewBoard = director?.reviewBoard || intelligence?.reviewBoard;
   const score = Number(renderedScore) || 0;
   const questions = {
-    wouldIClickThis: score >= 86 && intelligence?.taste?.approved,
+    wouldIClickThis: score >= 88 && intelligence?.taste?.approved,
     feelsPremium: score >= 88,
-    feelsLikeFleshlab: intelligence?.dna?.approved && score >= 84,
-    performerDominates: (plan?.selected?.score?.hero || 0) >= 62,
-    typographyEmotionallyCorrect: (plan?.selected?.score?.title || 0) >= 78,
+    feelsLikeFleshlab: intelligence?.dna?.approved && score >= 86,
+    performerDominates: (plan?.selected?.score?.hero || 0) >= 78,
+    typographyEmotionallyCorrect: (plan?.selected?.score?.title || 0) >= 82,
     everyElementHasPurpose: Boolean(intelligence?.creativeBrief?.approved),
-    distracts: !intelligence?.approved || score < 84,
-    agencyApproved: score >= 88 && Boolean(intelligence?.approved),
+    reviewBoardApproved: reviewBoard?.outcome === "APPROVED",
+    creativeDirectorApproved: director?.outcome === "APPROVED" && director?.approved === true,
+    professionalKeyArt: (reviewBoard?.average || 0) >= 88 && (reviewBoard?.lowest || 0) >= 78,
+    distracts: !intelligence?.approved || score < 88 || director?.outcome !== "APPROVED",
+    agencyApproved: score >= 88 && director?.outcome === "APPROVED" && Boolean(intelligence?.approved),
   };
   const failures = Object.entries(questions)
     .filter(([key, value]) => key === "distracts" ? value : !value)
     .map(([key]) => key);
-  const isFinalEditorialSource = renderMap.imageRole === "source_frame_editorial_final";
-  const approved = isFinalEditorialSource ? score >= 78 && questions.performerDominates && questions.typographyEmotionallyCorrect : failures.length === 0 && renderMap.imageRole === "ai_reconstructed_hero";
+  const approved = failures.length === 0 && ["source_frame_editorial_final", "ai_reconstructed_hero"].includes(renderMap.imageRole);
   return {
-    engine: "Internal Critic",
+    engine: "Internal Critic + Creative Director Gate",
     approved,
     score: Math.round(score),
     questions,
-    verdict: approved ? "Approved for export." : "Rejected. Redesign automatically before export.",
+    reviewBoard,
+    creativeDirector: director,
+    verdict: approved ? "Approved for export as professional key art." : "Rejected or revise required. Technical rendering is not enough for export.",
     redesignDirectives: failures.map(item => `Improve: ${item.replace(/([A-Z])/g, " $1").toLowerCase()}.`),
   };
 }

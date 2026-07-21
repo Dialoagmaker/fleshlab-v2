@@ -85,30 +85,135 @@ function cropFor(image, analysis, width, height, side, conceptIndex) {
   };
 }
 
+const REVIEW_CATEGORIES = [
+  "Visual Impact",
+  "Originality",
+  "Storytelling",
+  "Marketing Strength",
+  "Luxury Feel",
+  "Streaming Appeal",
+  "Brand Identity",
+  "Thumbnail Performance",
+  "Emotional Hook",
+  "Professionalism",
+];
+
 function titleZoneFor(side, conceptIndex, aspect) {
   const wide = aspect > 1.2;
-  if (conceptIndex === 0) return { x: side === "left" ? 0.055 : 0.58, y: wide ? 0.54 : 0.58, w: wide ? 0.38 : 0.36, h: 0.3 };
-  if (conceptIndex === 1) return { x: side === "left" ? 0.06 : 0.52, y: wide ? 0.12 : 0.1, w: wide ? 0.42 : 0.42, h: 0.34 };
-  return { x: 0.08, y: wide ? 0.72 : 0.68, w: 0.84, h: 0.22 };
+  if (conceptIndex === 0) return { x: side === "left" ? 0.1 : 0.47, y: wide ? 0.58 : 0.62, w: wide ? 0.42 : 0.46, h: 0.28 };
+  if (conceptIndex === 1) return { x: side === "left" ? 0.075 : 0.5, y: wide ? 0.11 : 0.12, w: wide ? 0.34 : 0.4, h: 0.32 };
+  return { x: side === "left" ? 0.18 : 0.12, y: wide ? 0.69 : 0.66, w: wide ? 0.56 : 0.68, h: 0.22 };
 }
 
 function conceptLabel(index) {
-  return ["Concept A — Cinematic Depth", "Concept B — Magazine Negative Space", "Concept C — Streaming Impact"][index] || `Concept ${index + 1}`;
+  return ["Concept A — Cinematic Poster", "Concept B — Luxury Editorial Magazine", "Concept C — Streaming Platform Key Art"][index] || `Concept ${index + 1}`;
 }
 
-function creativeBriefFor(system, metadata, concept, side) {
-  const title = metadata.videoTitle || metadata.title || "Untitled";
+function conceptArchetype(index) {
+  return [
+    {
+      composition: "cinematic rule-of-thirds crop with performer atmosphere, deep shadow, and title integrated into the scene",
+      hierarchy: "image and emotion first, title as a restrained dramatic promise",
+      crop: "tighter dramatic crop with directional eye travel",
+      colorTreatment: "dark cinema grade with controlled FLESHLAB red tension",
+      emotionalFocus: "curiosity and private access",
+    },
+    {
+      composition: "luxury editorial negative space with asymmetry, restraint, and magazine cover discipline",
+      hierarchy: "portrait presence first, premium whitespace second, quiet title third",
+      crop: "protected portrait crop with background extension",
+      colorTreatment: "warm editorial contrast with tactile premium paper tones",
+      emotionalFocus: "exclusivity and intimate confidence",
+    },
+    {
+      composition: "streaming key-art lockup with full-bleed cinematic image, bottom title field, and thumbnail punch",
+      hierarchy: "instant read at small size while preserving performer dominance",
+      crop: "bolder impact crop with strong foreground/background separation",
+      colorTreatment: "high-contrast platform grade with bold brand recognition",
+      emotionalFocus: "clickable episode-level tension",
+    },
+  ][index];
+}
+
+function looksLiteralTitle(title) {
+  const text = String(title || "").toLowerCase();
+  return !text || text.split(/\s+/).length > 5 || /scene|video|cover|episode|part|with|featuring|compilation|full|trailer/.test(text);
+}
+
+function premiumTitleFor(metadata = {}, index) {
+  const supplied = metadata.videoTitle || metadata.title || metadata.campaignName || "";
+  if (!looksLiteralTitle(supplied)) return supplied;
+  const text = textFor(metadata);
+  const bank = /hotel|suite|room|private|vip/.test(text)
+    ? ["After Check-In", "Private Premiere", "Room Key"]
+    : /beach|summer|vacation|pool|island/.test(text)
+      ? ["Heat Index", "The Escape", "Sun Permission"]
+      : /gym|workout|fit|trainer/.test(text)
+        ? ["Hard Form", "Discipline", "The Set"]
+        : /night|dark|city|urban/.test(text)
+          ? ["After Dark", "No Witness", "Night Signal"]
+          : ["The Invitation", "Private Signal", "Amateur Wins"];
+  return bank[index % bank.length];
+}
+
+function boardEntry(score, reasoning) {
+  return { score: Math.round(clamp(score, 0, 100)), reasoning };
+}
+
+function reviewConcept({ candidate, archetype, metadata, analysis, index }) {
+  const separation = analysis.subjectSeparation || 0.55;
+  const negative = analysis.negativeSpace?.score || 0.52;
+  const titlePremium = !looksLiteralTitle(candidate.creativeTitle);
+  const titleTooDominant = candidate.titleScale > 0.13 || candidate.titleZone.w > 0.62;
+  const splitLayoutRisk = candidate.titleZone.x > 0.52 && (analysis.subjectBox?.x || 0.5) < 0.38;
+  const impactBase = 78 + separation * 12 + (index === 2 ? 4 : 0) - (titleTooDominant ? 10 : 0);
+  const board = {
+    "Visual Impact": boardEntry(impactBase, `${archetype.composition}; performer remains the attention anchor instead of becoming decoration.`),
+    Originality: boardEntry(82 + index * 4 - (splitLayoutRisk ? 12 : 0), `Concept is judged as a real art direction, not a color swap: ${archetype.crop}.`),
+    Storytelling: boardEntry(80 + (titlePremium ? 8 : -10) + separation * 5, `Title and image must create a story question: “${candidate.creativeTitle}” supports ${archetype.emotionalFocus}.`),
+    "Marketing Strength": boardEntry(82 + (index === 2 ? 7 : 0) + (titlePremium ? 4 : -8), "Judged for premium click intent, not literal description."),
+    "Luxury Feel": boardEntry(80 + (index === 1 ? 10 : 3) + negative * 5 - (titleTooDominant ? 8 : 0), "Luxury requires restraint, hierarchy, and intentional negative space."),
+    "Streaming Appeal": boardEntry(81 + (index === 2 ? 10 : index === 0 ? 5 : 0), "Must look plausible beside Netflix/HBO/A24/Apple TV+ key art."),
+    "Brand Identity": boardEntry(84 + (candidate.brandScale >= 0.06 ? 5 : -6), "FLESHLAB should feel premium, modern, bold, authentic, and not logo-dependent."),
+    "Thumbnail Performance": boardEntry(80 + (index === 2 ? 9 : 2) - (titleTooDominant ? 7 : 0), "Small-size read must preserve image impact and curiosity."),
+    "Emotional Hook": boardEntry(81 + (titlePremium ? 8 : -12) + separation * 4, `Emotional hook is ${archetype.emotionalFocus}, not a caption of the image.`),
+    Professionalism: boardEntry(83 + (titleTooDominant ? -10 : 5) - (splitLayoutRisk ? 9 : 0), "Approval requires professional entertainment marketing quality, not technical correctness."),
+  };
+  const scores = Object.values(board).map(item => item.score);
+  const average = Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
+  const lowest = Math.min(...scores);
+  const outcome = average >= 88 && lowest >= 78 && !titleTooDominant && !splitLayoutRisk ? "APPROVED" : average >= 78 ? "REVISE" : "REJECT";
+  const rejectedBecause = [];
+  if (titleTooDominant) rejectedBecause.push("Typography risks overpowering the image.");
+  if (splitLayoutRisk) rejectedBecause.push("Composition risks becoming a basic left-image/right-headline template.");
+  if (!titlePremium) rejectedBecause.push("Title is too literal for premium entertainment marketing.");
+  if (average < 88) rejectedBecause.push("Review Board score does not reach professional key-art quality.");
   return {
-    approved: true,
-    score: 88,
+    categories: REVIEW_CATEGORIES.map(name => ({ name, ...board[name] })),
+    average,
+    lowest,
+    outcome,
+    approved: outcome === "APPROVED",
+    rejectedBecause,
+    directorReasoning: outcome === "APPROVED"
+      ? `Approved because it reaches professional key-art quality: ${archetype.hierarchy}, ${archetype.colorTreatment}, and a curiosity-led title.`
+      : `Not approved because ${rejectedBecause.join(" ")}`,
+  };
+}
+
+function creativeBriefFor(system, metadata, candidate, archetype, review) {
+  const title = candidate.creativeTitle;
+  return {
+    approved: review.approved,
+    score: review.average,
     story: title,
-    emotionalGoal: system.mood,
+    emotionalGoal: archetype.emotionalFocus,
     hero: "the preserved selected story frame performer",
-    composition: concept,
-    typographyStrategy: `${system.label} typography designed as image language, not placed text`,
-    visualHierarchy: "performer first, designed title second, FLESHLAB signature third",
-    expectedEyeFlow: side === "left" ? "performer on the right → designed title on the left → quiet logo read" : "performer on the left → designed title on the right → quiet logo read",
-    text: `EDITORIAL ART DIRECTION\nDesign system: ${system.label}\nStory: ${title}\nComposition: ${concept}\nHero rule: preserve the selected story frame performer.\nTypography: designed for ${system.label}, never merely placed.`,
+    composition: archetype.composition,
+    typographyStrategy: `${system.label} typography must support the image: size, weight, contrast, balance, readability, luxury, magazine quality, and poster quality are all judged.`,
+    visualHierarchy: archetype.hierarchy,
+    expectedEyeFlow: candidate.negativeSide === "left" ? "performer field → emotional title tension → quiet FLESHLAB signature" : "performer presence → atmosphere → designed title → quiet FLESHLAB signature",
+    text: `EDITORIAL ART DIRECTION\nDesign system: ${system.label}\nPremium title: ${title}\nComposition: ${archetype.composition}\nCrop: ${archetype.crop}\nHierarchy: ${archetype.hierarchy}\nColor: ${archetype.colorTreatment}\nEmotional focus: ${archetype.emotionalFocus}\nCreative Director outcome: ${review.outcome}\nCreative Director reasoning: ${review.directorReasoning}`,
   };
 }
 
@@ -119,66 +224,89 @@ export function buildEditorialArtDirectionPlan({ image, metadata = {}, analysis 
   const aspect = width / height;
   const concepts = [0, 1, 2].map(index => {
     const side = negativeSide(hero, index);
+    const archetype = conceptArchetype(index);
     const concept = conceptLabel(index);
     const titleZone = titleZoneFor(side, index, aspect);
-    const score = 82 + index * 2 + Math.round((analysis.subjectSeparation || 0.55) * 8);
-    const creativeBrief = creativeBriefFor(system, metadata, concept, side);
-    return {
-      id: `editorial_${index + 1}_${hashText({ systemId, title: metadata.videoTitle, index }).slice(0, 6)}`,
+    const baseCandidate = {
+      creativeTitle: premiumTitleFor(metadata, index),
       label: concept,
+      negativeSide: side,
+      titleZone,
+      titleScale: clamp(index === 2 ? 0.104 : 0.118 - String(metadata.videoTitle || metadata.title || "").split(/\s+/).length * 0.006, 0.058, 0.122),
+      brandScale: index === 1 ? 0.055 : 0.064,
+    };
+    const review = reviewConcept({ candidate: baseCandidate, archetype, metadata, analysis, index });
+    const creativeBrief = creativeBriefFor(system, metadata, baseCandidate, archetype, review);
+    const qualityFailures = review.approved ? [] : review.rejectedBecause;
+    return {
+      id: `editorial_${index + 1}_${hashText({ systemId, title: metadata.videoTitle, index, premium: baseCandidate.creativeTitle }).slice(0, 6)}`,
+      label: concept,
+      conceptArchetype: archetype,
+      creativeTitle: baseCandidate.creativeTitle,
+      sourceTitle: metadata.videoTitle || metadata.title || "Untitled",
       visual_system_id: systemId,
       visual_system_label: system.label,
-      typographyStyle: system.typographyStyle,
+      typographyStyle: index === 1 ? "magazine_editorial" : index === 2 ? "drama_condensed" : system.typographyStyle,
       mood: system.mood,
       grade: { bg: system.bg, accent: system.accent, paper: system.paper, warmth: system.warmth, contrast: system.contrast, saturation: system.saturation },
       negativeSide: side,
       titleZone,
       logoAnchor: index === 2 ? "top-right" : side === "left" ? "top-left" : "top-right",
-      heroEmphasis: clamp(0.66 + index * 0.07, 0.6, 0.88),
-      titleScale: clamp(index === 2 ? 0.118 : 0.14 - String(metadata.videoTitle || "").split(/\s+/).length * 0.01, 0.062, 0.15),
-      performerScale: 0.02,
-      footerScale: 0.013,
-      brandScale: 0.068,
+      heroEmphasis: clamp([0.82, 0.74, 0.88][index], 0.68, 0.9),
+      titleScale: baseCandidate.titleScale,
+      performerScale: 0.018,
+      footerScale: 0.012,
+      brandScale: baseCandidate.brandScale,
       imageRole: "source_frame_editorial_final",
-      compositionMode: ["cinematic-depth-crop", "editorial-background-extension", "streaming-impact-band"][index],
+      compositionMode: ["cinematic-poster-depth", "luxury-editorial-negative-space", "streaming-platform-key-art"][index],
       crop: cropFor(image, analysis, width, height, side, index),
       compositionBrief: creativeBrief.text,
+      reviewBoard: review,
       creativeIntelligence: {
-        approved: true,
-        taste: { approved: true, score },
-        dna: { approved: true },
+        approved: review.approved,
+        taste: { approved: review.approved, score: review.average },
+        dna: { approved: review.categories.find(item => item.name === "Brand Identity")?.score >= 78 },
         creativeBrief,
-        failures: [],
-        reasoningPipeline: ["Story Frame", "Design System Classification", "Editorial Crop", "Background Extension", "Color Grade", "Designed Typography", "Export"],
+        failures: qualityFailures,
+        reviewBoard: review,
+        reasoningPipeline: ["Concept Exploration", "Review Board", "Title Quality", "Creative Director", "Rejection Authority", "Selection"],
       },
-      artDirector: { approved: true, score, checks: { preservesPerformer: true, backgroundExtended: true, typographyDesigned: true } },
+      artDirector: { approved: review.approved, outcome: review.outcome, score: review.average, reasoning: review.directorReasoning, reviewBoard: review },
       score: {
-        total: score,
-        hero: 82,
-        title: 86,
-        polish: 88,
-        brand: 86,
-        negativeSpace: Math.round((titleZone.w || 0.4) * 100),
-        artDirector: score,
-        studioBenchmark: score,
+        total: review.average,
+        hero: review.categories.find(item => item.name === "Visual Impact")?.score || review.average,
+        title: review.categories.find(item => item.name === "Emotional Hook")?.score || review.average,
+        polish: review.categories.find(item => item.name === "Professionalism")?.score || review.average,
+        brand: review.categories.find(item => item.name === "Brand Identity")?.score || review.average,
+        negativeSpace: review.categories.find(item => item.name === "Luxury Feel")?.score || review.average,
+        artDirector: review.average,
+        studioBenchmark: review.average,
         imageQualityCeiling: 92,
-        passesQualityGate: true,
-        qualityFailures: [],
+        passesQualityGate: review.approved,
+        qualityFailures,
+        reviewBoard: review,
         compositionBrief: creativeBrief.text,
-        creativeIntelligence: { creativeBrief },
+        creativeIntelligence: { creativeBrief, reviewBoard: review },
       },
     };
   });
+  const approvedConcepts = concepts.filter(candidate => candidate.artDirector.approved).sort((a, b) => b.score.total - a.score.total);
+  const rankedConcepts = [...concepts].sort((a, b) => b.score.total - a.score.total);
+  const selected = approvedConcepts[0] || rankedConcepts[0];
   return {
-    engine: "FLESHLAB Editorial Art Direction Engine v1.0",
-    visualLanguage: { rules: ["preserve performer", "extend background locally", "design typography by genre", "render three distinct concepts"], designSystem: system },
+    engine: "FLESHLAB Editorial Art Direction Engine v2.0 — Creative Director Remediation",
+    visualLanguage: { rules: ["three genuinely different concepts", "Review Board critique before approval", "Creative Director may reject all concepts", "premium title quality", "professional entertainment key-art threshold"], designSystem: system },
     designSystem: { id: systemId, ...system },
     candidates: concepts,
-    selected: concepts[0],
+    selected,
     audit: {
       rootLimitation: "AI Hero Photography is optional. The selected Story Frame is the final hero asset and is never replaced.",
-      reasoningPipeline: concepts[0].creativeIntelligence.reasoningPipeline,
-      permanentEngines: ["Design System Classifier", "Editorial Art Director", "Typography Director", "Local Film Grade", "Commercial Export"],
+      reasoningPipeline: selected.creativeIntelligence.reasoningPipeline,
+      conceptComparison: concepts.map(candidate => ({ id: candidate.id, label: candidate.label, title: candidate.creativeTitle, outcome: candidate.artDirector.outcome, score: candidate.score.total, rejectedBecause: candidate.score.qualityFailures })),
+      rejectedConcepts: concepts.filter(candidate => !candidate.artDirector.approved).map(candidate => ({ label: candidate.label, title: candidate.creativeTitle, score: candidate.score.total, reasons: candidate.score.qualityFailures })),
+      finalSelectedConcept: selected.artDirector.approved ? { label: selected.label, title: selected.creativeTitle, reason: selected.artDirector.reasoning } : null,
+      regenerationRequired: approvedConcepts.length === 0,
+      permanentEngines: ["Concept Explorer", "Creative Review Board", "Creative Director", "Typography Director", "Commercial Export"],
       preservedSubsystems: ["selected story frame", "performer identity", "manual controls", "export"],
     },
   };
