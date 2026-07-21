@@ -1,0 +1,101 @@
+{
+  "name": "StudioAssetVersion",
+  "type": "object",
+  "properties": {
+    "version_id": {
+      "type": "string",
+      "title": "Version ID"
+    },
+    "asset_id": {
+      "type": "string",
+      "title": "Asset ID"
+    },
+    "project_id": {
+      "type": "string",
+      "title": "Project ID"
+    },
+    "version_number": {
+      "type": "integer",
+      "title": "Version Number"
+    },
+    "file_url": {
+      "type": "string",
+      "title": "File URL"
+    },
+    "reviewer": {
+      "type": "string",
+      "title": "Reviewer"
+    },
+    "reason": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Reason"
+    },
+    "change_why": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Why"
+    },
+    "requested_by": {
+      "type": "string",
+      "title": "Who Requested It"
+    },
+    "what_changed": {
+      "type": "string",
+      "format": "textarea",
+      "title": "What Changed"
+    },
+    "impact": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Impact"
+    },
+    "approval_state": {
+      "type": "string",
+      "enum": [
+        "not_requested",
+        "pending",
+        "approved",
+        "rejected",
+        "changes_requested"
+      ],
+      "default": "not_requested",
+      "title": "Approval"
+    },
+    "approved_by": {
+      "type": "string",
+      "title": "Approved By"
+    },
+    "rollback_available": {
+      "type": "boolean",
+      "default": true,
+      "title": "Rollback Available"
+    },
+    "rollback_from_version": {
+      "type": "integer",
+      "title": "Rollback From Version"
+    },
+    "history_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Version History JSON"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+    }
+  },
+  "required": [
+    "version_id",
+    "asset_id",
+    "project_id",
+    "version_number",
+    "reason",
+    "change_why",
+    "requested_by",
+    "what_changed",
+    "impact",
+    "approval_state"
+  ]
+}

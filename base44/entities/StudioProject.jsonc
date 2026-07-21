@@ -1,0 +1,108 @@
+{
+  "name": "StudioProject",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "title": "Project ID"
+    },
+    "client_name": {
+      "type": "string",
+      "title": "Client"
+    },
+    "campaign_name": {
+      "type": "string",
+      "title": "Campaign"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "planning",
+        "production",
+        "internal_review",
+        "revision",
+        "approved",
+        "publishing",
+        "completed",
+        "archived"
+      ],
+      "default": "draft",
+      "title": "Project Status"
+    },
+    "life_cycle_stage": {
+      "type": "string",
+      "enum": [
+        "inquiry",
+        "creative_brief",
+        "executive_review",
+        "creative_strategy",
+        "asset_planning",
+        "production",
+        "quality_review",
+        "executive_approval",
+        "publishing",
+        "performance_tracking",
+        "knowledge_update"
+      ],
+      "default": "inquiry",
+      "title": "Lifecycle Stage"
+    },
+    "executive_owner": {
+      "type": "string",
+      "title": "Executive Owner"
+    },
+    "creative_owner": {
+      "type": "string",
+      "title": "Creative Owner"
+    },
+    "production_owner": {
+      "type": "string",
+      "title": "Production Owner"
+    },
+    "creative_brief": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Creative Brief"
+    },
+    "strategy_summary": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Creative Strategy Summary"
+    },
+    "approval_state": {
+      "type": "string",
+      "enum": [
+        "not_requested",
+        "pending",
+        "approved",
+        "rejected",
+        "changes_requested"
+      ],
+      "default": "not_requested",
+      "title": "Approval State"
+    },
+    "history_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Project History JSON"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Completed At"
+    }
+  },
+  "required": [
+    "project_id",
+    "client_name",
+    "campaign_name",
+    "status",
+    "life_cycle_stage"
+  ]
+}
