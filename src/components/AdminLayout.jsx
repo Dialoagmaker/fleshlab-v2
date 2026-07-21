@@ -23,6 +23,7 @@ const NAV_GROUPS = [
       { href: "/admin/revenue", label: "Business", icon: DollarSign },
       { href: "/admin/ai-text-generator", label: "AI", icon: Sparkles },
       { href: "/admin/ai-media-studio", label: "Cover Designer", icon: Sparkles },
+      { href: "/admin/creative-brain", label: "Creative Brain", icon: Sparkles },
       { href: "/admin/rendering-intelligence", label: "Rendering Intelligence", icon: ShieldAlert },
       { href: "/admin/production-qa", label: "Production QA", icon: ShieldCheck },
       { href: "/admin/studio-audit", label: "Studio Audit", icon: Activity },

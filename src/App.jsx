@@ -53,6 +53,7 @@ import LegacyAssetInventory from './pages/admin/LegacyAssetInventory';
 import AssetRepairQueue from './pages/admin/AssetRepairQueue';
 import AITextGenerator from './pages/admin/AITextGenerator';
 import AIMediaStudio from './pages/admin/AIMediaStudio';
+import CreativeBrain from './pages/admin/CreativeBrain';
 import AdultImageProviderReadiness from './pages/admin/AdultImageProviderReadiness';
 import RenderingIntelligence from './pages/admin/RenderingIntelligence';
 import ProductionQA from './pages/admin/ProductionQA';
@@ -227,6 +228,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/asset-repair-queue" element={<AssetRepairQueue />} />
                 <Route path="/admin/ai-text-generator" element={<AITextGenerator />} />
                 <Route path="/admin/ai-media-studio" element={<AIMediaStudio />} />
+                <Route path="/admin/creative-brain" element={<CreativeBrain />} />
                 <Route path="/admin/adult-image-provider-readiness" element={<AdultImageProviderReadiness />} />
                 <Route path="/admin/rendering-intelligence" element={<RenderingIntelligence />} />
                 <Route path="/admin/production-qa" element={<ProductionQA />} />
