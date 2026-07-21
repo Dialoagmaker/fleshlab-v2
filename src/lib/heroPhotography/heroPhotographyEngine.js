@@ -44,9 +44,12 @@ export async function executeHeroPhotographyRender({ sourceFrameFile, production
       resolution: outputResolution,
       seed: render.seed,
       parameters: instructions,
+      heroPhotographyPlan: instructions.hero_photography_plan,
+      sourceFrameUnderstanding: instructions.source_frame_understanding,
+      reconstructionReport: render.reconstructionReport || instructions.reconstruction_report_template,
       identityPreservationStatus: {
         status: "accepted",
-        rule: "same source frame used as identity reference; provider instructed to preserve identity-critical areas",
+        rule: "same source frame used as identity reference; provider instructed to preserve identity-critical areas while rebuilding the commercial hero photograph",
         source_resolution: sourceResolution
       },
       renderWarnings: render.warnings || [],

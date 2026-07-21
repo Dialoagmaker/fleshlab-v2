@@ -11,11 +11,13 @@ export const openRouterHeroProvider = {
       identity_reference_data_url: identityReferenceDataUrl || sourceFrameDataUrl,
       aspect_ratio: "16:9",
       metadata: {
-        videoTitle: instructions.creative_decisions?.story || "Blueprint Hero Photograph",
-        optionalSubtitle: instructions.creative_decisions?.emotional_promise || "Blueprint execution",
+        videoTitle: instructions.hero_photography_plan?.Story || instructions.creative_decisions?.story || "",
+        optionalSubtitle: instructions.hero_photography_plan?.Emotional_Hook || instructions.creative_decisions?.emotional_promise || "",
         campaignName: instructions.campaign_family,
-        contentType: "Hero photography execution",
+        contentType: "professional hero photograph reconstructed from video frame reference",
         heroPhotographyEngine: instructions,
+        heroPhotographyPlan: instructions.hero_photography_plan,
+        sourceFrameUnderstanding: instructions.source_frame_understanding,
         productionBlueprint
       }
     });
@@ -29,6 +31,7 @@ export const openRouterHeroProvider = {
       imageDataUrl: data.generated_image_data_url,
       model: data.model || data.resolved_model || "model not exposed",
       seed: data.seed || null,
+      reconstructionReport: data.reconstruction_report || null,
       providerMetadata: data,
       warnings: [data.production_qa?.public_message, ...(data.warnings || [])].filter(Boolean)
     };

@@ -16,48 +16,36 @@ const RENDERING_CLASSIFICATIONS = ['SAFE_EDITORIAL', 'SAFE_PRODUCT', 'SAFE_BRAND
 const DEFAULT_SAFE_CATEGORIES = ['SAFE_EDITORIAL', 'SAFE_PRODUCT', 'SAFE_BRAND', 'SAFE_PORTRAIT', 'LIFESTYLE', 'FITNESS', 'SWIMWEAR', 'UNDERWEAR'];
 const ROUTING_WEIGHTS = { policy: 0.40, quality: 0.25, reliability: 0.15, runtime: 0.10, cost: 0.10 };
 
-const KEY_ART_DIRECTOR_PROMPT = `You are the FLESHLAB AI Photographer Engine.
+const KEY_ART_DIRECTOR_PROMPT = `You are the FLESHLAB Hero Photography Director.
 
-Core principle: FLESHLAB covers are not layouts. They are professional advertising photographs with branding applied afterwards.
+Core principle:
+The input video frame is only a scouting/reference image. The output must be the professional hero photograph that would have been captured if this scene had been planned as a premium commercial photo shoot.
 
-Internal role:
-"Imagine I am a senior commercial photographer hired to capture this exact scene for a premium streaming service."
+Never output an enhanced screenshot.
+Never merely upscale, sharpen, denoise, relight, beautify, or crop the source frame.
+Reconstruct the scene as world-class commercial photography and advertising art direction.
 
 Use two separate visual references when provided:
-- Identity Reference: preserve the same performer, face, body, tattoos, hairstyle, proportions, and recognisable appearance.
-- Story Reference: preserve the same action, location, room, emotional tone, scene logic, and visual story.
+- Identity Reference: preserve the same apparent person, face, body, tattoos, hairstyle, proportions, and recognizable appearance.
+- Story Reference: preserve the emotional moment, visual story, action logic, pose when protected, and emotional intent.
 
-AI Photographer instructions:
-- do NOT create fantasy art
-- do NOT stylize, cartoonize, paint, posterize, or illustrate
-- do NOT invent a different story, different clothing, another performer, or unrelated environment
-- do NOT add typography, logo, watermark, captions, UI, or poster text
-- do NOT decorate the smartphone frame
-- the smartphone frame is reference material only, never the finished artwork
-- do NOT crop a portrait or smartphone frame into a landscape image
-- re-photograph the scene as a new 16:9 advertising still that naturally expands the environment beyond the original crop
-- the editorial title must influence composition, mood, negative space, and where the title should naturally live later
+You may redesign when the provided Hero Photography Plan allows:
+- background, lighting, color palette, atmosphere, environment, reflections, architecture, furniture, depth, weather, and time of day.
 
-Maintain:
-- same performer where technically possible
-- same body and proportions where visible
-- same tattoos and hairstyle when visible
-- same room/location
-- same action and emotional tone
-- same story
+You may NOT redesign:
+- apparent person, protected pose, identity, protected expression, protected gaze, emotional intent, or protected storytelling facts.
 
-Improve photography only:
-- professional cinema camera
-- professional lighting
-- premium commercial composition
-- professional color science
-- cinematic lenses and depth
-- controlled contrast
-- natural skin and realistic environment
-- premium 16:9 framing
-- useful negative space for later typography
+Production quality target:
+Netflix Key Art, Amazon Originals, HBO Campaign, luxury fashion editorial, premium magazine cover.
+Never target generic AI-generated imagery.
 
-Output ONLY the professional 16:9 hero photograph. Branding and typography will be applied locally after this image is approved.`;
+Cinematic photography requirements:
+Explicitly design key light, fill light, rim light, practical lights, depth, foreground, background, texture, shadows, reflections, and color contrast.
+
+Composition requirement:
+Leave intentional typography space. Typography space must never cover the face, emotional focal point, or storytelling element.
+
+Output ONLY the professional 16:9 hero photograph. Do not include typography, logos, watermarks, captions, UI, or poster text.`;
 
 function json(data, status = 200) {
   return Response.json(data, { status });
@@ -311,24 +299,45 @@ async function discoverCompatibleImageRoutes(apiKey) {
 }
 
 function buildPhotographicBrief(metadata = {}) {
-  const title = metadata.videoTitle || metadata.title || 'Untitled FLESHLAB scene';
-  const performer = metadata.performerName || metadata.performer || 'the selected performer';
-  const subtitle = metadata.optionalSubtitle || metadata.subtitle || '';
-  const contentType = metadata.contentType || 'premium entertainment scene';
-  const campaign = metadata.campaignName || '';
+  const engine = metadata.heroPhotographyEngine || {};
+  const plan = metadata.heroPhotographyPlan || engine.hero_photography_plan || {};
+  const understanding = metadata.sourceFrameUnderstanding || engine.source_frame_understanding || {};
+  const story = plan.Story || metadata.videoTitle || metadata.title || '';
+  const emotionalHook = plan.Emotional_Hook || metadata.optionalSubtitle || metadata.subtitle || '';
+  const lighting = plan.Lighting || {};
+  const brief = plan.Hero_Rendering_Brief || 'Create the hero photograph that would have been captured by a top commercial photographer and advertising art director on a planned shoot.';
   return [
-    'CREATIVE DIRECTOR BRIEF',
-    `Story: ${title}`,
-    `Hero: ${performer}`,
-    subtitle ? `Secondary story: ${subtitle}` : '',
-    `Emotion to sell: ${campaign || contentType}`,
-    'Dominant read: performer and emotional action, not graphic decoration.',
-    'Must disappear: smartphone framing, ugly compression, accidental clutter, amateur lighting, unused canvas.',
+    'HERO PHOTOGRAPHY PLAN',
+    'Input: video frame as scouting/reference image.',
+    'Output: professional hero photograph.',
+    'Never output: enhanced screenshot.',
     '',
-    'PHOTOGRAPHIC BRIEF',
-    'Create the exact scene as a professional promotional still, not as cover art.',
-    'Same performer where technically possible, same action, same room/location, same story, same emotional tone.',
-    'Improve only camera, lighting, lens, depth, color science, contrast, composition, and cinematic realism.'
+    'STEP 1 — UNDERSTAND THE FRAME',
+    `Emotional moment: ${understanding.emotional_moment || emotionalHook}`,
+    `Visual story: ${understanding.visual_story || story}`,
+    `Strongest subject: ${understanding.strongest_subject || 'protected apparent person / subject hierarchy from Blueprint'}`,
+    `Weakest visual elements: ${understanding.weakest_visual_elements || 'accidental screenshot limitations'}`,
+    `Distractions: ${understanding.distractions || 'compression, clutter, amateur framing, unused canvas'}`,
+    `Opportunities: ${understanding.opportunities || 'commercial production design, lighting, depth, atmosphere'}`,
+    `Emotional hook: ${understanding.emotional_hook || emotionalHook}`,
+    '',
+    'STEP 2 — DESIGN THE HERO PHOTO',
+    `Camera: ${plan.Camera || 'planned commercial campaign camera, not screenshot perspective'}`,
+    `Lens: ${plan.Lens || 'cinematic editorial lens with controlled perspective and premium subject separation'}`,
+    `Lighting setup: key=${lighting.key_light || 'large soft directional key'}; fill=${lighting.fill_light || 'controlled low fill'}; rim=${lighting.rim_light || 'subtle separation rim'}; practicals=${lighting.practical_lights || 'motivated cinematic practicals'}`,
+    `Negative space and composition: ${plan.Composition || 'intentional typography space away from face, emotional focal point, and storytelling element'}`,
+    `Luxury level: ${plan.Luxury_Level || 'Netflix Key Art / Amazon Originals / HBO Campaign / luxury fashion editorial / premium magazine cover'}`,
+    `Editorial style: ${plan.Editorial_Style || metadata.campaignName || 'premium commercial editorial'}`,
+    '',
+    'STEP 3 — REBUILD THE SCENE',
+    `Background: ${plan.Background || 'redesigned commercial background that preserves story logic'}`,
+    `Environment: ${plan.Environment || 'redesign atmosphere, depth, reflections, texture and production design while preserving identity and emotional intent'}`,
+    '',
+    'STEP 4 — HERO RENDERING BRIEF',
+    brief,
+    '',
+    'REPORT REQUIREMENT',
+    'The generated hero photograph must differ from the original frame through creative reconstruction: planned camera, lens, lighting, production design, environment, background, atmosphere, depth, texture, color contrast and intentional typography space — not simple enhancement.'
   ].filter(Boolean).join('\n');
 }
 
@@ -890,6 +899,9 @@ async function generateCover(base44, apiKey, body, user) {
           aspect_ratio,
           content_classification: contentClassification,
           campaign: metadata.campaignName || '',
+          hero_photography_plan: metadata.heroPhotographyPlan || metadata.heroPhotographyEngine?.hero_photography_plan || null,
+          reconstruction_required: true,
+          forbidden_output: 'enhanced screenshot',
           creative_approval_pass: Boolean(metadata.creativeApprovalPass || metadata.creative_approval_pass),
           executive_approval_pass: Boolean(metadata.executiveApprovalPass || metadata.executive_approval_pass),
           governance_valid: policyRouting.policyCompatible !== 'no'
@@ -930,7 +942,10 @@ async function generateCover(base44, apiKey, body, user) {
           preview_rendered: false
         },
         creative_brief: buildPhotographicBrief(metadata),
-        pipeline: ['Video', 'Story Frame', 'Rendering Intelligence', 'Best Production Pipeline Selected', 'Professional Hero Photograph', 'Local Art Direction', 'Typography', 'Export'],
+        hero_photography_plan: metadata.heroPhotographyPlan || metadata.heroPhotographyEngine?.hero_photography_plan || null,
+        source_frame_understanding: metadata.sourceFrameUnderstanding || metadata.heroPhotographyEngine?.source_frame_understanding || null,
+        reconstruction_report: 'The generated hero photograph must differ from the original video frame through creative reconstruction: planned camera, lens, lighting, background, environment, atmosphere, depth, texture, color contrast, subject separation, and intentional typography space — not enhancement.',
+        pipeline: ['Video Frame Reference', 'Frame Understanding', 'Hero Photography Plan', 'Rendering Intelligence', 'Best Production Pipeline Selected', 'Professional Hero Photograph', 'Local Art Direction', 'Typography', 'Export'],
         privacy: {
           original_video_transmitted: false,
           story_reference_transmitted: true,
