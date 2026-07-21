@@ -1,6 +1,7 @@
 import { useState } from "react";
 import BrainUploadPanel from "@/components/creativeBrain/BrainUploadPanel";
 import BlueprintJsonOutput from "@/components/creativeBrain/BlueprintJsonOutput";
+import HeroPhotographyPanel from "@/components/creativeBrain/HeroPhotographyPanel";
 import { runCreativeBrainPipeline } from "@/lib/creativeBrain/pipeline";
 import { TARGET_PLATFORMS, CAMPAIGN_FAMILIES } from "@/lib/creativeBrain/brandRules";
 
@@ -21,5 +22,5 @@ export default function CreativeBrain() {
     finally { setLoading(false); }
   };
 
-  return <div className="mx-auto max-w-6xl space-y-5"><BrainUploadPanel file={file} loading={loading} error={error} targetPlatform={targetPlatform} campaignFamily={campaignFamily} onTargetChange={setTargetPlatform} onFamilyChange={setCampaignFamily} onFileChange={onFileChange} onAnalyze={analyze} /><BlueprintJsonOutput pipeline={pipeline} /></div>;
+  return <div className="mx-auto max-w-6xl space-y-5"><BrainUploadPanel file={file} loading={loading} error={error} targetPlatform={targetPlatform} campaignFamily={campaignFamily} onTargetChange={setTargetPlatform} onFamilyChange={setCampaignFamily} onFileChange={onFileChange} onAnalyze={analyze} />{pipeline && <HeroPhotographyPanel sourceFrameFile={file} pipeline={pipeline} targetPlatform={targetPlatform} campaignFamily={campaignFamily} />}<BlueprintJsonOutput pipeline={pipeline} /></div>;
 }
