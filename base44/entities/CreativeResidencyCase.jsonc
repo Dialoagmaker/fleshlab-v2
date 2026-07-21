@@ -1,0 +1,102 @@
+{
+  "name": "CreativeResidencyCase",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "title": "Case ID"
+    },
+    "title": {
+      "type": "string",
+      "title": "Case Title"
+    },
+    "phase": {
+      "type": "string",
+      "title": "Phase"
+    },
+    "case_type": {
+      "type": "string",
+      "title": "Case Type"
+    },
+    "brand": {
+      "type": "string",
+      "title": "Brand"
+    },
+    "current_license": {
+      "type": "string",
+      "title": "Current License"
+    },
+    "rendering_authorization": {
+      "type": "string",
+      "title": "Rendering Authorization"
+    },
+    "final_case_decision": {
+      "type": "string",
+      "title": "Final Case Decision"
+    },
+    "case_status": {
+      "type": "string",
+      "enum": [
+        "passed",
+        "passed_with_deficiencies",
+        "failed"
+      ],
+      "title": "Case Status"
+    },
+    "primary_territory": {
+      "type": "string",
+      "title": "Primary Territory"
+    },
+    "reserve_territory": {
+      "type": "string",
+      "title": "Reserve Territory"
+    },
+    "rejected_territory": {
+      "type": "string",
+      "title": "Rejected Territory"
+    },
+    "performance_scores_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Performance Scores JSON"
+    },
+    "governance_violations_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Governance Violations JSON"
+    },
+    "observed_weaknesses_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Observed Weaknesses JSON"
+    },
+    "candidate_memory_observations_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Candidate Memory Observations JSON"
+    },
+    "next_residency_recommendation": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Next Residency Recommendation"
+    },
+    "report_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Full Residency Case Report JSON"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Completed At"
+    }
+  },
+  "required": [
+    "case_id",
+    "title",
+    "phase",
+    "current_license",
+    "rendering_authorization",
+    "case_status"
+  ]
+}
