@@ -57,6 +57,7 @@ import AdultImageProviderReadiness from './pages/admin/AdultImageProviderReadine
 import RenderingIntelligence from './pages/admin/RenderingIntelligence';
 import ProductionQA from './pages/admin/ProductionQA';
 import StudioAudit from './pages/admin/StudioAudit';
+import Certification from './pages/admin/Certification';
 import VisualAttentionMapLab from './pages/admin/VisualAttentionMapLab';
 import AdminUsers from './pages/admin/Users';
 import AdminUserDetail from './pages/admin/UserDetail';
@@ -230,6 +231,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/rendering-intelligence" element={<RenderingIntelligence />} />
                 <Route path="/admin/production-qa" element={<ProductionQA />} />
                 <Route path="/admin/studio-audit" element={<StudioAudit />} />
+                <Route path="/admin/certification" element={<Certification />} />
                 <Route path="/admin/cover-engine/visual-attention" element={<VisualAttentionMapLab />} />
                 <Route path="/admin/growth" element={<GrowthDashboard />} />
                 <Route path="/admin/executive-dashboard" element={<ExecutiveDashboard />} />

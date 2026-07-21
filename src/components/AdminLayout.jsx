@@ -26,6 +26,7 @@ const NAV_GROUPS = [
       { href: "/admin/rendering-intelligence", label: "Rendering Intelligence", icon: ShieldAlert },
       { href: "/admin/production-qa", label: "Production QA", icon: ShieldCheck },
       { href: "/admin/studio-audit", label: "Studio Audit", icon: Activity },
+      { href: "/admin/certification", label: "Certification", icon: FlaskConical },
       { href: "/admin/adult-image-provider-readiness", label: "Adult Provider Readiness", icon: ShieldAlert },
       { href: "/admin/live-activity", label: "Automation", icon: Activity },
       { href: "/admin/payment-providers", label: "Settings", icon: Settings },
