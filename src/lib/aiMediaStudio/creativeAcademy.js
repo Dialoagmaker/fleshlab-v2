@@ -45,7 +45,12 @@ export const CREATIVE_ACADEMY_CAPABILITY_ALIASES = {
   "poster-design": ["composition", "typography", "art-direction", "visual-systems"],
   "entertainment-branding": ["visual-systems", "art-direction"],
   "film-language": ["photography", "composition", "visual-storytelling", "visual-genre"],
-  "world-knowledge": ["creative-memory", "studio-operating-system", "creative-benchmark-suite"]
+  "world-knowledge": ["creative-memory", "studio-operating-system", "creative-benchmark-suite"],
+  "visual-culture": ["visual-genre", "visual-storytelling", "visual-systems"],
+  "brand-dna": ["visual-systems", "art-direction", "creative-memory"],
+  "graphic-design": ["composition", "typography", "visual-systems"],
+  "image-critique": ["creative-critique", "human-vision", "composition"],
+  "creative-decision-making": ["creative-decision-engine", "creative-director-executive"]
 };
 
 export function lessonZeroModuleRecord(module) {
