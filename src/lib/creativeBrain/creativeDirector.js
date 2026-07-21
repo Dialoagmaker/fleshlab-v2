@@ -12,8 +12,11 @@ const familyDefaults = {
   CUSTOM: { atmosphere: "custom source-led", texture: "controlled", color: "source palette" }
 };
 
-export function directCreative(unifiedFacts, identityFacts, marketingFacts, campaignFamily) {
+export function directCreative(unifiedFacts, identityFacts, marketingFacts, campaignFamily, titlePolicyInput = {}) {
   const family = familyDefaults[campaignFamily] || familyDefaults.CUSTOM;
+  const userTitle = String(titlePolicyInput.userTitle || "").trim();
+  const generatedTitle = marketingFacts.recommended_visual_promise.value || marketingFacts.campaign_category.value || campaignFamily;
+  const selectedTitleSource = userTitle ? "user" : "generated";
   const space = unifiedFacts.attention_and_space?.value || {};
   const scene = unifiedFacts.subject_and_scene?.value || {};
   const titleZone = space.local_negative_space?.[0] || space.local_attention?.[3] || null;
@@ -25,6 +28,14 @@ export function directCreative(unifiedFacts, identityFacts, marketingFacts, camp
     schema_version: "2.0",
     campaign_family: rule(campaignFamily, 1, "user_selection"),
     brand_dna: rule(FLESHLAB_BRAND_DNA, 1, "brand_rule"),
+    title_policy: {
+      userTitle: rule(userTitle, 1, "user_selection"),
+      generatedTitle: rule(generatedTitle, marketingFacts.recommended_visual_promise.confidence || .62, "creative_rule"),
+      selectedTitleSource: rule(selectedTitleSource, 1, userTitle ? "user_selection" : "creative_rule"),
+      selectedTitle: rule(selectedTitleSource === "user" ? userTitle : generatedTitle, 1, selectedTitleSource === "user" ? "user_selection" : "creative_rule"),
+      selectedSubtitle: rule(marketingFacts.emotional_hook.value || "", marketingFacts.emotional_hook.confidence || .5, "semantic_vision"),
+      selectedCampaign: rule(campaignFamily, 1, "user_selection")
+    },
     story: rule(marketingFacts.recommended_visual_promise.value, .7, "creative_rule"),
     emotional_promise: rule(marketingFacts.emotional_hook.value, marketingFacts.emotional_hook.confidence, "semantic_vision"),
     subject_hierarchy: rule(identityFacts.face_visible.value ? "identity-led subject hierarchy" : "silhouette-or-scene-led hierarchy", .72, "creative_rule"),
@@ -38,6 +49,8 @@ export function directCreative(unifiedFacts, identityFacts, marketingFacts, camp
     effects: rule({ fog: "low", particles: "none or very subtle", grain: family.texture }, .78, "creative_rule"),
     crop: rule(marketingFacts.recommended_crop.value, marketingFacts.recommended_crop.confidence, "marketing_rule"),
     focal_emphasis: rule(space.strongest_visual_feature || scene.subject || "source attention anchor", .68, "creative_rule"),
+    typography_strategy: rule({ style: "blueprint-controlled display typography", hierarchy: marketingFacts.recommended_title_hierarchy.value, source: "Creative Brain" }, .82, "creative_rule"),
+    logo_placement_strategy: rule({ zone: logoZone, role: "quiet brand signature" }, logoZone ? .64 : .24, "deterministic_fusion"),
     title_zone: rule(titleZone, titleZone ? .7 : .25, "deterministic_fusion"),
     subtitle_zone: rule(titleZone, titleZone ? .62 : .25, "deterministic_fusion"),
     logo_zone: rule(logoZone, logoZone ? .64 : .24, "deterministic_fusion"),

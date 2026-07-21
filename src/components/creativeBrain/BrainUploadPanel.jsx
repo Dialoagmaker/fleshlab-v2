@@ -3,7 +3,7 @@ import { Brain, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TARGET_PLATFORMS, CAMPAIGN_FAMILIES } from "@/lib/creativeBrain/brandRules";
 
-export default function BrainUploadPanel({ file, loading, error, targetPlatform, campaignFamily, onTargetChange, onFamilyChange, onFileChange, onAnalyze }) {
+export default function BrainUploadPanel({ file, loading, error, targetPlatform, campaignFamily, userTitle, onTitleChange, onTargetChange, onFamilyChange, onFileChange, onAnalyze }) {
   const [preview, setPreview] = useState("");
   useEffect(() => {
     if (!file) { setPreview(""); return; }
@@ -22,6 +22,7 @@ export default function BrainUploadPanel({ file, loading, error, targetPlatform,
         <label><span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Campaign family</span><select value={campaignFamily} onChange={e => onFamilyChange(e.target.value)} className="mt-2 h-12 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground">{CAMPAIGN_FAMILIES.map(item => <option key={item}>{item}</option>)}</select></label>
         <Button onClick={onAnalyze} disabled={!file || loading} className="h-12 gap-2"><Upload className="h-4 w-4" />{loading ? "Analyzing" : "Run Brain"}</Button>
       </div>
+      <label className="mt-3 block"><span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">User title / creative authority input</span><input value={userTitle || ""} onChange={e => onTitleChange(e.target.value)} placeholder="Optional — if blank, Creative Brain selects its generated title" className="mt-2 block w-full rounded-lg border border-input bg-background p-3 text-sm text-foreground" /></label>
       {preview && <img src={preview} alt="Uploaded source" className="mt-4 max-h-80 rounded-xl border border-border bg-black object-contain" />}
       {error && <div className="mt-3 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
     </div>

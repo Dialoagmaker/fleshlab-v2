@@ -17,15 +17,23 @@ function automaticCandidateSettings(settings = {}) {
 
 function normalizeMetadata(metadata = {}, image = null) {
   const aiReconstructed = Boolean(metadata.aiReconstructed || image?.__fleshlabAIReconstructed);
+  const blueprint = metadata.productionBlueprint || null;
+  const selectedTitle = blueprint?.title_policy?.selectedTitle?.value || metadata.selectedTitle || metadata.videoTitle || metadata.title || "";
+  const selectedSubtitle = blueprint?.title_policy?.selectedSubtitle?.value || metadata.selectedSubtitle || metadata.optionalSubtitle || metadata.subtitle || "";
+  const selectedCampaign = blueprint?.title_policy?.selectedCampaign?.value || metadata.selectedCampaign || metadata.campaignName || "";
   return {
     ...metadata,
-    mainTitle: metadata.videoTitle || metadata.title || "",
-    title: metadata.videoTitle || metadata.title || "",
-    subtitle: metadata.optionalSubtitle || metadata.subtitle || "",
-    episodeTitle: metadata.optionalSubtitle || metadata.subtitle || "",
+    selectedTitle,
+    mainTitle: selectedTitle,
+    title: selectedTitle,
+    videoTitle: selectedTitle,
+    selectedSubtitle,
+    subtitle: selectedSubtitle,
+    episodeTitle: selectedSubtitle,
     performer: metadata.performerName || metadata.performer || "",
-    footerCategory: metadata.contentType || metadata.campaignName || "",
-    marketingTagline: metadata.campaignName || metadata.contentType || "",
+    selectedCampaign,
+    footerCategory: selectedCampaign,
+    marketingTagline: selectedCampaign,
     aiReconstructed,
   };
 }
@@ -44,13 +52,13 @@ function buildVariant(plan, candidate, index, width, height) {
     canvas_cache_key: `${candidate.id}_${hash}_${width}x${height}`,
     attempt: index + 1,
     variant: candidate.label,
-    creative_title: candidate.creativeTitle,
+    creative_title: candidate.selectedTitle || candidate.creativeTitle,
     creative_director_outcome: candidate.artDirector?.outcome,
-    poster_family_id: "fleshlab_inferred_language",
+    poster_family_id: "blueprint_execution",
     poster_family_label: candidate.label,
     philosophy: candidate.imageRole === "ai_reconstructed_hero"
-      ? "AI reconstructed hero image supplied; local engine applies FLESHLAB brand, typography, grading, and export only."
-      : "Editorial art direction uses the selected Story Frame as the preserved hero asset and finishes the cover locally.",
+      ? "Render Planner executes Blueprint-approved hero image, typography, branding, and export only."
+      : "Render Planner executes the selected Story Frame and Production Blueprint only.",
     impact_score: candidate.score.total,
     hero_score: candidate.score.hero,
     thumbnail_score: candidate.score.title,
@@ -75,7 +83,8 @@ function buildVariant(plan, candidate, index, width, height) {
       grade: candidate.grade,
       critique: candidate.critique,
       compositionBrief: candidate.compositionBrief,
-      creativeTitle: candidate.creativeTitle,
+      creativeTitle: candidate.selectedTitle || candidate.creativeTitle,
+      selectedTitle: candidate.selectedTitle || candidate.creativeTitle,
       sourceTitle: candidate.sourceTitle,
       reviewBoard: candidate.reviewBoard,
       creativeIntelligence: candidate.creativeIntelligence,
@@ -103,7 +112,7 @@ export async function generateCommercialKeyArtPlan(image, metadata = {}, setting
     variants,
     family: { id: languagePlan.designSystem?.id || "editorial_art_direction", label: languagePlan.designSystem?.label || languagePlan.selected.label },
     artDirection: {
-      pipeline: ["Video", "Story Frame", "Design System Classification", "Editorial Crop", "Background Extension", "Film Grade", "Designed Typography", "Branding", "Export"],
+      pipeline: ["Production Blueprint", "Selected Source Frame", "Layout Geometry", "Render Map", "Typography Draw", "Branding", "Creative Critic", "Export"],
       visualSystemId: languagePlan.designSystem?.id || "fleshlab-editorial-art-direction-system",
       compositionProtection: languagePlan.selected.crop.compositionProtection || null,
     },
@@ -111,9 +120,9 @@ export async function generateCommercialKeyArtPlan(image, metadata = {}, setting
       ...languagePlan,
       metadata: {
         ...normalizedMetadata,
-        title: candidate.creativeTitle || normalizedMetadata.title,
-        mainTitle: candidate.creativeTitle || normalizedMetadata.mainTitle,
-        videoTitle: candidate.creativeTitle || normalizedMetadata.videoTitle,
+        title: normalizedMetadata.selectedTitle,
+        mainTitle: normalizedMetadata.selectedTitle,
+        videoTitle: normalizedMetadata.selectedTitle,
       },
       analysis,
       selected: variants[index],
@@ -133,8 +142,8 @@ export async function generateCommercialKeyArtPlan(image, metadata = {}, setting
       optimizationDirectives: variant.optimization_directives,
     })),
     winner_reason: normalizedMetadata.aiReconstructed
-      ? `${languagePlan.selected.label} selected after applying inferred FLESHLAB rules to the reconstructed hero image.`
-      : `${languagePlan.selected.label} selected by the Editorial Art Direction Engine as a final local cover concept.`,
+      ? `${languagePlan.selected.label} executed from Production Blueprint on the reconstructed hero image.`
+      : `${languagePlan.selected.label} executed from Production Blueprint on the selected source frame.`,
   };
 }
 
@@ -200,8 +209,8 @@ export async function renderCommercialKeyArtToCanvas(canvas, image, metadata = {
     attempts,
     approvalStatus: bestPlan?.selected?.score?.passesQualityGate ? "approved" : "needs_review",
     winner_reason: bestPlan?.metadata?.aiReconstructed
-      ? `${bestPlan.selected.variant} passed the reconstructed-hero branding pass.`
-      : `${bestPlan.selected.variant} passed as a final local editorial cover.`,
+      ? `${bestPlan.selected.variant} completed Blueprint execution on the reconstructed hero image.`
+      : `${bestPlan.selected.variant} completed Blueprint execution on the selected source frame.`,
   };
   return canvas.__fleshlabPosterPlan;
 }

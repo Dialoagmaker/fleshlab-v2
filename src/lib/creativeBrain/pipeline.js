@@ -7,7 +7,7 @@ import { directCreative } from "./creativeDirector";
 import { planProduction } from "./productionPlanner";
 import { validateProductionBlueprint } from "./validator";
 
-export async function runCreativeBrainPipeline(file, { targetPlatform, campaignFamily }) {
+export async function runCreativeBrainPipeline(file, { targetPlatform, campaignFamily, userTitle = "" }) {
   if (!file?.type?.startsWith("image/")) throw new Error("Creative Brain accepts one still image file only.");
   if (file.size > 15 * 1024 * 1024) throw new Error("Image is too large. Use an image under 15MB.");
   const technicalFacts = await analyzeTechnicalVision(file);
@@ -15,7 +15,7 @@ export async function runCreativeBrainPipeline(file, { targetPlatform, campaignF
   const unifiedFacts = fuseFacts(technicalFacts, semanticFacts);
   const identityFacts = analyzeIdentity(unifiedFacts);
   const marketingFacts = analyzeMarketing(unifiedFacts, identityFacts, targetPlatform);
-  const creativeDecisions = directCreative(unifiedFacts, identityFacts, marketingFacts, campaignFamily);
+  const creativeDecisions = directCreative(unifiedFacts, identityFacts, marketingFacts, campaignFamily, { userTitle });
   const productionBlueprint = planProduction(unifiedFacts, identityFacts, marketingFacts, creativeDecisions);
   const validation = validateProductionBlueprint(productionBlueprint);
   if (!validation.valid) {

@@ -12,15 +12,16 @@ export default function CreativeBrain() {
   const [error, setError] = useState("");
   const [targetPlatform, setTargetPlatform] = useState(TARGET_PLATFORMS[0]);
   const [campaignFamily, setCampaignFamily] = useState(CAMPAIGN_FAMILIES[0]);
+  const [userTitle, setUserTitle] = useState("");
 
   const onFileChange = (event) => { setFile(event.target.files?.[0] || null); setPipeline(null); setError(""); };
   const analyze = async () => {
     if (!file || loading) return;
     setLoading(true); setError(""); setPipeline(null);
-    try { setPipeline(await runCreativeBrainPipeline(file, { targetPlatform, campaignFamily })); }
+    try { setPipeline(await runCreativeBrainPipeline(file, { targetPlatform, campaignFamily, userTitle })); }
     catch (err) { setError(err.message || "The Creative Brain could not analyze this image."); }
     finally { setLoading(false); }
   };
 
-  return <div className="mx-auto max-w-6xl space-y-5"><BrainUploadPanel file={file} loading={loading} error={error} targetPlatform={targetPlatform} campaignFamily={campaignFamily} onTargetChange={setTargetPlatform} onFamilyChange={setCampaignFamily} onFileChange={onFileChange} onAnalyze={analyze} />{pipeline && <HeroPhotographyPanel sourceFrameFile={file} pipeline={pipeline} targetPlatform={targetPlatform} campaignFamily={campaignFamily} />}<BlueprintJsonOutput pipeline={pipeline} /></div>;
+  return <div className="mx-auto max-w-6xl space-y-5"><BrainUploadPanel file={file} loading={loading} error={error} targetPlatform={targetPlatform} campaignFamily={campaignFamily} userTitle={userTitle} onTitleChange={setUserTitle} onTargetChange={setTargetPlatform} onFamilyChange={setCampaignFamily} onFileChange={onFileChange} onAnalyze={analyze} />{pipeline && <HeroPhotographyPanel sourceFrameFile={file} pipeline={pipeline} targetPlatform={targetPlatform} campaignFamily={campaignFamily} />}<BlueprintJsonOutput pipeline={pipeline} /></div>;
 }

@@ -15,7 +15,7 @@ function confidenceErrors(value, path = "root", errors = []) {
 
 export function validateProductionBlueprint(blueprint) {
   const errors = [];
-  const required = ["schema_version", "source_analysis", "identity_protection", "marketing_strategy", "creative_direction", "composition_plan", "rendering_instructions", "quality_requirements", "uncertainties", "provenance"];
+  const required = ["schema_version", "source_analysis", "identity_protection", "marketing_strategy", "creative_direction", "title_policy", "typography_strategy", "composition_plan", "rendering_instructions", "quality_requirements", "uncertainties", "provenance"];
   required.forEach(key => { if (!(key in blueprint)) errors.push(`missing ${key}`); });
   if (blueprint.schema_version !== "2.0") errors.push("schema_version must be 2.0");
   ["preserve", "modify", "generate", "local_composite", "forbidden"].forEach(key => {
@@ -23,6 +23,7 @@ export function validateProductionBlueprint(blueprint) {
   });
   if (!blueprint.rendering_instructions?.preserve?.length) errors.push("empty preserve strategy");
   if (!blueprint.rendering_instructions?.modify?.length) errors.push("empty modify strategy");
+  if (!blueprint.title_policy?.selectedTitle?.value) errors.push("title_policy.selectedTitle is required");
   if (!blueprint.provenance || typeof blueprint.provenance !== "object") errors.push("provenance missing");
   if (hasPlaceholder(blueprint)) errors.push("placeholder text detected");
   if (hasUnsupportedClaims(blueprint)) errors.push("unsupported claim detected");

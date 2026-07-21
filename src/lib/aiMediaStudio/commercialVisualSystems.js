@@ -1,5 +1,4 @@
 import { critiqueRenderedCover } from "./creativeIntelligenceEngine";
-import { solveIntentDrivenRenderMap } from "./intentDrivenRenderPlanner";
 
 const OFFICIAL_LOGO_URL = "https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/a1f9333f9_ChatGPTImageJul14202612_16_43AM.png";
 
@@ -128,7 +127,7 @@ function drawTitleWell(ctx, map, width, height) {
 
 function wrapTitle(ctx, text, maxWidth, startSize, maxLines = 3) {
   const words = upper(text).split(/\s+/).filter(Boolean);
-  if (!words.length) return { lines: ["UNTITLED"], size: startSize, lineHeight: startSize * 0.78 };
+  if (!words.length) return { lines: [], size: startSize, lineHeight: startSize * 0.78 };
   for (let size = startSize; size >= startSize * 0.44; size -= 4) {
     ctx.font = font(size, "Bebas Neue", 900);
     const lines = [];
@@ -150,8 +149,9 @@ function drawTitle(ctx, map, width, height, metadata, settings) {
   let y = (settings?.manualOverrides?.titleY ? Number(settings.titleY) / 100 : zone.y) * height;
   const maxW = zone.w * width;
   const baseSize = manualValue(settings, "titleSize", width * map.titleScale);
-  const title = metadata.title || metadata.mainTitle || metadata.videoTitle || "Untitled";
-  const style = map.typographyStyle || "drama_condensed";
+  const title = metadata.productionBlueprint?.title_policy?.selectedTitle?.value || metadata.selectedTitle || "";
+  if (!title) return;
+  const style = map.typographyStyle || "blueprint_display";
   const block = wrapTitle(ctx, title, maxW, baseSize, width > height ? 3 : 5);
 
   ctx.save();
@@ -162,9 +162,6 @@ function drawTitle(ctx, map, width, height, metadata, settings) {
   ctx.lineWidth = Math.max(2, block.size * (style === "action_impact" ? 0.045 : 0.018));
 
   if (style === "luxury_serif" || style === "lifestyle_magazine") {
-    ctx.font = font(Math.max(18, block.size * 0.16), "Inter", 800);
-    ctx.fillStyle = `rgba(${map.grade.accent},0.9)`;
-    ctx.fillText("PRIVATE PREMIERE", x, y - block.size * 0.34, maxW);
     ctx.font = font(block.size * 0.78, "Georgia", 700, style === "luxury_serif" ? "italic" : "");
   } else if (style === "vacation_script") {
     ctx.font = font(block.size * 0.62, "Permanent Marker", 700);
@@ -195,7 +192,7 @@ function drawTitle(ctx, map, width, height, metadata, settings) {
     y += block.lineHeight * (style === "minimal_spaced" ? 1.18 : 1);
   });
 
-  const subtitle = upper(metadata.subtitle || metadata.episodeTitle || metadata.optionalSubtitle || "");
+  const subtitle = upper(metadata.productionBlueprint?.title_policy?.selectedSubtitle?.value || metadata.selectedSubtitle || metadata.subtitle || metadata.episodeTitle || metadata.optionalSubtitle || "");
   if (subtitle) {
     y += height * 0.018;
     ctx.font = font(Math.max(18, manualValue(settings, "performerSize", width * map.performerScale)), "Inter", 900);
@@ -248,7 +245,7 @@ async function drawLogo(ctx, map, width, height, settings) {
 }
 
 function drawFooter(ctx, map, width, height, metadata, settings) {
-  const items = [metadata.footerCategory, metadata.marketingTagline, ...(String(settings?.sellingPoints || "").split(/\n+/))]
+  const items = [metadata.productionBlueprint?.title_policy?.selectedCampaign?.value || metadata.selectedCampaign || metadata.footerCategory, ...(String(settings?.sellingPoints || "").split(/\n+/))]
     .map(item => upper(item))
     .filter(Boolean)
     .slice(0, 3);
@@ -287,7 +284,14 @@ export async function paintCommercialVisualSystem(canvas, image, plan, settings 
     grade: candidate.grade || plan.selected?.diagnostic?.grade || { bg: "#030303", accent: "208,0,18", paper: "244,240,231", warmth: 0.68, contrast: 1.26, saturation: 1 },
     imageRole: candidate.imageRole || (plan.metadata?.aiReconstructed ? "ai_reconstructed_hero" : "source_frame_editorial"),
   };
-  const renderMap = solveIntentDrivenRenderMap({ baseMap, plan, metadata: plan.metadata || {}, width, height });
+  const renderMap = {
+    ...baseMap,
+    renderingInstructions: plan.metadata?.productionBlueprint?.rendering_instructions || {},
+    emotionFamily: "blueprint",
+    performerSide: baseMap.negativeSide === "left" ? "right" : "left",
+    visualTension: 0.72,
+    heroDominance: 0.82,
+  };
 
   drawEditorialBase(ctx, image, renderMap, width, height, settings);
   drawFleshlabGrade(ctx, renderMap, width, height);
@@ -319,6 +323,6 @@ export async function paintCommercialVisualSystem(canvas, image, plan, settings 
     artworkValidation: internalCritic.approved ? "passed" : "critic_rejected",
     internalCritic,
     compositionProtection: renderMap.crop?.fitMode === "portraitEditorial" ? "source_composition_protected" : "safe_crop",
-    artDirectorVersion: "FLESHLAB EDITORIAL ART DIRECTION ENGINE v1.0",
+    artDirectorVersion: "FLESHLAB COMMERCIAL VISUAL SYSTEMS v3.0 — Blueprint Execution Only",
   };
 }
