@@ -56,19 +56,34 @@ function aggregateSubsystemScores(tests) {
 }
 
 function buildStressMetrics(attempts, qa, videos, batchSize) {
+  const terminalDecisions = ['APPROVED', 'APPROVED WITH MINOR FIXES', 'REVISION REQUIRED', 'REJECTED', 'QA_TECHNICAL_FAILURE'];
   const totalAttempts = attempts.length;
   const failedAttempts = attempts.filter(item => !item.success).length;
   const retryableFailures = attempts.filter(item => item.error_category && item.error_category !== 'CONTENT_POLICY').length;
-  const successfulAttempts = attempts.filter(item => item.success).length;
+  const successfulAttempts = attempts.filter(item => item.success && item.generation_job_id).slice(0, batchSize);
   const published = videos.filter(item => item.status === 'published' || item.release_status === 'public').length;
+  const qaByGeneration = new Map();
+  for (const row of qa) {
+    if (!row.generation_job_id) continue;
+    if (!qaByGeneration.has(row.generation_job_id)) qaByGeneration.set(row.generation_job_id, []);
+    qaByGeneration.get(row.generation_job_id).push(row);
+  }
+  const qaMatched = successfulAttempts.map(attempt => qaByGeneration.get(attempt.generation_job_id) || []);
+  const terminalMatches = qaMatched.filter(rows => rows.some(row => terminalDecisions.includes(row.final_decision)));
+  const duplicateUnintended = qaMatched.filter(rows => rows.length > 1).length;
   return {
     configured_batch_size: batchSize,
     sample_attempts: totalAttempts,
+    eligible_generated_assets: successfulAttempts.length,
+    qa_triggered: qaMatched.filter(rows => rows.length > 0).length,
+    terminal_qa_states: terminalMatches.length,
+    missing_qa_results: Math.max(0, successfulAttempts.length - terminalMatches.length),
+    duplicate_unintended_qa_records: duplicateUnintended,
     average_runtime_ms: Number(average(attempts.map(item => Number(item.runtime_ms || 0))).toFixed(1)),
     failure_rate: totalAttempts ? Number(((failedAttempts / totalAttempts) * 100).toFixed(1)) : 0,
     retry_rate: totalAttempts ? Number(((retryableFailures / totalAttempts) * 100).toFixed(1)) : 0,
-    provider_failover_success: successfulAttempts > 0 || totalAttempts === 0,
-    qa_completion_rate: batchSize ? Number((Math.min(qa.length, batchSize) / batchSize * 100).toFixed(1)) : 0,
+    provider_failover_success: successfulAttempts.length > 0 || totalAttempts === 0,
+    qa_completion_rate: successfulAttempts.length ? Number((terminalMatches.length / successfulAttempts.length * 100).toFixed(1)) : 0,
     publishing_success_rate: videos.length ? Number((published / videos.length * 100).toFixed(1)) : 0,
     memory_integrity: failedAttempts <= Math.max(2, totalAttempts * 0.35)
   };
@@ -127,7 +142,7 @@ function buildTests(data, auditResponse, stressBatchSize) {
   tests.push(makeTest('Rendering Intelligence', 'Stress average runtime acceptable', 'stress', stress.average_runtime_ms === 0 || stress.average_runtime_ms < 180000, stress.average_runtime_ms === 0 ? 78 : 92, 'warning', 'Rendering runtime stress sample evaluated.', 'Investigate slow rendering providers.'));
   tests.push(makeTest('Rendering Intelligence', 'Stress failure rate acceptable', 'stress', stress.failure_rate <= 35, 100 - stress.failure_rate, 'critical', 'Rendering failure rate evaluated.', 'Reduce provider failure rate before certification.'));
   tests.push(makeTest('Provider Routing', 'Provider failover success', 'stress', stress.provider_failover_success, stress.provider_failover_success ? 90 : 40, 'critical', 'Provider failover inspected.', 'Enable alternate providers for failover.'));
-  tests.push(makeTest('Production QA', 'QA completion rate', 'stress', stress.qa_completion_rate >= 50 || qa.length > 0, stress.qa_completion_rate || (qa.length ? 70 : 35), 'warning', 'QA completion rate evaluated.', 'Increase QA completion rate for generated assets.'));
+  tests.push(makeTest('Production QA', 'QA completion rate', 'stress', stress.eligible_generated_assets > 0 && stress.qa_completion_rate === 100 && stress.missing_qa_results === 0 && stress.duplicate_unintended_qa_records === 0, stress.eligible_generated_assets ? stress.qa_completion_rate : 35, 'warning', 'QA completion rate evaluated against successful generated assets with matching terminal QA states.', 'Every successful generated asset must have exactly one terminal Production QA result linked by generation job.'));
   tests.push(makeTest('Publishing Gate', 'Publishing success rate', 'stress', stress.publishing_success_rate >= 20 || videos.length === 0, videos.length ? stress.publishing_success_rate : 75, 'warning', 'Publishing success rate evaluated.', 'Review publishing blockers and gate failures.'));
   tests.push(makeTest('Production Memory', 'Memory integrity under batch load', 'stress', stress.memory_integrity, stress.memory_integrity ? 92 : 40, 'critical', 'Production memory integrity evaluated.', 'Repair failed/stale production memory.'));
 
