@@ -1,37 +1,53 @@
-function pickMainZone(zones = [], fallback = "center") {
-  return zones[0] ? { zone: zones[0].zone, box: { x: zones[0].x, y: zones[0].y, width: zones[0].width, height: zones[0].height } } : { zone: fallback, box: null };
-}
+import { rule } from "./field";
+import { FLESHLAB_BRAND_DNA } from "./brandRules";
 
-export function directCreative(imageFacts, identityFacts, marketingFacts) {
-  const headline = pickMainZone(imageFacts.safe_typography_zones, "no_safe_headline_zone");
-  const logo = pickMainZone((imageFacts.safe_typography_zones || []).slice(1), "secondary_safe_zone");
-  const light = imageFacts.lighting?.dominant_direction || "balanced";
-  const exposure = imageFacts.image_quality?.exposure;
-  const campaign = marketingFacts.campaign_category;
-  const preserveSubject = identityFacts.areas_that_must_never_change?.length > 0;
+const familyDefaults = {
+  KRAKEN: { atmosphere: "dark red high-impact", texture: "distressed premium", color: "black red white" },
+  "DARK PREMIUM": { atmosphere: "controlled shadow luxury", texture: "fine grain", color: "black warm skin deep red" },
+  "LUXURY HOTEL": { atmosphere: "warm suite luxury", texture: "soft glow", color: "warm gold black red" },
+  "NETFLIX KEY ART": { atmosphere: "cinematic streaming poster", texture: "clean cinematic", color: "high-contrast controlled palette" },
+  EDITORIAL: { atmosphere: "magazine editorial", texture: "clean type-led", color: "source-led accents" },
+  "RAW AMATEUR": { atmosphere: "authentic raw premium", texture: "light documentary grain", color: "natural skin and dark brand frame" },
+  "OUTDOOR CINEMATIC": { atmosphere: "open cinematic scale", texture: "natural contrast", color: "source environment palette" },
+  CUSTOM: { atmosphere: "custom source-led", texture: "controlled", color: "source palette" }
+};
+
+export function directCreative(unifiedFacts, identityFacts, marketingFacts, campaignFamily) {
+  const family = familyDefaults[campaignFamily] || familyDefaults.CUSTOM;
+  const space = unifiedFacts.attention_and_space?.value || {};
+  const scene = unifiedFacts.subject_and_scene?.value || {};
+  const titleZone = space.local_negative_space?.[0] || space.local_attention?.[3] || null;
+  const logoZone = space.local_negative_space?.[1] || titleZone;
 
   return {
     module: "CREATIVE_DIRECTOR",
     output_type: "CreativeDecisions",
-    schema_version: "1.0",
-    input_modules: ["ImageFacts", "IdentityFacts", "MarketingFacts"],
-    lighting_direction: light,
-    lighting_action: exposure === "very_dark" ? "increase_subject_readability_without_changing_identity" : "preserve_existing_light_direction",
-    atmosphere: campaign === "premium_visual_campaign" ? "premium_controlled" : "clean_commercial",
-    story: marketingFacts.strongest_selling_point,
-    luxury_level: campaign === "premium_visual_campaign" ? "high" : "medium",
-    emotion: identityFacts.face_visibility?.visible ? "identity_led" : "mystery_or_silhouette_led",
-    composition: preserveSubject ? "protect_subject_cluster_and_use_negative_space" : "build_hierarchy_from_attention_map",
-    perspective: imageFacts.camera_and_crop?.camera_angle === "not_implemented_locally" ? "preserve_existing_perspective" : imageFacts.camera_and_crop.camera_angle,
-    depth: imageFacts.depth?.estimate || "uncertain",
-    visual_hierarchy: [
-      { rank: 1, element: "subject_or_attention_anchor", source: imageFacts.attention_map?.[0]?.zone || "unknown" },
-      { rank: 2, element: "headline", target_zone: headline.zone },
-      { rank: 3, element: "logo", target_zone: logo.zone }
-    ],
-    typography_zones: [headline],
-    logo_zones: [logo],
-    color_grade: imageFacts.lighting?.average_luminance < 0.3 ? "lift_shadows_preserve_mood" : "preserve_dominant_palette",
-    uncertainties: ["environment semantics are not available locally", "creative references are intentionally not generated as prompts"]
+    schema_version: "2.0",
+    campaign_family: rule(campaignFamily, 1, "user_selection"),
+    brand_dna: rule(FLESHLAB_BRAND_DNA, 1, "brand_rule"),
+    story: rule(marketingFacts.recommended_visual_promise.value, .7, "creative_rule"),
+    emotional_promise: rule(marketingFacts.emotional_hook.value, marketingFacts.emotional_hook.confidence, "semantic_vision"),
+    subject_hierarchy: rule(identityFacts.face_visible.value ? "identity-led subject hierarchy" : "silhouette-or-scene-led hierarchy", .72, "creative_rule"),
+    background_strategy: rule(identityFacts.editable_regions.value, .68, "creative_rule"),
+    lighting_strategy: rule(unifiedFacts.technical_quality.value.exposure === "underexposed" ? "lift readability without changing source direction" : "preserve source light and add controlled emphasis", .76, "creative_rule"),
+    lighting_direction: rule("derive from source luminance distribution", .62, "local_measurement"),
+    color_language: rule(family.color, .86, "brand_rule"),
+    atmosphere: rule(family.atmosphere, .86, "brand_rule"),
+    depth: rule(unifiedFacts.technical_quality.value.blur > .65 ? "increase separation carefully" : "preserve perceived depth", .7, "creative_rule"),
+    texture: rule(family.texture, .82, "brand_rule"),
+    effects: rule({ fog: "low", particles: "none or very subtle", grain: family.texture }, .78, "creative_rule"),
+    crop: rule(marketingFacts.recommended_crop.value, marketingFacts.recommended_crop.confidence, "marketing_rule"),
+    focal_emphasis: rule(space.strongest_visual_feature || scene.subject || "source attention anchor", .68, "creative_rule"),
+    title_zone: rule(titleZone, titleZone ? .7 : .25, "deterministic_fusion"),
+    subtitle_zone: rule(titleZone, titleZone ? .62 : .25, "deterministic_fusion"),
+    logo_zone: rule(logoZone, logoZone ? .64 : .24, "deterministic_fusion"),
+    preserve_modify_generate_local_composite_forbidden: {
+      PRESERVE: identityFacts.preserve_regions.value,
+      MODIFY: identityFacts.editable_regions.value,
+      GENERATE: ["background extension only where editable", "atmosphere consistent with campaign family"],
+      LOCAL_COMPOSITE: ["typography", "logo", "deterministic overlays"],
+      FORBIDDEN: ["identity drift", "identity-authentication claim", "factual CTR prediction", "unverified relationship/location claims"]
+    },
+    forbidden_changes: rule(["alter preserved identity areas", "invent unsupported story facts", "change source body identity", "claim identity authentication", "claim factual CTR prediction"], 1, "creative_rule")
   };
 }

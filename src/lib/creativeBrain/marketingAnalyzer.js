@@ -1,37 +1,32 @@
-const round = (value, digits = 1) => Number(Number(value || 0).toFixed(digits));
+import { rule } from "./field";
+import { FLESHLAB_BRAND_DNA } from "./brandRules";
 
-export function analyzeMarketing(imageFacts) {
-  const quality = imageFacts.image_quality?.score || 0;
-  const hasSubject = !imageFacts.subject_position?.status;
-  const hasFace = (imageFacts.face_visibility?.clear_face_count || 0) > 0;
-  const topAttention = imageFacts.attention_map?.[0]?.attention_strength || 0;
-  const safeZones = imageFacts.safe_typography_zones || [];
-  const darkPenalty = imageFacts.lighting?.underexposed_percent > 35 ? 16 : 0;
-  const noFacePenalty = hasFace ? 0 : 12;
-  const thumbnail = Math.max(0, Math.min(100, Math.round(topAttention * 42 + quality * 0.38 + (hasSubject ? 16 : 0) + (safeZones.length ? 8 : 0) - darkPenalty - noFacePenalty)));
-  const commercial = Math.max(0, Math.min(100, Math.round(thumbnail * 0.55 + quality * 0.25 + (imageFacts.dominant_colors?.length ? 8 : 0))));
-
-  const risks = [];
-  if (!hasFace) risks.push("face visibility is weak or unavailable");
-  if (!hasSubject) risks.push("main subject is not confidently localized");
-  if (imageFacts.image_quality?.exposure === "very_dark") risks.push("image is very dark");
-  if (safeZones.length < 2) risks.push("limited safe typography space");
+export function analyzeMarketing(unifiedFacts, identityFacts, targetPlatform) {
+  const attention = unifiedFacts.attention_and_space?.value || {};
+  const quality = unifiedFacts.technical_quality?.value || {};
+  const scene = unifiedFacts.subject_and_scene?.value || {};
+  const thumb = Math.max(0, Math.min(100, Math.round((attention.local_attention?.[0]?.score || .3) * 42 + (quality.sharpness || .3) * 30 + (identityFacts.face_visible.value ? 16 : 6))));
+  const fit = targetPlatform === "Video thumbnail" ? thumb : Math.round((thumb * .65) + (identityFacts.identity_risk.value === "high" ? 10 : 18));
 
   return {
     module: "MARKETING_ANALYZER",
     output_type: "MarketingFacts",
-    schema_version: "1.0",
-    input_modules: ["ImageFacts"],
-    attention_attractor: imageFacts.attention_map?.[0] ? { zone: imageFacts.attention_map[0].zone, reason: "highest local attention score", strength: imageFacts.attention_map[0].attention_strength } : { zone: null, reason: "no attention zone found", strength: 0 },
-    attention_weaknesses: risks,
-    thumbnail_strength: { heuristic_score: thumbnail, basis: "attention + quality + subject + typography space", performance_calibrated: false },
-    commercial_potential: { heuristic_score: commercial, basis: "thumbnail strength + quality + color structure", performance_calibrated: false },
-    target_audience: { value: "not inferable from pixels alone", limitation: "requires campaign/business context" },
-    campaign_category: quality > 70 && hasSubject ? "premium_visual_campaign" : quality > 45 ? "utility_marketing_asset" : "needs_source_improvement",
-    marketing_risks: risks,
-    strongest_selling_point: hasFace ? "visible face/identity can anchor attention" : hasSubject ? "subject silhouette or body position anchors attention" : "color and contrast are the primary available hooks",
-    weakest_visual_element: risks[0] || "no major weakness detected by local heuristics",
-    ctr_heuristic_estimate: { index: round(commercial), label: "heuristic only", not_factual_ctr: true },
-    uncertainties: ["target audience and campaign performance cannot be proven from pixels alone", "CTR is not calibrated against real campaign data"]
+    schema_version: "2.0",
+    target_platform: rule(targetPlatform, 1, "user_selection"),
+    brand_rules_used: rule(FLESHLAB_BRAND_DNA.pillars, 1, "brand_rule"),
+    strongest_selling_point: rule(attention.strongest_visual_feature || scene.subject || "strongest visual feature uncertain", .7, "semantic_vision"),
+    weakest_marketing_point: rule(attention.weakest_visual_feature || unifiedFacts.uncertainties?.[0]?.value || "weakness uncertain", .68, "semantic_vision"),
+    likely_audience_response: rule(scene.expression || scene.activity || "audience response cannot be performance-predicted", .58, "marketing_rule"),
+    thumbnail_readability: rule(thumb > 70 ? "strong" : thumb > 45 ? "moderate" : "weak", .68, "marketing_rule"),
+    emotional_hook: rule(unifiedFacts.story_signals?.value?.emotional_tone || "uncertain", unifiedFacts.story_signals?.confidence || .5, "semantic_vision"),
+    campaign_category: rule(scene.scene_category || "visual_campaign", .62, "semantic_vision"),
+    recommended_visual_promise: rule(unifiedFacts.story_signals?.value?.likely_narrative || "image-specific visual promise only", .62, "marketing_rule"),
+    marketing_risks: rule([...(unifiedFacts.uncertainties || []).map(u => u.value || u.field), ...(identityFacts.identity_risk.value.includes("high") ? ["identity preservation risk"] : [])], .76, "marketing_rule"),
+    content_platform_fit: rule(fit > 70 ? "strong heuristic fit" : fit > 45 ? "moderate heuristic fit" : "weak heuristic fit", .62, "marketing_rule"),
+    recommended_crop: rule(targetPlatform === "Banner" ? "wide banner-safe crop" : targetPlatform === "Instagram" ? "square or 4:5 crop" : "16:9 key-art crop", .74, "marketing_rule"),
+    recommended_title_hierarchy: rule(identityFacts.face_visible.value ? "subject first, title second" : "title/graphic first, subject second", .72, "marketing_rule"),
+    heuristic_attention_strength: rule(thumb, .64, "marketing_rule"),
+    heuristic_thumbnail_strength: rule(thumb, .64, "marketing_rule"),
+    heuristic_campaign_fit: rule(fit, .58, "marketing_rule")
   };
 }
