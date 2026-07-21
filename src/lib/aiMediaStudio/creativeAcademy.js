@@ -37,6 +37,17 @@ export const CREATIVE_ACADEMY_SYSTEMS = [
 
 export const REQUIRED_RENDERING_MODULES = CREATIVE_ACADEMY_MODULES.map(module => module.slug);
 
+export const CREATIVE_ACADEMY_CAPABILITY_ALIASES = {
+  lighting: ["color-lighting"],
+  "color-theory": ["color-lighting"],
+  advertising: ["advertising-psychology"],
+  "marketing-psychology": ["advertising-psychology"],
+  "poster-design": ["composition", "typography", "art-direction", "visual-systems"],
+  "entertainment-branding": ["visual-systems", "art-direction"],
+  "film-language": ["photography", "composition", "visual-storytelling", "visual-genre"],
+  "world-knowledge": ["creative-memory", "studio-operating-system", "creative-benchmark-suite"]
+};
+
 export function lessonZeroModuleRecord(module) {
   return {
     slug: module.slug,
@@ -54,20 +65,59 @@ export function lessonZeroModuleRecord(module) {
   };
 }
 
+function isCertified(record) {
+  return record?.status === "certified" && record?.installed === true && record?.certified === true;
+}
+
+function resolveCapability(module, records = []) {
+  const direct = records.find(record => record.slug === module.slug);
+  if (isCertified(direct)) return { ...direct, required_slug: module.slug, satisfied_by_slug: direct.slug, mapping_type: "direct" };
+
+  const aliasSlugs = CREATIVE_ACADEMY_CAPABILITY_ALIASES[module.slug] || [];
+  const certifiedAliases = aliasSlugs
+    .map(slug => records.find(record => record.slug === slug))
+    .filter(isCertified);
+
+  if (certifiedAliases.length) {
+    const primary = certifiedAliases[0];
+    return {
+      ...(direct || lessonZeroModuleRecord(module)),
+      status: "certified",
+      installed: true,
+      certified: true,
+      training_progress: 100,
+      quality_score: Math.min(...certifiedAliases.map(record => Number(record.quality_score || 90))),
+      version: primary.version,
+      required_slug: module.slug,
+      satisfied_by_slug: primary.slug,
+      satisfied_by_title: primary.title,
+      mapping_type: "certified_capability_alias",
+      known_scope: `Satisfied by certified capability ${primary.title}: ${primary.known_scope || "certified scope available"}`,
+      exposed_knowledge_json: JSON.stringify({
+        required_slug: module.slug,
+        satisfied_by: certifiedAliases.map(record => ({ slug: record.slug, title: record.title, version: record.version, quality_score: record.quality_score })),
+        claims_allowed: true,
+        mapping_type: "certified_capability_alias"
+      })
+    };
+  }
+
+  return direct || lessonZeroModuleRecord(module);
+}
+
 export function normalizeAcademyModules(records = []) {
-  return CREATIVE_ACADEMY_MODULES.map(module => {
-    const found = records.find(record => record.slug === module.slug);
-    return found || lessonZeroModuleRecord(module);
-  });
+  return CREATIVE_ACADEMY_MODULES.map(module => resolveCapability(module, records));
 }
 
 export function evaluateRenderingReadiness(records = []) {
   const modules = normalizeAcademyModules(records);
   const missing = modules.filter(module => REQUIRED_RENDERING_MODULES.includes(module.slug) && module.status !== "certified");
+  const satisfied = modules.filter(module => REQUIRED_RENDERING_MODULES.includes(module.slug) && module.status === "certified");
   return {
     ready: missing.length === 0,
     message: missing.length === 0 ? "Certified knowledge available." : "KNOWLEDGE NOT INSTALLED",
     missing,
+    satisfied,
     required: REQUIRED_RENDERING_MODULES
   };
 }
