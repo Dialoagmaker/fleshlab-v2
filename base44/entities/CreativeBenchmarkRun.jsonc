@@ -1,0 +1,73 @@
+{
+  "name": "CreativeBenchmarkRun",
+  "type": "object",
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "title": "Benchmark Run ID"
+    },
+    "system_version": {
+      "type": "string",
+      "title": "System Version"
+    },
+    "suite_version": {
+      "type": "string",
+      "title": "Suite Version"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "running",
+        "completed",
+        "failed"
+      ],
+      "default": "planned",
+      "title": "Status"
+    },
+    "case_count": {
+      "type": "integer",
+      "title": "Case Count"
+    },
+    "average_score": {
+      "type": "number",
+      "title": "Average Score"
+    },
+    "performance_delta_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Performance Delta JSON"
+    },
+    "regression_report_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Regression Report JSON"
+    },
+    "improvement_report_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Improvement Report JSON"
+    },
+    "confidence_delta_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Confidence Delta JSON"
+    },
+    "knowledge_drift_report_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Knowledge Drift Report JSON"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Completed At"
+    }
+  },
+  "required": [
+    "run_id",
+    "system_version",
+    "suite_version",
+    "status"
+  ]
+}
