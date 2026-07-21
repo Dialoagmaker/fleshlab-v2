@@ -689,6 +689,25 @@ function arrayBufferToBase64(buffer) {
   return btoa(binary);
 }
 
+async function runProductionQA(base44, payload) {
+  try {
+    const response = await base44.functions.invoke('productionQAEngine', payload);
+    return response.data;
+  } catch (error) {
+    console.warn('Production QA handoff failed', error.message);
+    return {
+      ok: false,
+      final_decision: 'REVISION REQUIRED',
+      production_approved: false,
+      publishing_gate_pass: false,
+      public_summary: {
+        status: 'Revision Required',
+        message: 'Production QA could not complete automatically. Publishing blocked until review.'
+      }
+    };
+  }
+}
+
 async function runOpenRouterSelfTest(base44, apiKey, user) {
   const testImageUrl = 'https://picsum.photos/seed/fleshlab-openrouter-pipeline/1280/720.jpg';
   const imageRes = await fetch(testImageUrl);
@@ -859,6 +878,27 @@ async function generateCover(base44, apiKey, body, user) {
         reason: 'Generated hero photograph returned successfully.',
         attempts_json: safeJson([...attemptDiagnostics, { model: route.id, provider: result.resolved_provider, http_status: 200, output_received: true }])
       });
+      const productionQA = await runProductionQA(base44, {
+        action: 'evaluate',
+        asset_id: generationJobId,
+        generation_job_id: generationJobId,
+        campaign: metadata.campaignName || metadata.videoTitle || '',
+        creative_brief: buildPhotographicBrief(metadata),
+        reference_frame_data_url: identityReferenceDataUrl || storyReferenceDataUrl,
+        generated_asset_data_url: result.image_data_url,
+        rendering_specification: {
+          aspect_ratio,
+          content_classification: contentClassification,
+          campaign: metadata.campaignName || '',
+          creative_approval_pass: Boolean(metadata.creativeApprovalPass || metadata.creative_approval_pass),
+          executive_approval_pass: Boolean(metadata.executiveApprovalPass || metadata.executive_approval_pass),
+          governance_valid: policyRouting.policyCompatible !== 'no'
+        },
+        creative_approval_pass: Boolean(metadata.creativeApprovalPass || metadata.creative_approval_pass),
+        executive_approval_pass: Boolean(metadata.executiveApprovalPass || metadata.executive_approval_pass),
+        governance_valid: policyRouting.policyCompatible !== 'no',
+        provider_id: getRouteProviderKey(route)
+      });
       return json({
         ok: true,
         generated_image_data_url: result.image_data_url,
@@ -867,6 +907,8 @@ async function generateCover(base44, apiKey, body, user) {
         cost_reported: result.cost,
         routing_pipeline: 'best_production_pipeline_selected',
         production_memory_recorded: true,
+        production_qa: productionQA,
+        publishing_gate_pass: Boolean(productionQA?.publishing_gate_pass),
         fallback_used: attempts.length > 0,
         photographer_attempts: [...attempts.map(item => ({ status: item.status, category: item.category || null, retryable: Boolean(item.retryable) })), { status: 'accepted' }],
         attempt_diagnostics: [...attemptDiagnostics.map(item => ({ category: item.category || null, retryable: Boolean(item.retryable), output_received: Boolean(item.output_received) })), {

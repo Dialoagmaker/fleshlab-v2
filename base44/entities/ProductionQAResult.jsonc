@@ -1,0 +1,177 @@
+{
+  "name": "ProductionQAResult",
+  "type": "object",
+  "properties": {
+    "qa_result_id": {
+      "type": "string",
+      "title": "QA Result ID"
+    },
+    "asset_id": {
+      "type": "string",
+      "title": "Asset ID"
+    },
+    "video_id": {
+      "type": "string",
+      "title": "Video ID"
+    },
+    "generation_job_id": {
+      "type": "string",
+      "title": "Generation Job ID"
+    },
+    "campaign": {
+      "type": "string",
+      "title": "Campaign"
+    },
+    "creative_brief": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Creative Brief"
+    },
+    "rendering_specification": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Rendering Specification JSON"
+    },
+    "reference_frame_summary_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Reference Frame Summary JSON"
+    },
+    "generated_asset_summary_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Generated Asset Summary JSON"
+    },
+    "qa_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "title": "QA Timestamp"
+    },
+    "overall_score": {
+      "type": "number",
+      "title": "Overall Score"
+    },
+    "confidence": {
+      "type": "number",
+      "title": "Confidence"
+    },
+    "identity_score": {
+      "type": "number",
+      "title": "Identity Score"
+    },
+    "technical_score": {
+      "type": "number",
+      "title": "Technical Score"
+    },
+    "brand_score": {
+      "type": "number",
+      "title": "Brand Score"
+    },
+    "executive_alignment_score": {
+      "type": "number",
+      "title": "Executive Alignment Score"
+    },
+    "production_readiness_score": {
+      "type": "number",
+      "title": "Production Readiness Score"
+    },
+    "category_scores_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Category Scores JSON"
+    },
+    "identity_verification_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Identity Verification JSON"
+    },
+    "technical_quality_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Technical Quality JSON"
+    },
+    "composition_validation_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Composition Validation JSON"
+    },
+    "brand_validation_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Brand Validation JSON"
+    },
+    "detected_issues_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Detected Issues JSON"
+    },
+    "recommended_fixes_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Recommended Fixes JSON"
+    },
+    "final_decision": {
+      "type": "string",
+      "enum": [
+        "APPROVED",
+        "APPROVED WITH MINOR FIXES",
+        "REVISION REQUIRED",
+        "REJECTED"
+      ],
+      "title": "Final Decision"
+    },
+    "production_approved": {
+      "type": "boolean",
+      "default": false,
+      "title": "Production QA Approved"
+    },
+    "creative_approval_pass": {
+      "type": "boolean",
+      "default": false,
+      "title": "Creative Approval Pass"
+    },
+    "executive_approval_pass": {
+      "type": "boolean",
+      "default": false,
+      "title": "Executive Approval Pass"
+    },
+    "governance_valid": {
+      "type": "boolean",
+      "default": false,
+      "title": "Governance Valid"
+    },
+    "publishing_gate_pass": {
+      "type": "boolean",
+      "default": false,
+      "title": "Publishing Gate Pass"
+    },
+    "provider_id": {
+      "type": "string",
+      "title": "Rendering Provider ID"
+    },
+    "failure_patterns": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Failure Patterns"
+    },
+    "public_status": {
+      "type": "string",
+      "title": "Public Status"
+    },
+    "public_message": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Public Message"
+    }
+  },
+  "required": [
+    "qa_result_id",
+    "asset_id",
+    "qa_timestamp",
+    "overall_score",
+    "final_decision",
+    "production_approved"
+  ]
+}

@@ -70,6 +70,18 @@ Deno.serve(async (req) => {
       errors.push('At least one performer must be assigned before publishing');
     }
 
+    const qaResults = await base44.entities.ProductionQAResult.filter({ video_id }, '-qa_timestamp', 10);
+    const latestQa = qaResults?.[0] || null;
+    const creativeApproved = video.creative_approval_status === 'approved' || latestQa?.creative_approval_pass === true;
+    const productionQaApproved = latestQa?.production_approved === true && latestQa?.final_decision === 'APPROVED';
+    const executiveApproved = video.executive_approval_status === 'approved' || latestQa?.executive_approval_pass === true;
+    const governanceValid = video.governance_status === 'valid' || latestQa?.governance_valid === true;
+
+    if (!creativeApproved) errors.push('Creative approval is required before publishing');
+    if (!productionQaApproved) errors.push('Production QA approval is required before publishing');
+    if (!executiveApproved) errors.push('Executive approval is required before publishing');
+    if (!governanceValid) errors.push('Governance validation is required before publishing');
+
     // === WARNING VALIDATIONS (notify but allow publishing) ===
 
     // 1. Description length
@@ -111,6 +123,15 @@ Deno.serve(async (req) => {
         processing_status: video.processing_status,
         status: video.status,
         performer_count: videoPerformers?.length || 0,
+        production_qa: latestQa ? {
+          qa_result_id: latestQa.qa_result_id,
+          final_decision: latestQa.final_decision,
+          overall_score: latestQa.overall_score,
+          creative_approval: creativeApproved,
+          production_qa_approval: productionQaApproved,
+          executive_approval: executiveApproved,
+          governance_valid: governanceValid
+        } : null,
       },
     });
 

@@ -61,6 +61,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
   const [error, setError] = useState("");
   const [frameStatus, setFrameStatus] = useState({ extracted: false, encoded: false });
   const [technicalDetails, setTechnicalDetails] = useState(null);
+  const [qaSummary, setQaSummary] = useState(null);
   const [showTechnical, setShowTechnical] = useState(false);
   const [routingGate, setRoutingGate] = useState({
     referenceContentClass: "BLOCKED_OR_UNVERIFIED",
@@ -106,6 +107,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
     setDesignCover(false);
     setFrameStatus({ extracted: false, encoded: false });
     setTechnicalDetails(null);
+    setQaSummary(null);
     setStatus("Preparing selected story frame for Rendering Intelligence...");
 
     try {
@@ -144,6 +146,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
           },
         });
         const data = response.data;
+        setQaSummary(data?.production_qa?.public_summary || null);
         setTechnicalDetails({
           generation_job_id: data?.generation_job_id,
           routing_pipeline: data?.routing_pipeline || "best_production_pipeline_selected",
@@ -159,6 +162,15 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
             retryable: Boolean(item.retryable),
             output_received: Boolean(item.output_received)
           })),
+          production_qa: data?.production_qa ? {
+            final_decision: data.production_qa.final_decision,
+            overall_score: data.production_qa.overall_score,
+            identity_score: data.production_qa.identity_score,
+            technical_score: data.production_qa.technical_score,
+            brand_score: data.production_qa.brand_score,
+            production_approved: data.production_qa.production_approved,
+            publishing_gate_pass: data.production_qa.publishing_gate_pass
+          } : null,
         });
         if (!data?.ok) throw new Error(data?.error || "The professional hero photograph could not be generated.");
         const blob = dataUrlToBlob(data.generated_image_data_url);
@@ -274,6 +286,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
         {heroImage ? (
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3"><Badge variant="outline">Professional hero photograph ready</Badge><Button onClick={() => setDesignCover(true)} disabled={designCover}>Design Cover</Button></div>
+            {qaSummary && <div className="rounded-lg border border-border bg-secondary/20 p-3 text-sm"><p className="font-semibold text-foreground">Production Review Complete</p><p className="mt-1 text-muted-foreground">{qaSummary.status}</p><p className="mt-2 text-foreground">{qaSummary.message}</p></div>}
             <img src={heroImage.url} alt="Generated professional hero photograph" className="w-full rounded-xl border border-border bg-black object-contain" />
           </div>
         ) : <div className="flex min-h-[360px] items-center justify-center rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">The professional hero photograph will appear here. If OpenRouter fails, the selected story frame remains available for local cover export.</div>}

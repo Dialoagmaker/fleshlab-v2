@@ -4,8 +4,8 @@ import {
   LayoutDashboard, Video, Upload, Users, Tag, Newspaper,
   Link2, Database, Menu, Play, ChevronRight, ChevronDown, Globe, FileText, ClipboardList,
   AlertCircle, Settings, UserX, DollarSign, MessageSquare, LogOut, Sparkles,
-  TrendingUp, CalendarCheck, Eye, ListChecks, FlaskConical, Activity, X, Search, FolderKanban, ShieldAlert
-  } from "lucide-react";
+  TrendingUp, CalendarCheck, Eye, ListChecks, FlaskConical, Activity, X, Search, FolderKanban, ShieldAlert, ShieldCheck
+   } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const NAV_GROUPS = [
@@ -24,6 +24,7 @@ const NAV_GROUPS = [
       { href: "/admin/ai-text-generator", label: "AI", icon: Sparkles },
       { href: "/admin/ai-media-studio", label: "Cover Designer", icon: Sparkles },
       { href: "/admin/rendering-intelligence", label: "Rendering Intelligence", icon: ShieldAlert },
+      { href: "/admin/production-qa", label: "Production QA", icon: ShieldCheck },
       { href: "/admin/adult-image-provider-readiness", label: "Adult Provider Readiness", icon: ShieldAlert },
       { href: "/admin/live-activity", label: "Automation", icon: Activity },
       { href: "/admin/payment-providers", label: "Settings", icon: Settings },
