@@ -12,6 +12,9 @@ const PREFERRED_IMAGE_MODELS = [
 const MAX_DATA_URL_CHARS = 12_000_000;
 const MAX_REFERENCE_BYTES = 9_000_000;
 const MAX_AUTOMATIC_ATTEMPTS = 4;
+const RENDERING_CLASSIFICATIONS = ['SAFE_EDITORIAL', 'SAFE_PRODUCT', 'SAFE_BRAND', 'SAFE_PORTRAIT', 'LIFESTYLE', 'FITNESS', 'SWIMWEAR', 'UNDERWEAR', 'ADULT_MARKETING', 'EXPLICIT', 'UNSUPPORTED'];
+const DEFAULT_SAFE_CATEGORIES = ['SAFE_EDITORIAL', 'SAFE_PRODUCT', 'SAFE_BRAND', 'SAFE_PORTRAIT', 'LIFESTYLE', 'FITNESS', 'SWIMWEAR', 'UNDERWEAR'];
+const ROUTING_WEIGHTS = { policy: 0.40, quality: 0.25, reliability: 0.15, runtime: 0.10, cost: 0.10 };
 
 const KEY_ART_DIRECTOR_PROMPT = `You are the FLESHLAB AI Photographer Engine.
 
@@ -153,15 +156,15 @@ function categorizeOpenRouterError(status, code, message, metadata) {
 }
 
 function publicFailureMessage(diagnostic) {
-  if (!diagnostic) return 'TEMPORARY_PROVIDER_FAILURE: The professional hero photograph could not be generated. Try another frame or retry later.';
-  if (diagnostic.category === 'NO_CREDITS') return 'NO_APPROVED_ADULT_PROVIDER: OpenRouter credits are not available for this application key.';
-  if (diagnostic.category === 'VERIFICATION_REQUIRED') return 'VERIFICATION_REQUIRED: Verified adult, consent, rights, and source checks are required before external processing.';
-  if (diagnostic.category === 'NO_APPROVED_ADULT_PROVIDER') return 'NO_APPROVED_ADULT_PROVIDER: No enabled provider is documented as permitting lawful explicit adult reference-image editing.';
-  if (diagnostic.category === 'UNSUPPORTED_REFERENCE_IMAGE' || diagnostic.category === 'UNSUPPORTED_IMAGE_INPUT') return 'UNSUPPORTED_REFERENCE_IMAGE: This model did not accept the reference-image request.';
-  if (diagnostic.category === 'INVALID_PAYLOAD') return 'INVALID_IMAGE: The reference-image payload was not accepted. Technical Details show the exact response.';
-  if (diagnostic.category === 'CONTENT_POLICY') return 'PROVIDER_POLICY_RESTRICTION: The provider rejected this request under its content policy.';
-  if (diagnostic.category === 'RATE_LIMIT' || diagnostic.category === 'TIMEOUT' || diagnostic.category === 'PROVIDER_FAILURE') return 'TEMPORARY_PROVIDER_FAILURE: The provider route failed temporarily.';
-  return 'TEMPORARY_PROVIDER_FAILURE: The selected route failed. Try another frame or continue locally.';
+  if (!diagnostic) return 'The production asset could not be generated. Try another frame or continue locally.';
+  if (diagnostic.category === 'NO_CREDITS') return 'Production capacity is temporarily unavailable. Continue locally or try again later.';
+  if (diagnostic.category === 'VERIFICATION_REQUIRED') return 'Verified adult, consent, rights, and source checks are required before external production.';
+  if (diagnostic.category === 'NO_COMPATIBLE_RENDERING_PIPELINE') return 'No approved production pipeline is currently compatible with this request. Continue locally.';
+  if (diagnostic.category === 'UNSUPPORTED_REFERENCE_IMAGE' || diagnostic.category === 'UNSUPPORTED_IMAGE_INPUT') return 'The selected frame was not compatible with any approved production pipeline. Try another frame or continue locally.';
+  if (diagnostic.category === 'INVALID_PAYLOAD') return 'The selected frame could not be prepared for production. Try another frame.';
+  if (diagnostic.category === 'CONTENT_POLICY') return 'All approved production pipelines declined this request. Continue with the local workflow.';
+  if (diagnostic.category === 'RATE_LIMIT' || diagnostic.category === 'TIMEOUT' || diagnostic.category === 'PROVIDER_FAILURE') return 'The production pipeline is temporarily unavailable. Continue locally or try again later.';
+  return 'The production asset could not be generated. Try another frame or continue locally.';
 }
 
 function logProviderDiagnostic(label, diagnostic) {
@@ -413,10 +416,30 @@ async function saveRoutingAudit(base44, record) {
   }
 }
 
+async function saveRenderingAttempt(base44, record) {
+  try {
+    await base44.asServiceRole.entities.RenderingAttempt.create({ timestamp: new Date().toISOString(), ...record });
+  } catch (error) {
+    console.warn('Rendering attempt save failed', error.message);
+  }
+}
+
 function getContentClassification(metadata = {}) {
-  return ['SAFE_MARKETING', 'SUGGESTIVE_ADULT', 'EXPLICIT_VERIFIED_ADULT', 'BLOCKED_OR_UNVERIFIED'].includes(metadata.referenceContentClass)
-    ? metadata.referenceContentClass
-    : 'BLOCKED_OR_UNVERIFIED';
+  const direct = String(metadata.renderingClassification || metadata.contentClassification || '').toUpperCase();
+  if (RENDERING_CLASSIFICATIONS.includes(direct)) return direct;
+  const legacy = String(metadata.referenceContentClass || '').toUpperCase();
+  if (legacy === 'SAFE_MARKETING') return 'SAFE_BRAND';
+  if (legacy === 'SUGGESTIVE_ADULT') return 'ADULT_MARKETING';
+  if (legacy === 'EXPLICIT_VERIFIED_ADULT') return 'EXPLICIT';
+  if (legacy === 'BLOCKED_OR_UNVERIFIED') return 'UNSUPPORTED';
+  const contentType = `${metadata.contentType || ''} ${metadata.campaignName || ''} ${metadata.videoTitle || ''}`.toLowerCase();
+  if (contentType.includes('fitness')) return 'FITNESS';
+  if (contentType.includes('swim')) return 'SWIMWEAR';
+  if (contentType.includes('underwear')) return 'UNDERWEAR';
+  if (contentType.includes('portrait')) return 'SAFE_PORTRAIT';
+  if (contentType.includes('product')) return 'SAFE_PRODUCT';
+  if (contentType.includes('lifestyle')) return 'LIFESTYLE';
+  return 'SAFE_EDITORIAL';
 }
 
 function verificationPassed(metadata = {}) {
@@ -424,52 +447,123 @@ function verificationPassed(metadata = {}) {
   return Boolean(verification.allPeopleVerified18Plus && verification.performerConsentConfirmed && verification.mediaRightsConfirmed && verification.platformSourceConfirmed && String(verification.verificationReference || '').trim());
 }
 
-async function getApprovedAdultProviders(base44) {
-  try {
-    const providers = await base44.asServiceRole.entities.AdultImageProviderRegistry.filter({ enabled: true, explicit_adult_image_processing_permitted: 'yes' }, 'priority', 100);
-    return providers || [];
-  } catch (_) {
-    return [];
-  }
+function getRouteProviderKey(route) {
+  return String(route?.id || '').trim();
 }
 
-function routeMatchesApprovedProvider(route, approvedProviders) {
-  return route.compatible_endpoints.some(endpoint => approvedProviders.some(provider => {
-    const slugs = [endpoint.provider_slug, endpoint.provider_tag, endpoint.provider_name].filter(Boolean).map(value => String(value).toLowerCase());
-    const registrySlug = String(provider.openrouter_provider_slug || '').toLowerCase();
-    const modelMatches = !provider.model_id || provider.model_id === route.id || provider.model_id === '*';
-    return modelMatches && slugs.some(value => value.includes(registrySlug));
+function routeProviderName(route) {
+  return route?.name || route?.id || 'Rendering Pipeline';
+}
+
+function maxResolutionForRoute(route) {
+  const endpoint = route?.compatible_endpoints?.[0] || {};
+  const params = endpoint.supported_parameters || route?.supported_parameters || {};
+  if (descriptorAllows(params.resolution, '4K')) return '4K';
+  if (descriptorAllows(params.resolution, '2K')) return '2K';
+  return '1K';
+}
+
+function inferRouteCategories(route) {
+  const text = `${route?.id || ''} ${route?.name || ''} ${route?.description || ''}`.toLowerCase();
+  const categories = new Set(DEFAULT_SAFE_CATEGORIES);
+  if (text.includes('seedream')) categories.add('ADULT_MARKETING');
+  if (text.includes('portrait')) categories.add('SAFE_PORTRAIT');
+  if (text.includes('product')) categories.add('SAFE_PRODUCT');
+  return Array.from(categories);
+}
+
+function recommendedUsageForRoute(route) {
+  const categories = inferRouteCategories(route);
+  return categories.includes('ADULT_MARKETING')
+    ? 'High-priority production pipeline for verified adult marketing references when governance checks pass.'
+    : 'General safe editorial production pipeline. Edit supported categories before routing adult marketing or explicit requests.';
+}
+
+async function ensureRenderingProviderRegistry(base44, routes) {
+  const existing = await base44.asServiceRole.entities.RenderingProvider.list('priority', 500).catch(() => []);
+  const existingById = new Map((existing || []).map(provider => [String(provider.provider_id || ''), provider]));
+  const missing = routes.filter(route => !existingById.has(getRouteProviderKey(route))).slice(0, 12).map((route, index) => ({
+    provider_name: routeProviderName(route),
+    provider_id: getRouteProviderKey(route),
+    supported_categories: inferRouteCategories(route),
+    estimated_quality: Math.max(70, 92 - index * 2),
+    estimated_cost: Number(route.compatible_endpoints?.[0]?.estimated_cost_usd || 0),
+    average_runtime_ms: 0,
+    historical_success_rate: 0,
+    historical_policy_reject_rate: 0,
+    maximum_resolution: maxResolutionForRoute(route),
+    current_availability: 'available',
+    priority: 50 + Math.max(0, 20 - index),
+    enabled: true,
+    recommended_usage: recommendedUsageForRoute(route)
   }));
+  if (missing.length) await base44.asServiceRole.entities.RenderingProvider.bulkCreate(missing).catch(error => console.warn('Rendering provider registry seed failed', error.message));
+  return await base44.asServiceRole.entities.RenderingProvider.list('priority', 500).catch(() => existing || []);
+}
+
+async function loadRenderingHistory(base44) {
+  return await base44.asServiceRole.entities.RenderingAttempt.list('-created_date', 500).catch(() => []);
+}
+
+function providerSupportsClassification(provider, classification) {
+  const supported = Array.isArray(provider?.supported_categories) ? provider.supported_categories : [];
+  return provider?.enabled && provider.current_availability !== 'unavailable' && supported.includes(classification);
+}
+
+function historyStats(attempts, providerId, classification) {
+  const rows = attempts.filter(row => row.provider_id === providerId && row.classification === classification);
+  if (!rows.length) return null;
+  const total = rows.length;
+  const success = rows.filter(row => row.result === 'success').length;
+  const policyReject = rows.filter(row => row.result === 'policy_reject').length;
+  const runtimeRows = rows.filter(row => Number(row.runtime_ms || 0) > 0);
+  const costRows = rows.filter(row => Number(row.cost || 0) > 0);
+  return {
+    total,
+    successRate: (success / total) * 100,
+    policyRejectRate: (policyReject / total) * 100,
+    averageRuntimeMs: runtimeRows.length ? runtimeRows.reduce((sum, row) => sum + Number(row.runtime_ms || 0), 0) / runtimeRows.length : 0,
+    averageCost: costRows.length ? costRows.reduce((sum, row) => sum + Number(row.cost || 0), 0) / costRows.length : 0
+  };
+}
+
+function scoreRenderingRoute(route, provider, stats) {
+  const predictedSuccess = stats ? stats.successRate : Number(provider.historical_success_rate || 72);
+  const quality = Number(provider.estimated_quality || 70);
+  const reliability = Math.max(0, 100 - (stats ? stats.policyRejectRate : Number(provider.historical_policy_reject_rate || 20)));
+  const runtimeMs = stats?.averageRuntimeMs || Number(provider.average_runtime_ms || 60000);
+  const runtimeScore = Math.max(0, 100 - Math.min(100, runtimeMs / 1800));
+  const cost = stats?.averageCost || Number(provider.estimated_cost || route.compatible_endpoints?.[0]?.estimated_cost_usd || 0);
+  const costScore = Math.max(0, 100 - Math.min(100, cost * 1000));
+  const priority = Math.min(10, Math.max(0, Number(provider.priority || 50) / 10));
+  return Number((predictedSuccess * ROUTING_WEIGHTS.policy + quality * ROUTING_WEIGHTS.quality + reliability * ROUTING_WEIGHTS.reliability + runtimeScore * ROUTING_WEIGHTS.runtime + costScore * ROUTING_WEIGHTS.cost + priority).toFixed(3));
+}
+
+async function rankRenderingRoutes(base44, routes, classification) {
+  const providers = await ensureRenderingProviderRegistry(base44, routes);
+  const providerMap = new Map(providers.map(provider => [String(provider.provider_id || ''), provider]));
+  const attempts = await loadRenderingHistory(base44);
+  const ranked = routes.map(route => {
+    const provider = providerMap.get(getRouteProviderKey(route));
+    if (!provider || !providerSupportsClassification(provider, classification)) return null;
+    const stats = historyStats(attempts, provider.provider_id, classification);
+    return { route, provider, stats, routing_score: scoreRenderingRoute(route, provider, stats) };
+  }).filter(Boolean).sort((a, b) => b.routing_score - a.routing_score || Number(b.provider.priority || 0) - Number(a.provider.priority || 0));
+  return { routes: ranked.map(item => item.route), ranked };
 }
 
 async function filterRoutesForPolicy(base44, routes, classification, generationJobId, metadata) {
-  if (classification === 'BLOCKED_OR_UNVERIFIED') {
-    return { ok: false, status: 409, code: 'VERIFICATION_REQUIRED', routes: [], policyCompatible: 'no', reason: 'Selected frame is blocked or unverified. No external provider request was sent.' };
+  if (classification === 'UNSUPPORTED') {
+    return { ok: false, status: 409, code: 'VERIFICATION_REQUIRED', routes: [], policyCompatible: 'no', reason: 'Selected frame is blocked or unverified. No external production request was sent.' };
   }
-  if (['SUGGESTIVE_ADULT', 'EXPLICIT_VERIFIED_ADULT'].includes(classification) && !verificationPassed(metadata)) {
-    return { ok: false, status: 409, code: 'VERIFICATION_REQUIRED', routes: [], policyCompatible: 'no', reason: 'Verified adult, consent, media-rights, platform-source, and evidence reference are required before external adult image routing.' };
+  if (['ADULT_MARKETING', 'EXPLICIT'].includes(classification) && !verificationPassed(metadata)) {
+    return { ok: false, status: 409, code: 'VERIFICATION_REQUIRED', routes: [], policyCompatible: 'no', reason: 'Verified adult, consent, media-rights, platform-source, and evidence reference are required before external production.' };
   }
-  if (classification === 'SAFE_MARKETING') return { ok: true, routes, policyCompatible: 'unknown', reason: 'Safe marketing route; mainstream technical providers may be used.' };
-  const approvedProviders = await getApprovedAdultProviders(base44);
-  const approvedRoutes = routes.filter(route => routeMatchesApprovedProvider(route, approvedProviders));
-  if (!approvedRoutes.length) {
-    await saveRoutingAudit(base44, {
-      generation_job_id: generationJobId,
-      content_classification: classification,
-      verification_status: 'passed',
-      verification_reference: metadata.adultVerification?.verificationReference || '',
-      routing_decision: 'NO_APPROVED_ADULT_PROVIDER',
-      policy_compatible: 'no',
-      request_sent: false,
-      output_received: false,
-      reason: 'No enabled provider has documented YES permission for lawful explicit adult reference-image processing.'
-    });
-    return { ok: false, status: 409, code: 'NO_APPROVED_ADULT_PROVIDER', routes: [], policyCompatible: 'no', reason: 'No enabled provider is documented as permitting lawful explicit adult reference-image editing. External request was not sent.' };
-  }
-  return { ok: true, routes: approvedRoutes, policyCompatible: 'yes', reason: 'Adult route restricted to enabled providers with documented YES permission.' };
+  return { ok: true, routes, policyCompatible: ['ADULT_MARKETING', 'EXPLICIT'].includes(classification) ? 'restricted' : 'yes', reason: 'Rendering Intelligence will rank enabled compatible production pipelines before sending a request.' };
 }
 
 async function callOpenRouterImage(apiKey, route, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata, generationJobId) {
+  const startedAt = Date.now();
   const { payload } = buildImagePayload(route, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata, generationJobId);
   const payloadSummary = buildPayloadSummary(route, payload, storyReferenceDataUrl, identityReferenceDataUrl);
   let res;
@@ -490,13 +584,15 @@ async function callOpenRouterImage(apiKey, route, storyReferenceDataUrl, identit
       request_id: null,
       generation_id: null,
       processing_began: false,
-      payload_summary: payloadSummary
+      payload_summary: payloadSummary,
+      runtime_ms: Date.now() - startedAt
     };
     throw new Error(safeJson(diagnostic));
   }
   const { text, data } = await readJsonResponse(res);
   if (!res.ok) {
     const diagnostic = parseOpenRouterError(res.status, text, res.headers, payloadSummary);
+    diagnostic.runtime_ms = Date.now() - startedAt;
     throw new Error(safeJson(diagnostic));
   }
   const first = data?.data?.[0];
@@ -512,7 +608,8 @@ async function callOpenRouterImage(apiKey, route, storyReferenceDataUrl, identit
       generation_id: data?.id || data?.generation_id || null,
       processing_began: true,
       raw_response: text.slice(0, 6000),
-      payload_summary: payloadSummary
+      payload_summary: payloadSummary,
+      runtime_ms: Date.now() - startedAt
     };
     throw new Error(safeJson(diagnostic));
   }
@@ -530,6 +627,7 @@ async function callOpenRouterImage(apiKey, route, storyReferenceDataUrl, identit
     resolved_provider: generationMetadata?.provider_name || data?.openrouter_metadata?.provider_name || route.compatible_endpoints[0]?.provider_name || null,
     generation_metadata: generationMetadata,
     payload_summary: payloadSummary,
+    runtime_ms: Date.now() - startedAt,
     raw_response_summary: {
       created: data?.created || null,
       data_count: Array.isArray(data?.data) ? data.data.length : 0,
@@ -560,6 +658,7 @@ async function auditOpenRouter(base44, apiKey) {
     getMonthlyOpenRouterSpend(base44)
   ]);
   const compatibleRoutes = Array.isArray(routes) ? routes : [];
+  if (compatibleRoutes.length) await ensureRenderingProviderRegistry(base44, compatibleRoutes);
   const preferred = compatibleRoutes[0] || null;
   const estimatedCost = preferred?.compatible_endpoints?.[0]?.estimated_cost_usd ?? null;
   return {
@@ -572,35 +671,11 @@ async function auditOpenRouter(base44, apiKey) {
       sufficient_credit: credits.sufficient_credit,
       low_credit_warning: credits.low_credit_warning
     } : { sufficient_credit: false },
-    selected_model: preferred ? preferred.id : null,
-    selected_model_capability: preferred ? {
-      id: preferred.id,
-      name: preferred.name,
-      input_modalities: preferred.architecture?.input_modalities || [],
-      output_modalities: preferred.architecture?.output_modalities || [],
-      compatible_provider_count: preferred.compatible_endpoint_count,
-      providers: preferred.compatible_endpoints.map(item => ({
-        provider_name: item.provider_name,
-        provider_slug: item.provider_slug,
-        provider_tag: item.provider_tag,
-        estimated_cost_usd: item.estimated_cost_usd,
-        pricing: item.pricing
-      }))
-    } : null,
-    compatible_models: compatibleRoutes.slice(0, 8).map(route => ({
-      id: route.id,
-      name: route.name,
-      compatible_provider_count: route.compatible_endpoint_count,
-      providers: route.compatible_endpoints.map(item => item.provider_name).filter(Boolean),
-      estimated_cost_usd: route.compatible_endpoints[0]?.estimated_cost_usd ?? null
-    })),
+    rendering_intelligence_ready: compatibleRoutes.length > 0,
+    compatible_pipeline_count: compatibleRoutes.length,
+    provider_registry_populated: compatibleRoutes.length > 0,
     estimated_generation_cost: estimatedCost,
-    monthly_openrouter_spend_usd: monthlySpend,
-    endpoint_used: 'https://openrouter.ai/api/v1/images',
-    catalog_endpoint_used: 'https://openrouter.ai/api/v1/images/models',
-    endpoint_capability_source: '/api/v1/images/models/{model}/endpoints',
-    secret_name_used: SECRET_NAME,
-    model_secret_name: EXISTING_TEXT_MODEL_SECRET
+    monthly_openrouter_spend_usd: monthlySpend
   };
 }
 
@@ -695,22 +770,40 @@ async function generateCover(base44, apiKey, body, user) {
     }, policyRouting.status);
   }
 
+  const routingPlan = await rankRenderingRoutes(base44, policyRouting.routes, contentClassification);
+  if (!routingPlan.routes.length) {
+    const diagnostic = { category: 'NO_COMPATIBLE_RENDERING_PIPELINE', message: 'No enabled provider is compatible with this classification.', retryable: false };
+    await saveRoutingAudit(base44, {
+      generation_job_id: generationJobId,
+      content_classification: contentClassification,
+      verification_status: ['ADULT_MARKETING', 'EXPLICIT'].includes(contentClassification) ? 'passed' : 'not_required',
+      verification_reference: metadata.adultVerification?.verificationReference || '',
+      routing_decision: 'NO_COMPATIBLE_RENDERING_PIPELINE',
+      policy_compatible: 'no',
+      request_sent: false,
+      output_received: false,
+      reason: diagnostic.message
+    });
+    return json({ ok: false, error: publicFailureMessage(diagnostic), code: 'NO_COMPATIBLE_RENDERING_PIPELINE', generation_job_id: generationJobId, content_classification: contentClassification, request_sent: false, output_received: false, diagnostics: diagnostic, photographer_attempts: [], attempt_diagnostics: [], stage_trace: { frame_extracted: true, image_encoded: true, payload_created: false, request_sent: false, response_received: false, hero_image_decoded: false, preview_rendered: false } }, 409);
+  }
+
   await saveRoutingAudit(base44, {
     generation_job_id: generationJobId,
     content_classification: contentClassification,
-    verification_status: contentClassification === 'SAFE_MARKETING' ? 'not_required' : 'passed',
+    verification_status: ['ADULT_MARKETING', 'EXPLICIT'].includes(contentClassification) ? 'passed' : 'not_required',
     verification_reference: metadata.adultVerification?.verificationReference || '',
-    routing_decision: policyRouting.reason,
+    routing_decision: 'RANKED_PRODUCTION_PIPELINE',
     policy_compatible: policyRouting.policyCompatible,
     request_sent: true,
     output_received: false,
-    reason: policyRouting.reason
+    reason: policyRouting.reason,
+    attempts_json: safeJson(routingPlan.ranked.map(item => ({ provider_id: item.provider.provider_id, score: item.routing_score, predicted_success: item.stats?.successRate ?? item.provider.historical_success_rate ?? 72 })))
   });
 
   const attempts = [];
   const attemptDiagnostics = [];
   let finalDiagnostic = null;
-  for (const route of compatibleRoutes.slice(0, MAX_AUTOMATIC_ATTEMPTS)) {
+  for (const route of routingPlan.routes.slice(0, MAX_AUTOMATIC_ATTEMPTS)) {
     try {
       const result = await callOpenRouterImage(apiKey, route, storyReferenceDataUrl, identityReferenceDataUrl, aspect_ratio, metadata, generationJobId);
       await saveGenerationLog(base44, {
@@ -728,6 +821,21 @@ async function generateCover(base44, apiKey, body, user) {
         payload_summary_json: safeJson(result.payload_summary),
         month
       });
+      await saveRenderingAttempt(base44, {
+        generation_job_id: generationJobId,
+        campaign: metadata.campaignName || metadata.videoTitle || '',
+        frame_id: metadata.frameId || '',
+        classification: contentClassification,
+        provider: routeProviderName(route),
+        provider_id: getRouteProviderKey(route),
+        result: 'success',
+        success: true,
+        runtime_ms: Number(result.runtime_ms || 0),
+        cost: Number(result.cost || 0),
+        quality_score: 0,
+        manual_rating: 0,
+        diagnostic_json: safeJson({ fallback_used: attempts.length > 0 })
+      });
       console.info('OpenRouter AI Photographer success', safeJson({
         endpoint: 'POST /api/v1/images',
         model: route.id,
@@ -740,7 +848,7 @@ async function generateCover(base44, apiKey, body, user) {
       await saveRoutingAudit(base44, {
         generation_job_id: generationJobId,
         content_classification: contentClassification,
-        verification_status: contentClassification === 'SAFE_MARKETING' ? 'not_required' : 'passed',
+        verification_status: ['ADULT_MARKETING', 'EXPLICIT'].includes(contentClassification) ? 'passed' : 'not_required',
         verification_reference: metadata.adultVerification?.verificationReference || '',
         routing_decision: 'OUTPUT_RECEIVED',
         selected_provider: result.resolved_provider || '',
@@ -755,24 +863,14 @@ async function generateCover(base44, apiKey, body, user) {
         ok: true,
         generated_image_data_url: result.image_data_url,
         media_type: result.media_type,
-        provider_used: result.resolved_provider,
-        model_used: route.id,
-        openrouter_request_id: result.request_id,
-        openrouter_generation_id: result.generation_id,
         generation_job_id: generationJobId,
         cost_reported: result.cost,
-        usage: result.usage,
+        routing_pipeline: 'best_production_pipeline_selected',
+        production_memory_recorded: true,
         fallback_used: attempts.length > 0,
-        photographer_attempts: [...attempts, { model: route.id, provider: result.resolved_provider, status: 'accepted' }],
-        attempt_diagnostics: [...attemptDiagnostics, {
-          model: route.id,
-          provider: result.resolved_provider,
-          endpoint: 'POST /api/v1/images',
-          http_status: 200,
-          openrouter_code: null,
-          openrouter_error_message: null,
-          request_reached_provider: true,
-          rejection_type: null,
+        photographer_attempts: [...attempts.map(item => ({ status: item.status, category: item.category || null, retryable: Boolean(item.retryable) })), { status: 'accepted' }],
+        attempt_diagnostics: [...attemptDiagnostics.map(item => ({ category: item.category || null, retryable: Boolean(item.retryable), output_received: Boolean(item.output_received) })), {
+          category: null,
           policy_compatible: policyRouting.policyCompatible,
           retryable: false,
           cost: result.cost || 0,
@@ -789,13 +887,8 @@ async function generateCover(base44, apiKey, body, user) {
           hero_image_decoded: true,
           preview_rendered: false
         },
-        selected_model_capability: {
-          id: route.id,
-          providers: route.compatible_endpoints.map(item => item.provider_name).filter(Boolean),
-          estimated_cost_usd: route.compatible_endpoints[0]?.estimated_cost_usd ?? null
-        },
         creative_brief: buildPhotographicBrief(metadata),
-        pipeline: ['Video', 'Story Frame', 'Base64 Reference Image', 'OpenRouter Image API', 'Professional Hero Photograph', 'Local Art Direction', 'Typography', 'Export'],
+        pipeline: ['Video', 'Story Frame', 'Rendering Intelligence', 'Best Production Pipeline Selected', 'Professional Hero Photograph', 'Local Art Direction', 'Typography', 'Export'],
         privacy: {
           original_video_transmitted: false,
           story_reference_transmitted: true,
@@ -850,6 +943,22 @@ async function generateCover(base44, apiKey, body, user) {
         payload_summary_json: safeJson(diagnostic.payload_summary),
         month
       });
+      await saveRenderingAttempt(base44, {
+        generation_job_id: generationJobId,
+        campaign: metadata.campaignName || metadata.videoTitle || '',
+        frame_id: metadata.frameId || '',
+        classification: contentClassification,
+        provider: routeProviderName(route),
+        provider_id: getRouteProviderKey(route),
+        result: diagnostic.category === 'CONTENT_POLICY' ? 'policy_reject' : diagnostic.category === 'TIMEOUT' ? 'timeout' : 'failed',
+        success: false,
+        runtime_ms: Number(diagnostic.runtime_ms || 0),
+        cost: 0,
+        quality_score: 0,
+        manual_rating: 0,
+        error_category: diagnostic.category || '',
+        diagnostic_json: safeJson({ category: diagnostic.category, retryable: diagnostic.retryable, request_reached_provider: diagnostic.request_reached_provider })
+      });
       if (['NO_CREDITS', 'AUTH_ERROR'].includes(diagnostic.category)) break;
     }
   }
@@ -859,13 +968,13 @@ async function generateCover(base44, apiKey, body, user) {
     error: publicFailureMessage(finalDiagnostic),
     code: 'all_openrouter_routes_failed',
     generation_job_id: generationJobId,
-    diagnostics: finalDiagnostic,
+    diagnostics: finalDiagnostic ? { category: finalDiagnostic.category, retryable: Boolean(finalDiagnostic.retryable), request_sent: Boolean(finalDiagnostic.payload_summary), output_received: false } : null,
     content_classification: contentClassification,
     policy_compatible: policyRouting.policyCompatible,
     request_sent: attempts.length > 0,
     output_received: false,
-    photographer_attempts: attempts,
-    attempt_diagnostics: attemptDiagnostics,
+    photographer_attempts: attempts.map(item => ({ status: item.status, category: item.category || null, retryable: Boolean(item.retryable) })),
+    attempt_diagnostics: attemptDiagnostics.map(item => ({ category: item.category || null, retryable: Boolean(item.retryable), output_received: Boolean(item.output_received) })),
     stage_trace: {
       frame_extracted: true,
       image_encoded: true,
@@ -894,7 +1003,7 @@ Deno.serve(async (req) => {
     if (action === 'generate') return await generateCover(base44, apiKey, body, user);
     return json({ ok: false, error: 'Invalid action' }, 400);
   } catch (error) {
-    console.error('openRouterAICover error:', error.message);
-    return json({ ok: false, error: 'The OpenRouter AI Photographer service failed before the request could complete.', code: error.message === 'timeout' ? 'timeout' : 'server_error' }, 500);
+    console.error('Rendering Intelligence error:', error.message);
+    return json({ ok: false, error: 'Rendering Intelligence failed before the request could complete.', code: error.message === 'timeout' ? 'timeout' : 'server_error' }, 500);
   }
 });

@@ -1,0 +1,87 @@
+{
+  "name": "RenderingAttempt",
+  "type": "object",
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Timestamp"
+    },
+    "generation_job_id": {
+      "type": "string",
+      "title": "Generation Job ID"
+    },
+    "campaign": {
+      "type": "string",
+      "title": "Campaign"
+    },
+    "frame_id": {
+      "type": "string",
+      "title": "Frame ID"
+    },
+    "classification": {
+      "type": "string",
+      "title": "Classification"
+    },
+    "provider": {
+      "type": "string",
+      "title": "Provider"
+    },
+    "provider_id": {
+      "type": "string",
+      "title": "Provider ID"
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "success",
+        "policy_reject",
+        "timeout",
+        "failed"
+      ],
+      "title": "Result"
+    },
+    "success": {
+      "type": "boolean",
+      "default": false,
+      "title": "Success"
+    },
+    "runtime_ms": {
+      "type": "number",
+      "default": 0,
+      "title": "Runtime MS"
+    },
+    "cost": {
+      "type": "number",
+      "default": 0,
+      "title": "Cost"
+    },
+    "quality_score": {
+      "type": "number",
+      "default": 0,
+      "title": "Quality Score"
+    },
+    "manual_rating": {
+      "type": "number",
+      "default": 0,
+      "title": "Manual Rating"
+    },
+    "error_category": {
+      "type": "string",
+      "title": "Error Category"
+    },
+    "diagnostic_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Diagnostic JSON"
+    }
+  },
+  "required": [
+    "timestamp",
+    "generation_job_id",
+    "classification",
+    "provider_id",
+    "result",
+    "success"
+  ]
+}

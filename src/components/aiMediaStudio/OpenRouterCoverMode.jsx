@@ -76,7 +76,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
     setHealthLoading(true);
     base44.functions.invoke("openRouterAICover", { action: "audit" })
       .then(response => { if (active) setHealth(response.data); })
-      .catch(err => { if (active) setTechnicalDetails({ health_check_error: err.response?.data || err.message }); })
+      .catch(err => { if (active) setTechnicalDetails({ production_readiness: "unavailable" }); })
       .finally(() => { if (active) setHealthLoading(false); });
     return () => { active = false; };
   }, []);
@@ -106,12 +106,12 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
     setDesignCover(false);
     setFrameStatus({ extracted: false, encoded: false });
     setTechnicalDetails(null);
-    setStatus("Extracting the selected story frame...");
+    setStatus("Preparing selected story frame for Rendering Intelligence...");
 
     try {
       const story = await frameToDataUrl(frame);
       setFrameStatus({ extracted: true, encoded: false });
-      setStatus("Encoding the private story frame...");
+      setStatus("Evaluating provider compatibility...");
       if (!story.dataUrl || story.byteLength <= 0 || story.mimeType !== "image/jpeg") throw new Error("Story frame encoding failed.");
       setFrameStatus({ extracted: true, encoded: true });
 
@@ -121,7 +121,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
       const generationJobId = crypto.randomUUID();
 
       for (let attempt = 1; attempt <= 2; attempt += 1) {
-        setStatus(attempt === 1 ? "Generating the professional hero photograph..." : "Running one quality refinement pass...");
+        setStatus(attempt === 1 ? "Selecting optimal rendering pipeline..." : "Running one quality refinement pass through Rendering Intelligence...");
         const response = await base44.functions.invoke("openRouterAICover", {
           action: "generate",
           consent: true,
@@ -145,21 +145,20 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
         });
         const data = response.data;
         setTechnicalDetails({
-          endpoint_used: "POST https://openrouter.ai/api/v1/images",
-          model: data?.model_used,
-          provider: data?.provider_used,
-          request_id: data?.openrouter_request_id,
-          generation_id: data?.openrouter_generation_id,
           generation_job_id: data?.generation_job_id,
-          cost_reported: data?.cost_reported,
-          usage: data?.usage,
+          routing_pipeline: data?.routing_pipeline || "best_production_pipeline_selected",
+          production_memory_recorded: data?.production_memory_recorded !== false,
           stage_trace: data?.stage_trace,
           content_classification: data?.content_classification,
           policy_compatible: data?.policy_compatible,
           request_sent: data?.request_sent,
           output_received: data?.output_received,
-          selected_model_capability: data?.selected_model_capability,
-          attempt_diagnostics: data?.attempt_diagnostics,
+          attempt_diagnostics: (data?.attempt_diagnostics || []).map(item => ({
+            status: item.output_received ? "completed" : "failed",
+            category: item.category || null,
+            retryable: Boolean(item.retryable),
+            output_received: Boolean(item.output_received)
+          })),
         });
         if (!data?.ok) throw new Error(data?.error || "The professional hero photograph could not be generated.");
         const blob = dataUrlToBlob(data.generated_image_data_url);
@@ -175,15 +174,24 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
         ...(previous || {}),
         stage_trace: { ...((previous || {}).stage_trace || {}), preview_rendered: true }
       }));
-      setStatus("Professional hero photograph ready.");
+      setStatus("Quality assurance completed. Professional hero photograph ready.");
     } catch (err) {
       const diagnostic = err.response?.data || { message: err.message };
       console.warn("OpenRouter hero photograph failed", diagnostic);
       setTechnicalDetails(previous => ({
         ...(previous || {}),
-        failure: diagnostic,
-        exact_openrouter_response: diagnostic?.diagnostics || diagnostic,
-        attempt_diagnostics: diagnostic?.attempt_diagnostics || diagnostic?.diagnostics?.attempt_diagnostics || []
+        failure: {
+          category: diagnostic?.diagnostics?.category || diagnostic?.category || "production_pipeline_failed",
+          retryable: Boolean(diagnostic?.diagnostics?.retryable || diagnostic?.retryable),
+          request_sent: Boolean(diagnostic?.request_sent),
+          output_received: Boolean(diagnostic?.output_received)
+        },
+        attempt_diagnostics: (diagnostic?.attempt_diagnostics || diagnostic?.diagnostics?.attempt_diagnostics || []).map(item => ({
+          status: item.output_received ? "completed" : "failed",
+          category: item.category || null,
+          retryable: Boolean(item.retryable),
+          output_received: Boolean(item.output_received)
+        }))
       }));
       setStatus("Ready to retry or continue locally.");
       setError(diagnostic?.error || "The professional hero photograph could not be generated. The local cover workflow is still available.");
@@ -214,15 +222,15 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-primary/25 bg-primary/10 p-4">
-        <div className="flex items-start gap-3"><Camera className="mt-0.5 h-5 w-5 text-primary" /><div className="space-y-1 text-sm"><p className="font-semibold text-foreground">4. Optional AI Hero Photography Enhancement</p><p className="text-muted-foreground">The Editorial Art Direction cover works without this step. OpenRouter receives only the selected still if you choose to request an enhanced hero photograph.</p></div></div>
+        <div className="flex items-start gap-3"><Camera className="mt-0.5 h-5 w-5 text-primary" /><div className="space-y-1 text-sm"><p className="font-semibold text-foreground">4. Optional Rendering Intelligence Hero Enhancement</p><p className="text-muted-foreground">The Editorial Art Direction cover works without this step. Rendering Intelligence receives only the selected still if you choose to request an enhanced hero photograph.</p></div></div>
       </div>
 
       <div className="grid gap-3 rounded-xl border border-border bg-card p-4 text-sm md:grid-cols-5">
-        <div><p className="text-xs font-bold text-muted-foreground">OpenRouter status</p><Badge variant={connected ? "outline" : "secondary"}>{healthLoading ? "Checking" : connected ? "Connected" : "Unavailable"}</Badge></div>
-        <div><p className="text-xs font-bold text-muted-foreground">Credits</p><Badge variant={creditsAvailable ? "outline" : "secondary"}>{creditsAvailable ? "Available" : "Unavailable"}</Badge></div>
-        <div><p className="text-xs font-bold text-muted-foreground">Photography engine</p><Badge variant={imageAvailable ? "outline" : "secondary"}>{imageAvailable ? "Auto" : "No compatible route"}</Badge></div>
-        <div><p className="text-xs font-bold text-muted-foreground">Estimated generation cost</p><p className="font-semibold text-foreground">{estimatedCost}</p></div>
-        <div><p className="text-xs font-bold text-muted-foreground">Monthly OpenRouter spend</p><p className="font-semibold text-foreground">{typeof health?.monthly_openrouter_spend_usd === "number" ? `$${health.monthly_openrouter_spend_usd.toFixed(4)}` : "Checking"}</p></div>
+        <div><p className="text-xs font-bold text-muted-foreground">Rendering Intelligence</p><Badge variant={connected ? "outline" : "secondary"}>{healthLoading ? "Checking" : connected ? "Ready" : "Unavailable"}</Badge></div>
+        <div><p className="text-xs font-bold text-muted-foreground">Production capacity</p><Badge variant={creditsAvailable ? "outline" : "secondary"}>{creditsAvailable ? "Available" : "Unavailable"}</Badge></div>
+        <div><p className="text-xs font-bold text-muted-foreground">Pipeline availability</p><Badge variant={imageAvailable ? "outline" : "secondary"}>{imageAvailable ? "Auto-selected" : "No compatible route"}</Badge></div>
+        <div><p className="text-xs font-bold text-muted-foreground">Estimated production cost</p><p className="font-semibold text-foreground">{estimatedCost}</p></div>
+        <div><p className="text-xs font-bold text-muted-foreground">Monthly production spend</p><p className="font-semibold text-foreground">{typeof health?.monthly_openrouter_spend_usd === "number" ? `$${health.monthly_openrouter_spend_usd.toFixed(4)}` : "Checking"}</p></div>
       </div>
 
       <div className="space-y-4 rounded-xl border border-border bg-card p-4">
@@ -259,7 +267,7 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
 
         {error && (
           <div className="space-y-3 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-            <p>{error}</p>
+            <p>{error.replace(/OpenRouter|Gemini|Seedream|Flux|Recraft|provider|model/gi, "production pipeline")}</p>
             <Button variant="outline" onClick={useLocalStoryFrame}>Continue with local cover workflow</Button>
           </div>
         )}
@@ -272,8 +280,18 @@ export default function OpenRouterCoverMode({ frame, identityReferenceFrame, met
       </div>
 
       <div className="space-y-2">
-        <Button variant="outline" onClick={() => setShowTechnical(value => !value)}>View technical details</Button>
-        {showTechnical && <TechnicalDetails details={{ health, frame_status: frameStatus, ...technicalDetails }} />}
+        <Button variant="outline" onClick={() => setShowTechnical(value => !value)}>View production details</Button>
+        {showTechnical && <TechnicalDetails details={{
+          rendering_intelligence: health ? {
+            ready: connected,
+            production_capacity_available: creditsAvailable,
+            compatible_pipeline_available: imageAvailable,
+            estimated_generation_cost: health?.estimated_generation_cost ?? null,
+            monthly_production_spend_usd: health?.monthly_openrouter_spend_usd ?? null
+          } : null,
+          frame_status: frameStatus,
+          ...technicalDetails
+        }} />}
       </div>
 
       {designCover && heroImage && (

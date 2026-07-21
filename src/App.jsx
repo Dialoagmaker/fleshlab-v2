@@ -54,6 +54,7 @@ import AssetRepairQueue from './pages/admin/AssetRepairQueue';
 import AITextGenerator from './pages/admin/AITextGenerator';
 import AIMediaStudio from './pages/admin/AIMediaStudio';
 import AdultImageProviderReadiness from './pages/admin/AdultImageProviderReadiness';
+import RenderingIntelligence from './pages/admin/RenderingIntelligence';
 import VisualAttentionMapLab from './pages/admin/VisualAttentionMapLab';
 import AdminUsers from './pages/admin/Users';
 import AdminUserDetail from './pages/admin/UserDetail';
@@ -224,6 +225,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/ai-text-generator" element={<AITextGenerator />} />
                 <Route path="/admin/ai-media-studio" element={<AIMediaStudio />} />
                 <Route path="/admin/adult-image-provider-readiness" element={<AdultImageProviderReadiness />} />
+                <Route path="/admin/rendering-intelligence" element={<RenderingIntelligence />} />
                 <Route path="/admin/cover-engine/visual-attention" element={<VisualAttentionMapLab />} />
                 <Route path="/admin/growth" element={<GrowthDashboard />} />
                 <Route path="/admin/executive-dashboard" element={<ExecutiveDashboard />} />

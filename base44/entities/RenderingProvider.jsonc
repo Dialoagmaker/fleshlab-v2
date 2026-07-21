@@ -1,0 +1,86 @@
+{
+  "name": "RenderingProvider",
+  "type": "object",
+  "properties": {
+    "provider_name": {
+      "type": "string",
+      "title": "Provider Name"
+    },
+    "provider_id": {
+      "type": "string",
+      "title": "Provider ID"
+    },
+    "supported_categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Supported Categories"
+    },
+    "estimated_quality": {
+      "type": "number",
+      "default": 70,
+      "title": "Estimated Quality"
+    },
+    "estimated_cost": {
+      "type": "number",
+      "default": 0,
+      "title": "Estimated Cost"
+    },
+    "average_runtime_ms": {
+      "type": "number",
+      "default": 0,
+      "title": "Average Runtime MS"
+    },
+    "historical_success_rate": {
+      "type": "number",
+      "default": 0,
+      "title": "Historical Success Rate"
+    },
+    "historical_policy_reject_rate": {
+      "type": "number",
+      "default": 0,
+      "title": "Historical Policy Reject Rate"
+    },
+    "maximum_resolution": {
+      "type": "string",
+      "title": "Maximum Resolution"
+    },
+    "current_availability": {
+      "type": "string",
+      "enum": [
+        "available",
+        "degraded",
+        "unavailable"
+      ],
+      "default": "available",
+      "title": "Current Availability"
+    },
+    "priority": {
+      "type": "integer",
+      "default": 50,
+      "title": "Priority"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "title": "Enabled"
+    },
+    "recommended_usage": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Recommended Usage"
+    },
+    "notes": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Admin Notes"
+    }
+  },
+  "required": [
+    "provider_name",
+    "provider_id",
+    "supported_categories",
+    "enabled"
+  ]
+}
