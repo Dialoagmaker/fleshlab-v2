@@ -24,6 +24,44 @@ function loadLogo() {
 function clamp(value, min = 0, max = 1) { return Math.max(min, Math.min(max, value)); }
 function compact(value) { return String(value || "").replace(/\s+/g, " ").trim(); }
 function font(size, family = "Bebas Neue", weight = 900) { return `${weight} ${Math.round(size)}px "${family}", Impact, Arial Black, sans-serif`; }
+function rgba(rgb, alpha) { return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`; }
+function mixRgb(a, b, weight = 0.5) { return a.map((value, index) => Math.round(value * (1 - weight) + b[index] * weight)); }
+
+function extractImagePalette(image) {
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = 48;
+    canvas.height = 48;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(image, 0, 0, 48, 48);
+    const data = ctx.getImageData(0, 0, 48, 48).data;
+    let r = 0, g = 0, b = 0, count = 0;
+    let hi = [244, 241, 234], lo = [12, 4, 6], hiScore = -1, loScore = 999;
+    for (let i = 0; i < data.length; i += 16) {
+      const px = [data[i], data[i + 1], data[i + 2]];
+      const luma = px[0] * 0.2126 + px[1] * 0.7152 + px[2] * 0.0722;
+      r += px[0]; g += px[1]; b += px[2]; count += 1;
+      if (luma > hiScore) { hiScore = luma; hi = px; }
+      if (luma < loScore) { loScore = luma; lo = px; }
+    }
+    const avg = [Math.round(r / count), Math.round(g / count), Math.round(b / count)];
+    const warm = avg[0] + avg[1] * 0.45 > avg[2] * 1.55;
+    return {
+      average: avg,
+      highlight: mixRgb(hi, WHITE === "#f4f1ea" ? [244, 241, 234] : [255, 255, 255], 0.25),
+      shadow: mixRgb(lo, [0, 0, 0], 0.58),
+      ambient: mixRgb(avg, warm ? [42, 12, 8] : [8, 18, 28], 0.52),
+      warm
+    };
+  } catch {
+    return { average: [32, 12, 16], highlight: [244, 241, 234], shadow: [4, 2, 3], ambient: [24, 6, 10], warm: true };
+  }
+}
+
+function applyPaletteToDirection(direction, palette) {
+  const imageAccent = palette.warm ? mixRgb([207, 16, 45], palette.average, 0.18) : mixRgb([207, 16, 45], [40, 72, 88], 0.12);
+  return { ...direction, palette, accent: `rgb(${imageAccent[0]},${imageAccent[1]},${imageAccent[2]})`, shadowRgb: palette.shadow, ambientRgb: palette.ambient, highlightRgb: palette.highlight };
+}
 
 function chooseDirection(campaign = {}, analysis = {}) {
   const text = `${campaign.campaignTitle || ""} ${campaign.collection || ""} ${campaign.releaseName || ""} ${campaign.campaignLabel || ""}`.toLowerCase();
@@ -82,14 +120,14 @@ function drawBackgroundAtmosphere(ctx, image, width, height, zones, direction, a
   coverImageRect(ctx, image, { x: 0, y: 0, w: width, h: height }, analysis.subjectCenter || { x: 0.5, y: 0.48 }, 1.18);
   ctx.restore();
   const grad = ctx.createLinearGradient(0, 0, width, height);
-  grad.addColorStop(0, "rgba(0,0,0,0.88)");
-  grad.addColorStop(0.42, direction.key === "bathroom_noir" ? "rgba(28,8,12,0.78)" : "rgba(18,4,8,0.7)");
+  grad.addColorStop(0, rgba(direction.shadowRgb || [0, 0, 0], 0.92));
+  grad.addColorStop(0.42, rgba(direction.ambientRgb || [18, 4, 8], 0.76));
   grad.addColorStop(1, "rgba(0,0,0,0.5)");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, width, height);
   const glow = ctx.createRadialGradient(zones.graphic.x + zones.graphic.w * 0.48, height * 0.43, 0, zones.graphic.x + zones.graphic.w * 0.48, height * 0.43, Math.max(width, height) * 0.48);
-  glow.addColorStop(0, "rgba(207,16,45,0.28)");
-  glow.addColorStop(0.48, "rgba(207,16,45,0.08)");
+  glow.addColorStop(0, rgba(direction.ambientRgb || [207,16,45], 0.34));
+  glow.addColorStop(0.48, rgba(direction.ambientRgb || [207,16,45], 0.1));
   glow.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, width, height);
@@ -174,7 +212,7 @@ function drawPhotoBackgroundFusion(ctx, image, width, height, zones, direction, 
 
   ctx.save();
   ctx.globalCompositeOperation = "screen";
-  ctx.strokeStyle = "rgba(207,16,45,0.48)";
+  ctx.strokeStyle = rgba(direction.ambientRgb || [207,16,45], 0.58);
   ctx.lineWidth = Math.max(5, width * 0.006);
   for (let i = 0; i < 4; i += 1) {
     ctx.beginPath();
@@ -192,20 +230,20 @@ function drawStructuralGraphics(ctx, width, height, zones, direction) {
   ctx.save();
   const field = ctx.createLinearGradient(g.x, g.y, g.x + g.w, g.y + g.h);
   if (direction.heroSide === "right" || zones.mode === "vertical-split") {
-    field.addColorStop(0, "rgba(0,0,0,0.96)");
-    field.addColorStop(0.48, "rgba(18,3,7,0.86)");
-    field.addColorStop(0.78, "rgba(0,0,0,0.48)");
+    field.addColorStop(0, rgba(direction.shadowRgb || [0, 0, 0], 0.97));
+    field.addColorStop(0.48, rgba(direction.ambientRgb || [18, 3, 7], 0.86));
+    field.addColorStop(0.78, rgba(direction.shadowRgb || [0, 0, 0], 0.48));
     field.addColorStop(1, "rgba(0,0,0,0.08)");
   } else {
     field.addColorStop(0, "rgba(0,0,0,0.08)");
-    field.addColorStop(0.22, "rgba(0,0,0,0.48)");
-    field.addColorStop(0.56, "rgba(18,3,7,0.86)");
-    field.addColorStop(1, "rgba(0,0,0,0.96)");
+    field.addColorStop(0.22, rgba(direction.shadowRgb || [0, 0, 0], 0.48));
+    field.addColorStop(0.56, rgba(direction.ambientRgb || [18, 3, 7], 0.86));
+    field.addColorStop(1, rgba(direction.shadowRgb || [0, 0, 0], 0.97));
   }
   ctx.fillStyle = field;
   ctx.fillRect(g.x, g.y, g.w, g.h);
   ctx.globalCompositeOperation = "screen";
-  ctx.strokeStyle = "rgba(207,16,45,0.34)";
+  ctx.strokeStyle = rgba(direction.ambientRgb || [207,16,45], 0.38);
   for (let i = 0; i < 9; i += 1) {
     ctx.lineWidth = Math.max(2, width * (0.004 + (i % 3) * 0.002));
     ctx.beginPath();
@@ -271,7 +309,7 @@ function planTitle(ctx, title, zones, width, height) {
   return { lines, fontSize: min, leadCount: 0, lineHeight: min * 0.92, valid: false };
 }
 
-function drawTitle(ctx, title, zones, width, height) {
+function drawTitle(ctx, title, zones, width, height, direction) {
   const plan = planTitle(ctx, title, zones, width, height);
   const boxes = [];
   ctx.save();
@@ -288,11 +326,11 @@ function drawTitle(ctx, title, zones, width, height) {
     ctx.shadowBlur = size * 0.14;
     const fill = ctx.createLinearGradient(zones.title.x, y - size, zones.title.x, y + size * 0.2);
     fill.addColorStop(0, "#ffffff"); fill.addColorStop(0.5, WHITE); fill.addColorStop(1, "#a7a7a7");
-    ctx.fillStyle = isImpact ? RED : fill;
+    ctx.fillStyle = isImpact ? (direction?.accent || RED) : fill;
     if (isImpact) {
       ctx.save();
       ctx.globalCompositeOperation = "screen";
-      ctx.strokeStyle = "rgba(255,40,54,0.34)";
+      ctx.strokeStyle = rgba(direction?.ambientRgb || [255,40,54], 0.42);
       ctx.lineWidth = Math.max(5, size * 0.08);
       ctx.beginPath();
       ctx.moveTo(zones.title.x - width * 0.01, y - size * 0.24);
@@ -306,7 +344,7 @@ function drawTitle(ctx, title, zones, width, height) {
     boxes.push({ x: zones.title.x, y: y - size * 0.82, w: Math.min(metrics.width, zones.title.w), h: size, text: line });
     if (isLead || isImpact) {
       ctx.globalCompositeOperation = "screen";
-      ctx.strokeStyle = isImpact ? "rgba(255,255,255,0.22)" : "rgba(207,16,45,0.7)";
+      ctx.strokeStyle = isImpact ? "rgba(255,255,255,0.22)" : rgba(direction?.ambientRgb || [207,16,45], 0.7);
       ctx.lineWidth = Math.max(3, width * 0.004);
       ctx.beginPath(); ctx.moveTo(zones.title.x, y + size * 0.11); ctx.lineTo(zones.title.x + Math.min(metrics.width, zones.title.w) * 0.94, y + size * 0.03); ctx.stroke();
       ctx.globalCompositeOperation = "source-over";
@@ -426,7 +464,8 @@ function validateTitle(title, titlePlan) {
 }
 
 export async function renderKrakenCampaignComposerAsset({ image, analysis = {}, format, campaign = {} }) {
-  const direction = chooseDirection(campaign, analysis);
+  const palette = extractImagePalette(image);
+  const direction = applyPaletteToDirection(chooseDirection(campaign, analysis), palette);
   const canvas = document.createElement("canvas");
   canvas.width = format.width;
   canvas.height = format.height;
@@ -442,7 +481,7 @@ export async function renderKrakenCampaignComposerAsset({ image, analysis = {}, 
   drawSubjectDepth(ctx, image, format.width, format.height, zones, direction, analysis);
   drawStructuralGraphics(ctx, format.width, format.height, zones, direction);
   drawPhotoBackgroundFusion(ctx, image, format.width, format.height, zones, direction, analysis);
-  const titlePlan = drawTitle(ctx, compact(campaign.campaignTitle || campaign.primaryTitle || ""), zones, format.width, format.height);
+  const titlePlan = drawTitle(ctx, compact(campaign.campaignTitle || campaign.primaryTitle || ""), zones, format.width, format.height, direction);
   drawMeta(ctx, campaign, zones, format.width, format.height, direction, titlePlan.bottom);
   drawBadges(ctx, campaign, zones, format.width, format.height, direction);
   const logo = await drawLogo(ctx, zones, format.width, format.height);
