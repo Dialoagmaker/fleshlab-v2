@@ -4,6 +4,7 @@ import { createLayerPlan } from "@/lib/heroPhotography/layerCompositionEngine";
 import { createKeyArtBrief, createLayoutSketch } from "@/lib/heroPhotography/keyArtWorkflow";
 import { planAdaptiveTypography } from "@/lib/heroPhotography/adaptiveTypographyEngine";
 import { getCompositionAwareTypographyLayouts } from "@/lib/heroPhotography/compositionAwareLayoutEngine";
+import { renderKrakenCampaignComposerAsset } from "@/lib/heroPhotography/krakenCampaignComposerRenderer";
 
 let logoPromise;
 function loadLogo() {
@@ -783,42 +784,5 @@ async function drawLegacyPanelRenderer(ctx, image, width, height, analysis, mood
 }
 
 export async function renderPremiumCampaignAsset({ image, analysis, format, campaign }) {
-  const mood = inferCampaignMood(campaign);
-  const keyArtBrief = createKeyArtBrief({ campaign, mood, analysis: analysis || {}, format });
-  const legacyLayout = null;
-
-  const canvas = document.createElement("canvas");
-  canvas.width = format.width;
-  canvas.height = format.height;
-  const ctx = canvas.getContext("2d");
-  const compositionPlan = createCompositionPlan({ analysis: analysis || {}, format, campaign: campaign || {} });
-  const layoutSketch = createLayoutSketch({ compositionPlan, campaign: campaign || {}, format, keyArtBrief });
-  compositionPlan.keyArtBrief = keyArtBrief;
-  compositionPlan.layoutSketch = layoutSketch;
-  await drawFullBleedKeyArt(ctx, image, format.width, format.height, analysis || {}, mood, campaign || {}, format, compositionPlan);
-
-  const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.93));
-  return {
-    format,
-    filename: `${campaign.base}_${format.key}_key_art.jpg`,
-    width: format.width,
-    height: format.height,
-    size: blob.size,
-    blob,
-    url: URL.createObjectURL(blob),
-    legacyPreviewUrl: null,
-    legacyRendererLabel: null,
-    kind: "visual",
-    status: "ready",
-    campaignConceptId: campaign.campaignConceptId,
-    brandPlan: { family: mood.label, designSystem: "FLESHLAB Creative Director Key Art", mood: mood.label, layout: { legacy: legacyLayout, compositionPlan, layoutSketch }, graphicLanguage: "brief_sketch_key_art", creativeConcept: compositionPlan.creativeConcept, brandDnaRules: compositionPlan.brandDnaRules },
-    keyArtBrief,
-    layoutSketch,
-    compositionPlan,
-    layerPlan: compositionPlan.layerPlan,
-    typographyWarnings: compositionPlan.typographyWarnings || [],
-    campaignMetadata: campaign.campaignMetadata,
-    downstreamStage: "Final Key Art",
-    campaignComposerReady: true,
-  };
+  return renderKrakenCampaignComposerAsset({ image, analysis: analysis || {}, format, campaign: campaign || {} });
 }

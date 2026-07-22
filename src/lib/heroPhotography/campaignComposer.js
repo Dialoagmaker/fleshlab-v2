@@ -47,7 +47,7 @@ export function getCampaignMetadataSuggestion(output, pipeline, campaignFamily) 
     performerName: compact(blueprint.performerName || blueprint.creatorName || output?.heroPhotographyPlan?.creatorName || ""),
     subtitle: compact(blueprint.campaignSubtitle || blueprint.seriesName || ""),
     episode: compact(blueprint.episode || ""),
-    cta: compact(blueprint.primaryCTA || "Watch Now"),
+    cta: compact(blueprint.primaryCTA || ""),
     campaignLabel: compact(blueprint.campaignLabel || campaignFamily || ""),
     releaseName: compact(blueprint.releaseName || blueprint.seriesName || "")
   };
@@ -75,7 +75,7 @@ function resolveMetadataField(key, userMetadata, savedMetadata, aiSuggestion, fa
 
 export function mergeCampaignMetadata({ output, pipeline, campaignFamily, userMetadata = {}, savedMetadata = {} }) {
   const aiSuggestion = getCampaignMetadataSuggestion(output, pipeline, campaignFamily);
-  const fallbacks = { campaignTitle: "", performerName: "", subtitle: "", episode: "", cta: "Watch Now", campaignLabel: "", releaseName: "", originalTitle: "" };
+  const fallbacks = { campaignTitle: "", performerName: "", subtitle: "", episode: "", cta: "", campaignLabel: "", releaseName: "", originalTitle: "" };
   const metadata = { source: {} };
   Object.keys(fallbacks).forEach(key => {
     if (key === "campaignTitle") {
