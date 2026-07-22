@@ -27,40 +27,40 @@ function buildHeroPhotographyPlan({ productionBlueprint, platformRules, campaign
 
   return {
     philosophy: {
-      input: "Uploaded frame as immutable ground-truth reference",
-      output: "Reference-fidelity professional retouch",
-      never_output: "Different generated scene, changed pose, changed identity, changed environment, changed framing, or invented composition",
-      goal: "Preserve the exact video moment while improving only photographic production quality."
+      input: "Uploaded frame as creative reference and identity/story continuity source",
+      output: "Creative commercial key-art reconstruction",
+      never_output: "Enhanced screenshot, simple retouch, upscaled frame, or template-like copy of the source geometry",
+      goal: "Create a premium cinematic advertising photograph inspired by the source frame while protecting recognizable subject and story continuity."
     },
     source_frame_understanding: {
       emotional_moment: emotionalHook,
       visual_story: story,
       strongest_subject: subject,
       weakest_visual_elements: editable,
-      distractions: "compression artifacts, noise, flat lighting, low dynamic range, weak sharpness and low production polish may be corrected without moving or changing scene content",
+      distractions: "compression artifacts, flat lighting, weak depth, accidental framing and low production polish should be creatively rebuilt, not merely retouched",
       opportunities: generated,
       emotional_hook: emotionalHook
     },
     hero_photography_plan: {
-      Camera: "Preserve the exact source camera angle, framing, perspective, subject distance and apparent focal length; do not choose a new hero angle.",
-      Lens: "Preserve the source lens perspective and spatial relationships; improve perceived optical quality, sharpness and depth without changing focal length or crop.",
+      Camera: "Choose a premium commercial hero angle inspired by the source moment. Lens perspective, crop, framing and camera distance may change to create stronger key art and typography space.",
+      Lens: "Use cinematic editorial lens treatment with controlled perspective, premium subject separation, depth and advertising polish.",
       Lighting: {
-        key_light: unwrap(creative.lighting_strategy) || "source-consistent cinematic key light that improves readability without changing the moment",
-        fill_light: "controlled low fill that preserves the original lighting direction and shadow logic",
-        rim_light: "subtle source-consistent edge separation that does not change pose, environment or object placement",
-        practical_lights: "only lights already implied by the source frame; no new visible fixtures or invented props",
-        shadows_reflections_texture: "source-faithful shadows, realistic moisture, water reflections, texture recovery and premium color contrast"
+        key_light: unwrap(creative.lighting_strategy) || "designed cinematic key light that upgrades the scene into premium advertising photography",
+        fill_light: "controlled low fill for sculpted contrast and readable subject detail",
+        rim_light: "stronger commercial rim or edge separation when useful for premium key art",
+        practical_lights: "motivated cinematic practicals and atmosphere may be introduced when consistent with the story world",
+        shadows_reflections_texture: "designed shadows, reflections, moisture, atmosphere, texture and premium color contrast"
       },
-      Background: "Preserve the exact bathroom layout, wall geometry, shower area, towel position, soap placement, water placement and object positions from the uploaded frame.",
-      Environment: `Do not redesign or generate new environment. Only retouch allowed photographic qualities: ${editable}; forbidden changes remain ${forbidden}.`,
-      Composition: "Preserve the exact original composition, framing, perspective, camera angle, subject distance and object positions. Do not create new typography space by moving, cropping, extending or reframing the scene.",
+      Background: "Rebuild the background treatment for cinematic depth, clean negative space, atmosphere and commercial polish while preserving recognizable scene inspiration.",
+      Environment: `Creative reconstruction is allowed. Improve or redesign non-identity environment, atmosphere, light, depth, framing and production design: ${editable}; identity and core emotional intent remain protected: ${forbidden}.`,
+      Composition: "Create intentional key-art composition with negative space for typography. Reframe, extend, simplify or stylize the scene when it improves the commercial poster result.",
       Story: story,
       Emotional_Hook: emotionalHook,
-      Luxury_Level: "High-end cinema-camera capture / professional retouch / premium color grade",
-      Editorial_Style: unwrap(creative.atmosphere) || campaignFamily || "reference-fidelity cinematic retouch",
-      Hero_Rendering_Brief: "Reference Fidelity Mode: preserve the uploaded frame as immutable source material. Perform expert photographer/retoucher enhancement only: cinematic lighting, HDR, clean skin rendering, realistic moisture, water reflections, sharpness, depth, color grading, subtle steam, noise removal and texture recovery. Maintain at least 95% structural similarity."
+      Luxury_Level: "Netflix Key Art / Amazon Originals / HBO Campaign / luxury fashion editorial / premium magazine cover",
+      Editorial_Style: unwrap(creative.atmosphere) || campaignFamily || "creative cinematic commercial key art",
+      Hero_Rendering_Brief: "Creative Reconstruction Mode: use the uploaded frame for subject identity, general scene inspiration, recognizable action/moment and brand/story continuity. Produce a premium cinematic advertising photograph with upgraded lighting, depth, composition, lens perspective, background treatment, atmosphere, framing, cinematic color and intentional typography space. Do not output an enhanced screenshot."
     },
-    reconstruction_report_template: "Reference fidelity enhancement must remain recognizably the same exact moment from the uploaded frame. Reject changes to identity, face, pose, body shape, shower/bathroom layout, framing, camera angle, object positions, soap, water, towel, necklace, gaze or expression."
+    reconstruction_report_template: "Creative key-art reconstruction should preserve recognizable subject identity and story continuity while allowing changed composition, lens perspective, lighting, background treatment, atmosphere, framing and negative space."
   };
 }
 
@@ -71,11 +71,11 @@ export function compileHeroPhotographyInstructions({ productionBlueprint, platfo
   const heroPlan = buildHeroPhotographyPlan({ productionBlueprint, platformRules, campaignFamily });
   return {
     engine: "FLESHLAB Hero Photography Engine",
-    execution_mode: "reference_fidelity_professional_retouch",
+    execution_mode: "creative_commercial_key_art_reconstruction",
     campaign_family: campaignFamily,
     platform_rules: platformRules,
-    quality_target: ["95%+ structural similarity", "same identity", "same pose", "same environment", "cinema-camera production quality"],
-    non_goal: "Never output a different generated scene, changed performer, changed pose, changed environment, changed camera angle, changed framing, or invented composition.",
+    quality_target: ["recognizable subject identity", "recognizable story continuity", "professionally reconstructed lighting", "intentional typography space", "cinematic commercial key-art quality"],
+    non_goal: "Never output a simple enhanced screenshot, generic AI image, or template-like copy of the source geometry.",
     preserve: rendering.preserve,
     modify_only: rendering.modify,
     generate_only: rendering.generate,
@@ -108,8 +108,8 @@ export function compileHeroPhotographyInstructions({ productionBlueprint, platfo
     source_frame_understanding: heroPlan.source_frame_understanding,
     hero_photography_plan: heroPlan.hero_photography_plan,
     reconstruction_report_template: heroPlan.reconstruction_report_template,
-    provider_directive: "Use the uploaded source frame as immutable ground truth. Enhance only production quality like an expert photographer and retoucher; do not reconstruct, redesign, reframe, extend, replace, or reinterpret the scene.",
-    performer_rule: "Never invent a different performer. Preserve facial identity, facial proportions, expression, gaze, head angle, body proportions, body posture, arms, hands, necklace and skin tone from the exact reference frame.",
-    editable_scope_rule: "Allowed edits are limited to photographic retouching: cinematic lighting, dynamic range, clean skin rendering, realistic moisture, water reflections, sharpness, depth, premium color grade, subtle steam, noise removal and texture recovery. All scene geometry and object placement are protected."
+    provider_directive: "Use the uploaded source frame as creative reference for identity, story, action and scene inspiration. Reconstruct the image as premium commercial key art with new lighting, composition, lens perspective, atmosphere, depth and typography space.",
+    performer_rule: "Never invent a different performer. Preserve recognizable identity, skin tone and distinguishing visual characteristics, while allowing non-identity pose/framing/composition improvements for key art.",
+    editable_scope_rule: "Creative reconstruction is allowed for lighting, background treatment, atmosphere, framing, lens perspective, depth, negative space, color grade and commercial polish. Exact scene geometry and object placement are not locked."
   };
 }

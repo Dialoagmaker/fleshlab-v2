@@ -79,12 +79,18 @@ export function mergeCampaignMetadata({ output, pipeline, campaignFamily, userMe
   const metadata = { source: {} };
   Object.keys(fallbacks).forEach(key => {
     if (key === "campaignTitle") {
-      if (userMetadata?.source?.campaignTitle === "user") {
-        metadata.campaignTitle = compact(userMetadata.campaignTitle);
+      const userTitle = compact(userMetadata?.campaignTitle);
+      const savedTitle = compact(savedMetadata?.campaignTitle);
+      const suggestedTitle = compact(aiSuggestion?.campaignTitle);
+      if (userTitle) {
+        metadata.campaignTitle = userTitle;
         metadata.source.campaignTitle = "user";
-      } else if (savedMetadata?.source?.campaignTitle === "project") {
-        metadata.campaignTitle = compact(savedMetadata.campaignTitle);
+      } else if (savedTitle) {
+        metadata.campaignTitle = savedTitle;
         metadata.source.campaignTitle = "project";
+      } else if (suggestedTitle) {
+        metadata.campaignTitle = suggestedTitle;
+        metadata.source.campaignTitle = "ai";
       } else {
         metadata.campaignTitle = "";
         metadata.source.campaignTitle = "empty";
