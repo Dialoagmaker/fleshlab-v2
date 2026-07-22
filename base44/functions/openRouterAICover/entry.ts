@@ -66,15 +66,18 @@ Never output an enhanced screenshot.
 Never merely upscale, sharpen, denoise, relight, beautify, or crop the source frame.
 Reconstruct the scene as world-class commercial photography and advertising art direction.
 
+Use the reference image as the primary visual source for scene-detail continuity.
+Preserve as many visible production details as possible: environment layout, camera angle, lighting direction, color palette, materials, props, surfaces, reflections, atmosphere, background geometry, wardrobe/accessories, composition balance, subject placement, mood, and visual story.
+
 Use two separate visual references when provided:
-- Identity Reference: preserve the same apparent person, face, body, tattoos, hairstyle, proportions, and recognizable appearance.
-- Story Reference: preserve the emotional moment, visual story, action logic, pose when protected, and emotional intent.
+- Identity Reference: use only for broad character continuity and recognizable styling; do not overfit facial, body, or anatomical details.
+- Story Reference: preserve emotional moment, visual story, action logic, subject placement, mood, and visible scene context.
 
-You may redesign when the provided Hero Photography Plan allows:
-- background, lighting, color palette, atmosphere, environment, reflections, architecture, furniture, depth, weather, and time of day.
+You may improve:
+- cinematic lighting, sharpness, contrast, texture, depth, color grade, atmosphere, production polish, and commercial photography quality.
 
-You may NOT redesign:
-- apparent person, protected pose, identity, protected expression, protected gaze, emotional intent, or protected storytelling facts.
+You may NOT invent:
+- unrelated locations, unrelated props, a different camera angle, a different visual story, or unnecessary scene redesigns that ignore the reference.
 
 Production quality target:
 Netflix Key Art, Amazon Originals, HBO Campaign, luxury fashion editorial, premium magazine cover.
@@ -491,29 +494,30 @@ function buildPhotographicBrief(metadata = {}) {
     `Emotional hook: ${understanding.emotional_hook || emotionalHook}`,
     '',
     'STEP 2 — DESIGN THE HERO PHOTO',
-    `Camera: ${plan.Camera || 'planned commercial campaign camera, not screenshot perspective'}`,
+    'Visible detail continuity: retain reference-specific environment layout, camera direction, lighting direction, color palette, surfaces, materials, props, wardrobe/accessories, background geometry, subject placement, mood, and visual story wherever visible.',
+    `Camera: ${plan.Camera || 'commercial campaign camera that keeps the reference viewpoint and composition logic'}`,
     `Lens: ${plan.Lens || 'cinematic editorial lens with controlled perspective and premium subject separation'}`,
-    `Lighting setup: key=${lighting.key_light || 'large soft directional key'}; fill=${lighting.fill_light || 'controlled low fill'}; rim=${lighting.rim_light || 'subtle separation rim'}; practicals=${lighting.practical_lights || 'motivated cinematic practicals'}`,
-    `Negative space and composition: ${plan.Composition || 'intentional typography space away from face, emotional focal point, and storytelling element'}`,
+    `Lighting setup: key=${lighting.key_light || 'large soft directional key based on the reference lighting direction'}; fill=${lighting.fill_light || 'controlled low fill'}; rim=${lighting.rim_light || 'subtle separation rim'}; practicals=${lighting.practical_lights || 'motivated cinematic practicals from the visible scene context'}`,
+    `Negative space and composition: ${plan.Composition || 'intentional typography space while keeping the reference composition balance and subject placement'}`,
     `Luxury level: ${plan.Luxury_Level || 'Netflix Key Art / Amazon Originals / HBO Campaign / luxury fashion editorial / premium magazine cover'}`,
     `Editorial style: ${plan.Editorial_Style || metadata.campaignName || 'premium commercial editorial'}`,
     '',
-    'STEP 3 — REBUILD THE SCENE',
-    `Background: ${plan.Background || 'redesigned commercial background that preserves story logic'}`,
-    `Environment: ${plan.Environment || 'redesign atmosphere, depth, reflections, texture and production design while preserving identity and emotional intent'}`,
+    'STEP 3 — POLISH THE SAME VISUAL WORLD',
+    `Background: ${plan.Background || 'production-polished background that retains visible reference details and story logic'}`,
+    `Environment: ${plan.Environment || 'improve atmosphere, depth, reflections, texture and production design while retaining visible reference-specific details'}`,
     '',
     'STEP 4 — HERO RENDERING BRIEF',
     brief,
     '',
     'REPORT REQUIREMENT',
-    'The generated hero photograph must differ from the original frame through creative reconstruction: planned camera, lens, lighting, production design, environment, background, atmosphere, depth, texture, color contrast and intentional typography space — not simple enhancement.'
+    'The generated hero photograph should feel like the same visual world elevated into premium commercial photography: keep visible reference details, scene logic, subject placement, mood, props, materials, lighting direction and composition balance while improving production quality.'
   ].filter(Boolean).join('\n');
 }
 
 function buildKeyArtPrompt(metadata = {}) {
   const referenceMode = metadata.identityReferenceProvided
-    ? 'Reference order: image 1 is IDENTITY ONLY; image 2 is STORY/MOMENT ONLY. Preserve identity from image 1 and story from image 2 where technically possible.'
-    : 'Only a Story Reference was supplied. Preserve scene, action, emotion, and visual context.';
+    ? 'Reference order: image 1 is broad character/style continuity only; image 2 is STORY/MOMENT and scene-detail reference. Preserve visible scene details from image 2 wherever possible.'
+    : 'Only a Story Reference was supplied. Preserve as many visible scene details as possible: environment, props, materials, lighting direction, camera viewpoint, subject placement, action, emotion, mood, and visual context.';
   const loopNote = metadata.regenerationDirective ? `\n\nPrevious creative review directive to fix:\n${metadata.regenerationDirective}` : '';
   return `${KEY_ART_DIRECTOR_PROMPT}\n\n${referenceMode}\n\n${buildPhotographicBrief(metadata)}${loopNote}`;
 }
