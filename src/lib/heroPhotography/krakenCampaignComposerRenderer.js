@@ -67,8 +67,8 @@ function getZones(width, height, direction) {
     mode: "side-split",
     photo: titleLeft ? { x: splitX - width * 0.05, y: 0, w: width - splitX + width * 0.05, h: height } : { x: 0, y: 0, w: splitX + width * 0.05, h: height },
     graphic: titleLeft ? { x: 0, y: 0, w: splitX + width * 0.08, h: height } : { x: splitX - width * 0.08, y: 0, w: width - splitX + width * 0.08, h: height },
-    title: { x: titleX, y: height * (banner ? 0.24 : 0.28), w: titleW, h: height * (banner ? 0.44 : 0.38), align: "left" },
-    meta: { x: titleX, y: height * 0.73, w: titleW, h: height * 0.14 },
+    title: { x: titleX, y: height * (banner ? 0.18 : 0.24), w: titleW, h: height * (banner ? 0.52 : 0.44), align: "left" },
+    meta: { x: titleX, y: height * 0.74, w: titleW, h: height * 0.14 },
     logo: { x: titleX, y: height * 0.055, w: Math.min(titleW * 0.44, width * 0.18) },
     split: splitX / width,
   };
@@ -166,11 +166,21 @@ function drawStructuralGraphics(ctx, width, height, zones, direction) {
     for (let x = g.x; x < g.x + g.w; x += tile) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x - width * 0.16, height); ctx.stroke(); }
     for (let y = 0; y < height; y += tile * 0.74) { ctx.beginPath(); ctx.moveTo(g.x, y); ctx.lineTo(g.x + g.w, y + height * 0.05); ctx.stroke(); }
   }
+  ctx.save();
+  ctx.globalAlpha = 0.15;
+  ctx.strokeStyle = direction.accent;
+  ctx.lineWidth = Math.max(8, width * 0.012);
+  ctx.font = font(width * 0.42, "Bebas Neue", 900);
+  ctx.strokeText("A", g.x + g.w * 0.08, height * 0.62, g.w * 0.5);
+  ctx.beginPath();
+  ctx.arc(g.x + g.w * 0.25, height * 0.43, g.w * 0.23, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
   ctx.strokeStyle = direction.accent;
   ctx.lineWidth = Math.max(4, width * 0.005);
   ctx.beginPath();
   ctx.moveTo(zones.title.x, zones.title.y - height * 0.035);
-  ctx.lineTo(zones.title.x + zones.title.w * 0.68, zones.title.y - height * 0.07);
+  ctx.lineTo(zones.title.x + zones.title.w * 0.74, zones.title.y - height * 0.07);
   ctx.stroke();
   ctx.restore();
 }
@@ -214,27 +224,39 @@ function drawTitle(ctx, title, zones, width, height) {
   let y = zones.title.y + plan.fontSize * 0.82;
   plan.lines.forEach((line, index) => {
     const isLead = index < plan.leadCount;
-    const size = isLead ? plan.fontSize * 1.14 : plan.fontSize;
+    const isImpact = index >= Math.max(plan.leadCount, plan.lines.length - 2);
+    const size = isLead ? plan.fontSize * 1.14 : isImpact ? plan.fontSize * 1.04 : plan.fontSize * 0.92;
     ctx.font = font(size, "Bebas Neue", 900);
     ctx.strokeStyle = "rgba(0,0,0,0.96)";
-    ctx.lineWidth = Math.max(3, size * 0.065);
-    ctx.shadowColor = "rgba(0,0,0,0.72)";
-    ctx.shadowBlur = size * 0.12;
+    ctx.lineWidth = Math.max(3, size * 0.072);
+    ctx.shadowColor = "rgba(0,0,0,0.78)";
+    ctx.shadowBlur = size * 0.14;
     const fill = ctx.createLinearGradient(zones.title.x, y - size, zones.title.x, y + size * 0.2);
-    fill.addColorStop(0, "#ffffff"); fill.addColorStop(0.55, WHITE); fill.addColorStop(1, "#b9b9b9");
-    ctx.fillStyle = isLead ? fill : WHITE;
+    fill.addColorStop(0, "#ffffff"); fill.addColorStop(0.5, WHITE); fill.addColorStop(1, "#a7a7a7");
+    ctx.fillStyle = isImpact ? RED : fill;
+    if (isImpact) {
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      ctx.strokeStyle = "rgba(255,40,54,0.34)";
+      ctx.lineWidth = Math.max(5, size * 0.08);
+      ctx.beginPath();
+      ctx.moveTo(zones.title.x - width * 0.01, y - size * 0.24);
+      ctx.bezierCurveTo(zones.title.x + zones.title.w * 0.18, y - size * 0.36, zones.title.x + zones.title.w * 0.52, y - size * 0.06, zones.title.x + zones.title.w * 0.92, y - size * 0.2);
+      ctx.stroke();
+      ctx.restore();
+    }
     ctx.strokeText(line, zones.title.x, y, zones.title.w);
     ctx.fillText(line, zones.title.x, y, zones.title.w);
     const metrics = ctx.measureText(line);
     boxes.push({ x: zones.title.x, y: y - size * 0.82, w: Math.min(metrics.width, zones.title.w), h: size, text: line });
-    if (isLead) {
+    if (isLead || isImpact) {
       ctx.globalCompositeOperation = "screen";
-      ctx.strokeStyle = "rgba(207,16,45,0.58)";
+      ctx.strokeStyle = isImpact ? "rgba(255,255,255,0.22)" : "rgba(207,16,45,0.7)";
       ctx.lineWidth = Math.max(3, width * 0.004);
-      ctx.beginPath(); ctx.moveTo(zones.title.x, y + size * 0.11); ctx.lineTo(zones.title.x + Math.min(metrics.width, zones.title.w) * 0.92, y + size * 0.03); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(zones.title.x, y + size * 0.11); ctx.lineTo(zones.title.x + Math.min(metrics.width, zones.title.w) * 0.94, y + size * 0.03); ctx.stroke();
       ctx.globalCompositeOperation = "source-over";
     }
-    y += plan.lineHeight;
+    y += plan.lineHeight * (isImpact ? 0.92 : 1);
   });
   ctx.restore();
   const visible = boxes.every(box => box.x >= 0 && box.y >= 0 && box.x + box.w <= width + 2 && box.y + box.h <= height + 2);
@@ -256,29 +278,55 @@ function drawMeta(ctx, campaign, zones, width, height, direction, titleBottom) {
     ctx.fillText(`PERFORMER / ${performer}`, zones.meta.x, startY, zones.meta.w);
   }
   if (collection || episode || label || cta) {
-    ctx.font = font(Math.max(10, width * 0.011), "Inter", 900);
-    ctx.fillStyle = direction.accent;
+    const y = startY + height * 0.045;
+    ctx.save();
+    ctx.fillStyle = "rgba(244,241,234,0.94)";
+    ctx.beginPath();
+    ctx.moveTo(zones.meta.x - width * 0.01, y - height * 0.025);
+    ctx.lineTo(zones.meta.x + zones.meta.w * 0.62, y - height * 0.038);
+    ctx.lineTo(zones.meta.x + zones.meta.w * 0.58, y + height * 0.015);
+    ctx.lineTo(zones.meta.x - width * 0.018, y + height * 0.027);
+    ctx.closePath();
+    ctx.fill();
+    ctx.font = font(Math.max(11, width * 0.012), "Permanent Marker", 900);
+    ctx.fillStyle = BLACK;
     const line = [collection, episode, label, cta].filter(Boolean).join("  /  ");
-    ctx.fillText(line, zones.meta.x, startY + height * 0.05, zones.meta.w);
+    ctx.fillText(line, zones.meta.x + width * 0.012, y + height * 0.008, zones.meta.w * 0.58);
+    ctx.restore();
   }
   ctx.restore();
 }
 
 function drawBadges(ctx, campaign, zones, width, height, direction) {
-  const items = (campaign.badges || []).slice(0, 4).map(compact).filter(Boolean);
+  const items = (campaign.badges || []).slice(0, 3).map(compact).filter(Boolean);
   if (!items.length) return;
-  const y = Math.min(height * 0.92, zones.meta.y + zones.meta.h * 0.72);
-  let x = zones.meta.x;
+  const y = Math.min(height * 0.93, zones.meta.y + zones.meta.h * 0.8);
+  const groupW = zones.meta.w / Math.max(3, items.length);
   ctx.save();
-  ctx.font = font(Math.max(9, width * 0.009), "Inter", 900);
-  items.forEach(item => {
-    const w = Math.min(zones.meta.w * 0.28, ctx.measureText(item).width + width * 0.026);
-    ctx.fillStyle = "rgba(255,255,255,0.065)";
-    ctx.strokeStyle = "rgba(244,241,234,0.18)";
-    ctx.beginPath(); ctx.roundRect(x, y, w, height * 0.045, height * 0.022); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = item.toLowerCase().includes("4k") ? direction.accent : WHITE;
-    ctx.fillText(item, x + width * 0.011, y + height * 0.028, w - width * 0.022);
-    x += w + width * 0.008;
+  ctx.font = font(Math.max(9, width * 0.0095), "Inter", 950);
+  items.forEach((item, index) => {
+    const x = zones.meta.x + groupW * index;
+    const icon = Math.max(22, width * 0.03);
+    ctx.strokeStyle = direction.accent;
+    ctx.lineWidth = Math.max(2, width * 0.002);
+    if (index === 0) {
+      ctx.strokeRect(x, y - icon * 0.5, icon * 0.78, icon * 0.52);
+      ctx.beginPath(); ctx.arc(x + icon * 0.39, y - icon * 0.24, icon * 0.16, 0, Math.PI * 2); ctx.stroke();
+    } else if (index === 1) {
+      ctx.beginPath(); ctx.arc(x + icon * 0.34, y - icon * 0.23, icon * 0.34, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x + icon * 0.25, y - icon * 0.42); ctx.lineTo(x + icon * 0.52, y - icon * 0.23); ctx.lineTo(x + icon * 0.25, y - icon * 0.04); ctx.closePath(); ctx.stroke();
+    } else {
+      ctx.strokeRect(x + icon * 0.1, y - icon * 0.46, icon * 0.55, icon * 0.45);
+      ctx.beginPath(); ctx.arc(x + icon * 0.38, y - icon * 0.46, icon * 0.18, Math.PI, 0); ctx.stroke();
+    }
+    ctx.fillStyle = WHITE;
+    const words = item.split(" ");
+    ctx.fillText(words.slice(0, 2).join(" "), x + icon, y - icon * 0.28, groupW - icon - width * 0.018);
+    ctx.fillText(words.slice(2).join(" "), x + icon, y + icon * 0.08, groupW - icon - width * 0.018);
+    if (index < items.length - 1) {
+      ctx.fillStyle = "rgba(244,241,234,0.32)";
+      ctx.fillRect(x + groupW - width * 0.018, y - icon * 0.7, 1, icon * 1.18);
+    }
   });
   ctx.restore();
 }
