@@ -48,21 +48,39 @@ export function createCampaignDesignDirection({ story = {}, metadata = {}, campa
   const campaignTitle = compact(metadata.campaignTitle || sourceTitle);
 
   return {
+    campaignTheme: story.territory || "exclusive",
     campaignMood: story.mood || "premium, cinematic, emotionally charged",
     campaignGenre: language.genre,
+    audienceEmotion: story.emotionalHook || "curiosity, intimacy and visual tension",
     visualStory: story.fantasy || `A premium campaign built around ${sourceTitle}`,
     heroMoment: campaignTitle || sourceTitle,
     emotionalHook: story.emotionalHook || "curiosity, intimacy and visual tension",
+    photographyStyle: `commissioned ${language.genre} hero photography, not a retouched frame`,
     colorNarrative: language.colorNarrative,
+    typographyPersonality: language.typographyEnergy,
     typographyEnergy: language.typographyEnergy,
+    compositionStrategy: composition.key,
     compositionIntent: composition.key,
     compositionWeight: composition.compositionWeight,
     performerDominanceSide: composition.performerDominanceSide,
     titlePlacement: composition.titlePlacement,
     focusPath: composition.focusPath,
     backgroundRole: language.backgroundRole,
-    imageRole: "The image carries the campaign story; typography supports the emotional read.",
-    negativeSpacePrinciple: "Find negative space from the image and story instead of applying a fixed text slot.",
+    heroQuestion: "Who is the hero, what are they doing, and why is this moment worth remembering?",
+    viewerFirstLook: composition.focusPath,
+    twoSecondEmotion: story.emotionalHook || "curiosity and premium desire",
+    imageRole: "The image must work as campaign key art before typography is added.",
+    negativeSpacePrinciple: "Find negative space from the commissioned-photograph concept instead of applying a fixed text slot.",
     campaignFamily
+  };
+}
+
+export function validateCampaignDirection(direction = {}) {
+  const required = ["campaignTheme", "emotionalHook", "heroMoment", "audienceEmotion", "visualStory", "photographyStyle", "colorNarrative", "typographyPersonality", "compositionStrategy"];
+  const missing = required.filter(key => !compact(direction[key]));
+  return {
+    ready: missing.length === 0,
+    missing,
+    required
   };
 }

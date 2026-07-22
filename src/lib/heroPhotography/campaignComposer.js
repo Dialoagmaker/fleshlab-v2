@@ -1,14 +1,15 @@
 import { analyzePosterImage } from "@/lib/aiMediaStudio/posterAnalysis";
 import { renderPremiumCampaignAsset } from "@/lib/heroPhotography/premiumCampaignDesignSystem";
 import { buildCampaignConcepts, getDefaultCampaignConcept } from "@/lib/heroPhotography/storyIntelligence";
+import { validateCampaignDirection } from "@/lib/heroPhotography/campaignCreativeDirector";
 
 export const HERO_CAMPAIGN_FORMATS = [
-  { key: "youtube_thumbnail", label: "YouTube Thumbnail", width: 1280, height: 720, role: "thumbnail" },
-  { key: "instagram_feed", label: "Instagram Feed", width: 1080, height: 1080, role: "feed" },
-  { key: "instagram_story", label: "Instagram Story", width: 1080, height: 1920, role: "story" },
-  { key: "x_banner", label: "X Banner", width: 1500, height: 500, role: "banner" },
-  { key: "website_hero", label: "Website Hero", width: 1920, height: 900, role: "hero" },
-  { key: "ppv_cover", label: "PPV Cover", width: 1600, height: 2400, role: "cover" },
+  { key: "campaign_landscape", label: "Campaign Landscape", width: 1280, height: 720, role: "landscape_key_art" },
+  { key: "campaign_square", label: "Square Campaign Key Art", width: 1080, height: 1080, role: "square_key_art" },
+  { key: "campaign_vertical", label: "Vertical Campaign Key Art", width: 1080, height: 1920, role: "vertical_key_art" },
+  { key: "campaign_banner", label: "Campaign Banner", width: 1500, height: 500, role: "banner_key_art" },
+  { key: "website_hero", label: "Website Hero Campaign", width: 1920, height: 900, role: "hero_key_art" },
+  { key: "premium_one_sheet", label: "Premium One-Sheet", width: 1600, height: 2400, role: "one_sheet_key_art" },
 ];
 
 const fallbackAnalysis = {
@@ -113,6 +114,14 @@ export async function composeCampaignFromHero(output, pipeline, campaignFamily, 
   const resolvedMetadata = mergeCampaignMetadata({ output, pipeline, campaignFamily, userMetadata: metadata.userMetadata, savedMetadata: metadata.savedMetadata });
   const blueprint = pipeline?.productionBlueprint || output?.heroPhotographyPlan?.productionBlueprint || {};
   const concepts = buildCampaignConcepts({ metadata: resolvedMetadata, blueprint, campaignFamily });
+  const campaignReadiness = concepts.map(concept => ({
+    campaignConceptId: concept.campaignConceptId,
+    ...validateCampaignDirection(concept.campaignDirection)
+  }));
+  const blocked = campaignReadiness.find(result => !result.ready);
+  if (blocked) {
+    throw new Error(`Campaign concept is incomplete. Missing: ${blocked.missing.join(", ")}`);
+  }
   const visualAssets = [];
 
   for (const campaign of concepts) {
@@ -130,8 +139,9 @@ export async function composeCampaignFromHero(output, pipeline, campaignFamily, 
     currentVisualAssets: [],
     visualAssets,
     typographyWarnings: [],
+    campaignReadiness,
     createdAt: new Date().toISOString(),
-    pipeline: ["Hero Photography", "Story Intelligence", "Campaign Concept", "Campaign Naming", "Creative Direction", "Graphic Design System", "Typography System", "Campaign Composer", "Final Key Art"],
+    pipeline: ["Story Discovery", "Campaign Concept", "Art Direction", "Photography Direction", "Layout Concept", "Typography Direction", "Final Key Art"],
     downstreamReady: visualAssets.length === HERO_CAMPAIGN_FORMATS.length * concepts.length
   };
 }

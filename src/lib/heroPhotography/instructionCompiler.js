@@ -58,7 +58,7 @@ function buildHeroPhotographyPlan({ productionBlueprint, platformRules, campaign
       Emotional_Hook: emotionalHook,
       Luxury_Level: "Netflix Key Art / Amazon Originals / HBO Campaign / luxury fashion editorial / premium magazine cover",
       Editorial_Style: unwrap(creative.atmosphere) || campaignFamily || "creative cinematic commercial key art",
-      Hero_Rendering_Brief: "Creative Reconstruction Mode: use the uploaded frame for subject identity, general scene inspiration, recognizable action/moment and brand/story continuity. Produce a premium cinematic advertising photograph with upgraded lighting, depth, composition, lens perspective, background treatment, atmosphere, framing, cinematic color and intentional typography space. Do not output an enhanced screenshot."
+      Hero_Rendering_Brief: "Creative Reconstruction Mode: first answer what photograph an international entertainment Creative Director would commission for this story. Use the uploaded frame only for subject identity, authenticity, recognizable action/moment and campaign continuity. Produce the photograph that should have been captured: premium cinematic campaign photography with upgraded lighting, depth, composition, lens perspective, background treatment, atmosphere, framing, cinematic color and intentional negative space. Typography comes only after the image works without text. Do not output an enhanced screenshot, cover, thumbnail, or template."
     },
     reconstruction_report_template: "Creative key-art reconstruction should preserve recognizable subject identity and story continuity while allowing changed composition, lens perspective, lighting, background treatment, atmosphere, framing and negative space."
   };
@@ -108,7 +108,7 @@ export function compileHeroPhotographyInstructions({ productionBlueprint, platfo
     source_frame_understanding: heroPlan.source_frame_understanding,
     hero_photography_plan: heroPlan.hero_photography_plan,
     reconstruction_report_template: heroPlan.reconstruction_report_template,
-    provider_directive: "Use the uploaded source frame as creative reference for identity, story, action and scene inspiration. Reconstruct the image as premium commercial key art with new lighting, composition, lens perspective, atmosphere, depth and typography space.",
+    provider_directive: "Use the uploaded source frame as creative reference for identity, story, action and scene inspiration. Discover the campaign concept first, then reconstruct the image as commissioned premium entertainment key art with new lighting, composition, lens perspective, atmosphere, depth and intentional negative space. Never return an enhanced screenshot or template-like cover.",
     performer_rule: "Never invent a different performer. Preserve recognizable identity, skin tone and distinguishing visual characteristics, while allowing non-identity pose/framing/composition improvements for key art.",
     editable_scope_rule: "Creative reconstruction is allowed for lighting, background treatment, atmosphere, framing, lens perspective, depth, negative space, color grade and commercial polish. Exact scene geometry and object placement are not locked."
   };
