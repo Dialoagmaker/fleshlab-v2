@@ -1,4 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+import { S3Client, PutObjectCommand, GetObjectCommand } from 'npm:@aws-sdk/client-s3@3.1057.0';
+import { getSignedUrl } from 'npm:@aws-sdk/s3-request-presigner@3.1057.0';
 
 const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
 const SECRET_NAME = 'KIMI_API_KEY';
@@ -143,6 +145,13 @@ function parseOpenRouterError(status, bodyText, headers = null, payloadSummary =
     provider,
     resolved_provider: provider,
     request_id: headers?.get('x-request-id') || headers?.get('x-openrouter-request-id') || openrouterMetadata?.request_id || null,
+    response_headers: headers ? {
+      'x-request-id': headers.get('x-request-id'),
+      'x-openrouter-request-id': headers.get('x-openrouter-request-id'),
+      'cf-ray': headers.get('cf-ray'),
+      'content-type': headers.get('content-type')
+    } : null,
+    invalid_parameter: metadata?.invalid_parameter || metadata?.param || metadata?.parameter || null,
     generation_id: parsed?.id || parsed?.generation_id || parsed?.data?.id || null,
     processing_began: status === 200,
     request_reached_provider: Boolean(provider),
@@ -513,13 +522,13 @@ function chooseResolution(route, params) {
   return null;
 }
 
-function buildImagePayload(route, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata, generationJobId) {
-  const refs = identityReferenceDataUrl
-    ? [
-      { type: 'image_url', image_url: { url: identityReferenceDataUrl } },
-      { type: 'image_url', image_url: { url: storyReferenceDataUrl } }
-    ]
-    : [{ type: 'image_url', image_url: { url: storyReferenceDataUrl } }];
+async function buildImagePayload(route, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata, generationJobId) {
+  const storyReference = await buildRouteReference(route, storyReferenceDataUrl, generationJobId, 'story');
+  const identityReference = identityReferenceDataUrl ? await buildRouteReference(route, identityReferenceDataUrl, generationJobId, 'identity') : null;
+  const refs = identityReference
+    ? [identityReference.reference, storyReference.reference]
+    : [storyReference.reference];
+  const referenceReports = identityReference ? [identityReference.report, storyReference.report] : [storyReference.report];
   const endpoint = route.compatible_endpoints[0] || {};
   const params = endpoint.supported_parameters || route.supported_parameters || {};
   const providerOrder = route.compatible_endpoints.map(item => item.provider_tag || item.provider_slug).filter(Boolean);
@@ -542,20 +551,31 @@ function buildImagePayload(route, storyReferenceDataUrl, identityReferenceDataUr
   if (resolution) payload.resolution = resolution;
   if (endpointSupports({ supported_parameters: params }, 'n')) payload.n = 1;
   if (!payload.provider.order.length) delete payload.provider.order;
-  return { payload, reference_count: refs.length };
+  return { payload, reference_count: refs.length, referenceReports };
 }
 
-function buildPayloadSummary(route, payload, storyReferenceDataUrl, identityReferenceDataUrl) {
+function buildPayloadSummary(route, payload, storyReferenceDataUrl, identityReferenceDataUrl, referenceReports = []) {
   return {
     endpoint: '/api/v1/images',
+    transport_endpoint: 'https://openrouter.ai/api/v1/images',
+    method: 'POST',
+    content_type: 'application/json',
+    headers_redacted: ['Authorization: Bearer [REDACTED]', 'Content-Type: application/json', 'HTTP-Referer', 'X-Title', 'Idempotency-Key'],
+    top_level_fields: Object.keys(payload),
     model: route.id,
+    prompt_field: 'prompt',
+    prompt_chars: String(payload.prompt || '').length,
+    aspect_ratio_field: Object.prototype.hasOwnProperty.call(payload, 'aspect_ratio') ? 'aspect_ratio' : null,
+    image_reference_field: 'input_references',
+    image_reference_object_shape: payload.input_references.map(item => ({ type: item.type, image_url: { url_mode: String(item.image_url?.url || '').startsWith('data:') ? 'data_url' : 'https_url' } })),
     provider_order: payload.provider?.order || [],
     aspect_ratio: payload.aspect_ratio || 'provider-default',
     resolution: payload.resolution || 'provider-default',
     output_format: payload.output_format || 'provider-default',
     reference_count: payload.input_references.length,
     story_reference_bytes_estimate: estimateBytesFromDataUrl(storyReferenceDataUrl),
-    identity_reference_bytes_estimate: identityReferenceDataUrl ? estimateBytesFromDataUrl(identityReferenceDataUrl) : 0
+    identity_reference_bytes_estimate: identityReferenceDataUrl ? estimateBytesFromDataUrl(identityReferenceDataUrl) : 0,
+    reference_transport: referenceReports
   };
 }
 
@@ -1105,8 +1125,25 @@ async function filterRoutesForPolicy(base44, routes, classification, generationJ
 
 async function callOpenRouterImage(apiKey, route, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata, generationJobId) {
   const startedAt = Date.now();
-  const { payload } = buildImagePayload(route, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata, generationJobId);
-  const payloadSummary = buildPayloadSummary(route, payload, storyReferenceDataUrl, identityReferenceDataUrl);
+  const { payload, referenceReports } = await buildImagePayload(route, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata, generationJobId);
+  const payloadSummary = buildPayloadSummary(route, payload, storyReferenceDataUrl, identityReferenceDataUrl, referenceReports);
+  const seedreamValidation = validateSeedDreamPayload(route, payload, referenceReports);
+  if (!seedreamValidation.ok) {
+    throw new Error(safeJson({
+      http_status: null,
+      openrouter_code: 'local_seedream_payload_validation_failed',
+      message: seedreamValidation.reason,
+      category: 'INVALID_PAYLOAD',
+      retryable: false,
+      provider: route.compatible_endpoints?.[0]?.provider_name || null,
+      request_reached_provider: false,
+      rejection_type: 'payload',
+      invalid_parameter: seedreamValidation.invalid_parameter,
+      expected_parameter: seedreamValidation.expected_parameter,
+      payload_summary: payloadSummary,
+      runtime_ms: Date.now() - startedAt
+    }));
+  }
   let res;
   try {
     res = await openRouterFetch('/images', apiKey, {
@@ -1155,12 +1192,16 @@ async function callOpenRouterImage(apiKey, route, storyReferenceDataUrl, identit
     throw new Error(safeJson(diagnostic));
   }
   const mediaType = first.media_type || 'image/png';
+  const outputBytes = Math.floor(String(first.b64_json || '').length * 0.75);
+  const outputDimensions = readImageDimensionsFromDataUrl(`data:${mediaType};base64,${first.b64_json}`);
   const generationId = data?.id || data?.generation_id || data?.data?.id || null;
   const requestId = res.headers.get('x-request-id') || res.headers.get('x-openrouter-request-id') || data?.openrouter_metadata?.request_id || null;
   const generationMetadata = await fetchGenerationMetadata(apiKey, generationId).catch(() => null);
   return {
     image_data_url: `data:${mediaType};base64,${first.b64_json}`,
     media_type: mediaType,
+    output_byte_size: outputBytes,
+    output_dimensions: outputDimensions,
     usage: data?.usage || null,
     cost: Number(data?.usage?.cost ?? generationMetadata?.total_cost ?? generationMetadata?.usage ?? 0),
     request_id: requestId || generationMetadata?.request_id || null,
@@ -1234,6 +1275,109 @@ function arrayBufferToBase64(buffer) {
   return btoa(binary);
 }
 
+function decodeImageDataUrl(dataUrl) {
+  const match = String(dataUrl || '').match(/^data:(image\/(png|jpeg|jpg|webp));base64,([A-Za-z0-9+/=]+)$/i);
+  if (!match) return { ok: false, mime_type: null, bytes: new Uint8Array(), byte_length: 0 };
+  const mimeType = match[1].toLowerCase().replace('image/jpg', 'image/jpeg');
+  const binary = atob(match[3]);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return { ok: true, mime_type: mimeType, bytes, byte_length: bytes.byteLength };
+}
+
+function readJpegDimensions(bytes) {
+  for (let i = 2; i < bytes.length - 9;) {
+    if (bytes[i] !== 0xff) { i += 1; continue; }
+    const marker = bytes[i + 1];
+    const length = (bytes[i + 2] << 8) + bytes[i + 3];
+    if ([0xc0, 0xc1, 0xc2, 0xc3].includes(marker)) return { width: (bytes[i + 7] << 8) + bytes[i + 8], height: (bytes[i + 5] << 8) + bytes[i + 6] };
+    i += Math.max(2, length + 2);
+  }
+  return null;
+}
+
+function readImageDimensionsFromBytes(bytes, mimeType) {
+  if (mimeType === 'image/png' && bytes.length > 24) return { width: (bytes[16] << 24) + (bytes[17] << 16) + (bytes[18] << 8) + bytes[19], height: (bytes[20] << 24) + (bytes[21] << 16) + (bytes[22] << 8) + bytes[23] };
+  if (mimeType === 'image/jpeg') return readJpegDimensions(bytes);
+  return null;
+}
+
+function readImageDimensionsFromDataUrl(dataUrl) {
+  const decoded = decodeImageDataUrl(dataUrl);
+  return decoded.ok ? readImageDimensionsFromBytes(decoded.bytes, decoded.mime_type) : null;
+}
+
+function isSeedDreamRoute(route) {
+  return String(route?.id || '').includes('seedream') || providerFamilyForRoute(route) === 'bytedance_seed';
+}
+
+function r2Config() {
+  return {
+    accountId: Deno.env.get('R2_ACCOUNT_ID'),
+    accessKeyId: Deno.env.get('R2_ACCESS_KEY_ID'),
+    secretAccessKey: Deno.env.get('R2_SECRET_ACCESS_KEY'),
+    bucket: Deno.env.get('R2_BUCKET_NAME')
+  };
+}
+
+function extensionForMime(mimeType) {
+  if (mimeType === 'image/png') return 'png';
+  if (mimeType === 'image/webp') return 'webp';
+  return 'jpg';
+}
+
+async function uploadSeedDreamReference(dataUrl, generationJobId, kind) {
+  const decoded = decodeImageDataUrl(dataUrl);
+  if (!decoded.ok) throw new Error('SeedDream reference image must be a valid PNG, JPEG, or WEBP data URL before upload.');
+  const config = r2Config();
+  if (!config.accountId || !config.accessKeyId || !config.secretAccessKey || !config.bucket) throw new Error('SeedDream reference upload storage is not configured.');
+  const client = new S3Client({ region: 'auto', endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`, credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey } });
+  const key = `openrouter/seedream-references/${String(generationJobId).replace(/[^a-zA-Z0-9_-]/g, '_')}/${kind}.${extensionForMime(decoded.mime_type)}`;
+  await client.send(new PutObjectCommand({ Bucket: config.bucket, Key: key, Body: decoded.bytes, ContentType: decoded.mime_type }));
+  const signedUrl = await getSignedUrl(client, new GetObjectCommand({ Bucket: config.bucket, Key: key }), { expiresIn: 900 });
+  const fetchRes = await fetch(signedUrl, { method: 'GET' });
+  const fetched = fetchRes.ok ? new Uint8Array(await fetchRes.arrayBuffer()) : new Uint8Array();
+  return {
+    signedUrl,
+    report: {
+      kind,
+      original_mode: 'data_url',
+      submitted_mode: 'public_https_signed_url',
+      source_field: `${kind}_reference_data_url`,
+      mime_type: decoded.mime_type,
+      byte_size: decoded.byte_length,
+      dimensions: readImageDimensionsFromBytes(decoded.bytes, decoded.mime_type),
+      source_image_accessibility_status: {
+        external_fetch_status: fetchRes.status,
+        externally_reachable: fetchRes.ok,
+        requires_session_cookies: false,
+        is_blob_url: false,
+        is_localhost: false,
+        is_private_preview_url: false,
+        content_type: fetchRes.headers.get('content-type'),
+        fetched_byte_size: fetched.byteLength,
+        contains_image_bytes: fetched.byteLength > 0
+      }
+    }
+  };
+}
+
+async function buildRouteReference(route, dataUrl, generationJobId, kind) {
+  if (!isSeedDreamRoute(route)) return { reference: { type: 'image_url', image_url: { url: dataUrl } }, report: { kind, original_mode: 'data_url', submitted_mode: 'data_url', source_field: `${kind}_reference_data_url`, mime_type: parseDataUrlInfo(dataUrl).mime_type, byte_size: estimateBytesFromDataUrl(dataUrl), dimensions: readImageDimensionsFromDataUrl(dataUrl) } };
+  const uploaded = await uploadSeedDreamReference(dataUrl, generationJobId, kind);
+  return { reference: { type: 'image_url', image_url: { url: uploaded.signedUrl } }, report: uploaded.report };
+}
+
+function validateSeedDreamPayload(route, payload, referenceReports) {
+  if (!isSeedDreamRoute(route)) return { ok: true };
+  if (!Array.isArray(payload.input_references) || !payload.input_references.length) return { ok: false, reason: 'SeedDream requires input_references with at least one externally reachable image URL.', invalid_parameter: 'input_references', expected_parameter: 'input_references[].image_url.url' };
+  const invalid = payload.input_references.find(item => !String(item?.image_url?.url || '').startsWith('https://'));
+  if (invalid) return { ok: false, reason: 'SeedDream reference image URL must be an externally reachable HTTPS URL; inline data URLs are rejected before transport.', invalid_parameter: 'input_references[].image_url.url', expected_parameter: 'HTTPS URL' };
+  const inaccessible = referenceReports.find(report => report.source_image_accessibility_status && !report.source_image_accessibility_status.externally_reachable);
+  if (inaccessible) return { ok: false, reason: 'SeedDream reference image could not be fetched externally before transport.', invalid_parameter: inaccessible.source_field, expected_parameter: 'externally reachable HTTPS image URL' };
+  return { ok: true };
+}
+
 async function runProductionQA(base44, payload) {
   try {
     const response = await base44.functions.invoke('productionQAEngine', payload);
@@ -1273,6 +1417,23 @@ async function runOpenRouterSelfTest(base44, apiKey, user, req) {
       campaignName: 'technical pipeline validation'
     }
   }, user, req);
+}
+
+async function runSeedDreamAdapterRegression(apiKey, options = {}) {
+  const testImageUrl = 'https://picsum.photos/seed/fleshlab-seedream-regression/1280/720.jpg';
+  const imageRes = await fetch(testImageUrl);
+  if (!imageRes.ok) return json({ ok: false, error: 'Could not fetch regression reference image.', status: imageRes.status }, 502);
+  const buffer = await imageRes.arrayBuffer();
+  const dataUrl = `data:image/jpeg;base64,${arrayBufferToBase64(buffer)}`;
+  const route = {
+    id: 'bytedance-seed/seedream-4.5',
+    compatible_endpoints: [{ provider_name: 'Seed', provider_slug: 'seed', provider_tag: 'seed', supported_parameters: { resolution: { type: 'enum', values: ['1K', '2K', '4K'] }, aspect_ratio: { type: 'enum', values: ['16:9'] } } }],
+    supported_parameters: {}
+  };
+  const result = await callOpenRouterImage(apiKey, route, dataUrl, null, '16:9', { videoTitle: 'SeedDream adapter regression', contentType: 'safe editorial image reference test', campaignName: 'technical regression' }, `seedream-regression-${crypto.randomUUID()}`);
+  const responseEvidence = { http_status: 200, model: route.id, provider_request_id: result.request_id, output_mime_type: result.media_type, output_byte_size: result.output_byte_size, output_dimensions: result.output_dimensions, has_browser_displayable_data_url: String(result.image_data_url || '').startsWith('data:image/') };
+  if (options.compact) return json({ ok: true, regression: 'seedream_image_reference_generation', response: responseEvidence, request_shape: { endpoint: result.payload_summary.endpoint, transport_endpoint: result.payload_summary.transport_endpoint, content_type: result.payload_summary.content_type, top_level_fields: result.payload_summary.top_level_fields, model: result.payload_summary.model, prompt_field: result.payload_summary.prompt_field, prompt_chars: result.payload_summary.prompt_chars, aspect_ratio_field: result.payload_summary.aspect_ratio_field, image_reference_field: result.payload_summary.image_reference_field, image_reference_object_shape: result.payload_summary.image_reference_object_shape, provider_order: result.payload_summary.provider_order, aspect_ratio: result.payload_summary.aspect_ratio, resolution: result.payload_summary.resolution, reference_transport: result.payload_summary.reference_transport } });
+  return json({ ok: true, regression: 'seedream_image_reference_generation', request_shape: result.payload_summary, response: responseEvidence });
 }
 
 async function generateCover(base44, apiKey, body, user, req) {
@@ -1458,8 +1619,10 @@ async function generateCover(base44, apiKey, body, user, req) {
         request_id: result.request_id,
         generation_id: result.generation_id,
         cost_usd: result.cost,
+        output_byte_size: result.output_byte_size,
+        output_dimensions: result.output_dimensions,
         payload_summary: result.payload_summary
-      }));
+        }));
       await saveRoutingAudit(base44, {
         generation_job_id: generationJobId,
         content_classification: classificationCategory,
@@ -1502,6 +1665,8 @@ async function generateCover(base44, apiKey, body, user, req) {
         ok: true,
         generated_image_data_url: result.image_data_url,
         media_type: result.media_type,
+        output_byte_size: result.output_byte_size,
+        output_dimensions: result.output_dimensions,
         generation_job_id: generationJobId,
         model: route.id,
         selected_model: route.id,
@@ -1716,6 +1881,7 @@ Deno.serve(async (req) => {
     if (action === 'canonical_policy_audit') return json(await auditAndRepairCanonicalPolicyRegistry(base44, body.requested_category || body.requestedCategory || null));
     if (action === 'route_capabilities') return json({ ok: true, requiredOperation: buildRequiredOperation(body.aspect_ratio || '16:9'), routes: await discoverCompatibleImageRoutes(apiKey), private_development_mode: privateDevelopmentStatus(req) });
     if (action === 'self_test') return await runOpenRouterSelfTest(base44, apiKey, user, req);
+    if (action === 'seedream_adapter_regression') return await runSeedDreamAdapterRegression(apiKey, body);
     if (action === 'generate') return await generateCover(base44, apiKey, body, user, req);
     return json({ ok: false, error: 'Invalid action' }, 400);
   } catch (error) {
