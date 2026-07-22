@@ -70,14 +70,17 @@ export function buildCampaignConcepts({ metadata = {}, blueprint = {}, campaignF
   const story = createStoryIntelligence({ metadata, blueprint, campaignFamily });
   const pool = conceptPools[story.territory] || conceptPools.exclusive;
   const performer = compact(metadata.performerName || blueprint.performerName || blueprint.creatorName || "Featured Creator");
+  const authoritativeTitle = compact(metadata.campaignTitle);
   return pool.slice(0, 3).map((concept, index) => {
     const episode = `Episode ${String(index + 1).padStart(2, "0")}`;
-    const base = `${safeSlug(concept.primaryTitle)}_${safeSlug(concept.collection)}_${safeSlug(performer)}`;
+    const primaryTitle = authoritativeTitle || concept.primaryTitle;
+    const base = `${safeSlug(primaryTitle)}_${safeSlug(concept.collection)}_${safeSlug(performer)}`;
     return {
       ...concept,
+      primaryTitle,
       base,
-      campaignConceptId: `${safeSlug(concept.primaryTitle)}-${index + 1}`,
-      campaignTitle: concept.primaryTitle,
+      campaignConceptId: `${safeSlug(primaryTitle)}-${index + 1}`,
+      campaignTitle: primaryTitle,
       subtitle: concept.collection,
       seriesName: concept.collection,
       performerName: performer,
@@ -88,7 +91,7 @@ export function buildCampaignConcepts({ metadata = {}, blueprint = {}, campaignF
       releaseName: compact(metadata.releaseName || concept.collection),
       storyIntelligence: story,
       campaignMetadata: {
-        campaignTitle: concept.primaryTitle,
+        campaignTitle: primaryTitle,
         collection: concept.collection,
         performerName: performer,
         episode,

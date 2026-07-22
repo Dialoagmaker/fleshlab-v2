@@ -56,7 +56,9 @@ export function getCampaignMetadataSuggestion(output, pipeline, campaignFamily) 
 }
 
 function resolveMetadataField(key, userMetadata, savedMetadata, aiSuggestion, fallback) {
-  if (["user", "ai"].includes(userMetadata?.source?.[key])) return { value: compact(userMetadata?.[key]), source: userMetadata.source[key] };
+  const userValue = compact(userMetadata?.[key]);
+  if (userMetadata?.source?.[key] === "user" && userValue) return { value: userValue, source: "user" };
+  if (userMetadata?.source?.[key] === "ai" && userValue) return { value: userValue, source: "ai" };
   const options = [[savedMetadata?.[key], "project"], [aiSuggestion?.[key], "ai"], [fallback, "fallback"]];
   const selected = options.find(([value]) => compact(value));
   return { value: compact(selected?.[0] || fallback), source: selected?.[1] || "fallback" };
