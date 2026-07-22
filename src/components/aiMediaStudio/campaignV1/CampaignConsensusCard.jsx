@@ -10,6 +10,7 @@ export default function CampaignConsensusCard({ campaign }) {
     ["Creative idea", campaign.consensus.creativeIdea],
     ["Hero", campaign.consensus.heroStrategy],
     ["Brand", campaign.consensus.brandLanguage],
+    ["Brand engine", campaign.brandSystem ? "Official FLESHLAB identity integrated into generated campaign assets" : "Not generated"],
   ];
   return (
     <Card>

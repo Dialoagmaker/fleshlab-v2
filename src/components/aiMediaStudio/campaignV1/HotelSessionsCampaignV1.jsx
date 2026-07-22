@@ -35,9 +35,9 @@ export default function HotelSessionsCampaignV1({ item }) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="rounded-xl border border-primary/30 bg-primary/10 p-4">
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-primary">One video → one campaign → one asset suite</p>
-            <h2 className="mt-2 text-2xl font-black text-foreground">Create the complete Hotel Sessions campaign</h2>
-            <p className="mt-2 max-w-3xl text-sm text-muted-foreground">This V1 locks one Campaign Consensus first, then generates every deliverable from that single creative identity.</p>
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-primary">Creative Brain → Brand Identity Engine → Campaign Generator</p>
+            <h2 className="mt-2 text-2xl font-black text-foreground">Create an official FLESHLAB campaign suite</h2>
+            <p className="mt-2 max-w-3xl text-sm text-muted-foreground">The Brand Identity Engine integrates the official logo, Amateur Wins lockup, typography, creator branding, campaign title, CTA and platform spacing into every generated asset.</p>
           </div>
           {!ready && <div className="rounded-lg border border-border bg-secondary/30 p-3 text-sm text-muted-foreground">Analyze one video first, then create the campaign.</div>}
           {error && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}

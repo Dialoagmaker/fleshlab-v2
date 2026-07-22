@@ -9,13 +9,14 @@ export default function CampaignAssetGrid({ assets = [] }) {
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {assets.map(asset => (
         <div key={asset.filename} className="overflow-hidden rounded-xl border border-border bg-card">
-          {asset.previewUrl && <img src={asset.previewUrl} alt={asset.filename} className="aspect-video w-full bg-black object-cover" />}
-          {!asset.previewUrl && <div className="flex aspect-video items-center justify-center bg-secondary/40 text-xs font-bold uppercase tracking-widest text-muted-foreground">{asset.kind}</div>}
+          {asset.kind === "visual" && <img src={asset.previewUrl || asset.url} alt={asset.filename} className="w-full bg-black object-cover" style={{ aspectRatio: asset.width && asset.height ? `${asset.width} / ${asset.height}` : "16 / 9" }} />}
+          {asset.kind !== "visual" && <div className="flex aspect-video items-center justify-center bg-secondary/40 text-xs font-bold uppercase tracking-widest text-muted-foreground">{asset.kind}</div>}
           <div className="space-y-3 p-4">
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="break-all text-sm font-semibold text-foreground">{asset.filename}</p>
-                <p className="text-xs text-muted-foreground">{formatBytes(asset.size)}</p>
+                <p className="text-xs text-muted-foreground">{formatBytes(asset.size)}{asset.width && asset.height ? ` · ${asset.width}×${asset.height}` : ""}</p>
+                {asset.brandPlan && <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-primary">{asset.brandPlan.family} · {asset.brandPlan.logoPlacement}</p>}
               </div>
               <Badge variant="outline">{asset.status}</Badge>
             </div>
