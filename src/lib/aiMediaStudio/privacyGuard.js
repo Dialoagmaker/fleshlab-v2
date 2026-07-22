@@ -1,7 +1,14 @@
 let installed = false;
 let approvedHeroRenderSendDepth = 0;
+let approvedHeroFrameUploadDepth = 0;
 
 const HERO_RENDER_CHANNEL = "approved_hero_frame_render";
+const HERO_FRAME_UPLOAD_POLICY = {
+  assetType: "HERO_FRAME",
+  purpose: "HERO_RENDER",
+  origin: "CreativeBrain",
+  stage: "HeroPhotography"
+};
 const FORBIDDEN_HERO_RENDER_KEYS = [
   "video",
   "video_file",
@@ -18,8 +25,28 @@ const FORBIDDEN_HERO_RENDER_KEYS = [
   "local_media_blob"
 ];
 
+function hasHeroFramePolicy(value) {
+  if (!value || typeof value !== "object") return false;
+  return value.assetType === HERO_FRAME_UPLOAD_POLICY.assetType &&
+    value.purpose === HERO_FRAME_UPLOAD_POLICY.purpose &&
+    value.origin === HERO_FRAME_UPLOAD_POLICY.origin &&
+    value.stage === HERO_FRAME_UPLOAD_POLICY.stage;
+}
+
+function isApprovedHeroFrameAsset(value, seen = new WeakSet()) {
+  if (!value || typeof value !== "object") return false;
+  if (seen.has(value)) return false;
+  seen.add(value);
+  if (hasHeroFramePolicy(value)) {
+    const mimeType = value.type || value.mime_type || "";
+    return !mimeType || mimeType.startsWith("image/");
+  }
+  return Object.values(value).some(entry => isApprovedHeroFrameAsset(entry, seen));
+}
+
 function isBlockedPayload(value, seen = new WeakSet()) {
   if (!value) return false;
+  if (isApprovedHeroFrameAsset(value)) return false;
   if (typeof File !== "undefined" && value instanceof File) return true;
   if (typeof Blob !== "undefined" && value instanceof Blob) return true;
   if (typeof ArrayBuffer !== "undefined" && value instanceof ArrayBuffer) return true;
@@ -78,9 +105,17 @@ function isApprovedHeroRenderBody(body) {
   return isApprovedHeroRenderPayload(parseJsonMaybe(body));
 }
 
+function isApprovedHeroFrameUploadBody(body) {
+  return approvedHeroFrameUploadDepth > 0 && typeof FormData !== "undefined" && body instanceof FormData;
+}
+
 function isApprovedOpenRouterCoverInvoke(args) {
   const [functionName, payload] = args;
   return functionName === "openRouterAICover" && isApprovedHeroRenderPayload(payload);
+}
+
+function isApprovedHeroFrameUploadInvoke(args) {
+  return args.some(arg => isApprovedHeroFrameAsset(arg));
 }
 
 function patchFunction(owner, key, label, log) {
@@ -88,7 +123,18 @@ function patchFunction(owner, key, label, log) {
   const original = owner[key].bind(owner);
   owner[key] = (...args) => {
     const approvedOpenRouterStill = key === "invoke" && isApprovedOpenRouterCoverInvoke(args);
-    if (!approvedOpenRouterStill && args.some(arg => isBlockedPayload(arg))) block(label, log);
+    const approvedHeroFrameUpload = (key === "UploadFile" || key === "UploadPrivateFile") && isApprovedHeroFrameUploadInvoke(args);
+    if (!approvedOpenRouterStill && !approvedHeroFrameUpload && args.some(arg => isBlockedPayload(arg))) block(label, log);
+    if (approvedHeroFrameUpload) {
+      log?.("privacy guard allowed asset-aware Hero Frame upload for Hero Photography staging");
+      approvedHeroFrameUploadDepth += 1;
+      const result = original(...args);
+      if (result && typeof result.finally === "function") {
+        return result.finally(() => { approvedHeroFrameUploadDepth = Math.max(0, approvedHeroFrameUploadDepth - 1); });
+      }
+      approvedHeroFrameUploadDepth = Math.max(0, approvedHeroFrameUploadDepth - 1);
+      return result;
+    }
     if (approvedOpenRouterStill) {
       log?.("privacy guard allowed one consent-approved Hero Frame for rendering");
       approvedHeroRenderSendDepth += 1;
@@ -109,14 +155,14 @@ export function installLocalMediaPrivacyGuard(log, base44Client = null) {
   installed = true;
   const originalFetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
-    if (isBlockedPayload(input) || (!isApprovedHeroRenderBody(init?.body) && isBlockedPayload(init?.body))) block("fetch", log);
+    if (isBlockedPayload(input) || (!isApprovedHeroRenderBody(init?.body) && !isApprovedHeroFrameUploadBody(init?.body) && isBlockedPayload(init?.body))) block("fetch", log);
     return originalFetch(input, init);
   };
 
   const originalSend = window.XMLHttpRequest?.prototype?.send;
   if (originalSend) {
     window.XMLHttpRequest.prototype.send = function guardedSend(body) {
-      if (!isApprovedHeroRenderBody(body) && isBlockedPayload(body)) block("XMLHttpRequest", log);
+      if (!isApprovedHeroRenderBody(body) && !isApprovedHeroFrameUploadBody(body) && isBlockedPayload(body)) block("XMLHttpRequest", log);
       return originalSend.call(this, body);
     };
   }
@@ -130,7 +176,8 @@ export function installLocalMediaPrivacyGuard(log, base44Client = null) {
   window.__FLESHLAB_LOCAL_MEDIA_GUARD__ = {
     installed: true,
     mode: "Browser local",
-    blocks: ["File", "Blob", "ArrayBuffer", "base64 image/video", "FormData media entries", "nested media payloads"],
+    blocks: ["VIDEO assets", "FRAME assets", "unclassified File", "unclassified Blob", "ArrayBuffer", "base64 image/video", "FormData media entries", "nested media payloads"],
+    asset_policy: HERO_FRAME_UPLOAD_POLICY,
     allow_with_consent: ["Selected Hero Frame through approved render channel only"],
     hero_render_channel: HERO_RENDER_CHANNEL,
   };
@@ -141,8 +188,9 @@ export function getPrivacyFacts(outputCount = 0) {
   return [
     ["Local file uploaded", "NO"],
     ["Library video fetched", "Only in Proof mode"],
-    ["New upload", "NO"],
-    ["Frames sent to external AI", "NO"],
+    ["New video upload", "NO"],
+    ["Hero Frame upload", "HERO_FRAME only for HeroPhotography"],
+    ["Frames sent to external AI", "HERO_FRAME only after approved render request"],
     ["Local file processing", "Browser local"],
     ["Library proof processing", "Browser local after fetch"],
     ["Generated outputs", outputCount ? "Local Blob URLs" : "None yet"],
