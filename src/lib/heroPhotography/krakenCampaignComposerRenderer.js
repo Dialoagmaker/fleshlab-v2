@@ -69,19 +69,24 @@ function chooseDirection(campaign = {}, analysis = {}) {
   const subjectRight = (analysis.subjectCenter?.x ?? 0.55) >= 0.5;
   const directed = campaign.campaignDirection || campaign.creativeDirection || campaign.campaignMetadata?.campaignDirection;
   if (directed) {
-    const genreText = `${directed.campaignGenre || ""} ${directed.campaignMood || ""} ${directed.visualStory || ""}`.toLowerCase();
+    const genreText = `${directed.visualGenre || ""} ${directed.campaignGenre || ""} ${directed.campaignMood || ""} ${directed.visualStory || ""}`.toLowerCase();
     const environmentLed = directed.compositionWeight === "environment_dominant";
     const performerSide = directed.performerDominanceSide || (subjectRight ? "right" : "left");
+    const paletteText = `${directed.colorLanguage || directed.colorNarrative || ""}`.toLowerCase();
     return {
-      key: environmentLed ? "campaign_environment_story" : genreText.includes("noir") ? "campaign_noir_series" : genreText.includes("adventure") ? "campaign_adventure" : "campaign_image_first",
-      accent: /summer|escape|sun/.test(genreText) ? "#ff3348" : /adventure|documentary/.test(genreText) ? "#f05b2a" : RED,
-      texture: directed.colorNarrative || "cinematic campaign atmosphere",
-      titleTone: directed.typographyEnergy || "image-led premium campaign title",
+      key: environmentLed ? "campaign_environment_story" : genreText.includes("documentary") ? "campaign_documentary_identity" : genreText.includes("fashion") ? "campaign_fashion_editorial" : genreText.includes("adventure") ? "campaign_adventure" : "campaign_image_first",
+      accent: /summer|sun|sea|fresh/.test(paletteText) ? "#ff3348" : /earth|adventure|documentary/.test(paletteText) ? "#f05b2a" : RED,
+      texture: directed.colorLanguage || directed.colorNarrative || "cinematic campaign atmosphere",
+      titleTone: directed.typographyStyle || directed.typographyEnergy || "image-led premium campaign title",
       heroSide: performerSide,
-      split: environmentLed ? 0.48 : directed.compositionWeight === "performer_dominant" ? 0.58 : 0.54,
+      split: environmentLed ? 0.46 : directed.compositionWeight === "performer_dominant" ? 0.6 : 0.54,
       referencePoster: false,
       campaignDirected: true,
       titlePlacement: directed.titlePlacement || (performerSide === "right" ? "left" : "right"),
+      titleBand: directed.titleBand || "middle",
+      posterHierarchy: directed.posterHierarchy,
+      visualDNA: directed.visualDNA,
+      visualGenre: directed.visualGenre || directed.campaignGenre,
       imageRole: directed.imageRole,
       focusPath: directed.focusPath
     };
@@ -120,16 +125,22 @@ function getZones(width, height, direction) {
   }
   const splitX = width * (direction.referencePoster ? 0.56 : banner ? 0.5 : direction.split);
   const titleLeft = direction.titlePlacement ? direction.titlePlacement === "left" : direction.heroSide === "right";
-  const titleX = titleLeft ? width * (direction.referencePoster ? 0.052 : 0.055) : splitX + width * 0.065;
-  const titleW = titleLeft ? splitX * (direction.referencePoster ? 0.9 : 0.84) : width - titleX - width * 0.055;
-  const titleY = height * (direction.referencePoster ? 0.28 : direction.campaignDirected && banner ? 0.14 : direction.campaignDirected ? 0.2 : banner ? 0.18 : 0.24);
+  const centeredTitle = direction.titlePlacement === "center";
+  let titleX = titleLeft ? width * (direction.referencePoster ? 0.052 : 0.055) : splitX + width * 0.065;
+  let titleW = titleLeft ? splitX * (direction.referencePoster ? 0.9 : 0.84) : width - titleX - width * 0.055;
+  if (centeredTitle) {
+    titleX = width * (banner ? 0.16 : 0.12);
+    titleW = width * (banner ? 0.68 : 0.76);
+  }
+  const titleBand = direction.titleBand || "middle";
+  const titleY = height * (direction.referencePoster ? 0.28 : titleBand === "top" ? 0.12 : titleBand === "low" ? 0.52 : direction.campaignDirected && banner ? 0.14 : direction.campaignDirected ? 0.2 : banner ? 0.18 : 0.24);
   return {
     mode: "side-split",
-    photo: titleLeft ? { x: splitX - width * 0.03, y: 0, w: width - splitX + width * 0.03, h: height } : { x: 0, y: 0, w: splitX + width * 0.05, h: height },
-    graphic: titleLeft ? { x: 0, y: 0, w: splitX + width * 0.1, h: height } : { x: splitX - width * 0.08, y: 0, w: width - splitX + width * 0.08, h: height },
-    title: { x: titleX, y: titleY, w: titleW, h: height * (direction.referencePoster ? 0.39 : banner ? 0.52 : 0.44), align: "left", maxLines: direction.referencePoster ? 3 : undefined },
-    meta: { x: titleX, y: height * (direction.referencePoster ? 0.76 : 0.74), w: titleW, h: height * 0.14 },
-    logo: { x: titleX, y: height * 0.058, w: Math.min(titleW * (direction.referencePoster ? 0.48 : 0.44), width * (direction.referencePoster ? 0.26 : 0.18)) },
+    photo: centeredTitle ? { x: 0, y: 0, w: width, h: height } : titleLeft ? { x: splitX - width * 0.03, y: 0, w: width - splitX + width * 0.03, h: height } : { x: 0, y: 0, w: splitX + width * 0.05, h: height },
+    graphic: centeredTitle ? { x: 0, y: 0, w: width, h: height } : titleLeft ? { x: 0, y: 0, w: splitX + width * 0.1, h: height } : { x: splitX - width * 0.08, y: 0, w: width - splitX + width * 0.08, h: height },
+    title: { x: titleX, y: titleY, w: titleW, h: height * (direction.referencePoster ? 0.39 : banner ? 0.52 : titleBand === "low" ? 0.32 : 0.44), align: "left", maxLines: direction.referencePoster ? 3 : undefined },
+    meta: { x: titleX, y: height * (direction.referencePoster ? 0.76 : titleBand === "low" ? 0.84 : 0.74), w: titleW, h: height * 0.14 },
+    logo: { x: centeredTitle ? width * 0.06 : titleX, y: height * 0.058, w: Math.min(titleW * (direction.referencePoster ? 0.48 : 0.44), width * (direction.referencePoster ? 0.26 : 0.18)) },
     split: splitX / width,
   };
 }
@@ -490,6 +501,7 @@ function drawMeta(ctx, campaign, zones, width, height, direction, titleBottom) {
 }
 
 function drawBadges(ctx, campaign, zones, width, height, direction) {
+  if (direction.campaignDirected && !String(direction.posterHierarchy || "").toLowerCase().includes("badge")) return;
   const items = direction.referencePoster ? resolveCampaignBadges(campaign) : (campaign.badges || []).slice(0, 3).map(compact).filter(Boolean);
   if (!items.length) return;
   const y = direction.referencePoster ? height * 0.88 : Math.min(height * 0.93, zones.meta.y + zones.meta.h * 0.8);
@@ -585,6 +597,8 @@ function intersects(a, b) {
 
 function createPolishVariants(format, campaign) {
   const seed = compact(`${campaign.campaignTitle || ""}${campaign.collection || ""}${format.key || ""}`).split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const campaignDirection = campaign.campaignDirection || campaign.creativeDirection || campaign.campaignMetadata?.campaignDirection;
+  const campaignBibleVariant = campaignDirection ? [{ key: `campaign-bible-${campaignDirection.compositionStrategy || "identity"}`, split: 0, titleY: 0, logoY: 0, titleScale: 1, preserve: true }] : [];
   const variants = [
     { key: "immersive-fusion", split: 0, titleY: -0.02, logoY: 0, titleScale: 0.96, immersive: true },
     { key: "cinema-monumental", split: -0.02, titleY: -0.035, logoY: 0, titleScale: 1 },
@@ -593,11 +607,15 @@ function createPolishVariants(format, campaign) {
     { key: "self-heal-wide-stage", split: 0, titleY: 0, logoY: 0, titleScale: 1, immersive: true, safe: true },
     { key: "self-heal-logo-footer", split: 0, titleY: 0, logoY: 0, titleScale: 1, immersive: true, safe: true, footerLogo: true }
   ];
-  return variants.slice(seed % variants.length).concat(variants.slice(0, seed % variants.length));
+  return campaignBibleVariant.concat(variants.slice(seed % variants.length).concat(variants.slice(0, seed % variants.length)));
 }
 
 function applyPolishVariant(zones, width, height, variant) {
   const adjusted = JSON.parse(JSON.stringify(zones));
+  if (variant.preserve) {
+    adjusted.polishVariant = variant.key;
+    return adjusted;
+  }
   if (variant.immersive && adjusted.mode === "side-split") {
     const titleLeft = adjusted.title.x < width * 0.45;
     adjusted.mode = "immersive";
@@ -704,7 +722,7 @@ export async function renderKrakenCampaignComposerAsset({ image, analysis = {}, 
   best.compositionPlan.typographyPlan = best.titlePlan;
   best.compositionPlan.typographyWarnings = [];
   best.compositionPlan.selfHealingCreativeDirector = { enabled: true, iterations: attempts.length, resolved: best.titleValidation.passed && best.compositionValidation.passed, internalFeedback: [...new Set(internalCreativeFeedback)], selectedVariant: best.zones.polishVariant };
-  best.compositionPlan.krakenArchitecture = { direction: best.direction, zones: best.zones, logo: best.logo, validation: best.compositionValidation, candidateCount: attempts.length, selfHealing: best.compositionPlan.selfHealingCreativeDirector, layerOrder: ["background atmosphere", "hero photography", "subject depth", "structural graphics", "photo fusion", "title", "premium info bar", "badges", "logo", "finish"] };
+  best.compositionPlan.krakenArchitecture = { direction: best.direction, zones: best.zones, logo: best.logo, validation: best.compositionValidation, candidateCount: attempts.length, selfHealing: best.compositionPlan.selfHealingCreativeDirector, layerOrder: ["campaign atmosphere", "art-directed photography", "subject depth", "story structure", "photo-world fusion", "supporting title", "premium info bar", "conditional campaign marks", "brand signature", "finish"] };
 
   const blob = await new Promise(resolve => best.canvas.toBlob(resolve, "image/jpeg", 0.95));
   return {
@@ -720,13 +738,14 @@ export async function renderKrakenCampaignComposerAsset({ image, analysis = {}, 
     kind: "visual",
     status: "ready",
     campaignConceptId: campaign.campaignConceptId,
-    brandPlan: { family: "KRAKEN Key Art", designSystem: "FLESHLAB KRAKEN Campaign Composer", mood: best.direction.key, layout: { compositionPlan: best.compositionPlan, layoutSketch: best.layoutSketch }, graphicLanguage: best.direction.texture, creativeConcept: best.compositionPlan.creativeConcept, brandDnaRules: best.compositionPlan.brandDnaRules },
+    brandPlan: { family: "KRAKEN Campaign Key Art", designSystem: "FLESHLAB AI Creative Campaign Director", visualDNA: best.direction.visualDNA, visualGenre: best.direction.visualGenre, mood: best.direction.key, layout: { compositionPlan: best.compositionPlan, layoutSketch: best.layoutSketch }, graphicLanguage: best.direction.texture, creativeConcept: best.compositionPlan.creativeConcept, brandDnaRules: best.compositionPlan.brandDnaRules },
     keyArtBrief: best.keyArtBrief,
     layoutSketch: best.layoutSketch,
     compositionPlan: best.compositionPlan,
     layerPlan: best.compositionPlan.layerPlan,
     typographyWarnings: [],
     campaignMetadata: campaign.campaignMetadata,
+    campaignBible: campaign.campaignDirection,
     downstreamStage: "Final KRAKEN Key Art",
     campaignComposerReady: true,
   };
