@@ -1,3 +1,5 @@
+import { resolveCampaignArtDirection } from "@/lib/heroPhotography/campaignArtDirection";
+
 function clamp(value, min = 0, max = 1) {
   return Math.max(min, Math.min(max, value));
 }
@@ -54,45 +56,40 @@ function chooseFamily({ format, analysis, creativeConcept }) {
 export function createCompositionPlan({ analysis = {}, format = {}, campaign = {} }) {
   const creativeConcept = createCreativeConcept(campaign, analysis);
   const dominantSide = inferDominantSide(analysis);
-  const titleSide = dominantSide === "RIGHT" ? "LEFT" : "RIGHT";
+  const artDirection = resolveCampaignArtDirection(campaign);
   const family = chooseFamily({ format, analysis, campaign, creativeConcept });
-  const portrait = format.height > format.width;
-  const ultraWide = format.width / format.height > 1.9;
-  const photoWeight = portrait ? 0.58 : ultraWide ? 0.64 : 0.62;
-  const graphicWeight = 1 - photoWeight;
-  const graphicZone = titleSide === "LEFT"
-    ? { x: 0, y: 0, w: portrait ? 0.68 : graphicWeight + 0.12, h: 1 }
-    : { x: portrait ? 0.32 : photoWeight - 0.12, y: 0, w: portrait ? 0.68 : graphicWeight + 0.12, h: 1 };
-  const photoZone = dominantSide === "RIGHT"
-    ? { x: portrait ? 0.34 : graphicWeight * 0.76, y: 0, w: portrait ? 0.66 : photoWeight + graphicWeight * 0.24, h: 1 }
-    : { x: 0, y: 0, w: portrait ? 0.66 : photoWeight + graphicWeight * 0.24, h: 1 };
+  const titleSide = artDirection.titleZone === "CENTER" ? "CENTER" : artDirection.titleZone || (dominantSide === "RIGHT" ? "LEFT" : "RIGHT");
+  const graphicZone = artDirection.graphicZone;
+  const photoZone = artDirection.photoZone;
 
   return {
     creativeConcept,
-    layoutStyle: "FULL_BLEED_KEY_ART",
-    layoutFamily: family,
-    photoWeight: pct(photoWeight),
-    graphicWeight: pct(graphicWeight),
+    artDirection,
+    layoutStyle: "ART_DIRECTED_KEY_ART",
+    layoutFamily: artDirection.composition || family,
+    photoWeight: pct(photoZone.w),
+    graphicWeight: pct(graphicZone.w),
     dominantSide,
     titleZone: titleSide,
-    logoZone: titleSide === "LEFT" ? "TOP_LEFT" : "TOP_RIGHT",
-    informationZone: titleSide === "LEFT" ? "BOTTOM_LEFT" : "BOTTOM_RIGHT",
+    titleAlign: artDirection.titleAlign,
+    logoZone: titleSide === "RIGHT" ? "TOP_RIGHT" : titleSide === "CENTER" ? "TOP_CENTER" : "TOP_LEFT",
+    informationZone: titleSide === "RIGHT" ? "BOTTOM_RIGHT" : titleSide === "CENTER" ? "BOTTOM_CENTER" : "BOTTOM_LEFT",
     subjectCrop: family === "MOVIE_POSTER" ? "TIGHT" : "MEDIUM",
-    subjectMask: "EDGE_BLEND",
+    subjectMask: artDirection.photoTreatment === "FULL_BLEED" ? "ATMOSPHERIC_BLEND" : "EDGE_BLEND",
     backgroundExtension: "YES",
-    backgroundDarkening: titleSide === "LEFT" ? "LEFT_ONLY" : "RIGHT_ONLY",
-    graphicField: "BLACK_TEXTURE",
-    accentStyle: "RED_BRUSH",
-    hierarchy: "EMOTION_FIRST",
+    backgroundDarkening: artDirection.composition,
+    graphicField: artDirection.graphicLanguage,
+    accentStyle: artDirection.accent,
+    hierarchy: "CAMPAIGN_IDENTITY_FIRST",
     brandDnaRules: {
-      typographyProportion: "oversized identity first, metadata last",
-      graphicRhythm: "black mass, red strike, cinematic photo counterweight",
-      negativeSpace: "large quiet field before detail",
-      logoTreatment: "brand as architecture, not watermark",
-      textureIntensity: "visible but subordinate to face and title"
+      typographyProportion: "adaptive title system based on current campaign data only",
+      graphicRhythm: artDirection.graphicLanguage,
+      negativeSpace: "typography assigned to campaign-specific safe area",
+      logoTreatment: "consistent small brand anchor, never competing with title",
+      textureIntensity: "changes by campaign identity"
     },
-    qualityGate: "Reject Canva, dashboard, card, slide, and overlay-generator compositions",
-    eyePath: titleSide === "LEFT" ? "LOGO_TO_IDENTITY_TO_FACE_TO_FEATURE_STRIP" : "FACE_TO_IDENTITY_TO_LOGO_TO_FEATURE_STRIP",
+    qualityGate: "Reject repeated template compositions and hardcoded fallback copy",
+    eyePath: `${artDirection.label}_TO_SUBJECT_TO_METADATA`,
     visualTension: analysis.backgroundComplexity > 0.62 ? "HIGH" : "CONTROLLED",
     safeTypographyArea: graphicZone,
     photoZone,
@@ -101,6 +98,6 @@ export function createCompositionPlan({ analysis = {}, format = {}, campaign = {
       x: clamp(analysis.subjectCenter?.x ?? 0.52, 0.24, 0.78),
       y: clamp(analysis.subjectCenter?.y ?? 0.46, 0.22, 0.72)
     },
-    cropZoom: family === "MOVIE_POSTER" ? 1.2 : format.role === "thumbnail" ? 1.24 : 1.14
+    cropZoom: artDirection.photoTreatment === "FULL_BLEED" ? 1.08 : family === "MOVIE_POSTER" ? 1.2 : format.role === "thumbnail" ? 1.24 : 1.14
   };
 }

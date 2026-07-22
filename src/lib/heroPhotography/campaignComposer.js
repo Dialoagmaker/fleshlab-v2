@@ -53,13 +53,13 @@ export function getCampaignMetadataSuggestion(output, pipeline, campaignFamily) 
   };
   const concept = getDefaultCampaignConcept({ metadata, blueprint, campaignFamily });
   return {
-    campaignTitle: metadata.campaignTitle || metadata.originalTitle || concept.primaryTitle,
+    campaignTitle: metadata.campaignTitle || metadata.originalTitle || "",
     performerName: metadata.performerName,
-    subtitle: concept.collection,
+    subtitle: metadata.subtitle,
     episode: metadata.episode,
     cta: metadata.cta,
-    campaignLabel: concept.campaignLabel,
-    releaseName: concept.collection,
+    campaignLabel: metadata.campaignLabel,
+    releaseName: metadata.releaseName || metadata.subtitle,
     originalTitle: metadata.originalTitle
   };
 }
@@ -75,13 +75,20 @@ function resolveMetadataField(key, userMetadata, savedMetadata, aiSuggestion, fa
 
 export function mergeCampaignMetadata({ output, pipeline, campaignFamily, userMetadata = {}, savedMetadata = {} }) {
   const aiSuggestion = getCampaignMetadataSuggestion(output, pipeline, campaignFamily);
-  const lockedSourceTitle = getSourcePlatformTitle(output, pipeline) || aiSuggestion.originalTitle || aiSuggestion.campaignTitle;
-  const fallbacks = { campaignTitle: "CHECK-IN", performerName: "", subtitle: "", episode: "", cta: "Watch Now", campaignLabel: "", releaseName: "", originalTitle: "" };
+  const fallbacks = { campaignTitle: "", performerName: "", subtitle: "", episode: "", cta: "Watch Now", campaignLabel: "", releaseName: "", originalTitle: "" };
   const metadata = { source: {} };
   Object.keys(fallbacks).forEach(key => {
-    if (key === "campaignTitle" || key === "originalTitle") {
-      metadata[key] = compact(lockedSourceTitle || fallbacks[key]);
-      metadata.source[key] = "source_platform";
+    if (key === "campaignTitle") {
+      if (userMetadata?.source?.campaignTitle === "user") {
+        metadata.campaignTitle = compact(userMetadata.campaignTitle);
+        metadata.source.campaignTitle = "user";
+      } else if (savedMetadata?.source?.campaignTitle === "project") {
+        metadata.campaignTitle = compact(savedMetadata.campaignTitle);
+        metadata.source.campaignTitle = "project";
+      } else {
+        metadata.campaignTitle = "";
+        metadata.source.campaignTitle = "empty";
+      }
       return;
     }
     const resolved = resolveMetadataField(key, userMetadata, savedMetadata, aiSuggestion, fallbacks[key]);

@@ -275,7 +275,7 @@ function drawEditorialType(ctx, width, height, layout, mood, campaign, logoBotto
   ctx.textAlign = center ? "center" : "left";
   const textX = center ? panel.x + panel.w / 2 : x;
 
-  const title = compact(campaign.campaignTitle || "PRIVATE ACCESS");
+  const title = compact(campaign.campaignTitle || "");
   const collection = compact(campaign.collection || campaign.subtitle || campaign.seriesName || "");
   const performer = compact(campaign.performerName || campaign.creatorName || "");
   const episode = compact(campaign.episode || "Episode 01");
@@ -340,8 +340,8 @@ function coverImageRect(ctx, image, box, focus, zoom = 1) {
 }
 
 function splitKeyArtTitle(title) {
-  const words = upper(title || "PRIVATE ACCESS").split(/\s+/).filter(Boolean);
-  if (words.length <= 1) return [words[0] || "PRIVATE", ""];
+  const words = upper(title || "").split(/\s+/).filter(Boolean);
+  if (words.length <= 1) return [words[0] || "", ""];
   if (words.length === 2) return [words[0], words[1]];
   return [words.slice(0, Math.ceil(words.length / 2)).join(" "), words.slice(Math.ceil(words.length / 2)).join(" ")];
 }
@@ -368,6 +368,49 @@ function drawDistressedField(ctx, width, height, mood) {
   ctx.fillStyle = mood.accent;
   for (let i = 0; i < 90; i += 1) ctx.fillRect((i * 61) % width, (i * 47) % height, 1 + (i % 6), 1 + (i % 3));
   ctx.restore();
+}
+
+function drawArtDirectedField(ctx, width, height, plan, mood) {
+  const key = plan.artDirection?.key || "editorial_default";
+  const accent = plan.artDirection?.accent || mood.accent;
+  if (key === "beach_escape") {
+    const gradient = ctx.createLinearGradient(0, 0, width, height);
+    gradient.addColorStop(0, "rgba(255,178,63,0.84)");
+    gradient.addColorStop(0.48, "rgba(8,30,38,0.58)");
+    gradient.addColorStop(1, "rgba(0,0,0,0.7)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
+  } else if (key === "behind_scenes") {
+    ctx.fillStyle = "rgba(7,7,7,0.84)";
+    ctx.fillRect(0, 0, width, height);
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    for (let x = 0; x < width; x += width / 4) for (let y = 0; y < height; y += height / 3) ctx.strokeRect(x + 8, y + 8, width / 4 - 16, height / 3 - 16);
+  } else if (key === "outdoor_adventure") {
+    ctx.fillStyle = "rgba(10,14,10,0.76)";
+    ctx.fillRect(0, 0, width, height);
+    ctx.strokeStyle = "rgba(217,164,65,0.35)";
+    for (let i = 0; i < 9; i += 1) { ctx.beginPath(); ctx.moveTo(0, height * (i / 8)); ctx.lineTo(width, height * ((i + 0.35) / 8)); ctx.stroke(); }
+  } else if (key === "massage_room") {
+    const gradient = ctx.createRadialGradient(width * 0.5, height * 0.5, 0, width * 0.5, height * 0.5, width * 0.7);
+    gradient.addColorStop(0, "rgba(214,161,93,0.34)");
+    gradient.addColorStop(1, "rgba(0,0,0,0.76)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
+  } else if (key === "gym_session") {
+    ctx.fillStyle = "rgba(0,0,0,0.82)";
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = "rgba(255,36,51,0.3)";
+    for (let i = 0; i < 7; i += 1) ctx.fillRect(width * 0.05, i * height * 0.16, width * 0.84, Math.max(6, height * 0.025));
+  } else if (key === "private_access") {
+    ctx.fillStyle = "rgba(0,0,0,0.72)";
+    ctx.fillRect(0, 0, width, height);
+    ctx.strokeStyle = "rgba(255,255,255,0.26)";
+    ctx.strokeRect(width * 0.08, height * 0.12, width * 0.84, height * 0.76);
+  } else {
+    drawDistressedField(ctx, width, height, { ...mood, accent });
+  }
+  ctx.fillStyle = accent;
+  ctx.fillRect(width * 0.06, height * 0.08, width * 0.2, Math.max(4, height * 0.008));
 }
 
 async function drawLargeLogo(ctx, x, y, maxW) {
@@ -429,6 +472,13 @@ function drawLayerAtmosphere(ctx, width, height, mood) {
 }
 
 function drawLayerPhoto(ctx, image, width, height, plan, photo) {
+  if (plan.artDirection?.photoTreatment === "FULL_BLEED") {
+    ctx.save();
+    ctx.filter = "brightness(78%) contrast(136%) saturate(108%)";
+    coverImageRect(ctx, image, { x: 0, y: 0, w: width, h: height }, plan.subjectFocus, plan.cropZoom);
+    ctx.restore();
+    return;
+  }
   ctx.save();
   ctx.beginPath();
   if (plan.dominantSide === "RIGHT") {
@@ -483,20 +533,17 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
   plan.layerPlan = createLayerPlan({ compositionPlan: plan, analysis, format });
   const graphic = toPx(plan.graphicZone, width, height);
   const photo = toPx(plan.photoZone, width, height);
-  const titleOnLeft = plan.titleZone === "LEFT";
+  const titleAlign = plan.titleAlign || (plan.titleZone === "RIGHT" ? "right" : plan.titleZone === "CENTER" ? "center" : "left");
+  const titleOnLeft = titleAlign !== "right";
 
   drawLayerBackgroundExtension(ctx, image, width, height, plan, mood);
   drawLayerAtmosphere(ctx, width, height, mood);
 
   ctx.save();
   ctx.beginPath();
-  if (titleOnLeft) {
-    ctx.rect(0, 0, graphic.w + width * 0.14, height);
-  } else {
-    ctx.rect(graphic.x - width * 0.14, 0, width - graphic.x + width * 0.14, height);
-  }
+  ctx.rect(graphic.x - width * 0.015, graphic.y - height * 0.015, graphic.w + width * 0.03, graphic.h + height * 0.03);
   ctx.clip();
-  drawDistressedField(ctx, width, height, mood);
+  drawArtDirectedField(ctx, width, height, plan, mood);
   ctx.restore();
 
   drawLayerPhoto(ctx, image, width, height, plan, photo);
@@ -519,42 +566,49 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
   ctx.fillRect(titleOnLeft ? width * 0.05 : -width * 0.36, height * 0.38, width * 0.42, Math.max(7, height * 0.014));
   ctx.restore();
 
-  const safeX = titleOnLeft ? graphic.x + width * 0.055 : graphic.x + graphic.w - width * 0.055;
+  const safeX = titleAlign === "center" ? graphic.x + graphic.w / 2 : titleOnLeft ? graphic.x + width * 0.055 : graphic.x + graphic.w - width * 0.055;
   const maxTextW = graphic.w * 0.78;
-  ctx.textAlign = titleOnLeft ? "left" : "right";
-  const logoW = Math.min(width * 0.16, maxTextW * 0.42);
-  const logoX = titleOnLeft ? safeX : safeX - logoW;
+  ctx.textAlign = titleAlign;
+  const logoW = Math.min(width * 0.14, maxTextW * 0.34);
+  const logoX = titleAlign === "center" ? safeX - logoW / 2 : titleOnLeft ? safeX : safeX - logoW;
   const logoBottom = await drawLargeLogo(ctx, logoX, height * 0.065, logoW);
   const collection = upper(campaign.collection || campaign.subtitle || campaign.campaignLabel || "");
-  const exactTitle = compact(campaign.campaignMetadata?.sourceTitle || campaign.originalTitle || campaign.campaignTitle || "PRIVATE ACCESS");
+  const exactTitle = compact(campaign.campaignTitle || campaign.primaryTitle || "");
   const performerName = upper(campaign.performerName || campaign.creatorName);
   if (collection) {
     ctx.font = font(Math.max(11, width * 0.011), "Inter", 950);
-    ctx.fillStyle = mood.accent;
-    if (titleOnLeft) drawTrackingText(ctx, collection, safeX, logoBottom + height * 0.052, Math.max(1.2, width * 0.0014), maxTextW);
+    ctx.fillStyle = plan.artDirection?.accent || mood.accent;
+    if (titleAlign === "left") drawTrackingText(ctx, collection, safeX, logoBottom + height * 0.052, Math.max(1.2, width * 0.0014), maxTextW);
     else ctx.fillText(collection, safeX, logoBottom + height * 0.052, maxTextW);
   }
 
-  const typographyPlan = planAdaptiveTypography({ ctx, title: exactTitle, width, height, format, compositionPlan: plan, logoBottom, collection, performerName });
-  plan.typographyPlan = typographyPlan;
-  plan.typographyWarnings = typographyPlan.preservesTitle ? [] : ["Title preservation check failed."];
-  ctx.textAlign = typographyPlan.align;
-  ctx.font = font(typographyPlan.fontSize, "Bebas Neue", 900);
-  ctx.fillStyle = FLESHLAB_BRAND_IDENTITY.colors.cream;
-  ctx.strokeStyle = "rgba(0,0,0,0.9)";
-  ctx.lineWidth = Math.max(3, typographyPlan.fontSize * 0.04);
-  ctx.shadowColor = "rgba(0,0,0,0.72)";
-  ctx.shadowBlur = typographyPlan.fontSize * 0.12;
-  typographyPlan.lines.forEach((line, index) => {
-    const y = typographyPlan.y + typographyPlan.fontSize * 0.88 + index * typographyPlan.lineHeight;
-    ctx.strokeText(line, typographyPlan.x, y, typographyPlan.width);
-    ctx.fillText(line, typographyPlan.x, y, typographyPlan.width);
-  });
-  ctx.shadowBlur = 0;
-
-  const afterTitle = typographyPlan.y + typographyPlan.lineHeight * typographyPlan.lines.length + height * 0.035;
-  ctx.fillStyle = mood.accent;
-  ctx.fillRect(titleOnLeft ? typographyPlan.box.x : typographyPlan.box.x + typographyPlan.box.w * 0.68, afterTitle, typographyPlan.box.w * 0.32, Math.max(4, height * 0.006));
+  let typographyPlan = null;
+  let afterTitle = logoBottom + height * 0.16;
+  if (exactTitle) {
+    typographyPlan = planAdaptiveTypography({ ctx, title: exactTitle, width, height, format, compositionPlan: plan, logoBottom, collection, performerName });
+    plan.typographyPlan = typographyPlan;
+    plan.typographyWarnings = typographyPlan.preservesTitle ? [] : ["Title preservation check failed."];
+    ctx.textAlign = typographyPlan.align;
+    ctx.font = font(typographyPlan.fontSize, typographyPlan.fontFamily || "Bebas Neue", 900);
+    ctx.fillStyle = FLESHLAB_BRAND_IDENTITY.colors.cream;
+    ctx.strokeStyle = "rgba(0,0,0,0.9)";
+    ctx.lineWidth = Math.max(3, typographyPlan.fontSize * 0.04);
+    ctx.shadowColor = "rgba(0,0,0,0.72)";
+    ctx.shadowBlur = typographyPlan.fontSize * 0.12;
+    typographyPlan.lines.forEach((line, index) => {
+      const y = typographyPlan.y + typographyPlan.fontSize * 0.88 + index * typographyPlan.lineHeight;
+      ctx.strokeText(line, typographyPlan.x, y, typographyPlan.width);
+      ctx.fillText(line, typographyPlan.x, y, typographyPlan.width);
+    });
+    ctx.shadowBlur = 0;
+    afterTitle = typographyPlan.y + typographyPlan.lineHeight * typographyPlan.lines.length + height * 0.035;
+    ctx.fillStyle = plan.artDirection?.accent || mood.accent;
+    const ruleX = titleAlign === "center" ? typographyPlan.box.x + typographyPlan.box.w * 0.34 : titleOnLeft ? typographyPlan.box.x : typographyPlan.box.x + typographyPlan.box.w * 0.68;
+    ctx.fillRect(ruleX, afterTitle, typographyPlan.box.w * 0.32, Math.max(4, height * 0.006));
+  } else {
+    plan.typographyPlan = { title: "", lines: [], preservesTitle: true, intentionallyBlank: true };
+    plan.typographyWarnings = [];
+  }
 
   drawLayerSubjectMask(ctx, image, width, height, plan, photo);
 
@@ -562,8 +616,10 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
     ctx.font = font(Math.max(12, width * 0.012), "Inter", 950);
     ctx.fillStyle = "rgba(255,255,255,0.86)";
     const performerY = Math.min(height * 0.76, afterTitle + height * 0.055);
-    if (titleOnLeft) drawTrackingText(ctx, `${performerName} SOLO`, typographyPlan.box.x, performerY, Math.max(1.1, width * 0.0012), typographyPlan.box.w);
-    else ctx.fillText(`${performerName} SOLO`, typographyPlan.box.x + typographyPlan.box.w, performerY, typographyPlan.box.w);
+    const labelX = typographyPlan?.box?.x ?? (titleAlign === "center" ? safeX : titleOnLeft ? graphic.x + width * 0.055 : graphic.x + graphic.w - width * 0.055);
+    const labelW = typographyPlan?.box?.w ?? maxTextW;
+    if (titleAlign === "left") drawTrackingText(ctx, `${performerName} SOLO`, labelX, performerY, Math.max(1.1, width * 0.0012), labelW);
+    else ctx.fillText(`${performerName} SOLO`, titleAlign === "center" ? safeX : labelX + labelW, performerY, labelW);
   }
   ctx.textAlign = "left";
 
@@ -594,11 +650,7 @@ async function drawLegacyPanelRenderer(ctx, image, width, height, analysis, mood
 export async function renderPremiumCampaignAsset({ image, analysis, format, campaign }) {
   const mood = inferCampaignMood(campaign);
   const keyArtBrief = createKeyArtBrief({ campaign, mood, analysis: analysis || {}, format });
-  const legacyCanvas = document.createElement("canvas");
-  legacyCanvas.width = format.width;
-  legacyCanvas.height = format.height;
-  const legacyLayout = await drawLegacyPanelRenderer(legacyCanvas.getContext("2d"), image, format.width, format.height, analysis || {}, mood, campaign || {}, format);
-  const legacyBlob = await new Promise(resolve => legacyCanvas.toBlob(resolve, "image/jpeg", 0.9));
+  const legacyLayout = null;
 
   const canvas = document.createElement("canvas");
   canvas.width = format.width;
@@ -619,8 +671,8 @@ export async function renderPremiumCampaignAsset({ image, analysis, format, camp
     size: blob.size,
     blob,
     url: URL.createObjectURL(blob),
-    legacyPreviewUrl: URL.createObjectURL(legacyBlob),
-    legacyRendererLabel: "Current panel-based renderer",
+    legacyPreviewUrl: null,
+    legacyRendererLabel: null,
     kind: "visual",
     status: "ready",
     campaignConceptId: campaign.campaignConceptId,

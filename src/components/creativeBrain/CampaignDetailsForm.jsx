@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { HERO_CAMPAIGN_FORMATS } from "@/lib/heroPhotography/campaignComposer";
 
 const FIELD_CONFIG = [
-  { key: "campaignTitle", label: "Campaign Title", required: true, max: 42 },
+  { key: "campaignTitle", label: "Campaign Title", required: false, max: 90 },
   { key: "performerName", label: "Performer / Creator", required: false, max: 42 },
   { key: "subtitle", label: "Collection", required: false, max: 48 },
   { key: "episode", label: "Episode", required: false, max: 28 },
@@ -37,8 +37,8 @@ export default function CampaignDetailsForm({ metadata, aiSuggestion, validation
           return (
             <label key={field.key} className="space-y-1 rounded-lg border border-border bg-background/40 p-3">
               <span className="flex items-center justify-between gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground"><span>{field.label}{field.required ? " *" : ""}</span><span>{value.length}/{field.max}</span></span>
-              <input value={value} disabled={field.key === "campaignTitle"} onChange={event => onChange(updateField(metadata, field.key, event.target.value))} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-80" />
-              <span className="block text-[10px] text-muted-foreground">{field.key === "campaignTitle" ? "Locked to source-platform title" : `AI suggestion: ${aiSuggestion?.[field.key] || "—"}`}</span>
+              <input value={value} onChange={event => onChange(updateField(metadata, field.key, event.target.value))} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground" />
+              <span className="block text-[10px] text-muted-foreground">AI suggestion: {aiSuggestion?.[field.key] || "—"}</span>
               {error && <span className="block text-xs text-destructive">{error}</span>}
             </label>
           );
@@ -48,7 +48,7 @@ export default function CampaignDetailsForm({ metadata, aiSuggestion, validation
       <div className="mt-4 rounded-lg border border-border bg-background/50 p-3">
         <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">Live Preview</p>
         <div className="mt-3 grid gap-2 md:grid-cols-3">
-          {HERO_CAMPAIGN_FORMATS.map(format => <div key={format.key} className="rounded-lg bg-secondary/50 p-3"><p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{format.label}</p><b className="mt-1 block break-words text-sm text-foreground">{metadata?.campaignTitle || "Campaign Title"}</b>{metadata?.performerName && <span className="block break-words text-xs text-muted-foreground">{metadata.performerName}</span>}{metadata?.subtitle && <span className="block break-words text-[10px] text-primary">{metadata.subtitle}</span>}</div>)}
+          {HERO_CAMPAIGN_FORMATS.map(format => <div key={format.key} className="rounded-lg bg-secondary/50 p-3"><p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{format.label}</p>{metadata?.campaignTitle ? <b className="mt-1 block break-words text-sm text-foreground">{metadata.campaignTitle}</b> : <span className="mt-1 block text-xs text-muted-foreground">No campaign title selected</span>}{metadata?.performerName && <span className="block break-words text-xs text-muted-foreground">{metadata.performerName}</span>}{metadata?.subtitle && <span className="block break-words text-[10px] text-primary">{metadata.subtitle}</span>}</div>)}
         </div>
       </div>
       <Button type="button" disabled={loading || Boolean(validation?.campaignTitle)} onClick={onGenerate} className="mt-4 w-full">{loading ? "Updating Campaign Assets" : hasAssets ? "Update Campaign Assets" : "Generate Campaign Assets"}</Button>

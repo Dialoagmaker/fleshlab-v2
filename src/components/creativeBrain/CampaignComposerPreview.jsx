@@ -20,9 +20,7 @@ function cleanMetadata(metadata) {
 }
 
 function validateMetadata(metadata) {
-  const errors = {};
-  if (!metadata?.campaignTitle?.trim()) errors.campaignTitle = "Campaign Title is required.";
-  return errors;
+  return {};
 }
 
 export default function CampaignComposerPreview({ output, pipeline, campaignFamily }) {
