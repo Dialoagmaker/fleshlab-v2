@@ -3,7 +3,7 @@ import { CheckCircle2, Loader2, Palette } from "lucide-react";
 import CampaignAssetGrid from "@/components/aiMediaStudio/campaignV1/CampaignAssetGrid";
 import { composeCampaignFromHero, getCampaignMetadataSuggestion, mergeCampaignMetadata } from "@/lib/heroPhotography/campaignComposer";
 import CampaignDetailsForm from "./CampaignDetailsForm";
-import CampaignComposerComparison from "./CampaignComposerComparison";
+import CampaignKeyArtWorkflow from "./CampaignKeyArtWorkflow";
 
 const METADATA_FIELDS = ["campaignTitle", "performerName", "subtitle", "episode", "cta", "campaignLabel", "releaseName", "originalTitle"];
 
@@ -85,8 +85,8 @@ export default function CampaignComposerPreview({ output, pipeline, campaignFami
       <CampaignDetailsForm metadata={metadata} aiSuggestion={aiSuggestion} validation={validation} warnings={composer?.typographyWarnings || []} onChange={setMetadata} onReset={resetToSuggestion} onSave={saveToProject} onGenerate={composeAssets} loading={loading} hasAssets={Boolean(composer?.visualAssets?.length)} />
       {loading && <div className="mt-4 flex items-center gap-2 rounded-lg border border-border bg-secondary/30 p-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Composing three distinct premium key art campaigns from the same Hero Photography</div>}
       {error && <div className="mt-4 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
-      {composer?.downstreamReady && <div className="mt-4 flex items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-200"><CheckCircle2 className="h-4 w-4" />Campaign output is available to downstream Campaign Assets.</div>}
-      {composer?.visualAssets?.length > 0 && <CampaignComposerComparison improvedAssets={composer.visualAssets} />}
+      {composer?.downstreamReady && <div className="mt-4 flex items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-200"><CheckCircle2 className="h-4 w-4" />Key Art output is ready for review and export.</div>}
+      {composer?.visualAssets?.length > 0 && <CampaignKeyArtWorkflow assets={composer.visualAssets} />}
       {composer?.visualAssets?.length > 0 && <div className="mt-5"><CampaignAssetGrid assets={composer.visualAssets} /></div>}
     </section>
   );
