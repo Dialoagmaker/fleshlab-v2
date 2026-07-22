@@ -67,6 +67,17 @@ function coverImage(ctx, image, width, height, focus, zoom = 1) {
 }
 
 function applyImageTreatment(ctx, plan, width, height) {
+  if (plan.imageTreatment.grade === "dark_documentary") {
+    ctx.fillStyle = "rgba(0,0,0,0.18)";
+    ctx.fillRect(0, 0, width, height);
+  }
+  if (plan.imageTreatment.grade === "high_energy_drop") {
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.fillStyle = "rgba(207,16,45,0.18)";
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
+  }
   const overlay = px(plan.imageTreatment.textReadabilityOverlay.zone, width, height);
   const strength = plan.imageTreatment.textReadabilityOverlay.strength;
   const gradient = ctx.createLinearGradient(overlay.x, overlay.y, overlay.x + overlay.w, overlay.y + overlay.h);
@@ -120,6 +131,8 @@ function drawTextLines(ctx, lines, rect, size, maxLines) {
 
 function titleSize(plan, format) {
   const base = format.height > format.width ? format.width * 0.18 : format.width * 0.085;
+  if (plan.title.scaleIntent === "oversized") return base * 1.28;
+  if (plan.title.scaleIntent === "cinematic") return base * 0.98;
   if (plan.title.scaleIntent === "dominant") return base * 1.05;
   if (plan.title.scaleIntent === "restrained") return base * 0.72;
   return base * 0.88;
@@ -174,7 +187,7 @@ async function renderBrandAsset(image, analysis, format, campaignData, artDirect
   if (artDirectionPlan.cta.visible) drawCTA(ctx, campaignData.primaryCTA, px(artDirectionPlan.cta.zone, format.width, format.height), format.width);
 
   const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.92));
-  return { format, blob, url: URL.createObjectURL(blob), filename: `${campaignData.base}_${format.key}.jpg`, size: blob.size, kind: "visual", status: "ready", width: format.width, height: format.height, previewUrl: null, brandPlan: { family: artDirectionPlan.layoutFamily, logoPlacement: artDirectionPlan.brand.logoZone, textZone: artDirectionPlan.title.zone, artDirectionPlan } };
+  return { format, blob, url: URL.createObjectURL(blob), filename: `${campaignData.base}_${campaignData.creativeDirection ? `${campaignData.creativeDirection}_` : ""}${format.key}.jpg`, size: blob.size, kind: "visual", status: "ready", width: format.width, height: format.height, previewUrl: null, brandPlan: { family: artDirectionPlan.layoutFamily, logoPlacement: artDirectionPlan.brand.logoZone, textZone: artDirectionPlan.title.zone, artDirectionPlan } };
 }
 
 function makeTextAsset(filename, data, type = "application/json") {
@@ -198,7 +211,7 @@ export async function createBrandIdentityCampaign(item, campaignData = {}) {
   const visualAssets = [];
   const artDirectionPlans = [];
   for (const format of BRAND_CAMPAIGN_FORMATS) {
-    const artDirectionPlan = createArtDirectionPlan({ heroImage: image, analysis, brandIdentity: FLESHLAB_BRAND_IDENTITY, campaignBrief: data, campaignTitle: data.campaignTitle, creatorName: data.creatorName, seriesName: data.seriesName, primaryCTA: data.primaryCTA, secondaryCTA: data.secondaryCTA, platform: format.key, aspectRatio: `${format.width}:${format.height}`, releaseType: data.releaseType, campaignGoal: data.campaignGoal, emotionalTone: data.emotionalTone, format });
+    const artDirectionPlan = createArtDirectionPlan({ heroImage: image, analysis, brandIdentity: FLESHLAB_BRAND_IDENTITY, campaignBrief: data, campaignTitle: data.campaignTitle, creatorName: data.creatorName, seriesName: data.seriesName, primaryCTA: data.primaryCTA, secondaryCTA: data.secondaryCTA, platform: format.key, aspectRatio: `${format.width}:${format.height}`, releaseType: data.releaseType, campaignGoal: data.campaignGoal, emotionalTone: data.emotionalTone, creativeDirection: data.creativeDirection, format });
     artDirectionPlans.push(artDirectionPlan);
     visualAssets.push(await renderBrandAsset(image, analysis, format, data, artDirectionPlan));
   }

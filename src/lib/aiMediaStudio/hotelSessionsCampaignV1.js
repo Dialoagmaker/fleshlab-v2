@@ -58,3 +58,47 @@ export async function createHotelSessionsCampaign(item) {
   const assets = [...brandCampaign.visualAssets, ...createBrandTextAssets(base, brandCampaign), makeTextAsset(`${base}_campaign_analytics.json`, analytics), makeTextAsset(`${base}_launch_checklist.json`, checklist), makeTextAsset(`${base}_campaign_consensus.json`, consensus), makeTextAsset(`${base}_production_plan.json`, productionPlan)];
   return { campaignId, consensus, productionPlan, assets, checklist, analytics, brandSystem: brandCampaign.brandSystem, createdAt: brandCampaign.createdAt };
 }
+
+const VARIATION_DIRECTIONS = [
+  { key: "luxury_editorial", label: "Luxury Editorial", description: "Minimal typography, restrained logo, premium spacing." },
+  { key: "netflix_documentary", label: "Netflix Documentary", description: "Darker cinematic story-first composition." },
+  { key: "streetwear_drop", label: "Streetwear Drop", description: "Bold launch energy, aggressive crop, stronger brand." },
+];
+
+function planFor(campaign, formatKey = "website_hero") {
+  return campaign.brandSystem.artDirectionPlans.find(plan => plan.platformDirection.platform === formatKey) || campaign.brandSystem.artDirectionPlans[0];
+}
+
+function matrixFor(direction, campaign) {
+  const plan = planFor(campaign);
+  return {
+    layoutFamily: plan.layoutFamily,
+    crop: `${plan.composition.cropMode} / scale ${plan.composition.subjectScale}`,
+    subject: plan.composition.subjectAnchor,
+    title: `${plan.title.zone.x.toFixed(2)},${plan.title.zone.y.toFixed(2)} / ${plan.title.scaleIntent}`,
+    logo: `${plan.brand.logoZone.x.toFixed(2)},${plan.brand.logoZone.y.toFixed(2)} / ${plan.brand.brandProminence}`,
+    type: plan.title.lineBreakPlan.preferredLines.join(" / "),
+    cta: plan.cta.visible ? `${plan.cta.prominence} ${plan.cta.style}` : "hidden",
+    hierarchy: `image ${plan.composition.visualWeight.image}, type ${plan.composition.visualWeight.typography}, brand ${plan.composition.visualWeight.brand}`,
+    grade: plan.imageTreatment.grade,
+    intent: direction.description,
+  };
+}
+
+export async function createHotelSessionsCampaignComparison(item) {
+  const base = safeBaseName(item);
+  const directions = [];
+  for (const direction of VARIATION_DIRECTIONS) {
+    const brandCampaign = await createBrandIdentityCampaign(item, { base, creativeDirection: direction.key, seriesName: "Hotel Sessions", campaignTitle: "THE CHECK-IN", primaryCTA: "Watch the check-in" });
+    const campaignId = brandCampaign.campaignId;
+    const checklist = buildChecklist();
+    const analytics = buildAnalytics(campaignId);
+    const consensus = buildConsensus(brandCampaign);
+    const productionPlan = buildProductionPlan();
+    const assets = [...brandCampaign.visualAssets, ...createBrandTextAssets(`${base}_${direction.key}`, brandCampaign), makeTextAsset(`${base}_${direction.key}_campaign_analytics.json`, analytics), makeTextAsset(`${base}_${direction.key}_launch_checklist.json`, checklist), makeTextAsset(`${base}_${direction.key}_campaign_consensus.json`, consensus), makeTextAsset(`${base}_${direction.key}_production_plan.json`, productionPlan)];
+    const campaign = { campaignId, consensus, productionPlan, assets, checklist, analytics, brandSystem: brandCampaign.brandSystem, createdAt: brandCampaign.createdAt };
+    directions.push({ ...direction, campaign, matrix: matrixFor(direction, campaign) });
+  }
+  const report = { directions, changedSummary: "Luxury Editorial prioritizes image-first spacing and restrained logo; Netflix Documentary moves into darker story-first staging; Streetwear Drop increases crop, typography and brand weight for launch energy." };
+  return { source: "single_selected_hero_photography_frame", directions, report, createdAt: new Date().toISOString() };
+}

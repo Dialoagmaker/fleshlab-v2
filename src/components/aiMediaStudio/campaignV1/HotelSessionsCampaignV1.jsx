@@ -3,15 +3,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { createHotelSessionsCampaign } from "@/lib/aiMediaStudio/hotelSessionsCampaignV1";
+import { createHotelSessionsCampaign, createHotelSessionsCampaignComparison } from "@/lib/aiMediaStudio/hotelSessionsCampaignV1";
 import CampaignConsensusCard from "./CampaignConsensusCard";
 import CampaignAssetGrid from "./CampaignAssetGrid";
 import CampaignLaunchChecklist from "./CampaignLaunchChecklist";
 import ArtDirectionDiagnostics from "./ArtDirectionDiagnostics";
+import ArtDirectionVariationComparison from "./ArtDirectionVariationComparison";
 
 export default function HotelSessionsCampaignV1({ item }) {
   const [campaign, setCampaign] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [comparison, setComparison] = useState(null);
   const [error, setError] = useState("");
   const [privateDevelopmentActive, setPrivateDevelopmentActive] = useState(false);
   const ready = !!item?.frames?.length;
@@ -38,6 +40,19 @@ export default function HotelSessionsCampaignV1({ item }) {
     }
   };
 
+  const createComparison = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const nextComparison = await createHotelSessionsCampaignComparison(item);
+      setComparison(nextComparison);
+    } catch (err) {
+      setError(err.message || "Comparison creation failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -50,11 +65,15 @@ export default function HotelSessionsCampaignV1({ item }) {
           </div>
           {!ready && <div className="rounded-lg border border-border bg-secondary/30 p-3 text-sm text-muted-foreground">Analyze one video first, then create the campaign.</div>}
           {error && <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
-          <Button onClick={createCampaign} disabled={!ready || busy} className="gap-2"><Sparkles className="h-4 w-4" />{busy ? "Creating Campaign..." : "Create Art-Directed Campaign"}</Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={createCampaign} disabled={!ready || busy} className="gap-2"><Sparkles className="h-4 w-4" />{busy ? "Creating..." : "Create Art-Directed Campaign"}</Button>
+            <Button onClick={createComparison} disabled={!ready || busy} variant="outline" className="gap-2"><Sparkles className="h-4 w-4" />Create 3-Direction Comparison</Button>
+          </div>
         </CardContent>
       </Card>
       <CampaignConsensusCard campaign={campaign} />
       <ArtDirectionDiagnostics campaign={campaign} visible={privateDevelopmentActive} />
+      <ArtDirectionVariationComparison comparison={comparison} />
       <CampaignLaunchChecklist items={campaign?.checklist || []} />
       <CampaignAssetGrid assets={campaign?.assets || []} />
     </div>

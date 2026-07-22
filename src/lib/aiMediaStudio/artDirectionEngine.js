@@ -29,6 +29,12 @@ const PLATFORM_RULES = {
   behind_the_scenes_cover: { strategyBias: ["full_bleed_documentary", "minimal_corner_lockup", "centered_cinematic"], maxLines: 3, cta: false, logoScale: 0.064, titleScale: "restrained", cropZoom: 1, safe: 0.06 },
 };
 
+const CREATIVE_DIRECTIONS = {
+  luxury_editorial: { label: "Luxury Editorial", grade: "soft_luxury_editorial", strategies: { default: ["minimal_corner_lockup", "centered_cinematic", "bottom_title_editorial"], ppv_cover: ["minimal_corner_lockup", "exclusivity_ppv_cover", "creator_led_portrait"] }, weight: { image: 0.86, typography: 0.08, brand: 0.06 }, logo: 0.72, titleScale: "restrained", crop: 0.96, cta: "subtle" },
+  netflix_documentary: { label: "Netflix Documentary", grade: "dark_documentary", strategies: { default: ["full_bleed_documentary", "centered_cinematic", "bottom_title_editorial"], youtube_thumbnail: ["centered_cinematic", "bottom_title_editorial", "full_bleed_documentary"] }, weight: { image: 0.76, typography: 0.18, brand: 0.06 }, logo: 0.7, titleScale: "cinematic", crop: 1.06, cta: "hidden" },
+  streetwear_drop: { label: "Streetwear Drop", grade: "high_energy_drop", strategies: { default: ["bottom_title_editorial", "subject_left_typography_right", "subject_right_typography_left"], instagram_story: ["conversion_first_landing", "creator_led_portrait", "bottom_title_editorial"], ppv_cover: ["exclusivity_ppv_cover", "bottom_title_editorial", "creator_led_portrait"] }, weight: { image: 0.52, typography: 0.34, brand: 0.14 }, logo: 1.24, titleScale: "oversized", crop: 1.22, cta: "prominent" },
+};
+
 function overlaps(a, b) {
   if (!a || !b) return false;
   return !(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y);
@@ -84,6 +90,20 @@ function planCandidate(strategyId, input, index) {
   };
 }
 
+function applyCreativeDirection(plan, input) {
+  const direction = CREATIVE_DIRECTIONS[input.creativeDirection];
+  if (!direction) return plan;
+  const next = { ...plan, creativeDirection: direction.label };
+  next.layoutFamily = direction.label;
+  next.composition = { ...next.composition, subjectScale: clamp(next.composition.subjectScale * direction.crop, 0.9, 1.34), visualWeight: direction.weight };
+  next.brand = { ...next.brand, logoScale: clamp(next.brand.logoScale * direction.logo, 0.04, 0.16), brandProminence: direction.cta === "prominent" ? "assertive" : "restrained" };
+  next.title = { ...next.title, scaleIntent: direction.titleScale };
+  next.cta = { ...next.cta, visible: direction.cta === "hidden" ? false : next.cta.visible, prominence: direction.cta === "prominent" ? "primary" : "tertiary" };
+  next.imageTreatment = { ...next.imageTreatment, grade: direction.grade, contrast: direction.grade === "dark_documentary" ? "high" : next.imageTreatment.contrast, backgroundSuppression: direction.grade === "high_energy_drop" ? 0.34 : direction.grade === "soft_luxury_editorial" ? 0.12 : next.imageTreatment.backgroundSuppression, textReadabilityOverlay: { ...next.imageTreatment.textReadabilityOverlay, strength: direction.grade === "high_energy_drop" ? 0.38 : direction.grade === "soft_luxury_editorial" ? 0.16 : 0.3 } };
+  next.rationale = [...next.rationale, `${direction.label} forces ${next.strategy.replaceAll("_", " ")} with ${direction.titleScale} typography and ${direction.grade} image treatment.`];
+  return next;
+}
+
 function scorePlan(plan, input) {
   const zones = [plan.brand.logoZone, plan.title.zone, plan.creator.zone, plan.cta.visible ? plan.cta.zone : null].filter(Boolean);
   const protectedZones = [input.analysis.detections?.face, input.analysis.detections?.body, input.analysis.detections?.torso].filter(Boolean);
@@ -105,8 +125,9 @@ function scorePlan(plan, input) {
 
 export function createArtDirectionPlan(input) {
   const rules = PLATFORM_RULES[input.format.key] || PLATFORM_RULES.instagram_feed;
-  const strategies = rules.strategyBias;
-  const candidates = strategies.map((strategy, index) => planCandidate(strategy, input, index));
+  const direction = CREATIVE_DIRECTIONS[input.creativeDirection];
+  const strategies = direction?.strategies?.[input.format.key] || direction?.strategies?.default || rules.strategyBias;
+  const candidates = strategies.map((strategy, index) => applyCreativeDirection(planCandidate(strategy, input, index), input));
   const scored = candidates.map(candidate => ({ plan: candidate, score: scorePlan(candidate, input) }));
   scored.sort((a, b) => b.score.total - a.score.total);
   const selected = scored.find(item => item.score.accepted) || scored[0];
