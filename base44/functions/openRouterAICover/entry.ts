@@ -15,6 +15,8 @@ const MAX_AUTOMATIC_ATTEMPTS = 4;
 const RENDERING_CLASSIFICATIONS = ['SAFE_EDITORIAL', 'SAFE_PRODUCT', 'SAFE_BRAND', 'SAFE_PORTRAIT', 'LIFESTYLE', 'FITNESS', 'SWIMWEAR', 'UNDERWEAR', 'ADULT_MARKETING', 'EXPLICIT', 'UNSUPPORTED'];
 const DEFAULT_SAFE_CATEGORIES = ['SAFE_EDITORIAL', 'SAFE_PRODUCT', 'SAFE_BRAND', 'SAFE_PORTRAIT', 'LIFESTYLE', 'FITNESS', 'SWIMWEAR', 'UNDERWEAR'];
 const ROUTING_WEIGHTS = { policy: 0.40, quality: 0.25, reliability: 0.15, runtime: 0.10, cost: 0.10 };
+const PROVIDER_FAILURE_MEMORY = new Map();
+const FAILURE_MEMORY_TTL_MS = 10 * 60 * 1000;
 
 const KEY_ART_DIRECTOR_PROMPT = `You are the FLESHLAB Hero Photography Director.
 
@@ -460,6 +462,57 @@ function getRouteProviderKey(route) {
   return String(route?.id || '').trim();
 }
 
+function providerFamilyForRoute(route) {
+  const id = String(route?.id || '').toLowerCase();
+  const providerText = `${route?.compatible_endpoints?.[0]?.provider_name || ''} ${route?.compatible_endpoints?.[0]?.provider_slug || ''} ${route?.compatible_endpoints?.[0]?.provider_tag || ''}`.toLowerCase();
+  if (id.includes('gemini') || providerText.includes('google')) return 'google_gemini';
+  if (id.includes('seedream') || providerText.includes('bytedance')) return 'bytedance_seed';
+  if (id.includes('gpt-image') || providerText.includes('openai')) return 'openai_image';
+  if (id.includes('flux') || providerText.includes('black') || providerText.includes('bfl')) return 'black_forest_labs';
+  return String(route?.compatible_endpoints?.[0]?.provider_name || route?.id || 'unknown_provider_family').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+}
+
+function requestSignature({ storyInfo, identityInfo, contentClassification, aspectRatio, metadata }) {
+  const basis = safeJson({
+    story_bytes: storyInfo?.byte_length || 0,
+    identity_bytes: identityInfo?.byte_length || 0,
+    contentClassification,
+    aspectRatio,
+    campaignName: metadata?.campaignName || '',
+    contentType: metadata?.contentType || '',
+    title: metadata?.videoTitle || ''
+  });
+  let hash = 2166136261;
+  for (let i = 0; i < basis.length; i += 1) {
+    hash ^= basis.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
+}
+
+function getRememberedFailure(signature, family) {
+  const key = `${signature}:${family}`;
+  const item = PROVIDER_FAILURE_MEMORY.get(key);
+  if (!item) return null;
+  if (Date.now() - item.timestamp > FAILURE_MEMORY_TTL_MS) {
+    PROVIDER_FAILURE_MEMORY.delete(key);
+    return null;
+  }
+  return item;
+}
+
+function rememberFailure(signature, family, diagnostic) {
+  if (!signature || !family || !diagnostic) return;
+  PROVIDER_FAILURE_MEMORY.set(`${signature}:${family}`, {
+    category: diagnostic.category,
+    retryable: Boolean(diagnostic.retryable),
+    first_status: diagnostic.http_status || null,
+    message: diagnostic.message || '',
+    timestamp: Date.now(),
+    ttl_ms: FAILURE_MEMORY_TTL_MS
+  });
+}
+
 function routeProviderName(route) {
   return route?.name || route?.id || 'Rendering Pipeline';
 }
@@ -830,8 +883,27 @@ async function generateCover(base44, apiKey, body, user) {
 
   const attempts = [];
   const attemptDiagnostics = [];
+  const skippedRoutes = [];
+  const failedPolicyFamilies = new Set();
+  const requestFingerprint = requestSignature({ storyInfo, identityInfo, contentClassification, aspectRatio: aspect_ratio, metadata });
+  let executedAttempts = 0;
   let finalDiagnostic = null;
-  for (const route of routingPlan.routes.slice(0, MAX_AUTOMATIC_ATTEMPTS)) {
+  for (const route of routingPlan.routes) {
+    const providerFamily = providerFamilyForRoute(route);
+    const rememberedFailure = getRememberedFailure(requestFingerprint, providerFamily);
+    if (rememberedFailure && rememberedFailure.category === 'CONTENT_POLICY' && rememberedFailure.retryable === false) {
+      skippedRoutes.push({ model: route.id, provider_family: providerFamily, reason: 'remembered non-retryable provider-family policy failure', category: rememberedFailure.category });
+      continue;
+    }
+    if (failedPolicyFamilies.has(providerFamily)) {
+      skippedRoutes.push({ model: route.id, provider_family: providerFamily, reason: 'equivalent provider family with identical non-retryable policy failure', category: 'CONTENT_POLICY' });
+      continue;
+    }
+    if (executedAttempts >= MAX_AUTOMATIC_ATTEMPTS) {
+      skippedRoutes.push({ model: route.id, provider_family: providerFamily, reason: 'maximum non-equivalent provider attempts reached' });
+      continue;
+    }
+    executedAttempts += 1;
     try {
       const result = await callOpenRouterImage(apiKey, route, storyReferenceDataUrl, identityReferenceDataUrl, aspect_ratio, metadata, generationJobId);
       await saveGenerationLog(base44, {
@@ -923,13 +995,27 @@ async function generateCover(base44, apiKey, body, user) {
         publishing_gate_pass: Boolean(productionQA?.publishing_gate_pass),
         fallback_used: attempts.length > 0,
         photographer_attempts: [...attempts.map(item => ({ status: item.status, category: item.category || null, retryable: Boolean(item.retryable) })), { status: 'accepted' }],
-        attempt_diagnostics: [...attemptDiagnostics.map(item => ({ category: item.category || null, retryable: Boolean(item.retryable), output_received: Boolean(item.output_received) })), {
+        attempt_diagnostics: [...attemptDiagnostics.map(item => ({ category: item.category || null, provider_family: item.provider_family || null, retryable: Boolean(item.retryable), output_received: Boolean(item.output_received) })), {
           category: null,
+          provider_family: providerFamilyForRoute(route),
           policy_compatible: policyRouting.policyCompatible,
           retryable: false,
           cost: result.cost || 0,
           output_received: true
         }],
+        provider_intelligence: {
+          stage: 'Provider Intelligence',
+          selectedProvider: result.resolved_provider || routeProviderName(route),
+          providerFamily: providerFamilyForRoute(route),
+          attemptedModels: [...attempts.map(item => item.model), route.id],
+          firstFailure: attemptDiagnostics[0] ? { category: attemptDiagnostics[0].category, retryable: Boolean(attemptDiagnostics[0].retryable), http_status: attemptDiagnostics[0].http_status } : null,
+          routingDecision: {
+            additionalRoutesSkipped: skippedRoutes.length > 0,
+            reason: skippedRoutes.length ? 'Equivalent provider-family routes were skipped after non-retryable policy memory.' : 'Selected route produced output.',
+            skippedRoutes
+          },
+          failureMemory: { requestFingerprint, ttl_ms: FAILURE_MEMORY_TTL_MS }
+        },
         content_classification: contentClassification,
         policy_compatible: policyRouting.policyCompatible,
         stage_trace: {
@@ -960,12 +1046,18 @@ async function generateCover(base44, apiKey, body, user) {
       try { diagnostic = JSON.parse(error.message); } catch (_) { diagnostic = { message: error.message, category: 'PROVIDER_FAILURE', retryable: true }; }
       diagnostic.model = route.id;
       diagnostic.provider = diagnostic.provider || route.compatible_endpoints?.[0]?.provider_name || null;
+      diagnostic.provider_family = providerFamilyForRoute(route);
       diagnostic.endpoint = 'POST /api/v1/images';
       diagnostic.policy_compatible = policyRouting.policyCompatible;
+      if (diagnostic.category === 'CONTENT_POLICY' && diagnostic.retryable === false) {
+        failedPolicyFamilies.add(diagnostic.provider_family);
+        rememberFailure(requestFingerprint, diagnostic.provider_family, diagnostic);
+      }
       finalDiagnostic = diagnostic;
       const attemptDetail = {
         model: route.id,
         provider: diagnostic.provider,
+        provider_family: diagnostic.provider_family,
         endpoint: diagnostic.endpoint,
         http_status: diagnostic.http_status,
         openrouter_code: diagnostic.openrouter_code,
@@ -1025,13 +1117,26 @@ async function generateCover(base44, apiKey, body, user) {
     error: publicFailureMessage(finalDiagnostic),
     code: 'all_openrouter_routes_failed',
     generation_job_id: generationJobId,
-    diagnostics: finalDiagnostic ? { category: finalDiagnostic.category, retryable: Boolean(finalDiagnostic.retryable), request_sent: Boolean(finalDiagnostic.payload_summary), output_received: false } : null,
+    diagnostics: finalDiagnostic ? { category: finalDiagnostic.category, retryable: Boolean(finalDiagnostic.retryable), request_sent: Boolean(finalDiagnostic.payload_summary), output_received: false, provider_family: finalDiagnostic.provider_family || null } : null,
+    provider_intelligence: {
+      stage: 'Provider Intelligence',
+      selectedProvider: finalDiagnostic?.provider || attempts[0]?.provider || null,
+      providerFamily: finalDiagnostic?.provider_family || null,
+      attemptedModels: attempts.map(item => item.model),
+      firstFailure: attemptDiagnostics[0] ? { category: attemptDiagnostics[0].category, retryable: Boolean(attemptDiagnostics[0].retryable), http_status: attemptDiagnostics[0].http_status } : null,
+      routingDecision: {
+        additionalRoutesSkipped: skippedRoutes.length > 0,
+        reason: skippedRoutes.length ? 'Equivalent provider family with identical non-retryable policy failure or request fingerprint memory.' : 'No equivalent provider-family routes skipped.',
+        skippedRoutes
+      },
+      failureMemory: { requestFingerprint, ttl_ms: FAILURE_MEMORY_TTL_MS }
+    },
     content_classification: contentClassification,
     policy_compatible: policyRouting.policyCompatible,
     request_sent: attempts.length > 0,
     output_received: false,
     photographer_attempts: attempts.map(item => ({ status: item.status, category: item.category || null, retryable: Boolean(item.retryable) })),
-    attempt_diagnostics: attemptDiagnostics.map(item => ({ category: item.category || null, retryable: Boolean(item.retryable), output_received: Boolean(item.output_received) })),
+    attempt_diagnostics: attemptDiagnostics.map(item => ({ category: item.category || null, provider_family: item.provider_family || null, retryable: Boolean(item.retryable), output_received: Boolean(item.output_received) })),
     stage_trace: {
       frame_extracted: true,
       image_encoded: true,

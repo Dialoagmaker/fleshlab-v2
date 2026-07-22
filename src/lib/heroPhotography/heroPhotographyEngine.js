@@ -1,7 +1,8 @@
 import { validateHeroPhotographyInputs } from "./inputValidator";
 import { compileHeroPhotographyInstructions } from "./instructionCompiler";
 import { fileToDataUrl, readImageResolution } from "./frameEncoding";
-import { getHeroPhotographyProvider } from "./providerRegistry";
+import { getHeroPhotographyProvider, listHeroPhotographyProviders } from "./providerRegistry";
+import { planProviderExecution } from "./providerIntelligence";
 import { runCreativeCritic } from "./creativeCritic";
 
 function hashPayload(payload) {
@@ -24,8 +25,9 @@ export async function executeHeroPhotographyRender({ sourceFrameFile, production
   const inputValidation = validateHeroPhotographyInputs({ sourceFrameFile, productionBlueprint, platformRules, campaignFamily });
   if (!inputValidation.valid) return structuredFailure("input_rejected", "Hero Photography Engine rejected the render inputs.", { errors: inputValidation.errors });
 
-  const provider = getHeroPhotographyProvider(providerId);
   const instructions = compileHeroPhotographyInstructions({ productionBlueprint, platformRules, campaignFamily });
+  const providerIntelligence = planProviderExecution({ providers: listHeroPhotographyProviders(), productionBlueprint, instructions, targetPlatform: platformRules?.targetPlatform, campaignFamily });
+  const provider = getHeroPhotographyProvider(providerIntelligence.selectedProvider?.providerId || providerId);
   const blueprintHash = hashPayload({ instructions, productionBlueprint });
 
   try {
@@ -39,7 +41,7 @@ export async function executeHeroPhotographyRender({ sourceFrameFile, production
       consent_text: consentText,
       blocked_media: ["original_video", "video_timeline", "additional_frames", "browser_blobs", "hidden_metadata"]
     };
-    const render = await provider.render({ sourceFrameDataUrl, instructions, productionBlueprint, privacyIntent });
+    const render = await provider.render({ sourceFrameDataUrl, instructions, productionBlueprint, privacyIntent, providerIntelligencePlan: providerIntelligence });
     const renderTimeMs = Math.round(performance.now() - providerStartedAt);
     const outputResolution = await readImageResolution(render.imageDataUrl);
     const outputPackage = {
@@ -70,6 +72,7 @@ export async function executeHeroPhotographyRender({ sourceFrameFile, production
         started_at: new Date().toISOString(),
         total_time_ms: Math.round(performance.now() - startedAt),
         provider_metadata: render.providerMetadata,
+        provider_intelligence: providerIntelligence,
         privacy_intent: privacyIntent
       }
     };
@@ -80,7 +83,8 @@ export async function executeHeroPhotographyRender({ sourceFrameFile, production
       provider: { id: provider.id, name: provider.name },
       providerData: error.providerData || null,
       renderTimeMs: Math.round(performance.now() - startedAt),
-      blueprint_execution_hash: blueprintHash
+      blueprint_execution_hash: blueprintHash,
+      provider_intelligence: providerIntelligence
     });
   }
 }

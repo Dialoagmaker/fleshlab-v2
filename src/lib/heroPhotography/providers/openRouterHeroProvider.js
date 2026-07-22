@@ -3,8 +3,10 @@ import { base44 } from "@/api/base44Client";
 export const openRouterHeroProvider = {
   id: "rendering_intelligence_openrouter",
   name: "Rendering Intelligence Provider",
-  async render({ sourceFrameDataUrl, instructions, productionBlueprint, privacyIntent }) {
-    const response = await base44.functions.invoke("openRouterAICover", {
+  async render({ sourceFrameDataUrl, instructions, productionBlueprint, privacyIntent, providerIntelligencePlan }) {
+    let response;
+    try {
+      response = await base44.functions.invoke("openRouterAICover", {
       action: "generate",
       consent: true,
       privacy_guard: privacyIntent,
@@ -18,9 +20,16 @@ export const openRouterHeroProvider = {
         heroPhotographyPlan: instructions.hero_photography_plan,
         sourceFrameUnderstanding: instructions.source_frame_understanding,
         productionBlueprint,
+        providerIntelligence: providerIntelligencePlan,
         renderingParameters: { aspect_ratio: "16:9", output: "professional_hero_photograph" }
       }
     });
+    } catch (error) {
+      const providerData = error.response?.data || error.data || null;
+      const wrapped = new Error(providerData?.error || error.message || "Rendering Intelligence provider failed.");
+      wrapped.providerData = providerData;
+      throw wrapped;
+    }
     const data = response.data || {};
     if (!data.ok || !data.generated_image_data_url) {
       const error = new Error(data.error || "Provider failed to return a hero image.");
