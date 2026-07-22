@@ -66,6 +66,7 @@ function applyPaletteToDirection(direction, palette) {
 function chooseDirection(campaign = {}, analysis = {}) {
   const text = `${campaign.campaignTitle || ""} ${campaign.collection || ""} ${campaign.releaseName || ""} ${campaign.campaignLabel || ""}`.toLowerCase();
   const subjectRight = (analysis.subjectCenter?.x ?? 0.55) >= 0.5;
+  if (/kraken|fleshlab|amateur wins|beach escape|new release|welcome/.test(text)) return { key: "kraken_reference_poster", accent: RED, texture: "red slash premium poster grit", titleTone: "massive distressed trailer title", heroSide: "right", split: 0.55, referencePoster: true };
   if (/bathroom|shower|soap|steam|hole|ass/.test(text)) return { key: "bathroom_noir", accent: RED, texture: "steam tile fracture", titleTone: "hard white cinema title", heroSide: subjectRight ? "right" : "left", split: 0.55 };
   if (/beach|summer|pool|island|ocean/.test(text)) return { key: "sun_escape", accent: "#ff3348", texture: "heated horizon scratches", titleTone: "open-air cinema title", heroSide: subjectRight ? "right" : "left", split: 0.53 };
   if (/gym|fitness|locker|workout/.test(text)) return { key: "kinetic_body", accent: "#ff2433", texture: "motion ticks", titleTone: "athletic block title", heroSide: subjectRight ? "right" : "left", split: 0.52 };
@@ -97,17 +98,17 @@ function getZones(width, height, direction) {
       split: photoH / height,
     };
   }
-  const splitX = width * (banner ? 0.5 : direction.split);
+  const splitX = width * (direction.referencePoster ? 0.56 : banner ? 0.5 : direction.split);
   const titleLeft = direction.heroSide === "right";
-  const titleX = titleLeft ? width * 0.055 : splitX + width * 0.065;
-  const titleW = titleLeft ? splitX * 0.84 : width - titleX - width * 0.055;
+  const titleX = titleLeft ? width * (direction.referencePoster ? 0.052 : 0.055) : splitX + width * 0.065;
+  const titleW = titleLeft ? splitX * (direction.referencePoster ? 0.9 : 0.84) : width - titleX - width * 0.055;
   return {
     mode: "side-split",
-    photo: titleLeft ? { x: splitX - width * 0.05, y: 0, w: width - splitX + width * 0.05, h: height } : { x: 0, y: 0, w: splitX + width * 0.05, h: height },
-    graphic: titleLeft ? { x: 0, y: 0, w: splitX + width * 0.08, h: height } : { x: splitX - width * 0.08, y: 0, w: width - splitX + width * 0.08, h: height },
-    title: { x: titleX, y: height * (banner ? 0.18 : 0.24), w: titleW, h: height * (banner ? 0.52 : 0.44), align: "left" },
-    meta: { x: titleX, y: height * 0.74, w: titleW, h: height * 0.14 },
-    logo: { x: titleX, y: height * 0.055, w: Math.min(titleW * 0.44, width * 0.18) },
+    photo: titleLeft ? { x: splitX - width * 0.03, y: 0, w: width - splitX + width * 0.03, h: height } : { x: 0, y: 0, w: splitX + width * 0.05, h: height },
+    graphic: titleLeft ? { x: 0, y: 0, w: splitX + width * 0.1, h: height } : { x: splitX - width * 0.08, y: 0, w: width - splitX + width * 0.08, h: height },
+    title: { x: titleX, y: height * (direction.referencePoster ? 0.28 : banner ? 0.18 : 0.24), w: titleW, h: height * (direction.referencePoster ? 0.39 : banner ? 0.52 : 0.44), align: "left", maxLines: direction.referencePoster ? 3 : undefined },
+    meta: { x: titleX, y: height * (direction.referencePoster ? 0.76 : 0.74), w: titleW, h: height * 0.14 },
+    logo: { x: titleX, y: height * 0.058, w: Math.min(titleW * (direction.referencePoster ? 0.48 : 0.44), width * (direction.referencePoster ? 0.26 : 0.18)) },
     split: splitX / width,
   };
 }
@@ -254,6 +255,26 @@ function drawPhotoBackgroundFusion(ctx, image, width, height, zones, direction, 
 
 function drawStructuralGraphics(ctx, width, height, zones, direction) {
   ctx.save();
+  if (direction.referencePoster) {
+    const panel = ctx.createLinearGradient(0, 0, width * 0.68, 0);
+    panel.addColorStop(0, "rgba(0,0,0,0.98)");
+    panel.addColorStop(0.56, "rgba(0,0,0,0.92)");
+    panel.addColorStop(0.82, "rgba(0,0,0,0.55)");
+    panel.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = panel;
+    ctx.fillRect(0, 0, width * 0.72, height);
+    ctx.globalCompositeOperation = "screen";
+    ctx.strokeStyle = rgba(direction.ambientRgb || [207,16,45], 0.78);
+    ctx.lineWidth = Math.max(5, width * 0.006);
+    for (let i = 0; i < 7; i += 1) {
+      const y = height * (i % 2 ? 0.08 : 0.92) + i * height * 0.018;
+      ctx.beginPath();
+      ctx.moveTo(-width * 0.02, y);
+      ctx.bezierCurveTo(width * 0.16, y - height * 0.06, width * 0.38, y + height * 0.035, width * 0.64, y - height * 0.018);
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = "source-over";
+  }
   const veil = ctx.createRadialGradient(zones.title.x + zones.title.w * 0.38, zones.title.y + zones.title.h * 0.42, 0, zones.title.x + zones.title.w * 0.38, zones.title.y + zones.title.h * 0.42, Math.max(width, height) * 0.58);
   veil.addColorStop(0, rgba(direction.shadowRgb || [0, 0, 0], zones.mode === "immersive" ? 0.66 : 0.76));
   veil.addColorStop(0.46, rgba(direction.ambientRgb || [18, 3, 7], 0.2));
@@ -420,9 +441,9 @@ function drawMeta(ctx, campaign, zones, width, height, direction, titleBottom) {
 }
 
 function drawBadges(ctx, campaign, zones, width, height, direction) {
-  const items = (campaign.badges || []).slice(0, 3).map(compact).filter(Boolean);
+  const items = direction.referencePoster ? ["Exclusive Content", "New Videos", "Behind The Scenes", "PPV & Fan Exclusives"] : (campaign.badges || []).slice(0, 3).map(compact).filter(Boolean);
   if (!items.length) return;
-  const y = Math.min(height * 0.93, zones.meta.y + zones.meta.h * 0.8);
+  const y = direction.referencePoster ? height * 0.88 : Math.min(height * 0.93, zones.meta.y + zones.meta.h * 0.8);
   const groupW = zones.meta.w / Math.max(3, items.length);
   ctx.save();
   ctx.font = font(Math.max(9, width * 0.0095), "Inter", 950);
@@ -450,6 +471,16 @@ function drawBadges(ctx, campaign, zones, width, height, direction) {
       ctx.fillRect(x + groupW - width * 0.018, y - icon * 0.7, 1, icon * 1.18);
     }
   });
+  ctx.restore();
+}
+
+function drawBrandTagline(ctx, zones, width, height, direction) {
+  if (!direction.referencePoster) return;
+  ctx.save();
+  ctx.font = font(Math.max(10, width * 0.014), "Inter", 950);
+  ctx.letterSpacing = `${Math.max(2, width * 0.004)}px`;
+  ctx.fillStyle = direction.accent || RED;
+  ctx.fillText("A M A T E U R   W I N S .", zones.logo.x, zones.logo.y + zones.logo.w * 0.34, zones.logo.w * 1.35);
   ctx.restore();
 }
 
@@ -603,6 +634,7 @@ export async function renderKrakenCampaignComposerAsset({ image, analysis = {}, 
     const metaBox = drawMeta(ctx, campaign, zones, format.width, format.height, direction, titlePlan.bottom);
     drawBadges(ctx, campaign, zones, format.width, format.height, direction);
     const logo = await drawLogo(ctx, zones, format.width, format.height);
+    drawBrandTagline(ctx, zones, format.width, format.height, direction);
     finalTexture(ctx, format.width, format.height, zones, direction);
 
     const titleValidation = validateTitle(title, titlePlan);
