@@ -16,7 +16,7 @@ export const openRouterHeroProvider = {
         videoTitle: instructions.hero_photography_plan?.Story || instructions.creative_decisions?.story || "",
         optionalSubtitle: instructions.hero_photography_plan?.Emotional_Hook || instructions.creative_decisions?.emotional_promise || "",
         campaignName: instructions.campaign_family,
-        contentType: "professional hero photograph from consent-approved selected Hero Frame",
+        contentType: "reference-fidelity professional retouch from consent-approved selected Hero Frame",
         heroPhotographyPlan: instructions.hero_photography_plan,
         sourceFrameUnderstanding: instructions.source_frame_understanding,
         productionBlueprint,
@@ -27,7 +27,7 @@ export const openRouterHeroProvider = {
         policyClassification: providerIntelligencePlan?.policyClassification,
         contentClassification: providerIntelligencePlan?.policyClassification || providerIntelligencePlan?.contentClassification,
         providerIntelligence: providerIntelligencePlan,
-        renderingParameters: { aspect_ratio: "16:9", output: "professional_hero_photograph" }
+        renderingParameters: { aspect_ratio: "16:9", output: "reference_fidelity_professional_retouch", minimum_structural_similarity: 0.95 }
       }
     });
     } catch (error) {

@@ -56,36 +56,35 @@ const ROUTE_CAPABILITY_MEMORY = new Map();
 const ROUTE_CAPABILITY_MEMORY_TTL_MS = 24 * 60 * 60 * 1000;
 const REQUIRED_IMAGE_REFERENCE_OPERATION = 'IMAGE_REFERENCE_GENERATION';
 
-const KEY_ART_DIRECTOR_PROMPT = `You are the FLESHLAB Hero Photography Director.
+const KEY_ART_DIRECTOR_PROMPT = `You are the FLESHLAB Reference Fidelity Retouch Director.
 
 Core principle:
-The input video frame is only a scouting/reference image. The output must be the professional hero photograph that would have been captured if this scene had been planned as a premium commercial photo shoot.
+The uploaded frame is immutable ground truth. The goal is not to create a better or different scene. The goal is to preserve the exact frame while increasing photographic production quality.
 
-Never output an enhanced screenshot.
-Never merely upscale, sharpen, denoise, relight, beautify, or crop the source frame.
-Reconstruct the scene as world-class commercial photography and advertising art direction.
+Treat the reference as the final composition:
+- Preserve facial identity, facial proportions, expression, gaze direction, head angle, body proportions, body posture, arm position, hand position, necklace, soap placement, water placement, towel position, bathroom layout, camera angle, focal length, framing, perspective, distance to subject, lighting direction, object positions, and overall composition.
+- Maintain at least 95% structural similarity to the uploaded frame.
+
+Allowed improvements only:
+- cinematic lighting consistent with the source direction
+- higher dynamic range
+- cleaner skin rendering without changing anatomy or identity
+- realistic moisture and water reflections
+- improved sharpness and realistic depth
+- premium color grading
+- subtle atmospheric steam
+- noise removal and texture recovery
+
+Never change:
+- pose, expression, body shape, face, environment, shower, bathroom, framing, camera angle, architecture, props, composition, or object placement.
 
 Use two separate visual references when provided:
 - Identity Reference: preserve the same apparent person, face, body, tattoos, hairstyle, proportions, and recognizable appearance.
-- Story Reference: preserve the emotional moment, visual story, action logic, pose when protected, and emotional intent.
+- Story Reference: preserve the exact moment, scene geometry, action, pose, gaze, expression, object locations, and camera perspective.
 
-You may redesign when the provided Hero Photography Plan allows:
-- background, lighting, color palette, atmosphere, environment, reflections, architecture, furniture, depth, weather, and time of day.
+Output should look as if the exact original frame was captured by a $10,000 cinema camera with professional lighting and expert retouching.
 
-You may NOT redesign:
-- apparent person, protected pose, identity, protected expression, protected gaze, emotional intent, or protected storytelling facts.
-
-Production quality target:
-Netflix Key Art, Amazon Originals, HBO Campaign, luxury fashion editorial, premium magazine cover.
-Never target generic AI-generated imagery.
-
-Cinematic photography requirements:
-Explicitly design key light, fill light, rim light, practical lights, depth, foreground, background, texture, shadows, reflections, and color contrast.
-
-Composition requirement:
-Leave intentional typography space. Typography space must never cover the face, emotional focal point, or storytelling element.
-
-Output ONLY the professional 16:9 hero photograph. Do not include typography, logos, watermarks, captions, UI, or poster text.`;
+Output ONLY the reference-faithful enhanced frame. Do not include typography, logos, watermarks, captions, UI, or poster text.`;
 
 function json(data, status = 200) {
   return Response.json(data, { status });
@@ -474,10 +473,10 @@ function buildPhotographicBrief(metadata = {}) {
   const lighting = plan.Lighting || {};
   const brief = plan.Hero_Rendering_Brief || 'Create the hero photograph that would have been captured by a top commercial photographer and advertising art director on a planned shoot.';
   return [
-    'HERO PHOTOGRAPHY PLAN',
-    'Input: video frame as scouting/reference image.',
-    'Output: professional hero photograph.',
-    'Never output: enhanced screenshot.',
+    'REFERENCE FIDELITY RETOUCH PLAN',
+    'Input: uploaded frame as immutable ground truth.',
+    'Output: reference-faithful professional enhancement.',
+    'Never output: a different generated scene, changed identity, changed pose, changed environment, changed framing, or invented composition.',
     '',
     'STEP 1 — UNDERSTAND THE FRAME',
     `Emotional moment: ${understanding.emotional_moment || emotionalHook}`,
@@ -488,23 +487,23 @@ function buildPhotographicBrief(metadata = {}) {
     `Opportunities: ${understanding.opportunities || 'commercial production design, lighting, depth, atmosphere'}`,
     `Emotional hook: ${understanding.emotional_hook || emotionalHook}`,
     '',
-    'STEP 2 — DESIGN THE HERO PHOTO',
-    `Camera: ${plan.Camera || 'planned commercial campaign camera, not screenshot perspective'}`,
-    `Lens: ${plan.Lens || 'cinematic editorial lens with controlled perspective and premium subject separation'}`,
-    `Lighting setup: key=${lighting.key_light || 'large soft directional key'}; fill=${lighting.fill_light || 'controlled low fill'}; rim=${lighting.rim_light || 'subtle separation rim'}; practicals=${lighting.practical_lights || 'motivated cinematic practicals'}`,
-    `Negative space and composition: ${plan.Composition || 'intentional typography space away from face, emotional focal point, and storytelling element'}`,
-    `Luxury level: ${plan.Luxury_Level || 'Netflix Key Art / Amazon Originals / HBO Campaign / luxury fashion editorial / premium magazine cover'}`,
-    `Editorial style: ${plan.Editorial_Style || metadata.campaignName || 'premium commercial editorial'}`,
+    'STEP 2 — PRESERVE THE EXACT FRAME',
+    `Camera: ${plan.Camera || 'preserve original camera angle, framing, perspective, focal length, and distance to subject'}`,
+    `Lens: ${plan.Lens || 'preserve source lens geometry while improving perceived optical quality'}`,
+    `Lighting setup: key=${lighting.key_light || 'source-consistent cinematic key'}; fill=${lighting.fill_light || 'controlled fill that preserves original shadow direction'}; rim=${lighting.rim_light || 'subtle source-consistent separation'}; practicals=${lighting.practical_lights || 'no new visible fixtures or props'}`,
+    `Composition lock: ${plan.Composition || 'preserve exact framing, perspective, object positions, pose, gaze, and scene layout'}`,
+    `Quality level: ${plan.Luxury_Level || 'high-end cinema-camera capture with professional retouch'}`,
+    `Retouch style: ${plan.Editorial_Style || metadata.campaignName || 'reference-fidelity cinematic enhancement'}`,
     '',
-    'STEP 3 — REBUILD THE SCENE',
-    `Background: ${plan.Background || 'redesigned commercial background that preserves story logic'}`,
-    `Environment: ${plan.Environment || 'redesign atmosphere, depth, reflections, texture and production design while preserving identity and emotional intent'}`,
+    'STEP 3 — RETOUCH ONLY, DO NOT REBUILD',
+    `Background: ${plan.Background || 'preserve exact bathroom/shower layout and all object positions'}`,
+    `Environment: ${plan.Environment || 'do not redesign the environment; improve only lighting, moisture, reflections, sharpness, color grade, noise and texture'}`,
     '',
-    'STEP 4 — HERO RENDERING BRIEF',
+    'STEP 4 — REFERENCE FIDELITY BRIEF',
     brief,
     '',
     'REPORT REQUIREMENT',
-    'The generated hero photograph must differ from the original frame through creative reconstruction: planned camera, lens, lighting, production design, environment, background, atmosphere, depth, texture, color contrast and intentional typography space — not simple enhancement.'
+    'Before accepting the enhancement, compare it against the original frame. Reject identity drift, pose drift, expression drift, changed body shape, changed bathroom/shower geometry, changed framing, changed camera angle, changed object positions, changed soap/water/towel/necklace placement, or any scene invention beyond minor photographic improvements.'
   ].filter(Boolean).join('\n');
 }
 
@@ -1682,8 +1681,10 @@ async function generateCover(base44, apiKey, body, user, req) {
           content_classification: classificationCategory,
           campaign: metadata.campaignName || '',
           hero_photography_plan: metadata.heroPhotographyPlan || metadata.heroPhotographyEngine?.hero_photography_plan || null,
-          reconstruction_required: true,
-          forbidden_output: 'enhanced screenshot',
+          reconstruction_required: false,
+          reference_fidelity_required: true,
+          minimum_structural_similarity: 0.95,
+          forbidden_output: 'different generated scene or changed reference composition',
           creative_approval_pass: Boolean(metadata.creativeApprovalPass || metadata.creative_approval_pass),
           executive_approval_pass: Boolean(metadata.executiveApprovalPass || metadata.executive_approval_pass),
           governance_valid: policyRouting.policyCompatible !== 'no'
@@ -1754,8 +1755,8 @@ async function generateCover(base44, apiKey, body, user, req) {
         creative_brief: buildPhotographicBrief(metadata),
         hero_photography_plan: metadata.heroPhotographyPlan || metadata.heroPhotographyEngine?.hero_photography_plan || null,
         source_frame_understanding: metadata.sourceFrameUnderstanding || metadata.heroPhotographyEngine?.source_frame_understanding || null,
-        reconstruction_report: 'The generated hero photograph must differ from the original video frame through creative reconstruction: planned camera, lens, lighting, background, environment, atmosphere, depth, texture, color contrast, subject separation, and intentional typography space — not enhancement.',
-        pipeline: ['Video Frame Reference', 'Frame Understanding', 'Hero Photography Plan', 'Rendering Intelligence', 'Best Production Pipeline Selected', 'Professional Hero Photograph', 'Local Art Direction', 'Typography', 'Export'],
+        reconstruction_report: 'Reference Fidelity Mode: accepted output must preserve the original frame identity, pose, composition, camera angle, bathroom layout, object positions and scene geometry while improving only photographic production quality.',
+        pipeline: ['Uploaded Frame Ground Truth', 'Reference Fidelity Brief', 'Retouch Instructions', 'Rendering Intelligence', 'Best Fidelity Pipeline Selected', 'Reference-Faithful Enhancement', 'Local Art Direction', 'Typography', 'Export'],
         privacy: {
           original_video_transmitted: false,
           story_reference_transmitted: true,
