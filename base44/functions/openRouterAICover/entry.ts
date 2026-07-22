@@ -848,14 +848,14 @@ function rememberRouteCapabilityMismatch(route, unsupportedOperation = REQUIRED_
   });
 }
 
-function applyRouteCapabilityMemory(routes) {
+function applyRouteCapabilityMemory(routes, contentClassification = null) {
   const eligibleRoutes = [];
   const rejectedRoutes = [];
   for (const route of routes) {
     const remembered = getRememberedRouteCapabilityMismatch(route, REQUIRED_IMAGE_REFERENCE_OPERATION);
     if (remembered) {
       rejectedRoutes.push({
-        ...routeDiagnosticBase(route),
+        ...routeDiagnosticBase(route, contentClassification),
         reason: 'IMAGE_REFERENCE_NOT_SUPPORTED',
         technicalCompatibility: 0,
         eligible: false,
@@ -1223,7 +1223,7 @@ async function generateCover(base44, apiKey, body, user, req) {
 
   const discoveredRoutes = await discoverCompatibleImageRoutes(apiKey);
   const technicalEvaluation = evaluateRoutesForOperation(discoveredRoutes, requiredOperation, contentClassification);
-  const memoryEvaluation = applyRouteCapabilityMemory(technicalEvaluation.eligibleRoutes);
+  const memoryEvaluation = applyRouteCapabilityMemory(technicalEvaluation.eligibleRoutes, contentClassification);
   const capabilityRejectedRoutes = [...technicalEvaluation.rejectedRoutes, ...memoryEvaluation.rejectedRoutes];
   if (!memoryEvaluation.eligibleRoutes.length) {
     const diagnostic = { category: 'NO_COMPATIBLE_PROVIDER_AVAILABLE', message: 'No concrete OpenRouter route proves support for the required image-reference operation.', retryable: false };
