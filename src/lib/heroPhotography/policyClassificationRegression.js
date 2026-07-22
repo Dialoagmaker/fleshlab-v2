@@ -41,6 +41,12 @@ const diagnosticSkinEvidence = [{
 export async function runDeterministicPolicyClassificationRegression() {
   const previous = await runPolicyEvidenceAudit({ ...replayRequest, sourceFrameFile: null, forcedImageEvidence: [] });
   const current = await runPolicyEvidenceAudit({ ...replayRequest, sourceFrameFile: null, forcedImageEvidence: diagnosticSkinEvidence });
+  const safetyConstraintReplay = await runPolicyEvidenceAudit({
+    ...replayRequest,
+    productionBlueprint: { ...replayRequest.productionBlueprint, rendering_instructions: { ...replayRequest.productionBlueprint.rendering_instructions, forbidden: ["explicit adult content", "identity drift"] } },
+    sourceFrameFile: null,
+    forcedImageEvidence: []
+  });
   const previousCategory = previous.policyClassification.canonicalCategory;
   const currentCategory = current.policyClassification.canonicalCategory;
   if (previousCategory !== currentCategory) {
@@ -49,5 +55,8 @@ export async function runDeterministicPolicyClassificationRegression() {
   if (currentCategory !== "SAFE_EDITORIAL") {
     throw new Error(`Expected SAFE_EDITORIAL, received ${currentCategory}`);
   }
-  return { ok: true, previous, current, canonicalCategory: currentCategory };
+  if (safetyConstraintReplay.policyClassification.canonicalCategory === "EXPLICIT_ADULT") {
+    throw new Error("Safety/forbidden explicit wording incorrectly promoted the request to EXPLICIT_ADULT.");
+  }
+  return { ok: true, previous, current, safetyConstraintReplay, canonicalCategory: currentCategory };
 }

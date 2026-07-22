@@ -1,8 +1,9 @@
 const TEXT_SIGNALS = [
-  { phrase: "explicit", category: "EXPLICIT_ADULT", weight: 0.58, reason: "Explicit-content wording appears in the creative/policy input." },
+  { phrase: "explicit adult", category: "EXPLICIT_ADULT", weight: 0.62, reason: "Affirmative explicit-adult wording appears in the creative/policy input." },
+  { phrase: "explicit sex", category: "EXPLICIT_ADULT", weight: 0.62, reason: "Affirmative explicit-sex wording appears in the creative/policy input." },
+  { phrase: "sexual act", category: "EXPLICIT_ADULT", weight: 0.6, reason: "Affirmative sexual-act wording appears in the creative/policy input." },
   { phrase: "hardcore", category: "EXPLICIT_ADULT", weight: 0.62, reason: "Hardcore-content wording appears in the creative/policy input." },
   { phrase: "porn", category: "EXPLICIT_ADULT", weight: 0.6, reason: "Pornography wording appears in the creative/policy input." },
-  { phrase: "sexual", category: "EXPLICIT_ADULT", weight: 0.58, reason: "Sexual-content wording appears in the creative/policy input." },
   { phrase: "nude", category: "EXPLICIT_ADULT", weight: 0.52, reason: "Nudity wording appears in the creative/policy input." },
   { phrase: "naked", category: "EXPLICIT_ADULT", weight: 0.52, reason: "Nudity wording appears in the creative/policy input." },
   { phrase: "visible genitals", category: "EXPLICIT_ADULT", weight: 0.66, reason: "Explicit anatomy wording appears in the creative/policy input." },
@@ -38,20 +39,33 @@ function evidenceId(type, signal, index) {
   return `${type}-${signal}-${index}`.replace(/[^a-z0-9-]/gi, "_");
 }
 
+function isNegatedExplicitContext(text, matchIndex) {
+  const before = text.slice(Math.max(0, matchIndex - 72), matchIndex);
+  return /\b(never|not|no|non|without|avoid|forbidden|blocked|prohibited|must not|do not|excluded|disallowed)\b/i.test(before);
+}
+
 function addTextEvidence(text, rules, type) {
   const evidence = [];
   rules.forEach(rule => {
     const escaped = rule.phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const matches = text.match(new RegExp(`\\b${escaped}\\b`, "gi")) || [];
-    matches.forEach((match, index) => evidence.push({
-      id: evidenceId(type, rule.phrase, index),
-      type,
-      signal: match,
-      category: rule.category,
-      weight: rule.weight,
-      reason: rule.reason,
-      confidence: Number(Math.min(0.96, 0.72 + rule.weight / 2).toFixed(2))
-    }));
+    const pattern = new RegExp(`\\b${escaped}\\b`, "gi");
+    let match;
+    let index = 0;
+    while ((match = pattern.exec(text)) !== null) {
+      const negatedExplicit = rule.category === "EXPLICIT_ADULT" && isNegatedExplicitContext(text, match.index);
+      evidence.push({
+        id: evidenceId(type, rule.phrase, index),
+        type,
+        signal: match[0],
+        category: negatedExplicit ? "SAFE_EDITORIAL" : rule.category,
+        weight: negatedExplicit ? 0 : rule.weight,
+        diagnosticOnly: negatedExplicit,
+        ignoredReason: negatedExplicit ? "Explicit term appears inside a negative/forbidden/safety context and cannot promote the canonical category." : null,
+        reason: negatedExplicit ? "Ignored explicit wording because it is a safety constraint, not requested content." : rule.reason,
+        confidence: Number(Math.min(0.96, 0.72 + (negatedExplicit ? 0 : rule.weight) / 2).toFixed(2))
+      });
+      index += 1;
+    }
   });
   return evidence;
 }
@@ -142,7 +156,7 @@ export async function runPolicyEvidenceAudit({ sourceFrameFile, productionBluepr
     confidence: scored.confidence,
     evidence,
     decisionTrace: {
-      weightedPath: evidence.map(item => ({ signal: item.signal, type: item.type, category: item.category, weight: item.weight, diagnosticOnly: Boolean(item.diagnosticOnly) })),
+      weightedPath: evidence.map(item => ({ signal: item.signal, type: item.type, category: item.category, weight: item.weight, diagnosticOnly: Boolean(item.diagnosticOnly), ignoredReason: item.ignoredReason || null })),
       total: scored.scores,
       winningCategory: scored.winningCategory,
       margin: scored.margin,

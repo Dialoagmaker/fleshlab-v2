@@ -633,8 +633,8 @@ function deriveFallbackClassification(metadata = {}) {
   if (legacy === 'EXPLICIT_VERIFIED_ADULT') return 'EXPLICIT';
   if (legacy === 'BLOCKED_OR_UNVERIFIED') return 'UNSUPPORTED';
   const contentType = `${metadata.contentType || ''} ${metadata.campaignName || ''} ${metadata.videoTitle || ''}`.toLowerCase();
-  if (contentType.includes('explicit') || contentType.includes('hardcore')) return 'EXPLICIT';
-  if (contentType.includes('adult') || contentType.includes('sexual')) return 'ADULT_MARKETING';
+  if (/\b(explicit adult|explicit sex|sexual act|hardcore|porn|visible genitals|visible nipples|nude|naked)\b/.test(contentType)) return 'EXPLICIT';
+  if (/\b(explicit|adult|sexual|suggestive|onlyfans)\b/.test(contentType)) return 'ADULT_MARKETING';
   if (contentType.includes('fitness')) return 'FITNESS';
   if (contentType.includes('swim')) return 'SWIMWEAR';
   if (contentType.includes('underwear')) return 'UNDERWEAR';
@@ -660,6 +660,21 @@ function canonicalTaxonomyRegistry() {
   return Object.entries(CANONICAL_CONTENT_TAXONOMY).map(([canonicalCategory, definition]) => ({ canonicalCategory, ...definition }));
 }
 
+function summarizePolicyEvidenceAudit(audit = null) {
+  const evidence = Array.isArray(audit?.evidence) ? audit.evidence : [];
+  const weightedPath = Array.isArray(audit?.decisionTrace?.weightedPath) ? audit.decisionTrace.weightedPath : evidence.map(item => ({ signal: item.signal, type: item.type, category: item.category, weight: item.weight, diagnosticOnly: Boolean(item.diagnosticOnly), ignoredReason: item.ignoredReason || null }));
+  const explicitPromoters = weightedPath.filter(item => item.category === 'EXPLICIT_ADULT' && Number(item.weight || 0) > 0 && !item.diagnosticOnly);
+  return { classification: audit?.classification || null, confidence: audit?.confidence || null, margin: audit?.decisionTrace?.margin ?? null, totals: audit?.decisionTrace?.total || audit?.alternativeClassifications || null, weightedPath, explicitPromoters };
+}
+
+function hasAffirmativeExplicitEvidence(metadata = {}) {
+  const audit = metadata.policyEvidenceAudit || metadata.providerIntelligence?.policyEvidenceAudit || null;
+  const chain = summarizePolicyEvidenceAudit(audit);
+  if (chain.explicitPromoters.length) return true;
+  const text = `${metadata.contentType || ''} ${metadata.campaignName || ''} ${metadata.videoTitle || ''}`.toLowerCase();
+  return /\b(explicit adult|explicit sex|sexual act|hardcore|porn|visible genitals|visible nipples|nude|naked)\b/.test(text);
+}
+
 function normalizeContentClassification(input) {
   const inputObject = input && typeof input === 'object' ? input : null;
   const rawCategory = String(inputObject?.rawCategory || inputObject?.canonicalCategory || inputObject?.category || input || '').trim();
@@ -674,6 +689,7 @@ function normalizeContentClassification(input) {
     confidence: Number(inputObject?.confidence ?? 0.45),
     policyRisk,
     technicalIntent: inputObject?.technicalIntent || REQUIRED_IMAGE_REFERENCE_OPERATION,
+    evidenceChain: inputObject?.evidenceChain || null,
     version: 'provider-intelligence-v3'
   };
   console.assert(!(canonicalCategoryToken(rawCategory) === 'EXPLICIT' && normalized.canonicalCategory !== 'EXPLICIT_ADULT'), 'Raw EXPLICIT must normalize to EXPLICIT_ADULT');
@@ -681,16 +697,26 @@ function normalizeContentClassification(input) {
 }
 
 function getCanonicalContentClassification(metadata = {}) {
-  const supplied = metadata.providerIntelligence?.contentClassification;
+  const supplied = metadata.providerIntelligence?.contentClassification || metadata.contentClassification || metadata.policyClassification;
+  const evidenceChain = summarizePolicyEvidenceAudit(metadata.policyEvidenceAudit || metadata.providerIntelligence?.policyEvidenceAudit || null);
+  const normalizeWithGuard = (classification) => {
+    const normalized = normalizeContentClassification({ ...classification, evidenceChain });
+    if (normalized.canonicalCategory === 'EXPLICIT_ADULT' && !hasAffirmativeExplicitEvidence(metadata)) {
+      const fallback = deriveFallbackClassification(metadata);
+      const guardedFallback = fallback === 'EXPLICIT' ? 'ADULT_MARKETING' : fallback;
+      return normalizeContentClassification({ rawCategory: guardedFallback, source: 'backend_explicit_promotion_guard', confidence: Math.min(Number(normalized.confidence || 0.45), 0.62), evidenceChain: { ...evidenceChain, guard: 'EXPLICIT_ADULT removed because no affirmative explicit-adult evidence item was present.' } });
+    }
+    return normalized;
+  };
   if (supplied && typeof supplied === 'object') {
-    return normalizeContentClassification({ ...supplied, rawCategory: supplied.rawCategory || supplied.category || supplied.canonicalCategory || '', source: supplied.source || 'frontend_provider_intelligence' });
+    return normalizeWithGuard({ ...supplied, rawCategory: supplied.rawCategory || supplied.category || supplied.canonicalCategory || '', source: supplied.source || 'frontend_provider_intelligence' });
   }
   const suppliedString = supplied || metadata.providerIntelligence?.contentClassificationCategory;
   if (suppliedString) {
-    return normalizeContentClassification({ rawCategory: suppliedString, source: 'frontend_provider_intelligence_legacy', confidence: 0.65 });
+    return normalizeWithGuard({ rawCategory: suppliedString, source: 'frontend_provider_intelligence_legacy', confidence: 0.65 });
   }
   const fallback = deriveFallbackClassification(metadata);
-  return normalizeContentClassification({ rawCategory: fallback, source: 'backend_fallback_metadata', confidence: 0.45 });
+  return normalizeWithGuard({ rawCategory: fallback, source: 'backend_fallback_metadata', confidence: 0.45 });
 }
 
 function standardVerificationComplete(metadata = {}) {
