@@ -37,8 +37,8 @@ export default function CampaignDetailsForm({ metadata, aiSuggestion, validation
           return (
             <label key={field.key} className="space-y-1 rounded-lg border border-border bg-background/40 p-3">
               <span className="flex items-center justify-between gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground"><span>{field.label}{field.required ? " *" : ""}</span><span>{value.length}/{field.max}</span></span>
-              <input value={value} onChange={event => onChange(updateField(metadata, field.key, event.target.value))} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground" />
-              <span className="block text-[10px] text-muted-foreground">AI suggestion: {aiSuggestion?.[field.key] || "—"}</span>
+              <input value={value} disabled={field.key === "campaignTitle"} onChange={event => onChange(updateField(metadata, field.key, event.target.value))} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-80" />
+              <span className="block text-[10px] text-muted-foreground">{field.key === "campaignTitle" ? "Locked to source-platform title" : `AI suggestion: ${aiSuggestion?.[field.key] || "—"}`}</span>
               {error && <span className="block text-xs text-destructive">{error}</span>}
             </label>
           );

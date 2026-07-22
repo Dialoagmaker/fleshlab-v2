@@ -33,11 +33,17 @@ function imageFromSource(src) {
 
 function compact(value) { return String(value || "").replace(/\s+/g, " ").trim(); }
 
+function getSourcePlatformTitle(output, pipeline) {
+  const blueprint = pipeline?.productionBlueprint || output?.heroPhotographyPlan?.productionBlueprint || {};
+  return compact(blueprint.originalTitle || blueprint.videoTitle || blueprint.sourceTitle || output?.heroPhotographyPlan?.originalTitle || output?.heroPhotographyPlan?.videoTitle || output?.heroPhotographyPlan?.sourceTitle || output?.heroPhotographyPlan?.campaignTitle || "");
+}
+
 export function getCampaignMetadataSuggestion(output, pipeline, campaignFamily) {
   const blueprint = pipeline?.productionBlueprint || output?.heroPhotographyPlan?.productionBlueprint || {};
+  const sourcePlatformTitle = getSourcePlatformTitle(output, pipeline);
   const metadata = {
-    campaignTitle: compact(blueprint.campaignTitle || output?.heroPhotographyPlan?.campaignTitle || blueprint.originalTitle || blueprint.videoTitle || ""),
-    originalTitle: compact(blueprint.originalTitle || blueprint.videoTitle || blueprint.campaignTitle || output?.heroPhotographyPlan?.campaignTitle || ""),
+    campaignTitle: sourcePlatformTitle || compact(blueprint.campaignTitle || output?.heroPhotographyPlan?.campaignTitle || ""),
+    originalTitle: sourcePlatformTitle || compact(blueprint.originalTitle || blueprint.videoTitle || blueprint.campaignTitle || output?.heroPhotographyPlan?.campaignTitle || ""),
     performerName: compact(blueprint.performerName || blueprint.creatorName || output?.heroPhotographyPlan?.creatorName || ""),
     subtitle: compact(blueprint.campaignSubtitle || blueprint.seriesName || ""),
     episode: compact(blueprint.episode || ""),
@@ -69,9 +75,15 @@ function resolveMetadataField(key, userMetadata, savedMetadata, aiSuggestion, fa
 
 export function mergeCampaignMetadata({ output, pipeline, campaignFamily, userMetadata = {}, savedMetadata = {} }) {
   const aiSuggestion = getCampaignMetadataSuggestion(output, pipeline, campaignFamily);
+  const lockedSourceTitle = getSourcePlatformTitle(output, pipeline) || aiSuggestion.originalTitle || aiSuggestion.campaignTitle;
   const fallbacks = { campaignTitle: "CHECK-IN", performerName: "", subtitle: "", episode: "", cta: "Watch Now", campaignLabel: "", releaseName: "", originalTitle: "" };
   const metadata = { source: {} };
   Object.keys(fallbacks).forEach(key => {
+    if (key === "campaignTitle" || key === "originalTitle") {
+      metadata[key] = compact(lockedSourceTitle || fallbacks[key]);
+      metadata.source[key] = "source_platform";
+      return;
+    }
     const resolved = resolveMetadataField(key, userMetadata, savedMetadata, aiSuggestion, fallbacks[key]);
     metadata[key] = resolved.value;
     metadata.source[key] = resolved.source;

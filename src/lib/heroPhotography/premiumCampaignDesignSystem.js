@@ -2,6 +2,7 @@ import { FLESHLAB_BRAND_IDENTITY } from "@/lib/aiMediaStudio/brandIdentityEngine
 import { createCompositionPlan } from "@/lib/heroPhotography/compositionEngine";
 import { createLayerPlan } from "@/lib/heroPhotography/layerCompositionEngine";
 import { createKeyArtBrief, createLayoutSketch } from "@/lib/heroPhotography/keyArtWorkflow";
+import { planAdaptiveTypography } from "@/lib/heroPhotography/adaptiveTypographyEngine";
 
 let logoPromise;
 function loadLogo() {
@@ -521,51 +522,48 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
   const safeX = titleOnLeft ? graphic.x + width * 0.055 : graphic.x + graphic.w - width * 0.055;
   const maxTextW = graphic.w * 0.78;
   ctx.textAlign = titleOnLeft ? "left" : "right";
-  const logoX = titleOnLeft ? safeX : safeX - Math.min(width * 0.28, maxTextW);
-  const logoBottom = await drawLargeLogo(ctx, logoX, height * 0.07, Math.min(width * 0.28, maxTextW));
+  const logoW = Math.min(width * 0.16, maxTextW * 0.42);
+  const logoX = titleOnLeft ? safeX : safeX - logoW;
+  const logoBottom = await drawLargeLogo(ctx, logoX, height * 0.065, logoW);
   const collection = upper(campaign.collection || campaign.subtitle || campaign.campaignLabel || "");
-  if (collection) {
-    ctx.font = font(Math.max(13, width * 0.014), "Inter", 950);
-    ctx.fillStyle = mood.accent;
-    if (titleOnLeft) drawTrackingText(ctx, collection, safeX, logoBottom + height * 0.065, Math.max(1.5, width * 0.002), maxTextW);
-    else ctx.fillText(collection, safeX, logoBottom + height * 0.065, maxTextW);
-  }
-
-  const [primary, secondary] = splitKeyArtTitle(campaign.campaignTitle || "PRIVATE ACCESS");
+  const exactTitle = compact(campaign.campaignMetadata?.sourceTitle || campaign.originalTitle || campaign.campaignTitle || "PRIVATE ACCESS");
   const performerName = upper(campaign.performerName || campaign.creatorName);
-  const hasMetadata = Boolean(collection || performerName || campaign.episode);
-  const titleY = logoBottom + (hasMetadata ? height * 0.22 : height * 0.3);
-  const primaryFit = fitText(ctx, primary, maxTextW, hasMetadata ? Math.min(height * 0.24, width * 0.16) : Math.min(height * 0.34, width * 0.22), Math.max(42, width * 0.052), 1, "Bebas Neue");
-  ctx.font = font(primaryFit.size, "Bebas Neue", 900);
-  ctx.fillStyle = FLESHLAB_BRAND_IDENTITY.colors.cream;
-  ctx.strokeStyle = "rgba(0,0,0,0.88)";
-  ctx.lineWidth = Math.max(3, primaryFit.size * 0.035);
-  ctx.shadowColor = "rgba(240,24,61,0.5)";
-  ctx.shadowBlur = primaryFit.size * 0.12;
-  ctx.strokeText(primary, safeX, titleY, maxTextW);
-  ctx.fillText(primary, safeX, titleY, maxTextW);
-
-  if (secondary) {
-    ctx.font = font(Math.max(primaryFit.size * 0.58, width * 0.045), "Permanent Marker", 900);
+  if (collection) {
+    ctx.font = font(Math.max(11, width * 0.011), "Inter", 950);
     ctx.fillStyle = mood.accent;
-    ctx.strokeStyle = FLESHLAB_BRAND_IDENTITY.colors.cream;
-    ctx.lineWidth = Math.max(1.5, primaryFit.size * 0.012);
-    ctx.save();
-    ctx.translate(titleOnLeft ? safeX + width * 0.02 : safeX - width * 0.02, titleY + primaryFit.size * 0.62);
-    ctx.rotate(titleOnLeft ? -0.055 : 0.055);
-    ctx.strokeText(secondary, 0, 0, maxTextW * 0.9);
-    ctx.fillText(secondary, 0, 0, maxTextW * 0.9);
-    ctx.restore();
+    if (titleOnLeft) drawTrackingText(ctx, collection, safeX, logoBottom + height * 0.052, Math.max(1.2, width * 0.0014), maxTextW);
+    else ctx.fillText(collection, safeX, logoBottom + height * 0.052, maxTextW);
   }
+
+  const typographyPlan = planAdaptiveTypography({ ctx, title: exactTitle, width, height, format, compositionPlan: plan, logoBottom, collection, performerName });
+  plan.typographyPlan = typographyPlan;
+  plan.typographyWarnings = typographyPlan.preservesTitle ? [] : ["Title preservation check failed."];
+  ctx.textAlign = typographyPlan.align;
+  ctx.font = font(typographyPlan.fontSize, "Bebas Neue", 900);
+  ctx.fillStyle = FLESHLAB_BRAND_IDENTITY.colors.cream;
+  ctx.strokeStyle = "rgba(0,0,0,0.9)";
+  ctx.lineWidth = Math.max(3, typographyPlan.fontSize * 0.04);
+  ctx.shadowColor = "rgba(0,0,0,0.72)";
+  ctx.shadowBlur = typographyPlan.fontSize * 0.12;
+  typographyPlan.lines.forEach((line, index) => {
+    const y = typographyPlan.y + typographyPlan.fontSize * 0.88 + index * typographyPlan.lineHeight;
+    ctx.strokeText(line, typographyPlan.x, y, typographyPlan.width);
+    ctx.fillText(line, typographyPlan.x, y, typographyPlan.width);
+  });
   ctx.shadowBlur = 0;
+
+  const afterTitle = typographyPlan.y + typographyPlan.lineHeight * typographyPlan.lines.length + height * 0.035;
+  ctx.fillStyle = mood.accent;
+  ctx.fillRect(titleOnLeft ? typographyPlan.box.x : typographyPlan.box.x + typographyPlan.box.w * 0.68, afterTitle, typographyPlan.box.w * 0.32, Math.max(4, height * 0.006));
 
   drawLayerSubjectMask(ctx, image, width, height, plan, photo);
 
   if (performerName) {
-    ctx.font = font(Math.max(14, width * 0.015), "Inter", 950);
+    ctx.font = font(Math.max(12, width * 0.012), "Inter", 950);
     ctx.fillStyle = "rgba(255,255,255,0.86)";
-    if (titleOnLeft) drawTrackingText(ctx, `${performerName} SOLO`, safeX, height * 0.72, Math.max(1.4, width * 0.0015), maxTextW);
-    else ctx.fillText(`${performerName} SOLO`, safeX, height * 0.72, maxTextW);
+    const performerY = Math.min(height * 0.76, afterTitle + height * 0.055);
+    if (titleOnLeft) drawTrackingText(ctx, `${performerName} SOLO`, typographyPlan.box.x, performerY, Math.max(1.1, width * 0.0012), typographyPlan.box.w);
+    else ctx.fillText(`${performerName} SOLO`, typographyPlan.box.x + typographyPlan.box.w, performerY, typographyPlan.box.w);
   }
   ctx.textAlign = "left";
 
@@ -631,7 +629,7 @@ export async function renderPremiumCampaignAsset({ image, analysis, format, camp
     layoutSketch,
     compositionPlan,
     layerPlan: compositionPlan.layerPlan,
-    typographyWarnings: [],
+    typographyWarnings: compositionPlan.typographyWarnings || [],
     campaignMetadata: campaign.campaignMetadata,
     downstreamStage: "Final Key Art",
     campaignComposerReady: true,
