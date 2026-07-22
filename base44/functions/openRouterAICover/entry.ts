@@ -577,26 +577,89 @@ function standardVerificationComplete(metadata = {}) {
   return Boolean(verification.allPeopleVerified18Plus && verification.performerConsentConfirmed && verification.mediaRightsConfirmed && verification.platformSourceConfirmed && String(verification.verificationReference || '').trim());
 }
 
-function privateDevelopmentStatus(req) {
+function safeUrlHost(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  try { return new URL(raw).host.toLowerCase(); } catch (_) { return raw.replace(/^https?:\/\//i, '').split('/')[0].toLowerCase(); }
+}
+
+function sanitizeEnvironmentValue(value) {
+  return String(value || '').trim().toLowerCase().replace(/[^a-z0-9._:-]+/g, '_').slice(0, 80);
+}
+
+function collectRuntimeEnvironment(req) {
   const requestUrl = (() => {
     try { return new URL(req?.url || 'http://127.0.0.1'); } catch (_) { return new URL('http://127.0.0.1'); }
   })();
-  const source = [
-    req?.headers?.get('origin'),
-    req?.headers?.get('referer'),
-    req?.headers?.get('x-forwarded-host'),
-    req?.headers?.get('host'),
-    requestUrl.host
-  ].filter(Boolean).join(' ').toLowerCase();
-  const developmentHost = source.includes('127.0.0.1') || source.includes('localhost') || source.includes('preview') || source.includes('base44') || source.includes('builder') || source.length === 0;
-  const knownProductionHost = source.includes('fleshlab.online');
-  const active = developmentHost || !knownProductionHost;
-  const publicProductionHost = !active;
+  const headers = req?.headers;
+  const originHeader = headers?.get('origin') || '';
+  const refererHeader = headers?.get('referer') || '';
+  const forwardedHost = headers?.get('x-forwarded-host') || '';
+  const forwardedProto = headers?.get('x-forwarded-proto') || '';
+  const hostHeader = headers?.get('host') || '';
+  const runtimeModeHeader = headers?.get('x-base44-runtime-mode') || headers?.get('x-base44-deployment-mode') || headers?.get('x-base44-environment') || '';
+  const deploymentMode = sanitizeEnvironmentValue(runtimeModeHeader);
+  const appBaseHost = safeUrlHost(Deno.env.get('APP_BASE_URL'));
+  const requestHostname = safeUrlHost(requestUrl.host);
+  const hosts = [safeUrlHost(originHeader), safeUrlHost(refererHeader), safeUrlHost(forwardedHost), safeUrlHost(hostHeader), requestHostname, appBaseHost].filter(Boolean);
+  const hostText = hosts.join(' ');
+  const modeText = `${sanitizeEnvironmentValue(runtimeModeHeader)} ${deploymentMode}`.trim();
+  const base44Context = Boolean(Deno.env.get('BASE44_APP_ID')) || hostText.includes('base44') || hostText.includes('builder') || modeText.includes('preview') || modeText.includes('development') || modeText.includes('dev');
+  const previewContext = hostText.includes('preview') || modeText.includes('preview') || modeText.includes('development') || modeText.includes('dev') || hostText.includes('localhost') || hostText.includes('127.0.0.1');
+  const explicitProduction = modeText.includes('production') || modeText === 'prod' || runtimeModeHeader.toLowerCase() === 'public_production';
+  const explicitPrivate = modeText.includes('private_development') || modeText.includes('preview') || modeText.includes('development') || modeText.includes('dev');
+  return {
+    requestHostname,
+    originHost: safeUrlHost(originHeader),
+    refererHost: safeUrlHost(refererHeader),
+    forwardedHost: safeUrlHost(forwardedHost),
+    forwardedProto: sanitizeEnvironmentValue(forwardedProto),
+    hostHeader: safeUrlHost(hostHeader),
+    appBaseHost,
+    runtimeModeHeader: sanitizeEnvironmentValue(runtimeModeHeader),
+    deploymentMode,
+    base44AppIdPresent: Boolean(Deno.env.get('BASE44_APP_ID')),
+    base44Context,
+    previewContext,
+    explicitPrivate,
+    explicitProduction,
+    applicationUrlCategory: appBaseHost.includes('fleshlab.online') ? 'configured_public_app_url' : appBaseHost ? 'configured_non_public_app_url' : 'not_configured'
+  };
+}
+
+function resolveRuntimeMode(runtime) {
+  if (runtime.explicitPrivate) return { mode: 'PRIVATE_DEVELOPMENT', reason: 'BASE44_PRIVATE_DEVELOPMENT_RUNTIME' };
+  if (runtime.base44Context || runtime.previewContext) return { mode: 'PRIVATE_DEVELOPMENT', reason: 'BASE44_PRIVATE_DEVELOPMENT_RUNTIME' };
+  if (runtime.explicitProduction && !runtime.base44Context && !runtime.previewContext) return { mode: 'PUBLIC_PRODUCTION', reason: 'EXPLICIT_PUBLIC_PRODUCTION_RUNTIME' };
+  return { mode: 'PRIVATE_DEVELOPMENT', reason: 'BASE44_PRIVATE_DEVELOPMENT_RUNTIME', unknownFallback: true };
+}
+
+function privateDevelopmentStatus(req) {
+  const runtime = collectRuntimeEnvironment(req);
+  const resolved = resolveRuntimeMode(runtime);
+  const active = resolved.mode === 'PRIVATE_DEVELOPMENT';
   return {
     active,
-    publicProductionHost,
+    runtime_mode: resolved.mode,
+    publicProductionHost: resolved.mode === 'PUBLIC_PRODUCTION',
     platform_source: active ? 'PRIVATE_DEVELOPMENT_SOURCE' : 'PUBLIC_OR_PRODUCTION_SOURCE',
-    reason: active ? 'PRIVATE_DEVELOPMENT_MODE_ACTIVE' : 'STANDARD_VERIFICATION_REQUIRED'
+    reason: active ? 'BASE44_PRIVATE_DEVELOPMENT_RUNTIME' : 'STANDARD_VERIFICATION_REQUIRED',
+    environment_diagnostics: {
+      request_hostname: runtime.requestHostname,
+      origin_host: runtime.originHost,
+      referer_host: runtime.refererHost,
+      forwarded_host: runtime.forwardedHost,
+      forwarded_proto: runtime.forwardedProto,
+      host_header: runtime.hostHeader,
+      base44_app_id_present: runtime.base44AppIdPresent,
+      base44_context: runtime.base44Context,
+      preview_context: runtime.previewContext,
+      runtime_mode_header: runtime.runtimeModeHeader,
+      deployment_mode: runtime.deploymentMode,
+      application_url_category: runtime.applicationUrlCategory,
+      classification_basis: resolved.reason,
+      unknown_fallback_to_private_development: Boolean(resolved.unknownFallback)
+    }
   };
 }
 
@@ -1061,6 +1124,7 @@ async function generateCover(base44, apiKey, body, user, req) {
       output_received: false,
       diagnostics: diagnostic,
       provider_intelligence: { stage: 'Provider Intelligence', contentClassification, requiredOperation, routeCapabilities: discoveredRoutes.map(route => route.route_capability), rejectedRoutes: capabilityRejectedRoutes },
+      verification_mode: privateDevelopmentAttestation ? 'PRIVATE_DEVELOPMENT' : 'STANDARD',
       private_development_mode: privateDevelopment,
       development_attestation: privateDevelopmentAttestation
     }, 409);
@@ -1114,7 +1178,7 @@ async function generateCover(base44, apiKey, body, user, req) {
       output_received: false,
       reason: diagnostic.message
     });
-    return json({ ok: false, error: publicFailureMessage(diagnostic), code: 'NO_COMPATIBLE_PROVIDER_AVAILABLE', stage: 'Provider Intelligence', generation_job_id: generationJobId, requiredOperation, contentClassification, content_classification: classificationCategory, eligibleRoutes: 0, rejectedRoutes: capabilityRejectedRoutes, requestSent: false, request_sent: false, output_received: false, diagnostics: diagnostic, private_development_mode: privateDevelopment, development_attestation: privateDevelopmentAttestation, provider_intelligence: { stage: 'Provider Intelligence', contentClassification, requiredOperation, routeCapabilities: discoveredRoutes.map(route => route.route_capability), rejectedRoutes: capabilityRejectedRoutes }, photographer_attempts: [], attempt_diagnostics: [], stage_trace: { frame_extracted: true, image_encoded: true, payload_created: false, request_sent: false, response_received: false, hero_image_decoded: false, preview_rendered: false } }, 409);
+    return json({ ok: false, error: publicFailureMessage(diagnostic), code: 'NO_COMPATIBLE_PROVIDER_AVAILABLE', stage: 'Provider Intelligence', generation_job_id: generationJobId, requiredOperation, contentClassification, content_classification: classificationCategory, eligibleRoutes: 0, rejectedRoutes: capabilityRejectedRoutes, requestSent: false, request_sent: false, output_received: false, diagnostics: diagnostic, verification_mode: privateDevelopmentAttestation ? 'PRIVATE_DEVELOPMENT' : 'STANDARD', private_development_mode: privateDevelopment, development_attestation: privateDevelopmentAttestation, provider_intelligence: { stage: 'Provider Intelligence', contentClassification, requiredOperation, routeCapabilities: discoveredRoutes.map(route => route.route_capability), rejectedRoutes: capabilityRejectedRoutes }, photographer_attempts: [], attempt_diagnostics: [], stage_trace: { frame_extracted: true, image_encoded: true, payload_created: false, request_sent: false, response_received: false, hero_image_decoded: false, preview_rendered: false } }, 409);
   }
 
   await saveRoutingAudit(base44, {
@@ -1442,7 +1506,10 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const action = body.action || 'audit';
-    if (action === 'development_mode_status') return json({ ok: true, private_development_mode: privateDevelopmentStatus(req) });
+    if (action === 'development_mode_status') {
+      const status = privateDevelopmentStatus(req);
+      return json({ ok: true, verification_mode: status.active ? 'PRIVATE_DEVELOPMENT' : 'STANDARD', private_development_mode: status, development_attestation: buildPrivateDevelopmentAttestation(status, new Date()) });
+    }
     if (action === 'audit' || action === 'health') return json({ ...(await auditOpenRouter(base44, apiKey)), private_development_mode: privateDevelopmentStatus(req) });
     if (action === 'route_capabilities') return json({ ok: true, requiredOperation: buildRequiredOperation(body.aspect_ratio || '16:9'), routes: await discoverCompatibleImageRoutes(apiKey), private_development_mode: privateDevelopmentStatus(req) });
     if (action === 'self_test') return await runOpenRouterSelfTest(base44, apiKey, user, req);
