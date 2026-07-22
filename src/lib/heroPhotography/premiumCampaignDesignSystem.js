@@ -31,18 +31,10 @@ function clamp(value, min = 0, max = 1) { return Math.max(min, Math.min(max, val
 function upper(value) { return String(value || "").trim().toUpperCase(); }
 function font(size, family = "Inter", weight = 900) { return `${weight} ${Math.round(size)}px "${family}", Impact, Arial, sans-serif`; }
 function compact(value) { return String(value || "").replace(/\s+/g, " ").trim(); }
+function toPx(zone, width, height) { return { x: zone.x * width, y: zone.y * height, w: zone.w * width, h: zone.h * height }; }
 
 function inferCampaignMood(campaign = {}) {
-  const text = `${campaign.campaignTitle || ""} ${campaign.subtitle || ""} ${campaign.campaignLabel || ""} ${campaign.releaseName || ""} ${campaign.seriesName || ""}`.toLowerCase();
-  if (/behind|bts|backstage/.test(text)) return MOODS.behind;
-  if (/exclusive|release|premiere|ppv/.test(text)) return MOODS.exclusive;
-  if (/travel|city|journey|location|manila|taipei|tokyo|bangkok/.test(text)) return MOODS.travel;
-  if (/summer|sun|heat/.test(text)) return MOODS.summer;
-  if (/night|club|after dark|neon/.test(text)) return MOODS.nightlife;
-  if (/hotel|room|suite|check-in|check in/.test(text)) return MOODS.hotel;
-  if (/beach|island|ocean|pool/.test(text)) return MOODS.beach;
-  if (/fitness|gym|body|motion|training/.test(text)) return MOODS.fitness;
-  if (/studio|lab|original/.test(text)) return MOODS.studio;
+  if (campaign.moodKey && MOODS[campaign.moodKey]) return MOODS[campaign.moodKey];
   return MOODS.luxury;
 }
 
@@ -70,19 +62,31 @@ function drawBackgroundStage(ctx, image, width, height, analysis, mood) {
   ctx.fillRect(0, 0, width, height);
 }
 
-function layoutFor(format, analysis) {
+function layoutFor(format, analysis, campaign) {
   const portrait = format.height > format.width;
   const ultraWide = format.width / format.height > 2.2;
-  const subjectSide = analysis.subjectSide || "center";
+  if (campaign.designVariant === "full_bleed") return portrait ? { image: { x: 0, y: 0, w: 1, h: 1 }, panel: { x: 0.08, y: 0.56, w: 0.84, h: 0.34 }, textAlign: "left", fullBleed: true } : { image: { x: 0, y: 0, w: 1, h: 1 }, panel: { x: 0.06, y: 0.12, w: ultraWide ? 0.38 : 0.42, h: 0.74 }, textAlign: "left", fullBleed: true };
+  if (campaign.designVariant === "poster_panel") return portrait ? { image: { x: 0.08, y: 0.06, w: 0.84, h: 0.52 }, panel: { x: 0.08, y: 0.55, w: 0.84, h: 0.38 }, textAlign: "center" } : { image: { x: 0.1, y: 0.08, w: 0.5, h: 0.84 }, panel: { x: 0.54, y: 0.12, w: 0.38, h: 0.76 }, textAlign: "left" };
   if (portrait) return { image: { x: 0.07, y: 0.07, w: 0.86, h: 0.56 }, panel: { x: 0.08, y: 0.56, w: 0.84, h: 0.36 }, textAlign: "center", portrait: true };
   if (ultraWide) return { image: { x: 0.46, y: 0.08, w: 0.5, h: 0.84 }, panel: { x: 0.04, y: 0.12, w: 0.42, h: 0.76 }, textAlign: "left" };
-  if (subjectSide === "left") return { image: { x: 0.04, y: 0.08, w: 0.58, h: 0.84 }, panel: { x: 0.57, y: 0.12, w: 0.38, h: 0.76 }, textAlign: "left" };
+  if ((analysis.subjectSide || "center") === "left") return { image: { x: 0.04, y: 0.08, w: 0.58, h: 0.84 }, panel: { x: 0.57, y: 0.12, w: 0.38, h: 0.76 }, textAlign: "left" };
   return { image: { x: 0.38, y: 0.08, w: 0.58, h: 0.84 }, panel: { x: 0.05, y: 0.12, w: 0.4, h: 0.76 }, textAlign: "left" };
 }
 
-function toPx(zone, width, height) { return { x: zone.x * width, y: zone.y * height, w: zone.w * width, h: zone.h * height }; }
-
 function drawImageMask(ctx, image, width, height, analysis, layout, mood, format) {
+  if (layout.fullBleed) {
+    ctx.save();
+    ctx.filter = "brightness(70%) contrast(142%) saturate(112%)";
+    coverImage(ctx, image, width, height, analysis.subjectCenter || { x: 0.5, y: 0.48 }, format.role === "thumbnail" ? 1.12 : 1.04);
+    ctx.restore();
+    const shade = ctx.createLinearGradient(0, 0, width, height);
+    shade.addColorStop(0, "rgba(0,0,0,0.82)");
+    shade.addColorStop(0.48, "rgba(0,0,0,0.26)");
+    shade.addColorStop(1, "rgba(0,0,0,0.74)");
+    ctx.fillStyle = shade;
+    ctx.fillRect(0, 0, width, height);
+    return;
+  }
   const box = toPx(layout.image, width, height);
   ctx.save();
   ctx.beginPath();
@@ -113,11 +117,7 @@ function drawTexture(ctx, width, height, mood) {
   ctx.save();
   ctx.globalAlpha = mood.texture;
   ctx.fillStyle = "#ffffff";
-  for (let i = 0; i < 360; i += 1) {
-    const x = (i * 97) % width;
-    const y = (i * 53) % height;
-    ctx.fillRect(x, y, 1 + (i % 3), 1);
-  }
+  for (let i = 0; i < 360; i += 1) ctx.fillRect((i * 97) % width, (i * 53) % height, 1 + (i % 3), 1);
   ctx.globalAlpha = 0.18;
   ctx.strokeStyle = "rgba(255,255,255,0.16)";
   ctx.lineWidth = 1;
@@ -130,10 +130,10 @@ function drawTexture(ctx, width, height, mood) {
   ctx.restore();
 }
 
-function drawGraphicLanguage(ctx, width, height, layout, mood, format) {
+function drawGraphicLanguage(ctx, width, height, layout, mood, format, campaign) {
   const panel = toPx(layout.panel, width, height);
   ctx.save();
-  ctx.fillStyle = mood.panel;
+  ctx.fillStyle = campaign.designVariant === "full_bleed" ? "rgba(0,0,0,0.34)" : mood.panel;
   ctx.beginPath();
   ctx.roundRect(panel.x, panel.y, panel.w, panel.h, Math.max(10, width * 0.012));
   ctx.fill();
@@ -146,7 +146,7 @@ function drawGraphicLanguage(ctx, width, height, layout, mood, format) {
   ctx.globalAlpha = 0.96;
   ctx.fillStyle = mood.accent;
   ctx.translate(panel.x - width * 0.025, panel.y + panel.h * 0.08);
-  ctx.rotate(-0.1);
+  ctx.rotate(campaign.designVariant === "poster_panel" ? 0.04 : -0.1);
   ctx.fillRect(0, 0, panel.w * 0.76, Math.max(9, height * 0.016));
   ctx.restore();
 
@@ -175,7 +175,7 @@ function drawGraphicLanguage(ctx, width, height, layout, mood, format) {
   streak.addColorStop(1, "rgba(255,255,255,0)");
   ctx.fillStyle = streak;
   ctx.translate(width * 0.08, format.role === "banner" ? -height * 0.15 : 0);
-  ctx.rotate(-0.16);
+  ctx.rotate(campaign.designVariant === "poster_panel" ? 0.12 : -0.16);
   ctx.fillRect(0, height * 0.24, width * 1.1, Math.max(18, height * 0.04));
   ctx.restore();
 }
@@ -185,8 +185,7 @@ function scoreWrappedLines(ctx, lines, maxWidth) {
   if (widths.some(width => width > maxWidth)) return -Infinity;
   const avg = widths.reduce((sum, width) => sum + width, 0) / Math.max(1, widths.length);
   const variance = widths.reduce((sum, width) => sum + Math.abs(width - avg), 0) / Math.max(1, widths.length);
-  const punctuation = lines.reduce((sum, line) => /[,;:!?]$/.test(line.trim()) ? sum + 0.1 : sum, 0);
-  return Math.max(...widths) / maxWidth - variance / maxWidth * 0.52 + punctuation;
+  return Math.max(...widths) / maxWidth - variance / maxWidth * 0.52;
 }
 
 function wrap(ctx, text, maxWidth, maxLines) {
@@ -207,17 +206,13 @@ function wrap(ctx, text, maxWidth, maxLines) {
 }
 
 function fitText(ctx, text, maxWidth, start, min, lines, family = "Bebas Neue") {
-  const words = String(text || "").trim().split(/\s+/).filter(Boolean);
-  const titleFamily = words.length > 10 ? "Inter" : family;
-  const maxLines = Math.min(Math.max(lines, words.length > 12 ? 6 : words.length > 8 ? 5 : lines), 6);
-  const startSize = words.length > 12 ? start * 0.58 : words.length > 8 ? start * 0.72 : start;
-  for (let size = startSize; size >= min; size -= Math.max(2, startSize * 0.045)) {
-    ctx.font = font(size, titleFamily, 900);
-    const wrapped = wrap(ctx, text, maxWidth, maxLines);
-    if (wrapped.every(line => ctx.measureText(line).width <= maxWidth)) return { size, lines: wrapped, family: titleFamily };
+  for (let size = start; size >= min; size -= Math.max(2, start * 0.045)) {
+    ctx.font = font(size, family, 900);
+    const wrapped = wrap(ctx, text, maxWidth, lines);
+    if (wrapped.every(line => ctx.measureText(line).width <= maxWidth)) return { size, lines: wrapped, family };
   }
-  ctx.font = font(min, titleFamily, 900);
-  return { size: min, lines: wrap(ctx, text, maxWidth, maxLines), family: titleFamily };
+  ctx.font = font(min, family, 900);
+  return { size: min, lines: wrap(ctx, text, maxWidth, lines), family };
 }
 
 function drawTrackingText(ctx, text, x, y, tracking, maxWidth) {
@@ -245,6 +240,28 @@ async function drawLogo(ctx, width, height, layout) {
   return panel.y + panel.h * 0.12;
 }
 
+function drawBadgeRow(ctx, badges, x, y, maxW, mood, center = false) {
+  const clean = (badges || []).slice(0, 4).map(upper).filter(Boolean);
+  if (!clean.length) return;
+  ctx.font = font(13, "Inter", 900);
+  const gap = 8;
+  const boxes = clean.map(label => ({ label, w: Math.min(maxW * 0.45, ctx.measureText(label).width + 22) }));
+  const total = boxes.reduce((sum, box) => sum + box.w, 0) + gap * (boxes.length - 1);
+  let cursor = center ? x - total / 2 : x;
+  boxes.forEach(box => {
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    ctx.strokeStyle = mood.accent;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(cursor, y, box.w, 24, 12);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,0.86)";
+    ctx.fillText(box.label, cursor + 11, y + 16, box.w - 22);
+    cursor += box.w + gap;
+  });
+}
+
 function drawEditorialType(ctx, width, height, layout, mood, campaign, logoBottom) {
   const panel = toPx(layout.panel, width, height);
   const pad = panel.w * 0.06;
@@ -254,10 +271,10 @@ function drawEditorialType(ctx, width, height, layout, mood, campaign, logoBotto
   ctx.textAlign = center ? "center" : "left";
   const textX = center ? panel.x + panel.w / 2 : x;
 
-  const title = compact(campaign.campaignTitle || "Hero Campaign");
-  const theme = compact(campaign.subtitle || campaign.seriesName || mood.label);
+  const title = compact(campaign.primaryTitle || campaign.campaignTitle || "PRIVATE ACCESS");
+  const collection = compact(campaign.collection || campaign.subtitle || campaign.seriesName || mood.label);
   const performer = compact(campaign.performerName || campaign.creatorName || "Featured Creator");
-  const supporting = compact(campaign.campaignLabel || campaign.releaseName || campaign.primaryCTA || mood.badge);
+  const episode = compact(campaign.episode || "Episode 01");
   const yStart = Math.max(logoBottom + height * 0.035, panel.y + panel.h * 0.21);
 
   ctx.font = font(Math.max(10, width * 0.009), "Inter", 950);
@@ -265,7 +282,7 @@ function drawEditorialType(ctx, width, height, layout, mood, campaign, logoBotto
   if (center) ctx.fillText(mood.badge, textX, yStart, maxW);
   else drawTrackingText(ctx, mood.badge, x, yStart, Math.max(1, width * 0.0016), maxW);
 
-  const titleFit = fitText(ctx, title, maxW, height > width ? width * 0.17 : width * 0.082, Math.max(24, width * 0.024), height > width ? 4 : 3);
+  const titleFit = fitText(ctx, title, maxW, height > width ? width * 0.22 : width * 0.11, Math.max(28, width * 0.028), 2);
   ctx.font = font(titleFit.size, titleFit.family || "Bebas Neue", 900);
   ctx.fillStyle = FLESHLAB_BRAND_IDENTITY.colors.cream;
   ctx.strokeStyle = "rgba(0,0,0,0.72)";
@@ -273,41 +290,29 @@ function drawEditorialType(ctx, width, height, layout, mood, campaign, logoBotto
   ctx.shadowColor = "rgba(0,0,0,0.65)";
   ctx.shadowBlur = titleFit.size * 0.1;
   titleFit.lines.forEach((line, index) => {
-    const y = yStart + titleFit.size * 0.82 + index * titleFit.size * 1.06;
-    ctx.strokeText(line, textX, y, maxW);
-    ctx.fillText(line, textX, y, maxW);
+    const y = yStart + titleFit.size * 0.86 + index * titleFit.size * 1.02;
+    ctx.strokeText(upper(line), textX, y, maxW);
+    ctx.fillText(upper(line), textX, y, maxW);
   });
   ctx.shadowBlur = 0;
 
-  const afterTitle = yStart + titleFit.size * (1 + titleFit.lines.length * 1.06) + height * 0.028;
+  const afterTitle = yStart + titleFit.size * (1 + titleFit.lines.length * 1.02) + height * 0.025;
   ctx.fillStyle = mood.accent;
   ctx.fillRect(center ? textX - maxW * 0.16 : x, afterTitle - height * 0.01, maxW * 0.32, Math.max(4, height * 0.006));
 
   ctx.font = font(Math.max(16, width * 0.022), "Inter", 850);
   ctx.fillStyle = mood.secondary;
-  ctx.fillText(upper(theme), textX, afterTitle + height * 0.035, maxW);
+  ctx.fillText(upper(collection), textX, afterTitle + height * 0.035, maxW);
 
   ctx.font = font(Math.max(13, width * 0.015), "Inter", 900);
   ctx.fillStyle = "rgba(255,255,255,0.86)";
   ctx.fillText(`PERFORMER / ${upper(performer)}`, textX, afterTitle + height * 0.085, maxW);
 
-  ctx.font = font(Math.max(10, width * 0.011), "Inter", 800);
-  ctx.fillStyle = "rgba(244,241,234,0.62)";
-  ctx.fillText(upper(supporting), textX, afterTitle + height * 0.125, maxW);
+  ctx.font = font(Math.max(11, width * 0.012), "Inter", 900);
+  ctx.fillStyle = "rgba(244,241,234,0.68)";
+  ctx.fillText(upper(episode), textX, afterTitle + height * 0.122, maxW);
 
-  if (campaign.primaryCTA) {
-    const ctaH = Math.max(30, height * 0.05);
-    const ctaW = Math.min(maxW, Math.max(maxW * 0.46, upper(campaign.primaryCTA).length * ctaH * 0.32));
-    const ctaX = center ? textX - ctaW / 2 : x;
-    const ctaY = panel.y + panel.h - ctaH - panel.h * 0.08;
-    ctx.fillStyle = mood.accent;
-    ctx.beginPath();
-    ctx.roundRect(ctaX, ctaY, ctaW, ctaH, ctaH * 0.5);
-    ctx.fill();
-    ctx.font = font(ctaH * 0.34, "Inter", 950);
-    ctx.fillStyle = "#fff";
-    ctx.fillText(upper(campaign.primaryCTA), center ? textX : ctaX + ctaH * 0.42, ctaY + ctaH * 0.64, ctaW - ctaH * 0.84);
-  }
+  drawBadgeRow(ctx, campaign.badges, center ? textX : x, afterTitle + height * 0.15, maxW, mood, center);
   ctx.textAlign = "left";
 }
 
@@ -317,21 +322,21 @@ export async function renderPremiumCampaignAsset({ image, analysis, format, camp
   canvas.height = format.height;
   const ctx = canvas.getContext("2d");
   const mood = inferCampaignMood(campaign);
-  const layout = layoutFor(format, analysis || {});
+  const layout = layoutFor(format, analysis || {}, campaign || {});
 
   ctx.fillStyle = FLESHLAB_BRAND_IDENTITY.colors.black;
   ctx.fillRect(0, 0, format.width, format.height);
   drawBackgroundStage(ctx, image, format.width, format.height, analysis || {}, mood);
   drawTexture(ctx, format.width, format.height, mood);
   drawImageMask(ctx, image, format.width, format.height, analysis || {}, layout, mood, format);
-  drawGraphicLanguage(ctx, format.width, format.height, layout, mood, format);
+  drawGraphicLanguage(ctx, format.width, format.height, layout, mood, format, campaign || {});
   const logoBottom = await drawLogo(ctx, format.width, format.height, layout);
-  drawEditorialType(ctx, format.width, format.height, layout, mood, campaign, logoBottom);
+  drawEditorialType(ctx, format.width, format.height, layout, mood, campaign || {}, logoBottom);
 
   const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.93));
   return {
     format,
-    filename: `${campaign.base}_${format.key}_premium.jpg`,
+    filename: `${campaign.base}_${format.key}_key_art.jpg`,
     width: format.width,
     height: format.height,
     size: blob.size,
@@ -339,10 +344,11 @@ export async function renderPremiumCampaignAsset({ image, analysis, format, camp
     url: URL.createObjectURL(blob),
     kind: "visual",
     status: "ready",
-    brandPlan: { family: mood.label, designSystem: "FLESHLAB Premium Campaign Design System", mood: mood.label, layout },
+    campaignConceptId: campaign.campaignConceptId,
+    brandPlan: { family: mood.label, designSystem: "FLESHLAB Premium Entertainment Key Art System", mood: mood.label, layout, graphicLanguage: campaign.designVariant },
     typographyWarnings: [],
     campaignMetadata: campaign.campaignMetadata,
-    downstreamStage: "Campaign Assets",
+    downstreamStage: "Final Key Art",
     campaignComposerReady: true,
   };
 }
