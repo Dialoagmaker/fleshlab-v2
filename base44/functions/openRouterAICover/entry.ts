@@ -13,7 +13,8 @@ const PREFERRED_IMAGE_MODELS = [
 ];
 const MAX_DATA_URL_CHARS = 12_000_000;
 const MAX_REFERENCE_BYTES = 9_000_000;
-const MAX_AUTOMATIC_ATTEMPTS = 4;
+const MAX_AUTOMATIC_ATTEMPTS = 8;
+const REFERENCE_ADAPTER_VERSION = 'reference-url-v2';
 const CANONICAL_CONTENT_TAXONOMY = {
   SAFE_EDITORIAL: {
     semanticMeaning: 'Non-explicit editorial, commercial, portrait, fitness, fashion, product, lifestyle, swimwear, and underwear creative.',
@@ -165,7 +166,7 @@ function parseOpenRouterError(status, bodyText, headers = null, payloadSummary =
 
 function classifyProviderRejection(message, metadata) {
   const lower = `${message || ''} ${metadata?.block_reason || ''} ${metadata?.finish_reason || ''}`.toLowerCase();
-  if (lower.includes('prohibited') || lower.includes('blocked') || lower.includes('moderation') || lower.includes('policy') || lower.includes('guardrail') || lower.includes('flagged')) return 'content';
+  if (lower.includes('prohibited') || lower.includes('blocked') || lower.includes('moderation') || lower.includes('policy') || lower.includes('guardrail') || lower.includes('flagged') || lower.includes('safety system') || lower.includes('safety_violations') || lower.includes('sexual') || lower.includes('sensitive information')) return 'content';
   if (lower.includes('image') || lower.includes('input_reference') || lower.includes('input reference') || lower.includes('base64') || lower.includes('parse')) return 'reference_image';
   if (lower.includes('payload') || lower.includes('parameter')) return 'payload';
   return 'unknown';
@@ -174,7 +175,7 @@ function classifyProviderRejection(message, metadata) {
 function categorizeOpenRouterError(status, code, message, metadata) {
   const lower = String(message || '').toLowerCase();
   const errorType = String(metadata?.error_type || metadata?.provider_code || '').toLowerCase();
-  if (lower.includes('prohibited') || lower.includes('blocked') || lower.includes('moderation') || lower.includes('policy') || lower.includes('guardrail') || lower.includes('flagged')) return 'CONTENT_POLICY';
+  if (lower.includes('prohibited') || lower.includes('blocked') || lower.includes('moderation') || lower.includes('policy') || lower.includes('guardrail') || lower.includes('flagged') || lower.includes('safety system') || lower.includes('safety_violations') || lower.includes('sexual') || lower.includes('sensitive information')) return 'CONTENT_POLICY';
   if (status === 400) {
     if (lower.includes('image') || lower.includes('input_reference') || lower.includes('input reference') || lower.includes('base64')) return 'UNSUPPORTED_IMAGE_INPUT';
     return 'INVALID_PAYLOAD';
@@ -294,7 +295,7 @@ function endpointIdentity(endpoint) {
 }
 
 function routeCapabilityKey(route) {
-  return `${route?.id || 'unknown'}::${route?.route_capability?.endpoint || route?.compatible_endpoints?.[0]?.provider_slug || 'default_endpoint'}`;
+  return `${REFERENCE_ADAPTER_VERSION}::${route?.id || 'unknown'}::${route?.route_capability?.endpoint || route?.compatible_endpoints?.[0]?.provider_slug || 'default_endpoint'}`;
 }
 
 function estimateEndpointCost(endpoint) {
@@ -876,6 +877,11 @@ function getRememberedRouteCapabilityMismatch(route, unsupportedOperation = REQU
     return null;
   }
   return { ...item, ttl_remaining_ms: ROUTE_CAPABILITY_MEMORY_TTL_MS - (Date.now() - item.timestamp) };
+}
+
+function providerReallyRejectedImageReference(diagnostic) {
+  const lower = String(diagnostic?.message || diagnostic?.raw_response || '').toLowerCase();
+  return lower.includes('input_references') && (lower.includes('not supported') || lower.includes('unsupported') || lower.includes('unknown parameter') || lower.includes('invalid parameter'));
 }
 
 function rememberRouteCapabilityMismatch(route, unsupportedOperation = REQUIRED_IMAGE_REFERENCE_OPERATION) {
@@ -1567,11 +1573,11 @@ async function generateCover(base44, apiKey, body, user, req) {
   for (const route of routingPlan.routes) {
     const providerFamily = providerFamilyForRoute(route);
     const rememberedFailure = getRememberedFailure(requestFingerprint, providerFamily);
-    if (rememberedFailure && rememberedFailure.category === 'CONTENT_POLICY' && rememberedFailure.retryable === false) {
+    if (classificationCategory !== 'SAFE_EDITORIAL' && rememberedFailure && rememberedFailure.category === 'CONTENT_POLICY' && rememberedFailure.retryable === false) {
       skippedRoutes.push({ model: route.id, provider_family: providerFamily, reason: 'remembered non-retryable provider-family policy failure', category: rememberedFailure.category, failure_memory_fingerprint: requestFingerprint, ttl_remaining_ms: FAILURE_MEMORY_TTL_MS - (Date.now() - rememberedFailure.timestamp) });
       continue;
     }
-    if (failedPolicyFamilies.has(providerFamily)) {
+    if (classificationCategory !== 'SAFE_EDITORIAL' && failedPolicyFamilies.has(providerFamily)) {
       skippedRoutes.push({ model: route.id, provider_family: providerFamily, reason: 'equivalent provider family with identical non-retryable policy failure', category: 'CONTENT_POLICY', failure_memory_fingerprint: requestFingerprint, ttl_remaining_ms: FAILURE_MEMORY_TTL_MS });
       continue;
     }
@@ -1741,11 +1747,11 @@ async function generateCover(base44, apiKey, body, user, req) {
       diagnostic.provider_family = providerFamilyForRoute(route);
       diagnostic.endpoint = route.route_capability?.endpoint || 'POST /api/v1/images';
       diagnostic.policy_compatible = policyRouting.policyCompatible;
-      if (diagnostic.category === 'CONTENT_POLICY' && diagnostic.retryable === false) {
+      if (classificationCategory !== 'SAFE_EDITORIAL' && diagnostic.category === 'CONTENT_POLICY' && diagnostic.retryable === false) {
         failedPolicyFamilies.add(diagnostic.provider_family);
         rememberFailure(requestFingerprint, diagnostic.provider_family, diagnostic);
       }
-      if (diagnostic.category === 'UNSUPPORTED_IMAGE_INPUT' && diagnostic.retryable === false) {
+      if (diagnostic.category === 'UNSUPPORTED_IMAGE_INPUT' && diagnostic.retryable === false && providerReallyRejectedImageReference(diagnostic)) {
         rememberRouteCapabilityMismatch(route, REQUIRED_IMAGE_REFERENCE_OPERATION);
       }
       finalDiagnostic = diagnostic;
