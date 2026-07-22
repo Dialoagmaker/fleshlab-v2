@@ -6,26 +6,62 @@ function pct(value) {
   return `${Math.round(value * 100)}%`;
 }
 
+function clean(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+const STOP_WORDS = new Set(["THE", "A", "AN", "AND", "OR", "WITH", "IN", "ON", "AT", "OF", "FOR", "TO", "HIS", "HER", "THEIR", "YOUR", "MY", "IS", "ARE"]);
+const IMPACT_WORDS = ["STEAM", "PRIVATE", "RAW", "WILD", "HEAT", "AFTER", "HOURS", "ACCESS", "CHECK", "SUMMER", "NIGHT", "LUXURY", "HOTEL", "BATHROOM", "LOCATION"];
+
+function identityFromTitle(title, fallback) {
+  const source = clean(title || fallback || "CHECK-IN").toUpperCase();
+  const words = source.replace(/[^A-Z0-9\s-]/g, " ").split(/\s+/).filter(Boolean);
+  if (words.length <= 4 && source.length <= 28) return source;
+  const impact = words.filter(word => IMPACT_WORDS.includes(word)).slice(0, 2);
+  const strong = words.filter(word => !STOP_WORDS.has(word) && word.length > 3).slice(0, 2);
+  return (impact.length ? impact : strong).join(" ") || clean(fallback).toUpperCase() || "CHECK-IN";
+}
+
+export function createCreativeConcept(campaign = {}, analysis = {}) {
+  const text = `${campaign.primaryTitle || ""} ${campaign.subtitle || ""} ${campaign.campaignLabel || ""}`.toLowerCase();
+  const steam = /bath|shower|steam|hotel|spa/.test(text);
+  const outdoor = /beach|summer|wild|jungle|outdoor|location/.test(text);
+  const raw = /raw|real|documentary|behind/.test(text);
+  const campaignIdentity = identityFromTitle(campaign.primaryTitle || campaign.campaignTitle, campaign.campaignLabel || campaign.collection);
+  return {
+    campaignEmotion: steam ? "INTIMATE_TENSION" : outdoor ? "SUNLIT_ESCAPE" : raw ? "RAW_ACCESS" : "PREMIUM_DESIRE",
+    campaignFantasy: steam ? "Luxury private-room access" : outdoor ? "On-location freedom" : raw ? "Unfiltered behind-the-scenes truth" : "Exclusive premium encounter",
+    visualTension: analysis.backgroundComplexity > 0.62 ? "HIGH_CONTRAST" : "CONTROLLED_SEDUCTION",
+    targetAudience: "Premium entertainment viewer seeking fast emotional clarity",
+    marketingHook: campaign.campaignLabel || campaign.collection || (steam ? "PRIVATE ACCESS" : outdoor ? "ON LOCATION" : "EXCLUSIVE"),
+    storytellingAngle: steam ? "privacy, steam, forbidden luxury" : outdoor ? "heat, motion, destination energy" : raw ? "access, realism, creator proximity" : "brand-led cinematic reveal",
+    dominantVisualWord: campaignIdentity.split(/\s+/)[0] || "ACCESS",
+    campaignIdentity
+  };
+}
+
 function inferDominantSide(analysis = {}) {
   const subjectX = analysis.subjectCenter?.x ?? 0.58;
   if ((analysis.subjectSide || "") === "left" || subjectX < 0.42) return "LEFT";
   return "RIGHT";
 }
 
-function chooseFamily({ format, analysis }) {
+function chooseFamily({ format, analysis, creativeConcept }) {
   const ratio = format.width / format.height;
   const complexity = analysis.backgroundComplexity ?? 0.45;
   if (format.role === "cover" || ratio < 0.75) return "MOVIE_POSTER";
   if (format.role === "hero" || ratio > 1.9) return "STREAMING_HERO";
-  if (complexity > 0.68) return "DOCUMENTARY";
+  if (creativeConcept?.campaignEmotion === "SUNLIT_ESCAPE") return "LUXURY_CAMPAIGN";
+  if (complexity > 0.68 || creativeConcept?.campaignEmotion === "RAW_ACCESS") return "DOCUMENTARY";
   if ((analysis.subjectSeparation ?? 0.6) > 0.72) return "FASHION_EDITORIAL";
   return "SPLIT_KEY_ART";
 }
 
 export function createCompositionPlan({ analysis = {}, format = {}, campaign = {} }) {
+  const creativeConcept = createCreativeConcept(campaign, analysis);
   const dominantSide = inferDominantSide(analysis);
   const titleSide = dominantSide === "RIGHT" ? "LEFT" : "RIGHT";
-  const family = chooseFamily({ format, analysis, campaign });
+  const family = chooseFamily({ format, analysis, campaign, creativeConcept });
   const portrait = format.height > format.width;
   const ultraWide = format.width / format.height > 1.9;
   const photoWeight = portrait ? 0.58 : ultraWide ? 0.64 : 0.62;
@@ -38,6 +74,7 @@ export function createCompositionPlan({ analysis = {}, format = {}, campaign = {
     : { x: 0, y: 0, w: portrait ? 0.66 : photoWeight + graphicWeight * 0.24, h: 1 };
 
   return {
+    creativeConcept,
     layoutStyle: "FULL_BLEED_KEY_ART",
     layoutFamily: family,
     photoWeight: pct(photoWeight),
@@ -49,11 +86,19 @@ export function createCompositionPlan({ analysis = {}, format = {}, campaign = {
     subjectCrop: family === "MOVIE_POSTER" ? "TIGHT" : "MEDIUM",
     subjectMask: "EDGE_BLEND",
     backgroundExtension: "YES",
-    backgroundDarkening: "LEFT_ONLY",
+    backgroundDarkening: titleSide === "LEFT" ? "LEFT_ONLY" : "RIGHT_ONLY",
     graphicField: "BLACK_TEXTURE",
     accentStyle: "RED_BRUSH",
-    hierarchy: "HERO",
-    eyePath: titleSide === "LEFT" ? "LOGO_TO_TITLE_TO_FACE_TO_FEATURE_STRIP" : "FACE_TO_TITLE_TO_LOGO_TO_FEATURE_STRIP",
+    hierarchy: "EMOTION_FIRST",
+    brandDnaRules: {
+      typographyProportion: "oversized identity first, metadata last",
+      graphicRhythm: "black mass, red strike, cinematic photo counterweight",
+      negativeSpace: "large quiet field before detail",
+      logoTreatment: "brand as architecture, not watermark",
+      textureIntensity: "visible but subordinate to face and title"
+    },
+    qualityGate: "Reject Canva, dashboard, card, slide, and overlay-generator compositions",
+    eyePath: titleSide === "LEFT" ? "LOGO_TO_IDENTITY_TO_FACE_TO_FEATURE_STRIP" : "FACE_TO_IDENTITY_TO_LOGO_TO_FEATURE_STRIP",
     visualTension: analysis.backgroundComplexity > 0.62 ? "HIGH" : "CONTROLLED",
     safeTypographyArea: graphicZone,
     photoZone,

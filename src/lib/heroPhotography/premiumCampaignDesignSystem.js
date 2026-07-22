@@ -447,7 +447,7 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
   if (titleOnLeft) drawTrackingText(ctx, collection, safeX, logoBottom + height * 0.065, Math.max(1.5, width * 0.002), maxTextW);
   else ctx.fillText(collection, safeX, logoBottom + height * 0.065, maxTextW);
 
-  const [primary, secondary] = splitKeyArtTitle(campaign.primaryTitle || campaign.campaignTitle);
+  const [primary, secondary] = splitKeyArtTitle(plan.creativeConcept?.campaignIdentity || campaign.primaryTitle || campaign.campaignTitle);
   const titleY = logoBottom + height * 0.22;
   const primaryFit = fitText(ctx, primary, maxTextW, Math.min(height * 0.24, width * 0.16), Math.max(42, width * 0.052), 1, "Bebas Neue");
   ctx.font = font(primaryFit.size, "Bebas Neue", 900);
@@ -530,7 +530,7 @@ export async function renderPremiumCampaignAsset({ image, analysis, format, camp
     kind: "visual",
     status: "ready",
     campaignConceptId: campaign.campaignConceptId,
-    brandPlan: { family: mood.label, designSystem: "FLESHLAB Composition Engine Key Art System", mood: mood.label, layout: { legacy: legacyLayout, compositionPlan }, graphicLanguage: "composition_engine_key_art" },
+    brandPlan: { family: mood.label, designSystem: "FLESHLAB Creative Director Renderer", mood: mood.label, layout: { legacy: legacyLayout, compositionPlan }, graphicLanguage: "creative_director_key_art", creativeConcept: compositionPlan.creativeConcept, brandDnaRules: compositionPlan.brandDnaRules },
     compositionPlan,
     typographyWarnings: [],
     campaignMetadata: campaign.campaignMetadata,
