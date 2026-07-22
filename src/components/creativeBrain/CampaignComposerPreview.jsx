@@ -55,7 +55,7 @@ export default function CampaignComposerPreview({ output, pipeline, campaignFami
     const savedMetadata = readSavedMetadata(campaignFamily);
     composeCampaignFromHero(output, pipeline, campaignFamily, { userMetadata: metadata, savedMetadata })
       .then(result => {
-        urlsRef.current = [...(result.visualAssets || [])].map(asset => asset.url);
+        urlsRef.current = [...(result.visualAssets || [])].flatMap(asset => [asset.url, asset.legacyPreviewUrl].filter(Boolean));
         setComposer(result);
       })
       .catch(err => setError(err?.message || "Campaign Composer failed."))
