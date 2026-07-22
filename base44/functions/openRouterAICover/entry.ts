@@ -525,19 +525,6 @@ async function saveRenderingAttempt(base44, record) {
   }
 }
 
-async function saveOwnerDevelopmentAudit(base44, record) {
-  if (!record) return;
-  try {
-    await base44.asServiceRole.entities.OwnerDevelopmentRenderAudit.create({
-      verification_mode: 'OWNER_DEVELOPMENT',
-      timestamp: new Date().toISOString(),
-      ...record
-    });
-  } catch (error) {
-    console.warn('Owner development audit save failed', error.message);
-  }
-}
-
 function normalizeClassificationCategory(value) {
   const raw = String(value || '').trim();
   const upper = raw.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
@@ -590,50 +577,46 @@ function standardVerificationComplete(metadata = {}) {
   return Boolean(verification.allPeopleVerified18Plus && verification.performerConsentConfirmed && verification.mediaRightsConfirmed && verification.platformSourceConfirmed && String(verification.verificationReference || '').trim());
 }
 
-function ownerDevelopmentAuthorization(user) {
-  const env = Deno.env.toObject();
-  const enabled = String(env.OWNER_DEVELOPMENT_MODE || '').toLowerCase() === 'true';
-  const configuredOwnerId = String(env.OWNER_DEVELOPMENT_OWNER_ID || '').trim();
-  const configuredOwnerEmail = String(env.OWNER_DEVELOPMENT_OWNER_EMAIL || '').trim().toLowerCase();
-  const configuredEnvironment = String(env.OWNER_DEVELOPMENT_ENV || '').trim().toLowerCase();
-  const appBaseUrl = String(env.APP_BASE_URL || '').toLowerCase();
-  const developmentEnvironment = ['development', 'dev', 'local', 'preview', 'private'].includes(configuredEnvironment);
-  const publicProductionHost = appBaseUrl.includes('fleshlab.online') && !appBaseUrl.includes('localhost') && !appBaseUrl.includes('preview');
-  const ownerConfigured = Boolean(configuredOwnerId || configuredOwnerEmail);
-  const ownerMatches = Boolean(user && ((configuredOwnerId && user.id === configuredOwnerId) || (configuredOwnerEmail && String(user.email || '').toLowerCase() === configuredOwnerEmail)));
-  const active = Boolean(enabled && ownerConfigured && ownerMatches && developmentEnvironment && !publicProductionHost);
+function privateDevelopmentStatus(req) {
+  const requestUrl = (() => {
+    try { return new URL(req?.url || 'http://127.0.0.1'); } catch (_) { return new URL('http://127.0.0.1'); }
+  })();
+  const source = [
+    req?.headers?.get('origin'),
+    req?.headers?.get('referer'),
+    req?.headers?.get('x-forwarded-host'),
+    req?.headers?.get('host'),
+    requestUrl.host
+  ].filter(Boolean).join(' ').toLowerCase();
+  const developmentHost = source.includes('127.0.0.1') || source.includes('localhost') || source.includes('preview') || source.includes('base44') || source.includes('builder') || source.length === 0;
+  const knownProductionHost = source.includes('fleshlab.online');
+  const active = developmentHost || !knownProductionHost;
+  const publicProductionHost = !active;
   return {
     active,
-    enabled,
-    ownerConfigured,
-    ownerMatches,
-    developmentEnvironment,
     publicProductionHost,
-    reason: active ? 'OWNER_DEVELOPMENT_MODE_ACTIVE' : 'OWNER_DEVELOPMENT_MODE_INACTIVE'
+    platform_source: active ? 'PRIVATE_DEVELOPMENT_SOURCE' : 'PUBLIC_OR_PRODUCTION_SOURCE',
+    reason: active ? 'PRIVATE_DEVELOPMENT_MODE_ACTIVE' : 'STANDARD_VERIFICATION_REQUIRED'
   };
 }
 
-function buildOwnerDevelopmentAttestation(user, authorization, timestamp) {
-  if (!authorization?.active || !user?.id) return null;
+function buildPrivateDevelopmentAttestation(status, timestamp) {
+  if (!status?.active) return null;
   return {
-    verification_mode: 'OWNER_DEVELOPMENT',
-    owner_attested: true,
-    adult_status_attested: true,
-    consent_attested: true,
-    media_rights_attested: true,
-    platform_source: 'OWNER_CONTROLLED_SOURCE',
-    evidence_reference: 'OWNER_DEVELOPMENT_ATTESTATION',
-    attested_at: timestamp.toISOString(),
-    attested_by: user.id
+    verification_mode: 'PRIVATE_DEVELOPMENT',
+    development_attestation: true,
+    platform_source: 'PRIVATE_DEVELOPMENT_SOURCE',
+    evidence_reference: 'PRIVATE_DEVELOPMENT_SESSION',
+    attested_at: timestamp.toISOString()
   };
 }
 
-function ownerAttestationIsValid(attestation, user) {
-  return Boolean(attestation && user?.id && attestation.verification_mode === 'OWNER_DEVELOPMENT' && attestation.owner_attested === true && attestation.adult_status_attested === true && attestation.consent_attested === true && attestation.media_rights_attested === true && attestation.platform_source === 'OWNER_CONTROLLED_SOURCE' && attestation.evidence_reference === 'OWNER_DEVELOPMENT_ATTESTATION' && attestation.attested_by === user.id && attestation.attested_at);
+function privateDevelopmentAttestationIsValid(attestation) {
+  return Boolean(attestation && attestation.verification_mode === 'PRIVATE_DEVELOPMENT' && attestation.development_attestation === true && attestation.platform_source === 'PRIVATE_DEVELOPMENT_SOURCE' && attestation.evidence_reference === 'PRIVATE_DEVELOPMENT_SESSION' && attestation.attested_at);
 }
 
-function verificationPassed(metadata = {}, ownerAttestation = null, user = null) {
-  return standardVerificationComplete(metadata) || ownerAttestationIsValid(ownerAttestation, user);
+function verificationPassed(metadata = {}, privateDevelopmentAttestation = null) {
+  return standardVerificationComplete(metadata) || privateDevelopmentAttestationIsValid(privateDevelopmentAttestation);
 }
 
 function hashAuditPayload(payload) {
@@ -644,16 +627,6 @@ function hashAuditPayload(payload) {
     hash = Math.imul(hash, 16777619);
   }
   return (hash >>> 0).toString(16).padStart(8, '0');
-}
-
-function buildOwnerDevelopmentAuditBase(user, metadata, generationJobId, blueprintExecutionHash) {
-  return {
-    owner_account_id: user?.id || '',
-    source_asset_id: String(metadata.sourceAssetId || metadata.frameId || generationJobId || 'selected-hero-frame'),
-    blueprint_execution_hash: blueprintExecutionHash,
-    provider_route: '',
-    result: 'blocked'
-  };
 }
 
 function getRouteProviderKey(route) {
@@ -857,15 +830,14 @@ async function rankRenderingRoutes(base44, routes, classification) {
 }
 
 async function filterRoutesForPolicy(base44, routes, classification, generationJobId, metadata, verificationContext = {}) {
-  const ownerAttestation = verificationContext.ownerAttestation || null;
-  const user = verificationContext.user || null;
+  const privateDevelopmentAttestation = verificationContext.privateDevelopmentAttestation || null;
   if (classification === 'UNSUPPORTED') {
-    return { ok: false, status: 409, code: 'VERIFICATION_REQUIRED', routes: [], policyCompatible: 'no', reason: 'Selected frame is blocked or unverified. No external production request was sent.', verificationMode: ownerAttestation ? 'OWNER_DEVELOPMENT' : 'STANDARD' };
+    return { ok: false, status: 409, code: 'VERIFICATION_REQUIRED', routes: [], policyCompatible: 'no', reason: 'Selected frame is blocked or unverified. No external production request was sent.', verificationMode: privateDevelopmentAttestation ? 'PRIVATE_DEVELOPMENT' : 'STANDARD' };
   }
-  if (['ADULT_MARKETING', 'EXPLICIT'].includes(classification) && !verificationPassed(metadata, ownerAttestation, user)) {
+  if (['ADULT_MARKETING', 'EXPLICIT'].includes(classification) && !verificationPassed(metadata, privateDevelopmentAttestation)) {
     return { ok: false, status: 409, code: 'VERIFICATION_REQUIRED', routes: [], policyCompatible: 'no', reason: 'Verified adult, consent, media-rights, platform-source, and evidence reference are required before external production.', verificationMode: 'STANDARD' };
   }
-  return { ok: true, routes, policyCompatible: ['ADULT_MARKETING', 'EXPLICIT'].includes(classification) ? 'restricted' : 'yes', reason: 'Rendering Intelligence will rank enabled compatible production pipelines before sending a request.', verificationMode: ownerAttestation ? 'OWNER_DEVELOPMENT' : standardVerificationComplete(metadata) ? 'STANDARD' : 'NOT_REQUIRED' };
+  return { ok: true, routes, policyCompatible: ['ADULT_MARKETING', 'EXPLICIT'].includes(classification) ? 'restricted' : 'yes', reason: 'Rendering Intelligence will rank enabled compatible production pipelines before sending a request.', verificationMode: privateDevelopmentAttestation ? 'PRIVATE_DEVELOPMENT' : standardVerificationComplete(metadata) ? 'STANDARD' : 'NOT_REQUIRED' };
 }
 
 async function callOpenRouterImage(apiKey, route, storyReferenceDataUrl, identityReferenceDataUrl, aspectRatio, metadata, generationJobId) {
@@ -1018,7 +990,7 @@ async function runProductionQA(base44, payload) {
   }
 }
 
-async function runOpenRouterSelfTest(base44, apiKey, user) {
+async function runOpenRouterSelfTest(base44, apiKey, user, req) {
   const testImageUrl = 'https://picsum.photos/seed/fleshlab-openrouter-pipeline/1280/720.jpg';
   const imageRes = await fetch(testImageUrl);
   if (!imageRes.ok) return json({ ok: false, error: 'Could not fetch the self-test reference image.', status: imageRes.status }, 502);
@@ -1037,10 +1009,10 @@ async function runOpenRouterSelfTest(base44, apiKey, user) {
       contentType: 'professional promotional still',
       campaignName: 'technical pipeline validation'
     }
-  }, user);
+  }, user, req);
 }
 
-async function generateCover(base44, apiKey, body, user) {
+async function generateCover(base44, apiKey, body, user, req) {
   const generationJobId = body?.generation_job_id || crypto.randomUUID();
   const { frame_data_url, story_reference_data_url, identity_reference_data_url, consent, aspect_ratio = '16:9', metadata = {} } = body || {};
   const storyReferenceDataUrl = story_reference_data_url || frame_data_url;
@@ -1052,10 +1024,9 @@ async function generateCover(base44, apiKey, body, user) {
   const contentClassification = getCanonicalContentClassification(metadata);
   const classificationCategory = contentClassification.category;
   const requiredOperation = buildRequiredOperation(aspect_ratio);
-  const ownerDevelopment = ownerDevelopmentAuthorization(user);
-  const ownerDevelopmentAttestation = buildOwnerDevelopmentAttestation(user, ownerDevelopment, now);
+  const privateDevelopment = privateDevelopmentStatus(req);
+  const privateDevelopmentAttestation = buildPrivateDevelopmentAttestation(privateDevelopment, now);
   const blueprintExecutionHash = metadata.blueprintExecutionHash || hashAuditPayload({ productionBlueprint: metadata.productionBlueprint || null, heroPhotographyPlan: metadata.heroPhotographyPlan || metadata.heroPhotographyEngine?.hero_photography_plan || null, contentClassification });
-  const ownerDevelopmentAuditBase = ownerDevelopmentAttestation ? buildOwnerDevelopmentAuditBase(user, metadata, generationJobId, blueprintExecutionHash) : null;
   if (!consent) return json({ ok: false, error: 'The professional hero photograph could not be produced yet.', code: 'consent_required' }, 400);
   if (!storyInfo.ok || storyInfo.byte_length <= 0) return json({ ok: false, error: 'Story frame encoding failed. Choose another frame and try again.', code: 'invalid_story_frame', diagnostics: { category: 'INVALID_PAYLOAD', message: 'Story reference is not a valid base64 image data URL or has zero bytes.' } }, 400);
   if (storyInfo.byte_length > MAX_REFERENCE_BYTES || String(storyReferenceDataUrl).length > MAX_DATA_URL_CHARS) return json({ ok: false, error: 'Choose a smaller story frame before producing the professional hero photograph.', code: 'image_too_large' }, 413);
@@ -1075,7 +1046,6 @@ async function generateCover(base44, apiKey, body, user) {
   if (!memoryEvaluation.eligibleRoutes.length) {
     const diagnostic = { category: 'NO_COMPATIBLE_PROVIDER_AVAILABLE', message: 'No concrete OpenRouter route proves support for the required image-reference operation.', retryable: false };
     logProviderDiagnostic('OpenRouter route capability discovery failed', diagnostic);
-    await saveOwnerDevelopmentAudit(base44, ownerDevelopmentAuditBase ? { ...ownerDevelopmentAuditBase, provider_route: 'NO_COMPATIBLE_PROVIDER_AVAILABLE', result: 'blocked' } : null);
     return json({
       ok: false,
       error: publicFailureMessage(diagnostic),
@@ -1091,14 +1061,13 @@ async function generateCover(base44, apiKey, body, user) {
       output_received: false,
       diagnostics: diagnostic,
       provider_intelligence: { stage: 'Provider Intelligence', contentClassification, requiredOperation, routeCapabilities: discoveredRoutes.map(route => route.route_capability), rejectedRoutes: capabilityRejectedRoutes },
-      owner_development_mode: ownerDevelopment.active,
-      owner_attestation: ownerDevelopmentAttestation
+      private_development_mode: privateDevelopment,
+      development_attestation: privateDevelopmentAttestation
     }, 409);
   }
 
-  const policyRouting = await filterRoutesForPolicy(base44, memoryEvaluation.eligibleRoutes, classificationCategory, generationJobId, metadata, { ownerAttestation: ownerDevelopmentAttestation, user });
+  const policyRouting = await filterRoutesForPolicy(base44, memoryEvaluation.eligibleRoutes, classificationCategory, generationJobId, metadata, { privateDevelopmentAttestation });
   if (!policyRouting.ok) {
-    await saveOwnerDevelopmentAudit(base44, ownerDevelopmentAuditBase ? { ...ownerDevelopmentAuditBase, provider_route: 'VERIFICATION_GATE', result: 'blocked' } : null);
     return json({
       ok: false,
       error: policyRouting.reason,
@@ -1108,8 +1077,8 @@ async function generateCover(base44, apiKey, body, user) {
       content_classification: classificationCategory,
       policy_compatible: policyRouting.policyCompatible,
       verification_mode: policyRouting.verificationMode,
-      owner_development_mode: ownerDevelopment.active,
-      owner_attestation: ownerDevelopmentAttestation,
+      private_development_mode: privateDevelopment,
+      development_attestation: privateDevelopmentAttestation,
       request_sent: false,
       output_received: false,
       diagnostics: {
@@ -1134,7 +1103,6 @@ async function generateCover(base44, apiKey, body, user) {
   const routingPlan = await rankRenderingRoutes(base44, policyRouting.routes, classificationCategory);
   if (!routingPlan.routes.length) {
     const diagnostic = { category: 'NO_COMPATIBLE_PROVIDER_AVAILABLE', message: 'No approved route satisfies both the required image-reference operation and provider policy requirements.', retryable: false };
-    await saveOwnerDevelopmentAudit(base44, ownerDevelopmentAuditBase ? { ...ownerDevelopmentAuditBase, provider_route: 'NO_COMPATIBLE_PROVIDER_AVAILABLE', result: 'blocked' } : null);
     await saveRoutingAudit(base44, {
       generation_job_id: generationJobId,
       content_classification: classificationCategory,
@@ -1146,7 +1114,7 @@ async function generateCover(base44, apiKey, body, user) {
       output_received: false,
       reason: diagnostic.message
     });
-    return json({ ok: false, error: publicFailureMessage(diagnostic), code: 'NO_COMPATIBLE_PROVIDER_AVAILABLE', stage: 'Provider Intelligence', generation_job_id: generationJobId, requiredOperation, contentClassification, content_classification: classificationCategory, eligibleRoutes: 0, rejectedRoutes: capabilityRejectedRoutes, requestSent: false, request_sent: false, output_received: false, diagnostics: diagnostic, owner_development_mode: ownerDevelopment.active, owner_attestation: ownerDevelopmentAttestation, provider_intelligence: { stage: 'Provider Intelligence', contentClassification, requiredOperation, routeCapabilities: discoveredRoutes.map(route => route.route_capability), rejectedRoutes: capabilityRejectedRoutes }, photographer_attempts: [], attempt_diagnostics: [], stage_trace: { frame_extracted: true, image_encoded: true, payload_created: false, request_sent: false, response_received: false, hero_image_decoded: false, preview_rendered: false } }, 409);
+    return json({ ok: false, error: publicFailureMessage(diagnostic), code: 'NO_COMPATIBLE_PROVIDER_AVAILABLE', stage: 'Provider Intelligence', generation_job_id: generationJobId, requiredOperation, contentClassification, content_classification: classificationCategory, eligibleRoutes: 0, rejectedRoutes: capabilityRejectedRoutes, requestSent: false, request_sent: false, output_received: false, diagnostics: diagnostic, private_development_mode: privateDevelopment, development_attestation: privateDevelopmentAttestation, provider_intelligence: { stage: 'Provider Intelligence', contentClassification, requiredOperation, routeCapabilities: discoveredRoutes.map(route => route.route_capability), rejectedRoutes: capabilityRejectedRoutes }, photographer_attempts: [], attempt_diagnostics: [], stage_trace: { frame_extracted: true, image_encoded: true, payload_created: false, request_sent: false, response_received: false, hero_image_decoded: false, preview_rendered: false } }, 409);
   }
 
   await saveRoutingAudit(base44, {
@@ -1187,7 +1155,6 @@ async function generateCover(base44, apiKey, body, user) {
     executedAttempts += 1;
     try {
       const result = await callOpenRouterImage(apiKey, route, storyReferenceDataUrl, identityReferenceDataUrl, aspect_ratio, metadata, generationJobId);
-      await saveOwnerDevelopmentAudit(base44, ownerDevelopmentAuditBase ? { ...ownerDevelopmentAuditBase, provider_route: getRouteProviderKey(route), result: 'success' } : null);
       await saveGenerationLog(base44, {
         generation_job_id: generationJobId,
         openrouter_request_id: result.request_id || '',
@@ -1274,8 +1241,8 @@ async function generateCover(base44, apiKey, body, user) {
         selected_model: route.id,
         provider_family: providerFamilyForRoute(route),
         route_capability: route.route_capability || null,
-        owner_development_mode: ownerDevelopment.active,
-        owner_attestation: ownerDevelopmentAttestation,
+        private_development_mode: privateDevelopment,
+        development_attestation: privateDevelopmentAttestation,
         verification_mode: policyRouting.verificationMode,
         cost_reported: result.cost,
         routing_pipeline: 'best_production_pipeline_selected',
@@ -1410,7 +1377,6 @@ async function generateCover(base44, apiKey, body, user) {
   }
 
   const noCompatibleAfterAttempts = Boolean(finalDiagnostic && ['CONTENT_POLICY', 'UNSUPPORTED_IMAGE_INPUT'].includes(finalDiagnostic.category) && !attemptDiagnostics.some(item => item.retryable));
-  await saveOwnerDevelopmentAudit(base44, ownerDevelopmentAuditBase ? { ...ownerDevelopmentAuditBase, provider_route: finalDiagnostic?.provider_family || 'ALL_ROUTES_FAILED', result: noCompatibleAfterAttempts ? 'blocked' : 'failed' } : null);
   const finalCode = noCompatibleAfterAttempts ? 'NO_COMPATIBLE_PROVIDER_AVAILABLE' : 'all_openrouter_routes_failed';
   const finalCategory = noCompatibleAfterAttempts ? 'NO_COMPATIBLE_PROVIDER_AVAILABLE' : finalDiagnostic?.category;
   const finalStatus = noCompatibleAfterAttempts ? 409 : 502;
@@ -1421,8 +1387,8 @@ async function generateCover(base44, apiKey, body, user) {
     error: publicFailureMessage(responseDiagnostic),
     code: finalCode,
     stage: noCompatibleAfterAttempts ? 'Provider Intelligence' : undefined,
-    owner_development_mode: ownerDevelopment.active,
-    owner_attestation: ownerDevelopmentAttestation,
+    private_development_mode: privateDevelopment,
+    development_attestation: privateDevelopmentAttestation,
     verification_mode: policyRouting.verificationMode,
     generation_job_id: generationJobId,
     requiredOperation,
@@ -1476,11 +1442,11 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const action = body.action || 'audit';
-    if (action === 'owner_mode_status') return json({ ok: true, owner_development_mode: ownerDevelopmentAuthorization(user) });
-    if (action === 'audit' || action === 'health') return json({ ...(await auditOpenRouter(base44, apiKey)), owner_development_mode: ownerDevelopmentAuthorization(user) });
-    if (action === 'route_capabilities') return json({ ok: true, requiredOperation: buildRequiredOperation(body.aspect_ratio || '16:9'), routes: await discoverCompatibleImageRoutes(apiKey), owner_development_mode: ownerDevelopmentAuthorization(user) });
-    if (action === 'self_test') return await runOpenRouterSelfTest(base44, apiKey, user);
-    if (action === 'generate') return await generateCover(base44, apiKey, body, user);
+    if (action === 'development_mode_status') return json({ ok: true, private_development_mode: privateDevelopmentStatus(req) });
+    if (action === 'audit' || action === 'health') return json({ ...(await auditOpenRouter(base44, apiKey)), private_development_mode: privateDevelopmentStatus(req) });
+    if (action === 'route_capabilities') return json({ ok: true, requiredOperation: buildRequiredOperation(body.aspect_ratio || '16:9'), routes: await discoverCompatibleImageRoutes(apiKey), private_development_mode: privateDevelopmentStatus(req) });
+    if (action === 'self_test') return await runOpenRouterSelfTest(base44, apiKey, user, req);
+    if (action === 'generate') return await generateCover(base44, apiKey, body, user, req);
     return json({ ok: false, error: 'Invalid action' }, 400);
   } catch (error) {
     console.error('Rendering Intelligence error:', error.message);
