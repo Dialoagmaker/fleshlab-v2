@@ -273,7 +273,7 @@ function drawEditorialType(ctx, width, height, layout, mood, campaign, logoBotto
   ctx.textAlign = center ? "center" : "left";
   const textX = center ? panel.x + panel.w / 2 : x;
 
-  const title = compact(campaign.primaryTitle || campaign.campaignTitle || "PRIVATE ACCESS");
+  const title = compact(campaign.campaignTitle || "PRIVATE ACCESS");
   const collection = compact(campaign.collection || campaign.subtitle || campaign.seriesName || "");
   const performer = compact(campaign.performerName || campaign.creatorName || "");
   const episode = compact(campaign.episode || "Episode 01");
@@ -530,7 +530,7 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
     else ctx.fillText(collection, safeX, logoBottom + height * 0.065, maxTextW);
   }
 
-  const [primary, secondary] = splitKeyArtTitle(plan.creativeConcept?.campaignIdentity || campaign.primaryTitle || campaign.campaignTitle);
+  const [primary, secondary] = splitKeyArtTitle(campaign.campaignTitle || "PRIVATE ACCESS");
   const performerName = upper(campaign.performerName || campaign.creatorName);
   const hasMetadata = Boolean(collection || performerName || campaign.episode);
   const titleY = logoBottom + (hasMetadata ? height * 0.22 : height * 0.3);

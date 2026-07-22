@@ -36,6 +36,7 @@ function compact(value) { return String(value || "").replace(/\s+/g, " ").trim()
 export function getCampaignMetadataSuggestion(output, pipeline, campaignFamily) {
   const blueprint = pipeline?.productionBlueprint || output?.heroPhotographyPlan?.productionBlueprint || {};
   const metadata = {
+    campaignTitle: compact(blueprint.campaignTitle || output?.heroPhotographyPlan?.campaignTitle || blueprint.originalTitle || blueprint.videoTitle || ""),
     originalTitle: compact(blueprint.originalTitle || blueprint.videoTitle || blueprint.campaignTitle || output?.heroPhotographyPlan?.campaignTitle || ""),
     performerName: compact(blueprint.performerName || blueprint.creatorName || output?.heroPhotographyPlan?.creatorName || ""),
     subtitle: compact(blueprint.campaignSubtitle || blueprint.seriesName || ""),
@@ -46,7 +47,7 @@ export function getCampaignMetadataSuggestion(output, pipeline, campaignFamily) 
   };
   const concept = getDefaultCampaignConcept({ metadata, blueprint, campaignFamily });
   return {
-    campaignTitle: concept.primaryTitle,
+    campaignTitle: metadata.campaignTitle || metadata.originalTitle || concept.primaryTitle,
     performerName: metadata.performerName,
     subtitle: concept.collection,
     episode: metadata.episode,

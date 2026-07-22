@@ -83,25 +83,23 @@ export function buildCampaignConcepts({ metadata = {}, blueprint = {}, campaignF
   const story = createStoryIntelligence({ metadata, blueprint, campaignFamily });
   const pool = conceptPools[story.territory] || conceptPools.exclusive;
   const performer = compact(metadata.performerName || blueprint.performerName || blueprint.creatorName || "");
-  const userCampaignTitle = compact(metadata.campaignTitle);
-  const userTitleIsExplicit = metadata.source?.campaignTitle === "user" && userCampaignTitle;
+  const campaignTitle = compact(metadata.campaignTitle || blueprint.campaignTitle || blueprint.originalTitle || blueprint.videoTitle || "PRIVATE ACCESS");
   return pool.slice(0, 3).map((concept, index) => {
     const collection = metadata.source?.subtitle === "user" ? compact(metadata.subtitle) : compact(metadata.subtitle || concept.collection);
     const episode = metadata.source?.episode === "user" ? compact(metadata.episode) : compact(metadata.episode || `Episode ${String(index + 1).padStart(2, "0")}`);
     const campaignType = performer ? "performer" : collection && episode ? "story" : collection ? "collection" : "brand";
-    const campaignIdentity = userTitleIsExplicit ? userCampaignTitle : compact(concept.campaignIdentity || concept.primaryTitle || collection || "PRIVATE ACCESS");
-    const heroWord = deriveHeroWord(campaignIdentity, metadata, concept.primaryTitle || "PRIVATE ACCESS");
-    const campaignTitle = userCampaignTitle || campaignIdentity;
-    const base = `${safeSlug(heroWord)}_${safeSlug(collection || campaignType)}_${safeSlug(performer || campaignType)}`;
+    const campaignIdentity = campaignTitle;
+    const heroWord = campaignTitle;
+    const base = `${safeSlug(campaignTitle)}_${safeSlug(collection || campaignType)}_${safeSlug(performer || campaignType)}`;
     return {
       ...concept,
       sceneDescription: story.sourceTitle,
       campaignType,
       campaignIdentity,
       heroWord,
-      primaryTitle: heroWord,
+      primaryTitle: campaignTitle,
       base,
-      campaignConceptId: `${safeSlug(heroWord)}-${index + 1}`,
+      campaignConceptId: `${safeSlug(campaignTitle)}-${index + 1}`,
       campaignTitle,
       subtitle: collection,
       collection,

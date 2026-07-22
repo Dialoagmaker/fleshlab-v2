@@ -13,9 +13,7 @@ function clean(value) {
 const LITERAL_LOCATION_HERO_WORDS = new Set(["BATHROOM", "BEDROOM", "KITCHEN", "SOFA", "DOOR", "ROOM", "SHOWER", "TOILET", "SINK", "BED"]);
 
 function identityFromCampaignConcept(campaign = {}) {
-  const explicit = clean(campaign.heroWord || campaign.campaignIdentity || campaign.primaryTitle || campaign.campaignTitle || campaign.collection || campaign.campaignLabel || "PRIVATE ACCESS").toUpperCase();
-  if (LITERAL_LOCATION_HERO_WORDS.has(explicit) && campaign.campaignMetadata?.heroWord !== explicit) return "PRIVATE ACCESS";
-  return explicit;
+  return clean(campaign.campaignTitle || campaign.campaignIdentity || campaign.primaryTitle || "PRIVATE ACCESS").toUpperCase();
 }
 
 export function createCreativeConcept(campaign = {}, analysis = {}) {
@@ -31,7 +29,7 @@ export function createCreativeConcept(campaign = {}, analysis = {}) {
     targetAudience: "Premium entertainment viewer seeking fast emotional clarity",
     marketingHook: campaign.campaignLabel || campaign.collection || (steam ? "PRIVATE ACCESS" : outdoor ? "ON LOCATION" : "EXCLUSIVE"),
     storytellingAngle: steam ? "privacy, steam, forbidden luxury" : outdoor ? "heat, motion, destination energy" : raw ? "access, realism, creator proximity" : "brand-led cinematic reveal",
-    dominantVisualWord: campaignIdentity.split(/\s+/)[0] || "ACCESS",
+    dominantVisualWord: campaignIdentity,
     campaignIdentity
   };
 }
