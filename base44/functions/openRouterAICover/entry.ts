@@ -55,36 +55,38 @@ const FAILURE_MEMORY_TTL_MS = 10 * 60 * 1000;
 const ROUTE_CAPABILITY_MEMORY = new Map();
 const ROUTE_CAPABILITY_MEMORY_TTL_MS = 24 * 60 * 60 * 1000;
 const REQUIRED_IMAGE_REFERENCE_OPERATION = 'IMAGE_REFERENCE_GENERATION';
+const STABLE_SAFE_EDITORIAL_ROUTE_KEY = 'google/gemini-2.5-flash-image::google-vertex/global';
 
-const KEY_ART_DIRECTOR_PROMPT = `You are the FLESHLAB Reference Fidelity Retouch Director.
+const KEY_ART_DIRECTOR_PROMPT = `You are the FLESHLAB Hero Photography Director.
 
 Core principle:
-The uploaded frame is immutable ground truth. The goal is not to create a better or different scene. The goal is to preserve the exact frame while increasing photographic production quality.
+The input video frame is only a scouting/reference image. The output must be the professional hero photograph that would have been captured if this scene had been planned as a premium commercial photo shoot.
 
-Treat the reference as the final composition:
-- Preserve facial identity, facial proportions, expression, gaze direction, head angle, body proportions, body posture, arm position, hand position, necklace, soap placement, water placement, towel position, bathroom layout, camera angle, focal length, framing, perspective, distance to subject, lighting direction, object positions, and overall composition.
-- Maintain at least 95% structural similarity to the uploaded frame.
-
-Allowed improvements only:
-- cinematic lighting consistent with the source direction
-- higher dynamic range
-- cleaner skin rendering without changing anatomy or identity
-- realistic moisture and water reflections
-- improved sharpness and realistic depth
-- premium color grading
-- subtle atmospheric steam
-- noise removal and texture recovery
-
-Never change:
-- pose, expression, body shape, face, environment, shower, bathroom, framing, camera angle, architecture, props, composition, or object placement.
+Never output an enhanced screenshot.
+Never merely upscale, sharpen, denoise, relight, beautify, or crop the source frame.
+Reconstruct the scene as world-class commercial photography and advertising art direction.
 
 Use two separate visual references when provided:
 - Identity Reference: preserve the same apparent person, face, body, tattoos, hairstyle, proportions, and recognizable appearance.
-- Story Reference: preserve the exact moment, scene geometry, action, pose, gaze, expression, object locations, and camera perspective.
+- Story Reference: preserve the emotional moment, visual story, action logic, pose when protected, and emotional intent.
 
-Output should look as if the exact original frame was captured by a $10,000 cinema camera with professional lighting and expert retouching.
+You may redesign when the provided Hero Photography Plan allows:
+- background, lighting, color palette, atmosphere, environment, reflections, architecture, furniture, depth, weather, and time of day.
 
-Output ONLY the reference-faithful enhanced frame. Do not include typography, logos, watermarks, captions, UI, or poster text.`;
+You may NOT redesign:
+- apparent person, protected pose, identity, protected expression, protected gaze, emotional intent, or protected storytelling facts.
+
+Production quality target:
+Netflix Key Art, Amazon Originals, HBO Campaign, luxury fashion editorial, premium magazine cover.
+Never target generic AI-generated imagery.
+
+Cinematic photography requirements:
+Explicitly design key light, fill light, rim light, practical lights, depth, foreground, background, texture, shadows, reflections, and color contrast.
+
+Composition requirement:
+Leave intentional typography space. Typography space must never cover the face, emotional focal point, or storytelling element.
+
+Output ONLY the professional 16:9 hero photograph. Do not include typography, logos, watermarks, captions, UI, or poster text.`;
 
 function json(data, status = 200) {
   return Response.json(data, { status });
@@ -474,10 +476,10 @@ function buildPhotographicBrief(metadata = {}) {
   const lighting = plan.Lighting || {};
   const brief = plan.Hero_Rendering_Brief || 'Create the hero photograph that would have been captured by a top commercial photographer and advertising art director on a planned shoot.';
   return [
-    'REFERENCE FIDELITY RETOUCH PLAN',
-    'Input: uploaded frame as immutable ground truth.',
-    'Output: reference-faithful professional enhancement.',
-    'Never output: a different generated scene, changed identity, changed pose, changed environment, changed framing, or invented composition.',
+    'HERO PHOTOGRAPHY PLAN',
+    'Input: video frame as scouting/reference image.',
+    'Output: professional hero photograph.',
+    'Never output: enhanced screenshot.',
     '',
     'STEP 1 — UNDERSTAND THE FRAME',
     `Emotional moment: ${understanding.emotional_moment || emotionalHook}`,
@@ -488,23 +490,23 @@ function buildPhotographicBrief(metadata = {}) {
     `Opportunities: ${understanding.opportunities || 'commercial production design, lighting, depth, atmosphere'}`,
     `Emotional hook: ${understanding.emotional_hook || emotionalHook}`,
     '',
-    'STEP 2 — PRESERVE THE EXACT FRAME',
-    `Camera: ${plan.Camera || 'preserve original camera angle, framing, perspective, focal length, and distance to subject'}`,
-    `Lens: ${plan.Lens || 'preserve source lens geometry while improving perceived optical quality'}`,
-    `Lighting setup: key=${lighting.key_light || 'source-consistent cinematic key'}; fill=${lighting.fill_light || 'controlled fill that preserves original shadow direction'}; rim=${lighting.rim_light || 'subtle source-consistent separation'}; practicals=${lighting.practical_lights || 'no new visible fixtures or props'}`,
-    `Composition lock: ${plan.Composition || 'preserve exact framing, perspective, object positions, pose, gaze, and scene layout'}`,
-    `Quality level: ${plan.Luxury_Level || 'high-end cinema-camera capture with professional retouch'}`,
-    `Retouch style: ${plan.Editorial_Style || metadata.campaignName || 'reference-fidelity cinematic enhancement'}`,
+    'STEP 2 — DESIGN THE HERO PHOTO',
+    `Camera: ${plan.Camera || 'planned commercial campaign camera, not screenshot perspective'}`,
+    `Lens: ${plan.Lens || 'cinematic editorial lens with controlled perspective and premium subject separation'}`,
+    `Lighting setup: key=${lighting.key_light || 'large soft directional key'}; fill=${lighting.fill_light || 'controlled low fill'}; rim=${lighting.rim_light || 'subtle separation rim'}; practicals=${lighting.practical_lights || 'motivated cinematic practicals'}`,
+    `Negative space and composition: ${plan.Composition || 'intentional typography space away from face, emotional focal point, and storytelling element'}`,
+    `Luxury level: ${plan.Luxury_Level || 'Netflix Key Art / Amazon Originals / HBO Campaign / luxury fashion editorial / premium magazine cover'}`,
+    `Editorial style: ${plan.Editorial_Style || metadata.campaignName || 'premium commercial editorial'}`,
     '',
-    'STEP 3 — RETOUCH ONLY, DO NOT REBUILD',
-    `Background: ${plan.Background || 'preserve exact bathroom/shower layout and all object positions'}`,
-    `Environment: ${plan.Environment || 'do not redesign the environment; improve only lighting, moisture, reflections, sharpness, color grade, noise and texture'}`,
+    'STEP 3 — REBUILD THE SCENE',
+    `Background: ${plan.Background || 'redesigned commercial background that preserves story logic'}`,
+    `Environment: ${plan.Environment || 'redesign atmosphere, depth, reflections, texture and production design while preserving identity and emotional intent'}`,
     '',
-    'STEP 4 — REFERENCE FIDELITY BRIEF',
+    'STEP 4 — HERO RENDERING BRIEF',
     brief,
     '',
     'REPORT REQUIREMENT',
-    'Before accepting the enhancement, compare it against the original frame. Reject identity drift, pose drift, expression drift, changed body shape, changed bathroom/shower geometry, changed framing, changed camera angle, changed object positions, changed soap/water/towel/necklace placement, or any scene invention beyond minor photographic improvements.'
+    'The generated hero photograph must differ from the original frame through creative reconstruction: planned camera, lens, lighting, production design, environment, background, atmosphere, depth, texture, color contrast and intentional typography space — not simple enhancement.'
   ].filter(Boolean).join('\n');
 }
 
@@ -1164,6 +1166,9 @@ async function rankRenderingRoutes(base44, routes, classification, contentClassi
     const stats = historyStats(attempts, provider.provider_id, classification);
     return { route, provider, stats, routing_score: scoreRenderingRoute(route, provider, stats), policyRules: policyEvaluation.policyRules };
   }).filter(Boolean).sort((a, b) => b.routing_score - a.routing_score || Number(b.provider.priority || 0) - Number(a.provider.priority || 0));
+  if (classification === 'SAFE_EDITORIAL') {
+    ranked.sort((a, b) => (getRouteProviderKey(b.route) === STABLE_SAFE_EDITORIAL_ROUTE_KEY ? 1 : 0) - (getRouteProviderKey(a.route) === STABLE_SAFE_EDITORIAL_ROUTE_KEY ? 1 : 0));
+  }
   return { routes: ranked.map(item => item.route), ranked, rejectedRoutes };
 }
 
@@ -1423,6 +1428,18 @@ async function buildRouteReference(route, dataUrl, generationJobId, kind) {
   return { reference: { type: 'image_url', image_url: { url: uploaded.signedUrl } }, report: uploaded.report };
 }
 
+async function loadStoredSeedDreamReferenceDataUrl(generationJobId, kind = 'story') {
+  const config = r2Config();
+  if (!config.accountId || !config.accessKeyId || !config.secretAccessKey || !config.bucket) throw new Error('Reference storage is not configured.');
+  const client = new S3Client({ region: 'auto', endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`, credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey } });
+  const key = `openrouter/seedream-references/${String(generationJobId).replace(/[^a-zA-Z0-9_-]/g, '_')}/${kind}.png`;
+  const signedUrl = await getSignedUrl(client, new GetObjectCommand({ Bucket: config.bucket, Key: key }), { expiresIn: 300 });
+  const res = await fetch(signedUrl);
+  if (!res.ok) throw new Error(`Stored reference fetch failed: ${res.status}`);
+  const buffer = await res.arrayBuffer();
+  return `data:${res.headers.get('content-type') || 'image/png'};base64,${arrayBufferToBase64(buffer)}`;
+}
+
 function validateSeedDreamPayload(route, payload, referenceReports) {
   if (!isSeedDreamRoute(route)) return { ok: true };
   if (!Array.isArray(payload.input_references) || !payload.input_references.length) return { ok: false, reason: 'SeedDream requires input_references with at least one externally reachable image URL.', invalid_parameter: 'input_references', expected_parameter: 'input_references[].image_url.url' };
@@ -1450,6 +1467,30 @@ async function runProductionQA(base44, payload) {
       }
     };
   }
+}
+
+async function runControlledSuccessfulEnvelopeRerun(base44, apiKey, user, req, body = {}) {
+  const sourceGenerationJobId = body.source_generation_job_id || '25c61478-1f0a-4a51-9dee-71e5ff0c5626';
+  let dataUrl;
+  try {
+    dataUrl = await loadStoredSeedDreamReferenceDataUrl(sourceGenerationJobId, 'story');
+  } catch (error) {
+    return json({ ok: false, code: 'stored_reference_load_failed', error: error.message, source_generation_job_id: sourceGenerationJobId }, 500);
+  }
+  return await generateCover(base44, apiKey, {
+    action: 'generate',
+    consent: true,
+    generation_job_id: `controlled-success-envelope-${crypto.randomUUID()}`,
+    story_reference_data_url: dataUrl,
+    aspect_ratio: '16:9',
+    metadata: {
+      videoTitle: body.videoTitle || 'KRAKEN',
+      optionalSubtitle: body.optionalSubtitle || '',
+      campaignName: 'KRAKEN',
+      contentType: 'reference frame for professional hero photograph',
+      contentClassification: { rawCategory: 'SAFE_EDITORIAL', category: 'SAFE_EDITORIAL', canonicalCategory: 'SAFE_EDITORIAL', source: 'controlled_success_envelope_rerun', confidence: 0.95 }
+    }
+  }, user, req);
 }
 
 async function runOpenRouterSelfTest(base44, apiKey, user, req) {
@@ -1976,6 +2017,7 @@ Deno.serve(async (req) => {
     if (action === 'canonical_policy_audit') return json(await auditAndRepairCanonicalPolicyRegistry(base44, body.requested_category || body.requestedCategory || null));
     if (action === 'route_capabilities') return json({ ok: true, requiredOperation: buildRequiredOperation(body.aspect_ratio || '16:9'), routes: await discoverCompatibleImageRoutes(apiKey), private_development_mode: privateDevelopmentStatus(req) });
     if (action === 'self_test') return await runOpenRouterSelfTest(base44, apiKey, user, req);
+    if (action === 'controlled_success_envelope_rerun') return await runControlledSuccessfulEnvelopeRerun(base44, apiKey, user, req, body);
     if (action === 'adult_commercial_route_regression') return await runAdultCommercialRouteRegression(base44, apiKey, user, req);
     if (action === 'seedream_adapter_regression') return await runSeedDreamAdapterRegression(apiKey, body);
     if (action === 'generate') return await generateCover(base44, apiKey, body, user, req);
