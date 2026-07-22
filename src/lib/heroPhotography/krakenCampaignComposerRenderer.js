@@ -2,6 +2,7 @@ import { FLESHLAB_BRAND_IDENTITY } from "@/lib/aiMediaStudio/brandIdentityEngine
 import { createCompositionPlan } from "@/lib/heroPhotography/compositionEngine";
 import { createLayerPlan } from "@/lib/heroPhotography/layerCompositionEngine";
 import { createKeyArtBrief, createLayoutSketch } from "@/lib/heroPhotography/keyArtWorkflow";
+import { resolveCampaignBadges, resolveCampaignHeadline, resolveCampaignSubtitle, shouldUseFleshlabKeyArtLanguage } from "@/lib/heroPhotography/fleshlabCampaignKeyArtLanguage";
 
 const RED = "#cf102d";
 const WHITE = "#f4f1ea";
@@ -66,7 +67,7 @@ function applyPaletteToDirection(direction, palette) {
 function chooseDirection(campaign = {}, analysis = {}) {
   const text = `${campaign.campaignTitle || ""} ${campaign.collection || ""} ${campaign.releaseName || ""} ${campaign.campaignLabel || ""}`.toLowerCase();
   const subjectRight = (analysis.subjectCenter?.x ?? 0.55) >= 0.5;
-  if (/kraken|fleshlab|amateur wins|beach escape|new release|welcome|bathroom|shower|soap|steam|hole|ass|twink|filipino/.test(text)) return { key: "kraken_reference_poster", accent: RED, texture: "red slash premium poster grit", titleTone: "massive distressed trailer title", heroSide: "right", split: 0.55, referencePoster: true };
+  if (shouldUseFleshlabKeyArtLanguage(text)) return { key: "kraken_reference_poster", accent: RED, texture: "red slash premium poster grit", titleTone: "massive distressed trailer title", heroSide: "right", split: 0.55, referencePoster: true };
   if (/bathroom|shower|soap|steam/.test(text)) return { key: "bathroom_noir", accent: RED, texture: "steam tile fracture", titleTone: "hard white cinema title", heroSide: subjectRight ? "right" : "left", split: 0.55 };
   if (/beach|summer|pool|island|ocean/.test(text)) return { key: "sun_escape", accent: "#ff3348", texture: "heated horizon scratches", titleTone: "open-air cinema title", heroSide: subjectRight ? "right" : "left", split: 0.53 };
   if (/gym|fitness|locker|workout/.test(text)) return { key: "kinetic_body", accent: "#ff2433", texture: "motion ticks", titleTone: "athletic block title", heroSide: subjectRight ? "right" : "left", split: 0.52 };
@@ -405,7 +406,7 @@ function drawTitle(ctx, title, zones, width, height, direction) {
 }
 
 function resolvePosterSubtitle(campaign = {}) {
-  return compact(campaign.posterSubtitle || campaign.subtitle || campaign.optionalSubtitle || campaign.campaignLabel || "");
+  return resolveCampaignSubtitle(campaign);
 }
 
 function drawPosterSubtitle(ctx, campaign, zones, width, height, direction, titleBottom) {
@@ -469,7 +470,7 @@ function drawMeta(ctx, campaign, zones, width, height, direction, titleBottom) {
 }
 
 function drawBadges(ctx, campaign, zones, width, height, direction) {
-  const items = direction.referencePoster ? ["Exclusive Content", "New Videos", "Behind The Scenes", "PPV & Fan Exclusives"] : (campaign.badges || []).slice(0, 3).map(compact).filter(Boolean);
+  const items = direction.referencePoster ? resolveCampaignBadges(campaign) : (campaign.badges || []).slice(0, 3).map(compact).filter(Boolean);
   if (!items.length) return;
   const y = direction.referencePoster ? height * 0.88 : Math.min(height * 0.93, zones.meta.y + zones.meta.h * 0.8);
   const groupW = zones.meta.w / Math.max(3, items.length);
@@ -545,7 +546,7 @@ function finalTexture(ctx, width, height, zones, direction) {
 }
 
 function resolvePosterTitle(campaign = {}) {
-  return compact(campaign.posterTitle || campaign.displayTitle || campaign.safeCampaignTitle || campaign.campaignTitle || campaign.primaryTitle || "");
+  return resolveCampaignHeadline(campaign);
 }
 
 function validateTitle(title, titlePlan) {
