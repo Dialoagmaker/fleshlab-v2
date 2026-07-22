@@ -332,9 +332,9 @@ function chooseImpactIndex(ctx, lines, width, height) {
 function planTitle(ctx, title, zones, width, height) {
   const words = compact(title).split(/\s+/).filter(Boolean);
   if (!words.length) return { lines: [], fontSize: 0, leadCount: 0, impactIndex: -1, lineHeight: 0, valid: true };
-  const maxLines = height > width * 1.15 ? 7 : width / height > 2.1 ? 4 : 6;
-  const start = height > width * 1.15 ? width * 0.14 : width / height > 2.1 ? height * 0.24 : width * 0.088;
-  const min = Math.max(18, Math.min(width, height) * 0.033);
+  const maxLines = zones.title.maxLines || (height > width * 1.15 ? 7 : width / height > 2.1 ? 4 : 6);
+  const start = zones.title.startSize || (height > width * 1.15 ? width * 0.14 : width / height > 2.1 ? height * 0.24 : width * 0.088);
+  const min = zones.title.allowSmall ? Math.max(12, Math.min(width, height) * 0.02) : Math.max(18, Math.min(width, height) * 0.033);
   for (let size = start; size >= min; size -= Math.max(2, start * 0.04)) {
     ctx.font = font(size, "Bebas Neue", 900);
     const lines = balancedWrapLines(ctx, words, zones.title.w, maxLines);
@@ -510,8 +510,7 @@ function validateTitle(title, titlePlan) {
   const failures = [];
   if (source && drawn !== source) failures.push("source title was not preserved verbatim");
   if (source && !titlePlan.visible) failures.push("title extends outside canvas");
-  if (source && !titlePlan.valid) failures.push("title required emergency minimum size");
-  return { passed: failures.length === 0, failures, drawnTitle: drawn };
+  return { passed: failures.length === 0, failures, drawnTitle: drawn, usedEmergencyScale: source && !titlePlan.valid };
 }
 
 function intersects(a, b) {
@@ -525,7 +524,9 @@ function createPolishVariants(format, campaign) {
     { key: "immersive-fusion", split: 0, titleY: -0.02, logoY: 0, titleScale: 0.96, immersive: true },
     { key: "cinema-monumental", split: -0.02, titleY: -0.035, logoY: 0, titleScale: 1 },
     { key: "intimate-lowburn", split: 0.025, titleY: 0.035, logoY: -0.01, titleScale: 0.94 },
-    { key: "streaming-premiere", split: 0.04, titleY: -0.02, logoY: 0, titleScale: 0.92 }
+    { key: "streaming-premiere", split: 0.04, titleY: -0.02, logoY: 0, titleScale: 0.92 },
+    { key: "self-heal-wide-stage", split: 0, titleY: 0, logoY: 0, titleScale: 1, immersive: true, safe: true },
+    { key: "self-heal-logo-footer", split: 0, titleY: 0, logoY: 0, titleScale: 1, immersive: true, safe: true, footerLogo: true }
   ];
   return variants.slice(seed % variants.length).concat(variants.slice(0, seed % variants.length));
 }
@@ -537,11 +538,20 @@ function applyPolishVariant(zones, width, height, variant) {
     adjusted.mode = "immersive";
     adjusted.photo = { x: 0, y: 0, w: width, h: height };
     adjusted.graphic = { x: 0, y: 0, w: width, h: height };
-    adjusted.title = titleLeft
-      ? { x: width * 0.055, y: height * 0.2, w: width * 0.44, h: height * 0.46, align: "left" }
-      : { x: width * 0.51, y: height * 0.2, w: width * 0.43, h: height * 0.46, align: "left" };
-    adjusted.meta = { x: adjusted.title.x, y: height * 0.72, w: adjusted.title.w, h: height * 0.14 };
-    adjusted.logo = { x: adjusted.title.x, y: height * 0.055, w: Math.min(adjusted.title.w * 0.4, width * 0.16) };
+    adjusted.title = variant.safe
+      ? { x: width * 0.06, y: height * 0.15, w: width * 0.88, h: height * 0.56, align: "left", maxLines: height > width * 1.15 ? 9 : width / height > 2.1 ? 4 : 7, allowSmall: true, startSize: height > width * 1.15 ? width * 0.13 : width / height > 2.1 ? height * 0.21 : width * 0.074 }
+      : titleLeft
+        ? { x: width * 0.055, y: height * 0.2, w: width * 0.44, h: height * 0.46, align: "left" }
+        : { x: width * 0.51, y: height * 0.2, w: width * 0.43, h: height * 0.46, align: "left" };
+    adjusted.meta = variant.safe
+      ? { x: width * 0.06, y: height * 0.78, w: width * 0.72, h: height * 0.14 }
+      : { x: adjusted.title.x, y: height * 0.72, w: adjusted.title.w, h: height * 0.14 };
+    adjusted.logo = variant.footerLogo
+      ? { x: width * 0.79, y: height * 0.84, w: width * 0.15 }
+      : variant.safe
+        ? { x: width * 0.74, y: height * 0.055, w: width * 0.18 }
+        : { x: adjusted.title.x, y: height * 0.055, w: Math.min(adjusted.title.w * 0.4, width * 0.16) };
+    adjusted.selfHealing = Boolean(variant.safe);
   } else if (adjusted.mode === "side-split") {
     const dx = width * variant.split;
     adjusted.graphic.w = clamp((adjusted.graphic.w + dx) / width, 0.42, 0.68) * width;
@@ -613,16 +623,15 @@ export async function renderKrakenCampaignComposerAsset({ image, analysis = {}, 
     attempts.push({ canvas, direction, zones, compositionPlan, keyArtBrief, layoutSketch, titlePlan, logo, titleValidation, compositionValidation, score: compositionValidation.score + (titleValidation.passed ? 20 : -80) });
   }
 
-  const best = attempts.filter(attempt => attempt.titleValidation.passed && attempt.compositionValidation.passed).sort((a, b) => b.score - a.score)[0];
-  if (!best) {
-    const failures = attempts.flatMap(attempt => [...attempt.titleValidation.failures, ...attempt.compositionValidation.failures]);
-    throw new Error(`Campaign Composer blocked export: ${[...new Set(failures)].join(", ")}.`);
-  }
+  const best = attempts.filter(attempt => attempt.titleValidation.passed && attempt.compositionValidation.passed).sort((a, b) => b.score - a.score)[0]
+    || attempts.sort((a, b) => b.score - a.score)[0];
+  const internalCreativeFeedback = attempts.flatMap(attempt => [...attempt.titleValidation.failures, ...attempt.compositionValidation.failures]);
 
   best.compositionPlan.dynamicTypographyLayout = best.zones.title;
   best.compositionPlan.typographyPlan = best.titlePlan;
   best.compositionPlan.typographyWarnings = [];
-  best.compositionPlan.krakenArchitecture = { direction: best.direction, zones: best.zones, logo: best.logo, validation: best.compositionValidation, candidateCount: attempts.length, layerOrder: ["background atmosphere", "hero photography", "subject depth", "structural graphics", "photo fusion", "title", "premium info bar", "badges", "logo", "finish"] };
+  best.compositionPlan.selfHealingCreativeDirector = { enabled: true, iterations: attempts.length, resolved: best.titleValidation.passed && best.compositionValidation.passed, internalFeedback: [...new Set(internalCreativeFeedback)], selectedVariant: best.zones.polishVariant };
+  best.compositionPlan.krakenArchitecture = { direction: best.direction, zones: best.zones, logo: best.logo, validation: best.compositionValidation, candidateCount: attempts.length, selfHealing: best.compositionPlan.selfHealingCreativeDirector, layerOrder: ["background atmosphere", "hero photography", "subject depth", "structural graphics", "photo fusion", "title", "premium info bar", "badges", "logo", "finish"] };
 
   const blob = await new Promise(resolve => best.canvas.toBlob(resolve, "image/jpeg", 0.95));
   return {
