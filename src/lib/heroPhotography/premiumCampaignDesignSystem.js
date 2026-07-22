@@ -274,8 +274,8 @@ function drawEditorialType(ctx, width, height, layout, mood, campaign, logoBotto
   const textX = center ? panel.x + panel.w / 2 : x;
 
   const title = compact(campaign.primaryTitle || campaign.campaignTitle || "PRIVATE ACCESS");
-  const collection = compact(campaign.collection || campaign.subtitle || campaign.seriesName || mood.label);
-  const performer = compact(campaign.performerName || campaign.creatorName || "Featured Creator");
+  const collection = compact(campaign.collection || campaign.subtitle || campaign.seriesName || "");
+  const performer = compact(campaign.performerName || campaign.creatorName || "");
   const episode = compact(campaign.episode || "Episode 01");
   const yStart = Math.max(logoBottom + height * 0.035, panel.y + panel.h * 0.21);
 
@@ -284,7 +284,8 @@ function drawEditorialType(ctx, width, height, layout, mood, campaign, logoBotto
   if (center) ctx.fillText(mood.badge, textX, yStart, maxW);
   else drawTrackingText(ctx, mood.badge, x, yStart, Math.max(1, width * 0.0016), maxW);
 
-  const titleFit = fitText(ctx, title, maxW, height > width ? width * 0.22 : width * 0.11, Math.max(28, width * 0.028), 2);
+  const hasSupportingText = Boolean(collection || performer || episode);
+  const titleFit = fitText(ctx, title, maxW, hasSupportingText ? (height > width ? width * 0.22 : width * 0.11) : (height > width ? width * 0.28 : width * 0.145), Math.max(28, width * 0.028), 2);
   ctx.font = font(titleFit.size, titleFit.family || "Bebas Neue", 900);
   ctx.fillStyle = FLESHLAB_BRAND_IDENTITY.colors.cream;
   ctx.strokeStyle = "rgba(0,0,0,0.72)";
@@ -302,19 +303,28 @@ function drawEditorialType(ctx, width, height, layout, mood, campaign, logoBotto
   ctx.fillStyle = mood.accent;
   ctx.fillRect(center ? textX - maxW * 0.16 : x, afterTitle - height * 0.01, maxW * 0.32, Math.max(4, height * 0.006));
 
-  ctx.font = font(Math.max(16, width * 0.022), "Inter", 850);
-  ctx.fillStyle = mood.secondary;
-  ctx.fillText(upper(collection), textX, afterTitle + height * 0.035, maxW);
+  if (collection) {
+    ctx.font = font(Math.max(16, width * 0.022), "Inter", 850);
+    ctx.fillStyle = mood.secondary;
+    ctx.fillText(upper(collection), textX, afterTitle + height * 0.035, maxW);
+  }
 
-  ctx.font = font(Math.max(13, width * 0.015), "Inter", 900);
-  ctx.fillStyle = "rgba(255,255,255,0.86)";
-  ctx.fillText(`PERFORMER / ${upper(performer)}`, textX, afterTitle + height * 0.085, maxW);
+  let detailY = afterTitle + height * 0.085;
+  if (performer) {
+    ctx.font = font(Math.max(13, width * 0.015), "Inter", 900);
+    ctx.fillStyle = "rgba(255,255,255,0.86)";
+    ctx.fillText(`PERFORMER / ${upper(performer)}`, textX, detailY, maxW);
+    detailY += height * 0.037;
+  }
 
-  ctx.font = font(Math.max(11, width * 0.012), "Inter", 900);
-  ctx.fillStyle = "rgba(244,241,234,0.68)";
-  ctx.fillText(upper(episode), textX, afterTitle + height * 0.122, maxW);
+  if (episode) {
+    ctx.font = font(Math.max(11, width * 0.012), "Inter", 900);
+    ctx.fillStyle = "rgba(244,241,234,0.68)";
+    ctx.fillText(upper(episode), textX, detailY, maxW);
+    detailY += height * 0.028;
+  }
 
-  drawBadgeRow(ctx, campaign.badges, center ? textX : x, afterTitle + height * 0.15, maxW, mood, center);
+  drawBadgeRow(ctx, campaign.badges, center ? textX : x, detailY, maxW, mood, center);
   ctx.textAlign = "left";
 }
 
@@ -512,15 +522,19 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
   ctx.textAlign = titleOnLeft ? "left" : "right";
   const logoX = titleOnLeft ? safeX : safeX - Math.min(width * 0.28, maxTextW);
   const logoBottom = await drawLargeLogo(ctx, logoX, height * 0.07, Math.min(width * 0.28, maxTextW));
-  const collection = upper(campaign.campaignLabel || campaign.collection || campaign.subtitle || mood.badge);
-  ctx.font = font(Math.max(13, width * 0.014), "Inter", 950);
-  ctx.fillStyle = mood.accent;
-  if (titleOnLeft) drawTrackingText(ctx, collection, safeX, logoBottom + height * 0.065, Math.max(1.5, width * 0.002), maxTextW);
-  else ctx.fillText(collection, safeX, logoBottom + height * 0.065, maxTextW);
+  const collection = upper(campaign.collection || campaign.subtitle || campaign.campaignLabel || "");
+  if (collection) {
+    ctx.font = font(Math.max(13, width * 0.014), "Inter", 950);
+    ctx.fillStyle = mood.accent;
+    if (titleOnLeft) drawTrackingText(ctx, collection, safeX, logoBottom + height * 0.065, Math.max(1.5, width * 0.002), maxTextW);
+    else ctx.fillText(collection, safeX, logoBottom + height * 0.065, maxTextW);
+  }
 
   const [primary, secondary] = splitKeyArtTitle(plan.creativeConcept?.campaignIdentity || campaign.primaryTitle || campaign.campaignTitle);
-  const titleY = logoBottom + height * 0.22;
-  const primaryFit = fitText(ctx, primary, maxTextW, Math.min(height * 0.24, width * 0.16), Math.max(42, width * 0.052), 1, "Bebas Neue");
+  const performerName = upper(campaign.performerName || campaign.creatorName);
+  const hasMetadata = Boolean(collection || performerName || campaign.episode);
+  const titleY = logoBottom + (hasMetadata ? height * 0.22 : height * 0.3);
+  const primaryFit = fitText(ctx, primary, maxTextW, hasMetadata ? Math.min(height * 0.24, width * 0.16) : Math.min(height * 0.34, width * 0.22), Math.max(42, width * 0.052), 1, "Bebas Neue");
   ctx.font = font(primaryFit.size, "Bebas Neue", 900);
   ctx.fillStyle = FLESHLAB_BRAND_IDENTITY.colors.cream;
   ctx.strokeStyle = "rgba(0,0,0,0.88)";
@@ -546,10 +560,12 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
 
   drawLayerSubjectMask(ctx, image, width, height, plan, photo);
 
-  ctx.font = font(Math.max(14, width * 0.015), "Inter", 950);
-  ctx.fillStyle = "rgba(255,255,255,0.86)";
-  if (titleOnLeft) drawTrackingText(ctx, `${upper(campaign.performerName || campaign.creatorName)} SOLO`, safeX, height * 0.72, Math.max(1.4, width * 0.0015), maxTextW);
-  else ctx.fillText(`${upper(campaign.performerName || campaign.creatorName)} SOLO`, safeX, height * 0.72, maxTextW);
+  if (performerName) {
+    ctx.font = font(Math.max(14, width * 0.015), "Inter", 950);
+    ctx.fillStyle = "rgba(255,255,255,0.86)";
+    if (titleOnLeft) drawTrackingText(ctx, `${performerName} SOLO`, safeX, height * 0.72, Math.max(1.4, width * 0.0015), maxTextW);
+    else ctx.fillText(`${performerName} SOLO`, safeX, height * 0.72, maxTextW);
+  }
   ctx.textAlign = "left";
 
   drawLayerForegroundFx(ctx, width, height, mood, plan);

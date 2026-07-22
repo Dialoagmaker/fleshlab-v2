@@ -4,8 +4,9 @@ import { HERO_CAMPAIGN_FORMATS } from "@/lib/heroPhotography/campaignComposer";
 
 const FIELD_CONFIG = [
   { key: "campaignTitle", label: "Campaign Title", required: true, max: 42 },
-  { key: "performerName", label: "Performer / Creator", required: true, max: 42 },
-  { key: "subtitle", label: "Subtitle", required: false, max: 48 },
+  { key: "performerName", label: "Performer / Creator", required: false, max: 42 },
+  { key: "subtitle", label: "Collection", required: false, max: 48 },
+  { key: "episode", label: "Episode", required: false, max: 28 },
   { key: "cta", label: "CTA", required: false, max: 24 },
   { key: "campaignLabel", label: "Campaign Label", required: false, max: 36 },
   { key: "releaseName", label: "Release Name", required: false, max: 42 },
@@ -47,10 +48,10 @@ export default function CampaignDetailsForm({ metadata, aiSuggestion, validation
       <div className="mt-4 rounded-lg border border-border bg-background/50 p-3">
         <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">Live Preview</p>
         <div className="mt-3 grid gap-2 md:grid-cols-3">
-          {HERO_CAMPAIGN_FORMATS.map(format => <div key={format.key} className="rounded-lg bg-secondary/50 p-3"><p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{format.label}</p><b className="mt-1 block break-words text-sm text-foreground">{metadata?.campaignTitle || "Campaign Title"}</b><span className="block break-words text-xs text-muted-foreground">{metadata?.performerName || "Performer / Creator"}</span>{metadata?.subtitle && <span className="block break-words text-[10px] text-primary">{metadata.subtitle}</span>}</div>)}
+          {HERO_CAMPAIGN_FORMATS.map(format => <div key={format.key} className="rounded-lg bg-secondary/50 p-3"><p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{format.label}</p><b className="mt-1 block break-words text-sm text-foreground">{metadata?.campaignTitle || "Campaign Title"}</b>{metadata?.performerName && <span className="block break-words text-xs text-muted-foreground">{metadata.performerName}</span>}{metadata?.subtitle && <span className="block break-words text-[10px] text-primary">{metadata.subtitle}</span>}</div>)}
         </div>
       </div>
-      <Button type="button" disabled={loading || Boolean(validation?.campaignTitle) || Boolean(validation?.performerName)} onClick={onGenerate} className="mt-4 w-full">{loading ? "Updating Campaign Assets" : hasAssets ? "Update Campaign Assets" : "Generate Campaign Assets"}</Button>
+      <Button type="button" disabled={loading || Boolean(validation?.campaignTitle)} onClick={onGenerate} className="mt-4 w-full">{loading ? "Updating Campaign Assets" : hasAssets ? "Update Campaign Assets" : "Generate Campaign Assets"}</Button>
     </div>
   );
 }

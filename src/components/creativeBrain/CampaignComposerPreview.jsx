@@ -5,7 +5,7 @@ import { composeCampaignFromHero, getCampaignMetadataSuggestion, mergeCampaignMe
 import CampaignDetailsForm from "./CampaignDetailsForm";
 import CampaignComposerComparison from "./CampaignComposerComparison";
 
-const METADATA_FIELDS = ["campaignTitle", "performerName", "subtitle", "cta", "campaignLabel", "releaseName", "originalTitle"];
+const METADATA_FIELDS = ["campaignTitle", "performerName", "subtitle", "episode", "cta", "campaignLabel", "releaseName", "originalTitle"];
 
 function storageKey(campaignFamily) {
   return `hero-campaign-metadata:${campaignFamily || "default"}`;
@@ -22,7 +22,6 @@ function cleanMetadata(metadata) {
 function validateMetadata(metadata) {
   const errors = {};
   if (!metadata?.campaignTitle?.trim()) errors.campaignTitle = "Campaign Title is required.";
-  if (!metadata?.performerName?.trim()) errors.performerName = "Performer / Creator is required.";
   return errors;
 }
 
@@ -47,7 +46,7 @@ export default function CampaignComposerPreview({ output, pipeline, campaignFami
   useEffect(() => () => urlsRef.current.forEach(url => URL.revokeObjectURL(url)), []);
 
   const composeAssets = async () => {
-    if (validation.campaignTitle || validation.performerName) return;
+    if (validation.campaignTitle) return;
     urlsRef.current.forEach(url => URL.revokeObjectURL(url));
     urlsRef.current = [];
     setLoading(true);

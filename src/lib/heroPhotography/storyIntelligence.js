@@ -82,41 +82,48 @@ const conceptPools = {
 export function buildCampaignConcepts({ metadata = {}, blueprint = {}, campaignFamily = "" }) {
   const story = createStoryIntelligence({ metadata, blueprint, campaignFamily });
   const pool = conceptPools[story.territory] || conceptPools.exclusive;
-  const performer = compact(metadata.performerName || blueprint.performerName || blueprint.creatorName || "Featured Creator");
+  const performer = compact(metadata.performerName || blueprint.performerName || blueprint.creatorName || "");
   const userCampaignTitle = compact(metadata.campaignTitle);
   const userTitleIsExplicit = metadata.source?.campaignTitle === "user" && userCampaignTitle;
   return pool.slice(0, 3).map((concept, index) => {
-    const episode = `Episode ${String(index + 1).padStart(2, "0")}`;
-    const campaignIdentity = userTitleIsExplicit ? userCampaignTitle : compact(concept.campaignIdentity || concept.primaryTitle || concept.collection || "PRIVATE ACCESS");
+    const collection = metadata.source?.subtitle === "user" ? compact(metadata.subtitle) : compact(metadata.subtitle || concept.collection);
+    const episode = metadata.source?.episode === "user" ? compact(metadata.episode) : compact(metadata.episode || `Episode ${String(index + 1).padStart(2, "0")}`);
+    const campaignType = performer ? "performer" : collection && episode ? "story" : collection ? "collection" : "brand";
+    const campaignIdentity = userTitleIsExplicit ? userCampaignTitle : compact(concept.campaignIdentity || concept.primaryTitle || collection || "PRIVATE ACCESS");
     const heroWord = deriveHeroWord(campaignIdentity, metadata, concept.primaryTitle || "PRIVATE ACCESS");
     const campaignTitle = userCampaignTitle || campaignIdentity;
-    const base = `${safeSlug(heroWord)}_${safeSlug(concept.collection)}_${safeSlug(performer)}`;
+    const base = `${safeSlug(heroWord)}_${safeSlug(collection || campaignType)}_${safeSlug(performer || campaignType)}`;
     return {
       ...concept,
       sceneDescription: story.sourceTitle,
+      campaignType,
       campaignIdentity,
       heroWord,
       primaryTitle: heroWord,
       base,
       campaignConceptId: `${safeSlug(heroWord)}-${index + 1}`,
       campaignTitle,
-      subtitle: concept.collection,
-      seriesName: concept.collection,
-      performerName: performer,
-      creatorName: performer,
+      subtitle: collection,
+      collection,
+      seriesName: collection,
+      performerName: performer || null,
+      creatorName: performer || null,
       episode,
       primaryCTA: compact(metadata.cta || "Watch Now"),
-      campaignLabel: compact(metadata.campaignLabel || story.emotionalHook),
-      releaseName: compact(metadata.releaseName || concept.collection),
+      campaignLabel: compact(metadata.campaignLabel || ""),
+      releaseName: compact(metadata.releaseName || collection),
       storyIntelligence: story,
       campaignMetadata: {
         sceneDescription: story.sourceTitle,
+        campaignType,
         campaignIdentity,
         heroWord,
         campaignTitle,
-        collection: concept.collection,
-        performerName: performer,
-        episode,
+        performer: performer || null,
+        collection: collection || null,
+        performerName: performer || null,
+        episode: episode || null,
+        cta: compact(metadata.cta || "Watch Now"),
         badges: concept.badges,
         sourceTitle: story.sourceTitle,
         metadataOnlyDescription: story.sourceTitle,
