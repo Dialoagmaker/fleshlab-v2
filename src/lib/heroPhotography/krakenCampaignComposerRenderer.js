@@ -117,9 +117,9 @@ function drawHeroPhotography(ctx, image, width, height, zones, direction, analys
 
   const edge = ctx.createLinearGradient(zones.photo.x, 0, zones.photo.x + zones.photo.w, 0);
   if (direction.heroSide === "right") {
-    edge.addColorStop(0, "rgba(0,0,0,0.86)"); edge.addColorStop(0.22, "rgba(0,0,0,0.28)"); edge.addColorStop(1, "rgba(0,0,0,0.16)");
+    edge.addColorStop(0, "rgba(0,0,0,0.96)"); edge.addColorStop(0.1, "rgba(0,0,0,0.68)"); edge.addColorStop(0.28, "rgba(0,0,0,0.22)"); edge.addColorStop(1, "rgba(0,0,0,0.1)");
   } else {
-    edge.addColorStop(0, "rgba(0,0,0,0.16)"); edge.addColorStop(0.78, "rgba(0,0,0,0.28)"); edge.addColorStop(1, "rgba(0,0,0,0.86)");
+    edge.addColorStop(0, "rgba(0,0,0,0.1)"); edge.addColorStop(0.72, "rgba(0,0,0,0.22)"); edge.addColorStop(0.9, "rgba(0,0,0,0.68)"); edge.addColorStop(1, "rgba(0,0,0,0.96)");
   }
   ctx.fillStyle = edge;
   ctx.fillRect(zones.photo.x, zones.photo.y, zones.photo.w, zones.photo.h);
@@ -140,13 +140,68 @@ function drawSubjectDepth(ctx, image, width, height, zones, direction, analysis)
   ctx.restore();
 }
 
+function drawPhotoBackgroundFusion(ctx, image, width, height, zones, direction, analysis) {
+  const g = zones.graphic;
+  const p = zones.photo;
+  const seamX = zones.mode === "vertical-split" ? 0 : direction.heroSide === "right" ? p.x + width * 0.035 : p.x + p.w - width * 0.035;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(g.x, g.y, g.w, g.h);
+  ctx.clip();
+  ctx.globalAlpha = 0.34;
+  ctx.filter = "blur(14px) brightness(44%) contrast(155%) saturate(126%)";
+  coverImageRect(ctx, image, { x: 0, y: 0, w: width, h: height }, analysis.subjectCenter || { x: 0.5, y: 0.48 }, 1.2);
+  ctx.restore();
+
+  ctx.save();
+  const seam = zones.mode === "vertical-split"
+    ? ctx.createLinearGradient(0, zones.graphic.y - height * 0.08, 0, zones.graphic.y + height * 0.18)
+    : ctx.createLinearGradient(seamX - width * 0.16, 0, seamX + width * 0.16, 0);
+  if (zones.mode === "vertical-split") {
+    seam.addColorStop(0, "rgba(0,0,0,0)"); seam.addColorStop(0.34, "rgba(0,0,0,0.48)"); seam.addColorStop(1, "rgba(0,0,0,0.9)");
+    ctx.fillStyle = seam;
+    ctx.fillRect(0, zones.graphic.y - height * 0.08, width, height * 0.28);
+  } else if (direction.heroSide === "right") {
+    seam.addColorStop(0, "rgba(0,0,0,0.9)"); seam.addColorStop(0.46, "rgba(0,0,0,0.48)"); seam.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = seam;
+    ctx.fillRect(seamX - width * 0.16, 0, width * 0.32, height);
+  } else {
+    seam.addColorStop(0, "rgba(0,0,0,0)"); seam.addColorStop(0.54, "rgba(0,0,0,0.48)"); seam.addColorStop(1, "rgba(0,0,0,0.9)");
+    ctx.fillStyle = seam;
+    ctx.fillRect(seamX - width * 0.16, 0, width * 0.32, height);
+  }
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.strokeStyle = "rgba(207,16,45,0.48)";
+  ctx.lineWidth = Math.max(5, width * 0.006);
+  for (let i = 0; i < 4; i += 1) {
+    ctx.beginPath();
+    const y = height * (i % 2 ? 0.14 : 0.84) + i * height * 0.018;
+    const startX = zones.mode === "vertical-split" ? width * 0.06 : seamX - width * 0.42;
+    ctx.moveTo(startX, y);
+    ctx.bezierCurveTo(startX + width * 0.24, y - height * 0.06, startX + width * 0.5, y + height * 0.04, startX + width * 0.82, y - height * 0.02);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function drawStructuralGraphics(ctx, width, height, zones, direction) {
   const g = zones.graphic;
   ctx.save();
   const field = ctx.createLinearGradient(g.x, g.y, g.x + g.w, g.y + g.h);
-  field.addColorStop(0, "rgba(0,0,0,0.92)");
-  field.addColorStop(0.56, "rgba(18,3,7,0.82)");
-  field.addColorStop(1, "rgba(0,0,0,0.26)");
+  if (direction.heroSide === "right" || zones.mode === "vertical-split") {
+    field.addColorStop(0, "rgba(0,0,0,0.96)");
+    field.addColorStop(0.48, "rgba(18,3,7,0.86)");
+    field.addColorStop(0.78, "rgba(0,0,0,0.48)");
+    field.addColorStop(1, "rgba(0,0,0,0.08)");
+  } else {
+    field.addColorStop(0, "rgba(0,0,0,0.08)");
+    field.addColorStop(0.22, "rgba(0,0,0,0.48)");
+    field.addColorStop(0.56, "rgba(18,3,7,0.86)");
+    field.addColorStop(1, "rgba(0,0,0,0.96)");
+  }
   ctx.fillStyle = field;
   ctx.fillRect(g.x, g.y, g.w, g.h);
   ctx.globalCompositeOperation = "screen";
@@ -386,6 +441,7 @@ export async function renderKrakenCampaignComposerAsset({ image, analysis = {}, 
   drawHeroPhotography(ctx, image, format.width, format.height, zones, direction, analysis);
   drawSubjectDepth(ctx, image, format.width, format.height, zones, direction, analysis);
   drawStructuralGraphics(ctx, format.width, format.height, zones, direction);
+  drawPhotoBackgroundFusion(ctx, image, format.width, format.height, zones, direction, analysis);
   const titlePlan = drawTitle(ctx, compact(campaign.campaignTitle || campaign.primaryTitle || ""), zones, format.width, format.height);
   drawMeta(ctx, campaign, zones, format.width, format.height, direction, titlePlan.bottom);
   drawBadges(ctx, campaign, zones, format.width, format.height, direction);
