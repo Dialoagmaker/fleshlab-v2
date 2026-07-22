@@ -1,0 +1,52 @@
+{
+  "name": "OwnerDevelopmentRenderAudit",
+  "type": "object",
+  "properties": {
+    "verification_mode": {
+      "type": "string",
+      "enum": [
+        "OWNER_DEVELOPMENT"
+      ],
+      "title": "Verification Mode"
+    },
+    "owner_account_id": {
+      "type": "string",
+      "title": "Owner Account ID"
+    },
+    "source_asset_id": {
+      "type": "string",
+      "title": "Source Asset ID"
+    },
+    "blueprint_execution_hash": {
+      "type": "string",
+      "title": "Blueprint Execution Hash"
+    },
+    "provider_route": {
+      "type": "string",
+      "title": "Provider Route"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Timestamp"
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "success",
+        "blocked",
+        "failed"
+      ],
+      "title": "Result"
+    }
+  },
+  "required": [
+    "verification_mode",
+    "owner_account_id",
+    "source_asset_id",
+    "blueprint_execution_hash",
+    "provider_route",
+    "timestamp",
+    "result"
+  ]
+}

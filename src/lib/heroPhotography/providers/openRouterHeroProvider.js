@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 export const openRouterHeroProvider = {
   id: "rendering_intelligence_openrouter",
   name: "Rendering Intelligence Provider",
-  async render({ sourceFrameDataUrl, instructions, productionBlueprint, privacyIntent, providerIntelligencePlan }) {
+  async render({ sourceFrameDataUrl, instructions, productionBlueprint, privacyIntent, providerIntelligencePlan, renderContext = {} }) {
     let response;
     try {
       response = await base44.functions.invoke("openRouterAICover", {
@@ -20,6 +20,8 @@ export const openRouterHeroProvider = {
         heroPhotographyPlan: instructions.hero_photography_plan,
         sourceFrameUnderstanding: instructions.source_frame_understanding,
         productionBlueprint,
+        sourceAssetId: renderContext.sourceAssetId || "selected-hero-frame",
+        blueprintExecutionHash: renderContext.blueprintExecutionHash || "",
         contentClassification: providerIntelligencePlan?.contentClassification,
         providerIntelligence: providerIntelligencePlan,
         renderingParameters: { aspect_ratio: "16:9", output: "professional_hero_photograph" }

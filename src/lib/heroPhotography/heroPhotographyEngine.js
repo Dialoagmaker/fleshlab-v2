@@ -41,7 +41,7 @@ export async function executeHeroPhotographyRender({ sourceFrameFile, production
       consent_text: consentText,
       blocked_media: ["original_video", "video_timeline", "additional_frames", "browser_blobs", "hidden_metadata"]
     };
-    const render = await provider.render({ sourceFrameDataUrl, instructions, productionBlueprint, privacyIntent, providerIntelligencePlan: providerIntelligence });
+    const render = await provider.render({ sourceFrameDataUrl, instructions, productionBlueprint, privacyIntent, providerIntelligencePlan: providerIntelligence, renderContext: { sourceAssetId: sourceFrameFile?.name || "selected-hero-frame", blueprintExecutionHash: blueprintHash } });
     const renderTimeMs = Math.round(performance.now() - providerStartedAt);
     const outputResolution = await readImageResolution(render.imageDataUrl);
     const outputPackage = {
