@@ -85,30 +85,31 @@ function chooseLines(ctx, title, maxWidth, maxLines) {
   return best?.lines || [compact(title)];
 }
 
-export function planAdaptiveTypography({ ctx, title, width, height, format = {}, compositionPlan = {}, logoBottom = 0, collection = "", performerName = "" }) {
+export function planAdaptiveTypography({ ctx, title, width, height, format = {}, compositionPlan = {}, logoBottom = 0, collection = "", performerName = "", layout = null }) {
   const exactTitle = compact(title || "");
   const selectedFont = compositionPlan.artDirection?.fontFamily || "Bebas Neue";
-  const align = compositionPlan.titleAlign || (compositionPlan.titleZone === "RIGHT" ? "right" : compositionPlan.titleZone === "CENTER" ? "center" : "left");
+  const align = layout?.align || compositionPlan.titleAlign || (compositionPlan.titleZone === "RIGHT" ? "right" : compositionPlan.titleZone === "CENTER" ? "center" : "left");
   const titleOnLeft = align !== "right";
   const graphic = px(compositionPlan.graphicZone || { x: titleOnLeft ? 0 : 0.5, y: 0, w: 0.5, h: 1 }, width, height);
   const marginX = Math.max(Math.min(width * 0.055, graphic.w * 0.12), 28);
-  const topMargin = Math.max(height * 0.07, 34);
-  const bottomReserve = Math.max(height * 0.18, 74);
-  const face = {
+  const bottomReserve = Math.max(height * 0.12, 58);
+  const face = layout?.facePosition ? px(layout.facePosition, width, height) : {
     x: width * clamp((compositionPlan.subjectFocus?.x ?? 0.58) - 0.17, 0, 1),
     y: height * clamp((compositionPlan.subjectFocus?.y ?? 0.46) - 0.28, 0, 1),
     w: width * 0.34,
     h: height * 0.56
   };
-  let box = {
+  let box = layout?.box ? { ...layout.box } : {
     x: graphic.x + marginX,
-    y: Math.max(logoBottom + height * 0.11, graphic.y + topMargin * 0.45),
+    y: Math.max(logoBottom + height * 0.11, graphic.y + height * 0.03),
     w: Math.min(graphic.w - marginX * 2, width * (format.height > format.width ? 0.72 : 0.54)),
-    h: Math.min(graphic.h - topMargin * 0.7, height - bottomReserve - Math.max(logoBottom + height * 0.11, graphic.y + topMargin * 0.45))
+    h: Math.min(graphic.h - height * 0.06, height - bottomReserve - Math.max(logoBottom + height * 0.11, graphic.y + height * 0.03))
   };
-  if (align === "right") box.x = graphic.x + graphic.w - marginX - box.w;
-  if (align === "center") box.x = graphic.x + (graphic.w - box.w) / 2;
-  if (intersects(box, face)) {
+  box.y = Math.max(box.y, logoBottom + height * 0.035);
+  box.h = Math.max(height * 0.18, Math.min(box.h, height - bottomReserve - box.y));
+  if (!layout?.box && align === "right") box.x = graphic.x + graphic.w - marginX - box.w;
+  if (!layout?.box && align === "center") box.x = graphic.x + (graphic.w - box.w) / 2;
+  if (!layout?.overlap && intersects(box, face)) {
     const shifted = titleOnLeft ? face.x - marginX - box.w : face.x + face.w + marginX;
     if (shifted > marginX && shifted + box.w < width - marginX) box.x = shifted;
   }
@@ -126,11 +127,11 @@ export function planAdaptiveTypography({ ctx, title, width, height, format = {},
     const lineHeight = size * (lines.length > 3 ? 1.16 : 1.1);
     const totalH = lineHeight * lines.length;
     if (lines.every(line => ctx.measureText(line).width <= box.w) && totalH <= availableTitleH) {
-      return { title: exactTitle, lines, fontSize: size, lineHeight, x: align === "right" ? box.x + box.w : align === "center" ? box.x + box.w / 2 : box.x, y: box.y, width: box.w, align, preservesTitle: lines.join(" ") === exactTitle, avoidsFace: !intersects({ ...box, h: totalH }, face), box, fontFamily: selectedFont };
+      return { title: exactTitle, lines, fontSize: size, lineHeight, x: align === "right" ? box.x + box.w : align === "center" ? box.x + box.w / 2 : box.x, y: box.y, width: box.w, align, preservesTitle: lines.join(" ") === exactTitle, avoidsFace: !intersects({ ...box, h: totalH }, face), box, fontFamily: selectedFont, layoutMode: layout?.layoutMode, layoutName: layout?.layoutName, diagonal: layout?.diagonal, overlap: layout?.overlap, compositionScore: layout?.score };
     }
   }
 
   ctx.font = `900 ${Math.round(minSize)}px "${selectedFont}", "Inter", Impact, Arial, sans-serif`;
   const lines = chooseLines(ctx, exactTitle, box.w, maxLines + 1);
-  return { title: exactTitle, lines, fontSize: minSize, lineHeight: minSize * 1.18, x: align === "right" ? box.x + box.w : align === "center" ? box.x + box.w / 2 : box.x, y: box.y, width: box.w, align, preservesTitle: lines.join(" ") === exactTitle, avoidsFace: !intersects({ ...box, h: minSize * 1.18 * lines.length }, face), box, fontFamily: selectedFont };
+  return { title: exactTitle, lines, fontSize: minSize, lineHeight: minSize * 1.18, x: align === "right" ? box.x + box.w : align === "center" ? box.x + box.w / 2 : box.x, y: box.y, width: box.w, align, preservesTitle: lines.join(" ") === exactTitle, avoidsFace: !intersects({ ...box, h: minSize * 1.18 * lines.length }, face), box, fontFamily: selectedFont, layoutMode: layout?.layoutMode, layoutName: layout?.layoutName, diagonal: layout?.diagonal, overlap: layout?.overlap, compositionScore: layout?.score };
 }

@@ -3,6 +3,7 @@ import { createCompositionPlan } from "@/lib/heroPhotography/compositionEngine";
 import { createLayerPlan } from "@/lib/heroPhotography/layerCompositionEngine";
 import { createKeyArtBrief, createLayoutSketch } from "@/lib/heroPhotography/keyArtWorkflow";
 import { planAdaptiveTypography } from "@/lib/heroPhotography/adaptiveTypographyEngine";
+import { chooseCompositionAwareTypographyLayout } from "@/lib/heroPhotography/compositionAwareLayoutEngine";
 
 let logoPromise;
 function loadLogo() {
@@ -522,9 +523,43 @@ function drawLayerForegroundFx(ctx, width, height, mood, plan) {
   streak.addColorStop(0.52, "rgba(240,24,61,0.28)");
   streak.addColorStop(1, "rgba(255,255,255,0)");
   ctx.fillStyle = streak;
-  ctx.translate(plan.titleZone === "LEFT" ? width * 0.08 : -width * 0.12, 0);
-  ctx.rotate(plan.titleZone === "LEFT" ? -0.12 : 0.12);
+  ctx.translate(plan.dynamicTypographyLayout?.align === "left" ? width * 0.08 : -width * 0.12, 0);
+  ctx.rotate(plan.dynamicTypographyLayout?.align === "left" ? -0.12 : 0.12);
   ctx.fillRect(0, height * 0.32, width * 1.15, Math.max(18, height * 0.045));
+  ctx.restore();
+}
+
+function drawCompositionTextWell(ctx, width, height, layout, mood) {
+  const box = layout.box;
+  ctx.save();
+  const pad = Math.max(16, Math.min(width, height) * 0.02);
+  const well = {
+    x: Math.max(0, box.x - pad),
+    y: Math.max(0, box.y - pad * 0.8),
+    w: Math.min(width - Math.max(0, box.x - pad), box.w + pad * 2),
+    h: Math.min(height - Math.max(0, box.y - pad * 0.8), box.h + pad * 1.6),
+  };
+  const gradient = ctx.createLinearGradient(well.x, well.y, well.x + well.w, well.y + well.h);
+  gradient.addColorStop(0, layout.overlap ? "rgba(0,0,0,0.78)" : "rgba(0,0,0,0.58)");
+  gradient.addColorStop(0.52, "rgba(0,0,0,0.34)");
+  gradient.addColorStop(1, "rgba(0,0,0,0.08)");
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.roundRect(well.x, well.y, well.w, well.h, Math.max(12, width * 0.012));
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.12)";
+  ctx.lineWidth = Math.max(1, width * 0.0012);
+  ctx.stroke();
+  ctx.globalCompositeOperation = "screen";
+  ctx.fillStyle = mood.accent;
+  if (layout.layoutMode === "DIAGONAL") {
+    ctx.translate(box.x + box.w / 2, box.y + box.h * 0.18);
+    ctx.rotate(layout.align === "left" ? -0.12 : 0.12);
+    ctx.fillRect(-box.w * 0.42, 0, box.w * 0.84, Math.max(8, height * 0.014));
+  } else {
+    const ruleX = layout.align === "right" ? box.x + box.w * 0.52 : layout.align === "center" ? box.x + box.w * 0.28 : box.x;
+    ctx.fillRect(ruleX, box.y - Math.max(12, height * 0.018), box.w * 0.42, Math.max(6, height * 0.009));
+  }
   ctx.restore();
 }
 
@@ -533,8 +568,6 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
   plan.layerPlan = createLayerPlan({ compositionPlan: plan, analysis, format });
   const graphic = toPx(plan.graphicZone, width, height);
   const photo = toPx(plan.photoZone, width, height);
-  const titleAlign = plan.titleAlign || (plan.titleZone === "RIGHT" ? "right" : plan.titleZone === "CENTER" ? "center" : "left");
-  const titleOnLeft = titleAlign !== "right";
 
   drawLayerBackgroundExtension(ctx, image, width, height, plan, mood);
   drawLayerAtmosphere(ctx, width, height, mood);
@@ -548,50 +581,60 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
 
   drawLayerPhoto(ctx, image, width, height, plan, photo);
 
-  const blend = titleOnLeft
-    ? ctx.createLinearGradient(photo.x - width * 0.1, 0, photo.x + width * 0.16, 0)
-    : ctx.createLinearGradient(photo.x + photo.w - width * 0.16, 0, photo.x + photo.w + width * 0.1, 0);
-  blend.addColorStop(0, titleOnLeft ? "rgba(0,0,0,1)" : "rgba(0,0,0,0)");
-  blend.addColorStop(0.5, "rgba(0,0,0,0.6)");
-  blend.addColorStop(1, titleOnLeft ? "rgba(0,0,0,0)" : "rgba(0,0,0,1)");
-  ctx.fillStyle = blend;
-  ctx.fillRect(Math.min(graphic.x, photo.x), 0, Math.abs(photo.x - graphic.x) + width * 0.24, height);
-
-  ctx.save();
-  ctx.globalCompositeOperation = "screen";
-  ctx.fillStyle = mood.accent;
-  ctx.translate(titleOnLeft ? width * 0.24 : width * 0.78, height * 0.23);
-  ctx.rotate(titleOnLeft ? -0.13 : 0.13);
-  ctx.fillRect(titleOnLeft ? -width * 0.08 : -width * 0.42, 0, width * 0.5, Math.max(10, height * 0.025));
-  ctx.fillRect(titleOnLeft ? width * 0.05 : -width * 0.36, height * 0.38, width * 0.42, Math.max(7, height * 0.014));
-  ctx.restore();
-
-  const safeX = titleAlign === "center" ? graphic.x + graphic.w / 2 : titleOnLeft ? graphic.x + width * 0.055 : graphic.x + graphic.w - width * 0.055;
-  const maxTextW = graphic.w * 0.78;
-  ctx.textAlign = titleAlign;
-  const logoW = Math.min(width * 0.14, maxTextW * 0.34);
-  const logoX = titleAlign === "center" ? safeX - logoW / 2 : titleOnLeft ? safeX : safeX - logoW;
-  const logoBottom = await drawLargeLogo(ctx, logoX, height * 0.065, logoW);
   const collection = upper(campaign.collection || campaign.subtitle || campaign.campaignLabel || "");
   const exactTitle = compact(campaign.campaignTitle || campaign.primaryTitle || "");
   const performerName = upper(campaign.performerName || campaign.creatorName);
+  const layout = chooseCompositionAwareTypographyLayout({ ctx, width, height, analysis, title: exactTitle || collection || performerName });
+  plan.dynamicTypographyLayout = layout;
+  plan.compositionAnalysis = {
+    performerBoundingBox: layout.performerBoundingBox,
+    facePosition: layout.facePosition,
+    bodyPosition: layout.bodyPosition,
+    availableNegativeSpace: layout.availableNegativeSpace,
+    visualBalance: layout.visualBalance,
+    imageFocalPoint: layout.imageFocalPoint,
+    selectedLayout: layout.layoutName,
+    candidates: layout.candidates,
+  };
+  plan.titleAlign = layout.align;
+  plan.titleZone = layout.align === "right" ? "RIGHT" : layout.align === "center" ? "CENTER" : "LEFT";
+  plan.safeTypographyArea = { x: layout.box.x / width, y: layout.box.y / height, w: layout.box.w / width, h: layout.box.h / height };
+
+  drawCompositionTextWell(ctx, width, height, layout, mood);
+
+  const titleAlign = layout.align;
+  const safeX = titleAlign === "center" ? layout.box.x + layout.box.w / 2 : titleAlign === "right" ? layout.box.x + layout.box.w : layout.box.x;
+  const maxTextW = layout.box.w;
+  ctx.textAlign = titleAlign;
+  const logoW = Math.min(width * 0.14, maxTextW * 0.28);
+  const logoX = titleAlign === "center" ? safeX - logoW / 2 : titleAlign === "right" ? safeX - logoW : safeX;
+  const logoBottom = await drawLargeLogo(ctx, logoX, Math.max(height * 0.04, layout.box.y - height * 0.105), logoW);
   if (collection) {
     ctx.font = font(Math.max(11, width * 0.011), "Inter", 950);
     ctx.fillStyle = plan.artDirection?.accent || mood.accent;
-    if (titleAlign === "left") drawTrackingText(ctx, collection, safeX, logoBottom + height * 0.052, Math.max(1.2, width * 0.0014), maxTextW);
-    else ctx.fillText(collection, safeX, logoBottom + height * 0.052, maxTextW);
+    const collectionY = Math.min(layout.box.y - height * 0.018, logoBottom + height * 0.045);
+    if (titleAlign === "left") drawTrackingText(ctx, collection, layout.box.x, collectionY, Math.max(1.2, width * 0.0014), maxTextW);
+    else ctx.fillText(collection, safeX, collectionY, maxTextW);
   }
 
   let typographyPlan = null;
-  let afterTitle = logoBottom + height * 0.16;
+  let afterTitle = layout.box.y;
   if (exactTitle) {
-    typographyPlan = planAdaptiveTypography({ ctx, title: exactTitle, width, height, format, compositionPlan: plan, logoBottom, collection, performerName });
+    typographyPlan = planAdaptiveTypography({ ctx, title: exactTitle, width, height, format, compositionPlan: plan, logoBottom: Math.min(logoBottom, layout.box.y - height * 0.04), collection, performerName, layout });
     plan.typographyPlan = typographyPlan;
-    plan.typographyWarnings = typographyPlan.preservesTitle ? [] : ["Title preservation check failed."];
+    plan.typographyWarnings = typographyPlan.preservesTitle && typographyPlan.avoidsFace ? [] : [typographyPlan.preservesTitle ? "Typography overlaps a protected face zone." : "Title preservation check failed."];
+    ctx.save();
+    if (typographyPlan.diagonal) {
+      const cx = typographyPlan.box.x + typographyPlan.box.w / 2;
+      const cy = typographyPlan.box.y + typographyPlan.box.h / 2;
+      ctx.translate(cx, cy);
+      ctx.rotate(typographyPlan.align === "left" ? -0.075 : 0.075);
+      ctx.translate(-cx, -cy);
+    }
     ctx.textAlign = typographyPlan.align;
     ctx.font = font(typographyPlan.fontSize, typographyPlan.fontFamily || "Bebas Neue", 900);
     ctx.fillStyle = FLESHLAB_BRAND_IDENTITY.colors.cream;
-    ctx.strokeStyle = "rgba(0,0,0,0.9)";
+    ctx.strokeStyle = "rgba(0,0,0,0.92)";
     ctx.lineWidth = Math.max(3, typographyPlan.fontSize * 0.04);
     ctx.shadowColor = "rgba(0,0,0,0.72)";
     ctx.shadowBlur = typographyPlan.fontSize * 0.12;
@@ -600,13 +643,10 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
       ctx.strokeText(line, typographyPlan.x, y, typographyPlan.width);
       ctx.fillText(line, typographyPlan.x, y, typographyPlan.width);
     });
-    ctx.shadowBlur = 0;
+    ctx.restore();
     afterTitle = typographyPlan.y + typographyPlan.lineHeight * typographyPlan.lines.length + height * 0.035;
-    ctx.fillStyle = plan.artDirection?.accent || mood.accent;
-    const ruleX = titleAlign === "center" ? typographyPlan.box.x + typographyPlan.box.w * 0.34 : titleOnLeft ? typographyPlan.box.x : typographyPlan.box.x + typographyPlan.box.w * 0.68;
-    ctx.fillRect(ruleX, afterTitle, typographyPlan.box.w * 0.32, Math.max(4, height * 0.006));
   } else {
-    plan.typographyPlan = { title: "", lines: [], preservesTitle: true, intentionallyBlank: true };
+    plan.typographyPlan = { title: "", lines: [], preservesTitle: true, intentionallyBlank: true, layoutName: layout.layoutName };
     plan.typographyWarnings = [];
   }
 
@@ -615,11 +655,11 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
   if (performerName) {
     ctx.font = font(Math.max(12, width * 0.012), "Inter", 950);
     ctx.fillStyle = "rgba(255,255,255,0.86)";
-    const performerY = Math.min(height * 0.76, afterTitle + height * 0.055);
-    const labelX = typographyPlan?.box?.x ?? (titleAlign === "center" ? safeX : titleOnLeft ? graphic.x + width * 0.055 : graphic.x + graphic.w - width * 0.055);
     const labelW = typographyPlan?.box?.w ?? maxTextW;
-    if (titleAlign === "left") drawTrackingText(ctx, `${performerName} SOLO`, labelX, performerY, Math.max(1.1, width * 0.0012), labelW);
-    else ctx.fillText(`${performerName} SOLO`, titleAlign === "center" ? safeX : labelX + labelW, performerY, labelW);
+    const labelX = typographyPlan?.align === "right" ? typographyPlan.box.x + typographyPlan.box.w : typographyPlan?.align === "center" ? typographyPlan.box.x + typographyPlan.box.w / 2 : typographyPlan?.box?.x ?? layout.box.x;
+    const performerY = Math.min(height * 0.9, afterTitle + height * 0.05);
+    if ((typographyPlan?.align || titleAlign) === "left") drawTrackingText(ctx, `${performerName} SOLO`, labelX, performerY, Math.max(1.1, width * 0.0012), labelW);
+    else ctx.fillText(`${performerName} SOLO`, labelX, performerY, labelW);
   }
   ctx.textAlign = "left";
 

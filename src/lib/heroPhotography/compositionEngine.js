@@ -15,7 +15,7 @@ function clean(value) {
 const LITERAL_LOCATION_HERO_WORDS = new Set(["BATHROOM", "BEDROOM", "KITCHEN", "SOFA", "DOOR", "ROOM", "SHOWER", "TOILET", "SINK", "BED"]);
 
 function identityFromCampaignConcept(campaign = {}) {
-  return clean(campaign.campaignTitle || campaign.campaignIdentity || campaign.primaryTitle || "PRIVATE ACCESS").toUpperCase();
+  return clean(campaign.campaignTitle || campaign.campaignIdentity || campaign.primaryTitle || campaign.collection || "").toUpperCase();
 }
 
 export function createCreativeConcept(campaign = {}, analysis = {}) {
