@@ -18,7 +18,7 @@ function automaticCandidateSettings(settings = {}) {
 function normalizeMetadata(metadata = {}, image = null) {
   const aiReconstructed = Boolean(metadata.aiReconstructed || image?.__fleshlabAIReconstructed);
   const blueprint = metadata.productionBlueprint || null;
-  const selectedTitle = blueprint?.title_policy?.selectedTitle?.value || metadata.selectedTitle || metadata.videoTitle || metadata.title || "";
+  const selectedTitle = metadata.videoTitle || metadata.title || metadata.selectedTitle || blueprint?.title_policy?.selectedTitle?.value || "";
   const selectedSubtitle = blueprint?.title_policy?.selectedSubtitle?.value || metadata.selectedSubtitle || metadata.optionalSubtitle || metadata.subtitle || "";
   const selectedCampaign = blueprint?.title_policy?.selectedCampaign?.value || metadata.selectedCampaign || metadata.campaignName || "";
   return {

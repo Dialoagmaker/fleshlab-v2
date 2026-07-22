@@ -125,22 +125,50 @@ function drawTitleWell(ctx, map, width, height) {
   ctx.restore();
 }
 
-function wrapTitle(ctx, text, maxWidth, startSize, maxLines = 3) {
-  const words = upper(text).split(/\s+/).filter(Boolean);
-  if (!words.length) return { lines: [], size: startSize, lineHeight: startSize * 0.78 };
-  for (let size = startSize; size >= startSize * 0.44; size -= 4) {
-    ctx.font = font(size, "Bebas Neue", 900);
-    const lines = [];
-    let current = "";
-    words.forEach(word => {
-      const next = current ? `${current} ${word}` : word;
-      if (!current || ctx.measureText(next).width <= maxWidth) current = next;
-      else { lines.push(current); current = word; }
-    });
-    if (current) lines.push(current);
-    if (lines.length <= maxLines) return { lines, size, lineHeight: size * 0.78 };
+function lineBreakScore(ctx, lines, maxWidth) {
+  const widths = lines.map(line => ctx.measureText(line).width);
+  if (widths.some(width => width > maxWidth)) return -Infinity;
+  const avg = widths.reduce((sum, width) => sum + width, 0) / Math.max(1, widths.length);
+  const variance = widths.reduce((sum, width) => sum + Math.abs(width - avg), 0) / Math.max(1, widths.length);
+  const punctuation = lines.reduce((sum, line) => /[,;:!?]$/.test(line.trim()) ? sum + 0.08 : sum, 0);
+  return Math.max(...widths) / maxWidth - variance / maxWidth * 0.5 + punctuation;
+}
+
+function balancedLines(ctx, words, maxWidth, maxLines) {
+  let best = null;
+  function walk(start, remaining, lines) {
+    if (remaining === 1) {
+      const candidate = [...lines, words.slice(start).join(" ")];
+      const score = lineBreakScore(ctx, candidate, maxWidth) - candidate.length * 0.025;
+      if (!best || score > best.score) best = { lines: candidate, score };
+      return;
+    }
+    for (let end = start + 1; end <= words.length - remaining + 1; end += 1) walk(end, remaining - 1, [...lines, words.slice(start, end).join(" ")]);
   }
-  return { lines: [upper(text)], size: startSize * 0.48, lineHeight: startSize * 0.44 };
+  for (let count = 1; count <= Math.min(maxLines, words.length); count += 1) walk(0, count, []);
+  return best?.lines || [words.join(" ")];
+}
+
+function wrapTitle(ctx, text, maxWidth, startSize, maxLines = 3) {
+  const words = String(text || "").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return { lines: [], size: startSize, lineHeight: startSize * 1.02 };
+  const adaptiveLines = Math.min(Math.max(maxLines, words.length > 12 ? 6 : words.length > 8 ? 5 : maxLines), 6);
+  const start = words.length > 12 ? startSize * 0.58 : words.length > 8 ? startSize * 0.72 : startSize;
+  for (let size = start; size >= startSize * 0.34; size -= 4) {
+    ctx.font = font(size, words.length > 10 ? "Inter" : "Bebas Neue", 900);
+    const lines = balancedLines(ctx, words, maxWidth, adaptiveLines);
+    if (lines.every(line => ctx.measureText(line).width <= maxWidth)) return { lines, size, lineHeight: size * 1.04, titleFont: words.length > 10 ? "Inter" : "Bebas Neue" };
+  }
+  ctx.font = font(startSize * 0.34, "Inter", 900);
+  const lines = [];
+  let current = "";
+  words.forEach(word => {
+    const next = current ? `${current} ${word}` : word;
+    if (!current || ctx.measureText(next).width <= maxWidth) current = next;
+    else { lines.push(current); current = word; }
+  });
+  if (current) lines.push(current);
+  return { lines, size: startSize * 0.34, lineHeight: startSize * 0.38, titleFont: "Inter" };
 }
 
 function drawTitle(ctx, map, width, height, metadata, settings) {
@@ -149,7 +177,7 @@ function drawTitle(ctx, map, width, height, metadata, settings) {
   let y = (settings?.manualOverrides?.titleY ? Number(settings.titleY) / 100 : zone.y) * height;
   const maxW = zone.w * width;
   const baseSize = manualValue(settings, "titleSize", width * map.titleScale);
-  const title = metadata.productionBlueprint?.title_policy?.selectedTitle?.value || metadata.selectedTitle || "";
+  const title = metadata.videoTitle || metadata.title || metadata.selectedTitle || metadata.productionBlueprint?.title_policy?.selectedTitle?.value || "";
   if (!title) return;
   const style = map.typographyStyle || "blueprint_display";
   const block = wrapTitle(ctx, title, maxW, baseSize, width > height ? 3 : 5);
@@ -166,7 +194,7 @@ function drawTitle(ctx, map, width, height, metadata, settings) {
   } else if (style === "vacation_script") {
     ctx.font = font(block.size * 0.62, "Permanent Marker", 700);
     ctx.fillStyle = `rgba(${map.grade.accent},0.95)`;
-    ctx.fillText(block.lines[0] || upper(title), x, y, maxW);
+    ctx.fillText(block.lines[0] || title, x, y, maxW);
     y += block.lineHeight * 0.7;
     ctx.font = font(block.size * 0.82, "Bebas Neue", 900);
   } else if (style === "magazine_editorial") {
@@ -174,14 +202,14 @@ function drawTitle(ctx, map, width, height, metadata, settings) {
     ctx.fillRect(x, y - block.size * 0.72, Math.min(maxW, width * 0.22), Math.max(8, block.size * 0.06));
     ctx.font = font(block.size * 0.86, "Georgia", 700);
   } else if (style === "minimal_spaced") {
-    ctx.font = font(block.size * 0.54, "Inter", 900);
+    ctx.font = font(block.size * 0.7, block.titleFont || "Inter", 900);
   } else {
-    ctx.font = font(block.size, "Bebas Neue", 900);
+    ctx.font = font(block.size, block.titleFont || "Bebas Neue", 900);
   }
 
   const lines = style === "vacation_script" ? block.lines.slice(1) : block.lines;
   lines.forEach((line, index) => {
-    const text = style === "minimal_spaced" ? upper(line).split("").join(" ") : line;
+    const text = line;
     if (style === "reality_bold") {
       ctx.fillStyle = index % 2 === 0 ? `rgba(${map.grade.accent},0.96)` : `rgba(${map.grade.paper},0.94)`;
       ctx.fillRect(x - width * 0.008, y - block.size * 0.66, Math.min(maxW, ctx.measureText(text).width + width * 0.026), block.size * 0.74);

@@ -45,35 +45,49 @@ export function calculateCrop(image, analysis, outputWidth, outputHeight, varian
   return { sx, sy, sw, sh, zoom };
 }
 
+function overlaps(a, b) {
+  if (!a || !b) return false;
+  return !(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y);
+}
+
 export function calculateTextArea(analysis, variant = "balanced", settings = {}, family = {}) {
   const margin = safeMargin(settings);
   const language = family?.graphicLanguage || {};
-  const baseZone = language.designZoneWidth || (variant === "performer" ? 0.42 : 0.39);
-  const designZoneWidth = clamp(baseZone, 0.3, 0.45);
+  const negative = analysis?.negativeSpace || null;
+  const face = analysis?.detections?.face || null;
+  const baseZone = language.designZoneWidth || (variant === "performer" ? 0.44 : 0.41);
+  const designZoneWidth = clamp(baseZone, 0.34, 0.52);
+  const preferred = negative && negative.score > 0.42
+    ? { x: negative.x, y: Math.max(negative.y, 0.14), w: Math.max(negative.w, 0.34), h: Math.max(negative.h, 0.34), align: negative.x > 0.5 ? "right" : "left" }
+    : { x: margin, y: variant === "title" ? 0.16 : 0.18, w: Math.max(0.32, designZoneWidth - margin * 1.35), h: 0.72, align: "left" };
   const area = {
-    x: margin,
-    y: variant === "title" ? 0.085 : 0.095,
-    w: Math.max(0.24, designZoneWidth - margin * (language.negative_space_strategy === "premium_silence" ? 1.85 : 1.55)),
-    h: 0.82,
-    align: "left",
+    x: clamp(preferred.x, margin, 1 - margin - 0.32),
+    y: clamp(preferred.y, margin + 0.08, 0.72),
+    w: clamp(preferred.w, 0.32, 0.56),
+    h: clamp(preferred.h, 0.28, 0.76),
+    align: preferred.align || "left",
   };
 
+  if (overlaps(area, face)) {
+    area.x = face.x + face.w / 2 > 0.5 ? margin : 1 - margin - area.w;
+    area.y = Math.max(area.y, margin + 0.1);
+  }
   if (isManual(settings, "titleY")) area.y = clamp((Number(settings.titleY) || 10) / 100, margin, 1 - margin - area.h);
-  area.x = clamp(area.x, margin, 0.45 - area.w);
+  area.x = clamp(area.x, margin, 1 - margin - area.w);
   area.y = clamp(area.y, margin, 1 - margin - area.h);
   return area;
 }
 
 export function calculateLogoArea(textArea, variant = "balanced", settings = {}, family = {}) {
   const margin = safeMargin(settings);
-  const logoArea = { x: textArea.x, y: textArea.y, w: 0.18 };
+  const logoArea = { x: textArea.x < 0.5 ? margin : 1 - margin - 0.16, y: margin, w: 0.16 };
 
-  if (isManual(settings, "logoScale")) logoArea.w *= clamp((Number(settings.logoScale) || 100) / 100, 0.85, 1.35);
-  logoArea.w = clamp(logoArea.w, 0.15, 0.2);
+  if (isManual(settings, "logoScale")) logoArea.w *= clamp((Number(settings.logoScale) || 100) / 100, 0.85, 1.18);
+  logoArea.w = clamp(logoArea.w, 0.12, 0.17);
   if (isManual(settings, "logoX")) logoArea.x += (Number(settings.logoX) || 0) / 100;
   if (isManual(settings, "logoY")) logoArea.y += (Number(settings.logoY) || 0) / 100;
-  logoArea.x = clamp(logoArea.x, margin, 0.45 - logoArea.w);
-  logoArea.y = clamp(logoArea.y, margin, 1 - margin - logoArea.w * 0.35);
+  logoArea.x = clamp(logoArea.x, margin, 1 - margin - logoArea.w);
+  logoArea.y = clamp(logoArea.y, margin, Math.max(margin, textArea.y - logoArea.w * 0.42));
   return logoArea;
 }
 

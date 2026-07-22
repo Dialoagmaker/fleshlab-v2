@@ -67,7 +67,7 @@ function cropFor(image, analysis, width, height) {
 }
 
 function selectedTitle(metadata = {}) {
-  return metadata.productionBlueprint?.title_policy?.selectedTitle?.value || metadata.selectedTitle || metadata.videoTitle || metadata.title || "";
+  return metadata.videoTitle || metadata.title || metadata.selectedTitle || metadata.productionBlueprint?.title_policy?.selectedTitle?.value || "";
 }
 
 function selectedSubtitle(metadata = {}) {

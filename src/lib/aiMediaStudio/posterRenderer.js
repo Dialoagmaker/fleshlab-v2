@@ -273,7 +273,7 @@ function drawFooter(ctx, composition, width, height, settings) {
 
 function fittedTitleSize(ctx, lines, maxWidth, desiredSize, family) {
   let size = desiredSize;
-  const minSize = Math.max(48, maxWidth * 0.18);
+  const minSize = Math.max(34, maxWidth * 0.055);
   while (size > minSize) {
     ctx.font = font(size, family, 900);
     if (lines.every(line => ctx.measureText(line).width <= maxWidth)) return size;
@@ -462,10 +462,12 @@ async function drawKeyArtComposition(ctx, renderPlan, image, width, height, sett
   const hero = subjectCanvasBox(image, renderPlan.analysis, composition.crop, width, height);
   const titleX = Math.max(width * 0.035, Math.min(width * 0.11, hero.x - width * 0.46));
   const maxWidth = Math.min(width * (0.54 + aggression * 0.12), Math.max(width * 0.42, hero.x + hero.w * 0.32 - titleX));
-  let y = height * (0.12 + (1 - aggression) * 0.035);
-  const titleTarget = (height * (0.48 + aggression * 0.14)) / Math.max(1, typography.lines.length);
-  const titleSize = fittedTitleSize(ctx, typography.lines, maxWidth, Math.max(typography.size, titleTarget / 0.75), family.typography.titleFont);
-  const titleLineHeight = titleSize * (language.typography_style === "minimal_elegant" ? 0.9 : 0.74);
+  let y = height * (0.14 + (1 - aggression) * 0.035);
+  const longTitle = String(typography.title || "").split(/\s+/).filter(Boolean).length > 10;
+  const titleTarget = (height * (0.5 + aggression * 0.1)) / Math.max(1, typography.lines.length);
+  const titleFont = longTitle ? "Inter" : family.typography.titleFont;
+  const titleSize = fittedTitleSize(ctx, typography.lines, maxWidth, Math.max(typography.size, titleTarget / 0.9), titleFont);
+  const titleLineHeight = titleSize * (longTitle ? 1.08 : language.typography_style === "minimal_elegant" ? 0.98 : 0.92);
 
   drawTransformedEnvironment(ctx, image, composition.crop, width, height, family, settings);
 
@@ -476,7 +478,7 @@ async function drawKeyArtComposition(ctx, renderPlan, image, width, height, sett
   ctx.fillStyle = `rgba(${tone.rgb},0.18)`;
   ctx.strokeStyle = "rgba(0,0,0,0.72)";
   ctx.lineWidth = Math.max(5, titleSize * 0.03);
-  ctx.font = font(titleSize * 1.04, family.typography.titleFont, 900);
+  ctx.font = font(titleSize * 1.04, titleFont, 900);
   typography.lines.forEach((line, index) => {
     ctx.strokeText(line, titleX - width * 0.01, y + titleSize + index * titleLineHeight);
     ctx.fillText(line, titleX - width * 0.01, y + titleSize + index * titleLineHeight);
@@ -493,7 +495,7 @@ async function drawKeyArtComposition(ctx, renderPlan, image, width, height, sett
   ctx.lineWidth = Math.max(4, titleSize * 0.024);
   ctx.strokeStyle = "rgba(0,0,0,0.8)";
   ctx.fillStyle = language.typography_style === "minimal_elegant" ? "#f2eee7" : "#fff7ee";
-  ctx.font = font(titleSize, family.typography.titleFont, 900);
+  ctx.font = font(titleSize, titleFont, 900);
   typography.lines.forEach(line => {
     ctx.strokeText(line, titleX, y + titleSize);
     ctx.fillText(line, titleX, y + titleSize);

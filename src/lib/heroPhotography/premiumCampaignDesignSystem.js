@@ -180,29 +180,44 @@ function drawGraphicLanguage(ctx, width, height, layout, mood, format) {
   ctx.restore();
 }
 
+function scoreWrappedLines(ctx, lines, maxWidth) {
+  const widths = lines.map(line => ctx.measureText(line).width);
+  if (widths.some(width => width > maxWidth)) return -Infinity;
+  const avg = widths.reduce((sum, width) => sum + width, 0) / Math.max(1, widths.length);
+  const variance = widths.reduce((sum, width) => sum + Math.abs(width - avg), 0) / Math.max(1, widths.length);
+  const punctuation = lines.reduce((sum, line) => /[,;:!?]$/.test(line.trim()) ? sum + 0.1 : sum, 0);
+  return Math.max(...widths) / maxWidth - variance / maxWidth * 0.52 + punctuation;
+}
+
 function wrap(ctx, text, maxWidth, maxLines) {
-  const words = upper(text).split(/\s+/).filter(Boolean);
-  const lines = [];
-  let line = "";
-  words.forEach(word => {
-    const test = line ? `${line} ${word}` : word;
-    if (!line || ctx.measureText(test).width <= maxWidth) line = test;
-    else { lines.push(line); line = word; }
-  });
-  if (line) lines.push(line);
-  if (lines.length <= maxLines) return lines;
-  const size = Math.ceil(words.length / maxLines);
-  return Array.from({ length: maxLines }, (_, index) => words.slice(index * size, (index + 1) * size).join(" ")).filter(Boolean);
+  const words = String(text || "").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  let best = null;
+  function walk(start, remaining, lines) {
+    if (remaining === 1) {
+      const candidate = [...lines, words.slice(start).join(" ")];
+      const score = scoreWrappedLines(ctx, candidate, maxWidth) - candidate.length * 0.025;
+      if (!best || score > best.score) best = { lines: candidate, score };
+      return;
+    }
+    for (let end = start + 1; end <= words.length - remaining + 1; end += 1) walk(end, remaining - 1, [...lines, words.slice(start, end).join(" ")]);
+  }
+  for (let count = 1; count <= Math.min(maxLines, words.length); count += 1) walk(0, count, []);
+  return best?.lines || [words.join(" ")];
 }
 
 function fitText(ctx, text, maxWidth, start, min, lines, family = "Bebas Neue") {
-  for (let size = start; size >= min; size -= Math.max(2, start * 0.045)) {
-    ctx.font = font(size, family, 900);
-    const wrapped = wrap(ctx, text, maxWidth, lines);
-    if (wrapped.length <= lines && wrapped.every(line => ctx.measureText(line).width <= maxWidth)) return { size, lines: wrapped };
+  const words = String(text || "").trim().split(/\s+/).filter(Boolean);
+  const titleFamily = words.length > 10 ? "Inter" : family;
+  const maxLines = Math.min(Math.max(lines, words.length > 12 ? 6 : words.length > 8 ? 5 : lines), 6);
+  const startSize = words.length > 12 ? start * 0.58 : words.length > 8 ? start * 0.72 : start;
+  for (let size = startSize; size >= min; size -= Math.max(2, startSize * 0.045)) {
+    ctx.font = font(size, titleFamily, 900);
+    const wrapped = wrap(ctx, text, maxWidth, maxLines);
+    if (wrapped.every(line => ctx.measureText(line).width <= maxWidth)) return { size, lines: wrapped, family: titleFamily };
   }
-  ctx.font = font(min, family, 900);
-  return { size: min, lines: wrap(ctx, text, maxWidth, lines).slice(0, lines) };
+  ctx.font = font(min, titleFamily, 900);
+  return { size: min, lines: wrap(ctx, text, maxWidth, maxLines), family: titleFamily };
 }
 
 function drawTrackingText(ctx, text, x, y, tracking, maxWidth) {
@@ -250,21 +265,21 @@ function drawEditorialType(ctx, width, height, layout, mood, campaign, logoBotto
   if (center) ctx.fillText(mood.badge, textX, yStart, maxW);
   else drawTrackingText(ctx, mood.badge, x, yStart, Math.max(1, width * 0.0016), maxW);
 
-  const titleFit = fitText(ctx, title, maxW, height > width ? width * 0.17 : width * 0.082, Math.max(32, width * 0.03), height > width ? 3 : 2);
-  ctx.font = font(titleFit.size, "Bebas Neue", 900);
+  const titleFit = fitText(ctx, title, maxW, height > width ? width * 0.17 : width * 0.082, Math.max(24, width * 0.024), height > width ? 4 : 3);
+  ctx.font = font(titleFit.size, titleFit.family || "Bebas Neue", 900);
   ctx.fillStyle = FLESHLAB_BRAND_IDENTITY.colors.cream;
   ctx.strokeStyle = "rgba(0,0,0,0.72)";
   ctx.lineWidth = Math.max(2, titleFit.size * 0.025);
   ctx.shadowColor = "rgba(0,0,0,0.65)";
   ctx.shadowBlur = titleFit.size * 0.1;
   titleFit.lines.forEach((line, index) => {
-    const y = yStart + titleFit.size * 0.78 + index * titleFit.size * 0.82;
+    const y = yStart + titleFit.size * 0.82 + index * titleFit.size * 1.06;
     ctx.strokeText(line, textX, y, maxW);
     ctx.fillText(line, textX, y, maxW);
   });
   ctx.shadowBlur = 0;
 
-  const afterTitle = yStart + titleFit.size * (1 + titleFit.lines.length * 0.82) + height * 0.028;
+  const afterTitle = yStart + titleFit.size * (1 + titleFit.lines.length * 1.06) + height * 0.028;
   ctx.fillStyle = mood.accent;
   ctx.fillRect(center ? textX - maxW * 0.16 : x, afterTitle - height * 0.01, maxW * 0.32, Math.max(4, height * 0.006));
 
