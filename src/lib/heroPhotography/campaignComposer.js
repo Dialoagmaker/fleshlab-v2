@@ -47,8 +47,10 @@ function imageFromSource(src) {
 
 function clamp(value, min = 0, max = 1) { return Math.max(min, Math.min(max, value)); }
 function upper(value) { return String(value || "").trim().toUpperCase(); }
+function compact(value) { return String(value || "").replace(/\s+/g, " ").trim(); }
 function font(size, family = "Inter", weight = 900) { return `${weight} ${Math.round(size)}px "${family}", Impact, Arial, sans-serif`; }
 function rect(zone, w, h) { return { x: zone.x * w, y: zone.y * h, w: zone.w * w, h: zone.h * h }; }
+function safeSlug(value, fallback = "campaign") { return compact(value || fallback).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || fallback; }
 
 function coverImage(ctx, image, width, height, focus, zoom = 1) {
   const scale = Math.max(width / image.width, height / image.height) * clamp(zoom, 0.9, 1.28);
@@ -107,33 +109,66 @@ async function drawLogo(ctx, zone, width, height) {
   return height * 0.045;
 }
 
-function drawText(ctx, text, x, y, maxWidth, size, family = "Bebas Neue", color = FLESHLAB_BRAND_IDENTITY.colors.cream) {
+function wrapLines(ctx, text, maxWidth, maxLines) {
+  const words = upper(text).split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const lines = [];
+  let line = "";
+  words.forEach(word => {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width <= maxWidth || !line) line = test;
+    else { lines.push(line); line = word; }
+  });
+  if (line) lines.push(line);
+  if (lines.length <= maxLines) return lines;
+  const packed = [];
+  const perLine = Math.ceil(words.length / maxLines);
+  for (let i = 0; i < words.length && packed.length < maxLines; i += perLine) packed.push(words.slice(i, i + perLine).join(" "));
+  return packed;
+}
+
+function fitBlock(ctx, text, maxWidth, baseSize, minSize, maxLines, family = "Bebas Neue") {
+  for (let size = baseSize; size >= minSize; size -= Math.max(2, baseSize * 0.045)) {
+    ctx.font = font(size, family, 900);
+    const lines = wrapLines(ctx, text, maxWidth, maxLines);
+    if (lines.length <= maxLines && lines.every(line => ctx.measureText(line).width <= maxWidth)) return { lines, size, warning: null };
+  }
+  ctx.font = font(minSize, family, 900);
+  const lines = wrapLines(ctx, text, maxWidth, maxLines);
+  return { lines: lines.slice(0, maxLines), size: minSize, warning: `Text may be too long for ${formatLabel(maxWidth)}; reduced to minimum safe size.` };
+}
+
+function formatLabel(width) { return `${Math.round(width)}px safe text zone`; }
+
+function drawTextLines(ctx, lines, x, y, maxWidth, size, family = "Bebas Neue", color = FLESHLAB_BRAND_IDENTITY.colors.cream) {
   ctx.font = font(size, family, 900);
   ctx.fillStyle = color;
   ctx.strokeStyle = "rgba(0,0,0,0.78)";
   ctx.lineWidth = Math.max(2, size * 0.035);
   ctx.shadowColor = "rgba(0,0,0,0.88)";
   ctx.shadowBlur = size * 0.16;
-  ctx.strokeText(upper(text), x, y, maxWidth);
-  ctx.fillText(upper(text), x, y, maxWidth);
-}
-
-function splitTitle(title, maxLines) {
-  const words = upper(title).split(/\s+/).filter(Boolean);
-  if (words.length <= maxLines) return words;
-  const perLine = Math.ceil(words.length / maxLines);
-  return Array.from({ length: maxLines }, (_, i) => words.slice(i * perLine, (i + 1) * perLine).join(" ")).filter(Boolean);
+  lines.forEach((line, index) => {
+    const lineY = y + size + index * size * 0.84;
+    ctx.strokeText(upper(line), x, lineY, maxWidth);
+    ctx.fillText(upper(line), x, lineY, maxWidth);
+  });
 }
 
 function drawCampaignCopy(ctx, plan, format, campaign) {
+  const warnings = [];
   const box = rect(plan.title.zone, format.width, format.height);
-  const titleSize = format.height > format.width ? format.width * 0.17 : format.width * 0.082;
-  const lines = plan.title.lineBreakPlan?.preferredLines?.length ? plan.title.lineBreakPlan.preferredLines : splitTitle(campaign.campaignTitle, plan.title.maxLines || 3);
-  lines.slice(0, plan.title.maxLines || 3).forEach((line, index) => drawText(ctx, line, box.x, box.y + titleSize + index * titleSize * 0.84, box.w, titleSize));
-  const subtitleY = box.y + titleSize * (1 + Math.min(lines.length, 3) * 0.84) + format.height * 0.012;
-  drawText(ctx, campaign.campaignSubtitle, box.x, subtitleY, box.w, Math.max(18, format.width * 0.022), "Inter", "rgba(244,241,234,0.84)");
+  const maxTitleLines = plan.title.maxLines || 3;
+  const titleBase = format.height > format.width ? format.width * 0.17 : format.width * 0.082;
+  const titleFit = fitBlock(ctx, campaign.campaignTitle, box.w, titleBase, Math.max(34, format.width * 0.032), maxTitleLines);
+  if (titleFit.warning) warnings.push(`${format.label}: campaign title ${titleFit.warning}`);
+  drawTextLines(ctx, titleFit.lines, box.x, box.y, box.w, titleFit.size);
+  const subtitleY = box.y + titleFit.size * (1 + Math.min(titleFit.lines.length, maxTitleLines) * 0.84) + format.height * 0.012;
+  if (campaign.subtitle) drawTextLines(ctx, [campaign.subtitle], box.x, subtitleY, box.w, Math.max(18, format.width * 0.022), "Inter", "rgba(244,241,234,0.84)");
   const creator = rect(plan.creator.zone, format.width, format.height);
-  drawText(ctx, campaign.creatorName, creator.x, creator.y + creator.h * 0.72, creator.w, Math.max(18, format.width * 0.021), "Inter", "rgba(255,255,255,0.9)");
+  const creatorFit = fitBlock(ctx, campaign.performerName, creator.w, Math.max(18, format.width * 0.021), Math.max(14, format.width * 0.014), 2, "Inter");
+  if (creatorFit.warning) warnings.push(`${format.label}: performer name ${creatorFit.warning}`);
+  drawTextLines(ctx, creatorFit.lines, creator.x, creator.y, creator.w, creatorFit.size, "Inter", "rgba(255,255,255,0.9)");
+  return warnings;
 }
 
 function drawCTA(ctx, plan, format, text) {
@@ -148,15 +183,52 @@ function drawCTA(ctx, plan, format, text) {
   ctx.fillText(upper(text), box.x + box.h * 0.4, box.y + box.h * 0.64, box.w - box.h * 0.8);
 }
 
-function campaignDataFromOutput(output, pipeline, campaignFamily) {
+export function getCampaignMetadataSuggestion(output, pipeline, campaignFamily) {
   const blueprint = pipeline?.productionBlueprint || output?.heroPhotographyPlan?.productionBlueprint || {};
   return {
-    base: `hero_campaign_${Date.now()}`,
-    campaignTitle: blueprint.campaignTitle || output?.heroPhotographyPlan?.campaignTitle || campaignFamily || "THE CHECK-IN",
-    campaignSubtitle: blueprint.campaignSubtitle || output?.heroPhotographyPlan?.campaignSubtitle || "A FLESHLAB hero campaign asset system",
-    creatorName: blueprint.creatorName || blueprint.performerName || output?.heroPhotographyPlan?.creatorName || "FLESHLAB CREATOR",
-    seriesName: blueprint.seriesName || "Hero Photography Campaign",
-    primaryCTA: blueprint.primaryCTA || "Watch now",
+    campaignTitle: compact(blueprint.campaignTitle || output?.heroPhotographyPlan?.campaignTitle || campaignFamily || "Hero Campaign"),
+    performerName: compact(blueprint.performerName || blueprint.creatorName || output?.heroPhotographyPlan?.creatorName || "Featured Creator"),
+    subtitle: compact(blueprint.campaignSubtitle || blueprint.seriesName || output?.heroPhotographyPlan?.campaignSubtitle || "Hero Photography Campaign"),
+    cta: compact(blueprint.primaryCTA || "Watch Now"),
+    campaignLabel: compact(blueprint.campaignLabel || campaignFamily || ""),
+    releaseName: compact(blueprint.releaseName || blueprint.seriesName || "")
+  };
+}
+
+function resolveMetadataField(key, userMetadata, savedMetadata, aiSuggestion, fallback) {
+  if (["user", "ai"].includes(userMetadata?.source?.[key])) return { value: compact(userMetadata?.[key]), source: userMetadata.source[key] };
+  const options = [[savedMetadata?.[key], "project"], [aiSuggestion?.[key], "ai"], [fallback, "fallback"]];
+  const selected = options.find(([value]) => compact(value));
+  return { value: compact(selected?.[0] || fallback), source: selected?.[1] || "fallback" };
+}
+
+export function mergeCampaignMetadata({ output, pipeline, campaignFamily, userMetadata = {}, savedMetadata = {} }) {
+  const aiSuggestion = getCampaignMetadataSuggestion(output, pipeline, campaignFamily);
+  const fallbacks = { campaignTitle: "Hero Campaign", performerName: "Featured Creator", subtitle: "", cta: "", campaignLabel: "", releaseName: "" };
+  const metadata = { source: {} };
+  Object.keys(fallbacks).forEach(key => {
+    const resolved = resolveMetadataField(key, userMetadata, savedMetadata, aiSuggestion, fallbacks[key]);
+    metadata[key] = resolved.value;
+    metadata.source[key] = resolved.source;
+  });
+  return { ...metadata, aiSuggestion };
+}
+
+function campaignDataFromOutput(output, pipeline, campaignFamily, metadata = {}) {
+  const resolved = mergeCampaignMetadata({ output, pipeline, campaignFamily, userMetadata: metadata.userMetadata, savedMetadata: metadata.savedMetadata });
+  return {
+    base: `${safeSlug(resolved.campaignTitle)}_${safeSlug(resolved.performerName)}`,
+    campaignTitle: resolved.campaignTitle,
+    performerName: resolved.performerName,
+    creatorName: resolved.performerName,
+    subtitle: resolved.subtitle,
+    campaignSubtitle: resolved.subtitle,
+    seriesName: resolved.releaseName || resolved.subtitle || "Hero Photography Campaign",
+    primaryCTA: resolved.cta,
+    campaignLabel: resolved.campaignLabel,
+    releaseName: resolved.releaseName,
+    source: resolved.source,
+    campaignMetadata: { campaignTitle: resolved.campaignTitle, performerName: resolved.performerName, subtitle: resolved.subtitle, cta: resolved.cta, campaignLabel: resolved.campaignLabel, releaseName: resolved.releaseName, source: resolved.source },
     releaseType: "premium_release",
     campaignGoal: "conversion",
     emotionalTone: "premium cinematic",
@@ -164,7 +236,7 @@ function campaignDataFromOutput(output, pipeline, campaignFamily) {
 }
 
 async function renderAsset(image, analysis, format, campaign) {
-  const plan = createArtDirectionPlan({ heroImage: image, analysis, brandIdentity: FLESHLAB_BRAND_IDENTITY, campaignBrief: campaign, campaignTitle: campaign.campaignTitle, creatorName: campaign.creatorName, seriesName: campaign.seriesName, primaryCTA: campaign.primaryCTA, secondaryCTA: "Join FLESHLAB", platform: format.key, aspectRatio: `${format.width}:${format.height}`, releaseType: campaign.releaseType, campaignGoal: campaign.campaignGoal, emotionalTone: campaign.emotionalTone, creativeDirection: format.key === "x_banner" ? "luxury_editorial" : format.key === "ppv_cover" ? "streetwear_drop" : undefined, format });
+  const plan = createArtDirectionPlan({ heroImage: image, analysis, brandIdentity: FLESHLAB_BRAND_IDENTITY, campaignBrief: campaign, campaignTitle: campaign.campaignTitle, creatorName: campaign.performerName, seriesName: campaign.seriesName, primaryCTA: campaign.primaryCTA, secondaryCTA: "Join FLESHLAB", platform: format.key, aspectRatio: `${format.width}:${format.height}`, releaseType: campaign.releaseType, campaignGoal: campaign.campaignGoal, emotionalTone: campaign.emotionalTone, creativeDirection: format.key === "x_banner" ? "luxury_editorial" : format.key === "ppv_cover" ? "streetwear_drop" : undefined, format });
   const canvas = document.createElement("canvas");
   canvas.width = format.width;
   canvas.height = format.height;
@@ -177,19 +249,20 @@ async function renderAsset(image, analysis, format, campaign) {
   applyGrade(ctx, plan, format.width, format.height);
   drawAccents(ctx, format.width, format.height, plan);
   await drawLogo(ctx, plan.brand.logoZone, format.width, format.height);
-  drawCampaignCopy(ctx, plan, format, campaign);
+  const typographyWarnings = drawCampaignCopy(ctx, plan, format, campaign);
   drawCTA(ctx, plan, format, campaign.primaryCTA);
   const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.92));
-  return { format, filename: `${campaign.base}_${format.key}.jpg`, width: format.width, height: format.height, size: blob.size, blob, url: URL.createObjectURL(blob), kind: "visual", status: "ready", brandPlan: { family: plan.layoutFamily, artDirectionPlan: plan }, downstreamStage: "Campaign Assets", campaignComposerReady: true };
+  return { format, filename: `${campaign.base}_${format.key}.jpg`, width: format.width, height: format.height, size: blob.size, blob, url: URL.createObjectURL(blob), kind: "visual", status: "ready", brandPlan: { family: plan.layoutFamily, artDirectionPlan: plan }, typographyWarnings, campaignMetadata: campaign.campaignMetadata, downstreamStage: "Campaign Assets", campaignComposerReady: true };
 }
 
-export async function composeCampaignFromHero(output, pipeline, campaignFamily) {
+export async function composeCampaignFromHero(output, pipeline, campaignFamily, metadata = {}) {
   if (!output?.heroImage) throw new Error("Hero Photograph is required before composing campaign assets.");
   const image = await imageFromSource(output.heroImage);
   let analysis = fallbackAnalysis;
   try { analysis = { ...fallbackAnalysis, ...(await analyzePosterImage(image)) }; } catch { analysis = fallbackAnalysis; }
-  const campaignData = campaignDataFromOutput(output, pipeline, campaignFamily);
+  const campaignData = campaignDataFromOutput(output, pipeline, campaignFamily, metadata);
   const visualAssets = [];
   for (const format of HERO_CAMPAIGN_FORMATS) visualAssets.push(await renderAsset(image, analysis, format, campaignData));
-  return { campaignId: campaignData.base, campaignData, sourceHeroImage: output.heroImage, visualAssets, createdAt: new Date().toISOString(), pipeline: ["Hero Photography", "Art Direction", "Brand Identity", "Typography Engine", "Campaign Composer", "Campaign Assets"], downstreamReady: visualAssets.length === HERO_CAMPAIGN_FORMATS.length };
+  const typographyWarnings = visualAssets.flatMap(asset => asset.typographyWarnings || []);
+  return { campaignId: campaignData.base, campaignData, campaignMetadata: campaignData.campaignMetadata, sourceHeroImage: output.heroImage, visualAssets, typographyWarnings, createdAt: new Date().toISOString(), pipeline: ["Hero Photography", "Art Direction", "Brand Identity", "Typography Engine", "Campaign Composer", "Campaign Assets"], downstreamReady: visualAssets.length === HERO_CAMPAIGN_FORMATS.length };
 }
