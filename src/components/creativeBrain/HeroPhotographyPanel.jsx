@@ -32,7 +32,7 @@ export default function HeroPhotographyPanel({ sourceFrameFile, pipeline, target
         <div>
           <p className="text-xs font-black uppercase tracking-[0.22em] text-primary">FLESHLAB Hero Photography Engine</p>
           <h2 className="mt-2 text-xl font-black text-foreground">Direct the Commercial Hero Photograph</h2>
-          <p className="mt-1 text-sm text-muted-foreground">The video frame is treated as a scouting reference. The engine rebuilds a premium hero photograph, not an enhanced screenshot.</p>
+          <p className="mt-1 text-sm text-muted-foreground">The uploaded Hero Frame is the selected source frame for Development Mode. The engine rebuilds a premium hero photograph, not an enhanced screenshot.</p>
         </div>
         <Camera className="h-6 w-6 text-primary" />
       </div>

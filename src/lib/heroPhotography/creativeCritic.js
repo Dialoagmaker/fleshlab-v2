@@ -8,9 +8,20 @@ export function runCreativeCritic(outputPackage, productionBlueprint) {
   const approved = warnings.length === 0;
   return {
     critic: "Creative Critic",
+    comparison: "Uploaded Hero Frame → Rendered Hero Photograph",
     automatic_revision_performed: false,
     status: approved ? "APPROVED_FOR_REVIEW" : "REVIEW_REQUIRED",
     quality_target: "Netflix / premium editorial / luxury campaign / AAA streaming artwork",
+    evaluation_criteria: [
+      "visual identity preservation",
+      "storytelling improvement",
+      "commercial quality",
+      "editorial quality",
+      "luxury photography",
+      "typography space",
+      "cinematic lighting",
+      "premium production value"
+    ],
     quality_requirements: qualityTarget,
     warnings,
     decision: approved ? "Hero photograph package can proceed to human review." : "Hero photograph package needs review before use."

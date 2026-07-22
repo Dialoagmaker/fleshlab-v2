@@ -13,10 +13,11 @@ export default function BlueprintJsonOutput({ pipeline }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => navigator.clipboard.writeText(finalJson)} className="gap-2"><Copy className="h-4 w-4" />Copy Final Blueprint</Button><Button variant="outline" onClick={download} className="gap-2"><Download className="h-4 w-4" />Download Final Blueprint</Button></div>
-      <JsonBlock title="Final Production Blueprint" value={pipeline.productionBlueprint} open />
-      <JsonBlock title="1 · Technical Image Facts" value={pipeline.technicalFacts} />
-      <JsonBlock title="2 · Semantic Image Facts" value={pipeline.semanticFacts} />
-      <JsonBlock title="3 · Unified Image Facts" value={pipeline.unifiedFacts} />
+      <JsonBlock title="Development Workflow" value={{ workflowMode: pipeline.workflowMode, selectedSourceFrame: pipeline.selectedSourceFrame }} open />
+      <JsonBlock title="Final Production Blueprint" value={pipeline.productionBlueprint} />
+      <JsonBlock title="1 · Human Vision · Technical Image Facts" value={pipeline.technicalFacts} />
+      <JsonBlock title="2 · Human Vision · Semantic Image Facts" value={pipeline.semanticFacts} />
+      <JsonBlock title="3 · Unified Hero Frame Facts" value={pipeline.unifiedFacts} />
       <JsonBlock title="4 · Identity Facts" value={pipeline.identityFacts} />
       <JsonBlock title="5 · Marketing Facts" value={pipeline.marketingFacts} />
       <JsonBlock title="6 · Creative Decisions" value={pipeline.creativeDecisions} />
