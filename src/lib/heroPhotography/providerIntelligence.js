@@ -9,7 +9,12 @@ function classifyRenderIntent({ productionBlueprint, instructions, campaignFamil
   let rawCategory = "SAFE_EDITORIAL";
   let reason = "General commercial art-direction request.";
   let confidence = 0.64;
-  if (/explicit|hardcore|porn|sexual/.test(text)) { rawCategory = "EXPLICIT"; reason = "Explicit or sexual language appears in the render context."; confidence = 0.82; }
+  const commercialKeyArtWorkflow = /key art|hero photography|campaign|commercial|marketing|promotional|poster|cover|reference fidelity|retouch/.test(text);
+  if (/explicit|hardcore|porn|sexual/.test(text)) {
+    rawCategory = commercialKeyArtWorkflow ? "ADULT_MARKETING" : "EXPLICIT";
+    reason = commercialKeyArtWorkflow ? "Adult source material is being used for commercial key-art/reference generation, not explicit-scene generation." : "Explicit or sexual language appears in the render context.";
+    confidence = commercialKeyArtWorkflow ? 0.8 : 0.82;
+  }
   else if (/adult/.test(text)) { rawCategory = "ADULT_MARKETING"; reason = "Adult-commercial language appears in the render context."; confidence = 0.78; }
   else if (/fitness|gym|athletic|body/.test(text)) { rawCategory = "FITNESS"; reason = "Fitness or athletic visual intent appears in the render context."; confidence = 0.72; }
   else if (/swim/.test(text)) { rawCategory = "SWIMWEAR"; reason = "Swimwear context appears in the render context."; confidence = 0.7; }

@@ -194,6 +194,7 @@ function publicFailureMessage(diagnostic) {
   if (diagnostic.category === 'NO_CREDITS') return 'Production capacity is temporarily unavailable. Continue locally or try again later.';
   if (diagnostic.category === 'VERIFICATION_REQUIRED') return 'Verified adult, consent, rights, and source checks are required before external production.';
   if (diagnostic.category === 'NO_COMPATIBLE_RENDERING_PIPELINE') return 'No approved production pipeline is currently compatible with this request. Continue locally.';
+  if (diagnostic.category === 'EXPLICIT_REFERENCE_GENERATION_UNSUPPORTED') return 'Explicit adult image-reference generation is not supported by any approved provider policy. This workflow can only route verified adult commercial key-art requests when the output is promotional, not explicit scene generation.';
   if (diagnostic.category === 'NO_PROVIDER_POLICY_SUPPORT') return 'No configured provider policy explicitly supports this canonical content category.';
   if (diagnostic.category === 'NO_COMPATIBLE_PROVIDER_AVAILABLE') return 'No currently configured rendering route supports both the required image-reference operation and the provider policy requirements.';
   if (diagnostic.category === 'UNSUPPORTED_REFERENCE_IMAGE' || diagnostic.category === 'UNSUPPORTED_IMAGE_INPUT') return 'No currently configured rendering route supports both the required image-reference operation and the provider policy requirements.';
@@ -674,6 +675,11 @@ function hasAffirmativeExplicitEvidence(metadata = {}) {
   return /\b(explicit adult|explicit sex|sexual act|hardcore|porn|visible genitals|visible nipples|nude|naked)\b/.test(text);
 }
 
+function isCommercialKeyArtWorkflow(metadata = {}) {
+  const text = `${metadata.contentType || ''} ${metadata.campaignName || ''} ${metadata.videoTitle || ''} ${metadata.title || ''} ${metadata.renderingIntent || ''} ${metadata.heroPhotographyPlan?.Editorial_Style || ''}`.toLowerCase();
+  return /\b(key art|hero photography|campaign|commercial|marketing|promotional|poster|cover|reference fidelity|retouch)\b/.test(text);
+}
+
 function normalizeContentClassification(input) {
   const inputObject = input && typeof input === 'object' ? input : null;
   const rawCategory = String(inputObject?.rawCategory || inputObject?.canonicalCategory || inputObject?.category || input || '').trim();
@@ -700,6 +706,9 @@ function getCanonicalContentClassification(metadata = {}) {
   const evidenceChain = summarizePolicyEvidenceAudit(metadata.policyEvidenceAudit || metadata.providerIntelligence?.policyEvidenceAudit || null);
   const normalizeWithGuard = (classification) => {
     const normalized = normalizeContentClassification({ ...classification, evidenceChain });
+    if (normalized.canonicalCategory === 'EXPLICIT_ADULT' && isCommercialKeyArtWorkflow(metadata)) {
+      return normalizeContentClassification({ rawCategory: 'ADULT_MARKETING', source: 'backend_adult_commercial_key_art_routing', confidence: Math.min(Number(normalized.confidence || 0.45), 0.8), evidenceChain: { ...evidenceChain, guard: 'Commercial key-art/reference workflow routed as ADULT_COMMERCIAL; explicit source material does not authorize explicit-scene generation.' } });
+    }
     if (normalized.canonicalCategory === 'EXPLICIT_ADULT' && !hasAffirmativeExplicitEvidence(metadata)) {
       const fallback = deriveFallbackClassification(metadata);
       const guardedFallback = fallback === 'EXPLICIT' ? 'ADULT_MARKETING' : fallback;
@@ -958,7 +967,8 @@ function maxResolutionForRoute(route) {
 function inferRouteCategories(route) {
   const text = `${route?.id || ''} ${route?.name || ''} ${route?.description || ''}`.toLowerCase();
   const categories = new Set(DEFAULT_SAFE_CATEGORIES);
-  if (text.includes('seedream')) categories.add('ADULT_MARKETING');
+  const providerFamily = providerFamilyForRoute(route);
+  if (text.includes('seedream') || providerFamily === 'bytedance_seed') categories.add('ADULT_MARKETING');
   if (text.includes('portrait')) categories.add('SAFE_PORTRAIT');
   if (text.includes('product')) categories.add('SAFE_PRODUCT');
   return Array.from(categories);
@@ -991,7 +1001,21 @@ async function ensureRenderingProviderRegistry(base44, routes) {
     enabled: true,
     recommended_usage: recommendedUsageForRoute(route)
   }));
+  const updates = routes.map(route => {
+    const provider = existingById.get(getRouteProviderKey(route));
+    if (!provider) return null;
+    const inferredLegacy = inferRouteCategories(route);
+    const inferredCanonical = canonicalCategoriesFromLegacy(inferredLegacy);
+    const unsupported = canonicalCategoriesFromLegacy(provider.unsupportedCanonicalCategories || []);
+    const currentLegacy = Array.isArray(provider.supported_categories) ? provider.supported_categories : [];
+    const currentCanonical = canonicalCategoriesFromLegacy(provider.supportedCanonicalCategories?.length ? provider.supportedCanonicalCategories : currentLegacy);
+    const mergedCanonical = [...new Set([...currentCanonical, ...inferredCanonical].filter(category => !unsupported.includes(category)))];
+    const mergedLegacy = [...new Set([...currentLegacy, ...inferredLegacy])];
+    if (safeJson(mergedCanonical) === safeJson(currentCanonical) && safeJson(mergedLegacy) === safeJson(currentLegacy)) return null;
+    return { id: provider.id, supported_categories: mergedLegacy, supportedCanonicalCategories: mergedCanonical };
+  }).filter(Boolean);
   if (missing.length) await base44.asServiceRole.entities.RenderingProvider.bulkCreate(missing).catch(error => console.warn('Rendering provider registry seed failed', error.message));
+  if (updates.length) await base44.asServiceRole.entities.RenderingProvider.bulkUpdate(updates).catch(error => console.warn('Rendering provider registry sync failed', error.message));
   return await base44.asServiceRole.entities.RenderingProvider.list('priority', 500).catch(() => existing || []);
 }
 
@@ -1450,6 +1474,29 @@ async function runOpenRouterSelfTest(base44, apiKey, user, req) {
   }, user, req);
 }
 
+async function runAdultCommercialRouteRegression(base44, apiKey, user, req) {
+  const testImageUrl = 'https://picsum.photos/seed/fleshlab-adult-commercial-route/1280/720.jpg';
+  const imageRes = await fetch(testImageUrl);
+  if (!imageRes.ok) return json({ ok: false, error: 'Could not fetch route regression reference image.', status: imageRes.status }, 502);
+  const buffer = await imageRes.arrayBuffer();
+  const dataUrl = `data:image/jpeg;base64,${arrayBufferToBase64(buffer)}`;
+  return await generateCover(base44, apiKey, {
+    action: 'generate',
+    consent: true,
+    generation_job_id: `adult-commercial-route-${crypto.randomUUID()}`,
+    story_reference_data_url: dataUrl,
+    aspect_ratio: '16:9',
+    metadata: {
+      videoTitle: 'Adult commercial key art route regression',
+      contentType: 'explicit adult source material for commercial key-art reference generation',
+      campaignName: 'commercial key art routing regression',
+      renderingIntent: 'commercial key art reference fidelity retouch',
+      contentClassification: { rawCategory: 'EXPLICIT_ADULT', category: 'EXPLICIT_ADULT', canonicalCategory: 'EXPLICIT_ADULT', source: 'regression_test', confidence: 0.9 },
+      adultVerification: { allPeopleVerified18Plus: true, performerConsentConfirmed: true, mediaRightsConfirmed: true, platformSourceConfirmed: true, verificationReference: 'ROUTE_REGRESSION_PRIVATE_DEVELOPMENT' }
+    }
+  }, user, req);
+}
+
 async function runSeedDreamAdapterRegression(apiKey, options = {}) {
   const testImageUrl = 'https://picsum.photos/seed/fleshlab-seedream-regression/1280/720.jpg';
   const imageRes = await fetch(testImageUrl);
@@ -1560,6 +1607,21 @@ async function generateCover(base44, apiKey, body, user, req) {
   const routingPlan = await rankRenderingRoutes(base44, policyRouting.routes, classificationCategory, contentClassification);
   const allRejectedRoutes = [...capabilityRejectedRoutes, ...routingPlan.rejectedRoutes];
   if (!routingPlan.routes.length) {
+    if (classificationCategory === 'EXPLICIT_ADULT') {
+      const diagnostic = { category: 'EXPLICIT_REFERENCE_GENERATION_UNSUPPORTED', reason: 'EXPLICIT_ADULT_IMAGE_REFERENCE_POLICY_UNSUPPORTED', message: 'Explicit adult image-reference generation is intentionally unsupported until a provider policy explicitly approves it. Commercial key-art workflows should route as ADULT_COMMERCIAL when the requested output is promotional rather than explicit scene generation.', retryable: false };
+      await saveRoutingAudit(base44, {
+        generation_job_id: generationJobId,
+        content_classification: classificationCategory,
+        verification_status: 'passed',
+        verification_reference: metadata.adultVerification?.verificationReference || '',
+        routing_decision: 'EXPLICIT_REFERENCE_GENERATION_UNSUPPORTED',
+        policy_compatible: 'no',
+        request_sent: false,
+        output_received: false,
+        reason: diagnostic.message
+      });
+      return json({ ok: false, error: publicFailureMessage(diagnostic), code: 'EXPLICIT_REFERENCE_GENERATION_UNSUPPORTED', stage: 'Provider Intelligence', generation_job_id: generationJobId, requiredOperation, contentClassification, content_classification: classificationCategory, suggested_classification: 'ADULT_COMMERCIAL', eligibleRoutes: 0, rejectedRoutes: allRejectedRoutes, requestSent: false, request_sent: false, output_received: false, diagnostics: diagnostic, verification_mode: privateDevelopmentAttestation ? 'PRIVATE_DEVELOPMENT' : 'STANDARD', private_development_mode: privateDevelopment, development_attestation: privateDevelopmentAttestation, provider_intelligence: { stage: 'Provider Intelligence', contentClassification, requiredOperation, routeCapabilities: discoveredRoutes.map(route => route.route_capability), rejectedRoutes: allRejectedRoutes }, photographer_attempts: [], attempt_diagnostics: [], stage_trace: { frame_extracted: true, image_encoded: true, payload_created: false, request_sent: false, response_received: false, hero_image_decoded: false, preview_rendered: false } }, 409);
+    }
     const diagnostic = { category: 'NO_PROVIDER_POLICY_SUPPORT', reason: 'CATEGORY_NOT_SUPPORTED', message: 'No approved route explicitly supports the canonical content category.', retryable: false };
     await saveRoutingAudit(base44, {
       generation_job_id: generationJobId,
@@ -1914,6 +1976,7 @@ Deno.serve(async (req) => {
     if (action === 'canonical_policy_audit') return json(await auditAndRepairCanonicalPolicyRegistry(base44, body.requested_category || body.requestedCategory || null));
     if (action === 'route_capabilities') return json({ ok: true, requiredOperation: buildRequiredOperation(body.aspect_ratio || '16:9'), routes: await discoverCompatibleImageRoutes(apiKey), private_development_mode: privateDevelopmentStatus(req) });
     if (action === 'self_test') return await runOpenRouterSelfTest(base44, apiKey, user, req);
+    if (action === 'adult_commercial_route_regression') return await runAdultCommercialRouteRegression(base44, apiKey, user, req);
     if (action === 'seedream_adapter_regression') return await runSeedDreamAdapterRegression(apiKey, body);
     if (action === 'generate') return await generateCover(base44, apiKey, body, user, req);
     return json({ ok: false, error: 'Invalid action' }, 400);
