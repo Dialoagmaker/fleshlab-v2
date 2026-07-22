@@ -707,30 +707,75 @@ function normalizeContentClassification(input) {
   return normalized;
 }
 
+function outputIntentText(metadata = {}) {
+  return `${metadata.intendedOutput || ''} ${metadata.outputIntent || ''} ${metadata.generatedOutputIntent || ''} ${metadata.renderingIntent || ''} ${metadata.contentType || ''} ${metadata.campaignName || ''} ${metadata.videoTitle || ''} ${metadata.title || ''}`.toLowerCase();
+}
+
+function explicitGeneratedOutputRequested(metadata = {}) {
+  const text = outputIntentText(metadata);
+  return /\b(generate|generated|output|create|render|produce|result|final)\b.{0,48}\b(explicit sex|sexual act|hardcore|porn|visible genitals|visible nipples|nude|naked|sexually explicit)\b/.test(text)
+    || /\b(explicit sex|sexual act|hardcore|porn|visible genitals|visible nipples|sexually explicit)\b.{0,48}\b(generate|generated|output|create|render|produce|result|final)\b/.test(text)
+    || /\bexplicit generated output\b|\bexplicit scene generation\b|\bsexually explicit output\b/.test(text);
+}
+
+function adultCommercialGeneratedOutputRequested(metadata = {}) {
+  const text = outputIntentText(metadata);
+  return /\b(generate|generated|output|create|render|produce|result|final)\b.{0,48}\b(adult commercial|adult marketing|suggestive adult|adult-oriented)\b/.test(text)
+    || /\b(adult commercial|adult marketing|suggestive adult|adult-oriented)\b.{0,48}\b(generate|generated|output|create|render|produce|result|final)\b/.test(text);
+}
+
+function nonExplicitEditorialOutputRequested(metadata = {}) {
+  const text = outputIntentText(metadata);
+  const safeOutput = /\b(non-explicit|safe editorial|editorial|promotional|promotion|commercial key art|key art|hero photo|hero photography|poster|cover|portrait|reference generation|reference fidelity|retouch|marketing still|campaign still)\b/.test(text) || isCommercialKeyArtWorkflow(metadata);
+  return safeOutput && !explicitGeneratedOutputRequested(metadata) && !adultCommercialGeneratedOutputRequested(metadata);
+}
+
+function buildRoutingClassification(sourceClassification, intendedOutputClassification) {
+  const sourceContentCategory = sourceClassification.canonicalCategory;
+  const intendedOutputCategory = intendedOutputClassification.canonicalCategory;
+  const routingCanonicalCategory = intendedOutputCategory;
+  return {
+    ...intendedOutputClassification,
+    canonicalCategory: routingCanonicalCategory,
+    category: routingCanonicalCategory,
+    sourceContentCategory,
+    intendedOutputCategory,
+    routingCanonicalCategory,
+    sourceClassification,
+    intendedOutputClassification,
+    routingDecisionBasis: 'intended_generated_output_category'
+  };
+}
+
 function getCanonicalContentClassification(metadata = {}) {
   const supplied = metadata.providerIntelligence?.contentClassification || metadata.contentClassification || metadata.policyClassification;
   const evidenceChain = summarizePolicyEvidenceAudit(metadata.policyEvidenceAudit || metadata.providerIntelligence?.policyEvidenceAudit || null);
-  const normalizeWithGuard = (classification) => {
-    const normalized = normalizeContentClassification({ ...classification, evidenceChain });
-    if (normalized.canonicalCategory === 'EXPLICIT_ADULT' && isCommercialKeyArtWorkflow(metadata)) {
-      return normalizeContentClassification({ rawCategory: 'ADULT_MARKETING', source: 'backend_adult_commercial_key_art_routing', confidence: Math.min(Number(normalized.confidence || 0.45), 0.8), evidenceChain: { ...evidenceChain, guard: 'Commercial key-art/reference workflow routed as ADULT_COMMERCIAL; explicit source material does not authorize explicit-scene generation.' } });
-    }
-    if (normalized.canonicalCategory === 'EXPLICIT_ADULT' && !hasAffirmativeExplicitEvidence(metadata)) {
-      const fallback = deriveFallbackClassification(metadata);
-      const guardedFallback = fallback === 'EXPLICIT' ? 'ADULT_MARKETING' : fallback;
-      return normalizeContentClassification({ rawCategory: guardedFallback, source: 'backend_explicit_promotion_guard', confidence: Math.min(Number(normalized.confidence || 0.45), 0.62), evidenceChain: { ...evidenceChain, guard: 'EXPLICIT_ADULT removed because no affirmative explicit-adult evidence item was present.' } });
-    }
-    return normalized;
-  };
+  const normalizeSource = (classification) => normalizeContentClassification({ ...classification, evidenceChain });
+  let sourceClassification;
   if (supplied && typeof supplied === 'object') {
-    return normalizeWithGuard({ ...supplied, rawCategory: supplied.rawCategory || supplied.category || supplied.canonicalCategory || '', source: supplied.source || 'frontend_provider_intelligence' });
+    sourceClassification = normalizeSource({ ...supplied, rawCategory: supplied.rawCategory || supplied.category || supplied.canonicalCategory || '', source: supplied.source || 'frontend_provider_intelligence' });
+  } else {
+    const suppliedString = supplied || metadata.providerIntelligence?.contentClassificationCategory;
+    sourceClassification = suppliedString
+      ? normalizeSource({ rawCategory: suppliedString, source: 'frontend_provider_intelligence_legacy', confidence: 0.65 })
+      : normalizeSource({ rawCategory: deriveFallbackClassification(metadata), source: 'backend_fallback_metadata', confidence: 0.45 });
   }
-  const suppliedString = supplied || metadata.providerIntelligence?.contentClassificationCategory;
-  if (suppliedString) {
-    return normalizeWithGuard({ rawCategory: suppliedString, source: 'frontend_provider_intelligence_legacy', confidence: 0.65 });
+
+  let intendedOutputClassification;
+  if (explicitGeneratedOutputRequested(metadata)) {
+    intendedOutputClassification = normalizeContentClassification({ rawCategory: 'EXPLICIT_ADULT', source: 'backend_intended_output_explicit', confidence: Math.max(Number(sourceClassification.confidence || 0.45), 0.8), evidenceChain });
+  } else if (adultCommercialGeneratedOutputRequested(metadata)) {
+    intendedOutputClassification = normalizeContentClassification({ rawCategory: 'ADULT_COMMERCIAL', source: 'backend_intended_output_adult_commercial', confidence: Math.max(Number(sourceClassification.confidence || 0.45), 0.72), evidenceChain });
+  } else if (nonExplicitEditorialOutputRequested(metadata)) {
+    intendedOutputClassification = normalizeContentClassification({ rawCategory: 'SAFE_EDITORIAL', source: 'backend_intended_output_safe_editorial', confidence: Math.max(Number(sourceClassification.confidence || 0.45), 0.76), evidenceChain: { ...evidenceChain, guard: 'Non-explicit commercial key-art / hero-photo / reference-generation output routes by intended output category; source category is preserved separately for audit.' } });
+  } else if (sourceClassification.canonicalCategory === 'EXPLICIT_ADULT' && !hasAffirmativeExplicitEvidence(metadata)) {
+    const fallback = deriveFallbackClassification(metadata);
+    const guardedFallback = fallback === 'EXPLICIT' ? 'ADULT_MARKETING' : fallback;
+    intendedOutputClassification = normalizeContentClassification({ rawCategory: guardedFallback, source: 'backend_explicit_promotion_guard', confidence: Math.min(Number(sourceClassification.confidence || 0.45), 0.62), evidenceChain: { ...evidenceChain, guard: 'EXPLICIT_ADULT removed for intended output because no affirmative explicit-adult generated-output evidence was present.' } });
+  } else {
+    intendedOutputClassification = normalizeContentClassification({ rawCategory: sourceClassification.canonicalCategory, source: 'backend_intended_output_defaults_to_source', confidence: sourceClassification.confidence, evidenceChain });
   }
-  const fallback = deriveFallbackClassification(metadata);
-  return normalizeWithGuard({ rawCategory: fallback, source: 'backend_fallback_metadata', confidence: 0.45 });
+  return buildRoutingClassification(sourceClassification, intendedOutputClassification);
 }
 
 function standardVerificationComplete(metadata = {}) {
@@ -1497,6 +1542,31 @@ async function runControlledSuccessfulEnvelopeRerun(base44, apiKey, user, req, b
   }, user, req);
 }
 
+async function runReferenceWorkflowRoutingRerun(base44, apiKey, user, req, body = {}) {
+  const sourceGenerationJobId = body.source_generation_job_id || '40253bc8-6b8c-4f17-b8a6-4a6abd216ce5';
+  let dataUrl;
+  try {
+    dataUrl = await loadStoredSeedDreamReferenceDataUrl(sourceGenerationJobId, 'story');
+  } catch (error) {
+    return json({ ok: false, code: 'stored_reference_load_failed', error: error.message, source_generation_job_id: sourceGenerationJobId }, 500);
+  }
+  return await generateCover(base44, apiKey, {
+    action: 'generate',
+    consent: true,
+    generation_job_id: `routing-policy-rerun-${crypto.randomUUID()}`,
+    story_reference_data_url: dataUrl,
+    aspect_ratio: '16:9',
+    metadata: {
+      videoTitle: body.videoTitle || 'Commercial hero photo reference workflow',
+      optionalSubtitle: body.optionalSubtitle || '',
+      campaignName: body.campaignName || 'Routing Policy Regression Rerun',
+      contentType: 'explicit adult source material for non-explicit commercial hero photography cover poster reference generation',
+      renderingIntent: 'non-explicit promotional hero photo output',
+      contentClassification: { rawCategory: 'EXPLICIT_ADULT', category: 'EXPLICIT_ADULT', canonicalCategory: 'EXPLICIT_ADULT', source: 'routing_policy_reference_rerun_source', confidence: 0.9 }
+    }
+  }, user, req);
+}
+
 async function runOpenRouterSelfTest(base44, apiKey, user, req) {
   const testImageUrl = 'https://picsum.photos/seed/fleshlab-openrouter-pipeline/1280/720.jpg';
   const imageRes = await fetch(testImageUrl);
@@ -1557,6 +1627,62 @@ async function runSeedDreamAdapterRegression(apiKey, options = {}) {
   const responseEvidence = { http_status: 200, model: route.id, provider_request_id: result.request_id, output_mime_type: result.media_type, output_byte_size: result.output_byte_size, output_dimensions: result.output_dimensions, has_browser_displayable_data_url: String(result.image_data_url || '').startsWith('data:image/') };
   if (options.compact) return json({ ok: true, regression: 'seedream_image_reference_generation', response: responseEvidence, request_shape: { endpoint: result.payload_summary.endpoint, transport_endpoint: result.payload_summary.transport_endpoint, content_type: result.payload_summary.content_type, top_level_fields: result.payload_summary.top_level_fields, model: result.payload_summary.model, prompt_field: result.payload_summary.prompt_field, prompt_chars: result.payload_summary.prompt_chars, aspect_ratio_field: result.payload_summary.aspect_ratio_field, image_reference_field: result.payload_summary.image_reference_field, image_reference_object_shape: result.payload_summary.image_reference_object_shape, provider_order: result.payload_summary.provider_order, aspect_ratio: result.payload_summary.aspect_ratio, resolution: result.payload_summary.resolution, reference_transport: result.payload_summary.reference_transport } });
   return json({ ok: true, regression: 'seedream_image_reference_generation', request_shape: result.payload_summary, response: responseEvidence });
+}
+
+async function runRoutingPolicyRegressionTests(base44, apiKey) {
+  const routes = evaluateRoutesForOperation(await discoverCompatibleImageRoutes(apiKey), buildRequiredOperation('16:9')).eligibleRoutes;
+  const cases = [
+    {
+      id: 'A',
+      metadata: {
+        videoTitle: 'Non-explicit commercial hero photo',
+        contentType: 'explicit adult source material for non-explicit commercial hero photography cover poster reference generation',
+        renderingIntent: 'non-explicit promotional hero photo output',
+        contentClassification: { rawCategory: 'EXPLICIT_ADULT', category: 'EXPLICIT_ADULT', canonicalCategory: 'EXPLICIT_ADULT', source: 'regression_test_source', confidence: 0.9 }
+      }
+    },
+    {
+      id: 'B',
+      metadata: {
+        videoTitle: 'Explicit generated output request',
+        contentType: 'explicit adult source material',
+        outputIntent: 'generate sexually explicit output with explicit adult scene content',
+        contentClassification: { rawCategory: 'EXPLICIT_ADULT', category: 'EXPLICIT_ADULT', canonicalCategory: 'EXPLICIT_ADULT', source: 'regression_test_source', confidence: 0.9 }
+      }
+    },
+    {
+      id: 'C',
+      metadata: {
+        videoTitle: 'Safe editorial hero photo',
+        contentType: 'safe editorial commercial hero photography reference generation',
+        renderingIntent: 'safe editorial output',
+        contentClassification: { rawCategory: 'SAFE_EDITORIAL', category: 'SAFE_EDITORIAL', canonicalCategory: 'SAFE_EDITORIAL', source: 'regression_test_source', confidence: 0.9 }
+      }
+    }
+  ];
+  const results = [];
+  for (const testCase of cases) {
+    const classification = getCanonicalContentClassification(testCase.metadata);
+    const ranked = await rankRenderingRoutes(base44, routes, classification.routingCanonicalCategory, classification);
+    const eligible = ranked.routes.map(route => getRouteProviderKey(route));
+    const safeOnlyRejected = ranked.rejectedRoutes.filter(route => (route.supportedCanonicalCategories || []).includes('SAFE_EDITORIAL') && !(route.supportedCanonicalCategories || []).includes(classification.routingCanonicalCategory)).map(route => `${route.model}::${route.capability?.endpoint || route.endpoint}`);
+    results.push({
+      id: testCase.id,
+      sourceContentCategory: classification.sourceContentCategory,
+      intendedOutputCategory: classification.intendedOutputCategory,
+      routingCanonicalCategory: classification.routingCanonicalCategory,
+      eligibleRoutes: eligible,
+      googleVertexEligible: eligible.includes(STABLE_SAFE_EDITORIAL_ROUTE_KEY),
+      fluxEligible: eligible.some(route => route.includes('black-forest-labs/flux.2')),
+      safeEditorialOnlyProvidersIneligible: testCase.id === 'B' ? safeOnlyRejected.length > 0 : undefined,
+      passed: testCase.id === 'A'
+        ? classification.routingCanonicalCategory === 'SAFE_EDITORIAL' && eligible.includes(STABLE_SAFE_EDITORIAL_ROUTE_KEY) && eligible.some(route => route.includes('black-forest-labs/flux.2'))
+        : testCase.id === 'B'
+          ? ['ADULT_COMMERCIAL', 'EXPLICIT_ADULT'].includes(classification.routingCanonicalCategory) && safeOnlyRejected.length > 0
+          : classification.routingCanonicalCategory === 'SAFE_EDITORIAL'
+    });
+  }
+  return json({ ok: results.every(item => item.passed), tests: results });
 }
 
 async function generateCover(base44, apiKey, body, user, req) {
@@ -2022,7 +2148,9 @@ Deno.serve(async (req) => {
     if (action === 'route_capabilities') return json({ ok: true, requiredOperation: buildRequiredOperation(body.aspect_ratio || '16:9'), routes: await discoverCompatibleImageRoutes(apiKey), private_development_mode: privateDevelopmentStatus(req) });
     if (action === 'self_test') return await runOpenRouterSelfTest(base44, apiKey, user, req);
     if (action === 'controlled_success_envelope_rerun') return await runControlledSuccessfulEnvelopeRerun(base44, apiKey, user, req, body);
+    if (action === 'reference_workflow_routing_rerun') return await runReferenceWorkflowRoutingRerun(base44, apiKey, user, req, body);
     if (action === 'adult_commercial_route_regression') return await runAdultCommercialRouteRegression(base44, apiKey, user, req);
+    if (action === 'routing_policy_regression_tests') return await runRoutingPolicyRegressionTests(base44, apiKey);
     if (action === 'seedream_adapter_regression') return await runSeedDreamAdapterRegression(apiKey, body);
     if (action === 'generate') return await generateCover(base44, apiKey, body, user, req);
     return json({ ok: false, error: 'Invalid action' }, 400);
