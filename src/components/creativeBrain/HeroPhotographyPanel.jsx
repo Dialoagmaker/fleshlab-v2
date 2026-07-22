@@ -6,6 +6,7 @@ import { executeHeroPhotographyRender } from "@/lib/heroPhotography/heroPhotogra
 import { listHeroPhotographyProviders } from "@/lib/heroPhotography/providerRegistry";
 import EditorialDiagnostics from "./EditorialDiagnostics";
 import PolicyEvidenceDiagnostics from "./PolicyEvidenceDiagnostics";
+import CampaignComposerPreview from "./CampaignComposerPreview";
 
 const providers = listHeroPhotographyProviders();
 const CONSENT_TEXT = "This Hero Frame will be securely transmitted to the selected rendering provider to create a professional Hero Photograph.";
@@ -63,6 +64,7 @@ export default function HeroPhotographyPanel({ sourceFrameFile, pipeline, target
       {output?.status === "failed" && <div className="mt-4 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"><div className="flex gap-2"><AlertTriangle className="mt-0.5 h-4 w-4" /><div><b>{output.message}</b><pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap text-xs">{JSON.stringify(output.details, null, 2)}</pre></div></div></div>}
       <EditorialDiagnostics output={output} />
       <PolicyEvidenceDiagnostics output={output} />
+      {output?.status === "succeeded" && <CampaignComposerPreview output={output} pipeline={pipeline} campaignFamily={campaignFamily} />}
       {output?.status === "succeeded" && <div className="mt-4 space-y-4"><img src={output.heroImage} alt="Rendered hero photograph" className="w-full rounded-xl border border-border bg-black object-contain" /><div className="grid gap-2 text-xs md:grid-cols-4"><span className="rounded bg-secondary p-2">Provider: {output.provider.name}</span><span className="rounded bg-secondary p-2">Model: {output.model}</span><span className="rounded bg-secondary p-2">Time: {output.renderTimeMs}ms</span><span className="rounded bg-secondary p-2">Critic: {output.creativeCritic.status}</span></div><div className="rounded-lg border border-border bg-secondary/40 p-3 text-xs text-muted-foreground"><b className="block text-foreground">Reconstruction report</b><p className="mt-1">{output.reconstructionReport}</p></div><details className="rounded-lg border border-border"><summary className="cursor-pointer p-3 text-xs font-bold uppercase tracking-widest text-primary">Hero Photography Plan</summary><pre className="max-h-96 overflow-auto bg-black p-4 text-xs text-green-100">{JSON.stringify(output.heroPhotographyPlan, null, 2)}</pre></details><details className="rounded-lg border border-border"><summary className="cursor-pointer p-3 text-xs font-bold uppercase tracking-widest text-primary">Output Package</summary><pre className="max-h-96 overflow-auto bg-black p-4 text-xs text-green-100">{JSON.stringify({ ...output, heroImage: "[image data omitted]" }, null, 2)}</pre></details></div>}
     </div>
   );
