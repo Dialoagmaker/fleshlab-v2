@@ -5,14 +5,17 @@ import { executeHeroPhotographyRender } from "@/lib/heroPhotography/heroPhotogra
 import { listHeroPhotographyProviders } from "@/lib/heroPhotography/providerRegistry";
 
 const providers = listHeroPhotographyProviders();
+const CONSENT_TEXT = "This Hero Frame will be securely transmitted to the selected rendering provider to create a professional Hero Photograph.";
 
 export default function HeroPhotographyPanel({ sourceFrameFile, pipeline, targetPlatform, campaignFamily }) {
   const [providerId, setProviderId] = useState(providers[0]?.id || "");
   const [loading, setLoading] = useState(false);
   const [output, setOutput] = useState(null);
+  const [consentOpen, setConsentOpen] = useState(false);
 
   const render = async () => {
     if (loading) return;
+    setConsentOpen(false);
     setLoading(true);
     setOutput(null);
     const result = await executeHeroPhotographyRender({
@@ -20,7 +23,9 @@ export default function HeroPhotographyPanel({ sourceFrameFile, pipeline, target
       productionBlueprint: pipeline?.productionBlueprint,
       platformRules: { targetPlatform },
       campaignFamily,
-      providerId
+      providerId,
+      userConsent: true,
+      consentText: CONSENT_TEXT
     });
     setOutput(result);
     setLoading(false);
@@ -32,14 +37,16 @@ export default function HeroPhotographyPanel({ sourceFrameFile, pipeline, target
         <div>
           <p className="text-xs font-black uppercase tracking-[0.22em] text-primary">FLESHLAB Hero Photography Engine</p>
           <h2 className="mt-2 text-xl font-black text-foreground">Direct the Commercial Hero Photograph</h2>
-          <p className="mt-1 text-sm text-muted-foreground">The uploaded Hero Frame is the selected source frame for Development Mode. The engine rebuilds a premium hero photograph, not an enhanced screenshot.</p>
+          <p className="mt-1 text-sm text-muted-foreground">The uploaded Hero Frame is the selected source frame for Development Mode. Videos remain local; only this selected Hero Frame can be sent after approval.</p>
         </div>
         <Camera className="h-6 w-6 text-primary" />
       </div>
+      <div className="mt-4 rounded-lg border border-border bg-secondary/30 p-3 text-xs text-muted-foreground">Privacy Guard active: original videos, extraction data, timelines, additional frames, browser blobs, and hidden metadata remain blocked.</div>
       <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
         <label className="space-y-1"><span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Provider</span><select value={providerId} onChange={e => setProviderId(e.target.value)} className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground">{providers.map(provider => <option key={provider.id} value={provider.id}>{provider.name}</option>)}</select></label>
-        <Button disabled={!sourceFrameFile || !pipeline?.productionBlueprint || loading} onClick={render} className="h-11">{loading ? "Rendering" : "Render Hero Photograph"}</Button>
+        <Button disabled={!sourceFrameFile || !pipeline?.productionBlueprint || loading} onClick={() => setConsentOpen(true)} className="h-11">{loading ? "Rendering" : "Render Hero Photograph"}</Button>
       </div>
+      {consentOpen && <div className="mt-4 rounded-xl border border-primary/40 bg-primary/10 p-4"><p className="text-sm font-semibold text-foreground">{CONSENT_TEXT}</p><p className="mt-2 text-xs text-muted-foreground">Transmitted payload: selected Hero Frame, current Production Blueprint, provider-neutral rendering brief, and rendering parameters only.</p><div className="mt-4 flex flex-wrap gap-2"><Button onClick={render} disabled={loading}>Render Hero Photograph</Button><Button variant="outline" onClick={() => setConsentOpen(false)} disabled={loading}>Cancel</Button></div></div>}
       {output?.status === "failed" && <div className="mt-4 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"><div className="flex gap-2"><AlertTriangle className="mt-0.5 h-4 w-4" /><div><b>{output.message}</b><pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap text-xs">{JSON.stringify(output.details, null, 2)}</pre></div></div></div>}
       {output?.status === "succeeded" && <div className="mt-4 space-y-4"><img src={output.heroImage} alt="Rendered hero photograph" className="w-full rounded-xl border border-border bg-black object-contain" /><div className="grid gap-2 text-xs md:grid-cols-4"><span className="rounded bg-secondary p-2">Provider: {output.provider.name}</span><span className="rounded bg-secondary p-2">Model: {output.model}</span><span className="rounded bg-secondary p-2">Time: {output.renderTimeMs}ms</span><span className="rounded bg-secondary p-2">Critic: {output.creativeCritic.status}</span></div><div className="rounded-lg border border-border bg-secondary/40 p-3 text-xs text-muted-foreground"><b className="block text-foreground">Reconstruction report</b><p className="mt-1">{output.reconstructionReport}</p></div><details className="rounded-lg border border-border"><summary className="cursor-pointer p-3 text-xs font-bold uppercase tracking-widest text-primary">Hero Photography Plan</summary><pre className="max-h-96 overflow-auto bg-black p-4 text-xs text-green-100">{JSON.stringify(output.heroPhotographyPlan, null, 2)}</pre></details><details className="rounded-lg border border-border"><summary className="cursor-pointer p-3 text-xs font-bold uppercase tracking-widest text-primary">Output Package</summary><pre className="max-h-96 overflow-auto bg-black p-4 text-xs text-green-100">{JSON.stringify({ ...output, heroImage: "[image data omitted]" }, null, 2)}</pre></details></div>}
     </div>

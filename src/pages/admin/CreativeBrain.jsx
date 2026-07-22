@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BrainUploadPanel from "@/components/creativeBrain/BrainUploadPanel";
 import BlueprintJsonOutput from "@/components/creativeBrain/BlueprintJsonOutput";
 import HeroPhotographyPanel from "@/components/creativeBrain/HeroPhotographyPanel";
+import { base44 } from "@/api/base44Client";
+import { installLocalMediaPrivacyGuard } from "@/lib/aiMediaStudio/privacyGuard";
 import { runCreativeBrainPipeline } from "@/lib/creativeBrain/pipeline";
 import { TARGET_PLATFORMS, CAMPAIGN_FAMILIES } from "@/lib/creativeBrain/brandRules";
 
@@ -13,6 +15,10 @@ export default function CreativeBrain() {
   const [targetPlatform, setTargetPlatform] = useState(TARGET_PLATFORMS[0]);
   const [campaignFamily, setCampaignFamily] = useState(CAMPAIGN_FAMILIES[0]);
   const [userTitle, setUserTitle] = useState("");
+
+  useEffect(() => {
+    installLocalMediaPrivacyGuard(null, base44);
+  }, []);
 
   const onFileChange = (event) => { setFile(event.target.files?.[0] || null); setPipeline(null); setError(""); };
   const analyze = async () => {

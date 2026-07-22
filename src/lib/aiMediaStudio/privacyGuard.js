@@ -1,4 +1,22 @@
 let installed = false;
+let approvedHeroRenderSendDepth = 0;
+
+const HERO_RENDER_CHANNEL = "approved_hero_frame_render";
+const FORBIDDEN_HERO_RENDER_KEYS = [
+  "video",
+  "video_file",
+  "video_blob",
+  "video_data_url",
+  "video_timeline",
+  "timeline",
+  "frames",
+  "additional_frames",
+  "frame_blobs",
+  "browser_blob",
+  "browser_analysis_data",
+  "hidden_metadata",
+  "local_media_blob"
+];
 
 function isBlockedPayload(value, seen = new WeakSet()) {
   if (!value) return false;
@@ -24,16 +42,45 @@ function block(kind, log) {
   throw new Error(message);
 }
 
-function isApprovedOpenRouterCoverInvoke(args) {
-  const [functionName, payload] = args;
-  if (functionName !== "openRouterAICover") return false;
-  if (payload?.action !== "generate" || payload?.consent !== true) return false;
+function hasForbiddenHeroRenderKeys(value, seen = new WeakSet()) {
+  if (!value || typeof value !== "object") return false;
+  if (seen.has(value)) return false;
+  seen.add(value);
+  return Object.entries(value).some(([key, child]) => {
+    const normalized = key.toLowerCase();
+    if (FORBIDDEN_HERO_RENDER_KEYS.includes(normalized)) return true;
+    return hasForbiddenHeroRenderKeys(child, seen);
+  });
+}
+
+function parseJsonMaybe(value) {
+  if (typeof value !== "string") return null;
+  try { return JSON.parse(value); } catch (_) { return null; }
+}
+
+function isApprovedHeroRenderPayload(payload) {
+  if (!payload || payload.action !== "generate" || payload.consent !== true) return false;
+  const privacy = payload.privacy_guard || payload.privacyGuard || {};
+  if (privacy.channel !== HERO_RENDER_CHANNEL) return false;
+  if (privacy.user_approved_transmission !== true) return false;
+  if (privacy.selected_hero_frame_only !== true) return false;
   const storyReference = payload.story_reference_data_url || payload.frame_data_url;
   const identityReference = payload.identity_reference_data_url;
   if (typeof storyReference !== "string" || !storyReference.startsWith("data:image/")) return false;
-  if (identityReference && (typeof identityReference !== "string" || !identityReference.startsWith("data:image/"))) return false;
+  if (identityReference && identityReference !== storyReference) return false;
+  if (hasForbiddenHeroRenderKeys(payload)) return false;
   const { frame_data_url, story_reference_data_url, identity_reference_data_url, ...rest } = payload;
   return !isBlockedPayload(rest);
+}
+
+function isApprovedHeroRenderBody(body) {
+  if (approvedHeroRenderSendDepth <= 0) return false;
+  return isApprovedHeroRenderPayload(parseJsonMaybe(body));
+}
+
+function isApprovedOpenRouterCoverInvoke(args) {
+  const [functionName, payload] = args;
+  return functionName === "openRouterAICover" && isApprovedHeroRenderPayload(payload);
 }
 
 function patchFunction(owner, key, label, log) {
@@ -42,7 +89,16 @@ function patchFunction(owner, key, label, log) {
   owner[key] = (...args) => {
     const approvedOpenRouterStill = key === "invoke" && isApprovedOpenRouterCoverInvoke(args);
     if (!approvedOpenRouterStill && args.some(arg => isBlockedPayload(arg))) block(label, log);
-    if (approvedOpenRouterStill) log?.("privacy guard allowed one approved still image for OpenRouter cover generation");
+    if (approvedOpenRouterStill) {
+      log?.("privacy guard allowed one consent-approved Hero Frame for rendering");
+      approvedHeroRenderSendDepth += 1;
+      const result = original(...args);
+      if (result && typeof result.finally === "function") {
+        return result.finally(() => { approvedHeroRenderSendDepth = Math.max(0, approvedHeroRenderSendDepth - 1); });
+      }
+      approvedHeroRenderSendDepth = Math.max(0, approvedHeroRenderSendDepth - 1);
+      return result;
+    }
     return original(...args);
   };
   owner[key].__localMediaGuarded = true;
@@ -53,14 +109,14 @@ export function installLocalMediaPrivacyGuard(log, base44Client = null) {
   installed = true;
   const originalFetch = window.fetch.bind(window);
   window.fetch = (input, init = {}) => {
-    if (isBlockedPayload(input) || isBlockedPayload(init?.body)) block("fetch", log);
+    if (isBlockedPayload(input) || (!isApprovedHeroRenderBody(init?.body) && isBlockedPayload(init?.body))) block("fetch", log);
     return originalFetch(input, init);
   };
 
   const originalSend = window.XMLHttpRequest?.prototype?.send;
   if (originalSend) {
     window.XMLHttpRequest.prototype.send = function guardedSend(body) {
-      if (isBlockedPayload(body)) block("XMLHttpRequest", log);
+      if (!isApprovedHeroRenderBody(body) && isBlockedPayload(body)) block("XMLHttpRequest", log);
       return originalSend.call(this, body);
     };
   }
@@ -75,6 +131,8 @@ export function installLocalMediaPrivacyGuard(log, base44Client = null) {
     installed: true,
     mode: "Browser local",
     blocks: ["File", "Blob", "ArrayBuffer", "base64 image/video", "FormData media entries", "nested media payloads"],
+    allow_with_consent: ["Selected Hero Frame through approved render channel only"],
+    hero_render_channel: HERO_RENDER_CHANNEL,
   };
   log?.("Privacy guard installed");
 }

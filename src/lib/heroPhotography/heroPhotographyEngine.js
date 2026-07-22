@@ -18,8 +18,9 @@ function structuredFailure(code, message, details = {}) {
   return { status: "failed", ok: false, code, message, details, heroImage: null, renderMetadata: null };
 }
 
-export async function executeHeroPhotographyRender({ sourceFrameFile, productionBlueprint, platformRules, campaignFamily, providerId }) {
+export async function executeHeroPhotographyRender({ sourceFrameFile, productionBlueprint, platformRules, campaignFamily, providerId, userConsent = false, consentText = "" }) {
   const startedAt = performance.now();
+  if (!userConsent) return structuredFailure("consent_required", "User approval is required before transmitting the selected Hero Frame.");
   const inputValidation = validateHeroPhotographyInputs({ sourceFrameFile, productionBlueprint, platformRules, campaignFamily });
   if (!inputValidation.valid) return structuredFailure("input_rejected", "Hero Photography Engine rejected the render inputs.", { errors: inputValidation.errors });
 
@@ -31,7 +32,14 @@ export async function executeHeroPhotographyRender({ sourceFrameFile, production
     const sourceFrameDataUrl = await fileToDataUrl(sourceFrameFile);
     const sourceResolution = await readImageResolution(sourceFrameDataUrl);
     const providerStartedAt = performance.now();
-    const render = await provider.render({ sourceFrameDataUrl, identityReferenceDataUrl: sourceFrameDataUrl, instructions, productionBlueprint });
+    const privacyIntent = {
+      channel: "approved_hero_frame_render",
+      user_approved_transmission: true,
+      selected_hero_frame_only: true,
+      consent_text: consentText,
+      blocked_media: ["original_video", "video_timeline", "additional_frames", "browser_blobs", "hidden_metadata"]
+    };
+    const render = await provider.render({ sourceFrameDataUrl, instructions, productionBlueprint, privacyIntent });
     const renderTimeMs = Math.round(performance.now() - providerStartedAt);
     const outputResolution = await readImageResolution(render.imageDataUrl);
     const outputPackage = {
@@ -49,7 +57,7 @@ export async function executeHeroPhotographyRender({ sourceFrameFile, production
       reconstructionReport: render.reconstructionReport || instructions.reconstruction_report_template,
       identityPreservationStatus: {
         status: "accepted",
-        rule: "same source frame used as identity reference; provider instructed to preserve identity-critical areas while rebuilding the commercial hero photograph",
+        rule: "single consent-approved selected Hero Frame used as the only visual reference; provider instructed to preserve identity-critical areas while rebuilding the commercial hero photograph",
         source_resolution: sourceResolution
       },
       renderWarnings: render.warnings || [],
@@ -61,7 +69,8 @@ export async function executeHeroPhotographyRender({ sourceFrameFile, production
         output_resolution: outputResolution,
         started_at: new Date().toISOString(),
         total_time_ms: Math.round(performance.now() - startedAt),
-        provider_metadata: render.providerMetadata
+        provider_metadata: render.providerMetadata,
+        privacy_intent: privacyIntent
       }
     };
     outputPackage.creativeCritic = runCreativeCritic(outputPackage, productionBlueprint);

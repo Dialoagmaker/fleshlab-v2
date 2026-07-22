@@ -3,22 +3,22 @@ import { base44 } from "@/api/base44Client";
 export const openRouterHeroProvider = {
   id: "rendering_intelligence_openrouter",
   name: "Rendering Intelligence Provider",
-  async render({ sourceFrameDataUrl, identityReferenceDataUrl, instructions, productionBlueprint }) {
+  async render({ sourceFrameDataUrl, instructions, productionBlueprint, privacyIntent }) {
     const response = await base44.functions.invoke("openRouterAICover", {
       action: "generate",
       consent: true,
+      privacy_guard: privacyIntent,
       story_reference_data_url: sourceFrameDataUrl,
-      identity_reference_data_url: identityReferenceDataUrl || sourceFrameDataUrl,
       aspect_ratio: "16:9",
       metadata: {
         videoTitle: instructions.hero_photography_plan?.Story || instructions.creative_decisions?.story || "",
         optionalSubtitle: instructions.hero_photography_plan?.Emotional_Hook || instructions.creative_decisions?.emotional_promise || "",
         campaignName: instructions.campaign_family,
-        contentType: "professional hero photograph reconstructed from video frame reference",
-        heroPhotographyEngine: instructions,
+        contentType: "professional hero photograph from consent-approved selected Hero Frame",
         heroPhotographyPlan: instructions.hero_photography_plan,
         sourceFrameUnderstanding: instructions.source_frame_understanding,
-        productionBlueprint
+        productionBlueprint,
+        renderingParameters: { aspect_ratio: "16:9", output: "professional_hero_photograph" }
       }
     });
     const data = response.data || {};
