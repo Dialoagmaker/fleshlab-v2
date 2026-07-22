@@ -66,8 +66,8 @@ function applyPaletteToDirection(direction, palette) {
 function chooseDirection(campaign = {}, analysis = {}) {
   const text = `${campaign.campaignTitle || ""} ${campaign.collection || ""} ${campaign.releaseName || ""} ${campaign.campaignLabel || ""}`.toLowerCase();
   const subjectRight = (analysis.subjectCenter?.x ?? 0.55) >= 0.5;
-  if (/kraken|fleshlab|amateur wins|beach escape|new release|welcome/.test(text)) return { key: "kraken_reference_poster", accent: RED, texture: "red slash premium poster grit", titleTone: "massive distressed trailer title", heroSide: "right", split: 0.55, referencePoster: true };
-  if (/bathroom|shower|soap|steam|hole|ass/.test(text)) return { key: "bathroom_noir", accent: RED, texture: "steam tile fracture", titleTone: "hard white cinema title", heroSide: subjectRight ? "right" : "left", split: 0.55 };
+  if (/kraken|fleshlab|amateur wins|beach escape|new release|welcome|bathroom|shower|soap|steam|hole|ass|twink|filipino/.test(text)) return { key: "kraken_reference_poster", accent: RED, texture: "red slash premium poster grit", titleTone: "massive distressed trailer title", heroSide: "right", split: 0.55, referencePoster: true };
+  if (/bathroom|shower|soap|steam/.test(text)) return { key: "bathroom_noir", accent: RED, texture: "steam tile fracture", titleTone: "hard white cinema title", heroSide: subjectRight ? "right" : "left", split: 0.55 };
   if (/beach|summer|pool|island|ocean/.test(text)) return { key: "sun_escape", accent: "#ff3348", texture: "heated horizon scratches", titleTone: "open-air cinema title", heroSide: subjectRight ? "right" : "left", split: 0.53 };
   if (/gym|fitness|locker|workout/.test(text)) return { key: "kinetic_body", accent: "#ff2433", texture: "motion ticks", titleTone: "athletic block title", heroSide: subjectRight ? "right" : "left", split: 0.52 };
   if (/behind|bts|raw|documentary/.test(text)) return { key: "raw_access", accent: "#f05b2a", texture: "contact-sheet grain", titleTone: "documentary impact title", heroSide: subjectRight ? "right" : "left", split: 0.54 };
@@ -404,6 +404,36 @@ function drawTitle(ctx, title, zones, width, height, direction) {
   return { ...plan, boxes, visible, bottom: y };
 }
 
+function resolvePosterSubtitle(campaign = {}, direction = {}) {
+  const raw = compact(campaign.posterSubtitle || campaign.subtitle || campaign.optionalSubtitle || campaign.campaignLabel || "");
+  if (direction.referencePoster && (!raw || /hole|ass|finger|soap|shoot|explicit|hardcore|porn/i.test(raw))) return "BEHIND THE SCENES";
+  return raw;
+}
+
+function drawPosterSubtitle(ctx, campaign, zones, width, height, direction, titleBottom) {
+  if (!direction.referencePoster) return null;
+  const subtitle = resolvePosterSubtitle(campaign, direction);
+  if (!subtitle) return null;
+  const x = zones.title.x;
+  const y = Math.min(height * 0.72, titleBottom + height * 0.035);
+  const w = Math.min(zones.title.w * 0.72, width * 0.44);
+  const h = Math.max(28, height * 0.07);
+  ctx.save();
+  ctx.fillStyle = "rgba(244,241,234,0.96)";
+  ctx.beginPath();
+  ctx.moveTo(x - width * 0.018, y + h * 0.16);
+  ctx.lineTo(x + w, y);
+  ctx.lineTo(x + w - width * 0.03, y + h * 0.86);
+  ctx.lineTo(x + width * 0.02, y + h);
+  ctx.closePath();
+  ctx.fill();
+  ctx.font = font(Math.max(20, height * 0.047), "Permanent Marker", 800);
+  ctx.fillStyle = "#050505";
+  ctx.fillText(subtitle.toUpperCase(), x + width * 0.04, y + h * 0.68, w * 0.86);
+  ctx.restore();
+  return { x, y, w, h, bottom: y + h };
+}
+
 function drawMeta(ctx, campaign, zones, width, height, direction, titleBottom) {
   const performer = compact(campaign.performerName || campaign.creatorName || "");
   const collection = compact(campaign.collection || "");
@@ -516,6 +546,15 @@ function finalTexture(ctx, width, height, zones, direction) {
   ctx.restore();
 }
 
+function resolvePosterTitle(campaign = {}, direction = {}) {
+  const raw = compact(campaign.posterTitle || campaign.displayTitle || campaign.campaignTitle || campaign.primaryTitle || "");
+  const explicitOrTooLong = /hole|ass|finger|fingers|soap|shoots|explicit|hardcore|porn/i.test(raw) || raw.length > 44;
+  if (!direction.referencePoster || !explicitOrTooLong) return raw;
+  const fallback = compact(campaign.collection || campaign.releaseName || campaign.campaignConceptTitle || campaign.campaignLabel || "");
+  if (fallback && !/hole|ass|finger|explicit|hardcore|porn/i.test(fallback) && fallback.length <= 34) return fallback.toUpperCase().includes("KRAKEN") ? fallback : `KRAKEN ${fallback}`;
+  return "KRAKEN INTO THE WILD";
+}
+
 function validateTitle(title, titlePlan) {
   const drawn = compact(titlePlan.lines.join(" "));
   const source = compact(title);
@@ -609,11 +648,11 @@ function validateComposition({ titlePlan, logoBox, metaBox, zones, width, height
 export async function renderKrakenCampaignComposerAsset({ image, analysis = {}, format, campaign = {} }) {
   const palette = extractImagePalette(image);
   const baseDirection = chooseDirection(campaign, analysis);
-  const title = compact(campaign.campaignTitle || campaign.primaryTitle || "");
   const attempts = [];
 
   for (const variant of createPolishVariants(format, campaign)) {
     const direction = applyPaletteToDirection({ ...baseDirection, polishVariant: variant.key }, palette);
+    const title = resolvePosterTitle(campaign, direction);
     const canvas = document.createElement("canvas");
     canvas.width = format.width;
     canvas.height = format.height;
@@ -631,7 +670,8 @@ export async function renderKrakenCampaignComposerAsset({ image, analysis = {}, 
     drawPhotoBackgroundFusion(ctx, image, format.width, format.height, zones, direction, analysis);
     drawSubjectAtmosphere(ctx, format.width, format.height, zones, direction, analysis);
     const titlePlan = drawTitle(ctx, title, zones, format.width, format.height, direction);
-    const metaBox = drawMeta(ctx, campaign, zones, format.width, format.height, direction, titlePlan.bottom);
+    const subtitleBox = drawPosterSubtitle(ctx, campaign, zones, format.width, format.height, direction, titlePlan.bottom);
+    const metaBox = drawMeta(ctx, campaign, zones, format.width, format.height, direction, subtitleBox?.bottom || titlePlan.bottom);
     drawBadges(ctx, campaign, zones, format.width, format.height, direction);
     const logo = await drawLogo(ctx, zones, format.width, format.height);
     drawBrandTagline(ctx, zones, format.width, format.height, direction);
