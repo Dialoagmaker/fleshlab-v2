@@ -17,6 +17,20 @@
       },
       "title": "Supported Categories"
     },
+    "supportedCanonicalCategories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Supported Canonical Categories"
+    },
+    "unsupportedCanonicalCategories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Unsupported Canonical Categories"
+    },
     "estimated_quality": {
       "type": "number",
       "default": 70,
