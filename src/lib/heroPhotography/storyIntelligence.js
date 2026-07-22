@@ -14,6 +14,19 @@ function safeSlug(value, fallback = "campaign") {
   return compact(value || fallback).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || fallback;
 }
 
+const LITERAL_LOCATION_HERO_WORDS = new Set(["BATHROOM", "BEDROOM", "KITCHEN", "SOFA", "DOOR", "ROOM", "SHOWER", "TOILET", "SINK", "BED"]);
+
+function isExplicitUserCampaignTitle(metadata = {}, title = "") {
+  return metadata.source?.campaignTitle === "user" && compact(metadata.campaignTitle) && upper(metadata.campaignTitle) === upper(title);
+}
+
+function deriveHeroWord(campaignIdentity, metadata = {}, fallback = "PRIVATE ACCESS") {
+  const identity = upper(campaignIdentity || fallback);
+  if (!identity) return fallback;
+  if (LITERAL_LOCATION_HERO_WORDS.has(identity) && !isExplicitUserCampaignTitle(metadata, identity)) return fallback;
+  return identity;
+}
+
 export function createStoryIntelligence({ metadata = {}, blueprint = {}, campaignFamily = "" }) {
   const sourceTitle = compact(metadata.originalTitle || metadata.videoTitle || metadata.title || blueprint.originalTitle || blueprint.videoTitle || blueprint.sourceTitle || "");
   const text = `${sourceTitle} ${metadata.subtitle || ""} ${metadata.releaseName || ""} ${campaignFamily || ""}`.toLowerCase();
@@ -70,17 +83,23 @@ export function buildCampaignConcepts({ metadata = {}, blueprint = {}, campaignF
   const story = createStoryIntelligence({ metadata, blueprint, campaignFamily });
   const pool = conceptPools[story.territory] || conceptPools.exclusive;
   const performer = compact(metadata.performerName || blueprint.performerName || blueprint.creatorName || "Featured Creator");
-  const authoritativeTitle = compact(metadata.campaignTitle);
+  const userCampaignTitle = compact(metadata.campaignTitle);
+  const userTitleIsExplicit = metadata.source?.campaignTitle === "user" && userCampaignTitle;
   return pool.slice(0, 3).map((concept, index) => {
     const episode = `Episode ${String(index + 1).padStart(2, "0")}`;
-    const primaryTitle = authoritativeTitle || concept.primaryTitle;
-    const base = `${safeSlug(primaryTitle)}_${safeSlug(concept.collection)}_${safeSlug(performer)}`;
+    const campaignIdentity = userTitleIsExplicit ? userCampaignTitle : compact(concept.campaignIdentity || concept.primaryTitle || concept.collection || "PRIVATE ACCESS");
+    const heroWord = deriveHeroWord(campaignIdentity, metadata, concept.primaryTitle || "PRIVATE ACCESS");
+    const campaignTitle = userCampaignTitle || campaignIdentity;
+    const base = `${safeSlug(heroWord)}_${safeSlug(concept.collection)}_${safeSlug(performer)}`;
     return {
       ...concept,
-      primaryTitle,
+      sceneDescription: story.sourceTitle,
+      campaignIdentity,
+      heroWord,
+      primaryTitle: heroWord,
       base,
-      campaignConceptId: `${safeSlug(primaryTitle)}-${index + 1}`,
-      campaignTitle: primaryTitle,
+      campaignConceptId: `${safeSlug(heroWord)}-${index + 1}`,
+      campaignTitle,
       subtitle: concept.collection,
       seriesName: concept.collection,
       performerName: performer,
@@ -91,7 +110,10 @@ export function buildCampaignConcepts({ metadata = {}, blueprint = {}, campaignF
       releaseName: compact(metadata.releaseName || concept.collection),
       storyIntelligence: story,
       campaignMetadata: {
-        campaignTitle: primaryTitle,
+        sceneDescription: story.sourceTitle,
+        campaignIdentity,
+        heroWord,
+        campaignTitle,
         collection: concept.collection,
         performerName: performer,
         episode,

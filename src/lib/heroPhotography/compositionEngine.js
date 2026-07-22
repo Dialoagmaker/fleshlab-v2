@@ -10,24 +10,20 @@ function clean(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
 
-const STOP_WORDS = new Set(["THE", "A", "AN", "AND", "OR", "WITH", "IN", "ON", "AT", "OF", "FOR", "TO", "HIS", "HER", "THEIR", "YOUR", "MY", "IS", "ARE"]);
-const IMPACT_WORDS = ["STEAM", "PRIVATE", "RAW", "WILD", "HEAT", "AFTER", "HOURS", "ACCESS", "CHECK", "SUMMER", "NIGHT", "LUXURY", "HOTEL", "BATHROOM", "LOCATION"];
+const LITERAL_LOCATION_HERO_WORDS = new Set(["BATHROOM", "BEDROOM", "KITCHEN", "SOFA", "DOOR", "ROOM", "SHOWER", "TOILET", "SINK", "BED"]);
 
-function identityFromTitle(title, fallback) {
-  const source = clean(title || fallback || "CHECK-IN").toUpperCase();
-  const words = source.replace(/[^A-Z0-9\s-]/g, " ").split(/\s+/).filter(Boolean);
-  if (words.length <= 4 && source.length <= 28) return source;
-  const impact = words.filter(word => IMPACT_WORDS.includes(word)).slice(0, 2);
-  const strong = words.filter(word => !STOP_WORDS.has(word) && word.length > 3).slice(0, 2);
-  return (impact.length ? impact : strong).join(" ") || clean(fallback).toUpperCase() || "CHECK-IN";
+function identityFromCampaignConcept(campaign = {}) {
+  const explicit = clean(campaign.heroWord || campaign.campaignIdentity || campaign.primaryTitle || campaign.campaignTitle || campaign.collection || campaign.campaignLabel || "PRIVATE ACCESS").toUpperCase();
+  if (LITERAL_LOCATION_HERO_WORDS.has(explicit) && campaign.campaignMetadata?.heroWord !== explicit) return "PRIVATE ACCESS";
+  return explicit;
 }
 
 export function createCreativeConcept(campaign = {}, analysis = {}) {
-  const text = `${campaign.primaryTitle || ""} ${campaign.subtitle || ""} ${campaign.campaignLabel || ""}`.toLowerCase();
-  const steam = /bath|shower|steam|hotel|spa/.test(text);
+  const text = `${campaign.campaignIdentity || ""} ${campaign.heroWord || ""} ${campaign.subtitle || ""} ${campaign.campaignLabel || ""}`.toLowerCase();
+  const steam = /steam|hotel|spa|private access|check-in|after hours/.test(text);
   const outdoor = /beach|summer|wild|jungle|outdoor|location/.test(text);
   const raw = /raw|real|documentary|behind/.test(text);
-  const campaignIdentity = identityFromTitle(campaign.primaryTitle || campaign.campaignTitle, campaign.campaignLabel || campaign.collection);
+  const campaignIdentity = identityFromCampaignConcept(campaign);
   return {
     campaignEmotion: steam ? "INTIMATE_TENSION" : outdoor ? "SUNLIT_ESCAPE" : raw ? "RAW_ACCESS" : "PREMIUM_DESIRE",
     campaignFantasy: steam ? "Luxury private-room access" : outdoor ? "On-location freedom" : raw ? "Unfiltered behind-the-scenes truth" : "Exclusive premium encounter",
