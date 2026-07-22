@@ -115,11 +115,11 @@ export function planAdaptiveTypography({ ctx, title, width, height, format = {},
   }
 
   const words = exactTitle.split(" ").filter(Boolean).length;
-  const maxLines = clamp(Math.ceil(words / 4), 2, format.height > format.width ? 6 : 5);
-  const metadataReserve = collection || performerName ? height * 0.12 : height * 0.06;
-  const availableTitleH = Math.max(height * 0.22, box.h - metadataReserve);
+  const maxLines = clamp(Math.ceil(words / 3), 2, format.height > format.width ? 8 : 6);
+  const metadataReserve = collection || performerName ? height * 0.09 : height * 0.04;
+  const availableTitleH = Math.max(height * 0.18, box.h - metadataReserve);
   const maxSize = Math.min(height * (format.role === "cover" ? 0.08 : 0.11), width * (format.height > format.width ? 0.105 : 0.078));
-  const minSize = Math.max(24, width * (format.height > format.width ? 0.035 : 0.026));
+  const minSize = Math.max(14, width * (format.height > format.width ? 0.022 : 0.016));
 
   for (let size = maxSize; size >= minSize; size -= Math.max(1.8, maxSize * 0.035)) {
     ctx.font = `900 ${Math.round(size)}px "${selectedFont}", "Inter", Impact, Arial, sans-serif`;

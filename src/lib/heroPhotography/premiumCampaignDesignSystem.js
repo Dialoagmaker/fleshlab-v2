@@ -3,7 +3,7 @@ import { createCompositionPlan } from "@/lib/heroPhotography/compositionEngine";
 import { createLayerPlan } from "@/lib/heroPhotography/layerCompositionEngine";
 import { createKeyArtBrief, createLayoutSketch } from "@/lib/heroPhotography/keyArtWorkflow";
 import { planAdaptiveTypography } from "@/lib/heroPhotography/adaptiveTypographyEngine";
-import { chooseCompositionAwareTypographyLayout } from "@/lib/heroPhotography/compositionAwareLayoutEngine";
+import { getCompositionAwareTypographyLayouts } from "@/lib/heroPhotography/compositionAwareLayoutEngine";
 
 let logoPromise;
 function loadLogo() {
@@ -563,6 +563,101 @@ function drawCompositionTextWell(ctx, width, height, layout, mood) {
   ctx.restore();
 }
 
+function textLineBounds(ctx, line, x, baseline, align, fallbackSize) {
+  const metrics = ctx.measureText(line);
+  const left = align === "right" ? x - metrics.width : align === "center" ? x - metrics.width / 2 : x;
+  const top = baseline - (metrics.actualBoundingBoxAscent || fallbackSize * 0.82);
+  const bottom = baseline + (metrics.actualBoundingBoxDescent || fallbackSize * 0.22);
+  return { x: left, y: top, w: metrics.width, h: bottom - top };
+}
+
+function rotateRectBounds(rect, centerX, centerY, angle) {
+  const points = [
+    [rect.x, rect.y],
+    [rect.x + rect.w, rect.y],
+    [rect.x + rect.w, rect.y + rect.h],
+    [rect.x, rect.y + rect.h],
+  ].map(([x, y]) => {
+    const dx = x - centerX;
+    const dy = y - centerY;
+    return {
+      x: centerX + dx * Math.cos(angle) - dy * Math.sin(angle),
+      y: centerY + dx * Math.sin(angle) + dy * Math.cos(angle),
+    };
+  });
+  const xs = points.map(point => point.x);
+  const ys = points.map(point => point.y);
+  return { x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) };
+}
+
+function validateTypographyVisibility(ctx, typographyPlan, width, height) {
+  if (!typographyPlan?.lines?.length) return { valid: true, reasons: [] };
+  const reasons = [];
+  const pad = Math.max(4, typographyPlan.fontSize * 0.08);
+  ctx.font = font(typographyPlan.fontSize, typographyPlan.fontFamily || "Bebas Neue", 900);
+  const safe = {
+    x: typographyPlan.box.x - pad,
+    y: typographyPlan.box.y - pad,
+    w: typographyPlan.box.w + pad * 2,
+    h: typographyPlan.box.h + pad * 2,
+  };
+  const rawLineRects = typographyPlan.lines.map((line, index) => textLineBounds(ctx, line, typographyPlan.x, typographyPlan.y + typographyPlan.fontSize * 0.88 + index * typographyPlan.lineHeight, typographyPlan.align, typographyPlan.fontSize));
+  const angle = typographyPlan.diagonal ? (typographyPlan.align === "left" ? -0.075 : 0.075) : 0;
+  const cx = typographyPlan.box.x + typographyPlan.box.w / 2;
+  const cy = typographyPlan.box.y + typographyPlan.box.h / 2;
+  const lineRects = angle ? rawLineRects.map(rect => rotateRectBounds(rect, cx, cy, angle)) : rawLineRects;
+  lineRects.forEach(rect => {
+    if (rect.x < 0 || rect.y < 0 || rect.x + rect.w > width || rect.y + rect.h > height) reasons.push("text extends outside canvas");
+    if (rect.x < safe.x || rect.y < safe.y || rect.x + rect.w > safe.x + safe.w || rect.y + rect.h > safe.y + safe.h) reasons.push("text extends outside safe area");
+    if (rect.w > typographyPlan.width + pad) reasons.push("line width exceeds text box");
+  });
+  if (typographyPlan.fontSize < 14) reasons.push("title is below readable minimum size");
+  if (!typographyPlan.preservesTitle) reasons.push("not every title character is preserved");
+  if (!typographyPlan.avoidsFace && !typographyPlan.overlap) reasons.push("text intersects protected face zone");
+  return { valid: reasons.length === 0, reasons: [...new Set(reasons)], lineRects };
+}
+
+function fallbackFullCanvasLayout(width, height) {
+  const safe = Math.max(24, Math.min(width, height) * 0.045);
+  return {
+    layoutName: "full canvas emergency reflow",
+    layoutMode: "MANDATORY_REFLOW",
+    align: "center",
+    box: { x: safe, y: height * 0.16, w: width - safe * 2, h: height * 0.64 },
+    score: 0,
+    candidates: [],
+    performerBoundingBox: null,
+    facePosition: null,
+    bodyPosition: null,
+    imageFocalPoint: null,
+    visualBalance: null,
+    availableNegativeSpace: null,
+  };
+}
+
+function selectValidatedTypography({ ctx, width, height, analysis, title, format, compositionPlan, collection, performerName }) {
+  const layouts = [...getCompositionAwareTypographyLayouts({ ctx, width, height, analysis, title }), fallbackFullCanvasLayout(width, height)];
+  const attempts = [];
+  for (const layout of layouts) {
+    const typographyPlan = planAdaptiveTypography({
+      ctx,
+      title,
+      width,
+      height,
+      format,
+      compositionPlan,
+      logoBottom: Math.max(0, layout.box.y - height * 0.08),
+      collection,
+      performerName,
+      layout,
+    });
+    const validation = validateTypographyVisibility(ctx, typographyPlan, width, height);
+    attempts.push({ layout: layout.layoutName, validation, fontSize: Math.round(typographyPlan.fontSize), lines: typographyPlan.lines.length });
+    if (validation.valid) return { layout, typographyPlan, validation, attempts };
+  }
+  throw new Error("Campaign Composer blocked export: no typography composition could render the full title without clipping.");
+}
+
 async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, campaign, format, compositionPlan) {
   const plan = compositionPlan || createCompositionPlan({ analysis, format, campaign });
   plan.layerPlan = createLayerPlan({ compositionPlan: plan, analysis, format });
@@ -580,11 +675,13 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
   ctx.restore();
 
   drawLayerPhoto(ctx, image, width, height, plan, photo);
+  drawLayerSubjectMask(ctx, image, width, height, plan, photo);
 
   const collection = upper(campaign.collection || campaign.subtitle || campaign.campaignLabel || "");
   const exactTitle = compact(campaign.campaignTitle || campaign.primaryTitle || "");
   const performerName = upper(campaign.performerName || campaign.creatorName);
-  const layout = chooseCompositionAwareTypographyLayout({ ctx, width, height, analysis, title: exactTitle || collection || performerName });
+  const validated = exactTitle ? selectValidatedTypography({ ctx, width, height, analysis, title: exactTitle, format, compositionPlan: plan, collection, performerName }) : null;
+  const layout = validated?.layout || getCompositionAwareTypographyLayouts({ ctx, width, height, analysis, title: collection || performerName })[0] || fallbackFullCanvasLayout(width, height);
   plan.dynamicTypographyLayout = layout;
   plan.compositionAnalysis = {
     performerBoundingBox: layout.performerBoundingBox,
@@ -595,11 +692,20 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
     imageFocalPoint: layout.imageFocalPoint,
     selectedLayout: layout.layoutName,
     candidates: layout.candidates,
+    typographyValidationAttempts: validated?.attempts || [],
+    finalTypographyValidation: validated?.validation || { valid: true, reasons: [] },
   };
   plan.titleAlign = layout.align;
   plan.titleZone = layout.align === "right" ? "RIGHT" : layout.align === "center" ? "CENTER" : "LEFT";
   plan.safeTypographyArea = { x: layout.box.x / width, y: layout.box.y / height, w: layout.box.w / width, h: layout.box.h / height };
 
+  drawLayerForegroundFx(ctx, width, height, mood, plan);
+  drawFeatureStrip(ctx, campaign, width, height, mood);
+  const vignette = ctx.createRadialGradient(width * 0.68, height * 0.46, height * 0.05, width * 0.68, height * 0.46, width * 0.72);
+  vignette.addColorStop(0, "rgba(0,0,0,0)");
+  vignette.addColorStop(1, "rgba(0,0,0,0.74)");
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, width, height);
   drawCompositionTextWell(ctx, width, height, layout, mood);
 
   const titleAlign = layout.align;
@@ -620,9 +726,9 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
   let typographyPlan = null;
   let afterTitle = layout.box.y;
   if (exactTitle) {
-    typographyPlan = planAdaptiveTypography({ ctx, title: exactTitle, width, height, format, compositionPlan: plan, logoBottom: Math.min(logoBottom, layout.box.y - height * 0.04), collection, performerName, layout });
+    typographyPlan = validated.typographyPlan;
     plan.typographyPlan = typographyPlan;
-    plan.typographyWarnings = typographyPlan.preservesTitle && typographyPlan.avoidsFace ? [] : [typographyPlan.preservesTitle ? "Typography overlaps a protected face zone." : "Title preservation check failed."];
+    plan.typographyWarnings = [];
     ctx.save();
     if (typographyPlan.diagonal) {
       const cx = typographyPlan.box.x + typographyPlan.box.w / 2;
@@ -650,8 +756,6 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
     plan.typographyWarnings = [];
   }
 
-  drawLayerSubjectMask(ctx, image, width, height, plan, photo);
-
   if (performerName) {
     ctx.font = font(Math.max(12, width * 0.012), "Inter", 950);
     ctx.fillStyle = "rgba(255,255,255,0.86)";
@@ -662,15 +766,6 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
     else ctx.fillText(`${performerName} SOLO`, labelX, performerY, labelW);
   }
   ctx.textAlign = "left";
-
-  drawLayerForegroundFx(ctx, width, height, mood, plan);
-  drawFeatureStrip(ctx, campaign, width, height, mood);
-
-  const vignette = ctx.createRadialGradient(width * 0.68, height * 0.46, height * 0.05, width * 0.68, height * 0.46, width * 0.72);
-  vignette.addColorStop(0, "rgba(0,0,0,0)");
-  vignette.addColorStop(1, "rgba(0,0,0,0.74)");
-  ctx.fillStyle = vignette;
-  ctx.fillRect(0, 0, width, height);
   return plan;
 }
 

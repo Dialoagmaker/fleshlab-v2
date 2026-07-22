@@ -124,13 +124,7 @@ export function analyzeFinalImageComposition({ ctx, width, height, analysis = {}
   };
 }
 
-export function chooseCompositionAwareTypographyLayout({ ctx, width, height, analysis = {}, title = "" }) {
-  const titleWordCount = compact(title).split(" ").filter(Boolean).length;
-  const metrics = analyzeFinalImageComposition({ ctx, width, height, analysis });
-  const candidates = buildCandidateLayouts(width, height, titleWordCount, metrics.bodyBox)
-    .map(candidate => ({ ...candidate, score: scoreCandidate(candidate, ctx, width, height, metrics, titleWordCount) }))
-    .sort((a, b) => b.score - a.score);
-  const selected = candidates[0];
+function hydrateLayout(selected, candidates, metrics, width, height) {
   return {
     layoutName: selected.name,
     layoutMode: selected.mode,
@@ -139,7 +133,7 @@ export function chooseCompositionAwareTypographyLayout({ ctx, width, height, ana
     diagonal: Boolean(selected.diagonal),
     overlap: Boolean(selected.overlap),
     score: Math.round(selected.score),
-    candidates: candidates.slice(0, 4).map(item => ({ layout: item.name, score: Math.round(item.score), zone: rectToZone(item.box, width, height) })),
+    candidates: candidates.slice(0, 8).map(item => ({ layout: item.name, score: Math.round(item.score), zone: rectToZone(item.box, width, height) })),
     performerBoundingBox: rectToZone(metrics.performerBox, width, height),
     facePosition: rectToZone(metrics.faceBox, width, height),
     bodyPosition: rectToZone(metrics.bodyBox, width, height),
@@ -147,4 +141,17 @@ export function chooseCompositionAwareTypographyLayout({ ctx, width, height, ana
     visualBalance: metrics.visualBalance,
     availableNegativeSpace: metrics.availableNegativeSpace,
   };
+}
+
+export function getCompositionAwareTypographyLayouts({ ctx, width, height, analysis = {}, title = "" }) {
+  const titleWordCount = compact(title).split(" ").filter(Boolean).length;
+  const metrics = analyzeFinalImageComposition({ ctx, width, height, analysis });
+  const candidates = buildCandidateLayouts(width, height, titleWordCount, metrics.bodyBox)
+    .map(candidate => ({ ...candidate, score: scoreCandidate(candidate, ctx, width, height, metrics, titleWordCount) }))
+    .sort((a, b) => b.score - a.score);
+  return candidates.map(candidate => hydrateLayout(candidate, candidates, metrics, width, height));
+}
+
+export function chooseCompositionAwareTypographyLayout(args) {
+  return getCompositionAwareTypographyLayouts(args)[0];
 }
