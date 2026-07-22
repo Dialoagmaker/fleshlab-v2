@@ -15,6 +15,10 @@ export function shouldUseFleshlabKeyArtLanguage(text = "") {
 }
 
 export function resolveCampaignHeadline(campaign = {}) {
+  const directTitle = compact(campaign.campaignTitle || campaign.primaryTitle || campaign.campaignMetadata?.campaignTitle || "");
+  const directSource = compact(campaign.campaignTitleSource || campaign.titleSource || campaign.campaignMetadata?.campaignTitleSource || campaign.campaignMetadata?.titleSource || "");
+  if (directTitle && ["user", "project", "ai"].includes(directSource)) return directTitle;
+
   const curated = cleanMarketingCopy(
     campaign.posterTitle ||
     campaign.displayTitle ||
@@ -26,7 +30,7 @@ export function resolveCampaignHeadline(campaign = {}) {
   );
   if (curated) return curated;
 
-  const raw = compact(campaign.campaignTitle || campaign.primaryTitle || "");
+  const raw = directTitle;
   const text = `${raw} ${campaign.collection || ""} ${campaign.releaseName || ""} ${campaign.campaignLabel || ""}`.toLowerCase();
   if (!EXPLICIT_COPY.test(raw) && raw.length <= 44) return raw;
   if (/beach|ocean|island|summer|shore|coast/.test(text)) return "BEACH ESCAPE";
@@ -36,6 +40,30 @@ export function resolveCampaignHeadline(campaign = {}) {
   if (/bathroom|shower|steam|soap/.test(text)) return "STEAM CUT";
   if (/solo/.test(text)) return "SOLO DROP";
   return "FEATURE PRESENTATION";
+}
+
+export const KRAKEN_TITLE_BINDING_REGRESSION = {
+  userEnteredTitle: "Filipino Twink Soaps His Hole in Bathroom, Fingers Ass Until He Shoots",
+  forbiddenVisibleTitle: "STEAM CUT"
+};
+
+export function assertKrakenTitleBindingRegression() {
+  const visibleTitle = resolveCampaignHeadline({
+    campaignTitle: KRAKEN_TITLE_BINDING_REGRESSION.userEnteredTitle,
+    primaryTitle: KRAKEN_TITLE_BINDING_REGRESSION.userEnteredTitle,
+    campaignTitleSource: "user",
+    titleSource: "user",
+    collection: "Private Moments",
+    releaseName: "Bathroom Release"
+  });
+  console.assert(visibleTitle === KRAKEN_TITLE_BINDING_REGRESSION.userEnteredTitle, "Kraken title binding regression failed: user-entered campaignTitle was not rendered exactly.");
+  console.assert(visibleTitle !== KRAKEN_TITLE_BINDING_REGRESSION.forbiddenVisibleTitle, "Kraken title binding regression failed: fallback title STEAM CUT was rendered.");
+  return {
+    passed: visibleTitle === KRAKEN_TITLE_BINDING_REGRESSION.userEnteredTitle && visibleTitle !== KRAKEN_TITLE_BINDING_REGRESSION.forbiddenVisibleTitle,
+    visibleTitle,
+    expectedVisibleTitle: KRAKEN_TITLE_BINDING_REGRESSION.userEnteredTitle,
+    forbiddenVisibleTitle: KRAKEN_TITLE_BINDING_REGRESSION.forbiddenVisibleTitle
+  };
 }
 
 export function resolveCampaignSubtitle(campaign = {}) {

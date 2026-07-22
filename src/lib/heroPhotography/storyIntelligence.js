@@ -84,6 +84,7 @@ export function buildCampaignConcepts({ metadata = {}, blueprint = {}, campaignF
   const pool = conceptPools[story.territory] || conceptPools.exclusive;
   const performer = compact(metadata.performerName || blueprint.performerName || blueprint.creatorName || "");
   const campaignTitle = compact(metadata.campaignTitle || "");
+  const campaignTitleSource = metadata.source?.campaignTitle || "fallback";
   return pool.slice(0, 3).map((concept, index) => {
     const collection = compact(metadata.subtitle || "");
     const episode = compact(metadata.episode || "");
@@ -101,6 +102,8 @@ export function buildCampaignConcepts({ metadata = {}, blueprint = {}, campaignF
       base,
       campaignConceptId: `${safeSlug(campaignTitle)}-${index + 1}`,
       campaignTitle,
+      campaignTitleSource,
+      titleSource: campaignTitleSource,
       subtitle: collection,
       collection,
       seriesName: collection,
@@ -117,6 +120,8 @@ export function buildCampaignConcepts({ metadata = {}, blueprint = {}, campaignF
         campaignIdentity,
         heroWord,
         campaignTitle,
+        campaignTitleSource,
+        titleSource: campaignTitleSource,
         performer: performer || null,
         collection: collection || null,
         performerName: performer || null,
