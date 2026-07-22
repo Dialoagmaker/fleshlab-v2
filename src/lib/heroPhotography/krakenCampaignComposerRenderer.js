@@ -404,10 +404,8 @@ function drawTitle(ctx, title, zones, width, height, direction) {
   return { ...plan, boxes, visible, bottom: y };
 }
 
-function resolvePosterSubtitle(campaign = {}, direction = {}) {
-  const raw = compact(campaign.posterSubtitle || campaign.subtitle || campaign.optionalSubtitle || campaign.campaignLabel || "");
-  if (direction.referencePoster && (!raw || /hole|ass|finger|soap|shoot|explicit|hardcore|porn/i.test(raw))) return "BEHIND THE SCENES";
-  return raw;
+function resolvePosterSubtitle(campaign = {}) {
+  return compact(campaign.posterSubtitle || campaign.subtitle || campaign.optionalSubtitle || campaign.campaignLabel || "");
 }
 
 function drawPosterSubtitle(ctx, campaign, zones, width, height, direction, titleBottom) {
@@ -546,13 +544,8 @@ function finalTexture(ctx, width, height, zones, direction) {
   ctx.restore();
 }
 
-function resolvePosterTitle(campaign = {}, direction = {}) {
-  const raw = compact(campaign.posterTitle || campaign.displayTitle || campaign.campaignTitle || campaign.primaryTitle || "");
-  const explicitOrTooLong = /hole|ass|finger|fingers|soap|shoots|explicit|hardcore|porn/i.test(raw) || raw.length > 44;
-  if (!direction.referencePoster || !explicitOrTooLong) return raw;
-  const fallback = compact(campaign.collection || campaign.releaseName || campaign.campaignConceptTitle || campaign.campaignLabel || "");
-  if (fallback && !/hole|ass|finger|explicit|hardcore|porn/i.test(fallback) && fallback.length <= 34) return fallback.toUpperCase().includes("KRAKEN") ? fallback : `KRAKEN ${fallback}`;
-  return "KRAKEN INTO THE WILD";
+function resolvePosterTitle(campaign = {}) {
+  return compact(campaign.posterTitle || campaign.displayTitle || campaign.safeCampaignTitle || campaign.campaignTitle || campaign.primaryTitle || "");
 }
 
 function validateTitle(title, titlePlan) {
@@ -652,7 +645,7 @@ export async function renderKrakenCampaignComposerAsset({ image, analysis = {}, 
 
   for (const variant of createPolishVariants(format, campaign)) {
     const direction = applyPaletteToDirection({ ...baseDirection, polishVariant: variant.key }, palette);
-    const title = resolvePosterTitle(campaign, direction);
+    const title = resolvePosterTitle(campaign);
     const canvas = document.createElement("canvas");
     canvas.width = format.width;
     canvas.height = format.height;
