@@ -18,7 +18,7 @@ export default function PolicyEvidenceDiagnostics({ output }) {
         <div className="overflow-x-auto rounded-lg border border-border">
           <table className="w-full min-w-[640px] text-left">
             <thead className="bg-background/70 text-foreground"><tr><th className="p-2">Type</th><th className="p-2">Signal</th><th className="p-2">Weight</th><th className="p-2">Confidence</th><th className="p-2">Reason</th></tr></thead>
-            <tbody>{audit.evidence?.map(item => <tr key={item.id} className="border-t border-border"><td className="p-2">{item.type}</td><td className="p-2 text-foreground">{item.signal}</td><td className="p-2">{item.weight}</td><td className="p-2">{item.confidence}</td><td className="p-2">{item.reason}</td></tr>)}</tbody>
+            <tbody>{audit.evidence?.map(item => <tr key={item.id} className="border-t border-border"><td className="p-2">{item.type}{item.diagnosticOnly ? " · diagnostic" : ""}</td><td className="p-2 text-foreground">{item.signal}</td><td className="p-2">{item.weight}</td><td className="p-2">{item.confidence}</td><td className="p-2">{item.reason}</td></tr>)}</tbody>
           </table>
         </div>
         <div className="grid gap-2 md:grid-cols-4">

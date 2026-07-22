@@ -7,23 +7,31 @@ const TEXT_SIGNALS = [
   { phrase: "naked", category: "EXPLICIT_ADULT", weight: 0.52, reason: "Nudity wording appears in the creative/policy input." },
   { phrase: "visible genitals", category: "EXPLICIT_ADULT", weight: 0.66, reason: "Explicit anatomy wording appears in the creative/policy input." },
   { phrase: "visible nipples", category: "EXPLICIT_ADULT", weight: 0.58, reason: "Explicit anatomy wording appears in the creative/policy input." },
-  { phrase: "adult", category: "ADULT_COMMERCIAL", weight: 0.48, reason: "Adult-commercial wording appears in the creative/policy input." },
+  { phrase: "adult commercial", category: "ADULT_COMMERCIAL", weight: 0.48, reason: "Explicit adult-commercial wording appears in the creative/policy input." },
+  { phrase: "adult-oriented", category: "ADULT_COMMERCIAL", weight: 0.48, reason: "Explicit adult-oriented commercial wording appears in the creative/policy input." },
+  { phrase: "adult marketing", category: "ADULT_COMMERCIAL", weight: 0.44, reason: "Explicit adult-marketing wording appears in the creative/policy input." },
   { phrase: "onlyfans", category: "ADULT_COMMERCIAL", weight: 0.44, reason: "Creator-platform context can indicate adult-commercial positioning." },
-  { phrase: "lingerie", category: "ADULT_COMMERCIAL", weight: 0.4, reason: "Lingerie wording indicates adult-commercial or fashion-adjacent styling." },
-  { phrase: "underwear", category: "ADULT_COMMERCIAL", weight: 0.36, reason: "Underwear wording indicates adult-commercial or fashion-adjacent styling." },
-  { phrase: "bikini", category: "ADULT_COMMERCIAL", weight: 0.12, reason: "Bikini wording indicates swimwear styling, not explicit content by itself." }
+  { phrase: "lingerie", category: "SAFE_EDITORIAL", weight: 0.04, reason: "Lingerie styling is fashion-adjacent and remains safe editorial unless explicit adult-commercial wording is present." },
+  { phrase: "underwear", category: "SAFE_EDITORIAL", weight: 0.04, reason: "Underwear creative is canonical SAFE_EDITORIAL unless explicit adult-commercial wording is present." },
+  { phrase: "bikini", category: "SAFE_EDITORIAL", weight: 0.04, reason: "Bikini/swimwear styling is canonical SAFE_EDITORIAL unless explicit adult-commercial wording is present." }
 ];
 
 const CONTEXT_SIGNALS = [
-  { phrase: "performer", category: "ADULT_COMMERCIAL", weight: 0.08, reason: "Performer context is relevant but not explicit by itself." },
-  { phrase: "creator", category: "ADULT_COMMERCIAL", weight: 0.06, reason: "Creator-brand context is relevant but not explicit by itself." },
+  { phrase: "performer", category: "SAFE_EDITORIAL", weight: 0.03, reason: "Performer context is identity/credit metadata and is not adult-commercial evidence by itself." },
+  { phrase: "creator", category: "SAFE_EDITORIAL", weight: 0.03, reason: "Creator-brand context is identity/credit metadata and is not adult-commercial evidence by itself." },
   { phrase: "campaign", category: "SAFE_EDITORIAL", weight: 0.06, reason: "Campaign wording supports commercial/editorial intent." },
   { phrase: "fashion", category: "SAFE_EDITORIAL", weight: 0.08, reason: "Fashion wording supports safe editorial intent." },
   { phrase: "editorial", category: "SAFE_EDITORIAL", weight: 0.08, reason: "Editorial wording supports safe editorial intent." }
 ];
 
+function stableStringify(value) {
+  if (value === null || typeof value !== "object") return JSON.stringify(value ?? "");
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
+  return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(",")}}`;
+}
+
 function textOf(value) {
-  try { return JSON.stringify(value || {}).toLowerCase(); } catch (_) { return ""; }
+  try { return stableStringify(value || {}).toLowerCase(); } catch (_) { return ""; }
 }
 
 function evidenceId(type, signal, index) {
@@ -78,9 +86,10 @@ async function auditImageEvidence(file) {
       id: "IMAGE-skin-tone-exposure-estimate-0",
       type: "IMAGE",
       signal: `skin-tone exposure estimate ${(ratio * 100).toFixed(1)}%`,
-      category: "ADULT_COMMERCIAL",
-      weight: ratio > 0.38 ? 0.18 : 0.1,
-      reason: "Pixel sampling detected skin-tone exposure; this is not anatomy detection and does not prove explicit content.",
+      category: "SAFE_EDITORIAL",
+      weight: 0,
+      diagnosticOnly: true,
+      reason: "Pixel sampling detected skin-tone exposure; this is diagnostic only and cannot change the canonical category.",
       confidence: Number(Math.min(0.82, 0.52 + ratio).toFixed(2))
     }];
   } catch (_) {
@@ -90,7 +99,10 @@ async function auditImageEvidence(file) {
 
 function scoreEvidence(evidence) {
   const raw = { SAFE_EDITORIAL: 0.18, ADULT_COMMERCIAL: 0.02, EXPLICIT_ADULT: 0, UNSUPPORTED: 0 };
-  evidence.forEach(item => { raw[item.category] = (raw[item.category] || 0) + item.weight; });
+  evidence.forEach(item => {
+    if (item.diagnosticOnly) return;
+    raw[item.category] = (raw[item.category] || 0) + item.weight;
+  });
   const total = Object.values(raw).reduce((sum, value) => sum + value, 0) || 1;
   const scores = Object.fromEntries(Object.entries(raw).map(([category, value]) => [category, Number((value / total).toFixed(3))]));
   const ordered = Object.entries(scores).sort((a, b) => b[1] - a[1]);
@@ -111,11 +123,12 @@ function counterfactuals(evidence) {
   });
 }
 
-export async function runPolicyEvidenceAudit({ sourceFrameFile, productionBlueprint, instructions, campaignFamily, targetPlatform }) {
+export async function runPolicyEvidenceAudit({ sourceFrameFile, productionBlueprint, instructions, campaignFamily, targetPlatform, forcedImageEvidence = null }) {
   const text = `${textOf(productionBlueprint)} ${textOf(instructions)} ${(campaignFamily || "").toLowerCase()} ${(targetPlatform || "").toLowerCase()}`;
+  const imageEvidence = Array.isArray(forcedImageEvidence) ? forcedImageEvidence : await auditImageEvidence(sourceFrameFile);
   const evidence = [
     ...addTextEvidence(text, TEXT_SIGNALS, "TEXT"),
-    ...(await auditImageEvidence(sourceFrameFile)),
+    ...imageEvidence,
     ...addTextEvidence(text, CONTEXT_SIGNALS, "CONTEXT")
   ];
   const scored = scoreEvidence(evidence);
@@ -129,7 +142,7 @@ export async function runPolicyEvidenceAudit({ sourceFrameFile, productionBluepr
     confidence: scored.confidence,
     evidence,
     decisionTrace: {
-      weightedPath: evidence.map(item => ({ signal: item.signal, type: item.type, category: item.category, weight: item.weight })),
+      weightedPath: evidence.map(item => ({ signal: item.signal, type: item.type, category: item.category, weight: item.weight, diagnosticOnly: Boolean(item.diagnosticOnly) })),
       total: scored.scores,
       winningCategory: scored.winningCategory,
       margin: scored.margin,
