@@ -12,8 +12,40 @@ const PREFERRED_IMAGE_MODELS = [
 const MAX_DATA_URL_CHARS = 12_000_000;
 const MAX_REFERENCE_BYTES = 9_000_000;
 const MAX_AUTOMATIC_ATTEMPTS = 4;
-const RENDERING_CLASSIFICATIONS = ['SAFE_EDITORIAL', 'SAFE_PRODUCT', 'SAFE_BRAND', 'SAFE_PORTRAIT', 'LIFESTYLE', 'FITNESS', 'SWIMWEAR', 'UNDERWEAR', 'ADULT_MARKETING', 'EXPLICIT', 'UNSUPPORTED'];
-const DEFAULT_SAFE_CATEGORIES = ['SAFE_EDITORIAL', 'SAFE_PRODUCT', 'SAFE_BRAND', 'SAFE_PORTRAIT', 'LIFESTYLE', 'FITNESS', 'SWIMWEAR', 'UNDERWEAR'];
+const CANONICAL_CONTENT_TAXONOMY = {
+  SAFE_EDITORIAL: {
+    semanticMeaning: 'Non-explicit editorial, commercial, portrait, fitness, fashion, product, lifestyle, swimwear, and underwear creative.',
+    policyRisk: 'standard',
+    providerCompatibility: 'Allowed when provider supports general safe image-reference generation.',
+    externalProviderMapping: { openrouter: 'standard image policy', google_gemini: 'safe editorial image generation', openai_image: 'standard image generation', black_forest_labs: 'general image generation', bytedance_seed: 'general image generation' }
+  },
+  ADULT_COMMERCIAL: {
+    semanticMeaning: 'Adult-oriented commercial or suggestive marketing that is not explicit sexual content.',
+    policyRisk: 'restricted',
+    providerCompatibility: 'Allowed only when provider explicitly supports adult commercial imagery after governance checks.',
+    externalProviderMapping: { openrouter: 'provider-specific adult-commercial policy', google_gemini: 'not assumed', openai_image: 'not assumed', black_forest_labs: 'not assumed', bytedance_seed: 'adult-commercial support must be explicit' }
+  },
+  EXPLICIT_ADULT: {
+    semanticMeaning: 'Explicit adult sexual content or verified explicit adult production material.',
+    policyRisk: 'restricted_explicit',
+    providerCompatibility: 'Allowed only when provider explicitly supports explicit adult generation; ADULT_COMMERCIAL is incompatible unless explicitly upgraded.',
+    externalProviderMapping: { openrouter: 'explicit provider support required', google_gemini: 'not supported unless provider says explicit', openai_image: 'not supported unless provider says explicit', black_forest_labs: 'not supported unless provider says explicit', bytedance_seed: 'not supported unless provider says explicit' }
+  },
+  UNSUPPORTED: {
+    semanticMeaning: 'Blocked, unverified, unknown, or unsupported content category.',
+    policyRisk: 'blocked',
+    providerCompatibility: 'Never route externally.',
+    externalProviderMapping: { openrouter: 'blocked', google_gemini: 'blocked', openai_image: 'blocked', black_forest_labs: 'blocked', bytedance_seed: 'blocked' }
+  }
+};
+const CANONICAL_CATEGORY_ALIASES = {
+  SAFE_EDITORIAL: 'SAFE_EDITORIAL', COMMERCIAL_PORTRAIT: 'SAFE_EDITORIAL', EDITORIAL_COVER: 'SAFE_EDITORIAL', FASHION: 'SAFE_EDITORIAL', FITNESS: 'SAFE_EDITORIAL', TRAVEL: 'SAFE_EDITORIAL', PRODUCT: 'SAFE_EDITORIAL', SAFE_PRODUCT: 'SAFE_EDITORIAL', ART_DIRECTION: 'SAFE_EDITORIAL', SAFE_BRAND: 'SAFE_EDITORIAL', SAFE_PORTRAIT: 'SAFE_EDITORIAL', LIFESTYLE: 'SAFE_EDITORIAL', SWIMWEAR: 'SAFE_EDITORIAL', UNDERWEAR: 'SAFE_EDITORIAL',
+  ADULT_COMMERCIAL: 'ADULT_COMMERCIAL', ADULT_MARKETING: 'ADULT_COMMERCIAL', SUGGESTIVE_ADULT: 'ADULT_COMMERCIAL',
+  EXPLICIT: 'EXPLICIT_ADULT', EXPLICIT_ADULT: 'EXPLICIT_ADULT', EXPLICIT_VERIFIED_ADULT: 'EXPLICIT_ADULT',
+  UNSUPPORTED: 'UNSUPPORTED', BLOCKED_OR_UNVERIFIED: 'UNSUPPORTED'
+};
+const RENDERING_CLASSIFICATIONS = Object.keys(CANONICAL_CONTENT_TAXONOMY);
+const DEFAULT_SAFE_CATEGORIES = ['SAFE_EDITORIAL'];
 const ROUTING_WEIGHTS = { policy: 0.40, quality: 0.25, reliability: 0.15, runtime: 0.10, cost: 0.10 };
 const PROVIDER_FAILURE_MEMORY = new Map();
 const FAILURE_MEMORY_TTL_MS = 10 * 60 * 1000;
@@ -153,6 +185,7 @@ function publicFailureMessage(diagnostic) {
   if (diagnostic.category === 'NO_CREDITS') return 'Production capacity is temporarily unavailable. Continue locally or try again later.';
   if (diagnostic.category === 'VERIFICATION_REQUIRED') return 'Verified adult, consent, rights, and source checks are required before external production.';
   if (diagnostic.category === 'NO_COMPATIBLE_RENDERING_PIPELINE') return 'No approved production pipeline is currently compatible with this request. Continue locally.';
+  if (diagnostic.category === 'NO_PROVIDER_POLICY_SUPPORT') return 'No configured provider policy explicitly supports this canonical content category.';
   if (diagnostic.category === 'NO_COMPATIBLE_PROVIDER_AVAILABLE') return 'No currently configured rendering route supports both the required image-reference operation and the provider policy requirements.';
   if (diagnostic.category === 'UNSUPPORTED_REFERENCE_IMAGE' || diagnostic.category === 'UNSUPPORTED_IMAGE_INPUT') return 'No currently configured rendering route supports both the required image-reference operation and the provider policy requirements.';
   if (diagnostic.category === 'INVALID_PAYLOAD') return 'The selected frame could not be prepared for production. Try another frame.';
@@ -594,34 +627,23 @@ function canonicalCategoryToken(value) {
   return String(value || '').trim().toUpperCase().replace(/[^A-Z0-9]+/g, '_');
 }
 
+function normalizeCanonicalCategory(value, fallback = 'UNSUPPORTED') {
+  return CANONICAL_CATEGORY_ALIASES[canonicalCategoryToken(value)] || fallback;
+}
+
+function categoryPolicyRisk(value) {
+  return CANONICAL_CONTENT_TAXONOMY[normalizeCanonicalCategory(value)]?.policyRisk || 'blocked';
+}
+
+function canonicalTaxonomyRegistry() {
+  return Object.entries(CANONICAL_CONTENT_TAXONOMY).map(([canonicalCategory, definition]) => ({ canonicalCategory, ...definition }));
+}
+
 function normalizeContentClassification(input) {
   const inputObject = input && typeof input === 'object' ? input : null;
   const rawCategory = String(inputObject?.rawCategory || inputObject?.canonicalCategory || inputObject?.category || input || '').trim();
-  const token = canonicalCategoryToken(rawCategory);
-  const canonicalMap = {
-    EXPLICIT: 'EXPLICIT_ADULT',
-    EXPLICIT_ADULT: 'EXPLICIT_ADULT',
-    EXPLICIT_VERIFIED_ADULT: 'EXPLICIT_ADULT',
-    ADULT_COMMERCIAL: 'ADULT_COMMERCIAL',
-    ADULT_MARKETING: 'ADULT_COMMERCIAL',
-    SAFE_EDITORIAL: 'SAFE_EDITORIAL',
-    COMMERCIAL_PORTRAIT: 'SAFE_EDITORIAL',
-    EDITORIAL_COVER: 'SAFE_EDITORIAL',
-    FASHION: 'SAFE_EDITORIAL',
-    FITNESS: 'SAFE_EDITORIAL',
-    TRAVEL: 'SAFE_EDITORIAL',
-    PRODUCT: 'SAFE_EDITORIAL',
-    SAFE_PRODUCT: 'SAFE_EDITORIAL',
-    ART_DIRECTION: 'SAFE_EDITORIAL',
-    SAFE_BRAND: 'SAFE_EDITORIAL',
-    SAFE_PORTRAIT: 'SAFE_EDITORIAL',
-    LIFESTYLE: 'SAFE_EDITORIAL',
-    SWIMWEAR: 'SAFE_EDITORIAL',
-    UNDERWEAR: 'SAFE_EDITORIAL',
-    UNSUPPORTED: 'UNSUPPORTED'
-  };
-  const canonicalCategory = canonicalMap[token] || 'SAFE_EDITORIAL';
-  const policyRisk = ['EXPLICIT_ADULT', 'ADULT_COMMERCIAL'].includes(canonicalCategory) ? 'restricted' : canonicalCategory === 'UNSUPPORTED' ? 'blocked' : 'standard';
+  const canonicalCategory = normalizeCanonicalCategory(rawCategory, 'SAFE_EDITORIAL');
+  const policyRisk = categoryPolicyRisk(canonicalCategory);
   const normalized = {
     ...(inputObject || {}),
     rawCategory,
@@ -922,35 +944,94 @@ async function ensureRenderingProviderRegistry(base44, routes) {
   return await base44.asServiceRole.entities.RenderingProvider.list('priority', 500).catch(() => existing || []);
 }
 
+async function auditAndRepairCanonicalPolicyRegistry(base44, requestedCategory = null) {
+  const providers = await base44.asServiceRole.entities.RenderingProvider.list('priority', 500).catch(() => []);
+  const canonicalCategories = Object.keys(CANONICAL_CONTENT_TAXONOMY);
+  const updates = [];
+  const diff = [];
+  const auditedProviders = providers.map(provider => {
+    const before = {
+      supportedCanonicalCategories: Array.isArray(provider.supportedCanonicalCategories) ? provider.supportedCanonicalCategories : [],
+      unsupportedCanonicalCategories: Array.isArray(provider.unsupportedCanonicalCategories) ? provider.unsupportedCanonicalCategories : []
+    };
+    const legacySource = [...(provider.supported_categories || []), ...before.supportedCanonicalCategories];
+    const supportedCanonicalCategories = [...new Set(legacySource.map(category => normalizeCanonicalCategory(category)).filter(category => category !== 'UNSUPPORTED'))];
+    const unsupportedCanonicalCategories = [...new Set(before.unsupportedCanonicalCategories.map(category => normalizeCanonicalCategory(category)).filter(category => canonicalCategories.includes(category)))];
+    const after = { supportedCanonicalCategories, unsupportedCanonicalCategories };
+    if (safeJson(before) !== safeJson(after)) {
+      updates.push({ id: provider.id, ...after });
+      diff.push({ provider_id: provider.provider_id, provider_name: provider.provider_name, before, after });
+    }
+    const compatibilityMatrix = canonicalCategories.map(category => {
+      const relations = supportedCanonicalCategories.map(supported => categoryCompatibility(supported, category));
+      const allowed = relations.some(item => item.routeAllowed) && !unsupportedCanonicalCategories.includes(category);
+      const strongestRelation = allowed ? 'equivalent' : relations.find(item => item.relation === 'partially_compatible')?.relation || relations[0]?.relation || 'incompatible';
+      return { requestedCategory: category, supported: allowed, relation: unsupportedCanonicalCategories.includes(category) ? 'incompatible' : strongestRelation, relations };
+    });
+    return { provider_id: provider.provider_id, provider_name: provider.provider_name, enabled: provider.enabled, availability: provider.current_availability, supportedCanonicalCategories, unsupportedCanonicalCategories, compatibilityMatrix };
+  });
+  if (updates.length) await base44.asServiceRole.entities.RenderingProvider.bulkUpdate(updates);
+  const requestedCanonicalCategory = requestedCategory ? normalizeCanonicalCategory(requestedCategory) : null;
+  const supportingProviders = requestedCanonicalCategory ? auditedProviders.filter(provider => provider.enabled && provider.availability !== 'unavailable' && provider.compatibilityMatrix.find(item => item.requestedCategory === requestedCanonicalCategory)?.supported) : [];
+  return {
+    ok: true,
+    taxonomy: canonicalTaxonomyRegistry(),
+    auditedProviderCount: auditedProviders.length,
+    repairedProviderCount: updates.length,
+    diff,
+    requestedCategory: requestedCanonicalCategory,
+    requestedCategorySupport: requestedCanonicalCategory ? {
+      code: supportingProviders.length ? 'PROVIDER_POLICY_SUPPORT_FOUND' : 'NO_PROVIDER_POLICY_SUPPORT',
+      providerCount: supportingProviders.length,
+      providers: supportingProviders.map(provider => ({ provider_id: provider.provider_id, provider_name: provider.provider_name, supportedCanonicalCategories: provider.supportedCanonicalCategories }))
+    } : null,
+    providers: auditedProviders
+  };
+}
+
 async function loadRenderingHistory(base44) {
   return await base44.asServiceRole.entities.RenderingAttempt.list('-created_date', 500).catch(() => []);
 }
 
 function canonicalCategoriesFromLegacy(categories = []) {
-  return [...new Set((Array.isArray(categories) ? categories : []).map(category => normalizeContentClassification({ rawCategory: category, source: 'provider_registry' }).canonicalCategory))];
+  return [...new Set((Array.isArray(categories) ? categories : []).map(category => normalizeCanonicalCategory(category)).filter(category => CANONICAL_CONTENT_TAXONOMY[category]))];
+}
+
+function categoryCompatibility(providerCategory, requestedCategory) {
+  const providerCanonical = normalizeCanonicalCategory(providerCategory);
+  const requestedCanonical = normalizeCanonicalCategory(requestedCategory);
+  if (providerCanonical === requestedCanonical && providerCanonical !== 'UNSUPPORTED') return { providerCanonical, requestedCanonical, relation: 'equivalent', routeAllowed: true, reason: 'CANONICAL_CATEGORY_EXACT_MATCH' };
+  if (providerCanonical === 'ADULT_COMMERCIAL' && requestedCanonical === 'EXPLICIT_ADULT') return { providerCanonical, requestedCanonical, relation: 'incompatible', routeAllowed: false, reason: 'ADULT_COMMERCIAL_DOES_NOT_AUTHORIZE_EXPLICIT_ADULT' };
+  if (providerCanonical === 'EXPLICIT_ADULT' && requestedCanonical === 'ADULT_COMMERCIAL') return { providerCanonical, requestedCanonical, relation: 'partially_compatible', routeAllowed: false, reason: 'EXPLICIT_SUPPORT_IS_STRONGER_BUT_NOT_ASSUMED_FOR_ADULT_COMMERCIAL_WITHOUT_PROVIDER_POLICY' };
+  if (providerCanonical === 'UNSUPPORTED' || requestedCanonical === 'UNSUPPORTED') return { providerCanonical, requestedCanonical, relation: 'incompatible', routeAllowed: false, reason: 'UNSUPPORTED_CATEGORY_NEVER_ROUTES' };
+  return { providerCanonical, requestedCanonical, relation: 'incompatible', routeAllowed: false, reason: 'CANONICAL_SEMANTICS_DO_NOT_MATCH' };
 }
 
 function providerSupportsClassification(provider, classification) {
-  const canonicalCategory = typeof classification === 'object' ? classification.canonicalCategory : normalizeContentClassification(classification).canonicalCategory;
+  const canonicalCategory = typeof classification === 'object' ? normalizeCanonicalCategory(classification.canonicalCategory || classification.category) : normalizeCanonicalCategory(classification);
   const supportedCanonicalCategories = Array.isArray(provider?.supportedCanonicalCategories) && provider.supportedCanonicalCategories.length
-    ? provider.supportedCanonicalCategories
+    ? canonicalCategoriesFromLegacy(provider.supportedCanonicalCategories)
     : canonicalCategoriesFromLegacy(provider?.supported_categories || []);
-  const unsupportedCanonicalCategories = Array.isArray(provider?.unsupportedCanonicalCategories) ? provider.unsupportedCanonicalCategories : [];
+  const unsupportedCanonicalCategories = Array.isArray(provider?.unsupportedCanonicalCategories) ? canonicalCategoriesFromLegacy(provider.unsupportedCanonicalCategories) : [];
+  const compatibilityRelations = supportedCanonicalCategories.map(category => categoryCompatibility(category, canonicalCategory));
   const baseRules = [
     { rule: 'PROVIDER_EXISTS', result: provider ? 'PASS' : 'FAIL', reason: provider ? null : 'PROVIDER_REGISTRY_ENTRY_MISSING' },
     { rule: 'PROVIDER_ENABLED', result: provider?.enabled ? 'PASS' : 'FAIL', reason: provider?.enabled ? null : 'PROVIDER_DISABLED' },
     { rule: 'PROVIDER_AVAILABLE', result: provider?.current_availability !== 'unavailable' ? 'PASS' : 'FAIL', reason: provider?.current_availability !== 'unavailable' ? null : 'PROVIDER_UNAVAILABLE' }
   ];
   const unsupportedMatch = unsupportedCanonicalCategories.includes(canonicalCategory);
-  const supportedMatch = supportedCanonicalCategories.includes(canonicalCategory);
+  const allowedMatch = compatibilityRelations.find(item => item.routeAllowed);
+  const partialMatch = compatibilityRelations.find(item => item.relation === 'partially_compatible');
   const categoryRule = unsupportedMatch
-    ? { rule: 'CANONICAL_CATEGORY_POLICY', result: 'FAIL', reason: 'CATEGORY_EXPLICITLY_UNSUPPORTED', canonicalCategory, supportedCanonicalCategories, unsupportedCanonicalCategories }
-    : supportedMatch
-      ? { rule: 'CANONICAL_CATEGORY_POLICY', result: 'PASS', reason: null, canonicalCategory, supportedCanonicalCategories, unsupportedCanonicalCategories }
-      : { rule: 'CANONICAL_CATEGORY_POLICY', result: 'POLICY_COMPATIBILITY_UNKNOWN', reason: 'CATEGORY_NOT_SUPPORTED', canonicalCategory, supportedCanonicalCategories, unsupportedCanonicalCategories };
+    ? { rule: 'CANONICAL_CATEGORY_POLICY', result: 'FAIL', reason: 'CATEGORY_EXPLICITLY_UNSUPPORTED', canonicalCategory, supportedCanonicalCategories, unsupportedCanonicalCategories, compatibilityRelations }
+    : allowedMatch
+      ? { rule: 'CANONICAL_CATEGORY_POLICY', result: 'PASS', reason: null, canonicalCategory, supportedCanonicalCategories, unsupportedCanonicalCategories, compatibilityRelations }
+      : partialMatch
+        ? { rule: 'CANONICAL_CATEGORY_POLICY', result: 'PARTIAL_COMPATIBILITY_NOT_ALLOWED', reason: partialMatch.reason, canonicalCategory, supportedCanonicalCategories, unsupportedCanonicalCategories, compatibilityRelations }
+        : { rule: 'CANONICAL_CATEGORY_POLICY', result: 'NO_PROVIDER_POLICY_SUPPORT', reason: 'CATEGORY_NOT_SUPPORTED', canonicalCategory, supportedCanonicalCategories, unsupportedCanonicalCategories, compatibilityRelations };
   const rules = [...baseRules, categoryRule];
   const pass = Boolean(provider && provider.enabled && provider.current_availability !== 'unavailable' && categoryRule.result === 'PASS');
-  return { pass, result: categoryRule.result, reason: pass ? null : (rules.find(rule => rule.result === 'FAIL')?.reason || categoryRule.reason), supportedCanonicalCategories, unsupportedCanonicalCategories, policyRules: rules };
+  return { pass, result: categoryRule.result, reason: pass ? null : (rules.find(rule => rule.result === 'FAIL')?.reason || categoryRule.reason), supportedCanonicalCategories, unsupportedCanonicalCategories, compatibilityRelations, policyRules: rules };
 }
 
 function historyStats(attempts, providerId, classification) {
@@ -999,6 +1080,7 @@ async function rankRenderingRoutes(base44, routes, classification, contentClassi
         policyCompatibility: policyEvaluation.result,
         technicalRules: route.technicalRules || [],
         policyRules: policyEvaluation.policyRules,
+        compatibilityRelations: policyEvaluation.compatibilityRelations,
         supportedCanonicalCategories: policyEvaluation.supportedCanonicalCategories,
         unsupportedCanonicalCategories: policyEvaluation.unsupportedCanonicalCategories
       });
@@ -1286,7 +1368,7 @@ async function generateCover(base44, apiKey, body, user, req) {
   const routingPlan = await rankRenderingRoutes(base44, policyRouting.routes, classificationCategory, contentClassification);
   const allRejectedRoutes = [...capabilityRejectedRoutes, ...routingPlan.rejectedRoutes];
   if (!routingPlan.routes.length) {
-    const diagnostic = { category: 'NO_COMPATIBLE_PROVIDER_AVAILABLE', reason: 'CATEGORY_NOT_SUPPORTED', message: 'No approved route explicitly supports the canonical content category.', retryable: false };
+    const diagnostic = { category: 'NO_PROVIDER_POLICY_SUPPORT', reason: 'CATEGORY_NOT_SUPPORTED', message: 'No approved route explicitly supports the canonical content category.', retryable: false };
     await saveRoutingAudit(base44, {
       generation_job_id: generationJobId,
       content_classification: classificationCategory,
@@ -1298,7 +1380,7 @@ async function generateCover(base44, apiKey, body, user, req) {
       output_received: false,
       reason: diagnostic.message
     });
-    return json({ ok: false, error: publicFailureMessage(diagnostic), code: 'NO_COMPATIBLE_PROVIDER_AVAILABLE', stage: 'Provider Intelligence', generation_job_id: generationJobId, requiredOperation, contentClassification, content_classification: classificationCategory, eligibleRoutes: 0, rejectedRoutes: allRejectedRoutes, requestSent: false, request_sent: false, output_received: false, diagnostics: diagnostic, verification_mode: privateDevelopmentAttestation ? 'PRIVATE_DEVELOPMENT' : 'STANDARD', private_development_mode: privateDevelopment, development_attestation: privateDevelopmentAttestation, provider_intelligence: { stage: 'Provider Intelligence', contentClassification, requiredOperation, routeCapabilities: discoveredRoutes.map(route => route.route_capability), rejectedRoutes: allRejectedRoutes }, photographer_attempts: [], attempt_diagnostics: [], stage_trace: { frame_extracted: true, image_encoded: true, payload_created: false, request_sent: false, response_received: false, hero_image_decoded: false, preview_rendered: false } }, 409);
+    return json({ ok: false, error: publicFailureMessage(diagnostic), code: 'NO_PROVIDER_POLICY_SUPPORT', stage: 'Provider Intelligence', generation_job_id: generationJobId, requiredOperation, contentClassification, content_classification: classificationCategory, eligibleRoutes: 0, rejectedRoutes: allRejectedRoutes, requestSent: false, request_sent: false, output_received: false, diagnostics: diagnostic, verification_mode: privateDevelopmentAttestation ? 'PRIVATE_DEVELOPMENT' : 'STANDARD', private_development_mode: privateDevelopment, development_attestation: privateDevelopmentAttestation, provider_intelligence: { stage: 'Provider Intelligence', contentClassification, requiredOperation, routeCapabilities: discoveredRoutes.map(route => route.route_capability), rejectedRoutes: allRejectedRoutes }, photographer_attempts: [], attempt_diagnostics: [], stage_trace: { frame_extracted: true, image_encoded: true, payload_created: false, request_sent: false, response_received: false, hero_image_decoded: false, preview_rendered: false } }, 409);
   }
 
   await saveRoutingAudit(base44, {
@@ -1631,6 +1713,7 @@ Deno.serve(async (req) => {
       return json({ ok: true, verification_mode: status.active ? 'PRIVATE_DEVELOPMENT' : 'STANDARD', private_development_mode: status, development_attestation: buildPrivateDevelopmentAttestation(status, new Date()) });
     }
     if (action === 'audit' || action === 'health') return json({ ...(await auditOpenRouter(base44, apiKey)), private_development_mode: privateDevelopmentStatus(req) });
+    if (action === 'canonical_policy_audit') return json(await auditAndRepairCanonicalPolicyRegistry(base44, body.requested_category || body.requestedCategory || null));
     if (action === 'route_capabilities') return json({ ok: true, requiredOperation: buildRequiredOperation(body.aspect_ratio || '16:9'), routes: await discoverCompatibleImageRoutes(apiKey), private_development_mode: privateDevelopmentStatus(req) });
     if (action === 'self_test') return await runOpenRouterSelfTest(base44, apiKey, user, req);
     if (action === 'generate') return await generateCover(base44, apiKey, body, user, req);
