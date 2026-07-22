@@ -1,5 +1,6 @@
 import { FLESHLAB_BRAND_IDENTITY } from "@/lib/aiMediaStudio/brandIdentityEngine";
 import { createCompositionPlan } from "@/lib/heroPhotography/compositionEngine";
+import { createLayerPlan } from "@/lib/heroPhotography/layerCompositionEngine";
 
 let logoPromise;
 function loadLogo() {
@@ -392,13 +393,30 @@ function drawFeatureStrip(ctx, campaign, width, height, mood) {
   });
 }
 
-async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, campaign, format, compositionPlan) {
-  const plan = compositionPlan || createCompositionPlan({ analysis, format, campaign });
-  const graphic = toPx(plan.graphicZone, width, height);
-  const photo = toPx(plan.photoZone, width, height);
-  const titleOnLeft = plan.titleZone === "LEFT";
-  drawDistressedField(ctx, width, height, mood);
+function drawLayerBackgroundExtension(ctx, image, width, height, plan, mood) {
+  ctx.save();
+  ctx.filter = "blur(26px) brightness(38%) contrast(150%) saturate(115%)";
+  coverImage(ctx, image, width, height, plan.subjectFocus, plan.cropZoom * 1.08);
+  ctx.restore();
+  ctx.fillStyle = mood.grade;
+  ctx.fillRect(0, 0, width, height);
+}
 
+function drawLayerAtmosphere(ctx, width, height, mood) {
+  const haze = ctx.createRadialGradient(width * 0.62, height * 0.42, 0, width * 0.62, height * 0.42, width * 0.8);
+  haze.addColorStop(0, "rgba(255,255,255,0.08)");
+  haze.addColorStop(0.28, "rgba(240,24,61,0.12)");
+  haze.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = haze;
+  ctx.fillRect(0, 0, width, height);
+  ctx.save();
+  ctx.globalAlpha = 0.22;
+  ctx.fillStyle = mood.secondary;
+  for (let i = 0; i < 120; i += 1) ctx.fillRect((i * 83) % width, (i * 41) % height, 1, 1);
+  ctx.restore();
+}
+
+function drawLayerPhoto(ctx, image, width, height, plan, photo) {
   ctx.save();
   ctx.beginPath();
   if (plan.dominantSide === "RIGHT") {
@@ -414,9 +432,62 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
   }
   ctx.closePath();
   ctx.clip();
-  ctx.filter = "brightness(84%) contrast(146%) saturate(108%)";
+  ctx.filter = "brightness(82%) contrast(150%) saturate(110%)";
   coverImageRect(ctx, image, photo, plan.subjectFocus, plan.cropZoom);
   ctx.restore();
+}
+
+function drawLayerSubjectMask(ctx, image, width, height, plan, photo) {
+  const cx = photo.x + photo.w * (plan.subjectFocus.x > 0.5 ? 0.58 : 0.42);
+  const cy = height * 0.48;
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, photo.w * 0.28, height * 0.5, 0, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.shadowColor = "rgba(0,0,0,0.8)";
+  ctx.shadowBlur = width * 0.035;
+  ctx.filter = "brightness(99%) contrast(132%) saturate(108%)";
+  coverImageRect(ctx, image, photo, plan.subjectFocus, plan.cropZoom);
+  ctx.restore();
+}
+
+function drawLayerForegroundFx(ctx, width, height, mood, plan) {
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  const streak = ctx.createLinearGradient(0, height * 0.15, width, height * 0.75);
+  streak.addColorStop(0, "rgba(255,255,255,0)");
+  streak.addColorStop(0.48, "rgba(255,255,255,0.15)");
+  streak.addColorStop(0.52, "rgba(240,24,61,0.28)");
+  streak.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = streak;
+  ctx.translate(plan.titleZone === "LEFT" ? width * 0.08 : -width * 0.12, 0);
+  ctx.rotate(plan.titleZone === "LEFT" ? -0.12 : 0.12);
+  ctx.fillRect(0, height * 0.32, width * 1.15, Math.max(18, height * 0.045));
+  ctx.restore();
+}
+
+async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, campaign, format, compositionPlan) {
+  const plan = compositionPlan || createCompositionPlan({ analysis, format, campaign });
+  plan.layerPlan = createLayerPlan({ compositionPlan: plan, analysis, format });
+  const graphic = toPx(plan.graphicZone, width, height);
+  const photo = toPx(plan.photoZone, width, height);
+  const titleOnLeft = plan.titleZone === "LEFT";
+
+  drawLayerBackgroundExtension(ctx, image, width, height, plan, mood);
+  drawLayerAtmosphere(ctx, width, height, mood);
+
+  ctx.save();
+  ctx.beginPath();
+  if (titleOnLeft) {
+    ctx.rect(0, 0, graphic.w + width * 0.14, height);
+  } else {
+    ctx.rect(graphic.x - width * 0.14, 0, width - graphic.x + width * 0.14, height);
+  }
+  ctx.clip();
+  drawDistressedField(ctx, width, height, mood);
+  ctx.restore();
+
+  drawLayerPhoto(ctx, image, width, height, plan, photo);
 
   const blend = titleOnLeft
     ? ctx.createLinearGradient(photo.x - width * 0.1, 0, photo.x + width * 0.16, 0)
@@ -473,11 +544,15 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
   }
   ctx.shadowBlur = 0;
 
+  drawLayerSubjectMask(ctx, image, width, height, plan, photo);
+
   ctx.font = font(Math.max(14, width * 0.015), "Inter", 950);
   ctx.fillStyle = "rgba(255,255,255,0.86)";
   if (titleOnLeft) drawTrackingText(ctx, `${upper(campaign.performerName || campaign.creatorName)} SOLO`, safeX, height * 0.72, Math.max(1.4, width * 0.0015), maxTextW);
   else ctx.fillText(`${upper(campaign.performerName || campaign.creatorName)} SOLO`, safeX, height * 0.72, maxTextW);
   ctx.textAlign = "left";
+
+  drawLayerForegroundFx(ctx, width, height, mood, plan);
   drawFeatureStrip(ctx, campaign, width, height, mood);
 
   const vignette = ctx.createRadialGradient(width * 0.68, height * 0.46, height * 0.05, width * 0.68, height * 0.46, width * 0.72);
@@ -532,6 +607,7 @@ export async function renderPremiumCampaignAsset({ image, analysis, format, camp
     campaignConceptId: campaign.campaignConceptId,
     brandPlan: { family: mood.label, designSystem: "FLESHLAB Creative Director Renderer", mood: mood.label, layout: { legacy: legacyLayout, compositionPlan }, graphicLanguage: "creative_director_key_art", creativeConcept: compositionPlan.creativeConcept, brandDnaRules: compositionPlan.brandDnaRules },
     compositionPlan,
+    layerPlan: compositionPlan.layerPlan,
     typographyWarnings: [],
     campaignMetadata: campaign.campaignMetadata,
     downstreamStage: "Final Key Art",
