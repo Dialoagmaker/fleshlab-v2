@@ -23,6 +23,7 @@ export const openRouterHeroProvider = {
         sourceAssetId: renderContext.sourceAssetId || "selected-hero-frame",
         blueprintExecutionHash: renderContext.blueprintExecutionHash || "",
         editorialIntent: providerIntelligencePlan?.editorialIntent,
+        policyEvidenceAudit: providerIntelligencePlan?.policyEvidenceAudit,
         policyClassification: providerIntelligencePlan?.policyClassification,
         contentClassification: providerIntelligencePlan?.policyClassification || providerIntelligencePlan?.contentClassification,
         providerIntelligence: providerIntelligencePlan,
