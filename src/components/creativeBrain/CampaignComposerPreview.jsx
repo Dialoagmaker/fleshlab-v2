@@ -3,6 +3,7 @@ import { CheckCircle2, Loader2, Palette } from "lucide-react";
 import CampaignAssetGrid from "@/components/aiMediaStudio/campaignV1/CampaignAssetGrid";
 import { composeCampaignFromHero, getCampaignMetadataSuggestion, mergeCampaignMetadata } from "@/lib/heroPhotography/campaignComposer";
 import CampaignDetailsForm from "./CampaignDetailsForm";
+import CampaignComposerComparison from "./CampaignComposerComparison";
 
 const METADATA_FIELDS = ["campaignTitle", "performerName", "subtitle", "cta", "campaignLabel", "releaseName"];
 
@@ -54,7 +55,7 @@ export default function CampaignComposerPreview({ output, pipeline, campaignFami
     const savedMetadata = readSavedMetadata(campaignFamily);
     composeCampaignFromHero(output, pipeline, campaignFamily, { userMetadata: metadata, savedMetadata })
       .then(result => {
-        urlsRef.current = result.visualAssets.map(asset => asset.url);
+        urlsRef.current = [...(result.currentVisualAssets || []), ...(result.visualAssets || [])].map(asset => asset.url);
         setComposer(result);
       })
       .catch(err => setError(err?.message || "Campaign Composer failed."))
@@ -86,6 +87,7 @@ export default function CampaignComposerPreview({ output, pipeline, campaignFami
       {loading && <div className="mt-4 flex items-center gap-2 rounded-lg border border-border bg-secondary/30 p-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Composing platform assets without regenerating Hero Photography</div>}
       {error && <div className="mt-4 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
       {composer?.downstreamReady && <div className="mt-4 flex items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-200"><CheckCircle2 className="h-4 w-4" />Campaign output is available to downstream Campaign Assets.</div>}
+      {composer?.visualAssets?.length > 0 && <CampaignComposerComparison currentAssets={composer.currentVisualAssets} improvedAssets={composer.visualAssets} />}
       {composer?.visualAssets?.length > 0 && <div className="mt-5"><CampaignAssetGrid assets={composer.visualAssets} /></div>}
     </section>
   );

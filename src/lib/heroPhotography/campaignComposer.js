@@ -1,6 +1,7 @@
 import { analyzePosterImage } from "@/lib/aiMediaStudio/posterAnalysis";
 import { createArtDirectionPlan } from "@/lib/aiMediaStudio/artDirectionEngine";
 import { FLESHLAB_BRAND_IDENTITY } from "@/lib/aiMediaStudio/brandIdentityEngine";
+import { renderPremiumCampaignAsset } from "@/lib/heroPhotography/premiumCampaignDesignSystem";
 
 export const HERO_CAMPAIGN_FORMATS = [
   { key: "youtube_thumbnail", label: "YouTube Thumbnail", width: 1280, height: 720, role: "thumbnail" },
@@ -235,7 +236,7 @@ function campaignDataFromOutput(output, pipeline, campaignFamily, metadata = {})
   };
 }
 
-async function renderAsset(image, analysis, format, campaign) {
+async function renderCurrentAsset(image, analysis, format, campaign) {
   const plan = createArtDirectionPlan({ heroImage: image, analysis, brandIdentity: FLESHLAB_BRAND_IDENTITY, campaignBrief: campaign, campaignTitle: campaign.campaignTitle, creatorName: campaign.performerName, seriesName: campaign.seriesName, primaryCTA: campaign.primaryCTA, secondaryCTA: "Join FLESHLAB", platform: format.key, aspectRatio: `${format.width}:${format.height}`, releaseType: campaign.releaseType, campaignGoal: campaign.campaignGoal, emotionalTone: campaign.emotionalTone, creativeDirection: format.key === "x_banner" ? "luxury_editorial" : format.key === "ppv_cover" ? "streetwear_drop" : undefined, format });
   const canvas = document.createElement("canvas");
   canvas.width = format.width;
@@ -261,8 +262,12 @@ export async function composeCampaignFromHero(output, pipeline, campaignFamily, 
   let analysis = fallbackAnalysis;
   try { analysis = { ...fallbackAnalysis, ...(await analyzePosterImage(image)) }; } catch { analysis = fallbackAnalysis; }
   const campaignData = campaignDataFromOutput(output, pipeline, campaignFamily, metadata);
+  const currentVisualAssets = [];
   const visualAssets = [];
-  for (const format of HERO_CAMPAIGN_FORMATS) visualAssets.push(await renderAsset(image, analysis, format, campaignData));
-  const typographyWarnings = visualAssets.flatMap(asset => asset.typographyWarnings || []);
-  return { campaignId: campaignData.base, campaignData, campaignMetadata: campaignData.campaignMetadata, sourceHeroImage: output.heroImage, visualAssets, typographyWarnings, createdAt: new Date().toISOString(), pipeline: ["Hero Photography", "Art Direction", "Brand Identity", "Typography Engine", "Campaign Composer", "Campaign Assets"], downstreamReady: visualAssets.length === HERO_CAMPAIGN_FORMATS.length };
+  for (const format of HERO_CAMPAIGN_FORMATS) {
+    currentVisualAssets.push(await renderCurrentAsset(image, analysis, format, campaignData));
+    visualAssets.push(await renderPremiumCampaignAsset({ image, analysis, format, campaign: campaignData }));
+  }
+  const typographyWarnings = [...currentVisualAssets, ...visualAssets].flatMap(asset => asset.typographyWarnings || []);
+  return { campaignId: campaignData.base, campaignData, campaignMetadata: campaignData.campaignMetadata, sourceHeroImage: output.heroImage, currentVisualAssets, visualAssets, typographyWarnings, createdAt: new Date().toISOString(), pipeline: ["Hero Photography", "Premium Campaign Design System", "Brand Graphic Language", "Editorial Typography", "Campaign Composer", "Campaign Assets"], downstreamReady: visualAssets.length === HERO_CAMPAIGN_FORMATS.length };
 }
