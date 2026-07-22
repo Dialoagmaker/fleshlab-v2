@@ -16,7 +16,7 @@ export default function CampaignAssetGrid({ assets = [] }) {
               <div>
                 <p className="break-all text-sm font-semibold text-foreground">{asset.filename}</p>
                 <p className="text-xs text-muted-foreground">{formatBytes(asset.size)}{asset.width && asset.height ? ` · ${asset.width}×${asset.height}` : ""}</p>
-                {asset.brandPlan && <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-primary">{asset.brandPlan.family} · {asset.brandPlan.logoPlacement}</p>}
+                {asset.brandPlan && <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-primary">{asset.brandPlan.family} · {asset.brandPlan.artDirectionPlan?.strategy || "art-directed"}</p>}
               </div>
               <Badge variant="outline">{asset.status}</Badge>
             </div>

@@ -21,9 +21,9 @@ function buildConsensus(campaign) {
     emotionalHook: data.commercialPromise,
     heroStrategy: "protect face/body features, use negative space for logo, title, creator and CTA hierarchy",
     visualLanguage: "official FLESHLAB red/black/cream identity with adaptive professional layout families",
-    brandLanguage: "Official logo, AMATEUR WINS lockup, creator branding, title hierarchy and CTA integrated into every format",
-    typographySystem: "Bebas Neue display hierarchy with Inter creator/CTA support and safe-margin wrapping",
-    marketingPsychology: "instant brand recognition plus creator-specific conversion message",
+    brandLanguage: "Brand Identity Engine supplies official logo, AMATEUR WINS lockup, typography, color and CTA restrictions; Art Direction Engine decides executable staging per asset.",
+    typographySystem: "Bebas Neue display hierarchy with Inter creator/CTA support, line-break planning and platform-specific scale intent",
+    marketingPsychology: "art-directed hierarchy balances subject recognition, brand recall and conversion intent per platform",
     sourceFrame: campaign.brandSystem.sourceFrame,
   };
 }
