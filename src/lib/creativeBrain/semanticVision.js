@@ -1,4 +1,5 @@
 import { base44 } from "@/api/base44Client";
+import { uploadApprovedHeroFrame } from "@/lib/creativeBrain/heroFrameUploadAdapter";
 
 const fact = (type) => ({ type: "object", properties: { value: { type }, confidence: { type: "number" }, source: { type: "string" } }, required: ["value", "confidence", "source"] });
 const stringFact = fact("string");
@@ -19,11 +20,10 @@ export const SEMANTIC_IMAGE_FACTS_SCHEMA = {
 };
 
 export async function analyzeSemanticVision(file) {
-  const uploaded = await base44.integrations.Core.UploadPrivateFile({ file });
-  const signed = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: uploaded.file_uri, expires_in: 900 });
+  const uploaded = await uploadApprovedHeroFrame(file, { consentGranted: true });
   const result = await base44.integrations.Core.InvokeLLM({
     prompt: `Analyze only the visible semantic content of this single uploaded image. Return SemanticImageFacts JSON only. Every field must include value, confidence 0-1, and source exactly semantic_vision. Do not create a production blueprint. Do not write prompts. Do not invent names, identities, exact locations, relationships, dates, or events. If uncertain, lower confidence and add the issue to uncertainty_or_ambiguity.`,
-    file_urls: [signed.signed_url],
+    file_urls: [uploaded.signed_url],
     response_json_schema: SEMANTIC_IMAGE_FACTS_SCHEMA
   });
   return {
@@ -32,6 +32,6 @@ export async function analyzeSemanticVision(file) {
     output_type: "SemanticImageFacts",
     schema_version: "2.0",
     provider_disclosure: { integration: "Base44 Core InvokeLLM", model: "automatic", provider: "provider not exposed by Base44" },
-    privacy: { source_file_upload: "private", temporary_signed_url_seconds: 900, public_url_created: false }
+    privacy: { source_file_upload: "request-bound private Hero Frame", temporary_signed_url_seconds: uploaded.expires_in || 900, public_url_created: false, request_id_revoked_after_upload: true, file_uri: uploaded.file_uri }
   };
 }

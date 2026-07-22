@@ -1,6 +1,6 @@
 let installed = false;
 let approvedHeroRenderSendDepth = 0;
-let approvedHeroFrameUploadDepth = 0;
+const approvedHeroFrameUploadRequests = new Map();
 
 const HERO_RENDER_CHANNEL = "approved_hero_frame_render";
 const HERO_FRAME_UPLOAD_POLICY = {
@@ -33,12 +33,43 @@ function hasHeroFramePolicy(value) {
     value.stage === HERO_FRAME_UPLOAD_POLICY.stage;
 }
 
+function hasHeroFrameUploadMetadata(value) {
+  if (!hasHeroFramePolicy(value)) return false;
+  return typeof value.requestId === "string" && value.requestId.length >= 8 && value.consentGranted === true;
+}
+
+function metadataMatchesApproval(value, approval) {
+  return approval && value.assetType === approval.assetType &&
+    value.purpose === approval.purpose &&
+    value.origin === approval.origin &&
+    value.stage === approval.stage &&
+    value.requestId === approval.requestId &&
+    value.consentGranted === true;
+}
+
+function isApprovedHeroFrameUploadPayload(value, seen = new WeakSet()) {
+  if (!value || typeof value !== "object") return false;
+  if (seen.has(value)) return false;
+  seen.add(value);
+  if (hasHeroFrameUploadMetadata(value)) {
+    const approval = approvedHeroFrameUploadRequests.get(value.requestId);
+    const mimeType = value.mimeType || value.mime_type || "";
+    const dataUrl = value.fileDataUrl || value.file_data_url || "";
+    return metadataMatchesApproval(value, approval) &&
+      value.endpoint === "uploadApprovedHeroFrame" &&
+      ["image/png", "image/jpeg", "image/webp"].includes(mimeType) &&
+      /^data:image\/(png|jpeg|webp);base64,/i.test(dataUrl) &&
+      !hasForbiddenHeroRenderKeys({ ...value, fileDataUrl: undefined, file_data_url: undefined });
+  }
+  return Object.values(value).some(entry => isApprovedHeroFrameUploadPayload(entry, seen));
+}
+
 function isApprovedHeroFrameAsset(value, seen = new WeakSet()) {
   if (!value || typeof value !== "object") return false;
   if (seen.has(value)) return false;
   seen.add(value);
   if (hasHeroFramePolicy(value)) {
-    const mimeType = value.type || value.mime_type || "";
+    const mimeType = value.type || value.mime_type || value.mimeType || "";
     return !mimeType || mimeType.startsWith("image/");
   }
   return Object.values(value).some(entry => isApprovedHeroFrameAsset(entry, seen));
@@ -46,7 +77,6 @@ function isApprovedHeroFrameAsset(value, seen = new WeakSet()) {
 
 function isBlockedPayload(value, seen = new WeakSet()) {
   if (!value) return false;
-  if (isApprovedHeroFrameAsset(value)) return false;
   if (typeof File !== "undefined" && value instanceof File) return true;
   if (typeof Blob !== "undefined" && value instanceof Blob) return true;
   if (typeof ArrayBuffer !== "undefined" && value instanceof ArrayBuffer) return true;
@@ -106,7 +136,7 @@ function isApprovedHeroRenderBody(body) {
 }
 
 function isApprovedHeroFrameUploadBody(body) {
-  return approvedHeroFrameUploadDepth > 0 && typeof FormData !== "undefined" && body instanceof FormData;
+  return isApprovedHeroFrameUploadPayload(parseJsonMaybe(body));
 }
 
 function isApprovedOpenRouterCoverInvoke(args) {
@@ -115,7 +145,8 @@ function isApprovedOpenRouterCoverInvoke(args) {
 }
 
 function isApprovedHeroFrameUploadInvoke(args) {
-  return args.some(arg => isApprovedHeroFrameAsset(arg));
+  const [functionName, payload] = args;
+  return functionName === "uploadApprovedHeroFrame" && isApprovedHeroFrameUploadPayload(payload);
 }
 
 function patchFunction(owner, key, label, log) {
@@ -123,17 +154,11 @@ function patchFunction(owner, key, label, log) {
   const original = owner[key].bind(owner);
   owner[key] = (...args) => {
     const approvedOpenRouterStill = key === "invoke" && isApprovedOpenRouterCoverInvoke(args);
-    const approvedHeroFrameUpload = (key === "UploadFile" || key === "UploadPrivateFile") && isApprovedHeroFrameUploadInvoke(args);
+    const approvedHeroFrameUpload = key === "invoke" && isApprovedHeroFrameUploadInvoke(args);
     if (!approvedOpenRouterStill && !approvedHeroFrameUpload && args.some(arg => isBlockedPayload(arg))) block(label, log);
     if (approvedHeroFrameUpload) {
-      log?.("privacy guard allowed asset-aware Hero Frame upload for Hero Photography staging");
-      approvedHeroFrameUploadDepth += 1;
-      const result = original(...args);
-      if (result && typeof result.finally === "function") {
-        return result.finally(() => { approvedHeroFrameUploadDepth = Math.max(0, approvedHeroFrameUploadDepth - 1); });
-      }
-      approvedHeroFrameUploadDepth = Math.max(0, approvedHeroFrameUploadDepth - 1);
-      return result;
+      log?.("privacy guard allowed request-bound Hero Frame upload");
+      return original(...args);
     }
     if (approvedOpenRouterStill) {
       log?.("privacy guard allowed one consent-approved Hero Frame for rendering");
@@ -178,10 +203,23 @@ export function installLocalMediaPrivacyGuard(log, base44Client = null) {
     mode: "Browser local",
     blocks: ["VIDEO assets", "FRAME assets", "unclassified File", "unclassified Blob", "ArrayBuffer", "base64 image/video", "FormData media entries", "nested media payloads"],
     asset_policy: HERO_FRAME_UPLOAD_POLICY,
-    allow_with_consent: ["Selected Hero Frame through approved render channel only"],
+    allow_with_consent: ["Selected Hero Frame through approved render channel only", "Single-use request-bound Hero Frame upload"],
     hero_render_channel: HERO_RENDER_CHANNEL,
   };
   log?.("Privacy guard installed");
+}
+
+export function registerApprovedHeroFrameUploadRequest(metadata) {
+  if (!hasHeroFrameUploadMetadata(metadata)) throw new Error("Invalid Hero Frame upload approval metadata.");
+  approvedHeroFrameUploadRequests.set(metadata.requestId, { ...metadata });
+}
+
+export function revokeApprovedHeroFrameUploadRequest(requestId) {
+  approvedHeroFrameUploadRequests.delete(requestId);
+}
+
+export function getApprovedHeroFrameUploadRequestCount() {
+  return approvedHeroFrameUploadRequests.size;
 }
 
 export function getPrivacyFacts(outputCount = 0) {
