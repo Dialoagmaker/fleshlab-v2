@@ -183,21 +183,23 @@ function drawSubjectAtmosphere(ctx, width, height, zones, direction, analysis) {
   const focus = analysis.subjectCenter || { x: 0.55, y: 0.48 };
   ctx.save();
   ctx.globalCompositeOperation = "screen";
-  const rim = ctx.createRadialGradient(width * focus.x, height * focus.y, 0, width * focus.x, height * focus.y, Math.max(width, height) * 0.35);
-  rim.addColorStop(0, rgba(direction.highlightRgb || [244,241,234], 0.18));
-  rim.addColorStop(0.32, rgba(direction.ambientRgb || [207,16,45], 0.12));
+  const rim = ctx.createRadialGradient(width * focus.x, height * focus.y, 0, width * focus.x, height * focus.y, Math.max(width, height) * 0.38);
+  rim.addColorStop(0, rgba(direction.highlightRgb || [244,241,234], 0.22));
+  rim.addColorStop(0.34, rgba(direction.ambientRgb || [207,16,45], 0.13));
   rim.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = rim;
   ctx.fillRect(0, 0, width, height);
-  ctx.globalAlpha = 0.38;
-  ctx.strokeStyle = rgba(direction.highlightRgb || [244,241,234], 0.34);
-  ctx.lineWidth = Math.max(1, width * 0.0012);
-  for (let i = 0; i < 18; i += 1) {
-    const x = (i * 89) % width;
-    const y = (i * 47) % height;
+
+  ctx.globalAlpha = direction.key === "bathroom_noir" ? 0.34 : 0.18;
+  ctx.strokeStyle = rgba(direction.highlightRgb || [244,241,234], 0.28);
+  ctx.lineWidth = Math.max(7, width * 0.007);
+  ctx.filter = `blur(${Math.max(5, width * 0.006)}px)`;
+  for (let i = 0; i < 5; i += 1) {
+    const y = height * (0.18 + i * 0.13);
+    const drift = width * (i % 2 ? 0.08 : -0.04);
     ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + width * 0.045, y - height * 0.018);
+    ctx.moveTo(width * 0.1 + drift, y);
+    ctx.bezierCurveTo(width * 0.28, y - height * 0.05, width * 0.56, y + height * 0.06, width * 0.9, y - height * 0.02);
     ctx.stroke();
   }
   ctx.restore();
@@ -251,40 +253,27 @@ function drawPhotoBackgroundFusion(ctx, image, width, height, zones, direction, 
 }
 
 function drawStructuralGraphics(ctx, width, height, zones, direction) {
-  const g = zones.graphic;
   ctx.save();
-  const veil = ctx.createRadialGradient(zones.title.x + zones.title.w * 0.38, zones.title.y + zones.title.h * 0.42, 0, zones.title.x + zones.title.w * 0.38, zones.title.y + zones.title.h * 0.42, Math.max(width, height) * 0.54);
-  veil.addColorStop(0, rgba(direction.shadowRgb || [0, 0, 0], zones.mode === "immersive" ? 0.62 : 0.72));
-  veil.addColorStop(0.52, rgba(direction.ambientRgb || [18, 3, 7], 0.22));
+  const veil = ctx.createRadialGradient(zones.title.x + zones.title.w * 0.38, zones.title.y + zones.title.h * 0.42, 0, zones.title.x + zones.title.w * 0.38, zones.title.y + zones.title.h * 0.42, Math.max(width, height) * 0.58);
+  veil.addColorStop(0, rgba(direction.shadowRgb || [0, 0, 0], zones.mode === "immersive" ? 0.66 : 0.76));
+  veil.addColorStop(0.46, rgba(direction.ambientRgb || [18, 3, 7], 0.2));
   veil.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = veil;
   ctx.fillRect(0, 0, width, height);
 
-  ctx.globalCompositeOperation = "screen";
-  ctx.strokeStyle = rgba(direction.ambientRgb || [207,16,45], 0.18);
-  for (let i = 0; i < 4; i += 1) {
-    ctx.lineWidth = Math.max(1, width * (0.0018 + i * 0.0007));
-    ctx.beginPath();
-    ctx.moveTo(g.x + g.w * (0.04 + i * 0.055), height * (0.2 + i * 0.09));
-    ctx.bezierCurveTo(g.x + g.w * 0.24, height * (0.16 + i * 0.07), g.x + g.w * 0.56, height * (0.26 + i * 0.04), g.x + g.w * 0.94, height * (0.2 + i * 0.065));
-    ctx.stroke();
-  }
+  const contrast = ctx.createLinearGradient(zones.title.x, zones.title.y, zones.title.x + zones.title.w, zones.title.y + zones.title.h);
+  contrast.addColorStop(0, "rgba(0,0,0,0.34)");
+  contrast.addColorStop(0.62, "rgba(0,0,0,0.08)");
+  contrast.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = contrast;
+  ctx.fillRect(zones.title.x - width * 0.03, zones.title.y - height * 0.035, zones.title.w + width * 0.08, zones.title.h + height * 0.08);
 
-  if (direction.key === "bathroom_noir") {
-    ctx.globalAlpha = 0.08;
-    ctx.strokeStyle = "rgba(244,241,234,0.22)";
-    ctx.lineWidth = 1;
-    const tile = Math.max(54, width * 0.068);
-    for (let x = -tile; x < width + tile; x += tile) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x - width * 0.12, height); ctx.stroke(); }
-  }
-
-  ctx.globalCompositeOperation = "source-over";
-  ctx.globalAlpha = 0.86;
+  ctx.globalAlpha = 0.9;
   ctx.strokeStyle = direction.accent;
-  ctx.lineWidth = Math.max(2, width * 0.0025);
+  ctx.lineWidth = Math.max(2, width * 0.0022);
   ctx.beginPath();
   ctx.moveTo(zones.title.x, zones.title.y - height * 0.025);
-  ctx.lineTo(zones.title.x + zones.title.w * 0.44, zones.title.y - height * 0.045);
+  ctx.lineTo(zones.title.x + zones.title.w * 0.34, zones.title.y - height * 0.04);
   ctx.stroke();
   ctx.restore();
 }
@@ -401,38 +390,27 @@ function drawMeta(ctx, campaign, zones, width, height, direction, titleBottom) {
   const label = compact(campaign.campaignLabel || campaign.releaseName || "");
   const cta = compact(campaign.primaryCTA || campaign.cta || "");
   const startY = Math.max(zones.meta.y, titleBottom + height * 0.026);
-  const barH = Math.max(height * 0.062, 44);
-  const box = { x: zones.meta.x, y: startY - barH * 0.26, w: zones.meta.w, h: barH * 1.18 };
+  const barH = Math.max(height * 0.044, 34);
+  const box = { x: zones.meta.x, y: startY - barH * 0.2, w: zones.meta.w, h: barH };
+  const items = [performer && `CAST  ${performer}`, collection && `COLLECTION  ${collection}`, episode && `EPISODE  ${episode}`, label && `RELEASE  ${label}`, cta && `WATCH  ${cta}`].filter(Boolean).slice(0, 4);
   ctx.save();
   ctx.textAlign = "left";
-  const glass = ctx.createLinearGradient(box.x, box.y, box.x + box.w, box.y + box.h);
-  glass.addColorStop(0, "rgba(0,0,0,0.78)");
-  glass.addColorStop(0.52, rgba(direction.shadowRgb || [0, 0, 0], 0.58));
-  glass.addColorStop(1, "rgba(255,255,255,0.035)");
-  ctx.fillStyle = glass;
+  ctx.strokeStyle = direction.accent;
+  ctx.lineWidth = Math.max(2, width * 0.0018);
   ctx.beginPath();
-  ctx.roundRect(box.x, box.y, box.w, box.h, Math.max(4, width * 0.006));
-  ctx.fill();
-  ctx.strokeStyle = "rgba(244,241,234,0.16)";
-  ctx.lineWidth = Math.max(1, width * 0.0011);
+  ctx.moveTo(box.x, box.y + box.h * 0.1);
+  ctx.lineTo(box.x + Math.min(box.w * 0.32, width * 0.18), box.y + box.h * 0.1);
   ctx.stroke();
-  ctx.fillStyle = direction.accent;
-  ctx.fillRect(box.x, box.y, box.w * 0.34, Math.max(2, height * 0.004));
-  const items = [performer && `CAST  ${performer}`, collection && `COLLECTION  ${collection}`, episode && `EPISODE  ${episode}`, label && `RELEASE  ${label}`, cta && `WATCH  ${cta}`].filter(Boolean).slice(0, 4);
   ctx.font = font(Math.max(9, width * 0.0088), "Inter", 900);
-  let cursor = box.x + width * 0.014;
-  const y = box.y + box.h * 0.62;
+  let cursor = box.x;
+  const y = box.y + box.h * 0.76;
   items.forEach((item, index) => {
     if (index > 0) {
-      ctx.strokeStyle = "rgba(244,241,234,0.28)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(cursor, box.y + box.h * 0.28);
-      ctx.lineTo(cursor, box.y + box.h * 0.82);
-      ctx.stroke();
+      ctx.fillStyle = "rgba(244,241,234,0.28)";
+      ctx.fillRect(cursor, y - barH * 0.48, 1, barH * 0.55);
       cursor += width * 0.014;
     }
-    ctx.fillStyle = index === 0 ? WHITE : "rgba(244,241,234,0.72)";
+    ctx.fillStyle = index === 0 ? WHITE : "rgba(244,241,234,0.74)";
     const max = box.x + box.w - cursor - width * 0.012;
     ctx.fillText(item.toUpperCase(), cursor, y, max);
     cursor += Math.min(ctx.measureText(item.toUpperCase()).width + width * 0.026, box.w * 0.28);
@@ -494,13 +472,16 @@ async function drawLogo(ctx, zones, width, height) {
 function finalTexture(ctx, width, height, zones, direction) {
   ctx.save();
   ctx.globalCompositeOperation = "screen";
-  for (let i = 0; i < 190; i += 1) {
-    ctx.fillStyle = i % 5 === 0 ? rgba(direction.ambientRgb || [207,16,45], 0.16) : "rgba(255,255,255,0.055)";
-    ctx.fillRect((i * 67) % width, (i * 41) % height, Math.max(1, width * 0.001), Math.max(1, width * 0.001));
+  for (let i = 0; i < 150; i += 1) {
+    ctx.fillStyle = i % 6 === 0 ? rgba(direction.ambientRgb || [207,16,45], 0.1) : "rgba(255,255,255,0.04)";
+    ctx.fillRect((i * 67) % width, (i * 41) % height, Math.max(1, width * 0.0008), Math.max(1, width * 0.0008));
   }
-  ctx.strokeStyle = rgba(direction.ambientRgb || [207,16,45], 0.42);
-  ctx.lineWidth = Math.max(2, width * 0.002);
-  ctx.strokeRect(width * 0.018, width * 0.018, width - width * 0.036, height - width * 0.036);
+  ctx.globalCompositeOperation = "multiply";
+  const vignette = ctx.createRadialGradient(width * 0.52, height * 0.46, Math.min(width, height) * 0.18, width * 0.52, height * 0.46, Math.max(width, height) * 0.72);
+  vignette.addColorStop(0, "rgba(255,255,255,0)");
+  vignette.addColorStop(1, "rgba(0,0,0,0.48)");
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, width, height);
   ctx.restore();
 }
 
@@ -580,12 +561,18 @@ function validateComposition({ titlePlan, logoBox, metaBox, zones, width, height
   if (titleArea && metaBox && intersects(titleArea, metaBox)) failures.push("metadata overlaps title");
   if (logoBox && (logoBox.y < 0 || logoBox.y + logoBox.h > height || logoBox.x < 0 || logoBox.x + logoBox.w > width)) failures.push("logo outside canvas");
   if (zones.title.w < width * 0.22) failures.push("insufficient title stage");
+  const professionalReview = {
+    question: "Does this look like premium entertainment key art designed by a professional art director?",
+    passes: failures.length === 0 && titlePlan.visible && titlePlan.fontSize >= Math.min(width, height) * 0.032 && zones.title.w >= width * 0.38,
+    criteria: ["clear title", "visible logo", "no title overlap", "subject-first hierarchy", "minimal justified graphics"]
+  };
+  if (!professionalReview.passes) failures.push("professional art direction review did not pass");
   const score = 100
     - failures.length * 28
     - Math.max(0, titlePlan.lines.length - 5) * 4
     + Math.min(18, titlePlan.fontSize / Math.max(1, Math.min(width, height)) * 180)
     + (zones.mode === "immersive" ? 18 : zones.mode === "side-split" ? 8 : 4);
-  return { passed: failures.length === 0, failures, score };
+  return { passed: failures.length === 0, failures, score, professionalReview };
 }
 
 export async function renderKrakenCampaignComposerAsset({ image, analysis = {}, format, campaign = {} }) {
