@@ -22,7 +22,9 @@ export const openRouterHeroProvider = {
         productionBlueprint,
         sourceAssetId: renderContext.sourceAssetId || "selected-hero-frame",
         blueprintExecutionHash: renderContext.blueprintExecutionHash || "",
-        contentClassification: providerIntelligencePlan?.contentClassification,
+        editorialIntent: providerIntelligencePlan?.editorialIntent,
+        policyClassification: providerIntelligencePlan?.policyClassification,
+        contentClassification: providerIntelligencePlan?.policyClassification || providerIntelligencePlan?.contentClassification,
         providerIntelligence: providerIntelligencePlan,
         renderingParameters: { aspect_ratio: "16:9", output: "professional_hero_photograph" }
       }

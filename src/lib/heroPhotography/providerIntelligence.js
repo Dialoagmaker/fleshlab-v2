@@ -84,14 +84,16 @@ function scoreProfile(profile, classification) {
   };
 }
 
-export function planProviderExecution({ providers, productionBlueprint, instructions, targetPlatform, campaignFamily }) {
-  const contentClassification = classifyRenderIntent({ productionBlueprint, instructions, campaignFamily, targetPlatform });
+export function planProviderExecution({ providers, productionBlueprint, instructions, targetPlatform, campaignFamily, editorialIntent, policyClassification }) {
+  const resolvedPolicyClassification = policyClassification || classifyRenderIntent({ productionBlueprint, instructions, campaignFamily, targetPlatform });
   const profiles = providers.map(profileFor);
-  const ranking = profiles.map(profile => scoreProfile(profile, contentClassification)).sort((a, b) => b.score - a.score);
+  const ranking = profiles.map(profile => scoreProfile(profile, resolvedPolicyClassification)).sort((a, b) => b.score - a.score);
   const selected = ranking[0] || null;
   return {
     stage: "Provider Intelligence",
-    contentClassification,
+    editorialIntent: editorialIntent || null,
+    policyClassification: resolvedPolicyClassification,
+    contentClassification: resolvedPolicyClassification,
     providerProfiles: profiles,
     providerRanking: ranking,
     selectedProvider: selected,

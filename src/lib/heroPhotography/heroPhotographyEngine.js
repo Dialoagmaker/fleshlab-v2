@@ -2,6 +2,7 @@ import { validateHeroPhotographyInputs } from "./inputValidator";
 import { compileHeroPhotographyInstructions } from "./instructionCompiler";
 import { fileToDataUrl, readImageResolution } from "./frameEncoding";
 import { getHeroPhotographyProvider, listHeroPhotographyProviders } from "./providerRegistry";
+import { classifyEditorialIntent } from "./editorialClassificationEngine";
 import { planProviderExecution } from "./providerIntelligence";
 import { runCreativeCritic } from "./creativeCritic";
 
@@ -26,7 +27,8 @@ export async function executeHeroPhotographyRender({ sourceFrameFile, production
   if (!inputValidation.valid) return structuredFailure("input_rejected", "Hero Photography Engine rejected the render inputs.", { errors: inputValidation.errors });
 
   const instructions = compileHeroPhotographyInstructions({ productionBlueprint, platformRules, campaignFamily });
-  const providerIntelligence = planProviderExecution({ providers: listHeroPhotographyProviders(), productionBlueprint, instructions, targetPlatform: platformRules?.targetPlatform, campaignFamily });
+  const editorialIntent = classifyEditorialIntent({ productionBlueprint, instructions, targetPlatform: platformRules?.targetPlatform, campaignFamily });
+  const providerIntelligence = planProviderExecution({ providers: listHeroPhotographyProviders(), productionBlueprint, instructions, targetPlatform: platformRules?.targetPlatform, campaignFamily, editorialIntent });
   const provider = getHeroPhotographyProvider(providerIntelligence.selectedProvider?.providerId || providerId);
   const blueprintHash = hashPayload({ instructions, productionBlueprint });
 
@@ -57,6 +59,8 @@ export async function executeHeroPhotographyRender({ sourceFrameFile, production
       parameters: instructions,
       heroPhotographyPlan: instructions.hero_photography_plan,
       sourceFrameUnderstanding: instructions.source_frame_understanding,
+      editorialIntent,
+      policyClassification: providerIntelligence.policyClassification,
       reconstructionReport: render.reconstructionReport || instructions.reconstruction_report_template,
       identityPreservationStatus: {
         status: "accepted",
@@ -73,6 +77,8 @@ export async function executeHeroPhotographyRender({ sourceFrameFile, production
         started_at: new Date().toISOString(),
         total_time_ms: Math.round(performance.now() - startedAt),
         provider_metadata: render.providerMetadata,
+        editorial_intent: editorialIntent,
+        policy_classification: providerIntelligence.policyClassification,
         provider_intelligence: providerIntelligence,
         privacy_intent: privacyIntent
       }
@@ -85,6 +91,8 @@ export async function executeHeroPhotographyRender({ sourceFrameFile, production
       providerData: error.providerData || null,
       renderTimeMs: Math.round(performance.now() - startedAt),
       blueprint_execution_hash: blueprintHash,
+      editorial_intent: editorialIntent,
+      policy_classification: providerIntelligence.policyClassification,
       provider_intelligence: providerIntelligence
     });
   }
