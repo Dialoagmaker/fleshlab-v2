@@ -20,6 +20,7 @@ export const openRouterHeroProvider = {
         heroPhotographyPlan: instructions.hero_photography_plan,
         sourceFrameUnderstanding: instructions.source_frame_understanding,
         productionBlueprint,
+        contentClassification: providerIntelligencePlan?.contentClassification,
         providerIntelligence: providerIntelligencePlan,
         renderingParameters: { aspect_ratio: "16:9", output: "professional_hero_photograph" }
       }
@@ -38,7 +39,9 @@ export const openRouterHeroProvider = {
     }
     return {
       imageDataUrl: data.generated_image_data_url,
-      model: data.model || data.resolved_model || "model not exposed",
+      model: data.model || data.selected_model || data.resolved_model || data.provider_intelligence?.attemptedModels?.slice(-1)?.[0] || "model not exposed",
+      providerFamily: data.provider_family || data.provider_intelligence?.providerFamily || null,
+      routeCapability: data.route_capability || null,
       seed: data.seed || null,
       reconstructionReport: data.reconstruction_report || null,
       providerMetadata: data,

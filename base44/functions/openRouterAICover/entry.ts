@@ -17,6 +17,9 @@ const DEFAULT_SAFE_CATEGORIES = ['SAFE_EDITORIAL', 'SAFE_PRODUCT', 'SAFE_BRAND',
 const ROUTING_WEIGHTS = { policy: 0.40, quality: 0.25, reliability: 0.15, runtime: 0.10, cost: 0.10 };
 const PROVIDER_FAILURE_MEMORY = new Map();
 const FAILURE_MEMORY_TTL_MS = 10 * 60 * 1000;
+const ROUTE_CAPABILITY_MEMORY = new Map();
+const ROUTE_CAPABILITY_MEMORY_TTL_MS = 24 * 60 * 60 * 1000;
+const REQUIRED_IMAGE_REFERENCE_OPERATION = 'IMAGE_REFERENCE_GENERATION';
 
 const KEY_ART_DIRECTOR_PROMPT = `You are the FLESHLAB Hero Photography Director.
 
@@ -150,7 +153,8 @@ function publicFailureMessage(diagnostic) {
   if (diagnostic.category === 'NO_CREDITS') return 'Production capacity is temporarily unavailable. Continue locally or try again later.';
   if (diagnostic.category === 'VERIFICATION_REQUIRED') return 'Verified adult, consent, rights, and source checks are required before external production.';
   if (diagnostic.category === 'NO_COMPATIBLE_RENDERING_PIPELINE') return 'No approved production pipeline is currently compatible with this request. Continue locally.';
-  if (diagnostic.category === 'UNSUPPORTED_REFERENCE_IMAGE' || diagnostic.category === 'UNSUPPORTED_IMAGE_INPUT') return 'The selected frame was not compatible with any approved production pipeline. Try another frame or continue locally.';
+  if (diagnostic.category === 'NO_COMPATIBLE_PROVIDER_AVAILABLE') return 'No currently configured rendering route supports both the required image-reference operation and the provider policy requirements.';
+  if (diagnostic.category === 'UNSUPPORTED_REFERENCE_IMAGE' || diagnostic.category === 'UNSUPPORTED_IMAGE_INPUT') return 'No currently configured rendering route supports both the required image-reference operation and the provider policy requirements.';
   if (diagnostic.category === 'INVALID_PAYLOAD') return 'The selected frame could not be prepared for production. Try another frame.';
   if (diagnostic.category === 'CONTENT_POLICY') return 'All approved production pipelines declined this request. Continue with the local workflow.';
   if (diagnostic.category === 'RATE_LIMIT' || diagnostic.category === 'TIMEOUT' || diagnostic.category === 'PROVIDER_FAILURE') return 'The production pipeline is temporarily unavailable. Continue locally or try again later.';
@@ -243,28 +247,109 @@ function endpointSupports(endpoint, key) {
   return Boolean(endpoint?.supported_parameters?.[key]);
 }
 
+function endpointIdentity(endpoint) {
+  return String(endpoint?.provider_slug || endpoint?.provider_tag || endpoint?.provider_name || 'default_endpoint').toLowerCase().replace(/[^a-z0-9._-]+/g, '_');
+}
+
+function routeCapabilityKey(route) {
+  return `${route?.id || 'unknown'}::${route?.route_capability?.endpoint || route?.compatible_endpoints?.[0]?.provider_slug || 'default_endpoint'}`;
+}
+
 function estimateEndpointCost(endpoint) {
   const lines = Array.isArray(endpoint?.pricing) ? endpoint.pricing : [];
   const output = lines.find(line => line.billable === 'output_image') || lines[0];
   return output ? Number(output.cost_usd || 0) : null;
 }
 
-function isReferenceCompatible(modelRecord, endpoint) {
-  const input = modelRecord?.architecture?.input_modalities || [];
-  const output = modelRecord?.architecture?.output_modalities || [];
-  const modelAcceptsImage = input.includes('image') || endpointSupports(endpoint, 'input_references');
-  const modelOutputsImage = output.includes('image');
-  const aspect = endpoint?.supported_parameters?.aspect_ratio || modelRecord?.supported_parameters?.aspect_ratio;
-  const format = endpoint?.supported_parameters?.output_format || modelRecord?.supported_parameters?.output_format;
-  return modelAcceptsImage && modelOutputsImage && descriptorAllows(aspect, '16:9') && (!format || descriptorAllows(format, 'png'));
+function buildRouteCapabilityProfile(modelRecord, endpoint) {
+  const input = Array.isArray(modelRecord?.architecture?.input_modalities) ? modelRecord.architecture.input_modalities : [];
+  const output = Array.isArray(modelRecord?.architecture?.output_modalities) ? modelRecord.architecture.output_modalities : [];
+  const endpointParams = endpoint?.supported_parameters || {};
+  const modelParams = modelRecord?.supported_parameters || {};
+  const endpointProvesImageReference = Boolean(endpointParams.input_references);
+  const modelMentionsImageReference = Boolean(modelParams.input_references);
+  const supportsImageOutput = output.includes('image');
+  const supportsTextToImage = input.includes('text') && supportsImageOutput;
+  const supportsImageReference = endpointProvesImageReference;
+  const aspect = endpointParams.aspect_ratio || modelParams.aspect_ratio;
+  const format = endpointParams.output_format || modelParams.output_format;
+  const providerSlug = endpointIdentity(endpoint);
+  const capabilitySource = endpointProvesImageReference ? 'live_endpoint_metadata' : modelMentionsImageReference ? 'documented_metadata' : 'documented_metadata';
+  const knownUnsupportedFields = [];
+  if (!endpointParams.input_references) knownUnsupportedFields.push('input_references');
+  if (!endpointParams.n) knownUnsupportedFields.push('n');
+  return {
+    adapter: 'openrouter',
+    providerFamily: providerFamilyForRoute({ id: modelRecord.id, compatible_endpoints: [endpoint] }),
+    model: modelRecord.id,
+    endpoint: `POST /api/v1/images:${providerSlug}`,
+    supportsTextToImage,
+    supportsImageReference,
+    supportsImageToImage: supportsImageReference,
+    supportsImageEditing: supportsImageReference,
+    supportsIdentityReference: supportsImageReference,
+    supportsImageOutput,
+    acceptedImageInputShape: supportsImageReference ? ['input_references[].image_url.url'] : [],
+    supportedAspectRatios: descriptorAllows(aspect, '16:9') ? ['16:9'] : [],
+    policyCompatibility: 'unknown_until_policy_gate',
+    capabilitySource,
+    capabilityConfidence: endpointProvesImageReference ? 0.95 : modelMentionsImageReference ? 0.45 : 0.2,
+    inputModalities: input,
+    outputModalities: output,
+    synchronousBehavior: 'synchronous_http_response_or_provider_error',
+    responseShape: 'data[0].b64_json image payload',
+    knownUnsupportedFields
+  };
+}
+
+function buildRequiredOperation(aspectRatio = '16:9') {
+  return {
+    operation: REQUIRED_IMAGE_REFERENCE_OPERATION,
+    sourceImageRequired: true,
+    imageOutputRequired: true,
+    identityReferenceRequired: true,
+    aspectRatio: aspectRatio || '16:9'
+  };
+}
+
+function evaluateRouteTechnicalEligibility(route, requiredOperation) {
+  const capability = route.route_capability || {};
+  if (requiredOperation.imageOutputRequired && !capability.supportsImageOutput) {
+    return { ...route, eligible: false, technicalCompatibility: 0, rejection_reason: 'IMAGE_OUTPUT_NOT_SUPPORTED' };
+  }
+  if (requiredOperation.sourceImageRequired && !capability.supportsImageReference) {
+    const reason = capability.inputModalities?.includes('image') ? 'UNVERIFIED_IMAGE_INPUT' : 'IMAGE_REFERENCE_NOT_SUPPORTED';
+    return { ...route, eligible: false, technicalCompatibility: 0, rejection_reason: reason };
+  }
+  if (requiredOperation.identityReferenceRequired && !capability.supportsIdentityReference) {
+    return { ...route, eligible: false, technicalCompatibility: 0, rejection_reason: 'IDENTITY_REFERENCE_NOT_SUPPORTED' };
+  }
+  if (!capability.supportedAspectRatios?.includes(requiredOperation.aspectRatio)) {
+    return { ...route, eligible: false, technicalCompatibility: 0, rejection_reason: 'ASPECT_RATIO_NOT_SUPPORTED' };
+  }
+  return { ...route, eligible: true, technicalCompatibility: 1, rejection_reason: null };
+}
+
+function evaluateRoutesForOperation(routes, requiredOperation) {
+  const evaluated = routes.map(route => evaluateRouteTechnicalEligibility(route, requiredOperation));
+  return {
+    eligibleRoutes: evaluated.filter(route => route.eligible),
+    rejectedRoutes: evaluated.filter(route => !route.eligible).map(route => ({
+      model: route.id,
+      providerFamily: route.route_capability?.providerFamily || providerFamilyForRoute(route),
+      endpoint: route.route_capability?.endpoint || 'POST /api/v1/images',
+      reason: route.rejection_reason,
+      technicalCompatibility: 0,
+      capability: route.route_capability || null
+    }))
+  };
 }
 
 async function discoverCompatibleImageRoutes(apiKey) {
   const catalog = await fetchImageModelCatalog(apiKey);
   const imageModels = catalog.filter(model => {
-    const input = model?.architecture?.input_modalities || [];
     const output = model?.architecture?.output_modalities || [];
-    return output.includes('image') && (input.includes('image') || model?.supported_parameters?.input_references);
+    return output.includes('image');
   });
   const sorted = imageModels.sort((a, b) => {
     const ai = PREFERRED_IMAGE_MODELS.indexOf(a.id);
@@ -274,30 +359,35 @@ async function discoverCompatibleImageRoutes(apiKey) {
     return ar - br || String(a.id).localeCompare(String(b.id));
   });
   const limited = sorted.slice(0, 12);
-  const inspected = [];
+  const concreteRoutes = [];
   for (const model of limited) {
     const endpointResult = await fetchImageModelEndpoints(apiKey, model.id);
     const endpoints = endpointResult.ok ? endpointResult.endpoints : [];
-    const compatibleEndpoints = endpoints.filter(endpoint => isReferenceCompatible(model, endpoint));
-    inspected.push({
-      id: model.id,
-      name: model.name || model.id,
-      description: model.description || '',
-      architecture: model.architecture || {},
-      supported_parameters: model.supported_parameters || {},
-      endpoint_count: endpoints.length,
-      compatible_endpoint_count: compatibleEndpoints.length,
-      compatible_endpoints: compatibleEndpoints.map(endpoint => ({
+    for (const endpoint of endpoints) {
+      const endpointSummary = {
         provider_name: endpoint.provider_name || endpoint.provider_slug || endpoint.provider_tag,
-        provider_slug: endpoint.provider_slug || endpoint.provider_tag,
-        provider_tag: endpoint.provider_tag || endpoint.provider_slug,
+        provider_slug: endpoint.provider_slug || endpoint.provider_tag || endpointIdentity(endpoint),
+        provider_tag: endpoint.provider_tag || endpoint.provider_slug || endpointIdentity(endpoint),
         pricing: endpoint.pricing || [],
         supported_parameters: endpoint.supported_parameters || {},
         estimated_cost_usd: estimateEndpointCost(endpoint)
-      }))
-    });
+      };
+      const capability = buildRouteCapabilityProfile(model, endpointSummary);
+      concreteRoutes.push({
+        id: model.id,
+        route_key: `${model.id}::${endpointSummary.provider_slug}`,
+        name: model.name || model.id,
+        description: model.description || '',
+        architecture: model.architecture || {},
+        supported_parameters: model.supported_parameters || {},
+        endpoint_count: endpoints.length,
+        compatible_endpoint_count: capability.supportsImageReference && capability.supportsImageOutput ? 1 : 0,
+        compatible_endpoints: [endpointSummary],
+        route_capability: capability
+      });
+    }
   }
-  return inspected.filter(model => model.compatible_endpoint_count > 0);
+  return concreteRoutes;
 }
 
 function buildPhotographicBrief(metadata = {}) {
@@ -435,15 +525,30 @@ async function saveRenderingAttempt(base44, record) {
   }
 }
 
-function getContentClassification(metadata = {}) {
-  const direct = String(metadata.renderingClassification || metadata.contentClassification || '').toUpperCase();
-  if (RENDERING_CLASSIFICATIONS.includes(direct)) return direct;
+function normalizeClassificationCategory(value) {
+  const raw = String(value || '').trim();
+  const upper = raw.toUpperCase().replace(/[^A-Z0-9]+/g, '_');
+  if (RENDERING_CLASSIFICATIONS.includes(upper)) return upper;
+  if (upper === 'ADULT_COMMERCIAL') return 'ADULT_MARKETING';
+  if (upper === 'EDITORIAL_COVER') return 'SAFE_EDITORIAL';
+  if (upper === 'COMMERCIAL_PORTRAIT') return 'SAFE_PORTRAIT';
+  if (upper === 'ART_DIRECTION') return 'SAFE_BRAND';
+  if (upper === 'PRODUCT') return 'SAFE_PRODUCT';
+  if (upper === 'FASHION') return 'SAFE_EDITORIAL';
+  return '';
+}
+
+function deriveFallbackClassification(metadata = {}) {
+  const direct = normalizeClassificationCategory(metadata.renderingClassification || metadata.contentClassification);
+  if (direct) return direct;
   const legacy = String(metadata.referenceContentClass || '').toUpperCase();
   if (legacy === 'SAFE_MARKETING') return 'SAFE_BRAND';
   if (legacy === 'SUGGESTIVE_ADULT') return 'ADULT_MARKETING';
   if (legacy === 'EXPLICIT_VERIFIED_ADULT') return 'EXPLICIT';
   if (legacy === 'BLOCKED_OR_UNVERIFIED') return 'UNSUPPORTED';
   const contentType = `${metadata.contentType || ''} ${metadata.campaignName || ''} ${metadata.videoTitle || ''}`.toLowerCase();
+  if (contentType.includes('explicit') || contentType.includes('hardcore')) return 'EXPLICIT';
+  if (contentType.includes('adult') || contentType.includes('sexual')) return 'ADULT_MARKETING';
   if (contentType.includes('fitness')) return 'FITNESS';
   if (contentType.includes('swim')) return 'SWIMWEAR';
   if (contentType.includes('underwear')) return 'UNDERWEAR';
@@ -453,13 +558,27 @@ function getContentClassification(metadata = {}) {
   return 'SAFE_EDITORIAL';
 }
 
+function getCanonicalContentClassification(metadata = {}) {
+  const supplied = metadata.providerIntelligence?.contentClassification;
+  if (supplied && typeof supplied === 'object') {
+    const category = normalizeClassificationCategory(supplied.category);
+    if (category) return { ...supplied, category, source: supplied.source || 'frontend_provider_intelligence', version: supplied.version || 'provider-intelligence-v2' };
+  }
+  const suppliedString = normalizeClassificationCategory(supplied || metadata.providerIntelligence?.contentClassificationCategory);
+  if (suppliedString) {
+    return { category: suppliedString, source: 'frontend_provider_intelligence_legacy', confidence: 0.65, policyRisk: ['ADULT_MARKETING', 'EXPLICIT'].includes(suppliedString) ? 'restricted' : 'standard', technicalIntent: REQUIRED_IMAGE_REFERENCE_OPERATION, version: 'provider-intelligence-v2' };
+  }
+  const fallback = deriveFallbackClassification(metadata);
+  return { category: fallback, source: 'backend_fallback_metadata', confidence: 0.45, policyRisk: ['ADULT_MARKETING', 'EXPLICIT'].includes(fallback) ? 'restricted' : 'standard', technicalIntent: REQUIRED_IMAGE_REFERENCE_OPERATION, version: 'provider-intelligence-v2' };
+}
+
 function verificationPassed(metadata = {}) {
   const verification = metadata.adultVerification || {};
   return Boolean(verification.allPeopleVerified18Plus && verification.performerConsentConfirmed && verification.mediaRightsConfirmed && verification.platformSourceConfirmed && String(verification.verificationReference || '').trim());
 }
 
 function getRouteProviderKey(route) {
-  return String(route?.id || '').trim();
+  return String(route?.route_key || route?.id || '').trim();
 }
 
 function providerFamilyForRoute(route) {
@@ -511,6 +630,50 @@ function rememberFailure(signature, family, diagnostic) {
     timestamp: Date.now(),
     ttl_ms: FAILURE_MEMORY_TTL_MS
   });
+}
+
+function getRememberedRouteCapabilityMismatch(route, unsupportedOperation = REQUIRED_IMAGE_REFERENCE_OPERATION) {
+  const key = `${routeCapabilityKey(route)}::${unsupportedOperation}`;
+  const item = ROUTE_CAPABILITY_MEMORY.get(key);
+  if (!item) return null;
+  if (Date.now() - item.timestamp > ROUTE_CAPABILITY_MEMORY_TTL_MS) {
+    ROUTE_CAPABILITY_MEMORY.delete(key);
+    return null;
+  }
+  return { ...item, ttl_remaining_ms: ROUTE_CAPABILITY_MEMORY_TTL_MS - (Date.now() - item.timestamp) };
+}
+
+function rememberRouteCapabilityMismatch(route, unsupportedOperation = REQUIRED_IMAGE_REFERENCE_OPERATION) {
+  if (!route) return;
+  ROUTE_CAPABILITY_MEMORY.set(`${routeCapabilityKey(route)}::${unsupportedOperation}`, {
+    model: route.id,
+    endpoint: route.route_capability?.endpoint || 'POST /api/v1/images',
+    providerFamily: providerFamilyForRoute(route),
+    unsupportedOperation,
+    timestamp: Date.now(),
+    ttl: ROUTE_CAPABILITY_MEMORY_TTL_MS
+  });
+}
+
+function applyRouteCapabilityMemory(routes) {
+  const eligibleRoutes = [];
+  const rejectedRoutes = [];
+  for (const route of routes) {
+    const remembered = getRememberedRouteCapabilityMismatch(route, REQUIRED_IMAGE_REFERENCE_OPERATION);
+    if (remembered) {
+      rejectedRoutes.push({
+        model: route.id,
+        providerFamily: providerFamilyForRoute(route),
+        endpoint: route.route_capability?.endpoint || 'POST /api/v1/images',
+        reason: 'IMAGE_REFERENCE_NOT_SUPPORTED',
+        technicalCompatibility: 0,
+        capabilityMemory: remembered
+      });
+    } else {
+      eligibleRoutes.push(route);
+    }
+  }
+  return { eligibleRoutes, rejectedRoutes };
 }
 
 function routeProviderName(route) {
@@ -719,7 +882,9 @@ async function auditOpenRouter(base44, apiKey) {
     }),
     getMonthlyOpenRouterSpend(base44)
   ]);
-  const compatibleRoutes = Array.isArray(routes) ? routes : [];
+  const discoveredRoutes = Array.isArray(routes) ? routes : [];
+  const routeEvaluation = evaluateRoutesForOperation(discoveredRoutes, buildRequiredOperation('16:9'));
+  const compatibleRoutes = routeEvaluation.eligibleRoutes;
   if (compatibleRoutes.length) await ensureRenderingProviderRegistry(base44, compatibleRoutes);
   const preferred = compatibleRoutes[0] || null;
   const estimatedCost = preferred?.compatible_endpoints?.[0]?.estimated_cost_usd ?? null;
@@ -735,6 +900,8 @@ async function auditOpenRouter(base44, apiKey) {
     } : { sufficient_credit: false },
     rendering_intelligence_ready: compatibleRoutes.length > 0,
     compatible_pipeline_count: compatibleRoutes.length,
+    discovered_route_count: discoveredRoutes.length,
+    rejected_route_count: routeEvaluation.rejectedRoutes.length,
     provider_registry_populated: compatibleRoutes.length > 0,
     estimated_generation_cost: estimatedCost,
     monthly_openrouter_spend_usd: monthlySpend
@@ -801,7 +968,9 @@ async function generateCover(base44, apiKey, body, user) {
   const month = now.toISOString().slice(0, 7);
   const storyInfo = parseDataUrlInfo(storyReferenceDataUrl);
   const identityInfo = identityReferenceDataUrl ? parseDataUrlInfo(identityReferenceDataUrl) : { ok: true, byte_length: 0 };
-  const contentClassification = getContentClassification(metadata);
+  const contentClassification = getCanonicalContentClassification(metadata);
+  const classificationCategory = contentClassification.category;
+  const requiredOperation = buildRequiredOperation(aspect_ratio);
   if (!consent) return json({ ok: false, error: 'The professional hero photograph could not be produced yet.', code: 'consent_required' }, 400);
   if (!storyInfo.ok || storyInfo.byte_length <= 0) return json({ ok: false, error: 'Story frame encoding failed. Choose another frame and try again.', code: 'invalid_story_frame', diagnostics: { category: 'INVALID_PAYLOAD', message: 'Story reference is not a valid base64 image data URL or has zero bytes.' } }, 400);
   if (storyInfo.byte_length > MAX_REFERENCE_BYTES || String(storyReferenceDataUrl).length > MAX_DATA_URL_CHARS) return json({ ok: false, error: 'Choose a smaller story frame before producing the professional hero photograph.', code: 'image_too_large' }, 413);
@@ -814,21 +983,40 @@ async function generateCover(base44, apiKey, body, user) {
     return json({ ok: false, error: publicFailureMessage(diagnostic), code: 'openrouter_health_check_failed', diagnostics: diagnostic }, 402);
   }
 
-  const compatibleRoutes = await discoverCompatibleImageRoutes(apiKey);
-  if (!compatibleRoutes.length) {
-    const diagnostic = { category: 'UNSUPPORTED_REFERENCE_IMAGE', message: 'No discovered OpenRouter image model currently accepts image input, image output, and 16:9 generation.', retryable: false };
-    logProviderDiagnostic('OpenRouter model discovery failed', diagnostic);
-    return json({ ok: false, error: publicFailureMessage(diagnostic), code: 'UNSUPPORTED_REFERENCE_IMAGE', diagnostics: diagnostic }, 503);
+  const discoveredRoutes = await discoverCompatibleImageRoutes(apiKey);
+  const technicalEvaluation = evaluateRoutesForOperation(discoveredRoutes, requiredOperation);
+  const memoryEvaluation = applyRouteCapabilityMemory(technicalEvaluation.eligibleRoutes);
+  const capabilityRejectedRoutes = [...technicalEvaluation.rejectedRoutes, ...memoryEvaluation.rejectedRoutes];
+  if (!memoryEvaluation.eligibleRoutes.length) {
+    const diagnostic = { category: 'NO_COMPATIBLE_PROVIDER_AVAILABLE', message: 'No concrete OpenRouter route proves support for the required image-reference operation.', retryable: false };
+    logProviderDiagnostic('OpenRouter route capability discovery failed', diagnostic);
+    return json({
+      ok: false,
+      error: publicFailureMessage(diagnostic),
+      code: 'NO_COMPATIBLE_PROVIDER_AVAILABLE',
+      stage: 'Provider Intelligence',
+      requiredOperation,
+      contentClassification,
+      content_classification: classificationCategory,
+      eligibleRoutes: 0,
+      rejectedRoutes: capabilityRejectedRoutes,
+      requestSent: false,
+      request_sent: false,
+      output_received: false,
+      diagnostics: diagnostic,
+      provider_intelligence: { stage: 'Provider Intelligence', contentClassification, requiredOperation, routeCapabilities: discoveredRoutes.map(route => route.route_capability), rejectedRoutes: capabilityRejectedRoutes }
+    }, 409);
   }
 
-  const policyRouting = await filterRoutesForPolicy(base44, compatibleRoutes, contentClassification, generationJobId, metadata);
+  const policyRouting = await filterRoutesForPolicy(base44, memoryEvaluation.eligibleRoutes, classificationCategory, generationJobId, metadata);
   if (!policyRouting.ok) {
     return json({
       ok: false,
       error: policyRouting.reason,
       code: policyRouting.code,
       generation_job_id: generationJobId,
-      content_classification: contentClassification,
+      contentClassification,
+      content_classification: classificationCategory,
       policy_compatible: policyRouting.policyCompatible,
       request_sent: false,
       output_received: false,
@@ -851,13 +1039,13 @@ async function generateCover(base44, apiKey, body, user) {
     }, policyRouting.status);
   }
 
-  const routingPlan = await rankRenderingRoutes(base44, policyRouting.routes, contentClassification);
+  const routingPlan = await rankRenderingRoutes(base44, policyRouting.routes, classificationCategory);
   if (!routingPlan.routes.length) {
-    const diagnostic = { category: 'NO_COMPATIBLE_RENDERING_PIPELINE', message: 'No enabled provider is compatible with this classification.', retryable: false };
+    const diagnostic = { category: 'NO_COMPATIBLE_PROVIDER_AVAILABLE', message: 'No approved route satisfies both the required image-reference operation and provider policy requirements.', retryable: false };
     await saveRoutingAudit(base44, {
       generation_job_id: generationJobId,
-      content_classification: contentClassification,
-      verification_status: ['ADULT_MARKETING', 'EXPLICIT'].includes(contentClassification) ? 'passed' : 'not_required',
+      content_classification: classificationCategory,
+      verification_status: ['ADULT_MARKETING', 'EXPLICIT'].includes(classificationCategory) ? 'passed' : 'not_required',
       verification_reference: metadata.adultVerification?.verificationReference || '',
       routing_decision: 'NO_COMPATIBLE_RENDERING_PIPELINE',
       policy_compatible: 'no',
@@ -865,13 +1053,13 @@ async function generateCover(base44, apiKey, body, user) {
       output_received: false,
       reason: diagnostic.message
     });
-    return json({ ok: false, error: publicFailureMessage(diagnostic), code: 'NO_COMPATIBLE_RENDERING_PIPELINE', generation_job_id: generationJobId, content_classification: contentClassification, request_sent: false, output_received: false, diagnostics: diagnostic, photographer_attempts: [], attempt_diagnostics: [], stage_trace: { frame_extracted: true, image_encoded: true, payload_created: false, request_sent: false, response_received: false, hero_image_decoded: false, preview_rendered: false } }, 409);
+    return json({ ok: false, error: publicFailureMessage(diagnostic), code: 'NO_COMPATIBLE_PROVIDER_AVAILABLE', stage: 'Provider Intelligence', generation_job_id: generationJobId, requiredOperation, contentClassification, content_classification: classificationCategory, eligibleRoutes: 0, rejectedRoutes: capabilityRejectedRoutes, requestSent: false, request_sent: false, output_received: false, diagnostics: diagnostic, provider_intelligence: { stage: 'Provider Intelligence', contentClassification, requiredOperation, routeCapabilities: discoveredRoutes.map(route => route.route_capability), rejectedRoutes: capabilityRejectedRoutes }, photographer_attempts: [], attempt_diagnostics: [], stage_trace: { frame_extracted: true, image_encoded: true, payload_created: false, request_sent: false, response_received: false, hero_image_decoded: false, preview_rendered: false } }, 409);
   }
 
   await saveRoutingAudit(base44, {
     generation_job_id: generationJobId,
-    content_classification: contentClassification,
-    verification_status: ['ADULT_MARKETING', 'EXPLICIT'].includes(contentClassification) ? 'passed' : 'not_required',
+    content_classification: classificationCategory,
+    verification_status: ['ADULT_MARKETING', 'EXPLICIT'].includes(classificationCategory) ? 'passed' : 'not_required',
     verification_reference: metadata.adultVerification?.verificationReference || '',
     routing_decision: 'RANKED_PRODUCTION_PIPELINE',
     policy_compatible: policyRouting.policyCompatible,
@@ -885,18 +1073,18 @@ async function generateCover(base44, apiKey, body, user) {
   const attemptDiagnostics = [];
   const skippedRoutes = [];
   const failedPolicyFamilies = new Set();
-  const requestFingerprint = requestSignature({ storyInfo, identityInfo, contentClassification, aspectRatio: aspect_ratio, metadata });
+  const requestFingerprint = requestSignature({ storyInfo, identityInfo, contentClassification: classificationCategory, aspectRatio: aspect_ratio, metadata });
   let executedAttempts = 0;
   let finalDiagnostic = null;
   for (const route of routingPlan.routes) {
     const providerFamily = providerFamilyForRoute(route);
     const rememberedFailure = getRememberedFailure(requestFingerprint, providerFamily);
     if (rememberedFailure && rememberedFailure.category === 'CONTENT_POLICY' && rememberedFailure.retryable === false) {
-      skippedRoutes.push({ model: route.id, provider_family: providerFamily, reason: 'remembered non-retryable provider-family policy failure', category: rememberedFailure.category });
+      skippedRoutes.push({ model: route.id, provider_family: providerFamily, reason: 'remembered non-retryable provider-family policy failure', category: rememberedFailure.category, failure_memory_fingerprint: requestFingerprint, ttl_remaining_ms: FAILURE_MEMORY_TTL_MS - (Date.now() - rememberedFailure.timestamp) });
       continue;
     }
     if (failedPolicyFamilies.has(providerFamily)) {
-      skippedRoutes.push({ model: route.id, provider_family: providerFamily, reason: 'equivalent provider family with identical non-retryable policy failure', category: 'CONTENT_POLICY' });
+      skippedRoutes.push({ model: route.id, provider_family: providerFamily, reason: 'equivalent provider family with identical non-retryable policy failure', category: 'CONTENT_POLICY', failure_memory_fingerprint: requestFingerprint, ttl_remaining_ms: FAILURE_MEMORY_TTL_MS });
       continue;
     }
     if (executedAttempts >= MAX_AUTOMATIC_ATTEMPTS) {
@@ -925,7 +1113,7 @@ async function generateCover(base44, apiKey, body, user) {
         generation_job_id: generationJobId,
         campaign: metadata.campaignName || metadata.videoTitle || '',
         frame_id: metadata.frameId || '',
-        classification: contentClassification,
+        classification: classificationCategory,
         provider: routeProviderName(route),
         provider_id: getRouteProviderKey(route),
         result: 'success',
@@ -947,8 +1135,8 @@ async function generateCover(base44, apiKey, body, user) {
       }));
       await saveRoutingAudit(base44, {
         generation_job_id: generationJobId,
-        content_classification: contentClassification,
-        verification_status: ['ADULT_MARKETING', 'EXPLICIT'].includes(contentClassification) ? 'passed' : 'not_required',
+        content_classification: classificationCategory,
+        verification_status: ['ADULT_MARKETING', 'EXPLICIT'].includes(classificationCategory) ? 'passed' : 'not_required',
         verification_reference: metadata.adultVerification?.verificationReference || '',
         routing_decision: 'OUTPUT_RECEIVED',
         selected_provider: result.resolved_provider || '',
@@ -969,7 +1157,7 @@ async function generateCover(base44, apiKey, body, user) {
         generated_asset_data_url: result.image_data_url,
         rendering_specification: {
           aspect_ratio,
-          content_classification: contentClassification,
+          content_classification: classificationCategory,
           campaign: metadata.campaignName || '',
           hero_photography_plan: metadata.heroPhotographyPlan || metadata.heroPhotographyEngine?.hero_photography_plan || null,
           reconstruction_required: true,
@@ -988,6 +1176,10 @@ async function generateCover(base44, apiKey, body, user) {
         generated_image_data_url: result.image_data_url,
         media_type: result.media_type,
         generation_job_id: generationJobId,
+        model: route.id,
+        selected_model: route.id,
+        provider_family: providerFamilyForRoute(route),
+        route_capability: route.route_capability || null,
         cost_reported: result.cost,
         routing_pipeline: 'best_production_pipeline_selected',
         production_memory_recorded: true,
@@ -1014,9 +1206,14 @@ async function generateCover(base44, apiKey, body, user) {
             reason: skippedRoutes.length ? 'Equivalent provider-family routes were skipped after non-retryable policy memory.' : 'Selected route produced output.',
             skippedRoutes
           },
-          failureMemory: { requestFingerprint, ttl_ms: FAILURE_MEMORY_TTL_MS }
+          failureMemory: { requestFingerprint, ttl_ms: FAILURE_MEMORY_TTL_MS },
+          contentClassification,
+          requiredOperation,
+          routeCapabilities: discoveredRoutes.map(item => item.route_capability),
+          rejectedRoutes: capabilityRejectedRoutes
         },
-        content_classification: contentClassification,
+        contentClassification,
+        content_classification: classificationCategory,
         policy_compatible: policyRouting.policyCompatible,
         stage_trace: {
           frame_extracted: true,
@@ -1047,11 +1244,14 @@ async function generateCover(base44, apiKey, body, user) {
       diagnostic.model = route.id;
       diagnostic.provider = diagnostic.provider || route.compatible_endpoints?.[0]?.provider_name || null;
       diagnostic.provider_family = providerFamilyForRoute(route);
-      diagnostic.endpoint = 'POST /api/v1/images';
+      diagnostic.endpoint = route.route_capability?.endpoint || 'POST /api/v1/images';
       diagnostic.policy_compatible = policyRouting.policyCompatible;
       if (diagnostic.category === 'CONTENT_POLICY' && diagnostic.retryable === false) {
         failedPolicyFamilies.add(diagnostic.provider_family);
         rememberFailure(requestFingerprint, diagnostic.provider_family, diagnostic);
+      }
+      if (diagnostic.category === 'UNSUPPORTED_IMAGE_INPUT' && diagnostic.retryable === false) {
+        rememberRouteCapabilityMismatch(route, REQUIRED_IMAGE_REFERENCE_OPERATION);
       }
       finalDiagnostic = diagnostic;
       const attemptDetail = {
@@ -1096,7 +1296,7 @@ async function generateCover(base44, apiKey, body, user) {
         generation_job_id: generationJobId,
         campaign: metadata.campaignName || metadata.videoTitle || '',
         frame_id: metadata.frameId || '',
-        classification: contentClassification,
+        classification: classificationCategory,
         provider: routeProviderName(route),
         provider_id: getRouteProviderKey(route),
         result: diagnostic.category === 'CONTENT_POLICY' ? 'policy_reject' : diagnostic.category === 'TIMEOUT' ? 'timeout' : 'failed',
@@ -1112,12 +1312,22 @@ async function generateCover(base44, apiKey, body, user) {
     }
   }
 
+  const noCompatibleAfterAttempts = Boolean(finalDiagnostic && ['CONTENT_POLICY', 'UNSUPPORTED_IMAGE_INPUT'].includes(finalDiagnostic.category) && !attemptDiagnostics.some(item => item.retryable));
+  const finalCode = noCompatibleAfterAttempts ? 'NO_COMPATIBLE_PROVIDER_AVAILABLE' : 'all_openrouter_routes_failed';
+  const finalCategory = noCompatibleAfterAttempts ? 'NO_COMPATIBLE_PROVIDER_AVAILABLE' : finalDiagnostic?.category;
+  const finalStatus = noCompatibleAfterAttempts ? 409 : 502;
+  const responseDiagnostic = finalDiagnostic ? { ...finalDiagnostic, category: finalCategory } : { category: finalCategory, retryable: false };
+
   return json({
     ok: false,
-    error: publicFailureMessage(finalDiagnostic),
-    code: 'all_openrouter_routes_failed',
+    error: publicFailureMessage(responseDiagnostic),
+    code: finalCode,
+    stage: noCompatibleAfterAttempts ? 'Provider Intelligence' : undefined,
     generation_job_id: generationJobId,
-    diagnostics: finalDiagnostic ? { category: finalDiagnostic.category, retryable: Boolean(finalDiagnostic.retryable), request_sent: Boolean(finalDiagnostic.payload_summary), output_received: false, provider_family: finalDiagnostic.provider_family || null } : null,
+    requiredOperation,
+    eligibleRoutes: 0,
+    rejectedRoutes: capabilityRejectedRoutes,
+    diagnostics: responseDiagnostic ? { category: responseDiagnostic.category, retryable: Boolean(responseDiagnostic.retryable), request_sent: Boolean(responseDiagnostic.payload_summary), output_received: false, provider_family: responseDiagnostic.provider_family || null } : null,
     provider_intelligence: {
       stage: 'Provider Intelligence',
       selectedProvider: finalDiagnostic?.provider || attempts[0]?.provider || null,
@@ -1129,9 +1339,14 @@ async function generateCover(base44, apiKey, body, user) {
         reason: skippedRoutes.length ? 'Equivalent provider family with identical non-retryable policy failure or request fingerprint memory.' : 'No equivalent provider-family routes skipped.',
         skippedRoutes
       },
-      failureMemory: { requestFingerprint, ttl_ms: FAILURE_MEMORY_TTL_MS }
+      failureMemory: { requestFingerprint, ttl_ms: FAILURE_MEMORY_TTL_MS },
+      contentClassification,
+      requiredOperation,
+      routeCapabilities: discoveredRoutes.map(item => item.route_capability),
+      rejectedRoutes: capabilityRejectedRoutes
     },
-    content_classification: contentClassification,
+    contentClassification,
+    content_classification: classificationCategory,
     policy_compatible: policyRouting.policyCompatible,
     request_sent: attempts.length > 0,
     output_received: false,
@@ -1146,7 +1361,7 @@ async function generateCover(base44, apiKey, body, user) {
       hero_image_decoded: false,
       preview_rendered: false
     }
-  }, 502);
+  }, finalStatus);
 }
 
 Deno.serve(async (req) => {
@@ -1161,6 +1376,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action || 'audit';
     if (action === 'audit' || action === 'health') return json(await auditOpenRouter(base44, apiKey));
+    if (action === 'route_capabilities') return json({ ok: true, requiredOperation: buildRequiredOperation(body.aspect_ratio || '16:9'), routes: await discoverCompatibleImageRoutes(apiKey) });
     if (action === 'self_test') return await runOpenRouterSelfTest(base44, apiKey, user);
     if (action === 'generate') return await generateCover(base44, apiKey, body, user);
     return json({ ok: false, error: 'Invalid action' }, 400);

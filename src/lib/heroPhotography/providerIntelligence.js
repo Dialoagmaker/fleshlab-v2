@@ -4,14 +4,26 @@ function textOf(value) {
 
 function classifyRenderIntent({ productionBlueprint, instructions, campaignFamily, targetPlatform }) {
   const text = `${textOf(productionBlueprint)} ${textOf(instructions)} ${campaignFamily || ""} ${targetPlatform || ""}`;
-  if (/explicit|hardcore|porn|sexual|adult/.test(text)) return "Adult Commercial";
-  if (/fitness|gym|athletic|body/.test(text)) return "Fitness";
-  if (/fashion|editorial|magazine|luxury/.test(text)) return "Fashion";
-  if (/travel|hotel|outdoor|destination/.test(text)) return "Travel";
-  if (/beauty|skin|portrait|face/.test(text)) return "Commercial Portrait";
-  if (/product|brand|campaign/.test(text)) return "Product";
-  if (/cover|key art|poster|netflix|hbo|amazon/.test(text)) return "Editorial Cover";
-  return "Art Direction";
+  let category = "SAFE_BRAND";
+  let reason = "General commercial art-direction request.";
+  let confidence = 0.64;
+  if (/explicit|hardcore|porn|sexual/.test(text)) { category = "EXPLICIT"; reason = "Explicit or sexual language appears in the render context."; confidence = 0.82; }
+  else if (/adult/.test(text)) { category = "ADULT_MARKETING"; reason = "Adult-commercial language appears in the render context."; confidence = 0.78; }
+  else if (/fitness|gym|athletic|body/.test(text)) { category = "FITNESS"; reason = "Fitness or athletic visual intent appears in the render context."; confidence = 0.72; }
+  else if (/swim/.test(text)) { category = "SWIMWEAR"; reason = "Swimwear context appears in the render context."; confidence = 0.7; }
+  else if (/underwear/.test(text)) { category = "UNDERWEAR"; reason = "Underwear context appears in the render context."; confidence = 0.7; }
+  else if (/beauty|skin|portrait|face/.test(text)) { category = "SAFE_PORTRAIT"; reason = "Portrait or identity-forward commercial intent appears in the render context."; confidence = 0.7; }
+  else if (/product|brand|campaign/.test(text)) { category = "SAFE_PRODUCT"; reason = "Product or brand campaign context appears in the render context."; confidence = 0.66; }
+  else if (/fashion|editorial|magazine|luxury|cover|key art|poster|netflix|hbo|amazon/.test(text)) { category = "SAFE_EDITORIAL"; reason = "Editorial, fashion, cover, or premium key-art context appears in the render context."; confidence = 0.69; }
+  return {
+    category,
+    source: "frontend_provider_intelligence",
+    confidence,
+    policyRisk: ["ADULT_MARKETING", "EXPLICIT"].includes(category) ? "restricted" : "standard",
+    technicalIntent: "IMAGE_REFERENCE_GENERATION",
+    reason,
+    version: "provider-intelligence-v2"
+  };
 }
 
 function profileFor(provider) {
@@ -19,10 +31,11 @@ function profileFor(provider) {
   return {
     provider: provider.name,
     providerId: provider.id,
-    providerFamily: isOpenRouter ? "OpenRouter routed image providers" : provider.name,
-    supportsImageInput: true,
-    supportsImageOutput: true,
-    supportsImageEditing: isOpenRouter,
+    providerFamily: isOpenRouter ? "OpenRouter routed image providers (route-level capability required)" : provider.name,
+    supportsImageInput: false,
+    supportsImageOutput: false,
+    supportsImageEditing: false,
+    executableCapabilityLevel: isOpenRouter ? "route_level_backend_verified" : "adapter_level",
     supportsCommercialPhotography: true,
     supportsEditorialKeyArt: true,
     supportsBrandConsistency: true,
@@ -39,8 +52,9 @@ function profileFor(provider) {
 }
 
 function scoreProfile(profile, classification) {
-  const adultRisk = ["Adult Commercial", "Explicit Adult"].includes(classification);
-  const technical = profile.supportsImageInput && profile.supportsImageOutput ? 1 : 0;
+  const category = typeof classification === "object" ? classification.category : classification;
+  const adultRisk = ["ADULT_MARKETING", "EXPLICIT"].includes(category);
+  const technical = profile.executableCapabilityLevel === "route_level_backend_verified" ? 0.6 : profile.supportsImageInput && profile.supportsImageOutput ? 1 : 0;
   const policy = adultRisk && !profile.supportsAdultSafeCommercial ? 0.28 : 0.86;
   const commercial = profile.supportsCommercialPhotography ? 0.9 : 0.45;
   const identity = profile.supportsImageEditing ? 0.78 : 0.48;
@@ -53,7 +67,7 @@ function scoreProfile(profile, classification) {
     providerId: profile.providerId,
     providerFamily: profile.providerFamily,
     score,
-    technicalCompatibility: technical === 1 ? "image input and output supported" : "missing image capability",
+    technicalCompatibility: profile.executableCapabilityLevel === "route_level_backend_verified" ? "requires concrete model-endpoint capability verification" : technical === 1 ? "image input and output supported" : "missing image capability",
     policyCompatibility: policy >= 0.8 ? "compatible" : "policy risk",
     commercialQuality: commercial,
     identityPreservationCapability: identity,
