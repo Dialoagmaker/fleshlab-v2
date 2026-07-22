@@ -1,3 +1,5 @@
+import { createCampaignDesignDirection } from "@/lib/heroPhotography/campaignCreativeDirector";
+
 function compact(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
@@ -91,6 +93,7 @@ export function buildCampaignConcepts({ metadata = {}, blueprint = {}, campaignF
     const campaignType = performer ? "performer" : collection && episode ? "story" : collection ? "collection" : "brand";
     const campaignIdentity = campaignTitle || collection || concept.collection || concept.primaryTitle || campaignType;
     const heroWord = campaignTitle;
+    const campaignDirection = createCampaignDesignDirection({ story, metadata, campaignFamily, index });
     const base = `${safeSlug(campaignIdentity)}_${safeSlug(collection || campaignType)}_${safeSlug(performer || campaignType)}`;
     return {
       ...concept,
@@ -104,6 +107,8 @@ export function buildCampaignConcepts({ metadata = {}, blueprint = {}, campaignF
       campaignTitle,
       campaignTitleSource,
       titleSource: campaignTitleSource,
+      campaignDirection,
+      creativeDirection: campaignDirection,
       subtitle: collection,
       collection,
       seriesName: collection,
@@ -122,6 +127,15 @@ export function buildCampaignConcepts({ metadata = {}, blueprint = {}, campaignF
         campaignTitle,
         campaignTitleSource,
         titleSource: campaignTitleSource,
+        campaignDirection,
+        creativeDirection: campaignDirection,
+        campaignMood: campaignDirection.campaignMood,
+        campaignGenre: campaignDirection.campaignGenre,
+        visualStory: campaignDirection.visualStory,
+        heroMoment: campaignDirection.heroMoment,
+        emotionalHook: campaignDirection.emotionalHook,
+        colorNarrative: campaignDirection.colorNarrative,
+        typographyEnergy: campaignDirection.typographyEnergy,
         performer: performer || null,
         collection: collection || null,
         performerName: performer || null,

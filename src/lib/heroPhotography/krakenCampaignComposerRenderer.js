@@ -67,7 +67,26 @@ function applyPaletteToDirection(direction, palette) {
 function chooseDirection(campaign = {}, analysis = {}) {
   const text = `${campaign.campaignTitle || ""} ${campaign.collection || ""} ${campaign.releaseName || ""} ${campaign.campaignLabel || ""}`.toLowerCase();
   const subjectRight = (analysis.subjectCenter?.x ?? 0.55) >= 0.5;
-  if (shouldUseFleshlabKeyArtLanguage(text)) return { key: "kraken_reference_poster", accent: RED, texture: "red slash premium poster grit", titleTone: "massive distressed trailer title", heroSide: "right", split: 0.55, referencePoster: true };
+  const directed = campaign.campaignDirection || campaign.creativeDirection || campaign.campaignMetadata?.campaignDirection;
+  if (directed) {
+    const genreText = `${directed.campaignGenre || ""} ${directed.campaignMood || ""} ${directed.visualStory || ""}`.toLowerCase();
+    const environmentLed = directed.compositionWeight === "environment_dominant";
+    const performerSide = directed.performerDominanceSide || (subjectRight ? "right" : "left");
+    return {
+      key: environmentLed ? "campaign_environment_story" : genreText.includes("noir") ? "campaign_noir_series" : genreText.includes("adventure") ? "campaign_adventure" : "campaign_image_first",
+      accent: /summer|escape|sun/.test(genreText) ? "#ff3348" : /adventure|documentary/.test(genreText) ? "#f05b2a" : RED,
+      texture: directed.colorNarrative || "cinematic campaign atmosphere",
+      titleTone: directed.typographyEnergy || "image-led premium campaign title",
+      heroSide: performerSide,
+      split: environmentLed ? 0.48 : directed.compositionWeight === "performer_dominant" ? 0.58 : 0.54,
+      referencePoster: false,
+      campaignDirected: true,
+      titlePlacement: directed.titlePlacement || (performerSide === "right" ? "left" : "right"),
+      imageRole: directed.imageRole,
+      focusPath: directed.focusPath
+    };
+  }
+  if (shouldUseFleshlabKeyArtLanguage(text)) return { key: "campaign_image_first", accent: RED, texture: "red slash premium campaign atmosphere", titleTone: "image-led premium campaign title", heroSide: subjectRight ? "right" : "left", split: 0.54, referencePoster: false, campaignDirected: true, titlePlacement: subjectRight ? "left" : "right" };
   if (/bathroom|shower|soap|steam/.test(text)) return { key: "bathroom_noir", accent: RED, texture: "steam tile fracture", titleTone: "hard white cinema title", heroSide: subjectRight ? "right" : "left", split: 0.55 };
   if (/beach|summer|pool|island|ocean/.test(text)) return { key: "sun_escape", accent: "#ff3348", texture: "heated horizon scratches", titleTone: "open-air cinema title", heroSide: subjectRight ? "right" : "left", split: 0.53 };
   if (/gym|fitness|locker|workout/.test(text)) return { key: "kinetic_body", accent: "#ff2433", texture: "motion ticks", titleTone: "athletic block title", heroSide: subjectRight ? "right" : "left", split: 0.52 };
@@ -100,14 +119,15 @@ function getZones(width, height, direction) {
     };
   }
   const splitX = width * (direction.referencePoster ? 0.56 : banner ? 0.5 : direction.split);
-  const titleLeft = direction.heroSide === "right";
+  const titleLeft = direction.titlePlacement ? direction.titlePlacement === "left" : direction.heroSide === "right";
   const titleX = titleLeft ? width * (direction.referencePoster ? 0.052 : 0.055) : splitX + width * 0.065;
   const titleW = titleLeft ? splitX * (direction.referencePoster ? 0.9 : 0.84) : width - titleX - width * 0.055;
+  const titleY = height * (direction.referencePoster ? 0.28 : direction.campaignDirected && banner ? 0.14 : direction.campaignDirected ? 0.2 : banner ? 0.18 : 0.24);
   return {
     mode: "side-split",
     photo: titleLeft ? { x: splitX - width * 0.03, y: 0, w: width - splitX + width * 0.03, h: height } : { x: 0, y: 0, w: splitX + width * 0.05, h: height },
     graphic: titleLeft ? { x: 0, y: 0, w: splitX + width * 0.1, h: height } : { x: splitX - width * 0.08, y: 0, w: width - splitX + width * 0.08, h: height },
-    title: { x: titleX, y: height * (direction.referencePoster ? 0.28 : banner ? 0.18 : 0.24), w: titleW, h: height * (direction.referencePoster ? 0.39 : banner ? 0.52 : 0.44), align: "left", maxLines: direction.referencePoster ? 3 : undefined },
+    title: { x: titleX, y: titleY, w: titleW, h: height * (direction.referencePoster ? 0.39 : banner ? 0.52 : 0.44), align: "left", maxLines: direction.referencePoster ? 3 : undefined },
     meta: { x: titleX, y: height * (direction.referencePoster ? 0.76 : 0.74), w: titleW, h: height * 0.14 },
     logo: { x: titleX, y: height * 0.058, w: Math.min(titleW * (direction.referencePoster ? 0.48 : 0.44), width * (direction.referencePoster ? 0.26 : 0.18)) },
     split: splitX / width,
