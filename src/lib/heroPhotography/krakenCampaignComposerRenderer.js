@@ -164,17 +164,42 @@ function drawHeroPhotography(ctx, image, width, height, zones, direction, analys
 }
 
 function drawSubjectDepth(ctx, image, width, height, zones, direction, analysis) {
-  if (zones.mode !== "side-split") return;
+  if (!["side-split", "immersive"].includes(zones.mode)) return;
   const p = zones.photo;
-  const focusX = p.x + p.w * 0.52;
+  const focus = analysis.subjectCenter || { x: 0.52, y: 0.48 };
+  const focusX = zones.mode === "immersive" ? width * focus.x : p.x + p.w * 0.52;
   ctx.save();
   ctx.beginPath();
-  ctx.ellipse(focusX, height * 0.48, p.w * 0.3, height * 0.52, 0, 0, Math.PI * 2);
+  ctx.ellipse(focusX, height * clamp(focus.y, 0.36, 0.58), p.w * (zones.mode === "immersive" ? 0.2 : 0.3), height * 0.52, 0, 0, Math.PI * 2);
   ctx.clip();
-  ctx.shadowColor = "rgba(0,0,0,0.9)";
-  ctx.shadowBlur = width * 0.04;
-  ctx.filter = "brightness(104%) contrast(136%) saturate(110%)";
-  coverImageRect(ctx, image, p, analysis.subjectCenter || { x: 0.52, y: 0.48 }, 1.15);
+  ctx.shadowColor = "rgba(0,0,0,0.88)";
+  ctx.shadowBlur = width * 0.034;
+  ctx.filter = "brightness(103%) contrast(132%) saturate(108%)";
+  coverImageRect(ctx, image, p, focus, zones.mode === "immersive" ? 1.08 : 1.15);
+  ctx.restore();
+}
+
+function drawSubjectAtmosphere(ctx, width, height, zones, direction, analysis) {
+  const focus = analysis.subjectCenter || { x: 0.55, y: 0.48 };
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  const rim = ctx.createRadialGradient(width * focus.x, height * focus.y, 0, width * focus.x, height * focus.y, Math.max(width, height) * 0.35);
+  rim.addColorStop(0, rgba(direction.highlightRgb || [244,241,234], 0.18));
+  rim.addColorStop(0.32, rgba(direction.ambientRgb || [207,16,45], 0.12));
+  rim.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = rim;
+  ctx.fillRect(0, 0, width, height);
+  ctx.globalAlpha = 0.38;
+  ctx.strokeStyle = rgba(direction.highlightRgb || [244,241,234], 0.34);
+  ctx.lineWidth = Math.max(1, width * 0.0012);
+  for (let i = 0; i < 18; i += 1) {
+    const x = (i * 89) % width;
+    const y = (i * 47) % height;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + width * 0.045, y - height * 0.018);
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
@@ -186,8 +211,8 @@ function drawPhotoBackgroundFusion(ctx, image, width, height, zones, direction, 
   ctx.beginPath();
   ctx.rect(g.x, g.y, g.w, g.h);
   ctx.clip();
-  ctx.globalAlpha = 0.34;
-  ctx.filter = "blur(14px) brightness(44%) contrast(155%) saturate(126%)";
+  ctx.globalAlpha = zones.mode === "immersive" ? 0.18 : 0.24;
+  ctx.filter = "blur(18px) brightness(48%) contrast(145%) saturate(118%)";
   coverImageRect(ctx, image, { x: 0, y: 0, w: width, h: height }, analysis.subjectCenter || { x: 0.5, y: 0.48 }, 1.2);
   ctx.restore();
 
@@ -200,11 +225,11 @@ function drawPhotoBackgroundFusion(ctx, image, width, height, zones, direction, 
     ctx.fillStyle = seam;
     ctx.fillRect(0, zones.graphic.y - height * 0.08, width, height * 0.28);
   } else if (direction.heroSide === "right") {
-    seam.addColorStop(0, "rgba(0,0,0,0.9)"); seam.addColorStop(0.46, "rgba(0,0,0,0.48)"); seam.addColorStop(1, "rgba(0,0,0,0)");
+    seam.addColorStop(0, "rgba(0,0,0,0.46)"); seam.addColorStop(0.5, "rgba(0,0,0,0.2)"); seam.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = seam;
     ctx.fillRect(seamX - width * 0.16, 0, width * 0.32, height);
   } else {
-    seam.addColorStop(0, "rgba(0,0,0,0)"); seam.addColorStop(0.54, "rgba(0,0,0,0.48)"); seam.addColorStop(1, "rgba(0,0,0,0.9)");
+    seam.addColorStop(0, "rgba(0,0,0,0)"); seam.addColorStop(0.52, "rgba(0,0,0,0.2)"); seam.addColorStop(1, "rgba(0,0,0,0.46)");
     ctx.fillStyle = seam;
     ctx.fillRect(seamX - width * 0.16, 0, width * 0.32, height);
   }
@@ -228,52 +253,38 @@ function drawPhotoBackgroundFusion(ctx, image, width, height, zones, direction, 
 function drawStructuralGraphics(ctx, width, height, zones, direction) {
   const g = zones.graphic;
   ctx.save();
-  const field = ctx.createLinearGradient(g.x, g.y, g.x + g.w, g.y + g.h);
-  if (direction.heroSide === "right" || zones.mode === "vertical-split") {
-    field.addColorStop(0, rgba(direction.shadowRgb || [0, 0, 0], 0.97));
-    field.addColorStop(0.48, rgba(direction.ambientRgb || [18, 3, 7], 0.86));
-    field.addColorStop(0.78, rgba(direction.shadowRgb || [0, 0, 0], 0.48));
-    field.addColorStop(1, "rgba(0,0,0,0.08)");
-  } else {
-    field.addColorStop(0, "rgba(0,0,0,0.08)");
-    field.addColorStop(0.22, rgba(direction.shadowRgb || [0, 0, 0], 0.48));
-    field.addColorStop(0.56, rgba(direction.ambientRgb || [18, 3, 7], 0.86));
-    field.addColorStop(1, rgba(direction.shadowRgb || [0, 0, 0], 0.97));
-  }
-  ctx.fillStyle = field;
-  ctx.fillRect(g.x, g.y, g.w, g.h);
+  const veil = ctx.createRadialGradient(zones.title.x + zones.title.w * 0.38, zones.title.y + zones.title.h * 0.42, 0, zones.title.x + zones.title.w * 0.38, zones.title.y + zones.title.h * 0.42, Math.max(width, height) * 0.54);
+  veil.addColorStop(0, rgba(direction.shadowRgb || [0, 0, 0], zones.mode === "immersive" ? 0.62 : 0.72));
+  veil.addColorStop(0.52, rgba(direction.ambientRgb || [18, 3, 7], 0.22));
+  veil.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = veil;
+  ctx.fillRect(0, 0, width, height);
+
   ctx.globalCompositeOperation = "screen";
-  ctx.strokeStyle = rgba(direction.ambientRgb || [207,16,45], 0.38);
-  for (let i = 0; i < 9; i += 1) {
-    ctx.lineWidth = Math.max(2, width * (0.004 + (i % 3) * 0.002));
+  ctx.strokeStyle = rgba(direction.ambientRgb || [207,16,45], 0.18);
+  for (let i = 0; i < 4; i += 1) {
+    ctx.lineWidth = Math.max(1, width * (0.0018 + i * 0.0007));
     ctx.beginPath();
-    ctx.moveTo(g.x + g.w * (0.08 + i * 0.025), height * (0.18 + i * 0.045));
-    ctx.bezierCurveTo(g.x + g.w * 0.28, height * (0.12 + i * 0.052), g.x + g.w * 0.55, height * (0.23 + i * 0.038), g.x + g.w * 0.86, height * (0.18 + i * 0.04));
+    ctx.moveTo(g.x + g.w * (0.04 + i * 0.055), height * (0.2 + i * 0.09));
+    ctx.bezierCurveTo(g.x + g.w * 0.24, height * (0.16 + i * 0.07), g.x + g.w * 0.56, height * (0.26 + i * 0.04), g.x + g.w * 0.94, height * (0.2 + i * 0.065));
     ctx.stroke();
   }
-  ctx.globalCompositeOperation = "source-over";
-  ctx.strokeStyle = "rgba(244,241,234,0.12)";
-  ctx.lineWidth = Math.max(1, width * 0.0012);
+
   if (direction.key === "bathroom_noir") {
-    const tile = Math.max(42, width * 0.055);
-    for (let x = g.x; x < g.x + g.w; x += tile) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x - width * 0.16, height); ctx.stroke(); }
-    for (let y = 0; y < height; y += tile * 0.74) { ctx.beginPath(); ctx.moveTo(g.x, y); ctx.lineTo(g.x + g.w, y + height * 0.05); ctx.stroke(); }
+    ctx.globalAlpha = 0.08;
+    ctx.strokeStyle = "rgba(244,241,234,0.22)";
+    ctx.lineWidth = 1;
+    const tile = Math.max(54, width * 0.068);
+    for (let x = -tile; x < width + tile; x += tile) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x - width * 0.12, height); ctx.stroke(); }
   }
-  ctx.save();
-  ctx.globalAlpha = 0.15;
+
+  ctx.globalCompositeOperation = "source-over";
+  ctx.globalAlpha = 0.86;
   ctx.strokeStyle = direction.accent;
-  ctx.lineWidth = Math.max(8, width * 0.012);
-  ctx.font = font(width * 0.42, "Bebas Neue", 900);
-  ctx.strokeText("A", g.x + g.w * 0.08, height * 0.62, g.w * 0.5);
+  ctx.lineWidth = Math.max(2, width * 0.0025);
   ctx.beginPath();
-  ctx.arc(g.x + g.w * 0.25, height * 0.43, g.w * 0.23, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.restore();
-  ctx.strokeStyle = direction.accent;
-  ctx.lineWidth = Math.max(4, width * 0.005);
-  ctx.beginPath();
-  ctx.moveTo(zones.title.x, zones.title.y - height * 0.035);
-  ctx.lineTo(zones.title.x + zones.title.w * 0.74, zones.title.y - height * 0.07);
+  ctx.moveTo(zones.title.x, zones.title.y - height * 0.025);
+  ctx.lineTo(zones.title.x + zones.title.w * 0.44, zones.title.y - height * 0.045);
   ctx.stroke();
   ctx.restore();
 }
@@ -511,9 +522,9 @@ function intersects(a, b) {
 function createPolishVariants(format, campaign) {
   const seed = compact(`${campaign.campaignTitle || ""}${campaign.collection || ""}${format.key || ""}`).split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
   const variants = [
+    { key: "immersive-fusion", split: 0, titleY: -0.02, logoY: 0, titleScale: 0.96, immersive: true },
     { key: "cinema-monumental", split: -0.02, titleY: -0.035, logoY: 0, titleScale: 1 },
     { key: "intimate-lowburn", split: 0.025, titleY: 0.035, logoY: -0.01, titleScale: 0.94 },
-    { key: "diagonal-tension", split: -0.045, titleY: -0.005, logoY: 0.012, titleScale: 0.98 },
     { key: "streaming-premiere", split: 0.04, titleY: -0.02, logoY: 0, titleScale: 0.92 }
   ];
   return variants.slice(seed % variants.length).concat(variants.slice(0, seed % variants.length));
@@ -521,7 +532,17 @@ function createPolishVariants(format, campaign) {
 
 function applyPolishVariant(zones, width, height, variant) {
   const adjusted = JSON.parse(JSON.stringify(zones));
-  if (adjusted.mode === "side-split") {
+  if (variant.immersive && adjusted.mode === "side-split") {
+    const titleLeft = adjusted.title.x < width * 0.45;
+    adjusted.mode = "immersive";
+    adjusted.photo = { x: 0, y: 0, w: width, h: height };
+    adjusted.graphic = { x: 0, y: 0, w: width, h: height };
+    adjusted.title = titleLeft
+      ? { x: width * 0.055, y: height * 0.2, w: width * 0.44, h: height * 0.46, align: "left" }
+      : { x: width * 0.51, y: height * 0.2, w: width * 0.43, h: height * 0.46, align: "left" };
+    adjusted.meta = { x: adjusted.title.x, y: height * 0.72, w: adjusted.title.w, h: height * 0.14 };
+    adjusted.logo = { x: adjusted.title.x, y: height * 0.055, w: Math.min(adjusted.title.w * 0.4, width * 0.16) };
+  } else if (adjusted.mode === "side-split") {
     const dx = width * variant.split;
     adjusted.graphic.w = clamp((adjusted.graphic.w + dx) / width, 0.42, 0.68) * width;
     adjusted.title.y = clamp(adjusted.title.y + height * variant.titleY, height * 0.12, height * 0.34);
@@ -553,7 +574,7 @@ function validateComposition({ titlePlan, logoBox, metaBox, zones, width, height
     - failures.length * 28
     - Math.max(0, titlePlan.lines.length - 5) * 4
     + Math.min(18, titlePlan.fontSize / Math.max(1, Math.min(width, height)) * 180)
-    + (zones.mode === "side-split" ? 8 : 4);
+    + (zones.mode === "immersive" ? 18 : zones.mode === "side-split" ? 8 : 4);
   return { passed: failures.length === 0, failures, score };
 }
 
@@ -580,6 +601,7 @@ export async function renderKrakenCampaignComposerAsset({ image, analysis = {}, 
     drawSubjectDepth(ctx, image, format.width, format.height, zones, direction, analysis);
     drawStructuralGraphics(ctx, format.width, format.height, zones, direction);
     drawPhotoBackgroundFusion(ctx, image, format.width, format.height, zones, direction, analysis);
+    drawSubjectAtmosphere(ctx, format.width, format.height, zones, direction, analysis);
     const titlePlan = drawTitle(ctx, title, zones, format.width, format.height, direction);
     const metaBox = drawMeta(ctx, campaign, zones, format.width, format.height, direction, titlePlan.bottom);
     drawBadges(ctx, campaign, zones, format.width, format.height, direction);
