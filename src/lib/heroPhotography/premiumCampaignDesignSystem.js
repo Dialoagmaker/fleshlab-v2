@@ -1,4 +1,5 @@
 import { FLESHLAB_BRAND_IDENTITY } from "@/lib/aiMediaStudio/brandIdentityEngine";
+import { createCompositionPlan } from "@/lib/heroPhotography/compositionEngine";
 
 let logoPromise;
 function loadLogo() {
@@ -391,49 +392,64 @@ function drawFeatureStrip(ctx, campaign, width, height, mood) {
   });
 }
 
-async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, campaign, format) {
-  const graphicW = format.role === "story" || height > width ? width * 0.62 : width * 0.47;
-  const photoBox = { x: graphicW * 0.86, y: 0, w: width - graphicW * 0.86, h: height };
+async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, campaign, format, compositionPlan) {
+  const plan = compositionPlan || createCompositionPlan({ analysis, format, campaign });
+  const graphic = toPx(plan.graphicZone, width, height);
+  const photo = toPx(plan.photoZone, width, height);
+  const titleOnLeft = plan.titleZone === "LEFT";
   drawDistressedField(ctx, width, height, mood);
+
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(graphicW * 0.82, 0);
-  ctx.lineTo(width, 0);
-  ctx.lineTo(width, height);
-  ctx.lineTo(graphicW * 0.64, height);
+  if (plan.dominantSide === "RIGHT") {
+    ctx.moveTo(photo.x + photo.w * 0.04, 0);
+    ctx.lineTo(width, 0);
+    ctx.lineTo(width, height);
+    ctx.lineTo(photo.x - width * 0.08, height);
+  } else {
+    ctx.moveTo(0, 0);
+    ctx.lineTo(photo.w + width * 0.08, 0);
+    ctx.lineTo(photo.w - photo.w * 0.04, height);
+    ctx.lineTo(0, height);
+  }
   ctx.closePath();
   ctx.clip();
-  ctx.filter = "brightness(84%) contrast(142%) saturate(108%)";
-  coverImageRect(ctx, image, photoBox, analysis.subjectCenter || { x: 0.52, y: 0.48 }, format.role === "thumbnail" ? 1.22 : 1.12);
+  ctx.filter = "brightness(84%) contrast(146%) saturate(108%)";
+  coverImageRect(ctx, image, photo, plan.subjectFocus, plan.cropZoom);
   ctx.restore();
 
-  const blend = ctx.createLinearGradient(graphicW * 0.62, 0, graphicW * 1.02, 0);
-  blend.addColorStop(0, "rgba(0,0,0,1)");
-  blend.addColorStop(0.38, "rgba(0,0,0,0.58)");
-  blend.addColorStop(1, "rgba(0,0,0,0)");
+  const blend = titleOnLeft
+    ? ctx.createLinearGradient(photo.x - width * 0.1, 0, photo.x + width * 0.16, 0)
+    : ctx.createLinearGradient(photo.x + photo.w - width * 0.16, 0, photo.x + photo.w + width * 0.1, 0);
+  blend.addColorStop(0, titleOnLeft ? "rgba(0,0,0,1)" : "rgba(0,0,0,0)");
+  blend.addColorStop(0.5, "rgba(0,0,0,0.6)");
+  blend.addColorStop(1, titleOnLeft ? "rgba(0,0,0,0)" : "rgba(0,0,0,1)");
   ctx.fillStyle = blend;
-  ctx.fillRect(graphicW * 0.58, 0, graphicW * 0.5, height);
+  ctx.fillRect(Math.min(graphic.x, photo.x), 0, Math.abs(photo.x - graphic.x) + width * 0.24, height);
 
   ctx.save();
   ctx.globalCompositeOperation = "screen";
   ctx.fillStyle = mood.accent;
-  ctx.translate(width * 0.25, height * 0.23);
-  ctx.rotate(-0.13);
-  ctx.fillRect(-width * 0.08, 0, width * 0.5, Math.max(10, height * 0.025));
-  ctx.fillRect(width * 0.05, height * 0.38, width * 0.42, Math.max(7, height * 0.014));
+  ctx.translate(titleOnLeft ? width * 0.24 : width * 0.78, height * 0.23);
+  ctx.rotate(titleOnLeft ? -0.13 : 0.13);
+  ctx.fillRect(titleOnLeft ? -width * 0.08 : -width * 0.42, 0, width * 0.5, Math.max(10, height * 0.025));
+  ctx.fillRect(titleOnLeft ? width * 0.05 : -width * 0.36, height * 0.38, width * 0.42, Math.max(7, height * 0.014));
   ctx.restore();
 
-  const safeX = width * 0.055;
-  const maxTextW = graphicW * 0.78;
-  const logoBottom = await drawLargeLogo(ctx, safeX, height * 0.07, Math.min(width * 0.28, maxTextW));
+  const safeX = titleOnLeft ? graphic.x + width * 0.055 : graphic.x + graphic.w - width * 0.055;
+  const maxTextW = graphic.w * 0.78;
+  ctx.textAlign = titleOnLeft ? "left" : "right";
+  const logoX = titleOnLeft ? safeX : safeX - Math.min(width * 0.28, maxTextW);
+  const logoBottom = await drawLargeLogo(ctx, logoX, height * 0.07, Math.min(width * 0.28, maxTextW));
   const collection = upper(campaign.campaignLabel || campaign.collection || campaign.subtitle || mood.badge);
   ctx.font = font(Math.max(13, width * 0.014), "Inter", 950);
   ctx.fillStyle = mood.accent;
-  drawTrackingText(ctx, collection, safeX, logoBottom + height * 0.065, Math.max(1.5, width * 0.002), maxTextW);
+  if (titleOnLeft) drawTrackingText(ctx, collection, safeX, logoBottom + height * 0.065, Math.max(1.5, width * 0.002), maxTextW);
+  else ctx.fillText(collection, safeX, logoBottom + height * 0.065, maxTextW);
 
   const [primary, secondary] = splitKeyArtTitle(campaign.primaryTitle || campaign.campaignTitle);
   const titleY = logoBottom + height * 0.22;
-  const primaryFit = fitText(ctx, primary, maxTextW, Math.min(height * 0.23, width * 0.15), Math.max(42, width * 0.052), 1, "Bebas Neue");
+  const primaryFit = fitText(ctx, primary, maxTextW, Math.min(height * 0.24, width * 0.16), Math.max(42, width * 0.052), 1, "Bebas Neue");
   ctx.font = font(primaryFit.size, "Bebas Neue", 900);
   ctx.fillStyle = FLESHLAB_BRAND_IDENTITY.colors.cream;
   ctx.strokeStyle = "rgba(0,0,0,0.88)";
@@ -449,8 +465,8 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
     ctx.strokeStyle = FLESHLAB_BRAND_IDENTITY.colors.cream;
     ctx.lineWidth = Math.max(1.5, primaryFit.size * 0.012);
     ctx.save();
-    ctx.translate(safeX + width * 0.02, titleY + primaryFit.size * 0.62);
-    ctx.rotate(-0.055);
+    ctx.translate(titleOnLeft ? safeX + width * 0.02 : safeX - width * 0.02, titleY + primaryFit.size * 0.62);
+    ctx.rotate(titleOnLeft ? -0.055 : 0.055);
     ctx.strokeText(secondary, 0, 0, maxTextW * 0.9);
     ctx.fillText(secondary, 0, 0, maxTextW * 0.9);
     ctx.restore();
@@ -459,7 +475,9 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
 
   ctx.font = font(Math.max(14, width * 0.015), "Inter", 950);
   ctx.fillStyle = "rgba(255,255,255,0.86)";
-  drawTrackingText(ctx, `${upper(campaign.performerName || campaign.creatorName)} SOLO`, safeX, height * 0.72, Math.max(1.4, width * 0.0015), maxTextW);
+  if (titleOnLeft) drawTrackingText(ctx, `${upper(campaign.performerName || campaign.creatorName)} SOLO`, safeX, height * 0.72, Math.max(1.4, width * 0.0015), maxTextW);
+  else ctx.fillText(`${upper(campaign.performerName || campaign.creatorName)} SOLO`, safeX, height * 0.72, maxTextW);
+  ctx.textAlign = "left";
   drawFeatureStrip(ctx, campaign, width, height, mood);
 
   const vignette = ctx.createRadialGradient(width * 0.68, height * 0.46, height * 0.05, width * 0.68, height * 0.46, width * 0.72);
@@ -467,6 +485,7 @@ async function drawFullBleedKeyArt(ctx, image, width, height, analysis, mood, ca
   vignette.addColorStop(1, "rgba(0,0,0,0.74)");
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, width, height);
+  return plan;
 }
 
 async function drawLegacyPanelRenderer(ctx, image, width, height, analysis, mood, campaign, format) {
@@ -494,7 +513,8 @@ export async function renderPremiumCampaignAsset({ image, analysis, format, camp
   canvas.width = format.width;
   canvas.height = format.height;
   const ctx = canvas.getContext("2d");
-  await drawFullBleedKeyArt(ctx, image, format.width, format.height, analysis || {}, mood, campaign || {}, format);
+  const compositionPlan = createCompositionPlan({ analysis: analysis || {}, format, campaign: campaign || {} });
+  await drawFullBleedKeyArt(ctx, image, format.width, format.height, analysis || {}, mood, campaign || {}, format, compositionPlan);
 
   const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.93));
   return {
@@ -510,7 +530,8 @@ export async function renderPremiumCampaignAsset({ image, analysis, format, camp
     kind: "visual",
     status: "ready",
     campaignConceptId: campaign.campaignConceptId,
-    brandPlan: { family: mood.label, designSystem: "FLESHLAB Full-Bleed Cinematic Key Art System", mood: mood.label, layout: { legacy: legacyLayout, split: "graphic-left/photo-right" }, graphicLanguage: "full_bleed_split_key_art" },
+    brandPlan: { family: mood.label, designSystem: "FLESHLAB Composition Engine Key Art System", mood: mood.label, layout: { legacy: legacyLayout, compositionPlan }, graphicLanguage: "composition_engine_key_art" },
+    compositionPlan,
     typographyWarnings: [],
     campaignMetadata: campaign.campaignMetadata,
     downstreamStage: "Final Key Art",

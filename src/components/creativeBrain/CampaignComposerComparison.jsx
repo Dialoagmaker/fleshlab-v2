@@ -21,7 +21,7 @@ export default function CampaignComposerComparison({ improvedAssets = [] }) {
           <img src={asset.url} alt={`${asset.campaignMetadata?.campaignTitle} full-bleed key art`} className="w-full rounded-md border border-primary/30 object-cover" />
         </article>
       </div>
-      <p className="mt-3 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{asset.campaignMetadata?.campaignTitle} · {asset.campaignMetadata?.performerName} · {asset.campaignMetadata?.collection}</p>
+      <p className="mt-3 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{asset.campaignMetadata?.campaignTitle} · {asset.campaignMetadata?.performerName} · {asset.campaignMetadata?.collection} · {asset.compositionPlan?.layoutFamily}</p>
     </div>
   );
 }
