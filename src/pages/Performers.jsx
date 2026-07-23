@@ -3,8 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { callPublicFunction } from "@/lib/publicApi";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Users, Search, X, Loader2, Sparkles, CheckCircle2, Star } from "lucide-react";
+import { Users, Search, X, Loader2 } from "lucide-react";
 import PerformerDiscoverySection from "@/components/public/PerformerDiscoverySection";
+import VideoCard from "@/components/public/VideoCard";
 import SEOMeta from "@/components/SEOMeta";
 import { useI18n } from "@/i18n/i18n.jsx";
 
@@ -17,8 +18,18 @@ export default function Performers() {
     queryFn: () => callPublicFunction('getPublicPerformers'),
     retry: 0,
   });
+  const { data: videoData, isLoading: videosLoading } = useQuery({
+    queryKey: ['performers-page-public-videos'],
+    queryFn: () => callPublicFunction('getPublicCollections'),
+    retry: 0,
+  });
   const performers = publicData?.performers || [];
   const brands = publicData?.brands || [];
+  const videoPerformers = videoData?.performers || performers;
+  const allVideos = useMemo(() => {
+    const videos = (videoData?.collections || []).flatMap((collection) => collection.videos || []);
+    return Array.from(new Map(videos.map((video) => [video.id, video])).values());
+  }, [videoData]);
 
   const featuredPerformers = useMemo(() => {
     const priority = performers.filter((performer) => {
@@ -40,6 +51,12 @@ export default function Performers() {
     );
   }, [performers, search]);
 
+  const filteredVideos = useMemo(() => {
+    if (!search) return allVideos;
+    const searchLower = search.toLowerCase();
+    return allVideos.filter((video) => [video.title, video.description, video.series_title, video.primary_category, ...(video.tags || []), ...(video.performer_names || [])].join(" ").toLowerCase().includes(searchLower));
+  }, [allVideos, search]);
+
   const trendingPerformers = useMemo(() => {
     const featuredIds = new Set(featuredPerformers.map((performer) => performer.id));
     return performers
@@ -58,7 +75,7 @@ export default function Performers() {
 
   const handleClear = () => setSearch("");
 
-  if (isLoading) {
+  if (isLoading || videosLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -116,6 +133,7 @@ export default function Performers() {
                 <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3"><p className="text-2xl font-black text-white">{performers.length}</p><p className="text-[10px] font-black uppercase tracking-wide text-white/42">Creators</p></div>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3"><p className="text-2xl font-black text-white">{performers.filter(p => p.fanclub_enabled).length}</p><p className="text-[10px] font-black uppercase tracking-wide text-white/42">Fanclubs</p></div>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3"><p className="text-2xl font-black text-white">{performers.filter(p => p.verified).length}</p><p className="text-[10px] font-black uppercase tracking-wide text-white/42">Verified</p></div>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3"><p className="text-2xl font-black text-white">{allVideos.length}</p><p className="text-[10px] font-black uppercase tracking-wide text-white/42">Videos</p></div>
               </div>
             </div>
           </section>
@@ -131,7 +149,7 @@ export default function Performers() {
             {search && <button onClick={handleClear} className="absolute right-4 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full hover:bg-white/10"><X className="h-4 w-4 text-white/60" /></button>}
           </div>
 
-          {filteredPerformers.length > 0 ? (
+          {filteredPerformers.length > 0 && (
             search ? (
               <PerformerDiscoverySection eyebrow="Search Results" title="Matching creators" subtitle={`${filteredPerformers.length} creators found.`} performers={filteredPerformers} />
             ) : (
@@ -142,11 +160,28 @@ export default function Performers() {
                 <PerformerDiscoverySection eyebrow="Browse All" title="The full creator roster." subtitle="A calmer grid with personality, country, production world and video count visible at a glance." performers={filteredPerformers} />
               </>
             )
-          ) : (
+          )}
+
+          {filteredVideos.length > 0 && (
+            <section className="space-y-5">
+              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#f0183d]">{search ? 'Video Results' : 'All Videos'}</p>
+                  <h2 className="fl-condensed mt-2 text-[52px] uppercase leading-none tracking-[-0.02em] text-white">{search ? 'Matching productions' : 'The full video library.'}</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-white/52">{search ? `${filteredVideos.length} videos found.` : 'Every public FLESHLAB production available from this creator discovery page.'}</p>
+                </div>
+              </div>
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {filteredVideos.map((video) => <VideoCard key={video.id} video={video} brands={brands} performers={videoPerformers} />)}
+              </div>
+            </section>
+          )}
+
+          {filteredPerformers.length === 0 && filteredVideos.length === 0 && (
             <div className="rounded-2xl border border-white/10 bg-white/[0.035] py-20 text-center">
               <Users className="mx-auto mb-4 h-16 w-16 text-white/28" />
               <h2 className="text-xl font-semibold text-white">{t('performers.noResults')}</h2>
-              <p className="mb-4 mt-2 text-white/60">{search ? 'Try adjusting your search' : 'No performers available'}</p>
+              <p className="mb-4 mt-2 text-white/60">{search ? 'Try adjusting your search' : 'No performers or videos available'}</p>
               {search && <Button variant="outline" onClick={handleClear} className="border-white/20 text-white hover:bg-white/10">Clear Search</Button>}
             </div>
           )}
