@@ -79,6 +79,7 @@ const DB_TRACKED_EVENTS = new Set([
   'application_submit',
   'application_complete',
   'philippines_application_start',
+  'recruitment_campaign_visit',
   ]);
 
 // Best-effort client-side enrichment — never overwrites explicit event params.
@@ -92,6 +93,13 @@ function buildClientEnrichment() {
       utm_source: urlParams.get('utm_source') || null,
       utm_medium: urlParams.get('utm_medium') || null,
       utm_campaign: urlParams.get('utm_campaign') || null,
+      utm_content: urlParams.get('utm_content') || null,
+      utm_term: urlParams.get('utm_term') || null,
+      campaign_id: urlParams.get('campaign_id') || null,
+      recruitment_campaign_id: urlParams.get('campaign_id') || null,
+      referral_code: urlParams.get('ref') || urlParams.get('referral_code') || null,
+      ref: urlParams.get('ref') || null,
+      market: urlParams.get('market') || null,
       referrer: document.referrer || null,
     };
   } catch (_) {
@@ -257,6 +265,27 @@ export function trackPageView(path) {
   }
   
   sendPageView(path, title, category);
+
+  if (['/become-performer', '/gay-performer-recruitment-philippines'].includes(path)) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasCampaignParams = ['utm_source', 'utm_medium', 'utm_campaign', 'campaign_id', 'ref', 'referral_code'].some(key => urlParams.get(key));
+    if (hasCampaignParams) {
+      trackEvent('recruitment_campaign_visit', {
+        source_page: path,
+        landing_page_type: 'recruitment',
+        utm_source: urlParams.get('utm_source') || null,
+        utm_medium: urlParams.get('utm_medium') || null,
+        utm_campaign: urlParams.get('utm_campaign') || null,
+        utm_content: urlParams.get('utm_content') || null,
+        utm_term: urlParams.get('utm_term') || null,
+        campaign_id: urlParams.get('campaign_id') || null,
+        recruitment_campaign_id: urlParams.get('campaign_id') || null,
+        referral_code: urlParams.get('ref') || urlParams.get('referral_code') || null,
+        ref: urlParams.get('ref') || null,
+        market: urlParams.get('market') || null,
+      });
+    }
+  }
 }
 
 /**

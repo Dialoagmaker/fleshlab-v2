@@ -53,7 +53,7 @@ function ChoiceButton({ label, selected, onClick }) {
   );
 }
 
-const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sourcePage, sourceCountry, utmSource, utmMarket, utmCampaign, embedded = false }, ref) {
+const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sourcePage, sourceCountry, utmSource, utmMarket, utmCampaign, utmMedium, utmContent, utmTerm, referralCode, recruitmentCampaignId, embedded = false }, ref) {
   const sessionId = useMemo(() => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, []);
   const [step, setStep] = useState(0);
   const applicationStartedRef = useRef(false);
@@ -153,6 +153,11 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
         utm_source: utmSource || null,
         utm_market: utmMarket || null,
         utm_campaign: utmCampaign || null,
+        utm_medium: utmMedium || null,
+        utm_content: utmContent || null,
+        utm_term: utmTerm || null,
+        referral_code: referralCode || null,
+        recruitment_campaign_id: recruitmentCampaignId || null,
       };
 
       const response = await base44.functions.invoke("submitPerformerApplication", payload);
@@ -172,6 +177,13 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
         source_country: sourceCountry,
         market,
         landing_page_type: 'recruitment',
+        utm_source: utmSource || null,
+        utm_medium: utmMedium || null,
+        utm_campaign: utmCampaign || null,
+        utm_content: utmContent || null,
+        utm_term: utmTerm || null,
+        referral_code: referralCode || null,
+        campaign_id: recruitmentCampaignId || null,
         photos_count: photosCount,
         videos_count: videosCount,
         id_uploaded: idUploaded,

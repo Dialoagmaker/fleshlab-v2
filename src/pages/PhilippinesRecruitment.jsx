@@ -51,9 +51,14 @@ export default function PhilippinesRecruitment() {
   const urlParams = useMemo(() => {
     const params = new URLSearchParams(location.search);
     return {
-      source: params.get("source") || "philippines-recruitment",
+      source: params.get("utm_source") || params.get("source") || "philippines-recruitment",
       market: params.get("market") || "philippines",
-      campaign: params.get("campaign") || "pinoy_recruitment",
+      campaign: params.get("utm_campaign") || params.get("campaign") || "pinoy_recruitment",
+      medium: params.get("utm_medium") || null,
+      content: params.get("utm_content") || null,
+      term: params.get("utm_term") || null,
+      referralCode: params.get("ref") || params.get("referral_code") || null,
+      campaignId: params.get("campaign_id") || null,
     };
   }, [location.search]);
 
@@ -726,6 +731,11 @@ export default function PhilippinesRecruitment() {
               utmSource={urlParams.source}
               utmMarket={urlParams.market}
               utmCampaign={urlParams.campaign}
+              utmMedium={urlParams.medium}
+              utmContent={urlParams.content}
+              utmTerm={urlParams.term}
+              referralCode={urlParams.referralCode}
+              recruitmentCampaignId={urlParams.campaignId}
             />
           </div>
         </section>

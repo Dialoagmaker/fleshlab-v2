@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import SEOMeta from "@/components/SEOMeta";
 import BPHero from "@/components/becomePerformer/BPHero";
 import BPChapterSection from "@/components/becomePerformer/BPChapterSection";
@@ -42,6 +42,20 @@ export default function BecomePerformer() {
   const intakeRef = useRef(null);
   const earnRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const urlParams = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return {
+      source: params.get("utm_source") || params.get("source") || null,
+      market: params.get("market") || null,
+      campaign: params.get("utm_campaign") || params.get("campaign") || null,
+      medium: params.get("utm_medium") || null,
+      content: params.get("utm_content") || null,
+      term: params.get("utm_term") || null,
+      referralCode: params.get("ref") || params.get("referral_code") || null,
+      campaignId: params.get("campaign_id") || null,
+    };
+  }, [location.search]);
   const [submitted, setSubmitted] = useState(false);
   const [submittedData, setSubmittedData] = useState(null);
 
@@ -181,7 +195,21 @@ export default function BecomePerformer() {
             <div ref={intakeRef} className="mx-auto mt-14 max-w-5xl">
               <PrivateCreatorIntake onVerifyClick={scrollToVerification} />
             </div>
-            <BPApplicationForm ref={formRef} onSuccess={handleSuccess} embedded />
+            <BPApplicationForm
+              ref={formRef}
+              onSuccess={handleSuccess}
+              sourcePage="become-performer"
+              sourceCountry={urlParams.market}
+              utmSource={urlParams.source}
+              utmMarket={urlParams.market}
+              utmCampaign={urlParams.campaign}
+              utmMedium={urlParams.medium}
+              utmContent={urlParams.content}
+              utmTerm={urlParams.term}
+              referralCode={urlParams.referralCode}
+              recruitmentCampaignId={urlParams.campaignId}
+              embedded
+            />
           </div>
         </BPChapterSection>
         </div>
