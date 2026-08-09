@@ -107,9 +107,12 @@ export default function GrowthDashboard() {
   const pagesByCategory = ga4Data?.pages_by_category || ga4Data?.pagesByCategory || {};
   const totalPageViewsBackend = ga4Data?.total_page_views || ga4Data?.totalPageViews || 0;
   const overview = ga4Data?.overview || {};
-  const landingPages = ga4Data?.landing_pages || [];
-  const countries = ga4Data?.countries || [];
+  const publicMetrics = ga4Data?.public_metrics || overview;
+  const excludedMetrics = ga4Data?.excluded_internal_metrics || {};
+  const landingPages = ga4Data?.public_landing_pages || ga4Data?.landing_pages || [];
+  const countries = ga4Data?.public_countries || ga4Data?.countries || [];
   const hostnames = ga4Data?.hostnames || [];
+  const publicTrafficSources = ga4Data?.public_traffic_sources || ga4Data?.traffic_sources || [];
   
   // Derive all data BEFORE useEffect references it
   const eventMap = {};
@@ -125,7 +128,7 @@ export default function GrowthDashboard() {
   const phCtaClicks = eventMap['philippines_application_start'] || eventMap['philippines_recruitment_cta_click'] || 0;
   const phWhatsappClicks = eventMap['whatsapp_click'] || eventMap['philippines_whatsapp_click'] || 0;
   // Use exact GA4 overview page views; fall back to visible top pages only if unavailable.
-  const totalPageViews = overview.page_views || topPages?.reduce((sum, p) => sum + (parseInt(p.page_views, 10) || 0), 0) || 0;
+  const totalPageViews = publicMetrics.page_views || overview.page_views || topPages?.reduce((sum, p) => sum + (parseInt(p.page_views, 10) || 0), 0) || 0;
   
   // Debug: Log full data structure
   useEffect(() => {
@@ -211,14 +214,14 @@ export default function GrowthDashboard() {
                 </div>
                 <div className="pt-2 border-t border-green-500/20">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                    <div>Users: <code className="text-green-400">{fmt(overview.total_users)}</code></div>
-                    <div>Sessions: <code className="text-green-400">{fmt(overview.sessions)}</code></div>
-                    <div>Engaged: <code className="text-green-400">{fmt(overview.engaged_sessions)}</code></div>
-                    <div>Engagement: <code className="text-green-400">{fmtPct(overview.engagement_rate)}</code></div>
-                    <div>Views/user: <code className="text-green-400">{overview.views_per_user?.toFixed ? overview.views_per_user.toFixed(2) : '—'}</code></div>
-                    <div>Avg engagement: <code className="text-green-400">{fmt(overview.average_engagement_time_seconds)}s</code></div>
-                    <div>Hosts: <code className="text-green-400">{fmt(hostnames.length)}</code></div>
-                    <div>Countries: <code className="text-green-400">{fmt(countries.length)}</code></div>
+                    <div>Public users: <code className="text-green-400">{fmt(publicMetrics.total_users)}</code></div>
+                    <div>Public sessions: <code className="text-green-400">{fmt(publicMetrics.sessions)}</code></div>
+                    <div>Public engaged: <code className="text-green-400">{fmt(publicMetrics.engaged_sessions)}</code></div>
+                    <div>Public engagement: <code className="text-green-400">{fmtPct(publicMetrics.engagement_rate)}</code></div>
+                    <div>Public views/user: <code className="text-green-400">{publicMetrics.views_per_user?.toFixed ? publicMetrics.views_per_user.toFixed(2) : '—'}</code></div>
+                    <div>Avg engagement: <code className="text-green-400">{fmt(publicMetrics.average_engagement_time_seconds)}s</code></div>
+                    <div>Excluded views: <code className="text-yellow-400">{fmt(excludedMetrics.page_views)}</code></div>
+                    <div>Preview views: <code className="text-yellow-400">{fmt(excludedMetrics.preview_page_views)}</code></div>
                   </div>
                 </div>
                 <div className="pt-2 border-t border-green-500/20">
@@ -245,8 +248,8 @@ export default function GrowthDashboard() {
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold flex items-center gap-2"><Eye className="w-4 h-4 text-primary" />Page Views</CardTitle></CardHeader>
-                <CardContent><p className="text-3xl font-bold">{totalPageViews.toLocaleString()}</p><p className="text-xs text-muted-foreground mt-1">Last {dateRange} days (top 50 pages)</p></CardContent>
+                <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold flex items-center gap-2"><Eye className="w-4 h-4 text-primary" />Public Page Views</CardTitle></CardHeader>
+                <CardContent><p className="text-3xl font-bold">{totalPageViews.toLocaleString()}</p><p className="text-xs text-muted-foreground mt-1">Last {dateRange} days, excluding admin/preview</p></CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold flex items-center gap-2"><MousePointerClick className="w-4 h-4 text-primary" />Fanclub CTA</CardTitle></CardHeader>
@@ -339,14 +342,14 @@ export default function GrowthDashboard() {
                   <Card>
                     <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold flex items-center gap-2"><TrendingUp className="w-4 h-4 text-primary" />All Traffic Sources</CardTitle></CardHeader>
                     <CardContent>
-                      {trafficSources?.length ? (<Table><TableHeader><TableRow><TableHead>Channel</TableHead><TableHead>Source / Medium</TableHead><TableHead className="text-right">Sessions</TableHead></TableRow></TableHeader><TableBody>{trafficSources.slice(0, 20).map((t, i) => (<TableRow key={i}><TableCell className="font-medium text-xs"><Badge variant="outline" className="text-[10px]">{t.channel}</Badge></TableCell><TableCell className="text-xs text-muted-foreground truncate max-w-[200px]">{t.source} / {t.medium}</TableCell><TableCell className="text-right">{fmt(t.sessions)}</TableCell></TableRow>))}</TableBody></Table>) : (<p className="text-sm text-muted-foreground">No traffic data available</p>)}
+                      {publicTrafficSources?.length ? (<Table><TableHeader><TableRow><TableHead>Channel</TableHead><TableHead>Source / Medium</TableHead><TableHead className="text-right">Sessions</TableHead></TableRow></TableHeader><TableBody>{publicTrafficSources.slice(0, 20).map((t, i) => (<TableRow key={i}><TableCell className="font-medium text-xs"><Badge variant="outline" className="text-[10px]">{t.channel}</Badge></TableCell><TableCell className="text-xs text-muted-foreground truncate max-w-[200px]">{t.source} / {t.medium}</TableCell><TableCell className="text-right">{fmt(t.sessions)}</TableCell></TableRow>))}</TableBody></Table>) : (<p className="text-sm text-muted-foreground">No traffic data available</p>)}
                     </CardContent>
                   </Card>
                   <Card>
                     <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold flex items-center gap-2"><ExternalLink className="w-4 h-4 text-primary" />External Platform Traffic</CardTitle></CardHeader>
                     <CardContent>
                       {(() => {
-                        const externalSources = (trafficSources || []).filter(t => ['xhamster', 'pornhub', 'faphouse', 'twitter', 't.co', 'chaturbate'].some(s => t.source?.toLowerCase().includes(s)) || t.medium === 'referral');
+                        const externalSources = (publicTrafficSources || []).filter(t => ['xhamster', 'pornhub', 'faphouse', 'twitter', 't.co', 'chaturbate'].some(s => t.source?.toLowerCase().includes(s)) || t.medium === 'referral');
                         return externalSources.length ? (<Table><TableHeader><TableRow><TableHead>Source</TableHead><TableHead>Channel</TableHead><TableHead className="text-right">Sessions</TableHead></TableRow></TableHeader><TableBody>{externalSources.slice(0, 15).map((t, i) => (<TableRow key={i}><TableCell className="font-medium text-xs truncate max-w-[150px]">{t.source}</TableCell><TableCell className="text-xs"><Badge variant="outline" className="text-[10px]">{t.channel}</Badge></TableCell><TableCell className="text-right">{fmt(t.sessions)}</TableCell></TableRow>))}</TableBody></Table>) : (<p className="text-sm text-muted-foreground">No external platform traffic detected yet</p>);
                       })()}
                     </CardContent>

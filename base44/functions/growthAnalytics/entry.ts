@@ -18,7 +18,7 @@ function classifyPath(path) {
   return 'unknown';
 }
 
-async function runReport(accessToken, propertyId, startDate, endDate, dimensions, metrics, limit = 100) {
+async function runReport(accessToken, propertyId, startDate, endDate, dimensions, metrics, limit = 100, dimensionFilter = undefined) {
   const res = await fetch(
     `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
     {
@@ -30,6 +30,7 @@ async function runReport(accessToken, propertyId, startDate, endDate, dimensions
         metrics: metrics.map(name => ({ name })),
         orderBys: metrics.length > 0 ? [{ metric: { metricName: metrics[0] }, desc: true }] : [],
         limit,
+        dimensionFilter,
       }),
     }
   );
@@ -110,6 +111,28 @@ Deno.serve(async (req) => {
     const today = now.toISOString().slice(0, 10);
     const startDate = new Date(now - days * 86400000).toISOString().slice(0, 10);
 
+    const excludePathPrefixes = ['/admin', '/login', '/register', '/forgot-password', '/reset-password', '/account', '/client/dashboard', '/performer/dashboard', '/performerlogin', '/performer/login', '/sign-contract', '/application-upload', '/wallet'];
+    const productionHostFilter = { filter: { fieldName: 'hostName', stringFilter: { matchType: 'EXACT', value: 'fleshlab.online' } } };
+    const publicTrafficFilter = {
+      andGroup: {
+        expressions: [
+          productionHostFilter,
+          ...excludePathPrefixes.map(prefix => ({ notExpression: { filter: { fieldName: 'pagePath', stringFilter: { matchType: 'BEGINS_WITH', value: prefix } } } }))
+        ]
+      }
+    };
+    const previewHostFilter = { filter: { fieldName: 'hostName', stringFilter: { matchType: 'CONTAINS', value: 'base44.app' } } };
+    const publicLandingFilter = {
+      andGroup: {
+        expressions: [
+          productionHostFilter,
+          { notExpression: { filter: { fieldName: 'landingPagePlusQueryString', stringFilter: { matchType: 'EXACT', value: '(not set)' } } } },
+          { notExpression: { filter: { fieldName: 'landingPagePlusQueryString', stringFilter: { matchType: 'EXACT', value: '' } } } },
+          ...excludePathPrefixes.map(prefix => ({ notExpression: { filter: { fieldName: 'landingPagePlusQueryString', stringFilter: { matchType: 'BEGINS_WITH', value: prefix } } } }))
+        ]
+      }
+    };
+
     // Run multiple reports in parallel
     const [
       overviewRows,
@@ -119,6 +142,11 @@ Deno.serve(async (req) => {
       landingPageRows,
       countryRows,
       hostnameRows,
+      publicOverviewRows,
+      previewOverviewRows,
+      publicTrafficSourceRows,
+      publicLandingPageRows,
+      publicCountryRows,
     ] = await Promise.all([
       runReport(accessToken, ga4PropertyId, startDate, today, [], ['screenPageViews', 'activeUsers', 'totalUsers', 'sessions', 'engagedSessions', 'engagementRate', 'screenPageViewsPerUser', 'userEngagementDuration'], 1),
       runReport(accessToken, ga4PropertyId, startDate, today, ['pagePath'], ['screenPageViews', 'activeUsers'], 50),
@@ -127,6 +155,11 @@ Deno.serve(async (req) => {
       runReport(accessToken, ga4PropertyId, startDate, today, ['landingPagePlusQueryString'], ['sessions', 'activeUsers', 'engagedSessions', 'screenPageViews'], 50),
       runReport(accessToken, ga4PropertyId, startDate, today, ['country'], ['sessions', 'activeUsers', 'screenPageViews'], 50),
       runReport(accessToken, ga4PropertyId, startDate, today, ['hostName'], ['sessions', 'activeUsers', 'screenPageViews'], 20),
+      runReport(accessToken, ga4PropertyId, startDate, today, [], ['screenPageViews', 'activeUsers', 'totalUsers', 'sessions', 'engagedSessions', 'engagementRate', 'screenPageViewsPerUser', 'userEngagementDuration'], 1, publicTrafficFilter),
+      runReport(accessToken, ga4PropertyId, startDate, today, [], ['screenPageViews', 'activeUsers', 'totalUsers', 'sessions', 'engagedSessions', 'engagementRate', 'screenPageViewsPerUser', 'userEngagementDuration'], 1, previewHostFilter),
+      runReport(accessToken, ga4PropertyId, startDate, today, ['sessionDefaultChannelGrouping', 'sessionSource', 'sessionMedium'], ['sessions', 'activeUsers', 'screenPageViews', 'engagedSessions'], 50, publicTrafficFilter),
+      runReport(accessToken, ga4PropertyId, startDate, today, ['landingPagePlusQueryString'], ['sessions', 'activeUsers', 'engagedSessions', 'screenPageViews', 'userEngagementDuration'], 50, publicLandingFilter),
+      runReport(accessToken, ga4PropertyId, startDate, today, ['country'], ['sessions', 'activeUsers', 'screenPageViews', 'engagedSessions'], 50, publicTrafficFilter),
     ]);
 
     // Process overview metrics
@@ -140,6 +173,33 @@ Deno.serve(async (req) => {
       engagement_rate: Number(overviewMetrics[5]?.value || 0) * 100,
       views_per_user: Number(overviewMetrics[6]?.value || 0),
       average_engagement_time_seconds: overviewMetrics[1]?.value ? Math.round(Number(overviewMetrics[7]?.value || 0) / Math.max(1, Number(overviewMetrics[1]?.value || 1))) : 0,
+    };
+
+    function parseOverview(rows) {
+      const values = rows[0]?.metricValues || [];
+      const activeUsers = Number(values[1]?.value || 0);
+      return {
+        page_views: parseInt(values[0]?.value || '0', 10),
+        active_users: parseInt(values[1]?.value || '0', 10),
+        total_users: parseInt(values[2]?.value || '0', 10),
+        sessions: parseInt(values[3]?.value || '0', 10),
+        engaged_sessions: parseInt(values[4]?.value || '0', 10),
+        engagement_rate: Number(values[5]?.value || 0) * 100,
+        views_per_user: Number(values[6]?.value || 0),
+        average_engagement_time_seconds: activeUsers ? Math.round(Number(values[7]?.value || 0) / activeUsers) : 0,
+      };
+    }
+
+    const publicMetrics = parseOverview(publicOverviewRows);
+    const previewMetrics = parseOverview(previewOverviewRows);
+    const excludedInternalMetrics = {
+      page_views: Math.max(0, overview.page_views - publicMetrics.page_views),
+      active_users: Math.max(0, overview.active_users - publicMetrics.active_users),
+      total_users: Math.max(0, overview.total_users - publicMetrics.total_users),
+      sessions: Math.max(0, overview.sessions - publicMetrics.sessions),
+      engaged_sessions: Math.max(0, overview.engaged_sessions - publicMetrics.engaged_sessions),
+      preview_page_views: previewMetrics.page_views,
+      preview_sessions: previewMetrics.sessions,
     };
 
     // Process top pages
@@ -215,6 +275,36 @@ Deno.serve(async (req) => {
       page_views: parseInt(r.metricValues[2].value || '0', 10),
     }));
 
+    const publicTrafficSources = publicTrafficSourceRows.map(r => ({
+      channel: r.dimensionValues[0].value,
+      source: r.dimensionValues[1].value,
+      medium: r.dimensionValues[2].value,
+      sessions: parseInt(r.metricValues[0].value || '0', 10),
+      active_users: parseInt(r.metricValues[1].value || '0', 10),
+      page_views: parseInt(r.metricValues[2].value || '0', 10),
+      engaged_sessions: parseInt(r.metricValues[3].value || '0', 10),
+    }));
+
+    const publicLandingPages = publicLandingPageRows.map(r => {
+      const activeUsers = Number(r.metricValues[1].value || 0);
+      return {
+        landing_page: r.dimensionValues[0].value,
+        sessions: parseInt(r.metricValues[0].value || '0', 10),
+        active_users: parseInt(r.metricValues[1].value || '0', 10),
+        engaged_sessions: parseInt(r.metricValues[2].value || '0', 10),
+        page_views: parseInt(r.metricValues[3].value || '0', 10),
+        average_engagement_time_seconds: activeUsers ? Math.round(Number(r.metricValues[4].value || 0) / activeUsers) : 0,
+      };
+    });
+
+    const publicCountries = publicCountryRows.map(r => ({
+      country: r.dimensionValues[0].value,
+      sessions: parseInt(r.metricValues[0].value || '0', 10),
+      active_users: parseInt(r.metricValues[1].value || '0', 10),
+      page_views: parseInt(r.metricValues[2].value || '0', 10),
+      engaged_sessions: parseInt(r.metricValues[3].value || '0', 10),
+    }));
+
     // Categorize pages
     const pagesByCategory = {
       public_current: [],
@@ -233,7 +323,10 @@ Deno.serve(async (req) => {
       date_range: { start: startDate, end: today, days },
       ga4_property_id: ga4PropertyId,
       overview,
+      public_metrics: publicMetrics,
+      excluded_internal_metrics: excludedInternalMetrics,
       total_page_views: overview.page_views,
+      public_page_views: publicMetrics.page_views,
       top_pages: topPages,
       pages_by_category: pagesByCategory,
       events: {
@@ -242,8 +335,11 @@ Deno.serve(async (req) => {
       },
       traffic_sources: trafficSources,
       landing_pages: landingPages,
+      public_landing_pages: publicLandingPages,
       countries,
+      public_countries: publicCountries,
       hostnames,
+      public_traffic_sources: publicTrafficSources,
       tracking_health: {
         ga4_connected: true,
         last_pull: new Date().toISOString(),
