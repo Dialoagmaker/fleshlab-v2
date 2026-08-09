@@ -73,7 +73,7 @@ export default function BPHero({ onApplyClick, onEarnClick }) {
           </h1>
 
           <p className="mb-3 max-w-[560px] text-lg leading-relaxed text-foreground/72 md:text-xl">
-            You already have the body, confidence and energy. FLESHLAB helps turn it into paid scenes, fanclub access, PPV sales, livecam and distribution.
+            Become a verified 18+ gay/adult content creator or performer. FLESHLAB helps turn your body, confidence and energy into paid scenes, fanclub access, PPV sales, livecam and distribution.
           </p>
           <p className="mb-8 max-w-[480px] text-base leading-relaxed text-muted-foreground">
             One video can become the start of a performer brand.

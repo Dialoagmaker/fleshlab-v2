@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useEffect, useMemo, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
   MessageCircle, 
@@ -31,9 +31,11 @@ import {
   Crown,
   Share2
 } from "lucide-react";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackPerformerApplyClick } from "@/lib/analytics";
 import SEOMeta from "@/components/SEOMeta";
 import BPApplicationForm from "@/components/becomePerformer/BPApplicationForm";
+import PhilippinesRecruitmentIntro from "@/components/recruitment/PhilippinesRecruitmentIntro";
+import PhilippinesRecruitmentFaq, { PHILIPPINES_RECRUITMENT_FAQ } from "@/components/recruitment/PhilippinesRecruitmentFaq";
 import gcashLogo from "@/assets/payment-logos/gcash.svg";
 import mayaLogo from "@/assets/payment-logos/maya.svg";
 import bdoLogo from "@/assets/payment-logos/bdo.svg";
@@ -42,8 +44,8 @@ import unionbankLogo from "@/assets/payment-logos/unionbank.svg";
 import usdtLogo from "@/assets/payment-logos/usdt.svg";
 
 export default function PhilippinesRecruitment() {
-  const navigate = useNavigate();
   const location = useLocation();
+  const applyRef = useRef(null);
 
   // Extract URL params for attribution
   const urlParams = useMemo(() => {
@@ -65,13 +67,16 @@ export default function PhilippinesRecruitment() {
     });
   }, [urlParams]);
 
-  const handleApplyClick = () => {
-    trackEvent("philippines_recruitment_cta_click", { source: "philippines_page", market: "philippines" });
-    navigate("/application-upload?source=philippines-recruitment&market=philippines");
+  const handleApplyClick = (ctaLocation = "final_cta") => {
+    trackPerformerApplyClick(ctaLocation, "/gay-performer-recruitment-philippines");
+    trackEvent("philippines_recruitment_cta_click", { source_page: "/gay-performer-recruitment-philippines", market: "philippines", cta_location: ctaLocation, recruitment_type: "philippines_performer" });
+    applyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const handleWhatsAppClick = () => {
-    trackEvent("philippines_whatsapp_click", { source: "philippines_page", market: "philippines" });
+  const handleWhatsAppClick = (ctaLocation = "whatsapp_cta") => {
+    const params = { source_page: "/gay-performer-recruitment-philippines", source: "philippines_page", market: "philippines", cta_location: ctaLocation, recruitment_type: "philippines_performer" };
+    trackEvent("whatsapp_click", params);
+    trackEvent("philippines_whatsapp_click", params);
     window.open("https://wa.me/886958679186?text=Hi%20FLESHLAB%2C%20I'm%20interested%20in%20becoming%20a%20performer%20from%20the%20Philippines", "_blank");
   };
 
@@ -90,10 +95,11 @@ export default function PhilippinesRecruitment() {
   return (
     <>
       <SEOMeta
-        title="Gay Performer Recruitment Philippines | FLESHLAB"
-        description="Apply as a verified Filipino gay performer or adult content creator with FLESHLAB. Professional studio support, content distribution, performer contracts, and revenue share options."
+        title="Gay Content Creator & Performer Opportunities Philippines | FLESHLAB"
+        description="Apply to join FLESHLAB as a verified 18+ gay content creator or performer in the Philippines. Beginner-friendly creator paths, private application review, professional support and remote options where available."
         canonical="/gay-performer-recruitment-philippines"
         noIndex={false}
+        jsonLd={{ "@context": "https://schema.org", "@type": "FAQPage", "mainEntity": PHILIPPINES_RECRUITMENT_FAQ.map(({ q, a }) => ({ "@type": "Question", "name": q, "acceptedAnswer": { "@type": "Answer", "text": a } })) }}
       />
       
       <div style={{ background: '#050505' }}>
@@ -115,18 +121,18 @@ export default function PhilippinesRecruitment() {
               <div className="max-w-[600px]" style={{ paddingTop: '130px', paddingBottom: '160px' }}>
                 <div className="flex items-center gap-2 mb-6 w-fit">
                   <span className="text-2xl">🇵🇭</span>
-                  <span className="text-white text-sm font-bold tracking-wide uppercase">Filipino Creators 18+</span>
+                  <span className="text-white text-sm font-bold tracking-wide uppercase">Philippines Creator Opportunity · Verified 18+</span>
                 </div>
                 <h1 className="text-[40px] sm:text-[48px] lg:text-[56px] xl:text-[64px] font-black text-white mb-6 leading-[0.95] tracking-tight">
-                  Start Creating<br />From Home in<br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ff2d6f] to-[#ff8a00]">the Philippines</span>
+                  Gay Performer &<br />Content Creator<br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ff2d6f] to-[#ff8a00]">Opportunities in the Philippines</span>
                 </h1>
-                <p className="text-[18px] text-white/90 mb-10 leading-[1.55] font-medium" style={{ maxWidth: '540px' }}>
-                  Use your phone, a private space, and a verified 18+ application to get started. FLESHLAB helps with setup, publishing, promotion and fanclub monetization.
+                <p className="text-[18px] text-white/90 mb-10 leading-[1.55] font-medium" style={{ maxWidth: '560px' }}>
+                  Apply from the Philippines as a verified 18+ adult creator or performer. Beginners can start with a phone and private space where appropriate; FLESHLAB helps with setup, publishing, promotion, fanclub monetization and distribution.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 mb-10">
                   <Button size="lg" className="bg-[#16a34a] hover:bg-[#15803d] text-white shadow-xl px-12 h-[56px] text-lg w-full sm:w-auto font-bold rounded-xl"
-                    onClick={handleWhatsAppClick}>
+                    onClick={() => handleWhatsAppClick("hero_whatsapp")}>
                     <MessageCircle className="mr-3 h-6 w-6" /> Apply on WhatsApp
                   </Button>
                   <Button size="lg" className="border border-white/35 text-white hover:bg-white/12 bg-transparent/50 backdrop-blur-sm h-[56px] px-12 text-lg w-full sm:w-auto font-bold rounded-xl"
@@ -161,6 +167,8 @@ export default function PhilippinesRecruitment() {
             </div>
           </div>
         </section>
+
+        <PhilippinesRecruitmentIntro />
 
         {/* ── SECTION 2: CREATOR TOOLKIT ── */}
         <section className="px-4 sm:px-6 lg:px-8 relative overflow-hidden" style={{ paddingTop: '80px', paddingBottom: '96px' }}>
@@ -312,7 +320,7 @@ export default function PhilippinesRecruitment() {
                 <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                   <Button className="font-extrabold text-white px-7 py-3.5 rounded-xl gap-2"
                     style={{ background: '#25D366', boxShadow: '0 0 22px rgba(37,211,102,0.45)' }}
-                    onClick={handleWhatsAppClick}>
+                    onClick={() => handleWhatsAppClick("path_card_whatsapp")}>
                     <MessageCircle className="h-5 w-5" /> Chat on WhatsApp
                   </Button>
                 </div>
@@ -430,7 +438,7 @@ export default function PhilippinesRecruitment() {
               </div>
               <Button className="font-bold text-white rounded-xl gap-2 flex-shrink-0 px-7"
                 style={{ background: '#25D366', boxShadow: '0 0 18px rgba(37,211,102,0.4)' }}
-                onClick={handleWhatsAppClick}>
+                onClick={() => handleWhatsAppClick("model_section_whatsapp")}>
                 <MessageCircle className="h-4 w-4" /> Chat on WhatsApp
               </Button>
             </div>
@@ -639,6 +647,8 @@ export default function PhilippinesRecruitment() {
           </div>
         </section>
 
+        <PhilippinesRecruitmentFaq onWhatsAppClick={handleWhatsAppClick} />
+
         {/* ── SECTION 8: FINAL CTA ── */}
         <section className="relative py-24 px-4 sm:px-6 lg:px-8 overflow-hidden"
           style={{ background: 'linear-gradient(135deg, #0a0610 0%, #1a0510 40%, #0b0808 70%, #050505 100%)' }}>
@@ -678,13 +688,13 @@ export default function PhilippinesRecruitment() {
               <div className="flex flex-col sm:flex-row gap-4 mb-12">
                 <Button size="lg" className="font-bold text-white px-10 h-14 text-base rounded-xl gap-2"
                   style={{ background: '#25D366', boxShadow: '0 0 30px rgba(37,211,102,0.5)' }}
-                  onClick={handleWhatsAppClick}>
+                  onClick={() => handleWhatsAppClick("final_whatsapp")}>
                   <MessageCircle className="h-5 w-5" /> Chat on WhatsApp
                 </Button>
                 <Button size="lg" variant="outline"
                   className="font-bold text-white px-10 h-14 text-base rounded-xl gap-2 bg-transparent hover:bg-white/8"
                   style={{ border: '1.5px solid rgba(255,255,255,0.28)' }}
-                  onClick={handleApplyClick}>
+                  onClick={() => handleApplyClick("final_start_application")}>
                   Start Application <ArrowRight className="h-5 w-5" />
                 </Button>
               </div>
@@ -698,7 +708,7 @@ export default function PhilippinesRecruitment() {
         </section>
 
         {/* ── APPLICATION FORM ── */}
-        <section id="apply-section" className="py-24 px-4 bg-[#050505]">
+        <section id="apply-section" ref={applyRef} className="py-24 px-4 bg-[#050505]">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-10">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-4 text-xs font-black uppercase tracking-widest text-rose-400"
@@ -725,7 +735,7 @@ export default function PhilippinesRecruitment() {
           <div className="max-w-4xl mx-auto text-center space-y-4">
             <p className="text-gray-600 text-xs leading-relaxed">All performers must be 18+ with valid Philippine government ID. Independent contractor position. Earnings vary and are not guaranteed. You are responsible for your own taxes (BIR).</p>
             <div className="flex flex-wrap justify-center gap-6">
-              {[['/terms','Terms'], ['/privacy','Privacy'], ['/2257','2257 Compliance'], ['/faq','FAQ']].map(([href, label]) => (
+              {[['/become-performer','Global Performer Application'], ['/terms','Terms'], ['/privacy','Privacy'], ['/2257','2257 Compliance'], ['/faq','FAQ'], ['/compliance','Compliance']].map(([href, label]) => (
                 <a key={href} href={href} className="hover:text-white transition-colors">{label}</a>
               ))}
             </div>

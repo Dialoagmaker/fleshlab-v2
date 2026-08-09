@@ -1,4 +1,4 @@
-import { useState, useMemo, forwardRef } from "react";
+import { useState, useMemo, useRef, forwardRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, ChevronRight, ChevronLeft } from "lucide-react";
-import { trackPhilippinesApplicationStart, trackApplicationStart, trackApplicationSubmit, trackApplicationStepComplete } from "@/lib/analytics";
+import { trackPhilippinesApplicationStart, trackApplicationStart, trackApplicationSubmit, trackApplicationComplete, trackApplicationStepComplete } from "@/lib/analytics";
 import { trackRecruitmentFunnelStage } from "@/lib/recruitmentOptimization";
 import { base44 } from "@/api/base44Client";
 import toast from "react-hot-toast";
@@ -56,6 +56,18 @@ function ChoiceButton({ label, selected, onClick }) {
 const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sourcePage, sourceCountry, utmSource, utmMarket, utmCampaign, embedded = false }, ref) {
   const sessionId = useMemo(() => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, []);
   const [step, setStep] = useState(0);
+  const applicationStartedRef = useRef(false);
+  const normalizedSourcePage = sourcePage ? (sourcePage.startsWith('/') ? sourcePage : `/${sourcePage}`) : null;
+  const market = sourceCountry === "Philippines" || utmMarket === "philippines" ? "philippines" : null;
+
+  const markApplicationStarted = () => {
+    if (applicationStartedRef.current) return;
+    applicationStartedRef.current = true;
+    trackApplicationStart('performer_application', normalizedSourcePage, { market, landing_page_type: 'recruitment' });
+    if (market === "philippines") {
+      trackPhilippinesApplicationStart({ utmSource, utmMarket, utmCampaign });
+    }
+  };
 
   // Part 1
   const [p1, setP1] = useState({
@@ -87,14 +99,6 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
 
     const submitMutation = useMutation({
     onMutate: () => {
-      // Track application start
-      trackApplicationStart('performer_application', sourcePage);
-      
-      // Track Philippines-specific
-      if (sourcePage === "gay-performer-recruitment-philippines") {
-        trackPhilippinesApplicationStart({ utmSource, utmMarket, utmCampaign });
-      }
-      
       // Track step completions
       trackApplicationStepComplete(1, 'performer_application');
       trackApplicationStepComplete(2, 'performer_application');
@@ -164,8 +168,9 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
       
       const submissionMetrics = {
         application_type: 'performer_application',
-        source_page: sourcePage,
+        source_page: normalizedSourcePage,
         source_country: sourceCountry,
+        market,
         landing_page_type: 'recruitment',
         photos_count: photosCount,
         videos_count: videosCount,
@@ -175,6 +180,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
         upload_status: missingCount === 0 ? 'complete' : 'partial',
       };
       trackApplicationSubmit(submissionMetrics);
+      trackApplicationComplete(submissionMetrics);
       trackRecruitmentFunnelStage('verification_completed', submissionMetrics);
       trackRecruitmentFunnelStage('application_submitted', submissionMetrics);
       
@@ -189,6 +195,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
   const step2Valid = p3.id_document_r2_key && p3.selfie_r2_key && p3.consent1 && p3.consent2 && p3.consent3 && p3.consent4 && p3.consent5;
 
   const handleNext = () => {
+    markApplicationStarted();
     if (step === 0) trackRecruitmentFunnelStage('verification_started', { verification_step: 'creator_profile_complete' });
     if (step === 1) trackRecruitmentFunnelStage('verification_started', { verification_step: 'review_media_complete' });
     setStep(s => s + 1);
@@ -197,7 +204,7 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
   const Wrapper = embedded ? "div" : "section";
 
   return (
-    <Wrapper id="application-form" ref={ref} className={embedded ? "pt-16 md:pt-20" : "py-24 px-6 bg-gradient-to-b from-fl-surface to-fl-background border-t border-border"}>
+    <Wrapper id="application-form" ref={ref} onFocusCapture={markApplicationStarted} onClickCapture={markApplicationStarted} className={embedded ? "pt-16 md:pt-20" : "py-24 px-6 bg-gradient-to-b from-fl-surface to-fl-background border-t border-border"}>
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-10">
           <h2 className="text-4xl md:text-5xl font-black mb-3 text-white">

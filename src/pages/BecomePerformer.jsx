@@ -9,8 +9,8 @@ import RecruitmentMeasurement from "@/components/becomePerformer/RecruitmentMeas
 import RecruitmentCredibilitySection from "@/components/becomePerformer/RecruitmentCredibilitySection";
 import BPSuccessScreen from "@/components/becomePerformer/BPSuccessScreen";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BarChart2, CheckCircle2, Crown, FileText, Film, Globe, Lock, Shield, Users, Video } from "lucide-react";
-import { trackBecomePerformerCtaClick } from "@/lib/analytics";
+import { ArrowRight, BarChart2, CheckCircle2, Crown, FileText, Film, Globe, Lock, MessageCircle, Shield, Users, Video } from "lucide-react";
+import { trackBecomePerformerCtaClick, trackWhatsappRecruitmentClick } from "@/lib/analytics";
 import { trackRecruitmentFunnelStage } from "@/lib/recruitmentOptimization";
 
 const FAQ_JSON_LD = [
@@ -46,7 +46,6 @@ export default function BecomePerformer() {
   const [submittedData, setSubmittedData] = useState(null);
 
   const scrollToForm = () => {
-    trackBecomePerformerCtaClick('hero_apply');
     trackRecruitmentFunnelStage('hero_interaction', { cta_location: 'hero_apply' });
     intakeRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -58,6 +57,11 @@ export default function BecomePerformer() {
   const scrollToEarn = () => {
     trackBecomePerformerCtaClick('hero_earn');
     earnRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleAskFirst = () => {
+    trackWhatsappRecruitmentClick('/become-performer', { cta_location: 'global_ask_first', market: 'global', recruitment_type: 'performer_recruitment' });
+    window.open("https://wa.me/886958679186?text=Hi%20FLESHLAB%2C%20I'm%20interested%20in%20becoming%20a%20performer", "_blank");
   };
 
   const handleSuccess = (data) => {
@@ -86,6 +90,20 @@ export default function BecomePerformer() {
         <div data-recruitment-section="hero">
           <BPHero onApplyClick={scrollToForm} onEarnClick={scrollToEarn} />
         </div>
+
+        <section className="border-y border-border bg-card px-6 py-8">
+          <div className="mx-auto grid max-w-[1180px] gap-5 md:grid-cols-[1fr_auto] md:items-center">
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest text-primary">Creator recruitment</p>
+              <h2 className="mt-2 text-2xl font-black text-foreground">Become a verified 18+ gay/adult content creator or performer with FLESHLAB.</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">The Philippines recruitment path is available for applicants who want to start from home with phone-shot review materials where appropriate.</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link to="/gay-performer-recruitment-philippines" className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-black text-primary-foreground transition hover:bg-primary/90">Philippines path <Globe className="h-4 w-4" /></Link>
+              <button type="button" onClick={handleAskFirst} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-5 py-3 text-sm font-bold text-foreground transition hover:bg-secondary"><MessageCircle className="h-4 w-4 text-primary" /> Ask first</button>
+            </div>
+          </div>
+        </section>
 
         <div data-recruitment-section="why_fleshlab">
         <BPChapterSection number="01" eyebrow="Why FLESHLAB" question="Why build with FLESHLAB?" answer="Start with what you already have: body, confidence and energy. We add production, publishing, compliance, sales and support.">

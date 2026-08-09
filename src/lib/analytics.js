@@ -68,10 +68,16 @@ const DB_TRACKED_EVENTS = new Set([
   'guest_production_cta_click',
   'performer_apply_click',
   'whatsapp_click',
+  'whatsapp_recruitment_click',
+  'philippines_whatsapp_click',
   'livecam_click',
   'fanclub_join_click',
   'video_unlock_click',
   'fan_production_request_click',
+  'application_start',
+  'application_step_complete',
+  'application_submit',
+  'application_complete',
   'philippines_application_start',
   ]);
 
@@ -393,13 +399,15 @@ export function trackExternalPlatformClick(platformName, sourcePage) {
 /**
  * Track WhatsApp recruitment click
  */
-export function trackWhatsappRecruitmentClick(sourcePage) {
-  const params = {
+export function trackWhatsappRecruitmentClick(sourcePage, params = {}) {
+  const eventParams = {
     source_page: sourcePage,
-    cta_location: 'recruitment',
+    cta_location: params.cta_location || 'recruitment',
+    market: params.market || null,
+    recruitment_type: params.recruitment_type || 'performer_recruitment',
   };
-  trackEvent('whatsapp_click', params);
-  trackEvent('whatsapp_recruitment_click', params);
+  trackEvent('whatsapp_click', eventParams);
+  trackEvent('whatsapp_recruitment_click', eventParams);
 }
 
 /**
@@ -451,10 +459,12 @@ export function trackVideoUnlockClick(videoId, priceTier, ctaLocation, sourcePag
 /**
  * Track application start
  */
-export function trackApplicationStart(applicationType, sourcePage) {
+export function trackApplicationStart(applicationType, sourcePage, params = {}) {
   trackEvent('application_start', {
     application_type: applicationType,
     source_page: sourcePage,
+    market: params.market || null,
+    landing_page_type: params.landing_page_type || 'recruitment',
   });
 }
 
@@ -477,6 +487,7 @@ export function trackApplicationSubmit(params) {
     application_type: params.application_type,
     source_page: params.source_page,
     source_country: params.source_country || null,
+    market: params.market || null,
     landing_page_type: params.landing_page_type,
     photos_count: params.photos_count,
     videos_count: params.videos_count,
@@ -484,6 +495,20 @@ export function trackApplicationSubmit(params) {
     selfie_uploaded: params.selfie_uploaded,
     missing_count: params.missing_count,
     upload_status: params.upload_status,
+  });
+}
+
+export function trackApplicationComplete(params) {
+  trackEvent('application_complete', {
+    application_type: params.application_type,
+    source_page: params.source_page,
+    market: params.market || null,
+    landing_page_type: params.landing_page_type,
+    upload_status: params.upload_status,
+    photos_count: params.photos_count,
+    videos_count: params.videos_count,
+    id_uploaded: params.id_uploaded,
+    selfie_uploaded: params.selfie_uploaded,
   });
 }
 
@@ -663,9 +688,10 @@ export function trackApplicationFilePreviewOpen(fileType, applicationId) {
  */
 export function trackPhilippinesApplicationStart(utmParams = {}) {
   trackEvent('philippines_application_start', {
-    source_page: 'gay-performer-recruitment-philippines',
+    source_page: '/gay-performer-recruitment-philippines',
     page_type: 'recruitment',
     source_country: 'Philippines',
+    market: 'philippines',
     utm_source: utmParams.utm_source || utmParams.utmSource || 'philippines-recruitment',
     utm_market: utmParams.utm_market || utmParams.utmMarket || 'philippines',
     utm_campaign: utmParams.utm_campaign || utmParams.utmCampaign || 'pinoy_recruitment',

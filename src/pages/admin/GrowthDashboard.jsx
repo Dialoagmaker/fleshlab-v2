@@ -113,7 +113,21 @@ export default function GrowthDashboard() {
   const countries = ga4Data?.public_countries || ga4Data?.countries || [];
   const hostnames = ga4Data?.hostnames || [];
   const publicTrafficSources = ga4Data?.public_traffic_sources || ga4Data?.traffic_sources || [];
-  
+  const recruitmentAcquisition = ga4Data?.recruitment_acquisition || {};
+  const recruitmentSummary = recruitmentAcquisition.summary || {};
+  const recruitmentPhilippines = recruitmentAcquisition.philippines || {};
+  const recruitmentNonPhilippines = recruitmentAcquisition.non_philippines || {};
+  const recruitmentEvents = recruitmentAcquisition.events || [];
+  const recruitmentLandingBreakdown = recruitmentAcquisition.all_landing_breakdown || [];
+  const recruitmentOrganicBreakdown = recruitmentAcquisition.organic_breakdown || [];
+  const recruitmentPagePaths = recruitmentAcquisition.pages || ['/become-performer', '/gay-performer-recruitment-philippines'];
+  const recruitmentGscPages = (gscData?.top_pages || []).filter((p) => recruitmentPagePaths.some((path) => String(p.page || '').includes(path)));
+  const recruitmentGscClicks = recruitmentGscPages.reduce((sum, p) => sum + (Number(p.clicks) || 0), 0);
+  const recruitmentGscImpressions = recruitmentGscPages.reduce((sum, p) => sum + (Number(p.impressions) || 0), 0);
+  const recruitmentGscCtr = recruitmentGscImpressions > 0 ? (recruitmentGscClicks / recruitmentGscImpressions) * 100 : 0;
+  const recruitmentGscPosition = recruitmentGscImpressions > 0 ? recruitmentGscPages.reduce((sum, p) => sum + ((Number(p.position ?? p.average_position) || 0) * (Number(p.impressions) || 0)), 0) / recruitmentGscImpressions : 0;
+  const funnelRate = (to, from) => from > 0 ? (to / from) * 100 : 0;
+
   // Derive all data BEFORE useEffect references it
   const eventMap = {};
   events.forEach(e => { eventMap[e.event_name] = e.event_count; });
@@ -264,6 +278,54 @@ export default function GrowthDashboard() {
                 </CardContent>
               </Card>
             </div>
+
+            <Card className="border-rose-500/35 bg-rose-950/10">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base"><Users className="w-5 h-5 text-rose-400" />PERFORMER ACQUISITION SEO</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  <div className="rounded-lg border bg-card p-3"><p className="text-xs text-muted-foreground">Organic recruitment sessions</p><p className="text-2xl font-bold">{fmt(recruitmentSummary.organic_recruitment_sessions || 0)}</p></div>
+                  <div className="rounded-lg border bg-card p-3"><p className="text-xs text-muted-foreground">Recruitment impressions</p><p className="text-2xl font-bold">{fmt(recruitmentGscImpressions)}</p></div>
+                  <div className="rounded-lg border bg-card p-3"><p className="text-xs text-muted-foreground">Recruitment clicks</p><p className="text-2xl font-bold">{fmt(recruitmentGscClicks)}</p></div>
+                  <div className="rounded-lg border bg-card p-3"><p className="text-xs text-muted-foreground">Recruitment CTR</p><p className="text-2xl font-bold">{fmtPct(recruitmentGscCtr)}</p></div>
+                  <div className="rounded-lg border bg-card p-3"><p className="text-xs text-muted-foreground">Avg recruitment position</p><p className="text-2xl font-bold">{recruitmentGscPosition ? recruitmentGscPosition.toFixed(1) : '—'}</p></div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-4">
+                  <div className="rounded-xl border bg-card p-4">
+                    <p className="mb-4 text-xs font-black uppercase tracking-widest text-muted-foreground">Funnel</p>
+                    <div className="grid gap-3 md:grid-cols-4">
+                      <div><p className="text-xs text-muted-foreground">Organic Recruitment Visit</p><p className="text-xl font-bold">{fmt(recruitmentSummary.organic_recruitment_sessions || 0)}</p></div>
+                      <div><p className="text-xs text-muted-foreground">Apply CTA</p><p className="text-xl font-bold">{fmt(recruitmentSummary.performer_apply_click || 0)}</p><p className="text-[10px] text-muted-foreground">{fmtPct(funnelRate(recruitmentSummary.performer_apply_click || 0, recruitmentSummary.organic_recruitment_sessions || 0))}</p></div>
+                      <div><p className="text-xs text-muted-foreground">Application Start</p><p className="text-xl font-bold">{fmt(recruitmentSummary.application_start || 0)}</p><p className="text-[10px] text-muted-foreground">{fmtPct(funnelRate(recruitmentSummary.application_start || 0, recruitmentSummary.performer_apply_click || 0))}</p></div>
+                      <div><p className="text-xs text-muted-foreground">Application Complete</p><p className="text-xl font-bold">{fmt(recruitmentSummary.application_complete || 0)}</p><p className="text-[10px] text-muted-foreground">{fmtPct(funnelRate(recruitmentSummary.application_complete || 0, recruitmentSummary.application_start || 0))}</p></div>
+                    </div>
+                    <div className="mt-4 flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2 text-sm"><span className="text-muted-foreground">WhatsApp recruitment clicks</span><span className="font-semibold">{fmt(recruitmentSummary.whatsapp_click || 0)}</span></div>
+                  </div>
+                  <div className="rounded-xl border bg-card p-4">
+                    <p className="mb-4 text-xs font-black uppercase tracking-widest text-muted-foreground">Philippines vs Non-Philippines</p>
+                    <Table><TableHeader><TableRow><TableHead>Segment</TableHead><TableHead className="text-right">Organic</TableHead><TableHead className="text-right">Apply</TableHead><TableHead className="text-right">Start</TableHead><TableHead className="text-right">Complete</TableHead></TableRow></TableHeader><TableBody>{[
+                      ['Philippines', recruitmentPhilippines],
+                      ['Non-Philippines', recruitmentNonPhilippines],
+                    ].map(([label, row]) => (<TableRow key={label}><TableCell className="font-medium text-xs">{label}</TableCell><TableCell className="text-right">{fmt(row.organic_recruitment_sessions || 0)}</TableCell><TableCell className="text-right">{fmt(row.performer_apply_click || 0)}</TableCell><TableCell className="text-right">{fmt(row.application_start || 0)}</TableCell><TableCell className="text-right">{fmt(row.application_complete || 0)}</TableCell></TableRow>))}</TableBody></Table>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div className="rounded-xl border bg-card p-4 lg:col-span-2">
+                    <p className="mb-3 text-xs font-black uppercase tracking-widest text-muted-foreground">Conversions by landing page / country / source</p>
+                    <Table><TableHeader><TableRow><TableHead>Landing Page</TableHead><TableHead>Country</TableHead><TableHead>Source / Medium</TableHead><TableHead className="text-right">Sessions</TableHead></TableRow></TableHeader><TableBody>{recruitmentLandingBreakdown.slice(0, 10).map((row, i) => (<TableRow key={i}><TableCell className="text-xs font-medium truncate max-w-[220px]">{row.landing_page}</TableCell><TableCell className="text-xs">{row.country}</TableCell><TableCell className="text-xs text-muted-foreground">{row.source} / {row.medium}</TableCell><TableCell className="text-right">{fmt(row.sessions)}</TableCell></TableRow>))}</TableBody></Table>
+                    {recruitmentLandingBreakdown.length === 0 && <p className="text-sm text-muted-foreground">No recruitment landing sessions yet.</p>}
+                  </div>
+                  <div className="rounded-xl border bg-card p-4">
+                    <p className="mb-3 text-xs font-black uppercase tracking-widest text-muted-foreground">Recruitment events</p>
+                    <Table><TableHeader><TableRow><TableHead>Event</TableHead><TableHead className="text-right">Count</TableHead></TableRow></TableHeader><TableBody>{recruitmentEvents.slice(0, 8).map((row, i) => (<TableRow key={i}><TableCell className="text-xs"><code>{row.event_name}</code><div className="text-[10px] text-muted-foreground">{row.country}</div></TableCell><TableCell className="text-right">{fmt(row.event_count)}</TableCell></TableRow>))}</TableBody></Table>
+                    {recruitmentEvents.length === 0 && <p className="text-sm text-muted-foreground">No recruitment events yet.</p>}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>

@@ -132,6 +132,27 @@ Deno.serve(async (req) => {
         ]
       }
     };
+    const recruitmentLandingPages = ['/become-performer', '/gay-performer-recruitment-philippines'];
+    const recruitmentLandingExpression = { filter: { fieldName: 'landingPagePlusQueryString', inListFilter: { values: recruitmentLandingPages } } };
+    const recruitmentAllFilter = { andGroup: { expressions: [productionHostFilter, recruitmentLandingExpression] } };
+    const recruitmentOrganicFilter = {
+      andGroup: {
+        expressions: [
+          productionHostFilter,
+          recruitmentLandingExpression,
+          { filter: { fieldName: 'sessionDefaultChannelGrouping', stringFilter: { matchType: 'EXACT', value: 'Organic Search' } } },
+        ]
+      }
+    };
+    const recruitmentEventNames = ['performer_apply_click', 'application_start', 'application_complete', 'application_submit', 'whatsapp_click', 'philippines_whatsapp_click', 'philippines_application_start', 'philippines_recruitment_cta_click'];
+    const recruitmentEventFilter = {
+      andGroup: {
+        expressions: [
+          productionHostFilter,
+          { filter: { fieldName: 'eventName', inListFilter: { values: recruitmentEventNames } } },
+        ]
+      }
+    };
 
     // Run multiple reports in parallel
     const [
@@ -147,6 +168,9 @@ Deno.serve(async (req) => {
       publicTrafficSourceRows,
       publicLandingPageRows,
       publicCountryRows,
+      recruitmentOrganicRows,
+      recruitmentAllRows,
+      recruitmentEventRows,
     ] = await Promise.all([
       runReport(accessToken, ga4PropertyId, startDate, today, [], ['screenPageViews', 'activeUsers', 'totalUsers', 'sessions', 'engagedSessions', 'engagementRate', 'screenPageViewsPerUser', 'userEngagementDuration'], 1),
       runReport(accessToken, ga4PropertyId, startDate, today, ['pagePath'], ['screenPageViews', 'activeUsers'], 50),
@@ -160,6 +184,9 @@ Deno.serve(async (req) => {
       runReport(accessToken, ga4PropertyId, startDate, today, ['sessionDefaultChannelGrouping', 'sessionSource', 'sessionMedium'], ['sessions', 'activeUsers', 'screenPageViews', 'engagedSessions'], 50, publicTrafficFilter),
       runReport(accessToken, ga4PropertyId, startDate, today, ['landingPagePlusQueryString'], ['sessions', 'activeUsers', 'engagedSessions', 'screenPageViews', 'userEngagementDuration'], 50, publicLandingFilter),
       runReport(accessToken, ga4PropertyId, startDate, today, ['country'], ['sessions', 'activeUsers', 'screenPageViews', 'engagedSessions'], 50, publicTrafficFilter),
+      runReport(accessToken, ga4PropertyId, startDate, today, ['landingPagePlusQueryString', 'country', 'sessionSource', 'sessionMedium'], ['sessions', 'activeUsers', 'engagedSessions', 'screenPageViews'], 100, recruitmentOrganicFilter),
+      runReport(accessToken, ga4PropertyId, startDate, today, ['landingPagePlusQueryString', 'country', 'sessionDefaultChannelGrouping', 'sessionSource', 'sessionMedium'], ['sessions', 'activeUsers', 'engagedSessions', 'screenPageViews'], 100, recruitmentAllFilter),
+      runReport(accessToken, ga4PropertyId, startDate, today, ['eventName', 'pagePath', 'country', 'sessionSource', 'sessionMedium'], ['eventCount', 'totalUsers'], 200, recruitmentEventFilter),
     ]);
 
     // Process overview metrics
@@ -305,6 +332,67 @@ Deno.serve(async (req) => {
       engaged_sessions: parseInt(r.metricValues[3].value || '0', 10),
     }));
 
+    const recruitmentOrganicBreakdown = recruitmentOrganicRows.map(r => ({
+      landing_page: r.dimensionValues[0].value,
+      country: r.dimensionValues[1].value,
+      source: r.dimensionValues[2].value,
+      medium: r.dimensionValues[3].value,
+      sessions: parseInt(r.metricValues[0].value || '0', 10),
+      active_users: parseInt(r.metricValues[1].value || '0', 10),
+      engaged_sessions: parseInt(r.metricValues[2].value || '0', 10),
+      page_views: parseInt(r.metricValues[3].value || '0', 10),
+    }));
+    const recruitmentAllBreakdown = recruitmentAllRows.map(r => ({
+      landing_page: r.dimensionValues[0].value,
+      country: r.dimensionValues[1].value,
+      channel: r.dimensionValues[2].value,
+      source: r.dimensionValues[3].value,
+      medium: r.dimensionValues[4].value,
+      sessions: parseInt(r.metricValues[0].value || '0', 10),
+      active_users: parseInt(r.metricValues[1].value || '0', 10),
+      engaged_sessions: parseInt(r.metricValues[2].value || '0', 10),
+      page_views: parseInt(r.metricValues[3].value || '0', 10),
+    }));
+    const recruitmentEvents = recruitmentEventRows.map(r => ({
+      event_name: r.dimensionValues[0].value,
+      page_path: r.dimensionValues[1].value,
+      country: r.dimensionValues[2].value,
+      source: r.dimensionValues[3].value,
+      medium: r.dimensionValues[4].value,
+      event_count: parseInt(r.metricValues[0].value || '0', 10),
+      total_users: parseInt(r.metricValues[1].value || '0', 10),
+    }));
+    const sumBy = (rows, field) => rows.reduce((sum, row) => sum + (row[field] || 0), 0);
+    const countEvent = (name, predicate = () => true) => recruitmentEvents.filter(row => row.event_name === name && predicate(row)).reduce((sum, row) => sum + row.event_count, 0);
+    const isPhilippines = row => row.country === 'Philippines' || row.page_path === '/gay-performer-recruitment-philippines' || row.landing_page === '/gay-performer-recruitment-philippines';
+    const recruitmentAcquisition = {
+      pages: recruitmentLandingPages,
+      summary: {
+        organic_recruitment_sessions: sumBy(recruitmentOrganicBreakdown, 'sessions'),
+        performer_apply_click: countEvent('performer_apply_click'),
+        application_start: countEvent('application_start'),
+        application_complete: countEvent('application_complete'),
+        whatsapp_click: countEvent('whatsapp_click'),
+      },
+      philippines: {
+        organic_recruitment_sessions: sumBy(recruitmentOrganicBreakdown.filter(isPhilippines), 'sessions'),
+        performer_apply_click: countEvent('performer_apply_click', isPhilippines),
+        application_start: countEvent('application_start', isPhilippines),
+        application_complete: countEvent('application_complete', isPhilippines),
+        whatsapp_click: countEvent('whatsapp_click', isPhilippines),
+      },
+      non_philippines: {
+        organic_recruitment_sessions: sumBy(recruitmentOrganicBreakdown.filter(row => !isPhilippines(row)), 'sessions'),
+        performer_apply_click: countEvent('performer_apply_click', row => !isPhilippines(row)),
+        application_start: countEvent('application_start', row => !isPhilippines(row)),
+        application_complete: countEvent('application_complete', row => !isPhilippines(row)),
+        whatsapp_click: countEvent('whatsapp_click', row => !isPhilippines(row)),
+      },
+      organic_breakdown: recruitmentOrganicBreakdown,
+      all_landing_breakdown: recruitmentAllBreakdown,
+      events: recruitmentEvents,
+    };
+
     // Categorize pages
     const pagesByCategory = {
       public_current: [],
@@ -338,6 +426,7 @@ Deno.serve(async (req) => {
       public_landing_pages: publicLandingPages,
       countries,
       public_countries: publicCountries,
+      recruitment_acquisition: recruitmentAcquisition,
       hostnames,
       public_traffic_sources: publicTrafficSources,
       tracking_health: {
