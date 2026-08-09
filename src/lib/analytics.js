@@ -63,6 +63,16 @@ const DB_TRACKED_EVENTS = new Set([
   'recruitment_verification_completed',
   'recruitment_application_submitted',
   'recruitment_credibility_faq_opened',
+  'registration_complete',
+  'become_performer_cta_click',
+  'guest_production_cta_click',
+  'performer_apply_click',
+  'whatsapp_click',
+  'livecam_click',
+  'fanclub_join_click',
+  'video_unlock_click',
+  'fan_production_request_click',
+  'philippines_application_start',
   ]);
 
 // Best-effort client-side enrichment — never overwrites explicit event params.
@@ -99,14 +109,22 @@ const PUBLIC_ROUTE_PATTERNS = [
   /^\/$/,
   /^\/videos$/,
   /^\/videos\/[a-z0-9-]+$/,
+  /^\/watch\/collections\/[a-z0-9-]+$/,
   /^\/performers$/,
   /^\/performers\/[a-z0-9-]+$/,
   /^\/news$/,
+  /^\/news\/category\/[a-z0-9-]+$/,
   /^\/news\/[a-z0-9-]+$/,
   /^\/fanclub$/,
   /^\/guest-production$/,
   /^\/fan-productions$/,
   /^\/become-performer$/,
+  /^\/gay-performer-recruitment-philippines$/,
+  /^\/gay-twink-performer-recruitment$/,
+  /^\/chaturbate-model-join-studio$/,
+  /^\/gay-onlyfans-alternative$/,
+  /^\/live$/,
+  /^\/live\/fitmaster$/,
   /^\/how-it-works$/,
   /^\/faq$/,
   /^\/brands$/,
@@ -115,6 +133,7 @@ const PUBLIC_ROUTE_PATTERNS = [
   /^\/privacy$/,
   /^\/dmca$/,
   /^\/2257$/,
+  /^\/compliance$/,
   /^\/imprint$/,
   /^\/cookie-policy$/,
 ];
@@ -148,6 +167,8 @@ const LEGACY_ROUTE_PATTERNS = [
   /^\/BecomePerformer/,
   /^\/HowItWorks/,
   /^\/Home/,
+  /^\/Imprint/,
+  /^\/guest-productions/,
 ];
 
 /**
@@ -221,6 +242,13 @@ function sendPageView(path, title = document.title, category = 'public') {
 export function trackPageView(path) {
   const category = getRouteCategory(path);
   const title = document.title;
+
+  if (category === 'excluded') {
+    if (import.meta.env.DEV) {
+      console.log('[Analytics] page_view excluded:', { path, title, category });
+    }
+    return;
+  }
   
   sendPageView(path, title, category);
 }
@@ -366,9 +394,12 @@ export function trackExternalPlatformClick(platformName, sourcePage) {
  * Track WhatsApp recruitment click
  */
 export function trackWhatsappRecruitmentClick(sourcePage) {
-  trackEvent('whatsapp_recruitment_click', {
+  const params = {
     source_page: sourcePage,
-  });
+    cta_location: 'recruitment',
+  };
+  trackEvent('whatsapp_click', params);
+  trackEvent('whatsapp_recruitment_click', params);
 }
 
 /**
@@ -534,9 +565,12 @@ export function trackFanProductionRequestSubmit(params) {
  * Track fan production WhatsApp click
  */
 export function trackFanProductionWhatsappClick(sourcePage) {
-  trackEvent('fan_production_whatsapp_click', {
+  const params = {
     source_page: sourcePage,
-  });
+    cta_location: 'fan_production',
+  };
+  trackEvent('whatsapp_click', params);
+  trackEvent('fan_production_whatsapp_click', params);
 }
 
 /**
@@ -630,10 +664,18 @@ export function trackApplicationFilePreviewOpen(fileType, applicationId) {
 export function trackPhilippinesApplicationStart(utmParams = {}) {
   trackEvent('philippines_application_start', {
     source_page: 'gay-performer-recruitment-philippines',
+    page_type: 'recruitment',
     source_country: 'Philippines',
-    utm_source: utmParams.utm_source || 'philippines-recruitment',
-    utm_market: utmParams.utm_market || 'philippines',
-    utm_campaign: utmParams.utm_campaign || 'pinoy_recruitment',
+    utm_source: utmParams.utm_source || utmParams.utmSource || 'philippines-recruitment',
+    utm_market: utmParams.utm_market || utmParams.utmMarket || 'philippines',
+    utm_campaign: utmParams.utm_campaign || utmParams.utmCampaign || 'pinoy_recruitment',
+  });
+}
+
+export function trackLivecamClick(ctaLocation, sourcePage) {
+  trackEvent('livecam_click', {
+    cta_location: ctaLocation || 'unknown',
+    source_page: sourcePage || (typeof window !== 'undefined' ? window.location.pathname : ''),
   });
 }
 
@@ -697,9 +739,11 @@ export { getRouteCategory };
  * Track registration completed (after OTP verification)
  */
 export function trackRegistrationCompleted(source) {
-  trackEvent("registration_completed", {
+  const params = {
     source: source || "direct",
-  });
+  };
+  trackEvent("registration_complete", params);
+  trackEvent("registration_completed", params);
 }
 
 /**

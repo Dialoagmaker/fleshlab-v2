@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Home, Film, Users, Crown, UserCircle, LogIn } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { getDashboardPath } from "@/lib/roleResolver";
+import { trackFanclubCtaClick } from "@/lib/analytics";
 
 export default function MobileBottomNav() {
   const location = useLocation();
@@ -29,6 +30,7 @@ export default function MobileBottomNav() {
             <Link
               key={label}
               to={href}
+              onClick={() => href === "/fanclub" && trackFanclubCtaClick("fanclub_monthly", null, "mobile_bottom_nav")}
               className="flex flex-col items-center justify-center gap-1 py-2.5 min-h-[56px]"
             >
               <Icon className={`w-5 h-5 ${active ? "text-rose-500" : "text-white/50"}`} />

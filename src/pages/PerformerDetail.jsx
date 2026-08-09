@@ -19,6 +19,7 @@ import PerformerPromoSection from "@/components/public/PerformerPromoSection";
 import PerformerVideoGrid from "@/components/public/PerformerVideoGrid";
 import FanclubSupportBlock from "@/components/public/FanclubSupportBlock";
 import SmartContentCta from "@/components/cta/SmartContentCta";
+import { trackFanclubCtaClick } from "@/lib/analytics";
 
 export default function PerformerDetail() {
   const { slug } = useParams();
@@ -30,7 +31,10 @@ export default function PerformerDetail() {
 
   // Auth-gated handlers
   const handleWatchVideos = () => requireSignup('/videos');
-  const handleJoinFanclub = () => navigate(`/fanclub?performer=${slug}`);
+  const handleJoinFanclub = () => {
+    trackFanclubCtaClick('fanclub_monthly', slug, 'performer_detail');
+    navigate(`/fanclub?performer=${slug}`);
+  };
 
   // Fetch all data
   const { data: performers = [] } = useQuery({

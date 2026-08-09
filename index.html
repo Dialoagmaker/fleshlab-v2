@@ -59,6 +59,37 @@
     <meta name="twitter:description" content="FLESHLAB Studios features verified gay performers, exclusive fanclub scenes, premium videos, and studio-produced adult content." />
     <meta name="twitter:image" content="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png" />
     <meta name="robots" content="index,follow" />
+    <script>
+      (function(){
+        var production = window.location.hostname === 'fleshlab.online' || window.location.hostname === 'www.fleshlab.online';
+        var path = window.location.pathname || '/';
+        var canonicalMap = {
+          '/Home': '/',
+          '/Videos': '/videos',
+          '/Actors': '/performers',
+          '/Brands': '/brands',
+          '/Imprint': '/imprint',
+          '/NewsCenter': '/news',
+          '/HowItWorks': '/how-it-works',
+          '/Gay-Performer-Recruitment': '/gay-performer-recruitment-philippines',
+          '/Gay-Adult-Content-Creator': '/become-performer',
+          '/Remote-Adult-Content-Creator': '/become-performer',
+          '/guest-productions': '/guest-production'
+        };
+        var canonicalPath = canonicalMap[path] || path;
+        canonicalPath = canonicalPath.replace(/\/+$/, '') || '/';
+        var canonical = 'https://fleshlab.online' + canonicalPath;
+        var link = document.querySelector('link[rel="canonical"]');
+        if (link) link.setAttribute('href', canonical);
+        var ogUrl = document.querySelector('meta[property="og:url"]');
+        if (ogUrl) ogUrl.setAttribute('content', canonical);
+        ['robots','googlebot'].forEach(function(name){
+          var meta = document.querySelector('meta[name="' + name + '"]');
+          if (!meta) { meta = document.createElement('meta'); meta.setAttribute('name', name); document.head.appendChild(meta); }
+          meta.setAttribute('content', production ? 'index,follow' : 'noindex,nofollow');
+        });
+      })();
+    </script>
     <!-- Dynamic SEO management by SEOMeta component (overrides all above tags after React hydration) -->
     <!-- Global structured data: Organization + WebSite (static, always present) -->
     <script type="application/ld+json">

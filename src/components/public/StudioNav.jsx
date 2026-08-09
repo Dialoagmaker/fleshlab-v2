@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Film, Users, Newspaper, Heart } from "lucide-react";
+import { trackFanclubCtaClick } from "@/lib/analytics";
 
 /**
  * StudioNav - Secondary navigation bar
@@ -45,6 +46,7 @@ export default function StudioNav() {
               <Link
                 key={item.href}
                 to={item.href}
+                onClick={() => item.href === "/fanclub" && trackFanclubCtaClick("fanclub_monthly", null, "studio_nav")}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
                   item.featured
                     ? 'text-rose-500 hover:text-rose-400'

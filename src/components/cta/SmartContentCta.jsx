@@ -9,7 +9,7 @@ const CTAS = {
     subtitle: "Unlock full Fanclub access for $12.99/month",
     cta: "Join Fanclub",
     href: "/fanclub",
-    event: "fanclub_cta_clicked",
+    event: "fanclub_cta_click",
     eventParams: { cta_location: "video_page" },
   },
   performers: {
@@ -18,7 +18,7 @@ const CTAS = {
     subtitle: "Join Fanclub",
     cta: "Join Fanclub",
     href: "/fanclub",
-    event: "fanclub_cta_clicked",
+    event: "fanclub_cta_click",
     eventParams: { cta_location: "performer_page" },
   },
   news: {
@@ -27,7 +27,7 @@ const CTAS = {
     subtitle: "Join Fanclub",
     cta: "Join Fanclub",
     href: "/fanclub",
-    event: "fanclub_cta_clicked",
+    event: "fanclub_cta_click",
     eventParams: { cta_location: "news_page" },
   },
 };

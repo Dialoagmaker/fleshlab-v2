@@ -2,10 +2,10 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 // Route classification matching App.jsx
 const ROUTE_CATEGORIES = {
-  public_current: ['/', '/videos', '/performers', '/news', '/become-performer', '/fanclub', '/guest-production', '/how-it-works', '/faq', '/terms', '/privacy', '/dmca', '/2257', '/brands'],
-  public_prefixes: ['/videos/', '/performers/', '/brands/', '/news/', '/fanclub/'],
-  legacy_routes: ['/VideoDetail', '/ArticleReader', '/ActorDetail', '/Videos', '/Actors', '/News', '/NewsCenter', '/Brands', '/BecomePerformer', '/HowItWorks', '/Home'],
-  auth_protected: ['/login', '/register', '/forgot-password', '/reset-password', '/account', '/performer/login', '/performerlogin', '/performer/dashboard'],
+  public_current: ['/', '/videos', '/performers', '/news', '/become-performer', '/fanclub', '/guest-production', '/fan-productions', '/gay-performer-recruitment-philippines', '/gay-twink-performer-recruitment', '/chaturbate-model-join-studio', '/gay-onlyfans-alternative', '/live', '/live/fitmaster', '/how-it-works', '/faq', '/terms', '/privacy', '/dmca', '/2257', '/compliance', '/imprint', '/cookie-policy', '/brands'],
+  public_prefixes: ['/videos/', '/performers/', '/brands/', '/news/', '/fanclub/', '/watch/collections/'],
+  legacy_routes: ['/VideoDetail', '/ArticleReader', '/ActorDetail', '/Videos', '/Actors', '/News', '/NewsCenter', '/Brands', '/BecomePerformer', '/HowItWorks', '/Home', '/Imprint', '/guest-productions'],
+  auth_protected: ['/login', '/register', '/forgot-password', '/reset-password', '/account', '/wallet', '/client/dashboard', '/performer/login', '/performerlogin', '/performer/dashboard'],
 };
 
 function classifyPath(path) {
@@ -99,9 +99,11 @@ Deno.serve(async (req) => {
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('google_analytics');
 
-    // Parse date range from query params
+    // Parse date range from function payload first; SDK invoke sends JSON body, not query params.
+    let payload = {};
+    try { payload = await req.json(); } catch (_) { payload = {}; }
     const url = new URL(req.url);
-    const daysParam = url.searchParams.get('days') || '28';
+    const daysParam = payload.days || url.searchParams.get('days') || '28';
     const days = parseInt(daysParam, 10);
     
     const now = new Date();
@@ -110,14 +112,35 @@ Deno.serve(async (req) => {
 
     // Run multiple reports in parallel
     const [
+      overviewRows,
       topPagesRows,
       eventRows,
       trafficSourceRows,
+      landingPageRows,
+      countryRows,
+      hostnameRows,
     ] = await Promise.all([
+      runReport(accessToken, ga4PropertyId, startDate, today, [], ['screenPageViews', 'activeUsers', 'totalUsers', 'sessions', 'engagedSessions', 'engagementRate', 'screenPageViewsPerUser', 'userEngagementDuration'], 1),
       runReport(accessToken, ga4PropertyId, startDate, today, ['pagePath'], ['screenPageViews', 'activeUsers'], 50),
       runEventReport(accessToken, ga4PropertyId, startDate, today, null, 200),
       runTrafficSourceReport(accessToken, ga4PropertyId, startDate, today, 50),
+      runReport(accessToken, ga4PropertyId, startDate, today, ['landingPagePlusQueryString'], ['sessions', 'activeUsers', 'engagedSessions', 'screenPageViews'], 50),
+      runReport(accessToken, ga4PropertyId, startDate, today, ['country'], ['sessions', 'activeUsers', 'screenPageViews'], 50),
+      runReport(accessToken, ga4PropertyId, startDate, today, ['hostName'], ['sessions', 'activeUsers', 'screenPageViews'], 20),
     ]);
+
+    // Process overview metrics
+    const overviewMetrics = overviewRows[0]?.metricValues || [];
+    const overview = {
+      page_views: parseInt(overviewMetrics[0]?.value || '0', 10),
+      active_users: parseInt(overviewMetrics[1]?.value || '0', 10),
+      total_users: parseInt(overviewMetrics[2]?.value || '0', 10),
+      sessions: parseInt(overviewMetrics[3]?.value || '0', 10),
+      engaged_sessions: parseInt(overviewMetrics[4]?.value || '0', 10),
+      engagement_rate: Number(overviewMetrics[5]?.value || 0) * 100,
+      views_per_user: Number(overviewMetrics[6]?.value || 0),
+      average_engagement_time_seconds: overviewMetrics[1]?.value ? Math.round(Number(overviewMetrics[7]?.value || 0) / Math.max(1, Number(overviewMetrics[1]?.value || 1))) : 0,
+    };
 
     // Process top pages
     const topPages = topPagesRows.map(r => ({
@@ -170,6 +193,28 @@ Deno.serve(async (req) => {
       page_views: parseInt(r.metricValues[2].value || '0', 10),
     }));
 
+    const landingPages = landingPageRows.map(r => ({
+      landing_page: r.dimensionValues[0].value,
+      sessions: parseInt(r.metricValues[0].value || '0', 10),
+      active_users: parseInt(r.metricValues[1].value || '0', 10),
+      engaged_sessions: parseInt(r.metricValues[2].value || '0', 10),
+      page_views: parseInt(r.metricValues[3].value || '0', 10),
+    }));
+
+    const countries = countryRows.map(r => ({
+      country: r.dimensionValues[0].value,
+      sessions: parseInt(r.metricValues[0].value || '0', 10),
+      active_users: parseInt(r.metricValues[1].value || '0', 10),
+      page_views: parseInt(r.metricValues[2].value || '0', 10),
+    }));
+
+    const hostnames = hostnameRows.map(r => ({
+      hostname: r.dimensionValues[0].value,
+      sessions: parseInt(r.metricValues[0].value || '0', 10),
+      active_users: parseInt(r.metricValues[1].value || '0', 10),
+      page_views: parseInt(r.metricValues[2].value || '0', 10),
+    }));
+
     // Categorize pages
     const pagesByCategory = {
       public_current: [],
@@ -187,6 +232,8 @@ Deno.serve(async (req) => {
       success: true,
       date_range: { start: startDate, end: today, days },
       ga4_property_id: ga4PropertyId,
+      overview,
+      total_page_views: overview.page_views,
       top_pages: topPages,
       pages_by_category: pagesByCategory,
       events: {
@@ -194,6 +241,9 @@ Deno.serve(async (req) => {
         by_page: eventByPage,
       },
       traffic_sources: trafficSources,
+      landing_pages: landingPages,
+      countries,
+      hostnames,
       tracking_health: {
         ga4_connected: true,
         last_pull: new Date().toISOString(),

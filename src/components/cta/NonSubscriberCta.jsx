@@ -26,7 +26,7 @@ export default function NonSubscriberCta({ hasActiveSub, user, compact = false }
         </div>
         <Link
           to="/fanclub"
-          onClick={() => trackEvent("fanclub_cta_clicked", { cta_location: "compact_banner" })}
+          onClick={() => trackEvent("fanclub_cta_click", { cta_location: "compact_banner" })}
           className="shrink-0 bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition-colors"
         >
           Join Fanclub
@@ -54,7 +54,7 @@ export default function NonSubscriberCta({ hasActiveSub, user, compact = false }
       </div>
       <Link
         to="/fanclub"
-        onClick={() => trackEvent("fanclub_cta_clicked", { cta_location: "full_banner" })}
+        onClick={() => trackEvent("fanclub_cta_click", { cta_location: "full_banner" })}
         className="shrink-0 bg-rose-600 hover:bg-rose-500 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors flex items-center gap-1.5"
       >
         <Star className="w-4 h-4 fill-white" />

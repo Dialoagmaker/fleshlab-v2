@@ -67,7 +67,7 @@ export function FanConversionCard({ events }) {
   const eventMap = {};
   (events || []).forEach(e => { eventMap[e.event_name] = e.event_count; });
   const clicks = eventMap['fanclub_cta_click'] || 0;
-  const checkout = eventMap['checkout_started'] || 0;
+  const checkout = eventMap['checkout_start'] || eventMap['checkout_started'] || 0;
   
   return (
     <Card>

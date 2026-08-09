@@ -106,22 +106,26 @@ export default function GrowthDashboard() {
   const events = ga4Data?.events?.all_events || ga4Data?.events || ga4Data?.eventRows || [];
   const pagesByCategory = ga4Data?.pages_by_category || ga4Data?.pagesByCategory || {};
   const totalPageViewsBackend = ga4Data?.total_page_views || ga4Data?.totalPageViews || 0;
+  const overview = ga4Data?.overview || {};
+  const landingPages = ga4Data?.landing_pages || [];
+  const countries = ga4Data?.countries || [];
+  const hostnames = ga4Data?.hostnames || [];
   
   // Derive all data BEFORE useEffect references it
   const eventMap = {};
   events.forEach(e => { eventMap[e.event_name] = e.event_count; });
 
   const fanclubClicks = eventMap['fanclub_cta_click'] || 0;
-  const checkoutStarted = eventMap['checkout_started'] || 0;
-  const registrationStarted = eventMap['registration_started'] || 0;
+  const checkoutStarted = eventMap['checkout_start'] || eventMap['checkout_started'] || 0;
+  const registrationStarted = eventMap['registration_start'] || eventMap['registration_started'] || 0;
   const gpClicks = eventMap['guest_production_cta_click'] || 0;
   const bpClicks = eventMap['become_performer_cta_click'] || 0;
   // Philippines-specific events
-  const phPageViews = eventMap['philippines_recruitment_page_view'] || 0;
-  const phCtaClicks = eventMap['philippines_recruitment_cta_click'] || 0;
-  const phWhatsappClicks = eventMap['philippines_whatsapp_click'] || 0;
-  // Calculate total page views as INTEGER (sum of top 50 pages)
-  const totalPageViews = topPages?.reduce((sum, p) => sum + (parseInt(p.page_views, 10) || 0), 0) || 0;
+  const phPageViews = topPages.find((p) => p.page_path === '/gay-performer-recruitment-philippines')?.page_views || 0;
+  const phCtaClicks = eventMap['philippines_application_start'] || eventMap['philippines_recruitment_cta_click'] || 0;
+  const phWhatsappClicks = eventMap['whatsapp_click'] || eventMap['philippines_whatsapp_click'] || 0;
+  // Use exact GA4 overview page views; fall back to visible top pages only if unavailable.
+  const totalPageViews = overview.page_views || topPages?.reduce((sum, p) => sum + (parseInt(p.page_views, 10) || 0), 0) || 0;
   
   // Debug: Log full data structure
   useEffect(() => {
@@ -206,6 +210,18 @@ export default function GrowthDashboard() {
                   <div>Site URL: <code className="text-blue-400">{gscData?.site_url || 'https://fleshlab.online/'}</code></div>
                 </div>
                 <div className="pt-2 border-t border-green-500/20">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                    <div>Users: <code className="text-green-400">{fmt(overview.total_users)}</code></div>
+                    <div>Sessions: <code className="text-green-400">{fmt(overview.sessions)}</code></div>
+                    <div>Engaged: <code className="text-green-400">{fmt(overview.engaged_sessions)}</code></div>
+                    <div>Engagement: <code className="text-green-400">{fmtPct(overview.engagement_rate)}</code></div>
+                    <div>Views/user: <code className="text-green-400">{overview.views_per_user?.toFixed ? overview.views_per_user.toFixed(2) : '—'}</code></div>
+                    <div>Avg engagement: <code className="text-green-400">{fmt(overview.average_engagement_time_seconds)}s</code></div>
+                    <div>Hosts: <code className="text-green-400">{fmt(hostnames.length)}</code></div>
+                    <div>Countries: <code className="text-green-400">{fmt(countries.length)}</code></div>
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-green-500/20">
                   <div className="text-xs text-green-300/80">
                     <strong>Note:</strong> Property ID (537674804) ≠ Measurement ID (G-3Z4DV3SVR8).<br/>
                     Backend uses Property ID for GA4 Data API. Frontend uses Measurement ID for gtag tracking.
@@ -240,7 +256,7 @@ export default function GrowthDashboard() {
                 <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-500" />Tracking Status</CardTitle></CardHeader>
                 <CardContent className="space-y-2">
                   <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">GA4 ID</span><code className="bg-muted px-1.5 py-0.5 rounded text-[10px]">{ga4PropertyId}</code></div>
-                  <div className="flex flex-wrap gap-1">{['page_view', 'fanclub_cta_click', 'checkout_started'].map(event => (<Badge key={event} variant="outline" className="text-[10px]">{eventMap[event] > 0 ? '✓' : '○'} {event.split('_').pop()}</Badge>))}</div>
+                  <div className="flex flex-wrap gap-1">{['page_view', 'fanclub_cta_click', 'checkout_start'].map(event => (<Badge key={event} variant="outline" className="text-[10px]">{eventMap[event] > 0 ? '✓' : '○'} {event.split('_').pop()}</Badge>))}</div>
                   {events.length === 0 && <p className="text-[10px] text-yellow-500"><AlertCircle className="w-2.5 h-2.5 inline mr-0.5" />No events in response</p>}
                 </CardContent>
               </Card>
@@ -373,7 +389,7 @@ export default function GrowthDashboard() {
                       <div className="p-3 rounded-lg border bg-card"><p className="text-xs text-muted-foreground">Checkout Started</p><p className="text-lg font-bold">{fmt(checkoutStarted)}</p></div>
                     </div>
                     {/* Full Events Table */}
-                    {events?.length ? (<Table><TableHeader><TableRow><TableHead>Event Name</TableHead><TableHead className="text-right">Count</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{events.slice(0, 50).map((e, i) => { const isKeyEvent = ['page_view', 'fanclub_cta_click', 'guest_production_cta_click', 'become_performer_cta_click', 'registration_started', 'checkout_started', 'video_detail_view', 'performer_profile_view'].includes(e.event_name); return (<TableRow key={i} className={isKeyEvent ? 'bg-primary/5' : ''}><TableCell className="font-medium text-xs"><code className="bg-muted px-1.5 py-0.5 rounded">{e.event_name}</code></TableCell><TableCell className="text-right">{fmt(e.event_count)}</TableCell><TableCell>{e.event_count > 0 ? (<Badge variant="default" className="text-xs bg-green-500">Active</Badge>) : (<Badge variant="outline" className="text-xs"><AlertCircle className="w-3 h-3 mr-1" />No data</Badge>)}</TableCell></TableRow>); })}</TableBody></Table>) : (<p className="text-sm text-muted-foreground">No event data available</p>)}
+                    {events?.length ? (<Table><TableHeader><TableRow><TableHead>Event Name</TableHead><TableHead className="text-right">Count</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{events.slice(0, 50).map((e, i) => { const isKeyEvent = ['page_view', 'fanclub_cta_click', 'guest_production_cta_click', 'become_performer_cta_click', 'registration_start', 'checkout_start', 'video_detail_view', 'performer_profile_view'].includes(e.event_name); return (<TableRow key={i} className={isKeyEvent ? 'bg-primary/5' : ''}><TableCell className="font-medium text-xs"><code className="bg-muted px-1.5 py-0.5 rounded">{e.event_name}</code></TableCell><TableCell className="text-right">{fmt(e.event_count)}</TableCell><TableCell>{e.event_count > 0 ? (<Badge variant="default" className="text-xs bg-green-500">Active</Badge>) : (<Badge variant="outline" className="text-xs"><AlertCircle className="w-3 h-3 mr-1" />No data</Badge>)}</TableCell></TableRow>); })}</TableBody></Table>) : (<p className="text-sm text-muted-foreground">No event data available</p>)}
                     <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                       <p className="text-xs text-yellow-500 flex items-center gap-1 mb-1"><AlertCircle className="w-3 h-3" />Event tracking recently installed</p>
                       <p className="text-xs text-yellow-500/80">Historical data may be limited. Events will accumulate going forward.</p>
