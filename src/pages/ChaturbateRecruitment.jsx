@@ -23,6 +23,58 @@ import {
 import { trackEvent, trackPerformerApplyClick, trackWhatsappRecruitmentClick } from "@/lib/analytics";
 import SEOMeta from "@/components/SEOMeta";
 
+const FAQS = [
+  {
+    q: "Will this conflict with my cam schedule?",
+    a: "No. Filming takes 2–4 hours and you schedule it when it works for you. We edit and distribute. You cam as usual — the studio content just runs in the background."
+  },
+  {
+    q: "Do I need to leave Chaturbate or OnlyFans?",
+    a: "No. No exclusivity required. Keep all your platforms. FLESHLAB adds a studio content and fanclub layer on top of what you already do."
+  },
+  {
+    q: "Can I use cam recordings or do I need new content?",
+    a: "Studio content is produced separately and at higher quality. Cam recordings can sometimes be repurposed for fanclub exclusives. We'll discuss what works when you apply."
+  },
+  {
+    q: "Can I mention my cam show in fanclub content?",
+    a: "Yes. Cross-promotion between your cam and fanclub is fine and often useful. We can help you set that up."
+  },
+  {
+    q: "How is the 70% calculated?",
+    a: "70% of net revenue from studio content sales and fanclub subscriptions goes to you. We handle distribution, platform fees, and payment processing. You receive your share monthly."
+  }
+];
+
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Chaturbate Model Studio Partnership | FLESHLAB Creator Network",
+    "description": "For verified 18+ Chaturbate and cam models who want to add studio content, fanclub monetization, distribution support and a reviewed creator model without leaving existing platforms.",
+    "url": "https://fleshlab.online/chaturbate-model-join-studio",
+    "publisher": { "@type": "Organization", "name": "FLESHLAB", "url": "https://fleshlab.online" }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://fleshlab.online/" },
+      { "@type": "ListItem", "position": 2, "name": "Become a Performer", "item": "https://fleshlab.online/become-performer" },
+      { "@type": "ListItem", "position": 3, "name": "Chaturbate Model Studio Partnership", "item": "https://fleshlab.online/chaturbate-model-join-studio" }
+    ]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": FAQS.map(({ q, a }) => ({
+      "@type": "Question",
+      "name": q,
+      "acceptedAnswer": { "@type": "Answer", "text": a }
+    }))
+  }
+];
+
 export default function ChaturbateRecruitment() {
   const navigate = useNavigate();
 
@@ -48,10 +100,11 @@ export default function ChaturbateRecruitment() {
   return (
     <>
       <SEOMeta
-        title="Chaturbate Models: Add Passive Income | Studio Partnership | FLESHLAB"
-        description="Chaturbate cam models: Add passive income with studio content. Keep camming. 70% revenue share. No exclusivity. Fanclub monetization. Apply in 5 minutes."
+        title="Chaturbate Model Studio Partnership | FLESHLAB Creator Network"
+        description="For verified 18+ Chaturbate and cam models who want to add studio content, fanclub monetization, distribution support and a reviewed creator model without leaving existing platforms."
         canonical="/chaturbate-model-join-studio"
         ogImage="https://fleshlab.online/og-cam-recruitment.jpg"
+        jsonLd={jsonLd}
       />
 
       <style>{`
@@ -467,28 +520,7 @@ export default function ChaturbateRecruitment() {
             </div>
 
             <div className="space-y-3">
-              {[
-                {
-                  q: "Will this conflict with my cam schedule?",
-                  a: "No. Filming takes 2–4 hours and you schedule it when it works for you. We edit and distribute. You cam as usual — the studio content just runs in the background."
-                },
-                {
-                  q: "Do I need to leave Chaturbate or OnlyFans?",
-                  a: "No. No exclusivity required. Keep all your platforms. FLESHLAB adds a studio content and fanclub layer on top of what you already do."
-                },
-                {
-                  q: "Can I use cam recordings or do I need new content?",
-                  a: "Studio content is produced separately and at higher quality. Cam recordings can sometimes be repurposed for fanclub exclusives. We'll discuss what works when you apply."
-                },
-                {
-                  q: "Can I mention my cam show in fanclub content?",
-                  a: "Yes. Cross-promotion between your cam and fanclub is fine and often useful. We can help you set that up."
-                },
-                {
-                  q: "How is the 70% calculated?",
-                  a: "70% of net revenue from studio content sales and fanclub subscriptions goes to you. We handle distribution, platform fees, and payment processing. You receive your share monthly."
-                },
-              ].map((faq, i) => (
+              {FAQS.map((faq, i) => (
                 <div key={i} className="rounded-xl p-6"
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
                   <h3 className="text-white font-bold text-base mb-2">{faq.q}</h3>
