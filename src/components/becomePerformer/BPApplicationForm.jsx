@@ -7,8 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, ChevronRight, ChevronLeft } from "lucide-react";
-import { trackPhilippinesApplicationStart, trackApplicationStart, trackApplicationSubmit, trackApplicationComplete, trackApplicationStepComplete } from "@/lib/analytics";
-import { trackRecruitmentFunnelStage } from "@/lib/recruitmentOptimization";
+import { getRecruitmentAttribution, trackApplicationStart, trackApplicationSubmit, trackApplicationComplete } from "@/lib/analytics";
 import { base44 } from "@/api/base44Client";
 import toast from "react-hot-toast";
 import FileUploadField from "@/components/application/FileUploadField";
@@ -59,14 +58,25 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
   const applicationStartedRef = useRef(false);
   const normalizedSourcePage = sourcePage ? (sourcePage.startsWith('/') ? sourcePage : `/${sourcePage}`) : null;
   const market = sourceCountry === "Philippines" || utmMarket === "philippines" ? "philippines" : null;
+  const attribution = useMemo(() => ({
+    ...getRecruitmentAttribution(normalizedSourcePage),
+    source: utmSource || null,
+    medium: utmMedium || null,
+    campaign: utmCampaign || null,
+    country: sourceCountry || utmMarket || null,
+    utm_source: utmSource || null,
+    utm_medium: utmMedium || null,
+    utm_campaign: utmCampaign || null,
+    utm_content: utmContent || null,
+    utm_term: utmTerm || null,
+    referral_code: referralCode || null,
+    recruitment_campaign_id: recruitmentCampaignId || null,
+  }), [normalizedSourcePage, sourceCountry, utmSource, utmMarket, utmCampaign, utmMedium, utmContent, utmTerm, referralCode, recruitmentCampaignId]);
 
   const markApplicationStarted = () => {
     if (applicationStartedRef.current) return;
     applicationStartedRef.current = true;
-    trackApplicationStart('performer_application', normalizedSourcePage, { market, landing_page_type: 'recruitment' });
-    if (market === "philippines") {
-      trackPhilippinesApplicationStart({ utmSource, utmMarket, utmCampaign });
-    }
+    trackApplicationStart('performer_application', normalizedSourcePage, { market, landing_page_type: 'recruitment', ...attribution });
   };
 
   // Part 1
@@ -98,12 +108,6 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
   });
 
     const submitMutation = useMutation({
-    onMutate: () => {
-      // Track step completions
-      trackApplicationStepComplete(1, 'performer_application');
-      trackApplicationStepComplete(2, 'performer_application');
-      trackApplicationStepComplete(3, 'performer_application');
-    },
     mutationFn: async () => {
       const modelMap = {
         "managed_40": "standard_studio_60_performer_40",
@@ -158,43 +162,63 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
         utm_term: utmTerm || null,
         referral_code: referralCode || null,
         recruitment_campaign_id: recruitmentCampaignId || null,
+        landing_page: attribution.landing_page || normalizedSourcePage,
+        recruitment_page: attribution.recruitment_page || normalizedSourcePage,
+        referrer: attribution.referrer || null,
+        source: attribution.source || utmSource || null,
+        medium: attribution.medium || utmMedium || null,
+        campaign: attribution.campaign || utmCampaign || null,
+        country: attribution.country || sourceCountry || null,
+        first_touch_source: attribution.first_touch_source || null,
+        first_touch_landing_page: attribution.first_touch_landing_page || null,
       };
 
-      const response = await base44.functions.invoke("submitPerformerApplication", payload);
-      return response.data;
-    },
-    onSuccess: (data) => {
-      // Track application submit (Phase 2)
       const photosCount = mediaKeys.profile_photo_r2_keys.length;
       const videosCount = (mediaKeys.intro_video_r2_key ? 1 : 0) + (mediaKeys.hardcore_video_r2_key ? 1 : 0);
       const idUploaded = !!p3.id_document_r2_key;
       const selfieUploaded = !!p3.selfie_r2_key;
       const missingCount = Math.max(0, 5 - photosCount) + Math.max(0, 2 - videosCount) + (idUploaded ? 0 : 1) + (selfieUploaded ? 0 : 1);
-      
-      const submissionMetrics = {
+      trackApplicationSubmit({
+        ...attribution,
         application_type: 'performer_application',
         source_page: normalizedSourcePage,
         source_country: sourceCountry,
         market,
         landing_page_type: 'recruitment',
-        utm_source: utmSource || null,
-        utm_medium: utmMedium || null,
-        utm_campaign: utmCampaign || null,
-        utm_content: utmContent || null,
-        utm_term: utmTerm || null,
-        referral_code: referralCode || null,
-        campaign_id: recruitmentCampaignId || null,
         photos_count: photosCount,
         videos_count: videosCount,
         id_uploaded: idUploaded,
         selfie_uploaded: selfieUploaded,
         missing_count: missingCount,
         upload_status: missingCount === 0 ? 'complete' : 'partial',
-      };
-      trackApplicationSubmit(submissionMetrics);
-      trackApplicationComplete(submissionMetrics);
-      trackRecruitmentFunnelStage('verification_completed', submissionMetrics);
-      trackRecruitmentFunnelStage('application_submitted', submissionMetrics);
+      });
+
+      const response = await base44.functions.invoke("submitPerformerApplication", payload);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      if (data?.success) {
+        const photosCount = mediaKeys.profile_photo_r2_keys.length;
+        const videosCount = (mediaKeys.intro_video_r2_key ? 1 : 0) + (mediaKeys.hardcore_video_r2_key ? 1 : 0);
+        const idUploaded = !!p3.id_document_r2_key;
+        const selfieUploaded = !!p3.selfie_r2_key;
+        const missingCount = Math.max(0, 5 - photosCount) + Math.max(0, 2 - videosCount) + (idUploaded ? 0 : 1) + (selfieUploaded ? 0 : 1);
+        trackApplicationComplete({
+          ...attribution,
+          application_type: 'performer_application',
+          source_page: normalizedSourcePage,
+          source_country: sourceCountry,
+          market,
+          landing_page_type: 'recruitment',
+          photos_count: photosCount,
+          videos_count: videosCount,
+          id_uploaded: idUploaded,
+          selfie_uploaded: selfieUploaded,
+          missing_count: missingCount,
+          upload_status: missingCount === 0 ? 'complete' : 'partial',
+          backend_status: data.status || null,
+        });
+      }
       
       onSuccess({ first_name: p1.first_name, last_name: p1.last_name, email: p1.email });
     },
@@ -208,8 +232,6 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
 
   const handleNext = () => {
     markApplicationStarted();
-    if (step === 0) trackRecruitmentFunnelStage('verification_started', { verification_step: 'creator_profile_complete' });
-    if (step === 1) trackRecruitmentFunnelStage('verification_started', { verification_step: 'review_media_complete' });
     setStep(s => s + 1);
   };
 

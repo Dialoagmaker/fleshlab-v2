@@ -54,16 +54,12 @@ export const QUALITY_METRICS = ["Qualified applicants", "Approval rate", "First 
 export const MONTHLY_OPTIMIZATION_FRAMEWORK = ["Find the biggest funnel drop-off", "Compare conversion by country, device, path and source", "Compare section views against completion quality", "Select one high-impact experiment", "Run for a fixed period", "Keep, revert or iterate based on behaviour"];
 
 const EVENT_BY_STAGE = {
-  landing: "recruitment_landing_viewed",
-  hero_interaction: "recruitment_hero_interaction",
-  why_viewed: "recruitment_why_viewed",
-  proof_viewed: "recruitment_proof_viewed",
-  creator_path_selected: "recruitment_creator_path_selected",
-  private_intake_started: "recruitment_private_intake_started",
-  private_intake_completed: "recruitment_private_intake_completed",
-  verification_started: "recruitment_verification_started",
-  verification_completed: "recruitment_verification_completed",
-  application_submitted: "recruitment_application_submitted",
+  landing: "recruitment_landing_view",
+  hero_interaction: "performer_apply_click",
+  private_intake_started: "application_start",
+  verification_started: "application_start",
+  verification_completed: "application_submit",
+  application_submitted: "application_submit",
 };
 
 export function getRecruitmentVariant(experimentKey) {

@@ -440,27 +440,85 @@
     "source_page": {
       "type": "string",
       "title": "Source Page",
-      "description": "Page slug where application was submitted (e.g., gay-performer-recruitment-philippines)"
+      "description": "Page slug where application was submitted"
     },
     "source_country": {
       "type": "string",
       "title": "Source Country",
-      "description": "Country/market from application URL (e.g., Philippines)"
+      "description": "Country/market from application URL"
+    },
+    "landing_page": {
+      "type": "string",
+      "title": "Landing Page",
+      "description": "Recruitment landing page that introduced the applicant"
+    },
+    "recruitment_page": {
+      "type": "string",
+      "title": "Recruitment Page",
+      "description": "Canonical recruitment page for attribution"
+    },
+    "referrer": {
+      "type": "string",
+      "title": "Referrer"
+    },
+    "source": {
+      "type": "string",
+      "title": "Traffic Source"
+    },
+    "medium": {
+      "type": "string",
+      "title": "Traffic Medium"
+    },
+    "campaign": {
+      "type": "string",
+      "title": "Traffic Campaign"
+    },
+    "country": {
+      "type": "string",
+      "title": "Attribution Country"
+    },
+    "first_touch_source": {
+      "type": "string",
+      "title": "First Touch Source"
+    },
+    "first_touch_landing_page": {
+      "type": "string",
+      "title": "First Touch Landing Page"
     },
     "utm_source": {
       "type": "string",
       "title": "UTM Source",
-      "description": "URL param: source (e.g., philippines-recruitment)"
+      "description": "URL param: utm_source/source"
     },
     "utm_market": {
       "type": "string",
       "title": "UTM Market",
-      "description": "URL param: market (e.g., philippines)"
+      "description": "URL param: market"
     },
     "utm_campaign": {
       "type": "string",
       "title": "UTM Campaign",
-      "description": "URL param: campaign (e.g., pinoy_recruitment)"
+      "description": "URL param: utm_campaign/campaign"
+    },
+    "utm_medium": {
+      "type": "string",
+      "title": "UTM Medium"
+    },
+    "utm_content": {
+      "type": "string",
+      "title": "UTM Content"
+    },
+    "utm_term": {
+      "type": "string",
+      "title": "UTM Term"
+    },
+    "referral_code": {
+      "type": "string",
+      "title": "Referral Code"
+    },
+    "recruitment_campaign_id": {
+      "type": "string",
+      "title": "Recruitment Campaign ID"
     }
   },
   "required": [

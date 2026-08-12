@@ -94,7 +94,7 @@ export function FanConversionCard({ events }) {
 export function PerformerAcquisitionCard({ events }) {
   const eventMap = {};
   (events || []).forEach(e => { eventMap[e.event_name] = e.event_count; });
-  const bpClicks = eventMap['become_performer_cta_click'] || 0;
+  const bpClicks = eventMap['performer_apply_click'] || 0;
   
   return (
     <Card>
@@ -106,7 +106,7 @@ export function PerformerAcquisitionCard({ events }) {
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">BP CTA Clicks</span>
+          <span className="text-muted-foreground">Performer Apply Clicks</span>
           <Badge variant={bpClicks > 0 ? "default" : "secondary"}>{fmt(bpClicks)}</Badge>
         </div>
       </CardContent>

@@ -10,8 +10,7 @@ import RecruitmentCredibilitySection from "@/components/becomePerformer/Recruitm
 import BPSuccessScreen from "@/components/becomePerformer/BPSuccessScreen";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BarChart2, CheckCircle2, Crown, FileText, Film, Globe, Lock, MessageCircle, Shield, Users, Video } from "lucide-react";
-import { trackBecomePerformerCtaClick, trackWhatsappRecruitmentClick } from "@/lib/analytics";
-import { trackRecruitmentFunnelStage } from "@/lib/recruitmentOptimization";
+import { trackPerformerApplyClick, trackWhatsappRecruitmentClick } from "@/lib/analytics";
 
 const FAQ_JSON_LD = [
   { q: "Can I really make money with this?", a: "Yes, but not automatically. You can earn through views, video sales, fanclub subscriptions, PPV, partner platforms and livecam tokens." },
@@ -60,16 +59,14 @@ export default function BecomePerformer() {
   const [submittedData, setSubmittedData] = useState(null);
 
   const scrollToForm = () => {
-    trackRecruitmentFunnelStage('hero_interaction', { cta_location: 'hero_apply' });
+    trackPerformerApplyClick('hero_apply', '/become-performer');
     intakeRef.current?.scrollIntoView({ behavior: "smooth" });
   };
   const scrollToVerification = () => {
-    trackBecomePerformerCtaClick('intake_continue_verification');
-    trackRecruitmentFunnelStage('verification_started', { cta_location: 'intake_continue_verification' });
+    trackPerformerApplyClick('intake_continue_verification', '/become-performer');
     formRef.current?.scrollIntoView({ behavior: "smooth" });
   };
   const scrollToEarn = () => {
-    trackBecomePerformerCtaClick('hero_earn');
     earnRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -79,7 +76,6 @@ export default function BecomePerformer() {
   };
 
   const handleSuccess = (data) => {
-    trackRecruitmentFunnelStage('application_submitted');
     setSubmittedData(data);
     setSubmitted(true);
     window.scrollTo({ top: 0, behavior: "smooth" });

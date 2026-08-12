@@ -65,19 +65,20 @@ export default function GrowthDashboard() {
     queryFn: async () => {
       const response = await base44.entities.GuestProductionApplication.list();
       const all = response || [];
-      // Filter by date range
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - parseInt(dateRange));
-      const filtered = all.filter(app => {
-        if (!app.submitted_at) return false;
-        return new Date(app.submitted_at) >= cutoff;
+      const performerApplications = all.filter(app => app.request_type === 'performer_application' || /performer|recruitment|onlyfans|chaturbate/i.test(String(app.source_page || '')));
+      const filtered = performerApplications.filter(app => {
+        const submittedAt = app.submitted_at || app.created_date;
+        if (!submittedAt) return false;
+        return new Date(submittedAt) >= cutoff;
       });
-      // Count by market and source
-      const phApps = filtered.filter(app => app.utm_market === 'philippines' || app.source_country === 'Philippines');
-      const phSourceApps = filtered.filter(app => app.utm_source === 'philippines-recruitment');
-      const phCampaignApps = filtered.filter(app => app.utm_campaign === 'pinoy_recruitment');
+      const phApps = filtered.filter(app => app.utm_market === 'philippines' || app.source_country === 'Philippines' || app.country === 'Philippines' || app.recruitment_page === '/gay-performer-recruitment-philippines');
+      const phSourceApps = filtered.filter(app => app.utm_source === 'philippines-recruitment' || app.source === 'philippines-recruitment');
+      const phCampaignApps = filtered.filter(app => app.utm_campaign === 'pinoy_recruitment' || app.campaign === 'pinoy_recruitment');
       return {
-        total: filtered.length,
+        application_records: filtered.length,
+        successfully_persisted_performer_applications: filtered.length,
         philippines_total: phApps.length,
         philippines_source: phSourceApps.length,
         philippines_campaign: phCampaignApps.length,
@@ -120,7 +121,7 @@ export default function GrowthDashboard() {
   const recruitmentEvents = recruitmentAcquisition.events || [];
   const recruitmentLandingBreakdown = recruitmentAcquisition.all_landing_breakdown || [];
   const recruitmentOrganicBreakdown = recruitmentAcquisition.organic_breakdown || [];
-  const recruitmentPagePaths = recruitmentAcquisition.pages || ['/become-performer', '/gay-performer-recruitment-philippines'];
+  const recruitmentPagePaths = recruitmentAcquisition.pages || ['/become-performer', '/gay-performer-recruitment-philippines', '/gay-twink-performer-recruitment', '/chaturbate-model-join-studio', '/gay-onlyfans-alternative'];
   const recruitmentGscPages = (gscData?.top_pages || []).filter((p) => recruitmentPagePaths.some((path) => String(p.page || '').includes(path)));
   const recruitmentGscClicks = recruitmentGscPages.reduce((sum, p) => sum + (Number(p.clicks) || 0), 0);
   const recruitmentGscImpressions = recruitmentGscPages.reduce((sum, p) => sum + (Number(p.impressions) || 0), 0);
@@ -136,11 +137,11 @@ export default function GrowthDashboard() {
   const checkoutStarted = eventMap['checkout_start'] || eventMap['checkout_started'] || 0;
   const registrationStarted = eventMap['registration_start'] || eventMap['registration_started'] || 0;
   const gpClicks = eventMap['guest_production_cta_click'] || 0;
-  const bpClicks = eventMap['become_performer_cta_click'] || 0;
+  const bpClicks = eventMap['performer_apply_click'] || 0;
   // Philippines-specific events
   const phPageViews = topPages.find((p) => p.page_path === '/gay-performer-recruitment-philippines')?.page_views || 0;
-  const phCtaClicks = eventMap['philippines_application_start'] || eventMap['philippines_recruitment_cta_click'] || 0;
-  const phWhatsappClicks = eventMap['whatsapp_click'] || eventMap['philippines_whatsapp_click'] || 0;
+  const phCtaClicks = eventMap['performer_apply_click'] || 0;
+  const phWhatsappClicks = eventMap['recruitment_whatsapp_click'] || 0;
   // Use exact GA4 overview page views; fall back to visible top pages only if unavailable.
   const totalPageViews = publicMetrics.page_views || overview.page_views || topPages?.reduce((sum, p) => sum + (parseInt(p.page_views, 10) || 0), 0) || 0;
   
@@ -298,10 +299,10 @@ export default function GrowthDashboard() {
                     <div className="grid gap-3 md:grid-cols-4">
                       <div><p className="text-xs text-muted-foreground">Organic Recruitment Visit</p><p className="text-xl font-bold">{fmt(recruitmentSummary.organic_recruitment_sessions || 0)}</p></div>
                       <div><p className="text-xs text-muted-foreground">Apply CTA</p><p className="text-xl font-bold">{fmt(recruitmentSummary.performer_apply_click || 0)}</p><p className="text-[10px] text-muted-foreground">{fmtPct(funnelRate(recruitmentSummary.performer_apply_click || 0, recruitmentSummary.organic_recruitment_sessions || 0))}</p></div>
-                      <div><p className="text-xs text-muted-foreground">Application Start</p><p className="text-xl font-bold">{fmt(recruitmentSummary.application_start || 0)}</p><p className="text-[10px] text-muted-foreground">{fmtPct(funnelRate(recruitmentSummary.application_start || 0, recruitmentSummary.performer_apply_click || 0))}</p></div>
-                      <div><p className="text-xs text-muted-foreground">Application Complete</p><p className="text-xl font-bold">{fmt(recruitmentSummary.application_complete || 0)}</p><p className="text-[10px] text-muted-foreground">{fmtPct(funnelRate(recruitmentSummary.application_complete || 0, recruitmentSummary.application_start || 0))}</p></div>
+                      <div><p className="text-xs text-muted-foreground">GA4 Application Start</p><p className="text-xl font-bold">{fmt(recruitmentSummary.application_start || 0)}</p><p className="text-[10px] text-muted-foreground">{fmtPct(funnelRate(recruitmentSummary.application_start || 0, recruitmentSummary.performer_apply_click || 0))}</p></div>
+                      <div><p className="text-xs text-muted-foreground">GA4 Application Complete</p><p className="text-xl font-bold">{fmt(recruitmentSummary.application_complete || 0)}</p><p className="text-[10px] text-muted-foreground">{fmtPct(funnelRate(recruitmentSummary.application_complete || 0, recruitmentSummary.application_start || 0))}</p></div>
                     </div>
-                    <div className="mt-4 flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2 text-sm"><span className="text-muted-foreground">WhatsApp recruitment clicks</span><span className="font-semibold">{fmt(recruitmentSummary.whatsapp_click || 0)}</span></div>
+                    <div className="mt-4 grid gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm md:grid-cols-3"><div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">GA4 submits</span><span className="font-semibold">{fmt(recruitmentSummary.application_submit || 0)}</span></div><div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Application records</span><span className="font-semibold">{fmt(applicationsData?.application_records || 0)}</span></div><div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">WhatsApp clicks</span><span className="font-semibold">{fmt(recruitmentSummary.recruitment_whatsapp_click || recruitmentSummary.whatsapp_click || 0)}</span></div></div>
                   </div>
                   <div className="rounded-xl border bg-card p-4">
                     <p className="mb-4 text-xs font-black uppercase tracking-widest text-muted-foreground">Philippines vs Non-Philippines</p>
@@ -360,7 +361,7 @@ export default function GrowthDashboard() {
                     <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">CTA → WhatsApp</span><span className="font-medium">{fmtPct(phCtaClicks > 0 ? (phWhatsappClicks / phCtaClicks) * 100 : 0)}</span></div>
                   </div>
                   <div className="pt-2 border-t border-green-500/20">
-                    <div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">Applications (PH)</span><span className="font-semibold">{fmt(applicationsData?.philippines_total || 0)}</span></div>
+                  <div className="flex items-center justify-between text-sm"><span className="text-muted-foreground">Application records (PH)</span><span className="font-semibold">{fmt(applicationsData?.philippines_total || 0)}</span></div>
                     <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">Source: philippines-recruitment</span><span className="font-medium">{fmt(applicationsData?.philippines_source || 0)}</span></div>
                     <div className="flex items-center justify-between text-xs"><span className="text-muted-foreground">Campaign: pinoy_recruitment</span><span className="font-medium">{fmt(applicationsData?.philippines_campaign || 0)}</span></div>
                   </div>
@@ -449,12 +450,12 @@ export default function GrowthDashboard() {
                     {/* Key CTA Events Summary */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       <div className="p-3 rounded-lg border bg-card"><p className="text-xs text-muted-foreground">Fanclub CTA</p><p className="text-lg font-bold">{fmt(fanclubClicks)}</p></div>
-                      <div className="p-3 rounded-lg border bg-card"><p className="text-xs text-muted-foreground">Become Performer</p><p className="text-lg font-bold">{fmt(bpClicks)}</p></div>
+                      <div className="p-3 rounded-lg border bg-card"><p className="text-xs text-muted-foreground">Performer Apply</p><p className="text-lg font-bold">{fmt(bpClicks)}</p></div>
                       <div className="p-3 rounded-lg border bg-card"><p className="text-xs text-muted-foreground">Guest Production</p><p className="text-lg font-bold">{fmt(gpClicks)}</p></div>
                       <div className="p-3 rounded-lg border bg-card"><p className="text-xs text-muted-foreground">Checkout Started</p><p className="text-lg font-bold">{fmt(checkoutStarted)}</p></div>
                     </div>
                     {/* Full Events Table */}
-                    {events?.length ? (<Table><TableHeader><TableRow><TableHead>Event Name</TableHead><TableHead className="text-right">Count</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{events.slice(0, 50).map((e, i) => { const isKeyEvent = ['page_view', 'fanclub_cta_click', 'guest_production_cta_click', 'become_performer_cta_click', 'registration_start', 'checkout_start', 'video_detail_view', 'performer_profile_view'].includes(e.event_name); return (<TableRow key={i} className={isKeyEvent ? 'bg-primary/5' : ''}><TableCell className="font-medium text-xs"><code className="bg-muted px-1.5 py-0.5 rounded">{e.event_name}</code></TableCell><TableCell className="text-right">{fmt(e.event_count)}</TableCell><TableCell>{e.event_count > 0 ? (<Badge variant="default" className="text-xs bg-green-500">Active</Badge>) : (<Badge variant="outline" className="text-xs"><AlertCircle className="w-3 h-3 mr-1" />No data</Badge>)}</TableCell></TableRow>); })}</TableBody></Table>) : (<p className="text-sm text-muted-foreground">No event data available</p>)}
+                    {events?.length ? (<Table><TableHeader><TableRow><TableHead>Event Name</TableHead><TableHead className="text-right">Count</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>{events.slice(0, 50).map((e, i) => { const isKeyEvent = ['page_view', 'fanclub_cta_click', 'guest_production_cta_click', 'performer_apply_click', 'recruitment_landing_view', 'application_start', 'application_submit', 'application_complete', 'recruitment_whatsapp_click', 'registration_start', 'checkout_start', 'video_detail_view', 'performer_profile_view'].includes(e.event_name); return (<TableRow key={i} className={isKeyEvent ? 'bg-primary/5' : ''}><TableCell className="font-medium text-xs"><code className="bg-muted px-1.5 py-0.5 rounded">{e.event_name}</code></TableCell><TableCell className="text-right">{fmt(e.event_count)}</TableCell><TableCell>{e.event_count > 0 ? (<Badge variant="default" className="text-xs bg-green-500">Active</Badge>) : (<Badge variant="outline" className="text-xs"><AlertCircle className="w-3 h-3 mr-1" />No data</Badge>)}</TableCell></TableRow>); })}</TableBody></Table>) : (<p className="text-sm text-muted-foreground">No event data available</p>)}
                     <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                       <p className="text-xs text-yellow-500 flex items-center gap-1 mb-1"><AlertCircle className="w-3 h-3" />Event tracking recently installed</p>
                       <p className="text-xs text-yellow-500/80">Historical data may be limited. Events will accumulate going forward.</p>

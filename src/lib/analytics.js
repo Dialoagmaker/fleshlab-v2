@@ -23,6 +23,70 @@ export function clearAnalyticsUserId() {
   _currentUserId = null;
 }
 
+export const RECRUITMENT_PAGES = [
+  '/become-performer',
+  '/gay-performer-recruitment-philippines',
+  '/gay-twink-performer-recruitment',
+  '/chaturbate-model-join-studio',
+  '/gay-onlyfans-alternative',
+];
+
+const CANONICAL_EVENT_NAME = {
+  recruitment_landing_viewed: 'recruitment_landing_view',
+  become_performer_cta_click: 'performer_apply_click',
+  philippines_whatsapp_click: 'recruitment_whatsapp_click',
+  whatsapp_recruitment_click: 'recruitment_whatsapp_click',
+  philippines_application_start: 'application_start',
+  recruitment_application_submitted: 'application_submit',
+  recruitment_verification_completed: 'application_submit',
+};
+
+export function isRecruitmentPagePath(path) {
+  return RECRUITMENT_PAGES.includes(path);
+}
+
+export function getRecruitmentAttribution(recruitmentPage = null) {
+  if (typeof window === 'undefined') return {};
+  const urlParams = new URLSearchParams(window.location.search);
+  const landingPage = recruitmentPage || window.location.pathname;
+  const currentSource = urlParams.get('utm_source') || urlParams.get('source') || null;
+  const currentMedium = urlParams.get('utm_medium') || null;
+  const currentCampaign = urlParams.get('utm_campaign') || urlParams.get('campaign') || null;
+  const referrer = document.referrer || null;
+
+  let firstTouchSource = window.localStorage?.getItem('fl_first_touch_source') || null;
+  let firstTouchLandingPage = window.localStorage?.getItem('fl_first_touch_landing_page') || null;
+
+  if (!firstTouchLandingPage && isRecruitmentPagePath(landingPage)) {
+    firstTouchLandingPage = landingPage;
+    window.localStorage?.setItem('fl_first_touch_landing_page', firstTouchLandingPage);
+  }
+  if (!firstTouchSource && (currentSource || referrer)) {
+    firstTouchSource = currentSource || referrer;
+    window.localStorage?.setItem('fl_first_touch_source', firstTouchSource);
+  }
+
+  return {
+    landing_page: landingPage,
+    recruitment_page: landingPage,
+    referrer,
+    source: currentSource,
+    medium: currentMedium,
+    campaign: currentCampaign,
+    country: urlParams.get('country') || urlParams.get('market') || null,
+    first_touch_source: firstTouchSource,
+    first_touch_landing_page: firstTouchLandingPage,
+    utm_source: currentSource,
+    utm_medium: currentMedium,
+    utm_campaign: currentCampaign,
+    utm_content: urlParams.get('utm_content') || null,
+    utm_term: urlParams.get('utm_term') || null,
+    campaign_id: urlParams.get('campaign_id') || null,
+    recruitment_campaign_id: urlParams.get('campaign_id') || null,
+    referral_code: urlParams.get('ref') || urlParams.get('referral_code') || null,
+  };
+}
+
 // Events also persisted to the ConversionEvent table via the logEvent function.
 // Keep in sync with base44/functions/logEvent/entry.ts ALLOWED_EVENTS.
 const DB_TRACKED_EVENTS = new Set([
@@ -49,37 +113,19 @@ const DB_TRACKED_EVENTS = new Set([
   'wallet_purchase_failed',
   'wallet_abandoned',
   'topup_before_purchase',
-  'recruitment_landing_viewed',
-  'recruitment_hero_interaction',
-  'recruitment_section_viewed',
-  'recruitment_why_viewed',
-  'recruitment_proof_viewed',
-  'recruitment_experiment_exposed',
-  'recruitment_creator_path_selected',
-  'recruitment_private_intake_started',
-  'recruitment_private_intake_completed',
-  'recruitment_private_intake_error',
-  'recruitment_verification_started',
-  'recruitment_verification_completed',
-  'recruitment_application_submitted',
-  'recruitment_credibility_faq_opened',
-  'registration_complete',
-  'become_performer_cta_click',
-  'guest_production_cta_click',
+  'recruitment_landing_view',
   'performer_apply_click',
+  'application_start',
+  'application_submit',
+  'application_complete',
+  'recruitment_whatsapp_click',
+  'registration_complete',
+  'guest_production_cta_click',
   'whatsapp_click',
-  'whatsapp_recruitment_click',
-  'philippines_whatsapp_click',
   'livecam_click',
   'fanclub_join_click',
   'video_unlock_click',
   'fan_production_request_click',
-  'application_start',
-  'application_step_complete',
-  'application_submit',
-  'application_complete',
-  'philippines_application_start',
-  'recruitment_campaign_visit',
   ]);
 
 // Best-effort client-side enrichment — never overwrites explicit event params.
@@ -90,17 +136,9 @@ function buildClientEnrichment() {
       screen_resolution: `${window.screen?.width || ''}x${window.screen?.height || ''}`,
       language: navigator.language || null,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
-      utm_source: urlParams.get('utm_source') || null,
-      utm_medium: urlParams.get('utm_medium') || null,
-      utm_campaign: urlParams.get('utm_campaign') || null,
-      utm_content: urlParams.get('utm_content') || null,
-      utm_term: urlParams.get('utm_term') || null,
-      campaign_id: urlParams.get('campaign_id') || null,
-      recruitment_campaign_id: urlParams.get('campaign_id') || null,
-      referral_code: urlParams.get('ref') || urlParams.get('referral_code') || null,
+      ...getRecruitmentAttribution(),
       ref: urlParams.get('ref') || null,
       market: urlParams.get('market') || null,
-      referrer: document.referrer || null,
     };
   } catch (_) {
     return {};
@@ -266,25 +304,12 @@ export function trackPageView(path) {
   
   sendPageView(path, title, category);
 
-  if (['/become-performer', '/gay-performer-recruitment-philippines'].includes(path)) {
-    const urlParams = new URLSearchParams(window.location.search);
-    const hasCampaignParams = ['utm_source', 'utm_medium', 'utm_campaign', 'campaign_id', 'ref', 'referral_code'].some(key => urlParams.get(key));
-    if (hasCampaignParams) {
-      trackEvent('recruitment_campaign_visit', {
-        source_page: path,
-        landing_page_type: 'recruitment',
-        utm_source: urlParams.get('utm_source') || null,
-        utm_medium: urlParams.get('utm_medium') || null,
-        utm_campaign: urlParams.get('utm_campaign') || null,
-        utm_content: urlParams.get('utm_content') || null,
-        utm_term: urlParams.get('utm_term') || null,
-        campaign_id: urlParams.get('campaign_id') || null,
-        recruitment_campaign_id: urlParams.get('campaign_id') || null,
-        referral_code: urlParams.get('ref') || urlParams.get('referral_code') || null,
-        ref: urlParams.get('ref') || null,
-        market: urlParams.get('market') || null,
-      });
-    }
+  if (isRecruitmentPagePath(path)) {
+    trackEvent('recruitment_landing_view', {
+      source_page: path,
+      landing_page_type: 'recruitment',
+      ...getRecruitmentAttribution(path),
+    });
   }
 }
 
@@ -295,6 +320,7 @@ export function trackPageView(path) {
  * @param {Object} params - Event parameters
  */
 export function trackEvent(eventName, params = {}) {
+  const canonicalEventName = CANONICAL_EVENT_NAME[eventName] || eventName;
   const enrichedParams = {
     page_path: typeof window !== 'undefined' ? window.location.pathname : '',
     page_title: typeof document !== 'undefined' ? document.title : '',
@@ -304,17 +330,17 @@ export function trackEvent(eventName, params = {}) {
   if (typeof window === 'undefined' || typeof window.gtag === 'undefined') {
     console.warn('[Analytics] GA4 not initialized');
   } else {
-    window.gtag('event', eventName, enrichedParams);
+    window.gtag('event', canonicalEventName, enrichedParams);
   }
 
   // Log for debugging in development
   if (import.meta.env.DEV) {
-    console.log('[Analytics] event:', eventName, enrichedParams);
+    console.log('[Analytics] event:', canonicalEventName, enrichedParams);
   }
 
   // Persist a subset of events to our own DB (in parallel to GA4)
-  if (DB_TRACKED_EVENTS.has(eventName)) {
-    logDbEvent(eventName, params);
+  if (DB_TRACKED_EVENTS.has(canonicalEventName)) {
+    logDbEvent(canonicalEventName, enrichedParams);
   }
 }
 
@@ -434,9 +460,10 @@ export function trackWhatsappRecruitmentClick(sourcePage, params = {}) {
     cta_location: params.cta_location || 'recruitment',
     market: params.market || null,
     recruitment_type: params.recruitment_type || 'performer_recruitment',
+    landing_page_type: 'recruitment',
+    ...getRecruitmentAttribution(sourcePage),
   };
-  trackEvent('whatsapp_click', eventParams);
-  trackEvent('whatsapp_recruitment_click', eventParams);
+  trackEvent('recruitment_whatsapp_click', eventParams);
 }
 
 /**
@@ -494,6 +521,8 @@ export function trackApplicationStart(applicationType, sourcePage, params = {}) 
     source_page: sourcePage,
     market: params.market || null,
     landing_page_type: params.landing_page_type || 'recruitment',
+    ...getRecruitmentAttribution(sourcePage),
+    ...params,
   });
 }
 
@@ -513,6 +542,7 @@ export function trackApplicationStepComplete(stepNumber, applicationType) {
  */
 export function trackApplicationSubmit(params) {
   trackEvent('application_submit', {
+    ...getRecruitmentAttribution(params.source_page),
     application_type: params.application_type,
     source_page: params.source_page,
     source_country: params.source_country || null,
@@ -529,6 +559,7 @@ export function trackApplicationSubmit(params) {
 
 export function trackApplicationComplete(params) {
   trackEvent('application_complete', {
+    ...getRecruitmentAttribution(params.source_page),
     application_type: params.application_type,
     source_page: params.source_page,
     market: params.market || null,
@@ -538,6 +569,8 @@ export function trackApplicationComplete(params) {
     videos_count: params.videos_count,
     id_uploaded: params.id_uploaded,
     selfie_uploaded: params.selfie_uploaded,
+    application_record_created: true,
+    backend_status: params.backend_status || null,
   });
 }
 

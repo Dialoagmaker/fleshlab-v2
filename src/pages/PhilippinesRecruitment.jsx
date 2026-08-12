@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useMemo, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
@@ -31,7 +31,7 @@ import {
   Crown,
   Share2
 } from "lucide-react";
-import { trackEvent, trackPerformerApplyClick } from "@/lib/analytics";
+import { trackEvent, trackPerformerApplyClick, trackWhatsappRecruitmentClick } from "@/lib/analytics";
 import SEOMeta from "@/components/SEOMeta";
 import BPApplicationForm from "@/components/becomePerformer/BPApplicationForm";
 import PhilippinesRecruitmentIntro from "@/components/recruitment/PhilippinesRecruitmentIntro";
@@ -62,26 +62,13 @@ export default function PhilippinesRecruitment() {
     };
   }, [location.search]);
 
-  useEffect(() => {
-    // Track Philippines-specific page view
-    trackEvent("philippines_recruitment_page_view", { 
-      page: "philippines", 
-      market: urlParams.market,
-      source: urlParams.source,
-      campaign: urlParams.campaign 
-    });
-  }, [urlParams]);
-
   const handleApplyClick = (ctaLocation = "final_cta") => {
     trackPerformerApplyClick(ctaLocation, "/gay-performer-recruitment-philippines");
-    trackEvent("philippines_recruitment_cta_click", { source_page: "/gay-performer-recruitment-philippines", market: "philippines", cta_location: ctaLocation, recruitment_type: "philippines_performer" });
     applyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const handleWhatsAppClick = (ctaLocation = "whatsapp_cta") => {
-    const params = { source_page: "/gay-performer-recruitment-philippines", source: "philippines_page", market: "philippines", cta_location: ctaLocation, recruitment_type: "philippines_performer" };
-    trackEvent("whatsapp_click", params);
-    trackEvent("philippines_whatsapp_click", params);
+    trackWhatsappRecruitmentClick("/gay-performer-recruitment-philippines", { source: "philippines_page", market: "philippines", cta_location: ctaLocation, recruitment_type: "philippines_performer" });
     window.open("https://wa.me/886958679186?text=Hi%20FLESHLAB%2C%20I'm%20interested%20in%20becoming%20a%20performer%20from%20the%20Philippines", "_blank");
   };
 

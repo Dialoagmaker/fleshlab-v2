@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +21,7 @@ import {
   UserCheck,
   HelpCircle
 } from "lucide-react";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackPerformerApplyClick, trackWhatsappRecruitmentClick } from "@/lib/analytics";
 import SEOMeta from "@/components/SEOMeta";
 
 const FAQS = [
@@ -90,17 +90,13 @@ export default function GayTwinkPerformerRecruitment() {
   const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState(null);
 
-  useEffect(() => {
-    trackEvent("twink_recruitment_page_view", { page: "gay-twink-performer-recruitment" });
-  }, []);
-
   const handleApplyClick = () => {
-    trackEvent("twink_recruitment_cta_click", { source: "twink_page", cta: "apply" });
+    trackPerformerApplyClick("twink_apply", "/gay-twink-performer-recruitment");
     navigate("/become-performer");
   };
 
   const handleWhatsAppClick = () => {
-    trackEvent("twink_recruitment_whatsapp_click", { source: "twink_page" });
+    trackWhatsappRecruitmentClick("/gay-twink-performer-recruitment", { source: "twink_page", cta_location: "twink_whatsapp" });
     window.open("https://wa.me/886958679186?text=Hi%20FLESHLAB%2C%20I%20want%20to%20apply%20as%20a%20gay%20twink%20performer.", "_blank");
   };
 

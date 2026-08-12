@@ -132,8 +132,12 @@ Deno.serve(async (req) => {
         ]
       }
     };
-    const recruitmentLandingPages = ['/become-performer', '/gay-performer-recruitment-philippines'];
-    const recruitmentLandingExpression = { filter: { fieldName: 'landingPagePlusQueryString', inListFilter: { values: recruitmentLandingPages } } };
+    const recruitmentLandingPages = ['/become-performer', '/gay-performer-recruitment-philippines', '/gay-twink-performer-recruitment', '/chaturbate-model-join-studio', '/gay-onlyfans-alternative'];
+    const recruitmentLandingExpression = {
+      orGroup: {
+        expressions: recruitmentLandingPages.map(value => ({ filter: { fieldName: 'landingPagePlusQueryString', stringFilter: { matchType: 'BEGINS_WITH', value } } }))
+      }
+    };
     const recruitmentAllFilter = { andGroup: { expressions: [productionHostFilter, recruitmentLandingExpression] } };
     const recruitmentOrganicFilter = {
       andGroup: {
@@ -144,7 +148,7 @@ Deno.serve(async (req) => {
         ]
       }
     };
-    const recruitmentEventNames = ['performer_apply_click', 'application_start', 'application_complete', 'application_submit', 'whatsapp_click', 'philippines_whatsapp_click', 'philippines_application_start', 'philippines_recruitment_cta_click'];
+    const recruitmentEventNames = ['recruitment_landing_view', 'performer_apply_click', 'application_start', 'application_submit', 'application_complete', 'recruitment_whatsapp_click'];
     const recruitmentEventFilter = {
       andGroup: {
         expressions: [
@@ -371,22 +375,28 @@ Deno.serve(async (req) => {
         organic_recruitment_sessions: sumBy(recruitmentOrganicBreakdown, 'sessions'),
         performer_apply_click: countEvent('performer_apply_click'),
         application_start: countEvent('application_start'),
+        application_submit: countEvent('application_submit'),
         application_complete: countEvent('application_complete'),
-        whatsapp_click: countEvent('whatsapp_click'),
+        recruitment_whatsapp_click: countEvent('recruitment_whatsapp_click'),
+        whatsapp_click: countEvent('recruitment_whatsapp_click'),
       },
       philippines: {
         organic_recruitment_sessions: sumBy(recruitmentOrganicBreakdown.filter(isPhilippines), 'sessions'),
         performer_apply_click: countEvent('performer_apply_click', isPhilippines),
         application_start: countEvent('application_start', isPhilippines),
+        application_submit: countEvent('application_submit', isPhilippines),
         application_complete: countEvent('application_complete', isPhilippines),
-        whatsapp_click: countEvent('whatsapp_click', isPhilippines),
+        recruitment_whatsapp_click: countEvent('recruitment_whatsapp_click', isPhilippines),
+        whatsapp_click: countEvent('recruitment_whatsapp_click', isPhilippines),
       },
       non_philippines: {
         organic_recruitment_sessions: sumBy(recruitmentOrganicBreakdown.filter(row => !isPhilippines(row)), 'sessions'),
         performer_apply_click: countEvent('performer_apply_click', row => !isPhilippines(row)),
         application_start: countEvent('application_start', row => !isPhilippines(row)),
+        application_submit: countEvent('application_submit', row => !isPhilippines(row)),
         application_complete: countEvent('application_complete', row => !isPhilippines(row)),
-        whatsapp_click: countEvent('whatsapp_click', row => !isPhilippines(row)),
+        recruitment_whatsapp_click: countEvent('recruitment_whatsapp_click', row => !isPhilippines(row)),
+        whatsapp_click: countEvent('recruitment_whatsapp_click', row => !isPhilippines(row)),
       },
       organic_breakdown: recruitmentOrganicBreakdown,
       all_landing_breakdown: recruitmentAllBreakdown,

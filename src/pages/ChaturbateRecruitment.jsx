@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,28 +20,24 @@ import {
   Film,
   Crown
 } from "lucide-react";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackPerformerApplyClick, trackWhatsappRecruitmentClick } from "@/lib/analytics";
 import SEOMeta from "@/components/SEOMeta";
 
 export default function ChaturbateRecruitment() {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    trackEvent("recruitment_landing_view", { page: "chaturbate" });
-  }, []);
-
   const handleApplyClick = () => {
-    trackEvent("become_performer_cta_click", { source: "chaturbate_page" });
+    trackPerformerApplyClick("chaturbate_apply", "/chaturbate-model-join-studio");
     navigate("/become-performer");
   };
 
   const handleSecondaryClick = () => {
-    trackEvent("become_performer_cta_click", { source: "chaturbate_page", cta: "secondary" });
+    trackPerformerApplyClick("chaturbate_secondary_apply", "/chaturbate-model-join-studio");
     navigate("/become-performer");
   };
 
   const handleWhatsAppClick = () => {
-    trackEvent("whatsapp_cta_click", { source: "chaturbate_page" });
+    trackWhatsappRecruitmentClick("/chaturbate-model-join-studio", { source: "chaturbate_page", cta_location: "chaturbate_whatsapp" });
     window.open("https://wa.me/886958679186?text=Hi%20FLESHLAB%2C%20I'm%20a%20cam%20model%20and%20interested%20in%20adding%20studio%20content", "_blank");
   };
 

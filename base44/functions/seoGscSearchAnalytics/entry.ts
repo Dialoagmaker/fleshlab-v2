@@ -1,5 +1,14 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
+function classifyQueryPrimary(query) {
+  const text = String(query || '').toLowerCase();
+  if (/flesh\s*lab|fleshlab/.test(text)) return 'brand';
+  if (/philippines|philippine|filipino|pinoy|manila|cebu|davao|\bph\b/.test(text)) return 'philippines_local';
+  if (/performer|recruit|casting|model|actor|porn star|adult performer|join studio|studio/.test(text)) return 'performer_recruitment';
+  if (/creator|content creator|onlyfans|fansly|cam|chaturbate|fanclub/.test(text)) return 'creator_content_creator';
+  return 'other';
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -78,13 +87,21 @@ Deno.serve(async (req) => {
       position: parseFloat(r.position.toFixed(1)),
     }));
 
-    const topQueries = (queriesBody.rows || []).map(r => ({
-      query: r.keys[0],
-      clicks: r.clicks,
-      impressions: r.impressions,
-      ctr: parseFloat((r.ctr * 100).toFixed(2)),
-      position: parseFloat(r.position.toFixed(1)),
-    }));
+    const bucketSummary = { brand:{ clicks:0, impressions:0, queries:0 }, performer_recruitment:{ clicks:0, impressions:0, queries:0 }, creator_content_creator:{ clicks:0, impressions:0, queries:0 }, philippines_local:{ clicks:0, impressions:0, queries:0 }, other:{ clicks:0, impressions:0, queries:0 } };
+    const topQueries = (queriesBody.rows || []).map(r => {
+      const primary_bucket = classifyQueryPrimary(r.keys[0]);
+      bucketSummary[primary_bucket].clicks += r.clicks || 0;
+      bucketSummary[primary_bucket].impressions += r.impressions || 0;
+      bucketSummary[primary_bucket].queries += 1;
+      return {
+        query: r.keys[0],
+        primary_bucket,
+        clicks: r.clicks,
+        impressions: r.impressions,
+        ctr: parseFloat((r.ctr * 100).toFixed(2)),
+        position: parseFloat(r.position.toFixed(1)),
+      };
+    });
 
     return Response.json({
       success: true,
@@ -92,6 +109,7 @@ Deno.serve(async (req) => {
       summary,
       top_pages: topPages,
       top_queries: topQueries,
+      query_bucket_summary: bucketSummary,
     });
   } catch (error) {
     return Response.json({ success: false, error: error.message }, { status: 500 });

@@ -1,8 +1,17 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
-const ALLOWED_EVENTS = new Set(['registration_start','registration_complete','registration_completed','otp_verified','login_success','login_failed','logout','onboarding_viewed','onboarding_completed','performer_profile_view','video_detail_view','fanclub_cta_click','fanclub_join_click','checkout_start','payment_success','payment_failed','subscription_activated','wallet_selected','wallet_spend_started','wallet_spend_completed','wallet_spend_failed','wallet_purchase_completed','wallet_purchase_failed','wallet_abandoned','topup_before_purchase','become_performer_cta_click','guest_production_cta_click','performer_apply_click','whatsapp_click','whatsapp_recruitment_click','philippines_whatsapp_click','livecam_click','video_unlock_click','fan_production_request_click','application_start','application_step_complete','application_submit','application_complete','philippines_application_start','recruitment_campaign_visit','recruitment_landing_viewed','recruitment_hero_interaction','recruitment_section_viewed','recruitment_why_viewed','recruitment_proof_viewed','recruitment_experiment_exposed','recruitment_creator_path_selected','recruitment_private_intake_started','recruitment_private_intake_completed','recruitment_private_intake_error','recruitment_verification_started','recruitment_verification_completed','recruitment_application_submitted','recruitment_credibility_faq_opened']);
+const CANONICAL_EVENT_NAMES = {
+  recruitment_landing_viewed: 'recruitment_landing_view',
+  become_performer_cta_click: 'performer_apply_click',
+  philippines_whatsapp_click: 'recruitment_whatsapp_click',
+  whatsapp_recruitment_click: 'recruitment_whatsapp_click',
+  philippines_application_start: 'application_start',
+  recruitment_application_submitted: 'application_submit',
+  recruitment_verification_completed: 'application_submit',
+};
+const ALLOWED_EVENTS = new Set(['registration_start','registration_complete','registration_completed','otp_verified','login_success','login_failed','logout','onboarding_viewed','onboarding_completed','performer_profile_view','video_detail_view','fanclub_cta_click','fanclub_join_click','checkout_start','payment_success','payment_failed','subscription_activated','wallet_selected','wallet_spend_started','wallet_spend_completed','wallet_spend_failed','wallet_purchase_completed','wallet_purchase_failed','wallet_abandoned','topup_before_purchase','guest_production_cta_click','performer_apply_click','whatsapp_click','recruitment_whatsapp_click','livecam_click','video_unlock_click','fan_production_request_click','application_start','application_submit','application_complete','recruitment_landing_view']);
 const BLOCKED_KEYS = ['email','phone','r2_key','r2_keys','document','document_url','id_document','selfie','token','signed_url'];
-const STRONG_DEDUPE_EVENTS = new Set(['registration_completed','otp_verified','onboarding_completed','payment_success','subscription_activated','wallet_spend_completed','wallet_purchase_completed','application_submit','application_complete','recruitment_private_intake_completed','recruitment_application_submitted','recruitment_verification_completed']);
+const STRONG_DEDUPE_EVENTS = new Set(['registration_completed','otp_verified','onboarding_completed','payment_success','subscription_activated','wallet_spend_completed','wallet_purchase_completed','application_start','application_submit','application_complete']);
 const REPEATABLE_EVENTS = new Set(['login_failed','payment_failed','wallet_spend_failed','wallet_purchase_failed','recruitment_private_intake_error']);
 
 function parseUserAgent(ua) {
@@ -56,7 +65,9 @@ Deno.serve(async (req) => {
     if (Number(req.headers.get('content-length') || 0) > 12000) return Response.json({ error:'Payload too large' }, { status:413 });
     const base44 = createClientFromRequest(req);
     const body = await req.json();
-    const { event_name, user_id, source_page, metadata } = body || {};
+    const { user_id, source_page, metadata } = body || {};
+    const requestedEventName = body?.event_name;
+    const event_name = CANONICAL_EVENT_NAMES[requestedEventName] || requestedEventName;
     if (!event_name || !ALLOWED_EVENTS.has(event_name)) return Response.json({ error:'Invalid or missing event_name' }, { status:400 });
 
     const ipHash = await sha(req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || 'unknown');

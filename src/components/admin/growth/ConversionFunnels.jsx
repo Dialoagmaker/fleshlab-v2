@@ -69,8 +69,8 @@ export function FanConversionFunnel({ events, pageViews }) {
 }
 
 export function PerformerAcquisitionFunnel({ events }) {
-  const becomePerformerClicks = getEventCount(events, 'become_performer_cta_click');
-  const whatsappClicks = getEventCount(events, 'whatsapp_recruitment_click');
+  const becomePerformerClicks = getEventCount(events, 'performer_apply_click');
+  const whatsappClicks = getEventCount(events, 'recruitment_whatsapp_click');
 
   return (
     <Card>
@@ -82,7 +82,7 @@ export function PerformerAcquisitionFunnel({ events }) {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Become Performer CTA</span>
+          <span className="text-muted-foreground">Performer Apply Clicks</span>
           <Badge variant={becomePerformerClicks > 0 ? "default" : "secondary"}>{fmt(becomePerformerClicks)}</Badge>
         </div>
         <div className="flex items-center justify-between text-sm">

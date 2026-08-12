@@ -76,7 +76,7 @@ export function TrackingHealthCard({ trackingHealth }) {
         <div className="pt-2 border-t">
           <p className="text-xs text-muted-foreground mb-2">Key Events Tracked:</p>
           <div className="flex flex-wrap gap-1.5">
-            {['page_view', 'fanclub_cta_click', 'guest_production_cta_click', 'become_performer_cta_click', 'registration_started', 'checkout_started', 'video_detail_view'].map(event => (
+            {['page_view', 'fanclub_cta_click', 'guest_production_cta_click', 'performer_apply_click', 'recruitment_landing_view', 'application_start', 'application_submit', 'application_complete', 'recruitment_whatsapp_click', 'registration_start', 'checkout_start', 'video_detail_view'].map(event => (
               <Badge key={event} variant="outline" className="text-xs">
                 {event}
               </Badge>

@@ -1,7 +1,15 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 const BASE_URL = 'https://fleshlab.online';
-const RECRUITMENT_EVENTS = new Set(['recruitment_campaign_visit','performer_apply_click','application_start','application_complete','application_submit','whatsapp_click','whatsapp_recruitment_click','philippines_whatsapp_click']);
+const CANONICAL_EVENT_NAMES = {
+  recruitment_campaign_visit: 'recruitment_landing_view',
+  recruitment_landing_viewed: 'recruitment_landing_view',
+  become_performer_cta_click: 'performer_apply_click',
+  whatsapp_recruitment_click: 'recruitment_whatsapp_click',
+  philippines_whatsapp_click: 'recruitment_whatsapp_click',
+  philippines_application_start: 'application_start',
+};
+const RECRUITMENT_EVENTS = new Set(['recruitment_landing_view','performer_apply_click','application_start','application_submit','application_complete','recruitment_whatsapp_click']);
 
 function slugify(value) {
   return String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || `campaign-${Date.now()}`;
@@ -54,12 +62,13 @@ function emptyMetric(label) {
 }
 
 function addMetric(metric, eventName) {
-  if (eventName === 'recruitment_campaign_visit') metric.visits += 1;
-  if (eventName === 'performer_apply_click') metric.apply_cta += 1;
-  if (eventName === 'application_start') metric.application_start += 1;
-  if (eventName === 'application_complete') metric.application_complete += 1;
-  if (eventName === 'application_submit') metric.application_submit += 1;
-  if (eventName === 'whatsapp_click' || eventName === 'whatsapp_recruitment_click' || eventName === 'philippines_whatsapp_click') metric.whatsapp_click += 1;
+  const canonicalEventName = CANONICAL_EVENT_NAMES[eventName] || eventName;
+  if (canonicalEventName === 'recruitment_landing_view') metric.visits += 1;
+  if (canonicalEventName === 'performer_apply_click') metric.apply_cta += 1;
+  if (canonicalEventName === 'application_start') metric.application_start += 1;
+  if (canonicalEventName === 'application_complete') metric.application_complete += 1;
+  if (canonicalEventName === 'application_submit') metric.application_submit += 1;
+  if (canonicalEventName === 'recruitment_whatsapp_click') metric.whatsapp_click += 1;
 }
 
 function summarize(rows, dimension) {
@@ -88,7 +97,7 @@ function campaignReport(rows, campaigns) {
 
 async function getReport(base44, campaigns) {
   const rows = (await base44.asServiceRole.entities.ConversionEvent.filter({})) || [];
-  const recruitmentRows = rows.filter(row => RECRUITMENT_EVENTS.has(row.event_name));
+  const recruitmentRows = rows.filter(row => RECRUITMENT_EVENTS.has(CANONICAL_EVENT_NAMES[row.event_name] || row.event_name));
   const dimensions = ['source','medium','campaign','country','landing_page','referral_code'];
   const by_dimension = {};
   dimensions.forEach(d => { by_dimension[d] = summarize(recruitmentRows, d).slice(0, 50); });

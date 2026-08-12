@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   Shield, 
@@ -21,8 +20,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SEOMeta from "@/components/SEOMeta";
-import { base44 } from "@/api/base44Client";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackPerformerApplyClick, trackWhatsappRecruitmentClick } from "@/lib/analytics";
 
 // JSON-LD structured data
 const jsonLd = [
@@ -91,32 +89,13 @@ const ctaUrl = "/become-performer?source=gay-onlyfans-alternative&market=global&
 export default function GayOnlyfansAlternative() {
   const navigate = useNavigate();
 
-  // Track page view
-  useEffect(() => {
-    base44.analytics.track({
-      eventName: "gay_onlyfans_alternative_page_view",
-      properties: {
-        source: "gay-onlyfans-alternative",
-        market: "global",
-        campaign: "onlyfans_alternative"
-      }
-    });
-  }, []);
-
   const handleCtaClick = () => {
-    base44.analytics.track({
-      eventName: "gay_onlyfans_alternative_cta_click",
-      properties: {
-        source: "gay-onlyfans-alternative",
-        market: "global",
-        campaign: "onlyfans_alternative"
-      }
-    });
+    trackPerformerApplyClick("onlyfans_alternative_apply", "/gay-onlyfans-alternative");
     navigate(ctaUrl);
   };
 
   const handleWhatsAppClick = () => {
-    trackEvent("onlyfans_alternative_whatsapp_click", { source: "gay-onlyfans-alternative" });
+    trackWhatsappRecruitmentClick("/gay-onlyfans-alternative", { source: "gay-onlyfans-alternative", cta_location: "onlyfans_alternative_whatsapp" });
     window.open("https://wa.me/886958679186?text=Hi%20FLESHLAB%2C%20I'm%20interested%20in%20joining%20as%20a%20creator", "_blank");
   };
 
