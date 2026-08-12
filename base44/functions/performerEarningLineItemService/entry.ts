@@ -316,7 +316,7 @@ Deno.serve(async (req) => {
         snapshotQuery.platform = platform;
       }
 
-      const snapshots = await base44.asServiceRole.entities.VideoStatSnapshot.filter(snapshotQuery);
+      let snapshots = await base44.asServiceRole.entities.VideoStatSnapshot.filter(snapshotQuery);
       if (!Array.isArray(snapshots)) snapshots = [];
 
       const createdLineItemIds = [];
