@@ -22,65 +22,61 @@ import { Button } from "@/components/ui/button";
 import SEOMeta from "@/components/SEOMeta";
 import { trackEvent, trackPerformerApplyClick, trackWhatsappRecruitmentClick } from "@/lib/analytics";
 
-// JSON-LD structured data
+const FAQS = [
+  {
+    q: "Is FLESHLAB an alternative to OnlyFans for gay creators?",
+    a: "FLESHLAB can be an alternative or complement for verified 18+ gay adult creators who want studio-backed support, distribution, fanclub/PPV monetization and revenue-share options instead of managing everything alone."
+  },
+  {
+    q: "Can I use FLESHLAB and OnlyFans at the same time?",
+    a: "Yes, depending on the agreement. FLESHLAB is built to support creators who may already use OnlyFans-style platforms, cam platforms or fan communities. The page does not require exclusivity unless a future agreement says otherwise."
+  },
+  {
+    q: "Do I need an existing audience?",
+    a: "No. Beginners can apply for the managed model, while creators with content, followers or cam traffic may fit the network/distribution model. Applications are reviewed individually."
+  },
+  {
+    q: "How do creators earn with FLESHLAB?",
+    a: "Creators may earn through eligible studio content, fanclub subscriptions, PPV or premium video sales and distribution support. Earnings are not guaranteed and depend on content quality, consistency, audience demand and agreement terms."
+  },
+  {
+    q: "Do I need professional content experience?",
+    a: "No professional experience is required to apply. FLESHLAB reviews verified 18+ applicants based on fit, comfort level, available content or review materials, and the creator model that makes sense."
+  },
+  {
+    q: "Is FLESHLAB only for established creators?",
+    a: "No. The studio-managed model is designed for creators who want more setup and publishing support. The network model is better for creators who already have content, traffic or a workflow."
+  }
+];
+
+const COMPARISON_ROWS = [
+  ["Platform dependence", "You may keep existing platforms while adding FLESHLAB as a studio-backed creator channel, depending on agreement."],
+  ["Creator support", "FLESHLAB can help with production planning, publishing structure, compliance steps and creator support."],
+  ["Revenue model", "Two reviewed models are used: a studio-managed 60/40 model and a network/distribution 70/30 model."],
+  ["Distribution", "FLESHLAB adds studio publishing, SEO/release support and long-tail content distribution around approved creator content."],
+  ["Fanclub / PPV", "The creator ecosystem can support fanclub access, PPV or premium video sales where eligible."],
+  ["Studio support", "Support can include profile setup, content planning, publishing, promotion assets and fanclub infrastructure."],
+  ["Contracts", "Verified 18+ ID review, contracts, consent and release documentation are required before publishing."],
+  ["Application process", "Interested creators start through the FLESHLAB creator application and are reviewed before any agreement or publishing step."]
+];
+
 const jsonLd = [
   {
     "@context": "https://schema.org",
     "@type": "WebPage",
     "name": "Gay OnlyFans Alternative for Creators | FLESHLAB",
-    "description": "Looking for a studio-backed alternative as a gay adult creator? Join FLESHLAB for professional content distribution, creator support, and revenue-share options.",
+    "description": "Explore FLESHLAB as a studio-backed OnlyFans alternative or complement for gay creators, with creator support, distribution, fanclub/PPV monetization and revenue-share options.",
     "url": "https://fleshlab.online/gay-onlyfans-alternative",
-    "publisher": {
-      "@type": "Organization",
-      "name": "FLESHLAB",
-      "url": "https://fleshlab.online"
-    }
+    "publisher": { "@type": "Organization", "name": "FLESHLAB", "url": "https://fleshlab.online" }
   },
   {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "Is FLESHLAB an OnlyFans replacement?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "FLESHLAB is not a direct replacement for every creator. It is a studio-backed creator network for gay adult creators who want support with distribution, production planning, compliance, and revenue-share options."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Can I join if I already have an OnlyFans-style page?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes. Existing creators may apply for the network/distribution model if they already have content, a fanbase, or a creator workflow."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "What revenue models are available?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "FLESHLAB offers a studio-managed model with Studio 60% / Performer 40%, and a network model with Performer 70% / Studio 30%."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Do you guarantee income?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "No. FLESHLAB does not guarantee income. Results depend on content quality, audience demand, consistency, distribution, and performance."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Is ID verification required?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes. All performers must be verified 18+ and complete ID/KYC and consent documentation before participating."
-        }
-      }
-    ]
+    "mainEntity": FAQS.map(({ q, a }) => ({
+      "@type": "Question",
+      "name": q,
+      "acceptedAnswer": { "@type": "Answer", "text": a }
+    }))
   }
 ];
 
@@ -115,7 +111,7 @@ export default function GayOnlyfansAlternative() {
     <>
       <SEOMeta
         title="Gay OnlyFans Alternative for Creators | FLESHLAB"
-        description="Looking for a studio-backed alternative as a gay adult creator? Join FLESHLAB for professional content distribution, creator support, and revenue-share options."
+        description="Explore FLESHLAB as a studio-backed OnlyFans alternative or complement for gay creators, with creator support, distribution, fanclub/PPV monetization and revenue-share options."
         canonical="/gay-onlyfans-alternative"
         ogImage="https://fleshlab.online/og-image.jpg"
         jsonLd={jsonLd}
@@ -138,29 +134,32 @@ export default function GayOnlyfansAlternative() {
               <div className="max-w-[600px]" style={{ paddingTop: '130px', paddingBottom: '160px' }}>
                 <div className="flex items-center gap-2 mb-6 w-fit">
                   <Film className="w-5 h-5 text-rose-400" />
-                  <span className="text-white text-sm font-bold uppercase tracking-wide">Studio-Backed Creator Network</span>
+                  <span className="text-white text-sm font-bold uppercase tracking-wide">Gay OnlyFans Alternative · Studio-Backed Creator Support</span>
                 </div>
                 <h1 className="text-[40px] sm:text-[48px] lg:text-[56px] xl:text-[64px] font-black text-white mb-6 leading-[0.95] tracking-tight">
-                  A Studio-Backed<br />Alternative for<br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ff2d6f] to-[#ff8a00]">Gay Creators</span>
+                  Gay OnlyFans<br />Alternative for<br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ff2d6f] to-[#ff8a00]">Creators</span>
                 </h1>
-                <p className="text-[18px] text-white/90 mb-10 leading-[1.55] font-medium" style={{ maxWidth: '540px' }}>
-                  FLESHLAB is a studio-backed creator network for gay adult creators. We handle distribution, production support, contracts and revenue-share options so you don't have to figure it out alone.
+                <p className="text-[18px] text-white/90 mb-5 leading-[1.55] font-medium" style={{ maxWidth: '580px' }}>
+                  FLESHLAB is a studio-backed creator network for verified 18+ gay adult creators who want support beyond running a solo subscription page. It can work as an alternative or complement to OnlyFans-style platforms, with distribution, production planning, contracts, fanclub/PPV monetization and reviewed revenue-share options.
+                </p>
+                <p className="text-[15px] text-white/62 mb-10 leading-relaxed" style={{ maxWidth: '560px' }}>
+                  You may be able to keep existing platforms while adding FLESHLAB as a creator support and distribution channel, depending on the agreement. Nothing is published without verification, consent and review.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 mb-10">
                   <Button size="lg" className="bg-[#16a34a] hover:bg-[#15803d] text-white shadow-xl px-12 h-[56px] text-lg w-full sm:w-auto font-bold rounded-xl"
-                    onClick={handleWhatsAppClick}>
-                    <MessageCircle className="mr-3 h-6 w-6" /> Apply on WhatsApp
+                    onClick={handleCtaClick}>
+                    <ChevronRight className="mr-3 h-6 w-6" /> Explore creator opportunities
                   </Button>
                   <Button size="lg" className="border border-white/35 text-white hover:bg-white/12 bg-transparent/50 backdrop-blur-sm h-[56px] px-12 text-lg w-full sm:w-auto font-bold rounded-xl"
                     onClick={() => handleScrollToSection('creator-models')}>
-                    <Play className="mr-3 h-6 w-6" /> See Revenue Models
+                    <Play className="mr-3 h-6 w-6" /> Compare creator models
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-8 text-white font-semibold text-[14px]">
                   <div className="flex items-center gap-3"><Shield className="w-6 h-6 text-rose-500" /><span>Verified 18+</span></div>
                   <div className="flex items-center gap-3"><Lock className="w-6 h-6 text-rose-500" /><span>Private & Secure</span></div>
-                  <div className="flex items-center gap-3"><DollarSign className="w-6 h-6 text-rose-500" /><span>Earn in USD or Crypto</span></div>
+                  <div className="flex items-center gap-3"><DollarSign className="w-6 h-6 text-rose-500" /><span>Revenue-share options</span></div>
                 </div>
               </div>
             </div>
@@ -186,7 +185,7 @@ export default function GayOnlyfansAlternative() {
           </div>
         </section>
 
-        {/* ── WHY CREATORS LOOK FOR ALTERNATIVES ───────────────────────── */}
+        {/* ── ONLYFANS ALTERNATIVE COMPARISON ───────────────────────── */}
         <section className="px-4 sm:px-6 lg:px-8 relative overflow-hidden" style={{ paddingTop: '80px', paddingBottom: '96px' }}>
           <div className="absolute inset-0 pointer-events-none"
             style={{ background: 'linear-gradient(180deg, #050505 0%, #0b0610 45%, #120814 100%)' }} />
@@ -197,28 +196,34 @@ export default function GayOnlyfansAlternative() {
             <div className="text-center mb-14">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-5 text-xs font-black uppercase tracking-widest text-rose-400"
                 style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.35)', boxShadow: '0 0 16px rgba(244,63,94,0.2)' }}>
-                Why Look Beyond Solo Platforms
+                OnlyFans Alternative for Gay Creators
               </div>
               <h2 className="font-black text-white mb-3 leading-tight" style={{ fontSize: 'clamp(34px, 5vw, 52px)' }}>
-                Solo platform management is <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-amber-400">hard work</span>
+                A creator network for gay adults who want <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-amber-400">support beyond one platform</span>
               </h2>
-              <p className="text-gray-400 max-w-2xl mx-auto text-base">
-                Promotion, editing, compliance requirements and monetization take a lot of time. Time you could spend on content.
+              <p className="text-gray-400 max-w-3xl mx-auto text-base leading-relaxed">
+                FLESHLAB is not here to attack OnlyFans or replace every creator's existing setup. It gives verified 18+ gay creators a studio-backed path for content planning, distribution, compliance steps and fanclub/PPV monetization support.
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6 mb-10">
+            <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-6 mb-10">
               <div className="bg-[#111] border border-white/8 rounded-xl p-6">
-                <h3 className="text-white font-bold text-lg mb-3">The Solo Creator Challenge</h3>
-                <p className="text-white/50 text-sm leading-relaxed">
-                  Running a creator page alone is a lot. You're not just making content. You're also the editor, marketer, compliance officer and support team.
+                <h3 className="text-white font-bold text-lg mb-3">Why creators look for alternatives</h3>
+                <p className="text-white/55 text-sm leading-relaxed mb-4">
+                  Running a solo subscription page means handling content, promotion, editing, compliance and monetization yourself. Some gay creators want an additional route where a studio helps structure the business side without forcing every creator into the same model.
                 </p>
+                <Link to={ctaUrl} onClick={() => trackPerformerApplyClick("onlyfans_contextual_learn_more", "/gay-onlyfans-alternative")} className="inline-flex items-center gap-2 text-sm font-black text-rose-400 hover:text-white">
+                  Learn how FLESHLAB works for creators <ChevronRight className="h-4 w-4" />
+                </Link>
               </div>
-              <div className="bg-[#111] border border-white/8 rounded-xl p-6">
-                <h3 className="text-white font-bold text-lg mb-3">Studio/Network Support</h3>
-                <p className="text-white/50 text-sm leading-relaxed">
-                  FLESHLAB gives you studio infrastructure: distribution, production planning, compliance support and revenue-share options. You don't have to do all of it yourself.
-                </p>
+
+              <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.035)' }}>
+                {COMPARISON_ROWS.map(([label, value]) => (
+                  <div key={label} className="grid gap-2 border-b border-white/8 p-4 sm:grid-cols-[180px_1fr] last:border-b-0">
+                    <h3 className="text-sm font-black text-white">{label}</h3>
+                    <p className="text-sm leading-relaxed text-white/58">{value}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -227,7 +232,7 @@ export default function GayOnlyfansAlternative() {
               <div>
                 <p className="text-amber-200/70 text-sm leading-relaxed">
                   <strong className="text-amber-200 block mb-1">Important:</strong>
-                  FLESHLAB does not guarantee income. Results depend on content quality, audience demand, consistency and how well the content performs. We provide support and infrastructure, not income guarantees.
+                  FLESHLAB does not guarantee income. Results depend on content quality, audience demand, consistency and how well content performs. We provide support and infrastructure, not income promises.
                 </p>
               </div>
             </div>
@@ -381,7 +386,7 @@ export default function GayOnlyfansAlternative() {
 
                   {/* Description */}
                   <p className="text-white/70 text-sm leading-relaxed">
-                    Best if you already have content or an audience and mainly want distribution, SEO support and platform tools.
+                    Best if you already have content or an audience and mainly want distribution, SEO support and platform tools. If live cam is your main channel, see the <Link to="/chaturbate-model-join-studio" className="font-bold text-amber-300 hover:text-white">cam model monetization path</Link> for a more specific setup.
                   </p>
 
                   {/* Feature rows */}
@@ -408,18 +413,18 @@ export default function GayOnlyfansAlternative() {
                 <HelpCircle className="h-5 w-5 text-rose-400 flex-shrink-0" />
                 <div>
                   <p className="text-white font-semibold text-sm">Not sure which model?</p>
-                  <p className="text-white/35 text-xs">We'll help you decide.</p>
+                  <p className="text-white/35 text-xs">Compare the creator paths before applying.</p>
                 </div>
               </div>
               <div className="sm:col-span-2 flex flex-col sm:flex-row gap-3 justify-end">
+                <Button className="font-bold text-white rounded-xl gap-2 px-6 h-11 border border-rose-500/40 bg-rose-600/15 hover:bg-rose-600/25"
+                  onClick={handleCtaClick}>
+                  <ChevronRight className="h-4 w-4" /> Explore creator opportunities
+                </Button>
                 <Button className="font-bold text-white rounded-xl gap-2 px-6 h-11"
                   style={{ background: '#25D366', boxShadow: '0 0 16px rgba(37,211,102,0.35)' }}
                   onClick={handleWhatsAppClick}>
-                  <MessageCircle className="h-4 w-4" /> Chat on WhatsApp
-                </Button>
-                <Button className="font-bold text-white rounded-xl gap-2 px-6 h-11 border border-rose-500/40 bg-rose-600/15 hover:bg-rose-600/25"
-                  onClick={handleCtaClick}>
-                  <ChevronRight className="h-4 w-4" /> Start Your Application
+                  <MessageCircle className="h-4 w-4" /> Ask on WhatsApp
                 </Button>
               </div>
             </div>
@@ -549,29 +554,12 @@ export default function GayOnlyfansAlternative() {
                 FAQ
               </div>
               <h2 className="font-black text-white mb-3" style={{ fontSize: 'clamp(30px, 5vw, 44px)' }}>
-                Frequently Asked Questions
+                Gay Creator Alternative FAQ
               </h2>
             </div>
 
             <div className="space-y-4">
-              {[
-                {
-                  q: "Is FLESHLAB an OnlyFans replacement?",
-                  a: "Not for everyone. FLESHLAB is a studio-backed network for gay adult creators who want support with distribution, production planning, compliance and revenue-share options. It's not a self-serve platform."
-                },
-                {
-                  q: "Can I join if I already have an OnlyFans-style page?",
-                  a: "Yes. If you already have content, a following or a workflow, apply for the network model. That's what it's designed for."
-                },
-                {
-                  q: "Do you guarantee income?",
-                  a: "No. Income depends on content quality, audience demand, consistency and performance. We don't make income promises."
-                },
-                {
-                  q: "Is ID verification required?",
-                  a: "Yes. Government-issued ID required. All creators must be verified 18+ and complete KYC and consent documentation before anything else."
-                },
-              ].map((faq, i) => (
+              {FAQS.map((faq, i) => (
                 <div key={i} className="bg-[#111] border border-white/8 rounded-xl p-6">
                   <h3 className="text-white font-bold text-base mb-3">{faq.q}</h3>
                   <p className="text-white/50 text-sm leading-relaxed">{faq.a}</p>
@@ -592,20 +580,20 @@ export default function GayOnlyfansAlternative() {
                   Ready to Start?
                 </div>
                 <h2 className="font-black text-white mb-4" style={{ fontSize: 'clamp(30px, 5vw, 48px)' }}>
-                  Join a Studio-Backed Creator Network
+                  See if FLESHLAB fits your creator goals
                 </h2>
                 <p className="text-gray-400 mb-8 max-w-2xl mx-auto text-base">
-                  Apply and we'll go through your options together. No obligations, no pressure.
+                  Review the creator opportunity first, then apply if the studio-backed model fits what you want to build.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button className="font-bold text-white rounded-xl gap-2 px-10 py-5 h-auto text-lg border border-white/20 bg-transparent/50 backdrop-blur-sm"
+                    onClick={handleCtaClick}>
+                    <ChevronRight className="h-5 w-5" /> Learn how FLESHLAB works for creators
+                  </Button>
                   <Button className="font-bold text-white rounded-xl gap-2 px-10 py-5 h-auto text-lg"
                     style={{ background: '#25D366', boxShadow: '0 0 22px rgba(37,211,102,0.45)' }}
                     onClick={handleWhatsAppClick}>
-                    <MessageCircle className="h-5 w-5" /> Apply on WhatsApp
-                  </Button>
-                  <Button className="font-bold text-white rounded-xl gap-2 px-10 py-5 h-auto text-lg border border-white/20 bg-transparent/50 backdrop-blur-sm"
-                    onClick={handleCtaClick}>
-                    <ChevronRight className="h-5 w-5" /> Apply Online
+                    <MessageCircle className="h-5 w-5" /> Ask on WhatsApp
                   </Button>
                 </div>
               </div>

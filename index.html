@@ -76,6 +76,12 @@
           '/Remote-Adult-Content-Creator': '/become-performer',
           '/guest-productions': '/guest-production'
         };
+        var pageSeoMap = {
+          '/gay-onlyfans-alternative': {
+            title: 'Gay OnlyFans Alternative for Creators | FLESHLAB',
+            description: 'Explore FLESHLAB as a studio-backed OnlyFans alternative or complement for gay creators, with creator support, distribution, fanclub/PPV monetization and revenue-share options.'
+          }
+        };
         var canonicalPath = canonicalMap[path] || path;
         canonicalPath = canonicalPath.replace(/\/+$/, '') || '/';
         var canonical = 'https://fleshlab.online' + canonicalPath;
@@ -83,6 +89,20 @@
         if (link) link.setAttribute('href', canonical);
         var ogUrl = document.querySelector('meta[property="og:url"]');
         if (ogUrl) ogUrl.setAttribute('content', canonical);
+        var pageSeo = pageSeoMap[canonicalPath];
+        if (pageSeo) {
+          document.title = pageSeo.title;
+          var description = document.querySelector('meta[name="description"]');
+          if (description) description.setAttribute('content', pageSeo.description);
+          var ogTitle = document.querySelector('meta[property="og:title"]');
+          if (ogTitle) ogTitle.setAttribute('content', pageSeo.title);
+          var ogDescription = document.querySelector('meta[property="og:description"]');
+          if (ogDescription) ogDescription.setAttribute('content', pageSeo.description);
+          var twitterTitle = document.querySelector('meta[name="twitter:title"]');
+          if (twitterTitle) twitterTitle.setAttribute('content', pageSeo.title);
+          var twitterDescription = document.querySelector('meta[name="twitter:description"]');
+          if (twitterDescription) twitterDescription.setAttribute('content', pageSeo.description);
+        }
         ['robots','googlebot'].forEach(function(name){
           var meta = document.querySelector('meta[name="' + name + '"]');
           if (!meta) { meta = document.createElement('meta'); meta.setAttribute('name', name); document.head.appendChild(meta); }
