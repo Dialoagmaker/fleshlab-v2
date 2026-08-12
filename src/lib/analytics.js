@@ -175,6 +175,8 @@ const PUBLIC_ROUTE_PATTERNS = [
   /^\/gay-twink-performer-recruitment$/,
   /^\/chaturbate-model-join-studio$/,
   /^\/gay-onlyfans-alternative$/,
+  /^\/best-onlyfans-alternatives-gay-creators$/,
+  /^\/how-to-become-gay-content-creator$/,
   /^\/live$/,
   /^\/live\/fitmaster$/,
   /^\/how-it-works$/,

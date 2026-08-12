@@ -120,6 +120,8 @@ import ContentOrganization from './pages/admin/ContentOrganization';
 import GayTwinkPerformerRecruitment from './pages/GayTwinkPerformerRecruitment';
 import ChaturbateRecruitment from './pages/ChaturbateRecruitment';
 import GayOnlyfansAlternative from './pages/GayOnlyfansAlternative';
+import BestOnlyfansAlternativesGayCreators from './pages/BestOnlyfansAlternativesGayCreators';
+import HowToBecomeGayContentCreator from './pages/HowToBecomeGayContentCreator';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 import DMCA from './pages/DMCA';
@@ -418,6 +420,22 @@ const AuthenticatedApp = () => {
     );
   }
 
+  if (path === "/best-onlyfans-alternatives-gay-creators") {
+    return (
+      <PublicPageShell>
+        <BestOnlyfansAlternativesGayCreators />
+      </PublicPageShell>
+    );
+  }
+
+  if (path === "/how-to-become-gay-content-creator") {
+    return (
+      <PublicPageShell>
+        <HowToBecomeGayContentCreator />
+      </PublicPageShell>
+    );
+  }
+
   if (path === "/brands") {
     return (
       <PublicPageShell>
@@ -520,6 +538,8 @@ const AuthenticatedApp = () => {
       <Route path="/gay-twink-performer-recruitment" element={<PublicPageShell><GayTwinkPerformerRecruitment /></PublicPageShell>} />
       <Route path="/chaturbate-model-join-studio" element={<PublicPageShell><ChaturbateRecruitment /></PublicPageShell>} />
       <Route path="/gay-onlyfans-alternative" element={<PublicPageShell><GayOnlyfansAlternative /></PublicPageShell>} />
+      <Route path="/best-onlyfans-alternatives-gay-creators" element={<PublicPageShell><BestOnlyfansAlternativesGayCreators /></PublicPageShell>} />
+      <Route path="/how-to-become-gay-content-creator" element={<PublicPageShell><HowToBecomeGayContentCreator /></PublicPageShell>} />
       {/* Public routes */}
       <Route element={<Layout />}>
         <Route path="/brands" element={<PublicBrands />} />

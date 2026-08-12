@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { callPublicFunction } from "@/lib/publicApi";
 import { appParams } from "@/lib/app-params";
@@ -120,6 +121,21 @@ export default function News({ initialCategory = "all", archiveLabel = "" }) {
         </section>
 
         <main className="mx-auto max-w-7xl px-4 py-12 md:py-16">
+          <section className="mb-14 rounded-3xl border border-white/10 bg-white/[0.035] p-6 md:p-8">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[#f0183d]">Creator Guides</p>
+            <h2 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white">Resources for creator research</h2>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <Link to="/best-onlyfans-alternatives-gay-creators" className="rounded-2xl border border-white/10 bg-black/25 p-5 transition hover:border-[#f0183d]/40">
+                <h3 className="text-lg font-black text-white">Best OnlyFans Alternatives for Gay Creators</h3>
+                <p className="mt-2 text-sm leading-6 text-white/56">Compare platform categories, support models, monetization options and questions to ask before choosing another creator path.</p>
+              </Link>
+              <Link to="/how-to-become-gay-content-creator" className="rounded-2xl border border-white/10 bg-black/25 p-5 transition hover:border-[#f0183d]/40">
+                <h3 className="text-lg font-black text-white">How to Become a Gay Content Creator</h3>
+                <p className="mt-2 text-sm leading-6 text-white/56">A beginner-friendly guide to creator paths, boundaries, verification, monetization and FLESHLAB's application workflow.</p>
+              </Link>
+            </div>
+          </section>
+
           {isLoading ? (
             <div className="flex min-h-[260px] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-[#f0183d]" /></div>
           ) : error ? (
