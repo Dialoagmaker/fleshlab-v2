@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import SEOMeta from "@/components/SEOMeta";
 import BPHero from "@/components/becomePerformer/BPHero";
 import BPChapterSection from "@/components/becomePerformer/BPChapterSection";
@@ -9,38 +9,47 @@ import RecruitmentMeasurement from "@/components/becomePerformer/RecruitmentMeas
 import RecruitmentCredibilitySection from "@/components/becomePerformer/RecruitmentCredibilitySection";
 import BPSuccessScreen from "@/components/becomePerformer/BPSuccessScreen";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BarChart2, CheckCircle2, Crown, FileText, Film, Globe, Lock, MessageCircle, Shield, Users, Video } from "lucide-react";
+import { ArrowRight, BarChart2, CheckCircle2, Crown, FileText, Film, Lock, MessageCircle, Shield, Users, Video } from "lucide-react";
 import { trackPerformerApplyClick, trackWhatsappRecruitmentClick } from "@/lib/analytics";
 
-const FAQ_JSON_LD = [
-  { q: "Can I really make money with this?", a: "Yes, but not automatically. You can earn through views, video sales, fanclub subscriptions, PPV, partner platforms and livecam tokens." },
-  { q: "Do I need experience?", a: "No. Beginners can apply. If you are new, the Managed Performer model may fit you better." },
-  { q: "Do I have to do everything?", a: "No. Your boundaries matter. Productions are discussed and agreed." },
-  { q: "What exactly do I do as a performer?", a: "You create adult content: solo scenes, partner scenes, fanclub drops, livecam shows, photos, short clips or promotional material." },
-  { q: "How does livecam income work?", a: "Livecam income depends on how long you are online, what you offer and how viewers respond." },
-  { q: "What makes videos earn more?", a: "Face visibility, sexual energy, real reactions, moaning, body language, story, fantasy, good climax, partner chemistry, niche appeal, strong title and thumbnail." },
-  { q: "Do I need to show my face?", a: "Face visibility often helps but privacy concerns can be discussed during review." },
-  { q: "Why does FLESHLAB take a studio share?", a: "Because we handle production support, profile setup, promo, distribution, contracts, compliance, fanclub tools, publishing and earnings tracking." },
-  { q: "Is this escort, dating or private meetings?", a: "No. FLESHLAB is not escorting, dating or private meetings. This is adult content production, fanclub, PPV, livecam and distribution." },
-  { q: "What makes a performer successful?", a: "Consistency, openness, reliability, scene ideas, fan interaction, niche, production quality and whether viewers want to see more of you." },
+const FAQS = [
+  { q: "How do I become a FLESHLAB performer?", a: "Start with the private intake on this page. If there may be a fit, FLESHLAB reviews your application, age-verification readiness, media, goals and creator model before any contract or publishing step." },
+  { q: "Do I need experience to apply?", a: "No. Beginners can apply. New performers are usually reviewed for the Management / Build-Up model, while experienced creators may fit the Network / Distribution model." },
+  { q: "Can I apply without an existing audience?", a: "Yes. An existing audience can help, but it is not required to start an application. FLESHLAB reviews fit, reliability, verification readiness and production suitability." },
+  { q: "How do FLESHLAB performers earn?", a: "Approved performers may earn through eligible scenes, video sales, fanclub access, PPV, partner platform distribution, livecam activity or collaborations depending on the agreed model and contract. Income is not guaranteed." },
+  { q: "What happens after I apply?", a: "A team member reviews the application. If it moves forward, the next steps can include verification, review media, model discussion, contract review, consent confirmation, profile setup and first content planning." },
+  { q: "Do I need to create explicit content immediately?", a: "No. The private intake comes first. Full verification, review materials, boundaries and consent are handled before any production or publishing decision." },
+  { q: "Is my application private?", a: "Yes. Intake details, ID and review media are private. Nothing becomes public without verification, contract, consent and publishing approval." },
+  { q: "Can I keep using other creator platforms?", a: "That depends on your agreement and creator model. Existing creators can discuss how FLESHLAB may work alongside other platforms during review." },
 ];
 
-const SUPPORT = ["Profile setup", "Content planning", "Scene and boundary planning", "Solo and partner production planning", "Remote production support", "Thumbnails, titles and descriptions", "Promo assets", "Fanclub setup", "PPV / premium video sales", "FapHouse and partner distribution", "Livecam strategy", "Contracts and releases", "18+ compliance", "ID verification", "Earnings tracking"];
+const SUPPORT = ["Profile setup", "Content planning", "Scene and boundary planning", "Solo and partner production planning", "Remote production support", "Titles and descriptions", "Promo assets", "Fanclub setup", "PPV / premium video sales", "FapHouse and partner distribution", "Livecam strategy", "Contracts and releases", "18+ compliance", "ID verification", "Earnings tracking"];
 const INCOME = [
-  { Icon: BarChart2, title: "Partner views", text: "Scenes can earn from platform performance over time." },
+  { Icon: BarChart2, title: "Partner views", text: "Scenes can create platform performance opportunities over time." },
   { Icon: Film, title: "Video sales", text: "Premium scenes, PPV unlocks and paid purchases." },
   { Icon: Crown, title: "Fanclub", text: "Recurring fan access around your performer brand." },
-  { Icon: Video, title: "Livecam", text: "Active token income and regular viewer growth." },
-  { Icon: Users, title: "Collabs", text: "More variety, stronger thumbnails and shared audiences." },
+  { Icon: Video, title: "Livecam", text: "Token income and regular viewer growth where livecam fits the creator plan." },
+  { Icon: Users, title: "Collabs", text: "Partner productions can add variety and shared audience signals." },
 ];
-const EARNING_FACTORS = ["Consistency", "Viewer demand", "Face visibility", "Sexual energy", "Real reactions", "Strong fantasy", "Clear climax", "Clickable packaging", "Niche appeal", "Fan interaction"];
-const APPLICATION_STEPS = ["Apply privately", "Upload review media", "Verify 18+", "Team review", "Model discussion", "Contract + consent", "First production", "Track earnings"];
+const EARNING_FACTORS = ["Consistency", "Viewer demand", "Reliability", "Clear boundaries", "Strong performance", "Creator fit", "Production quality", "Clickable packaging", "Niche appeal", "Fan interaction"];
+const APPLICATION_STEPS = ["Apply privately", "Upload review media", "Verify 18+", "Team review", "Model discussion", "Contract + consent", "First production plan", "Track performance"];
+const WHO_CAN_APPLY = [
+  ["Do I need professional experience?", "No. Beginners can apply and may be reviewed for a managed build-up path."],
+  ["Do I need an existing audience?", "No. Existing fans help, but they are not required for the first review."],
+  ["Can beginners apply?", "Yes. The intake is designed to identify the right starting point before deeper verification."],
+  ["Is this employment?", "It is a creator/revenue-share opportunity reviewed through application, verification, contract and consent steps."],
+  ["What happens after I apply?", "A human team member reviews fit, completeness, verification readiness and model suitability."],
+];
+const HUB_LINKS = [
+  ["Philippines creator path", "/gay-performer-recruitment-philippines", "For applicants in the Philippines who want country-specific setup, remote intake and payout context."],
+  ["OnlyFans-style creator comparison", "/gay-onlyfans-alternative", "For creators comparing FLESHLAB with subscription-platform workflows, not the general casting path."],
+  ["Cam model partnership", "/chaturbate-model-join-studio", "For creators already doing livecam who want to add studio content, fanclub and distribution."],
+  ["Twink performer casting", "/gay-twink-performer-recruitment", "For performers who specifically match the twink/niche recruitment path."],
+];
 
 export default function BecomePerformer() {
   const formRef = useRef(null);
   const intakeRef = useRef(null);
-  const earnRef = useRef(null);
-  const navigate = useNavigate();
   const location = useLocation();
   const urlParams = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -58,18 +67,14 @@ export default function BecomePerformer() {
   const [submitted, setSubmitted] = useState(false);
   const [submittedData, setSubmittedData] = useState(null);
 
-  const scrollToForm = () => {
-    trackPerformerApplyClick('hero_apply', '/become-performer');
+  const scrollToForm = (ctaLocation = 'hero_apply') => {
+    trackPerformerApplyClick(ctaLocation, '/become-performer');
     intakeRef.current?.scrollIntoView({ behavior: "smooth" });
   };
   const scrollToVerification = () => {
     trackPerformerApplyClick('intake_continue_verification', '/become-performer');
     formRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-  const scrollToEarn = () => {
-    earnRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
   const handleAskFirst = () => {
     trackWhatsappRecruitmentClick('/become-performer', { cta_location: 'global_ask_first', market: 'global', recruitment_type: 'performer_recruitment' });
     window.open("https://wa.me/886958679186?text=Hi%20FLESHLAB%2C%20I'm%20interested%20in%20becoming%20a%20performer", "_blank");
@@ -88,38 +93,77 @@ export default function BecomePerformer() {
   return (
     <>
       <SEOMeta
-        title="Become a FLESHLAB Performer | Adult Performer Casting & Content Monetization"
-        description="Apply to become a verified 18+ FLESHLAB performer. Earn from adult scenes, fanclub subscriptions, PPV video sales, partner platform distribution and livecam opportunities. Professional contracts, consent and private application review."
+        title="Become a Gay Performer or Adult Content Creator | FLESHLAB"
+        description="Apply to become a verified 18+ FLESHLAB performer or adult content creator. Beginners and experienced creators can be reviewed for managed or network creator models with contracts, consent and private application review."
         canonical="/become-performer"
         ogImage="https://media.base44.com/images/public/6a1bc26018a7bec38bc6ac4a/3e64bceff_image.png"
-        jsonLd={{ "@context": "https://schema.org", "@type": "FAQPage", "mainEntity": FAQ_JSON_LD.map(({ q, a }) => ({ "@type": "Question", "name": q, "acceptedAnswer": { "@type": "Answer", "text": a } })) }}
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "Become a Gay Performer or Adult Content Creator | FLESHLAB",
+            "url": "https://fleshlab.online/become-performer",
+            "description": "Apply to become a verified 18+ FLESHLAB performer or adult content creator. Beginners and experienced creators can be reviewed for managed or network creator models with contracts, consent and private application review."
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": FAQS.map(({ q, a }) => ({ "@type": "Question", "name": q, "acceptedAnswer": { "@type": "Answer", "text": a } }))
+          }
+        ]}
       />
 
       <div className="min-h-screen bg-fl-background text-foreground">
         <RecruitmentMeasurement />
         <div data-recruitment-section="hero">
-          <BPHero onApplyClick={scrollToForm} onEarnClick={scrollToEarn} />
+          <BPHero onApplyClick={scrollToForm} onAskFirst={handleAskFirst} />
         </div>
 
-        <section className="border-y border-border bg-card px-6 py-8">
-          <div className="mx-auto grid max-w-[1180px] gap-5 md:grid-cols-[1fr_auto] md:items-center">
-            <div>
-              <p className="text-xs font-black uppercase tracking-widest text-primary">Creator recruitment</p>
-              <h2 className="mt-2 text-2xl font-black text-foreground">Become a verified 18+ gay/adult content creator or performer with FLESHLAB.</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">The Philippines recruitment path is available for applicants who want to start from home with phone-shot review materials where appropriate.</p>
+        <section className="border-y border-border bg-card px-6 py-10">
+          <div className="mx-auto max-w-[1180px]">
+            <div className="grid gap-5 md:grid-cols-[1fr_auto] md:items-start">
+              <div>
+                <p className="text-xs font-black uppercase tracking-widest text-primary">Global recruitment hub</p>
+                <h2 className="mt-2 text-2xl font-black text-foreground">Start here if you want to join FLESHLAB as a performer or adult content creator.</h2>
+                <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">This page covers the global application path. Specialized pages below explain country, platform or niche-specific routes without replacing the main creator application.</p>
+              </div>
+              <button type="button" onClick={handleAskFirst} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-5 py-3 text-sm font-bold text-foreground transition hover:bg-secondary"><MessageCircle className="h-4 w-4 text-primary" /> Ask first on WhatsApp</button>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <Link to="/gay-performer-recruitment-philippines" className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-black text-primary-foreground transition hover:bg-primary/90">Philippines path <Globe className="h-4 w-4" /></Link>
-              <button type="button" onClick={handleAskFirst} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-5 py-3 text-sm font-bold text-foreground transition hover:bg-secondary"><MessageCircle className="h-4 w-4 text-primary" /> Ask first</button>
+            <div className="mt-7 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+              {HUB_LINKS.map(([label, href, text]) => (
+                <Link key={href} to={href} className="rounded-2xl border border-border bg-secondary/35 p-4 transition hover:-translate-y-0.5 hover:border-primary/40">
+                  <h3 className="text-sm font-black text-foreground">{label}</h3>
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">{text}</p>
+                  <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wide text-primary">Specialized path <ArrowRight className="h-3 w-3" /></span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-border bg-fl-background px-6 py-20">
+          <div className="mx-auto max-w-[1180px]">
+            <div className="mb-10 max-w-3xl">
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-primary">Who can apply?</p>
+              <h2 className="mt-3 text-3xl font-black leading-tight text-foreground md:text-5xl">A clear first step for beginners, experienced creators and performers exploring studio support.</h2>
+              <p className="mt-4 text-sm leading-7 text-muted-foreground">Applications are reviewed by people. Applying does not guarantee acceptance, earnings, production work or publication.</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+              {WHO_CAN_APPLY.map(([title, text]) => (
+                <div key={title} className="rounded-2xl border border-border bg-card p-5">
+                  <h3 className="text-sm font-black text-foreground">{title}</h3>
+                  <p className="mt-3 text-xs leading-6 text-muted-foreground">{text}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
         <div data-recruitment-section="why_fleshlab">
-        <BPChapterSection number="01" eyebrow="Why FLESHLAB" question="Why build with FLESHLAB?" answer="Start with what you already have: body, confidence and energy. We add production, publishing, compliance, sales and support.">
+        <BPChapterSection number="01" eyebrow="What FLESHLAB does" question="Why apply through FLESHLAB?" answer="FLESHLAB helps verified 18+ adult creators with production planning, publishing, compliance, contracts, monetization tools and private review before anything goes public.">
           <div className="grid gap-7 lg:grid-cols-[0.95fr_1.05fr]">
             <div className="rounded-[2rem] border border-primary/25 bg-gradient-to-br from-primary/12 to-card p-8 md:p-10">
-              <p className="mb-7 text-2xl font-black leading-tight text-foreground md:text-3xl">You bring the raw material. FLESHLAB turns it into a performer brand.</p>
+              <p className="mb-7 text-2xl font-black leading-tight text-foreground md:text-3xl">You bring the interest, boundaries and consistency. FLESHLAB reviews whether there is a safe creator path to build around you.</p>
               <div className="grid gap-3 sm:grid-cols-2">
                 {["Your look", "Your boundaries", "Your sexual energy", "Your consistency"].map((item) => <div key={item} className="rounded-2xl border border-border bg-background/45 px-4 py-3 text-sm font-bold text-foreground/70">{item}</div>)}
               </div>
@@ -134,8 +178,8 @@ export default function BecomePerformer() {
         </BPChapterSection>
         </div>
 
-        <div ref={earnRef} data-recruitment-section="earnings">
-          <BPChapterSection number="02" eyebrow="How You Earn" question="How can this make money?" answer="Scenes create income opportunities. A catalog, fanclub, livecam schedule and partner distribution create momentum." tone="amber">
+        <div data-recruitment-section="earnings">
+          <BPChapterSection number="02" eyebrow="Creator monetization" question="How can performers earn?" answer="Approved creators may earn through eligible scenes, fanclub access, PPV, partner distribution, livecam activity or collaborations depending on the reviewed model and contract." tone="amber">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               {INCOME.map(({ Icon, title, text }) => <div key={title} className="rounded-[1.6rem] border border-border bg-card p-5 transition hover:-translate-y-0.5 hover:border-primary/30"><Icon className="mb-5 h-7 w-7 text-primary" /><h3 className="mb-2 text-lg font-black text-foreground">{title}</h3><p className="text-sm leading-relaxed text-muted-foreground">{text}</p></div>)}
             </div>
@@ -148,18 +192,18 @@ export default function BecomePerformer() {
             <div className="mt-6 rounded-[2rem] border border-border bg-card p-7 md:p-8">
               <h3 className="mb-4 text-xl font-black text-foreground">What improves performance</h3>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">{EARNING_FACTORS.map((item) => <div key={item} className="flex items-center gap-2 text-sm text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-primary" />{item}</div>)}</div>
-              <p className="mt-5 max-w-3xl text-sm leading-relaxed text-muted-foreground/70">Earnings are not guaranteed. Some start at zero; some starter cam shows make $25–$30 in three hours. Growth depends on content, demand and consistency.</p>
+              <p className="mt-5 max-w-3xl text-sm leading-relaxed text-muted-foreground/70">Earnings are not guaranteed. Growth depends on content, demand, consistency, reliability and the agreed creator model.</p>
             </div>
           </BPChapterSection>
         </div>
 
         <div data-recruitment-section="creator_models">
-        <BPChapterSection number="03" eyebrow="Choose Your Model" question="Which model fits you?" answer="New performers usually need studio management. Established creators usually need reach, infrastructure and smarter monetization.">
+        <BPChapterSection number="03" eyebrow="Choose Your Model" question="Which creator model fits you?" answer="FLESHLAB reviews applicants for a management/build-up path or a network/distribution path. The right model depends on experience, content readiness, audience, support needs and contract review.">
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-[2rem] border-2 border-primary/45 bg-gradient-to-br from-primary/12 to-card p-8 md:p-10"><span className="rounded-full bg-primary px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary-foreground">New Performers</span><h3 className="mt-7 text-2xl font-black text-foreground">Managed Performer</h3><div className="mt-4 flex items-end gap-3"><span className="text-6xl font-black text-primary">40%</span><span className="pb-2 text-sm text-muted-foreground">performer share</span></div><ul className="mt-6 space-y-3 text-sm text-muted-foreground"><li>• For beginners or performers starting from scratch</li><li>• Studio support for planning, setup, promo and compliance</li><li>• We help build the performer brand around you</li></ul></div>
-            <div className="rounded-[2rem] border-2 border-border bg-card p-8 md:p-10"><span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary">Established Creators</span><h3 className="mt-7 text-2xl font-black text-foreground">Network Performer</h3><div className="mt-4 flex items-end gap-3"><span className="text-6xl font-black text-primary">70%</span><span className="pb-2 text-sm text-muted-foreground">performer share</span></div><ul className="mt-6 space-y-3 text-sm text-muted-foreground"><li>• For creators with content, fans or cam experience</li><li>• FLESHLAB adds distribution, SEO, fanclub tools and sales</li><li>• Keep creating while the network helps you grow</li></ul></div>
+            <div className="rounded-[2rem] border-2 border-primary/45 bg-gradient-to-br from-primary/12 to-card p-8 md:p-10"><span className="rounded-full bg-primary px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary-foreground">Management / Build-Up</span><h3 className="mt-7 text-2xl font-black text-foreground">Managed Performer</h3><div className="mt-4 flex items-end gap-3"><span className="text-6xl font-black text-primary">40%</span><span className="pb-2 text-sm text-muted-foreground">performer share</span></div><ul className="mt-6 space-y-3 text-sm text-muted-foreground"><li>• For beginners or performers starting from scratch</li><li>• Fits creators who need planning, setup, compliance, publishing and promo support</li><li>• FLESHLAB helps shape the first creator roadmap around boundaries and review fit</li></ul></div>
+            <div className="rounded-[2rem] border-2 border-border bg-card p-8 md:p-10"><span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary">Network / Distribution</span><h3 className="mt-7 text-2xl font-black text-foreground">Network Performer</h3><div className="mt-4 flex items-end gap-3"><span className="text-6xl font-black text-primary">70%</span><span className="pb-2 text-sm text-muted-foreground">performer share</span></div><ul className="mt-6 space-y-3 text-sm text-muted-foreground"><li>• For creators with content, fans, cam experience or existing platform activity</li><li>• FLESHLAB adds distribution, SEO, fanclub tools, video sales and audience infrastructure</li><li>• Designed to support creators who already know how they want to produce</li></ul></div>
           </div>
-          <p className="mx-auto mt-8 max-w-3xl text-center text-xs leading-relaxed text-muted-foreground/70">Revenue models are reviewed during application. Splits apply to eligible gross revenue and may vary by product type or contract. Your boundaries still matter.</p>
+          <p className="mx-auto mt-8 max-w-3xl text-center text-xs leading-relaxed text-muted-foreground/70">Revenue models are reviewed during application. Splits apply to eligible gross revenue and may vary by product type or contract. No income is guaranteed, and your boundaries still matter.</p>
         </BPChapterSection>
         </div>
 
@@ -169,13 +213,30 @@ export default function BecomePerformer() {
         </BPChapterSection>
         </div>
 
+        <section className="border-t border-border bg-card px-6 py-24">
+          <div className="mx-auto max-w-[1180px]">
+            <div className="mb-10 max-w-3xl">
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-primary">Performer application FAQ</p>
+              <h2 className="mt-3 text-3xl font-black leading-tight text-foreground md:text-5xl">Questions before applying to become a FLESHLAB creator</h2>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              {FAQS.map(({ q, a }) => (
+                <div key={q} className="rounded-2xl border border-border bg-background/35 p-5">
+                  <h3 className="text-base font-black text-foreground">{q}</h3>
+                  <p className="mt-3 text-sm leading-7 text-muted-foreground">{a}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <div data-recruitment-section="apply">
-        <BPChapterSection number="05" eyebrow="Apply" question="Apply today" answer="You have seen the path. Start privately, verify safely, and let the team review your fit for FLESHLAB.">
+        <BPChapterSection number="05" eyebrow="Apply" question="Start your private performer application" answer="One primary path: begin with the private intake, then continue only if you want to move into verification and review. Prefer to ask first? Use the WhatsApp option above.">
           <div className="rounded-[2.2rem] border border-primary/25 bg-gradient-to-b from-primary/12 to-card p-7 shadow-2xl shadow-primary/10 md:p-10">
             <div className="grid gap-7 lg:grid-cols-[0.9fr_1.1fr]">
               <div className="rounded-[1.7rem] border border-border bg-background/35 p-6">
                 <h3 className="mb-5 text-xl font-black text-foreground">Before you apply</h3>
-                <div className="space-y-3">{[{ Icon: Shield, text: "Verified 18+ only" }, { Icon: FileText, text: "Valid ID + selfie required" }, { Icon: Film, text: "Private review photos and videos" }, { Icon: Lock, text: "Nothing published without consent" }].map(({ Icon, text }) => <div key={text} className="flex min-h-12 items-center gap-3 rounded-xl border border-border bg-secondary/45 px-4 py-3 text-sm text-muted-foreground"><Icon className="h-4 w-4 shrink-0 text-primary" />{text}</div>)}</div>
+                <div className="space-y-3">{[{ Icon: Shield, text: "Verified 18+ only" }, { Icon: FileText, text: "Valid ID / KYC may be required before approval" }, { Icon: Lock, text: "Private review and human application review" }, { Icon: FileText, text: "Contract and consent before publishing" }, { Icon: Film, text: "Nothing published without approval" }, { Icon: Shield, text: "No escort, dating or private meeting service" }].map(({ Icon, text }) => <div key={text} className="flex min-h-12 items-center gap-3 rounded-xl border border-border bg-secondary/45 px-4 py-3 text-sm text-muted-foreground"><Icon className="h-4 w-4 shrink-0 text-primary" />{text}</div>)}</div>
               </div>
               <div className="rounded-[1.7rem] border border-border bg-background/35 p-6">
                 <h3 className="mb-5 text-xl font-black text-foreground">What happens next</h3>
@@ -184,8 +245,8 @@ export default function BecomePerformer() {
             </div>
 
             <div className="mt-8 grid gap-4 md:grid-cols-2">
-              <Link to="/gay-performer-recruitment-philippines" className="rounded-3xl border border-border bg-secondary/35 p-6 transition hover:-translate-y-1 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-lg">🇵🇭</div><h3 className="mb-2 font-black text-foreground">Philippines Recruitment</h3><p className="mb-4 text-sm leading-relaxed text-muted-foreground">Start from home, use your phone, get setup support and PHP/USD payouts.</p><span className="inline-flex items-center gap-2 text-xs font-bold text-primary">Learn more <Globe className="h-3.5 w-3.5" /></span></Link>
-              <button type="button" aria-label="Learn more about the cam model partnership" onClick={() => navigate("/chaturbate-model-join-studio")} className="rounded-3xl border border-border bg-secondary/35 p-6 text-left transition hover:-translate-y-1 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-primary/30 bg-primary/10"><Video className="h-5 w-5 text-primary" /></div><h3 className="mb-2 font-black text-foreground">Cam Model Partnership</h3><p className="mb-4 text-sm leading-relaxed text-muted-foreground">Already camming? Add studio content, fanclub income and the 70% network split.</p><span className="inline-flex items-center gap-2 text-xs font-bold text-primary">Learn more <ArrowRight className="h-3.5 w-3.5" /></span></button>
+              <button type="button" onClick={() => scrollToForm('apply_section_primary')} className="rounded-3xl border border-primary/35 bg-primary/10 p-6 text-left transition hover:-translate-y-1 hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-primary/30 bg-primary/10"><ArrowRight className="h-5 w-5 text-primary" /></div><h3 className="mb-2 font-black text-foreground">Primary application path</h3><p className="mb-4 text-sm leading-relaxed text-muted-foreground">Start with private intake, then continue to verification only if you want to move forward.</p><span className="inline-flex items-center gap-2 text-xs font-bold text-primary">Start intake <ArrowRight className="h-3.5 w-3.5" /></span></button>
+              <button type="button" onClick={handleAskFirst} className="rounded-3xl border border-border bg-secondary/35 p-6 text-left transition hover:-translate-y-1 hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-primary/30 bg-primary/10"><MessageCircle className="h-5 w-5 text-primary" /></div><h3 className="mb-2 font-black text-foreground">Ask first on WhatsApp</h3><p className="mb-4 text-sm leading-relaxed text-muted-foreground">Not ready to apply? Ask about fit, privacy, verification or creator models first.</p><span className="inline-flex items-center gap-2 text-xs font-bold text-primary">Ask first <ArrowRight className="h-3.5 w-3.5" /></span></button>
             </div>
 
             <div ref={intakeRef} className="mx-auto mt-14 max-w-5xl">

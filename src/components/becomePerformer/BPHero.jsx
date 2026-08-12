@@ -1,22 +1,16 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Shield, FileText, Lock, Film } from "lucide-react";
-import { trackEvent } from "@/lib/analytics";
+import { Shield, FileText, Lock, Film, MessageCircle } from "lucide-react";
 
 const EARNINGS_STEPS = [0, 50, 200, 500, 1000, 2000];
 const isAtMax = (idx) => idx >= EARNINGS_STEPS.length - 1;
 
-export default function BPHero({ onApplyClick, onEarnClick }) {
+export default function BPHero({ onApplyClick, onAskFirst }) {
   const [earningsIdx, setEarningsIdx] = useState(0);
   const [displayVal, setDisplayVal] = useState(0);
   const [showPlus, setShowPlus] = useState(false);
 
   const handleApplyClick = () => {
-    trackEvent('performer_apply_click', {
-      cta_label: 'Start application',
-      cta_location: 'hero',
-      landing_page_type: 'become_performer',
-    });
     if (onApplyClick) onApplyClick();
   };
 
@@ -63,20 +57,18 @@ export default function BPHero({ onApplyClick, onEarnClick }) {
         <div className="max-w-[680px]">
           <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5">
             <Film className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs font-bold uppercase tracking-widest text-primary">FLESHLAB Performer Casting — Now Open</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-primary">Global FLESHLAB Performer Casting</span>
           </div>
 
           <h1 className="mb-6 text-5xl font-black leading-[0.92] tracking-tighter text-foreground sm:text-6xl md:text-8xl">
-            MAKE MONEY<br />
-            <span className="text-primary">WITH YOUR</span><br />
-            BODY.
+            Become a Gay Performer or Adult Content Creator with FLESHLAB
           </h1>
 
-          <p className="mb-3 max-w-[560px] text-lg leading-relaxed text-foreground/72 md:text-xl">
-            Become a verified 18+ gay/adult content creator or performer. FLESHLAB helps turn your body, confidence and energy into paid scenes, fanclub access, PPV sales, livecam and distribution.
+          <p className="mb-3 max-w-[600px] text-lg leading-relaxed text-foreground/72 md:text-xl">
+            FLESHLAB is a studio-backed adult creator network for verified 18+ gay performers and adult content creators. Beginners and experienced creators can apply for human review.
           </p>
-          <p className="mb-8 max-w-[480px] text-base leading-relaxed text-muted-foreground">
-            One video can become the start of a performer brand.
+          <p className="mb-8 max-w-[560px] text-base leading-relaxed text-muted-foreground">
+            Choose between a managed build-up model or a network/distribution model. Nothing is published without verification, contract, consent and approval. Income is not guaranteed.
           </p>
 
           <div className="mb-9">
@@ -104,8 +96,8 @@ export default function BPHero({ onApplyClick, onEarnClick }) {
             <Button size="lg" onClick={handleApplyClick} className="h-auto min-h-14 rounded-xl bg-primary px-10 py-5 text-base font-black uppercase tracking-wide text-primary-foreground shadow-xl shadow-primary/35 hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary">
               Start private intake
             </Button>
-            <Button size="lg" variant="outline" onClick={onEarnClick} className="h-auto min-h-14 rounded-xl border-border px-8 py-5 text-base font-semibold text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary/50">
-              See how you earn
+            <Button size="lg" variant="outline" onClick={onAskFirst} className="h-auto min-h-14 rounded-xl border-border px-8 py-5 text-base font-semibold text-foreground hover:bg-secondary focus-visible:ring-2 focus-visible:ring-primary/50">
+              <MessageCircle className="mr-2 h-4 w-4 text-primary" /> Ask first on WhatsApp
             </Button>
           </div>
 
