@@ -15,6 +15,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import OAuthConsent from './pages/OAuthConsent';
 import AdminWallets from './pages/admin/Wallets';
 import AdminPaymentProviders from './pages/admin/PaymentProviders';
 import TrackingTest from './pages/admin/TrackingTest';
@@ -482,6 +483,7 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<><SEOMeta title="Create Account" description="Create your FLESHLAB account" canonical="/register" noIndex={true} /><Register /></>} />
       <Route path="/forgot-password" element={<><SEOMeta title="Reset Password" description="Reset your FLESHLAB password" canonical="/forgot-password" noIndex={true} /><ForgotPassword /></>} />
       <Route path="/reset-password" element={<><SEOMeta title="Set New Password" description="Set your new FLESHLAB password" canonical="/reset-password" noIndex={true} /><ResetPassword /></>} />
+      <Route path="/oauth/consent" element={<OAuthConsent />} />
       <Route path="/performer/login" element={<PerformerLoginPage />} />
       <Route path="/performerlogin" element={<Navigate to="/performer/login" replace />} />
       {/* V1 → V2 static path compatibility - handled by manual dispatch above for immediate render */}

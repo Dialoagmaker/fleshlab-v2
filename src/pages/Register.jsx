@@ -10,6 +10,7 @@ import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
 import { getStoredAuthIntent, buildRedirectUrl, validateRedirectUrl } from "@/lib/authRedirect";
+import { safeReturnTo } from "@/lib/authReturnTo";
 import SEOMeta from "@/components/SEOMeta";
 import { trackRegistrationStarted, trackOtpVerified, trackRegistrationCompleted, setAnalyticsUserId } from "@/lib/analytics";
 
@@ -37,7 +38,8 @@ export default function Register() {
 
   // Read ?next=, ?from_url=, ?checkout= from URL
   const urlParams = new URLSearchParams(window.location.search);
-  const nextParam = urlParams.get("next") || urlParams.get("from_url") || null;
+  const returnToParam = safeReturnTo();
+  const nextParam = urlParams.get("next") || urlParams.get("from_url") || (returnToParam !== "/" ? returnToParam : null);
   const checkoutParam = urlParams.get("checkout") || null; // e.g., fanclub_monthly, fanclub_3mo
   const isFanProductionFlow = nextParam && nextParam.includes("/fan-productions");
   const isFanclubCheckout = checkoutParam && checkoutParam.startsWith("fanclub_");

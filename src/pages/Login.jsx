@@ -8,6 +8,7 @@ import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { getStoredAuthIntent, buildRedirectUrl, validateRedirectUrl } from "@/lib/authRedirect";
+import { safeReturnTo } from "@/lib/authReturnTo";
 import { trackLoginSuccess, trackLoginFailed, setAnalyticsUserId } from "@/lib/analytics";
 
 import SEOMeta from "@/components/SEOMeta";
@@ -31,7 +32,8 @@ export default function Login() {
 
   // Read ?next= or ?from= or ?from_url= from URL (support all variants)
   const urlParams = new URLSearchParams(window.location.search);
-  const fromParam = urlParams.get("next") || urlParams.get("from_url") || urlParams.get("from") || null;
+  const returnToParam = safeReturnTo();
+  const fromParam = urlParams.get("next") || urlParams.get("from_url") || urlParams.get("from") || (returnToParam !== "/" ? returnToParam : null);
   const isFanProductionFlow = fromParam && fromParam.includes("/fan-productions");
 
   const getRedirectForRole = (user) => {
