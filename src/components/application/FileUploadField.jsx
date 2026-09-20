@@ -50,8 +50,18 @@ export default function FileUploadField({
       return;
     }
 
+    const confirmed = await base44.functions.invoke("finalizeTokenUpload", {
+      application_session_id: sessionId,
+      intent_id: res.data.intent_id,
+    });
+    if (!confirmed.data?.success) {
+      setStatus("error");
+      setErrorMsg("Storage confirmation failed");
+      return;
+    }
+
     setStatus("done");
-    onUploaded(res.data.r2_key);
+    onUploaded(confirmed.data.r2_key);
   };
 
   const handleClear = () => {

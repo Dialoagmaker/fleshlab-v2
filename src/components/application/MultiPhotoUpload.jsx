@@ -45,8 +45,17 @@ export default function MultiPhotoUpload({ sessionId, onKeysChanged, required = 
       return;
     }
 
+    const confirmed = await base44.functions.invoke("finalizeTokenUpload", {
+      application_session_id: sessionId,
+      intent_id: res.data.intent_id,
+    });
+    if (!confirmed.data?.success) {
+      setSlots(prev => prev.map((s, i) => i === index ? { ...s, status: "error", error: "Storage confirmation failed" } : s));
+      return;
+    }
+
     const newSlots = slots.map((s, i) =>
-      i === index ? { status: "done", fileName: file.name, r2Key: res.data.r2_key, error: null } : s
+      i === index ? { status: "done", fileName: file.name, r2Key: confirmed.data.r2_key, error: null } : s
     );
     setSlots(newSlots);
     onKeysChanged(newSlots.filter(s => s.r2Key).map(s => s.r2Key));

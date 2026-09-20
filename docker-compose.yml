@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fleshlab
+      POSTGRES_USER: fleshlab
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets: [postgres_password]
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fleshlab -d fleshlab"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+  api:
+    build:
+      context: .
+      target: api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 8787
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: fleshlab
+      POSTGRES_USER: fleshlab
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN}
+      COOKIE_SECURE: "true"
+      SESSION_SECRET_FILE: /run/secrets/session_secret
+      FLESHLAB_MEDIA_MIGRATION_ENABLED: "false"
+    depends_on:
+      postgres: { condition: service_healthy }
+    secrets: [session_secret]
+  worker:
+    build:
+      context: .
+      target: api
+    command: ["node", "server/worker.js"]
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+  web:
+    build:
+      context: .
+      target: web
+    restart: unless-stopped
+    ports: ["443:8080"]
+    depends_on: [api]
+secrets:
+  postgres_password:
+    file: ${POSTGRES_PASSWORD_FILE}
+  session_secret:
+    file: ${SESSION_SECRET_FILE}
+volumes:
+  postgres-data:

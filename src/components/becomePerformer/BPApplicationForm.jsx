@@ -53,7 +53,10 @@ function ChoiceButton({ label, selected, onClick }) {
 }
 
 const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sourcePage, sourceCountry, utmSource, utmMarket, utmCampaign, utmMedium, utmContent, utmTerm, referralCode, recruitmentCampaignId, embedded = false }, ref) {
-  const sessionId = useMemo(() => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, []);
+  // Issued server-side after the identity/age step. It is never derived from
+  // an email address or a client-generated UUID.
+  const [sessionId, setSessionId] = useState(null);
+  const [startingDraft, setStartingDraft] = useState(false);
   const [step, setStep] = useState(0);
   const applicationStartedRef = useRef(false);
   const normalizedSourcePage = sourcePage ? (sourcePage.startsWith('/') ? sourcePage : `/${sourcePage}`) : null;
@@ -230,8 +233,32 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
   const step1Valid = mediaKeys.profile_photo_r2_keys.length >= 5 && mediaKeys.intro_video_r2_key && mediaKeys.hardcore_video_r2_key;
   const step2Valid = p3.id_document_r2_key && p3.selfie_r2_key && p3.consent1 && p3.consent2 && p3.consent3 && p3.consent4 && p3.consent5;
 
-  const handleNext = () => {
+  const handleNext = async () => {
     markApplicationStarted();
+    if (step === 0 && !sessionId) {
+      setStartingDraft(true);
+      try {
+        const response = await fetch('/api/v1/recruiting/applications/draft', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            full_name: `${p1.first_name} ${p1.last_name}`.trim(),
+            email: p1.email,
+            country: p1.country,
+            age_confirmed: !!p1.age_confirmed,
+            answers: { source_page: sourcePage || null, source_country: sourceCountry || null },
+          }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.continuationToken) throw new Error(data?.error?.message || 'Could not start the secure application.');
+        setSessionId(data.continuationToken);
+      } catch (error) {
+        toast.error(error.message || 'Could not start the secure application.');
+        return;
+      } finally {
+        setStartingDraft(false);
+      }
+    }
     setStep(s => s + 1);
   };
 
@@ -483,10 +510,10 @@ const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sou
             {step < 2 ? (
               <Button
                 onClick={handleNext}
-                disabled={step === 0 ? !step0Valid : step === 1 ? !step1Valid : false}
+                disabled={step === 0 ? (!step0Valid || startingDraft) : step === 1 ? !step1Valid : false}
                 className="min-h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 focus-visible:ring-2 focus-visible:ring-primary"
               >
-                {step === 0 ? "Continue to private review" : "Continue to secure verification"}
+                {step === 0 && startingDraft ? "Preparing secure upload…" : (step === 0 ? "Continue to private review" : "Continue to secure verification")}
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             ) : (

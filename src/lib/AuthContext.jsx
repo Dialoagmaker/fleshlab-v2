@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { appParams } from '@/lib/app-params';
 import { setAnalyticsUserId, clearAnalyticsUserId, trackLogout } from '@/lib/analytics';
 
 const AuthContext = createContext();
@@ -21,39 +20,20 @@ export const AuthProvider = ({ children }) => {
   const checkAppState = async () => {
     console.log('AUTH_CHECK_START', { path: window.location.pathname });
     
-    const storedToken = appParams.token || localStorage.getItem('base44_access_token');
-    
-    if (!storedToken) {
-      console.log('AUTH_CHECK_NO_TOKEN - anonymous');
-      setUser(null);
-      setIsAuthenticated(false);
-      setAuthChecked(true);
-      clearAnalyticsUserId();
-      return;
-    }
-
     try {
-      const resp = await fetch(`/api/apps/${appParams.appId}/entities/User/me`, {
-        headers: {
-          'Authorization': `Bearer ${storedToken}`,
-          'X-App-Id': appParams.appId,
-        },
-      });
+      const resp = await fetch('/api/v1/auth/me', { credentials: 'include' });
 
       if (!resp.ok) {
         // 401/403 - treat as anonymous, don't break app
         console.log('AUTH_CHECK_401_ANONYMOUS', { status: resp.status });
         setUser(null);
         setIsAuthenticated(false);
-        localStorage.removeItem('base44_access_token');
         setAuthChecked(true);
         clearAnalyticsUserId();
         return;
       }
 
       const currentUser = await resp.json();
-      base44.auth.setToken(storedToken);
-      localStorage.setItem('base44_access_token', storedToken);
       setUser(currentUser);
       setIsAuthenticated(true);
       setAuthChecked(true);
@@ -63,7 +43,6 @@ export const AuthProvider = ({ children }) => {
       console.log('AUTH_CHECK_ERROR_ANONYMOUS', error?.message || error);
       setUser(null);
       setIsAuthenticated(false);
-      localStorage.removeItem('base44_access_token');
       setAuthChecked(true);
       clearAnalyticsUserId();
     }
