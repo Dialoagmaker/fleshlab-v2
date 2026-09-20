@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useState, useMemo } from "react";
-import { LayoutDashboard, Menu, Play, ChevronRight, ChevronDown, Globe, LogOut, X, Search } from "lucide-react";
+import { LayoutDashboard, Menu, Play, ChevronRight, ChevronDown, Globe, LogOut, X, Search, Upload } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const NAV_GROUPS = [
@@ -9,6 +9,7 @@ const NAV_GROUPS = [
     items: [
       { href: "/admin", label: "HQ", icon: LayoutDashboard, exact: true },
       { href: "/admin/applications", label: "Recruiting review", icon: Search },
+      { href: "/admin/catalogue-import", label: "Catalogue import", icon: Upload },
     ],
   },
 ];

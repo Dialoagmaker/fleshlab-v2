@@ -21,6 +21,7 @@ import AdminPaymentProviders from './pages/admin/PaymentProviders';
 import TrackingTest from './pages/admin/TrackingTest';
 import LiveActivity from './pages/admin/LiveActivity';
 import AdminNews from './pages/admin/News';
+import CatalogueImport from './pages/admin/CatalogueImport';
 // Add page imports here
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
@@ -193,6 +194,7 @@ const AuthenticatedApp = () => {
                 {/* /admin redirects to /admin/dashboard */}
                 <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
                 <Route path="/admin/dashboard" element={<AdminDashboardSelfHosted />} />
+                <Route path="/admin/catalogue-import" element={<CatalogueImport />} />
                 <Route path="/admin/videos" element={<Videos />} />
                 <Route path="/admin/content-organization" element={<ContentOrganization />} />
                 <Route path="/admin/videos/:id" element={<VideoEdit />} />

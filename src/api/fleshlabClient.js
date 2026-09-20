@@ -67,3 +67,11 @@ export const dashboards = {
   approve: (id) => fleshlabRequest(`/admin/recruiting/applications/${encodeURIComponent(id)}/approve`, { method: 'POST', body: '{}' }),
   recordContract: (id, template_version) => fleshlabRequest(`/admin/recruiting/applications/${encodeURIComponent(id)}/contract`, { method: 'POST', body: JSON.stringify({ template_version }) })
 };
+
+// Catalogue imports are deliberately explicit admin actions. The browser only
+// reads the four selected export files; it never sends them anywhere except the
+// self-hosted, authenticated FLESHLAB import endpoints.
+export const catalogueImports = {
+  dryRun: (exports) => fleshlabRequest('/admin/imports/base44/catalogue/dry-run', { method: 'POST', body: JSON.stringify({ exports }) }),
+  execute: (exports) => fleshlabRequest('/admin/imports/base44/catalogue/execute', { method: 'POST', body: JSON.stringify({ exports }) })
+};
