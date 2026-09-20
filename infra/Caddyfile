@@ -7,5 +7,10 @@
     Referrer-Policy "strict-origin-when-cross-origin"
     Permissions-Policy "camera=(), microphone=(), geolocation=()"
   }
-  reverse_proxy web:8080
+  handle /healthz {
+    reverse_proxy api:8787
+  }
+  handle {
+    reverse_proxy web:8080
+  }
 }
