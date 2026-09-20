@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { importSnapshot, snapshotFromExports } from './import-base44.js';
+import { importEntities, importSnapshot, snapshotFromExports } from './import-base44.js';
 
 async function fixture(overrides = {}) {
   const dir = await mkdtemp(path.join(tmpdir(), 'fleshlab-import-'));
@@ -37,4 +37,14 @@ test('Base44 browser export envelopes are accepted without a filesystem export',
   });
   assert.equal(snapshot.entities.Video.length, 1);
   assert.equal(snapshot.manifest.source, 'base44-data-export');
+});
+
+test('Base44 browser export surfaces a safe validation error for incomplete records', () => {
+  const snapshot = snapshotFromExports({
+    Brand: { entity: 'Brand', exported_at: '2026-09-20T00:00:00Z', records: [{ id: 'brand-1', name: 'Synthetic Brand', slug: 'synthetic-brand' }] },
+    Performer: { entity: 'Performer', exported_at: '2026-09-20T00:00:00Z', records: [{ id: 'performer-1', display_name: '', slug: 'synthetic-performer' }] },
+    Video: { entity: 'Video', exported_at: '2026-09-20T00:00:00Z', records: [] },
+    VideoPerformer: { entity: 'VideoPerformer', exported_at: '2026-09-20T00:00:00Z', records: [] }
+  });
+  return assert.rejects(() => importEntities({ snapshot, execute: false }), (error) => error.code === 'IMPORT_INVALID' && /Performer\.display_name/.test(error.message));
 });

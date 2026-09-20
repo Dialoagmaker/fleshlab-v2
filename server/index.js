@@ -101,8 +101,15 @@ const server = http.createServer(async (req, res) => {
     }
     throw unavailable(`${req.method} ${url.pathname}`);
   } catch (error) {
-    const status = error instanceof HttpError ? error.status : 500;
-    send(res, status, { error: { code: error.code || 'INTERNAL_ERROR', message: status === 500 ? 'Internal server error.' : error.message } });
+    // Import validation intentionally raises a plain domain error so the same
+    // validator can be used by the CLI and the HTTP endpoint.  It is a client
+    // correctable input error, never an internal server failure.  Keeping this
+    // mapping here also ensures we don't expose database/provider errors.
+    const importValidationError = error?.code === 'IMPORT_INVALID';
+    const status = error instanceof HttpError ? error.status : importValidationError ? 422 : 500;
+    const message = status === 500 ? 'Internal server error.' : error.message;
+    if (status === 500) console.error(JSON.stringify({ event: 'request_failed', code: error?.code || 'INTERNAL_ERROR', name: error?.name || 'Error' }));
+    send(res, status, { error: { code: error.code || 'INTERNAL_ERROR', message } });
   }
 });
 
