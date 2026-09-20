@@ -52,8 +52,9 @@ export POSTGRES_PASSWORD_FILE="${SECRETS_DIR}/postgres_password"
 export SESSION_SECRET_FILE="${SECRETS_DIR}/session_secret"
 export COMPOSE_PROJECT_NAME='fleshlab'
 cd "$RELEASE_DIR"
-# Never run a migration against a cached image from an earlier release.
-docker compose build api
+# Never run a migration against a cached image from an earlier release. Build
+# every local service before the no-build start so the worker has its image too.
+docker compose build api worker web
 docker compose run --rm api node server/migrate.js
 docker compose up -d --no-build --remove-orphans
 docker compose ps
