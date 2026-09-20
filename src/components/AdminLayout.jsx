@@ -1,37 +1,14 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useState, useMemo } from "react";
-import {
-  LayoutDashboard, Video, Upload, Users, Tag, Newspaper,
-  Link2, Database, Menu, Play, ChevronRight, ChevronDown, Globe, FileText, ClipboardList,
-  AlertCircle, Settings, UserX, DollarSign, MessageSquare, LogOut, Sparkles,
-  TrendingUp, CalendarCheck, Eye, ListChecks, FlaskConical, Activity, X, Search, FolderKanban, ShieldAlert, ShieldCheck
-   } from "lucide-react";
+import { LayoutDashboard, Menu, Play, ChevronRight, ChevronDown, Globe, LogOut, X, Search } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const NAV_GROUPS = [
   {
-    label: "FLESHLAB HQ",
+    label: "SELF-HOSTED HQ",
     items: [
       { href: "/admin", label: "HQ", icon: LayoutDashboard, exact: true },
-      { href: "/admin/performers", label: "Creator", icon: Users },
-      { href: "/admin/videos", label: "Library", icon: Video },
-      { href: "/admin/content-organization", label: "Collections", icon: FolderKanban },
-      { href: "/admin/news", label: "News", icon: Newspaper },
-      { href: "/admin/applications", label: "Discovery", icon: Search },
-      { href: "/admin/recruitment-intelligence", label: "Recruitment", icon: FlaskConical },
-      { href: "/admin/recruitment-campaigns", label: "Campaigns", icon: Link2 },
-      { href: "/admin/growth", label: "Marketing", icon: TrendingUp },
-      { href: "/admin/revenue", label: "Business", icon: DollarSign },
-      { href: "/admin/ai-text-generator", label: "AI", icon: Sparkles },
-      { href: "/admin/ai-media-studio", label: "Cover Designer", icon: Sparkles },
-      { href: "/admin/creative-brain", label: "Creative Brain", icon: Sparkles },
-      { href: "/admin/rendering-intelligence", label: "Rendering Intelligence", icon: ShieldAlert },
-      { href: "/admin/production-qa", label: "Production QA", icon: ShieldCheck },
-      { href: "/admin/studio-audit", label: "Studio Audit", icon: Activity },
-      { href: "/admin/certification", label: "Certification", icon: FlaskConical },
-      { href: "/admin/adult-image-provider-readiness", label: "Adult Provider Readiness", icon: ShieldAlert },
-      { href: "/admin/live-activity", label: "Automation", icon: Activity },
-      { href: "/admin/payment-providers", label: "Settings", icon: Settings },
+      { href: "/admin/applications", label: "Recruiting review", icon: Search },
     ],
   },
 ];

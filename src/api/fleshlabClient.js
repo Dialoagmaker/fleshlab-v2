@@ -10,7 +10,7 @@ class ApiError extends Error {
 // snapshot's restricted TypeScript include set.
 const apiBase = () => window['__FLESHLAB_API_BASE_URL__'] || '/api/v1';
 
-async function request(path, options = {}) {
+export async function fleshlabRequest(path, options = {}) {
   const response = await fetch(`${apiBase()}${path}`, {
     ...options,
     credentials: 'include',
@@ -22,7 +22,7 @@ async function request(path, options = {}) {
 }
 
 function entity(name) {
-  const call = (method, suffix = '', payload) => request(`/entities/${encodeURIComponent(name)}${suffix}`, { method, body: payload === undefined ? undefined : JSON.stringify(payload) });
+  const call = (method, suffix = '', payload) => fleshlabRequest(`/entities/${encodeURIComponent(name)}${suffix}`, { method, body: payload === undefined ? undefined : JSON.stringify(payload) });
   return {
     list: (query) => call('POST', '/query', query || {}),
     filter: (query) => call('POST', '/query', query || {}),
@@ -36,21 +36,34 @@ function entity(name) {
 export const base44 = {
   // Compatibility export name only. This object has no Base44 SDK, origin or fallback.
   entities: new Proxy({}, { get: (_, name) => entity(name) }),
-  functions: { invoke: async (name, payload = {}) => ({ data: await request(`/functions/${encodeURIComponent(name)}`, { method: 'POST', body: JSON.stringify(payload) }) }) },
+  functions: { invoke: async (name, payload = {}) => ({ data: await fleshlabRequest(`/functions/${encodeURIComponent(name)}`, { method: 'POST', body: JSON.stringify(payload) }) }) },
   integrations: { Core: { InvokeLLM: () => Promise.reject(new ApiError(501, 'MIGRATION_NOT_IMPLEMENTED', 'AI integrations are not migrated to the Azure runtime.')) } },
   auth: {
-    me: () => request('/auth/me'),
-    isAuthenticated: async () => { try { await request('/auth/me'); return true; } catch { return false; } },
-    loginViaEmailPassword: (email, password) => request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
-    register: (payload) => request('/auth/register', { method: 'POST', body: JSON.stringify(payload) }),
-    verifyOtp: (payload) => request('/auth/verify-email', { method: 'POST', body: JSON.stringify({ token: payload.token || payload.otpCode }) }),
+    me: () => fleshlabRequest('/auth/me'),
+    isAuthenticated: async () => { try { await fleshlabRequest('/auth/me'); return true; } catch { return false; } },
+    loginViaEmailPassword: (email, password) => fleshlabRequest('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+    register: (payload) => fleshlabRequest('/auth/register', { method: 'POST', body: JSON.stringify(payload) }),
+    verifyOtp: (payload) => fleshlabRequest('/auth/verify-email', { method: 'POST', body: JSON.stringify({ token: payload.token || payload.otpCode }) }),
     resendOtp: () => Promise.reject(new ApiError(501, 'MIGRATION_NOT_IMPLEMENTED', 'Verification resend requires the email delivery worker configuration.')),
-    resetPasswordRequest: (email) => request('/auth/password/reset-request', { method: 'POST', body: JSON.stringify({ email }) }),
-    resetPassword: (payload) => request('/auth/password/reset', { method: 'POST', body: JSON.stringify(payload) }),
-    updateMe: (payload) => request('/auth/me', { method: 'PATCH', body: JSON.stringify(payload) }),
-    logout: async (next = '/') => { await request('/auth/logout', { method: 'POST' }).catch(() => {}); window.location.assign(next); },
+    resetPasswordRequest: (email) => fleshlabRequest('/auth/password/reset-request', { method: 'POST', body: JSON.stringify({ email }) }),
+    resetPassword: (payload) => fleshlabRequest('/auth/password/reset', { method: 'POST', body: JSON.stringify(payload) }),
+    updateMe: (payload) => fleshlabRequest('/auth/me', { method: 'PATCH', body: JSON.stringify(payload) }),
+    logout: async (next = '/') => { await fleshlabRequest('/auth/logout', { method: 'POST' }).catch(() => {}); window.location.assign(next); },
     redirectToLogin: (from = window.location.pathname) => window.location.assign(`/login?from=${encodeURIComponent(from)}`),
     loginWithProvider: () => Promise.reject(new ApiError(501, 'MIGRATION_NOT_IMPLEMENTED', 'External identity provider login is not migrated.')),
     setToken: () => undefined
   }
+};
+
+export const dashboards = {
+  profile: () => fleshlabRequest('/dashboard/profile'),
+  updateProfile: (payload) => fleshlabRequest('/dashboard/profile', { method: 'PATCH', body: JSON.stringify(payload) }),
+  customer: () => fleshlabRequest('/dashboard/customer'),
+  performer: () => fleshlabRequest('/dashboard/performer'),
+  admin: () => fleshlabRequest('/dashboard/admin'),
+  applications: (params = {}) => fleshlabRequest(`/admin/recruiting/applications?${new URLSearchParams(params)}`),
+  application: (id) => fleshlabRequest(`/admin/recruiting/applications/${encodeURIComponent(id)}`),
+  review: (id, payload) => fleshlabRequest(`/admin/recruiting/applications/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  approve: (id) => fleshlabRequest(`/admin/recruiting/applications/${encodeURIComponent(id)}/approve`, { method: 'POST', body: '{}' }),
+  recordContract: (id, template_version) => fleshlabRequest(`/admin/recruiting/applications/${encodeURIComponent(id)}/contract`, { method: 'POST', body: JSON.stringify({ template_version }) })
 };

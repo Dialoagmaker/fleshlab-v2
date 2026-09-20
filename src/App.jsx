@@ -26,7 +26,7 @@ import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
 import AdminGuard from './components/AdminGuard';
 import Home from './pages/Home';
-import Dashboard from './pages/admin/Dashboard';
+import { AdminApplicationsSelfHosted, AdminDashboardSelfHosted, CustomerDashboard, PerformerDashboardSelfHosted } from './pages/SelfHostedDashboards';
 import Videos from './pages/admin/Videos';
 import VideoEdit from './pages/admin/VideoEdit';
 import Performers from './pages/admin/Performers';
@@ -38,7 +38,6 @@ import BrandEdit from './pages/admin/BrandEdit';
 import VideoPerformerMatch from './pages/admin/VideoPerformerMatch';
 import VideoMetadataCompletion from './pages/admin/VideoMetadataCompletion';
 import MissingPerformerAssignments from './pages/admin/MissingPerformerAssignments';
-import Applications from './pages/admin/Applications';
 import VideoUploadTest from './pages/admin/VideoUploadTest';
 import DraftReview from './pages/admin/DraftReview';
 import UnlinkedPerformers from './pages/admin/UnlinkedPerformers';
@@ -77,7 +76,6 @@ import ComingSoon from './pages/ComingSoon';
 import PerformerRouteHandler from './components/PerformerRouteHandler';
 import PerformerGuard from './components/PerformerGuard';
 import PerformerLoginPage from './pages/performer/PerformerLoginPage';
-import PerformerDashboard from './pages/performer/PerformerDashboard';
 import PerformerLogin from './pages/performer/PerformerLogin';
 
 import Account from './pages/Account';
@@ -109,7 +107,6 @@ import Fanclub from './pages/Fanclub';
 import GuestProduction from './pages/GuestProduction';
 import FanProductions from './pages/FanProductions';
 import FanProductionRequest from './pages/FanProductionRequest';
-import ClientDashboard from './pages/ClientDashboard';
 import Onboarding from './pages/Onboarding';
 import PhilippinesRecruitment from './pages/PhilippinesRecruitment';
 import Live from './pages/Live';
@@ -195,7 +192,7 @@ const AuthenticatedApp = () => {
               <Route element={<AdminLayout />}>
                 {/* /admin redirects to /admin/dashboard */}
                 <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-                <Route path="/admin/dashboard" element={<Dashboard />} />
+                <Route path="/admin/dashboard" element={<AdminDashboardSelfHosted />} />
                 <Route path="/admin/videos" element={<Videos />} />
                 <Route path="/admin/content-organization" element={<ContentOrganization />} />
                 <Route path="/admin/videos/:id" element={<VideoEdit />} />
@@ -204,7 +201,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/video-upload" element={<VideoUploadTest />} />
                 <Route path="/admin/draft-review" element={<DraftReview />} />
                 <Route path="/admin/missing-performer-assignments" element={<MissingPerformerAssignments />} />
-                <Route path="/admin/applications" element={<Applications />} />
+                <Route path="/admin/applications" element={<AdminApplicationsSelfHosted />} />
                 <Route path="/admin/performers" element={<Performers />} />
                 <Route path="/admin/performers/new" element={<PerformerEdit />} />
                 <Route path="/admin/unlinked-performers" element={<UnlinkedPerformers />} />
@@ -524,7 +521,7 @@ const AuthenticatedApp = () => {
       <Route path="/client/dashboard" element={
         <PublicPageShell noIndex={true}>
           <ClientDashboardGuard>
-            <ClientDashboard />
+            <CustomerDashboard />
           </ClientDashboardGuard>
         </PublicPageShell>
       } />
@@ -556,7 +553,7 @@ const AuthenticatedApp = () => {
             <Route path="/tools/ai-text-generator" element={<><SEOMeta title="AI Text Generator" description="FLESHLAB staff AI text generator" canonical="/tools/ai-text-generator" noIndex={true} /><AITextGenerator /></>} />
           </Route>
         </Route>
-        <Route path="/account" element={<><SEOMeta title="Account Settings" description="Manage your account settings" canonical="/account" noIndex={true} /><Account /></>} />
+        <Route path="/account" element={<Navigate to="/client/dashboard" replace />} />
       </Route>
       
       {/* Performer dashboard - uses PerformerRouteHandler (independent from Base44 auth) — noindex */}
@@ -574,7 +571,7 @@ const AuthenticatedApp = () => {
         <Route key={route} path={route} element={
           <><SEOMeta title="Performer Dashboard" description="Manage your performer profile" canonical={canonical} noIndex={true} />
           <PerformerRouteHandler>
-            <PerformerDashboard />
+            <PerformerDashboardSelfHosted />
           </PerformerRouteHandler>
           </>
         } />
