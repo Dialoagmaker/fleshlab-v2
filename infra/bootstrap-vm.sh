@@ -56,5 +56,8 @@ cd "$RELEASE_DIR"
 # every local service before the no-build start so the worker has its image too.
 docker compose build api worker web
 docker compose run --rm api node server/migrate.js
-docker compose up -d --no-build --remove-orphans
+# Local image tags are intentionally stable on the small VM. Recreate service
+# containers after a successful immutable source build so a rebuilt `latest`
+# image cannot leave an older API process serving stale routes.
+docker compose up -d --no-build --remove-orphans --force-recreate
 docker compose ps
