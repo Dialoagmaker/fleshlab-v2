@@ -1,7 +1,9 @@
 /*
  * Controlled catalogue import. Input is a local, audited Base44 export:
- *   manifest.json, Brand.json, Performer.json, Video.json, VideoPerformer.json
- * Every JSON file is an array of records with Base44's original `id`.
+ *   Brand_export_YYYY-MM-DD.json, Performer_export_YYYY-MM-DD.json,
+ *   Video_export_YYYY-MM-DD.json, VideoPerformer_export_YYYY-MM-DD.json
+ * Every file is Base44 dataExport's {entity, exported_at, count, records}
+ * envelope and every record retains Base44's original `id`.
  *
  * This program never calls Base44, never follows media URLs and never accepts
  * credentials. `--dry-run` is the default. Use --execute only against a
@@ -23,14 +25,23 @@ function safeSlug(value, field) { const slug = text(value, field); if (!/^[a-z0-
 function boolean(value) { return value === true; }
 
 async function readSnapshot(inputDirectory) {
-  const manifestPath = path.join(inputDirectory, 'manifest.json');
-  const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8'));
-  if (!manifest?.source || !manifest?.exported_at) fail('manifest.json requires source and exported_at.');
+  const candidates = await fs.readdir(inputDirectory);
   const entities = {};
+  let exportedAt = null;
   for (const name of entityNames) {
-    const file = path.join(inputDirectory, `${name}.json`);
-    entities[name] = asArray(JSON.parse(await fs.readFile(file, 'utf8')), name);
+    const match = candidates.find((file) => new RegExp(`^${name}(?:_export_[0-9]{4}-[0-9]{2}-[0-9]{2})?\\.json$`, 'i').test(file));
+    if (!match) fail(`Missing ${name} export JSON.`);
+    const payload = JSON.parse(await fs.readFile(path.join(inputDirectory, match), 'utf8'));
+    if (Array.isArray(payload)) entities[name] = payload;
+    else {
+      if (String(payload?.entity || '').toLowerCase() !== name.toLowerCase()) fail(`${match} is not a ${name} export.`);
+      if (!payload?.exported_at || !Array.isArray(payload?.records)) fail(`${match} must contain exported_at and records.`);
+      exportedAt ||= payload.exported_at;
+      entities[name] = payload.records;
+    }
+    entities[name] = asArray(entities[name], name);
   }
+  const manifest = { source: 'base44-data-export', exported_at: exportedAt || new Date().toISOString() };
   const digest = crypto.createHash('sha256').update(JSON.stringify({ manifest, entities })).digest('hex');
   return { manifest, entities, digest };
 }
@@ -60,20 +71,20 @@ function validate(snapshot) {
 async function upsert(client, snapshot, maps) {
   for (const item of maps.brands.values()) {
     const r = item.record;
-    await client.query(`INSERT INTO catalog_brands(legacy_id,name,slug,description,logo_url,cover_image_url,status,source_payload)
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(legacy_id) DO UPDATE SET name=EXCLUDED.name,slug=EXCLUDED.slug,description=EXCLUDED.description,logo_url=EXCLUDED.logo_url,cover_image_url=EXCLUDED.cover_image_url,status=EXCLUDED.status,source_payload=EXCLUDED.source_payload,imported_at=now()`,
+    await client.query(`INSERT INTO catalog_brands(legacy_id,name,slug,description,legacy_logo_url,legacy_cover_image_url,status,source_payload)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(legacy_id) DO UPDATE SET name=EXCLUDED.name,slug=EXCLUDED.slug,description=EXCLUDED.description,legacy_logo_url=EXCLUDED.legacy_logo_url,legacy_cover_image_url=EXCLUDED.legacy_cover_image_url,status=EXCLUDED.status,source_payload=EXCLUDED.source_payload,imported_at=now()`,
       [item.id,item.name,item.slug,r.description || null,r.logo_url || null,r.cover_image_url || null,r.status === 'active' ? 'active' : 'inactive',r]);
   }
   for (const item of maps.performers.values()) {
     const r = item.record;
-    await client.query(`INSERT INTO catalog_performers(legacy_id,display_name,slug,bio,nationality,profile_image_url,cover_image_url,status,featured,verified,source_payload)
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT(legacy_id) DO UPDATE SET display_name=EXCLUDED.display_name,slug=EXCLUDED.slug,bio=EXCLUDED.bio,nationality=EXCLUDED.nationality,profile_image_url=EXCLUDED.profile_image_url,cover_image_url=EXCLUDED.cover_image_url,status=EXCLUDED.status,featured=EXCLUDED.featured,verified=EXCLUDED.verified,source_payload=EXCLUDED.source_payload,imported_at=now()`,
+    await client.query(`INSERT INTO catalog_performers(legacy_id,display_name,slug,bio,nationality,legacy_profile_image_url,legacy_cover_image_url,status,featured,verified,source_payload)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) ON CONFLICT(legacy_id) DO UPDATE SET display_name=EXCLUDED.display_name,slug=EXCLUDED.slug,bio=EXCLUDED.bio,nationality=EXCLUDED.nationality,legacy_profile_image_url=EXCLUDED.legacy_profile_image_url,legacy_cover_image_url=EXCLUDED.legacy_cover_image_url,status=EXCLUDED.status,featured=EXCLUDED.featured,verified=EXCLUDED.verified,source_payload=EXCLUDED.source_payload,imported_at=now()`,
       [item.id,item.display_name,item.slug,r.bio || null,r.nationality || null,r.profile_image_url || null,r.cover_image_url || null,['active','inactive','pending'].includes(r.status) ? r.status : 'inactive',boolean(r.featured),boolean(r.verified),r]);
   }
   for (const item of maps.videos.values()) {
     const r = item.record;
-    await client.query(`INSERT INTO catalog_videos(legacy_id,title,slug,description,short_summary,brand_legacy_id,status,access_tier,release_date,duration_seconds,thumbnail_url,trailer_url,source_media_url,source_payload)
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT(legacy_id) DO UPDATE SET title=EXCLUDED.title,slug=EXCLUDED.slug,description=EXCLUDED.description,short_summary=EXCLUDED.short_summary,brand_legacy_id=EXCLUDED.brand_legacy_id,status=EXCLUDED.status,access_tier=EXCLUDED.access_tier,release_date=EXCLUDED.release_date,duration_seconds=EXCLUDED.duration_seconds,thumbnail_url=EXCLUDED.thumbnail_url,trailer_url=EXCLUDED.trailer_url,source_media_url=EXCLUDED.source_media_url,source_payload=EXCLUDED.source_payload,imported_at=now()`,
+    await client.query(`INSERT INTO catalog_videos(legacy_id,title,slug,description,short_summary,brand_legacy_id,status,access_tier,release_date,duration_seconds,legacy_thumbnail_url,legacy_trailer_url,legacy_source_media_url,source_payload)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT(legacy_id) DO UPDATE SET title=EXCLUDED.title,slug=EXCLUDED.slug,description=EXCLUDED.description,short_summary=EXCLUDED.short_summary,brand_legacy_id=EXCLUDED.brand_legacy_id,status=EXCLUDED.status,access_tier=EXCLUDED.access_tier,release_date=EXCLUDED.release_date,duration_seconds=EXCLUDED.duration_seconds,legacy_thumbnail_url=EXCLUDED.legacy_thumbnail_url,legacy_trailer_url=EXCLUDED.legacy_trailer_url,legacy_source_media_url=EXCLUDED.legacy_source_media_url,source_payload=EXCLUDED.source_payload,imported_at=now()`,
       [item.id,item.title,item.slug,r.description || null,r.short_summary || null,r.brand_id || null,['draft','published','unlisted','archived'].includes(r.status) ? r.status : 'draft',['free','fanclub','ppv'].includes(r.access_tier) ? r.access_tier : 'free',r.release_date || null,Number.isInteger(r.duration_seconds) ? r.duration_seconds : null,r.primary_thumbnail_url || r.thumbnail || null,r.trailer_url || r.teaser || null,r.source_video_url || null,r]);
   }
   for (const row of snapshot.entities.VideoPerformer) {

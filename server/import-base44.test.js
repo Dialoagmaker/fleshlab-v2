@@ -13,8 +13,7 @@ async function fixture(overrides = {}) {
     Video: [{ id: 'video-1', title: 'Synthetic Video', slug: 'synthetic-video', brand_id: 'brand-1', status: 'draft' }],
     VideoPerformer: [{ video_id: 'video-1', performer_id: 'performer-1', order: 0 }], ...overrides
   };
-  await writeFile(path.join(dir, 'manifest.json'), JSON.stringify({ source: 'synthetic-test', exported_at: '2026-09-20T00:00:00Z' }));
-  await Promise.all(Object.entries(entities).map(([name, rows]) => writeFile(path.join(dir, `${name}.json`), JSON.stringify(rows))));
+  await Promise.all(Object.entries(entities).map(([name, rows]) => writeFile(path.join(dir, `${name}_export_2026-09-20.json`), JSON.stringify({ entity: name, exported_at: '2026-09-20T00:00:00Z', count: rows.length, records: rows }))));
   return dir;
 }
 
