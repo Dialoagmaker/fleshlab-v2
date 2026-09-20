@@ -89,4 +89,6 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(config.port, '127.0.0.1', () => console.log(`FLESHLAB API listening on 127.0.0.1:${config.port}`));
+// Docker networking is the only caller in production. The API has no host
+// port mapping, so binding all container interfaces does not expose it.
+server.listen(config.port, '0.0.0.0', () => console.log(`FLESHLAB API listening on internal port ${config.port}`));

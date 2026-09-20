@@ -11,6 +11,7 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts
 COPY server ./server
+COPY migrations ./migrations
 CMD ["node", "server/index.js"]
 
 FROM nginx:1.27-alpine AS web

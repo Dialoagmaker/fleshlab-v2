@@ -28,10 +28,12 @@ services:
       PUBLIC_ORIGIN: ${PUBLIC_ORIGIN}
       COOKIE_SECURE: "true"
       SESSION_SECRET_FILE: /run/secrets/session_secret
+      AZURE_STORAGE_ACCOUNT_URL: ${AZURE_STORAGE_ACCOUNT_URL}
+      PRIVATE_UPLOAD_CONTAINER: private-uploads
       FLESHLAB_MEDIA_MIGRATION_ENABLED: "false"
     depends_on:
       postgres: { condition: service_healthy }
-    secrets: [session_secret]
+    secrets: [postgres_password, session_secret]
   worker:
     build:
       context: .
@@ -45,8 +47,18 @@ services:
       context: .
       target: web
     restart: unless-stopped
-    ports: ["443:8080"]
     depends_on: [api]
+  edge:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST}
+    ports: ["443:443"]
+    volumes:
+      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [web]
 secrets:
   postgres_password:
     file: ${POSTGRES_PASSWORD_FILE}
@@ -54,3 +66,5 @@ secrets:
     file: ${SESSION_SECRET_FILE}
 volumes:
   postgres-data:
+  caddy-data:
+  caddy-config:

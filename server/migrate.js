@@ -2,11 +2,13 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Pool } from 'pg';
+import { loadConfig } from './config.js';
 
-if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required for explicit migrations.');
+const config = loadConfig();
+if (!config.databaseUrl) throw new Error('A database connection is required for explicit migrations.');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const directory = path.join(root, 'migrations');
-const db = new Pool({ connectionString: process.env.DATABASE_URL });
+const db = new Pool({ connectionString: config.databaseUrl });
 const files = (await fs.readdir(directory)).filter((name) => name.endsWith('.sql')).sort();
 for (const file of files) {
   const applied = await db.query('SELECT 1 FROM schema_migrations WHERE version=$1', [file]);
