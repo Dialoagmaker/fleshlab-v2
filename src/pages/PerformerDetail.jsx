@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { callPublicFunction } from "@/lib/publicApi";
 import { useAuth } from "@/lib/AuthContext";
 import { useAccessControl } from "@/lib/useAccessControl";
 import SEOMeta from "@/components/SEOMeta";
@@ -36,39 +36,28 @@ export default function PerformerDetail() {
     navigate(`/fanclub?performer=${slug}`);
   };
 
-  // Fetch all data
-  const { data: performers = [] } = useQuery({
-    queryKey: ['public-performers'],
-    queryFn: () => base44.entities.Performer.filter({ status: 'active' }),
+  // One public, self-hosted projection supplies only catalogue-safe fields.
+  // Do not use the legacy Base44 entity client for public profile pages.
+  const { data: catalogue = {} } = useQuery({
+    queryKey: ['public-performer-catalogue'],
+    queryFn: () => callPublicFunction('getPublicPerformers'),
+    retry: 1,
   });
-
-  const { data: videos = [] } = useQuery({
-    queryKey: ['public-videos-published'],
-    queryFn: () => base44.entities.Video.filter({ status: 'published' }),
-  });
-
-  const { data: brands = [] } = useQuery({
-    queryKey: ['public-brands'],
-    queryFn: () => base44.entities.Brand.filter({ status: 'active' }),
-  });
-
-  const { data: videoPerformers = [] } = useQuery({
-    queryKey: ['video-performers'],
-    queryFn: () => base44.entities.VideoPerformer.list(),
-  });
+  const performers = catalogue.performers || [];
+  const videos = catalogue.videos || [];
+  const brands = catalogue.brands || [];
 
   useEffect(() => {
-    if (performers.length > 0 && slug && videos.length > 0) {
+    if (performers.length > 0 && slug) {
       const found = performers.find(p => p.slug === slug);
       if (found) {
         setPerformer(found);
-        const ids = videoPerformers.filter(vp => vp.performer_id === found.id).map(vp => vp.video_id);
-        setPerformerVideos(videos.filter(v => ids.includes(v.id)));
+        setPerformerVideos(videos.filter(v => Array.isArray(v.performer_ids) && v.performer_ids.includes(found.id)));
       } else {
         setPerformer(null);
       }
     }
-  }, [performers, slug, videos, videoPerformers]);
+  }, [performers, slug, videos]);
 
   // Derived state
   const hasExclusiveVideos = performerVideos.some(v => v.is_exclusive || v.access_tier === 'fanclub' || v.access_tier === 'ppv');
