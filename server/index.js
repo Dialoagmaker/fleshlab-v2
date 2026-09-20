@@ -7,6 +7,7 @@ import { createAzureBlob } from './blob.js';
 import { AuthService, requireSameOrigin } from './auth.js';
 import { DashboardService } from './dashboards.js';
 import { importEntities, snapshotFromExports } from './import-base44.js';
+import { CatalogueService } from './catalog.js';
 
 const config = loadConfig();
 const pool = new Pool({ connectionString: config.databaseUrl || undefined });
@@ -14,6 +15,7 @@ const unavailableBlob = { issueWriteUrl: async () => { throw unavailable('Privat
 const recruiting = new RecruitingService(pool, createAzureBlob(config) || unavailableBlob);
 const auth = new AuthService(pool, config);
 const dashboards = new DashboardService(pool);
+const catalogue = new CatalogueService(pool);
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', ...headers });
@@ -32,6 +34,11 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
     if (req.method === 'GET' && url.pathname === '/healthz') return send(res, 200, { status: 'ok', service: 'fleshlab-api', mediaMigrationEnabled: config.mediaMigrationEnabled });
+    if (req.method === 'POST' && /^\/api\/v1\/public\/functions\/[a-zA-Z0-9_-]+$/.test(url.pathname)) {
+      const result = await catalogue.dispatch(url.pathname.split('/').at(-1), await body(req));
+      if (result) return send(res, 200, result, { 'cache-control': 'public, max-age=60, stale-while-revalidate=300' });
+      throw unavailable(`Public function ${url.pathname.split('/').at(-1)}`);
+    }
     if (req.method === 'GET' && url.pathname === '/api/v1/auth/me') return send(res, 200, await auth.current(req));
     if (req.method === 'POST' && url.pathname === '/api/v1/auth/register') { requireSameOrigin(req, config); return send(res, 201, await auth.register(await body(req), req.socket.remoteAddress)); }
     if (req.method === 'POST' && url.pathname === '/api/v1/auth/login') {

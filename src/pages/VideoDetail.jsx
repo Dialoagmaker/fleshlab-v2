@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { callPublicFunction } from "@/lib/publicApi";
 import { useAuth } from "@/lib/AuthContext";
 import { useAccessControl, PRICING } from "@/lib/useAccessControl";
 import { usePaymentProvider } from "@/hooks/usePaymentProvider";
@@ -32,8 +33,7 @@ const ACCESS_TIER = {
 };
 
 async function fetchVideoDetail(slug) {
-  const res = await base44.functions.invoke('getPublicVideoDetail', { slug });
-  return res.data;
+  return callPublicFunction('getPublicVideoDetail', { slug });
 }
 
 export default function VideoDetail() {
