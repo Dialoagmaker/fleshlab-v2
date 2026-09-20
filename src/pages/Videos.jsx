@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { callPublicFunction } from "@/lib/publicApi";
 import VideoCard from "@/components/public/VideoCard";
 import VideoCollectionRail from "@/components/public/VideoCollectionRail";
 import CinematicFeaturedProduction from "@/components/platform/CinematicFeaturedProduction";
@@ -9,8 +9,7 @@ import SEOMeta from "@/components/SEOMeta";
 import { Film, AlertCircle } from "lucide-react";
 
 async function fetchCollections() {
-  const res = await base44.functions.invoke("getPublicCollections", {});
-  return res.data;
+  return callPublicFunction("getPublicCollections", {});
 }
 
 export default function Videos() {
