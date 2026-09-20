@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { importSnapshot } from './import-base44.js';
+import { importSnapshot, snapshotFromExports } from './import-base44.js';
 
 async function fixture(overrides = {}) {
   const dir = await mkdtemp(path.join(tmpdir(), 'fleshlab-import-'));
@@ -26,4 +26,15 @@ test('catalogue export dry run validates preserved relationships', async () => {
 test('catalogue export refuses an orphaned video-performer relationship', async () => {
   const inputDirectory = await fixture({ VideoPerformer: [{ video_id: 'video-missing', performer_id: 'performer-1' }] });
   await assert.rejects(() => importSnapshot({ inputDirectory, execute: false, databaseUrl: 'postgres://unused' }), /unknown video/);
+});
+
+test('Base44 browser export envelopes are accepted without a filesystem export', () => {
+  const snapshot = snapshotFromExports({
+    Brand: { entity: 'Brand', exported_at: '2026-09-20T00:00:00Z', records: [{ id: 'brand-1', name: 'Synthetic Brand', slug: 'synthetic-brand' }] },
+    Performer: { entity: 'Performer', exported_at: '2026-09-20T00:00:00Z', records: [{ id: 'performer-1', display_name: 'Synthetic Performer', slug: 'synthetic-performer' }] },
+    Video: { entity: 'Video', exported_at: '2026-09-20T00:00:00Z', records: [{ id: 'video-1', title: 'Synthetic Video', slug: 'synthetic-video', brand_id: 'brand-1' }] },
+    VideoPerformer: { entity: 'VideoPerformer', exported_at: '2026-09-20T00:00:00Z', records: [{ video_id: 'video-1', performer_id: 'performer-1' }] }
+  });
+  assert.equal(snapshot.entities.Video.length, 1);
+  assert.equal(snapshot.manifest.source, 'base44-data-export');
 });

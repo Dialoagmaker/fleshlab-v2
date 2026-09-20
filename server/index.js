@@ -6,6 +6,7 @@ import { RecruitingService } from './recruiting.js';
 import { createAzureBlob } from './blob.js';
 import { AuthService, requireSameOrigin } from './auth.js';
 import { DashboardService } from './dashboards.js';
+import { importEntities, snapshotFromExports } from './import-base44.js';
 
 const config = loadConfig();
 const pool = new Pool({ connectionString: config.databaseUrl || undefined });
@@ -18,11 +19,12 @@ function send(res, status, body, headers = {}) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', ...headers });
   res.end(JSON.stringify(body));
 }
-async function body(req) {
+async function body(req, maximumBytes = 1024 * 1024) {
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
-  if (Buffer.concat(chunks).length > 1024 * 1024) throw new HttpError(413, 'PAYLOAD_TOO_LARGE', 'Request is too large.');
-  try { return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}'); } catch { throw new HttpError(400, 'INVALID_JSON', 'Request body must be JSON.'); }
+  const value = Buffer.concat(chunks);
+  if (value.length > maximumBytes) throw new HttpError(413, 'PAYLOAD_TOO_LARGE', 'Request is too large.');
+  try { return JSON.parse(value.toString('utf8') || '{}'); } catch { throw new HttpError(400, 'INVALID_JSON', 'Request body must be JSON.'); }
 }
 function tokenFrom(req) { return req.headers['x-application-continuation']; }
 
@@ -46,6 +48,14 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/v1/dashboard/customer') return send(res, 200, await dashboards.customer(await auth.current(req)));
     if (req.method === 'GET' && url.pathname === '/api/v1/dashboard/performer') return send(res, 200, await dashboards.performer(await auth.current(req)));
     if (req.method === 'GET' && url.pathname === '/api/v1/dashboard/admin') return send(res, 200, await dashboards.admin(await auth.current(req)));
+    if (req.method === 'POST' && url.pathname === '/api/v1/admin/imports/base44/catalogue/dry-run') {
+      requireSameOrigin(req, config); await auth.requireRole(req, ['admin']);
+      return send(res, 200, await importEntities({ snapshot: snapshotFromExports((await body(req, 25 * 1024 * 1024)).exports), execute: false, pool }));
+    }
+    if (req.method === 'POST' && url.pathname === '/api/v1/admin/imports/base44/catalogue/execute') {
+      requireSameOrigin(req, config); await auth.requireRole(req, ['admin']);
+      return send(res, 200, await importEntities({ snapshot: snapshotFromExports((await body(req, 25 * 1024 * 1024)).exports), execute: true, pool }));
+    }
     if (req.method === 'POST' && url.pathname === '/api/v1/recruiting/applications') return send(res, 201, await recruiting.createApplication(await body(req), req.headers['idempotency-key']));
     if (req.method === 'POST' && url.pathname === '/api/v1/recruiting/applications/draft') return send(res, 201, await recruiting.startDraft(await body(req)));
     if (req.method === 'GET' && url.pathname === '/api/v1/recruiting/applications/resume') return send(res, 200, await recruiting.resume(url.searchParams.get('token')));

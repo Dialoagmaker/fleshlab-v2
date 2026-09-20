@@ -68,6 +68,22 @@ function validate(snapshot) {
   return { brands, performers, videos };
 }
 
+export function snapshotFromExports(exports) {
+  if (!exports || typeof exports !== 'object' || Array.isArray(exports)) fail('exports must be an object keyed by entity name.');
+  const entities = {};
+  let exportedAt = null;
+  for (const name of entityNames) {
+    const payload = exports[name] || exports[name.toLowerCase()] || exports[`${name[0].toLowerCase()}${name.slice(1)}`];
+    if (!payload || String(payload.entity || '').toLowerCase() !== name.toLowerCase() || !Array.isArray(payload.records)) fail(`A valid ${name} export is required.`);
+    exportedAt ||= payload.exported_at;
+    entities[name] = payload.records;
+  }
+  if (!exportedAt) fail('Each export needs exported_at.');
+  const manifest = { source: 'base44-data-export', exported_at: exportedAt };
+  const digest = crypto.createHash('sha256').update(JSON.stringify({ manifest, entities })).digest('hex');
+  return { manifest, entities, digest };
+}
+
 async function upsert(client, snapshot, maps) {
   for (const item of maps.brands.values()) {
     const r = item.record;
@@ -95,16 +111,22 @@ async function upsert(client, snapshot, maps) {
 export async function importSnapshot({ inputDirectory, execute = false, databaseUrl = process.env.DATABASE_URL }) {
   if (!inputDirectory) fail('--input=/absolute/export-directory is required.');
   if (!databaseUrl) fail('DATABASE_URL is required.');
-  const snapshot = await readSnapshot(inputDirectory); const maps = validate(snapshot);
+  const snapshot = await readSnapshot(inputDirectory);
+  return importEntities({ snapshot, execute, databaseUrl });
+}
+
+export async function importEntities({ snapshot, execute = false, databaseUrl = process.env.DATABASE_URL, pool: existingPool } = {}) {
+  const maps = validate(snapshot);
   const summary = { brands: maps.brands.size, performers: maps.performers.size, videos: maps.videos.size, credits: snapshot.entities.VideoPerformer.length, source_sha256: snapshot.digest, dry_run: !execute };
   if (!execute) return summary;
-  const pool = new Pool({ connectionString: databaseUrl }); const client = await pool.connect();
+  if (!existingPool && !databaseUrl) fail('DATABASE_URL is required.');
+  const pool = existingPool || new Pool({ connectionString: databaseUrl }); const client = await pool.connect();
   try {
     await client.query('BEGIN');
     await upsert(client, snapshot, maps);
     await client.query(`INSERT INTO import_runs(source_name,source_sha256,dry_run,summary) VALUES($1,$2,false,$3) ON CONFLICT(source_name,source_sha256) DO UPDATE SET summary=EXCLUDED.summary`, [snapshot.manifest.source,snapshot.digest,summary]);
     await client.query('COMMIT'); return summary;
-  } catch (error) { await client.query('ROLLBACK'); throw error; } finally { client.release(); await pool.end(); }
+  } catch (error) { await client.query('ROLLBACK'); throw error; } finally { client.release(); if (!existingPool) await pool.end(); }
 }
 
 if (process.argv[1] === new URL(import.meta.url).pathname) {
