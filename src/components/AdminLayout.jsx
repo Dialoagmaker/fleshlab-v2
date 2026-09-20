@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useState, useMemo } from "react";
-import { LayoutDashboard, Menu, Play, ChevronRight, ChevronDown, Globe, LogOut, X, Search, Upload } from "lucide-react";
+import { LayoutDashboard, Menu, Play, ChevronRight, ChevronDown, Globe, LogOut, X, Search, Upload, FolderOpen, Users, BarChart3, Sparkles, ShieldCheck, Settings, WalletCards } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const NAV_GROUPS = [
@@ -10,6 +10,30 @@ const NAV_GROUPS = [
       { href: "/admin", label: "HQ", icon: LayoutDashboard, exact: true },
       { href: "/admin/applications", label: "Recruiting review", icon: Search },
       { href: "/admin/catalogue-import", label: "Catalogue import", icon: Upload },
+    ],
+  },
+  {
+    label: "CATALOGUE · MIGRATION PENDING",
+    items: [
+      { label: "Creator & performer management", icon: Users, unavailable: true },
+      { label: "Library, collections & news", icon: FolderOpen, unavailable: true },
+      { label: "Data export & discovery", icon: Search, unavailable: true },
+    ],
+  },
+  {
+    label: "OPERATIONS · MIGRATION PENDING",
+    items: [
+      { label: "Campaigns & marketing", icon: BarChart3, unavailable: true },
+      { label: "Business, payments & payouts", icon: WalletCards, unavailable: true },
+      { label: "Automation & settings", icon: Settings, unavailable: true },
+    ],
+  },
+  {
+    label: "STUDIO & AI · MIGRATION PENDING",
+    items: [
+      { label: "Creative Brain & Cover Designer", icon: Sparkles, unavailable: true },
+      { label: "Rendering, QA & Studio Audit", icon: ShieldCheck, unavailable: true },
+      { label: "Certification & provider readiness", icon: ShieldCheck, unavailable: true },
     ],
   },
 ];
@@ -40,7 +64,13 @@ function DesktopSidebar() {
             <div className="space-y-0.5">
               {group.items.map(item => {
                 const Icon = item.icon;
-                const active = isActive(item);
+                const active = item.unavailable ? false : isActive(item);
+                if (item.unavailable) return (
+                  <div key={item.label} title="This Base44 module has not yet been migrated to the self-hosted backend." className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground/55 cursor-not-allowed">
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <span>{item.label}</span><span className="ml-auto text-[9px] font-semibold uppercase tracking-wide">Pending</span>
+                  </div>
+                );
                 return (
                   <Link
                     key={item.href}
@@ -149,10 +179,15 @@ function MobileDrawer({ onClose }) {
               </button>
               {expanded && (
                 <div className="p-1.5 space-y-1">
-                  {group.items.map(item => {
-                    const Icon = item.icon;
-                    const active = isActive(item);
-                    return (
+              {group.items.map(item => {
+                const Icon = item.icon;
+                const active = item.unavailable ? false : isActive(item);
+                if (item.unavailable) return (
+                  <div key={item.label} className="flex items-center gap-3 px-3.5 py-3 min-h-[48px] rounded-lg text-sm text-muted-foreground/55">
+                    <Icon className="w-4 h-4 flex-shrink-0" /><span>{item.label}</span><span className="ml-auto text-[9px] uppercase">Pending</span>
+                  </div>
+                );
+                return (
                       <Link
                         key={item.href}
                         to={item.href}

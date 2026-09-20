@@ -224,6 +224,17 @@ export class RecruitingService {
     }
     return { ...updated.rows[0], replay: false };
   }
+
+  async listAssignablePerformerAccounts() {
+    const result = await this.db.query(
+      `SELECT u.id,u.email,u.created_at
+       FROM app_users u
+       WHERE u.role='performer' AND u.account_status='active'
+         AND NOT EXISTS (SELECT 1 FROM performer_profiles p WHERE p.user_id=u.id)
+       ORDER BY u.created_at DESC`
+    );
+    return { accounts: result.rows };
+  }
 }
 
 function sanitize(row) {

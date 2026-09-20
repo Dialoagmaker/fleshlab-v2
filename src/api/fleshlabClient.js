@@ -65,7 +65,9 @@ export const dashboards = {
   application: (id) => fleshlabRequest(`/admin/recruiting/applications/${encodeURIComponent(id)}`),
   review: (id, payload) => fleshlabRequest(`/admin/recruiting/applications/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   approve: (id) => fleshlabRequest(`/admin/recruiting/applications/${encodeURIComponent(id)}/approve`, { method: 'POST', body: '{}' }),
-  recordContract: (id, template_version) => fleshlabRequest(`/admin/recruiting/applications/${encodeURIComponent(id)}/contract`, { method: 'POST', body: JSON.stringify({ template_version }) })
+  recordContract: (id, template_version) => fleshlabRequest(`/admin/recruiting/applications/${encodeURIComponent(id)}/contract`, { method: 'POST', body: JSON.stringify({ template_version }) }),
+  performerAccounts: () => fleshlabRequest('/admin/recruiting/performer-accounts'),
+  assignPerformer: (id, performer_user_id) => fleshlabRequest(`/admin/recruiting/applications/${encodeURIComponent(id)}/performer`, { method: 'POST', body: JSON.stringify({ performer_user_id }) })
 };
 
 // Catalogue imports are deliberately explicit admin actions. The browser only

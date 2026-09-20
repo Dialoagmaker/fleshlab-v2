@@ -92,6 +92,9 @@ const server = http.createServer(async (req, res) => {
       await auth.requireRole(req, ['staff', 'admin']);
       return send(res, 200, await recruiting.listForReview({ cursor: url.searchParams.get('cursor'), limit: url.searchParams.get('limit'), status: url.searchParams.get('status') }));
     }
+    if (req.method === 'GET' && url.pathname === '/api/v1/admin/recruiting/performer-accounts') {
+      await auth.requireRole(req, ['admin']); return send(res, 200, await recruiting.listAssignablePerformerAccounts());
+    }
     if (/^\/api\/v1\/admin\/recruiting\/applications\/[^/]+$/.test(url.pathname)) {
       const applicationId = url.pathname.split('/').at(-1);
       if (req.method === 'GET') { await auth.requireRole(req, ['staff', 'admin']); return send(res, 200, await recruiting.reviewDetail(applicationId)); }

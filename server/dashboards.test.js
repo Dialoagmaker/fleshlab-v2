@@ -20,3 +20,20 @@ test('performer dashboard refuses a customer session', async () => {
 test('admin dashboard refuses a customer session', async () => {
   await assert.rejects(() => new DashboardService(dbWith()).admin(customer), { code: 'FORBIDDEN' });
 });
+
+test('admin dashboard includes only database-backed catalogue metrics', async () => {
+  const calls = [];
+  const db = {
+    query: async (sql) => {
+      calls.push(sql);
+      if (calls.length === 1) return { rows: [{ applications_total: 2, applications_pending: 1, active_performers: 1, active_accounts: 3, active_brands: 5, catalogue_performers: 16, published_videos: 101, catalogue_credits: 105 }] };
+      return { rows: [] };
+    }
+  };
+  const result = await new DashboardService(db).admin({ ...customer, role: 'admin' });
+  assert.equal(result.metrics.published_videos, 101);
+  assert.equal(result.metrics.catalogue_credits, 105);
+  assert.equal(result.migration.catalog, 'migrated');
+  assert.match(calls[0], /catalog_videos/);
+  assert.match(calls[0], /catalog_video_performers/);
+});

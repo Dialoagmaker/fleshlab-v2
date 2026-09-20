@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isComplete, reviewStatuses, uploadTypes, validateApplication, validateDraft } from './recruiting.js';
+import { isComplete, RecruitingService, reviewStatuses, uploadTypes, validateApplication, validateDraft } from './recruiting.js';
 
 test('recruiting requires age and consent rather than accepting a bare email', () => {
   assert.throws(() => validateApplication({ full_name: 'Synthetic Applicant', email: 'test@example.test', country: 'DE' }), { code: 'CONSENT_REQUIRED' });
@@ -28,4 +28,19 @@ test('review status cannot silently approve an application', () => {
   assert.equal(reviewStatuses.has('under_review'), true);
   assert.equal(reviewStatuses.has('rejected'), true);
   assert.equal(reviewStatuses.has('approved'), false);
+});
+
+test('assignable performer accounts are restricted to active, unlinked performer users', async () => {
+  let statement = '';
+  const service = new RecruitingService({
+    query: async (sql) => {
+      statement = sql;
+      return { rows: [{ id: '00000000-0000-0000-0000-000000000002', email: 'performer@example.test' }] };
+    }
+  }, {});
+  const result = await service.listAssignablePerformerAccounts();
+  assert.deepEqual(result.accounts, [{ id: '00000000-0000-0000-0000-000000000002', email: 'performer@example.test' }]);
+  assert.match(statement, /u\.role='performer'/);
+  assert.match(statement, /u\.account_status='active'/);
+  assert.match(statement, /NOT EXISTS/);
 });

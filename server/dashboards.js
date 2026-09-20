@@ -65,9 +65,13 @@ export class DashboardService {
         (SELECT count(*)::int FROM performer_applications) AS applications_total,
         (SELECT count(*)::int FROM performer_applications WHERE status IN ('submitted','under_review')) AS applications_pending,
         (SELECT count(*)::int FROM performer_profiles WHERE status='active') AS active_performers,
-        (SELECT count(*)::int FROM app_users WHERE account_status='active') AS active_accounts`
+        (SELECT count(*)::int FROM app_users WHERE account_status='active') AS active_accounts,
+        (SELECT count(*)::int FROM catalog_brands WHERE status='active') AS active_brands,
+        (SELECT count(*)::int FROM catalog_performers WHERE status='active') AS catalogue_performers,
+        (SELECT count(*)::int FROM catalog_videos WHERE status='published') AS published_videos,
+        (SELECT count(*)::int FROM catalog_video_performers) AS catalogue_credits`
     );
     const recent = await this.db.query('SELECT id,full_name,country,status,created_at FROM performer_applications ORDER BY created_at DESC,id DESC LIMIT 12');
-    return { user, metrics: result.rows[0], recent_applications: recent.rows, migration: { catalog: 'not_migrated', revenue: 'not_migrated', payments: 'not_migrated' } };
+    return { user, metrics: result.rows[0], recent_applications: recent.rows, migration: { catalog: 'migrated', revenue: 'not_migrated', payments: 'not_migrated' } };
   }
 }
