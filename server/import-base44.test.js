@@ -23,9 +23,9 @@ test('catalogue export dry run validates preserved relationships', async () => {
   assert.deepEqual({ brands: result.brands, performers: result.performers, videos: result.videos, credits: result.credits, dry_run: result.dry_run }, { brands: 1, performers: 1, videos: 1, credits: 1, dry_run: true });
 });
 
-test('catalogue export refuses an orphaned video-performer relationship', async () => {
+test('catalogue export refuses an orphaned video-performer relationship with a safe re-export action', async () => {
   const inputDirectory = await fixture({ VideoPerformer: [{ video_id: 'video-missing', performer_id: 'performer-1' }] });
-  await assert.rejects(() => importSnapshot({ inputDirectory, execute: false, databaseUrl: 'postgres://unused' }), /unknown video/);
+  await assert.rejects(() => importSnapshot({ inputDirectory, execute: false, databaseUrl: 'postgres://unused' }), /missing Video video-missing.*same Base44 snapshot/);
 });
 
 test('Base44 browser export envelopes are accepted without a filesystem export', () => {

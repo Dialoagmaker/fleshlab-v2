@@ -12,6 +12,7 @@ const REQUIRED = Object.freeze([
 
 function humanError(error) {
   if (error?.code === 'PAYLOAD_TOO_LARGE') return 'The four export files exceed the current 25 MB import request limit.';
+  if (error?.code === 'IMPORT_INVALID') return error.message || 'The four exports do not form one consistent Base44 catalogue snapshot.';
   return error?.message || 'The catalogue import could not be checked.';
 }
 

@@ -61,9 +61,13 @@ function validate(snapshot) {
     if (record.brand_id && !brands.has(record.brand_id)) fail(`Video ${id} references unknown Brand ${record.brand_id}.`);
     videos.set(id, { id, title: text(record.title, 'Video.title'), slug: safeSlug(record.slug, 'Video.slug'), record });
   }
-  for (const record of snapshot.entities.VideoPerformer) {
-    if (!videos.has(text(record.video_id, 'VideoPerformer.video_id'))) fail('VideoPerformer references an unknown video.');
-    if (!performers.has(text(record.performer_id, 'VideoPerformer.performer_id'))) fail('VideoPerformer references an unknown performer.');
+  for (let index = 0; index < snapshot.entities.VideoPerformer.length; index += 1) {
+    const record = snapshot.entities.VideoPerformer[index];
+    const reference = record.id ? `VideoPerformer ${record.id}` : `VideoPerformer record ${index + 1}`;
+    const videoId = text(record.video_id, 'VideoPerformer.video_id');
+    const performerId = text(record.performer_id, 'VideoPerformer.performer_id');
+    if (!videos.has(videoId)) fail(`${reference} references missing Video ${videoId}. Re-export Video and VideoPerformer from the same Base44 snapshot; no data was imported.`);
+    if (!performers.has(performerId)) fail(`${reference} references missing Performer ${performerId}. Re-export Performer and VideoPerformer from the same Base44 snapshot; no data was imported.`);
   }
   return { brands, performers, videos };
 }
