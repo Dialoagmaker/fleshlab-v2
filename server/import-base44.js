@@ -48,6 +48,7 @@ async function readSnapshot(inputDirectory) {
 
 function validate(snapshot) {
   const brands = new Map(); const performers = new Map(); const videos = new Map();
+  const validCredits = []; const unresolvedCredits = [];
   for (const record of snapshot.entities.Brand) {
     const id = text(record.id, 'Brand.id'); if (brands.has(id)) fail(`Duplicate Brand id ${id}.`);
     brands.set(id, { id, name: text(record.name, 'Brand.name'), slug: safeSlug(record.slug, 'Brand.slug'), record });
@@ -66,10 +67,20 @@ function validate(snapshot) {
     const reference = record.id ? `VideoPerformer ${record.id}` : `VideoPerformer record ${index + 1}`;
     const videoId = text(record.video_id, 'VideoPerformer.video_id');
     const performerId = text(record.performer_id, 'VideoPerformer.performer_id');
-    if (!videos.has(videoId)) fail(`${reference} references missing Video ${videoId}. Re-export Video and VideoPerformer from the same Base44 snapshot; no data was imported.`);
-    if (!performers.has(performerId)) fail(`${reference} references missing Performer ${performerId}. Re-export Performer and VideoPerformer from the same Base44 snapshot; no data was imported.`);
+    const missing = [];
+    if (!videos.has(videoId)) missing.push({ entity: 'Video', id: videoId });
+    if (!performers.has(performerId)) missing.push({ entity: 'Performer', id: performerId });
+    // Credits cannot safely exist without both parent records.  Import all
+    // complete catalogue data, but retain a precise reconciliation report
+    // rather than silently creating a broken relationship or aborting the
+    // whole customer migration.
+    if (missing.length) {
+      unresolvedCredits.push({ reference, credit_id: record.id || null, video_id: videoId, performer_id: performerId, missing });
+      continue;
+    }
+    validCredits.push(record);
   }
-  return { brands, performers, videos };
+  return { brands, performers, videos, validCredits, unresolvedCredits };
 }
 
 export function snapshotFromExports(exports) {
@@ -107,7 +118,7 @@ async function upsert(client, snapshot, maps) {
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT(legacy_id) DO UPDATE SET title=EXCLUDED.title,slug=EXCLUDED.slug,description=EXCLUDED.description,short_summary=EXCLUDED.short_summary,brand_legacy_id=EXCLUDED.brand_legacy_id,status=EXCLUDED.status,access_tier=EXCLUDED.access_tier,release_date=EXCLUDED.release_date,duration_seconds=EXCLUDED.duration_seconds,legacy_thumbnail_url=EXCLUDED.legacy_thumbnail_url,legacy_trailer_url=EXCLUDED.legacy_trailer_url,legacy_source_media_url=EXCLUDED.legacy_source_media_url,source_payload=EXCLUDED.source_payload,imported_at=now()`,
       [item.id,item.title,item.slug,r.description || null,r.short_summary || null,r.brand_id || null,['draft','published','unlisted','archived'].includes(r.status) ? r.status : 'draft',['free','fanclub','ppv'].includes(r.access_tier) ? r.access_tier : 'free',r.release_date || null,Number.isInteger(r.duration_seconds) ? r.duration_seconds : null,r.primary_thumbnail_url || r.thumbnail || null,r.trailer_url || r.teaser || null,r.source_video_url || null,r]);
   }
-  for (const row of snapshot.entities.VideoPerformer) {
+  for (const row of maps.validCredits) {
     await client.query(`INSERT INTO catalog_video_performers(video_legacy_id,performer_legacy_id,role_name,display_order,featured,lead_performer) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(video_legacy_id,performer_legacy_id) DO UPDATE SET role_name=EXCLUDED.role_name,display_order=EXCLUDED.display_order,featured=EXCLUDED.featured,lead_performer=EXCLUDED.lead_performer`, [row.video_id,row.performer_id,row.role || null,Number.isInteger(row.order) ? row.order : 0,boolean(row.featured),boolean(row.lead_performer)]);
   }
 }
@@ -121,7 +132,16 @@ export async function importSnapshot({ inputDirectory, execute = false, database
 
 export async function importEntities({ snapshot, execute = false, databaseUrl = process.env.DATABASE_URL, pool: existingPool } = {}) {
   const maps = validate(snapshot);
-  const summary = { brands: maps.brands.size, performers: maps.performers.size, videos: maps.videos.size, credits: snapshot.entities.VideoPerformer.length, source_sha256: snapshot.digest, dry_run: !execute };
+  const summary = {
+    brands: maps.brands.size,
+    performers: maps.performers.size,
+    videos: maps.videos.size,
+    credits: maps.validCredits.length,
+    skipped_credits: maps.unresolvedCredits.length,
+    unresolved_credits: maps.unresolvedCredits,
+    source_sha256: snapshot.digest,
+    dry_run: !execute
+  };
   if (!execute) return summary;
   if (!existingPool && !databaseUrl) fail('DATABASE_URL is required.');
   const pool = existingPool || new Pool({ connectionString: databaseUrl }); const client = await pool.connect();
