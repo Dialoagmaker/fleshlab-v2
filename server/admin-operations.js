@@ -37,5 +37,5 @@ export class AdminOperationsService {
     }
     const keys = Object.keys(data); const args = values(data); const result = await this.db.query(`INSERT INTO ${d.table}(${keys.join(',')},created_by) VALUES(${keys.map((_,i)=>`$${i+1}`).join(',')},$${args.length+1}) RETURNING *`, [...args, user.id]); return result.rows[0];
   }
-  async remove(kind, id) { const d = def(kind); const result = await this.db.query(`DELETE FROM ${d.table} WHERE id=$1 RETURNING id`, [id]); if (!result.rowCount) throw new HttpError(404, 'NOT_FOUND', 'Record was not found.'); return { deleted: true }; }
+  async remove(kind, id) { const d = def(kind); const result = kind === 'settings' ? await this.db.query(`DELETE FROM ${d.table} WHERE key=$1 RETURNING key`, [id]) : await this.db.query(`DELETE FROM ${d.table} WHERE id=$1 RETURNING id`, [id]); if (!result.rowCount) throw new HttpError(404, 'NOT_FOUND', 'Record was not found.'); return { deleted: true }; }
 }
