@@ -91,3 +91,6 @@ export const adminNews = {
   update: (id, payload) => fleshlabRequest(`/admin/news/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   remove: (id) => fleshlabRequest(`/admin/news/${encodeURIComponent(id)}`, { method: 'DELETE' })
 };
+export const adminDiscovery = {
+  snapshot: () => fleshlabRequest('/admin/discovery')
+};

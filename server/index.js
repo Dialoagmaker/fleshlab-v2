@@ -10,6 +10,7 @@ import { importEntities, snapshotFromExports } from './import-base44.js';
 import { CatalogueService } from './catalog.js';
 import { DataExportService } from './data-export.js';
 import { NewsService } from './news.js';
+import { DiscoveryService } from './discovery.js';
 
 const config = loadConfig();
 const pool = new Pool({ connectionString: config.databaseUrl || undefined });
@@ -20,6 +21,7 @@ const dashboards = new DashboardService(pool);
 const catalogue = new CatalogueService(pool);
 const dataExports = new DataExportService(pool);
 const news = new NewsService(pool);
+const discovery = new DiscoveryService(pool);
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', ...headers });
@@ -72,6 +74,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/v1/admin/news') { await auth.requireRole(req, ['admin']); return send(res, 200, await news.list()); }
     if (req.method === 'POST' && url.pathname === '/api/v1/admin/news') { requireSameOrigin(req, config); await auth.requireRole(req, ['admin']); return send(res, 201, await news.save(null, await body(req))); }
     if (/^\/api\/v1\/admin\/news\/[^/]+$/.test(url.pathname)) { const id=url.pathname.split('/').at(-1); if(req.method==='PATCH'){requireSameOrigin(req,config);await auth.requireRole(req,['admin']);return send(res,200,await news.save(id,await body(req)));} if(req.method==='DELETE'){requireSameOrigin(req,config);await auth.requireRole(req,['admin']);return send(res,200,await news.remove(id));} }
+    if (req.method === 'GET' && url.pathname === '/api/v1/admin/discovery') { await auth.requireRole(req, ['staff', 'admin']); return send(res, 200, await discovery.snapshot(await auth.current(req))); }
     if (req.method === 'POST' && url.pathname === '/api/v1/admin/imports/base44/catalogue/dry-run') {
       requireSameOrigin(req, config); await auth.requireRole(req, ['admin']);
       return send(res, 200, await importEntities({ snapshot: snapshotFromExports((await body(req, 25 * 1024 * 1024)).exports), execute: false, pool }));
