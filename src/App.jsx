@@ -25,6 +25,7 @@ import CatalogueImport from './pages/admin/CatalogueImport';
 import SelfHostedCatalogue from './pages/admin/SelfHostedCatalogue';
 import DataExport from './pages/admin/DataExport';
 import Discovery from './pages/admin/Discovery';
+import Campaigns from './pages/admin/Campaigns';
 // Add page imports here
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
@@ -224,6 +225,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/brands/:id" element={<BrandEdit />} />
                 <Route path="/admin/news" element={<AdminNews />} />
                 <Route path="/admin/discovery" element={<Discovery />} />
+                <Route path="/admin/campaigns" element={<Campaigns />} />
                 <Route path="/admin/seo" element={<ComingSoon title="SEO Management" />} />
                 <Route path="/admin/migration" element={<ComingSoon title="Migration Tools" />} />
                 <Route path="/admin/monthly-closeout" element={<MonthlyCloseout />} />
