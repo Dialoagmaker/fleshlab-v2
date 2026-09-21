@@ -25,3 +25,14 @@ test('public catalogue exposes only published videos', async () => {
   assert.equal(result.total, 1);
   assert.equal(result.videos[0].slug, 'video-one');
 });
+
+test('admin catalogue projection is complete but never exposes raw legacy media origins', async () => {
+  const service = new CatalogueService(db);
+  const result = await service.adminSnapshot();
+  assert.deepEqual(result.counts, { brands: 1, performers: 1, videos: 1, credits: 1 });
+  assert.equal(result.performers[0].display_name, 'Performer One');
+  assert.equal(result.videos[0].performer_names[0], 'Performer One');
+  assert.equal(Object.hasOwn(result.videos[0], 'source_video_url'), false);
+  assert.equal(Object.hasOwn(result.videos[0], 'source_payload'), false);
+  assert.equal(result.collections[0].title, 'New Releases');
+});

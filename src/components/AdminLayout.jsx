@@ -1,39 +1,39 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useState, useMemo } from "react";
-import { LayoutDashboard, Menu, Play, ChevronRight, ChevronDown, Globe, LogOut, X, Search, Upload, FolderOpen, Users, BarChart3, Sparkles, ShieldCheck, Settings, WalletCards } from "lucide-react";
+import { LayoutDashboard, Menu, Play, ChevronRight, ChevronDown, Globe, LogOut, X, Search, Upload, FolderOpen, Users, BarChart3, ShieldCheck, Settings, WalletCards, Database, Newspaper, Compass, Bot, Palette, WandSparkles, Gauge, BadgeCheck, Workflow } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const NAV_GROUPS = [
   {
     label: "SELF-HOSTED HQ",
     items: [
-      { href: "/admin", label: "HQ", icon: LayoutDashboard, exact: true },
-      { href: "/admin/applications", label: "Recruiting review", icon: Search },
+      { href: "/admin/dashboard", label: "HQ", icon: LayoutDashboard, exact: true },
+      { href: "/admin/creator", label: "Creator", icon: Users },
+      { href: "/admin/library", label: "Library", icon: FolderOpen },
+      { href: "/admin/collections", label: "Collections", icon: FolderOpen },
+      { href: "/admin/applications", label: "Recruitment", icon: Search },
       { href: "/admin/catalogue-import", label: "Catalogue import", icon: Upload },
     ],
   },
   {
-    label: "CATALOGUE · MIGRATION PENDING",
+    label: "MIGRATION PENDING · NO SELF-HOSTED DATA SOURCE",
     items: [
-      { label: "Creator & performer management", icon: Users, unavailable: true },
-      { label: "Library, collections & news", icon: FolderOpen, unavailable: true },
-      { label: "Data export & discovery", icon: Search, unavailable: true },
-    ],
-  },
-  {
-    label: "OPERATIONS · MIGRATION PENDING",
-    items: [
-      { label: "Campaigns & marketing", icon: BarChart3, unavailable: true },
-      { label: "Business, payments & payouts", icon: WalletCards, unavailable: true },
-      { label: "Automation & settings", icon: Settings, unavailable: true },
-    ],
-  },
-  {
-    label: "STUDIO & AI · MIGRATION PENDING",
-    items: [
-      { label: "Creative Brain & Cover Designer", icon: Sparkles, unavailable: true },
-      { label: "Rendering, QA & Studio Audit", icon: ShieldCheck, unavailable: true },
-      { label: "Certification & provider readiness", icon: ShieldCheck, unavailable: true },
+      { label: "Data Export", icon: Database, unavailable: true },
+      { label: "News", icon: Newspaper, unavailable: true },
+      { label: "Discovery", icon: Compass, unavailable: true },
+      { label: "Campaigns", icon: BarChart3, unavailable: true },
+      { label: "Marketing", icon: BarChart3, unavailable: true },
+      { label: "Business", icon: WalletCards, unavailable: true },
+      { label: "AI", icon: Bot, unavailable: true },
+      { label: "Cover Designer", icon: Palette, unavailable: true },
+      { label: "Creative Brain", icon: WandSparkles, unavailable: true },
+      { label: "Rendering Intelligence", icon: Gauge, unavailable: true },
+      { label: "Production QA", icon: ShieldCheck, unavailable: true },
+      { label: "Studio Audit", icon: ShieldCheck, unavailable: true },
+      { label: "Certification", icon: BadgeCheck, unavailable: true },
+      { label: "Adult Provider Readiness", icon: ShieldCheck, unavailable: true },
+      { label: "Automation", icon: Workflow, unavailable: true },
+      { label: "Settings", icon: Settings, unavailable: true },
     ],
   },
 ];

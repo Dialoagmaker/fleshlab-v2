@@ -38,11 +38,14 @@ function video(row, performerIds = [], performerNames = []) {
 export class CatalogueService {
   constructor(db) { this.db = db; }
 
-  async snapshot() {
+  async snapshot({ includeInactive = false } = {}) {
+    const brandWhere = includeInactive ? '' : " WHERE status='active'";
+    const performerWhere = includeInactive ? '' : " WHERE status='active'";
+    const videoWhere = includeInactive ? '' : " WHERE status='published'";
     const [brands, performers, videos, credits] = await Promise.all([
-      this.db.query("SELECT legacy_id,name,slug,status,source_payload,imported_at FROM catalog_brands WHERE status='active' ORDER BY name"),
-      this.db.query("SELECT legacy_id,display_name,slug,status,source_payload,imported_at FROM catalog_performers WHERE status='active' ORDER BY display_name"),
-      this.db.query("SELECT legacy_id,title,slug,description,short_summary,brand_legacy_id,status,access_tier,release_date,duration_seconds,legacy_thumbnail_url,legacy_trailer_url,source_payload,imported_at FROM catalog_videos WHERE status='published' ORDER BY release_date DESC NULLS LAST, imported_at DESC"),
+      this.db.query(`SELECT legacy_id,name,slug,status,source_payload,imported_at FROM catalog_brands${brandWhere} ORDER BY name`),
+      this.db.query(`SELECT legacy_id,display_name,slug,status,source_payload,imported_at FROM catalog_performers${performerWhere} ORDER BY display_name`),
+      this.db.query(`SELECT legacy_id,title,slug,description,short_summary,brand_legacy_id,status,access_tier,release_date,duration_seconds,legacy_thumbnail_url,legacy_trailer_url,source_payload,imported_at FROM catalog_videos${videoWhere} ORDER BY release_date DESC NULLS LAST, imported_at DESC`),
       this.db.query('SELECT video_legacy_id,performer_legacy_id FROM catalog_video_performers')
     ]);
     const performerRows = new Map(performers.rows.map((row) => [row.legacy_id, row]));
@@ -71,6 +74,39 @@ export class CatalogueService {
       return performer(row, videosByPerformer.get(row.legacy_id) || 0, primaryBrand);
     });
     return { brands: brands.rows.map(brand), performers: performersPublic, videos: videosPublic };
+  }
+
+  // This intentionally uses the same safe projection as the public catalogue:
+  // administrators can review migrated catalogue state, but raw import payloads
+  // and legacy original-media URLs never leave PostgreSQL through this route.
+  async adminSnapshot() {
+    const catalogue = await this.snapshot({ includeInactive: true });
+    const collections = [];
+    if (catalogue.videos.length) {
+      collections.push({
+        id: 'new-releases', type: 'dynamic', slug: 'new-releases', title: 'New Releases',
+        short_description: 'The latest imported productions.', video_count: catalogue.videos.length,
+        videos: catalogue.videos.slice(0, 12)
+      });
+    }
+    for (const item of catalogue.brands) {
+      const videos = catalogue.videos.filter((video) => video.brand_id === item.id);
+      if (videos.length) collections.push({
+        id: item.id, type: 'brand', slug: item.slug, title: item.name,
+        short_description: item.description, cover_image: item.cover_image_url,
+        video_count: videos.length, videos: videos.slice(0, 12)
+      });
+    }
+    return {
+      counts: {
+        brands: catalogue.brands.length,
+        performers: catalogue.performers.length,
+        videos: catalogue.videos.length,
+        credits: catalogue.videos.reduce((count, item) => count + item.performer_ids.length, 0)
+      },
+      ...catalogue,
+      collections
+    };
   }
 
   async dispatch(name, input = {}) {

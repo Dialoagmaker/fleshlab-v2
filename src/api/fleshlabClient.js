@@ -77,3 +77,7 @@ export const catalogueImports = {
   dryRun: (exports) => fleshlabRequest('/admin/imports/base44/catalogue/dry-run', { method: 'POST', body: JSON.stringify({ exports }) }),
   execute: (exports) => fleshlabRequest('/admin/imports/base44/catalogue/execute', { method: 'POST', body: JSON.stringify({ exports }) })
 };
+
+export const adminCatalogue = {
+  snapshot: () => fleshlabRequest('/admin/catalogue')
+};
