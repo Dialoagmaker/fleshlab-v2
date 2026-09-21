@@ -74,6 +74,7 @@ test('publishing readiness exposes every consent and participant blocker', () =>
   assert.equal(publishingReadiness({ consent_status: 'acknowledged', participants: [], primary_performer_verified: true, rights: { rights_status: 'active', commercial_exploitation_allowed: true } }).publishable, true);
   assert.ok(publishingReadiness({ consent_status: 'acknowledged', participants: [], primary_performer_verified: true, rights: { rights_status: 'expired' } }).blockers.includes('rights_expired'));
   assert.ok(rightsReadiness({ rights_status: 'legacy_unknown' }).blockers.includes('legacy_rights_status_unknown'));
+  assert.equal(rightsReadiness({ rights_status: 'legacy_unknown' }).ready, false);
 });
 
 test('Content Rights readiness migration preserves legacy uncertainty and independent rights state', () => {

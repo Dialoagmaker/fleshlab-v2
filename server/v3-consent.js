@@ -58,7 +58,7 @@ export class V3ConsentService {
     for (const row of consent.rows) {
       const participants = await this.db.query(`SELECT id,performer_legacy_id,display_name,role,age_verified,identity_verified,release_status FROM v3_production_participants WHERE consent_record_id=$1 ORDER BY created_at`, [row.id]);
       const rights = await this.rights(productionId, row.video_legacy_id);
-      const readiness = publishingReadiness({ consent_status: row.status, participants: participants.rows, rights: rights.records[0] || { rights_status: 'missing' } });
+      const readiness = publishingReadiness({ consent_status: row.status, participants: participants.rows, rights: rights.records[0] || { rights_status: row.video_legacy_id ? 'legacy_unknown' : 'missing' } });
       records.push({ ...row, participants: participants.rows.map(safeParticipant), rights: rights.records, publishing: readiness });
     }
     return { production_id: productionId, records };
@@ -67,6 +67,6 @@ export class V3ConsentService {
   async rights(productionId, contentId = null) {
     const args = contentId ? [productionId, contentId] : [productionId];
     const result = await this.db.query(`SELECT id,production_id,content_legacy_id,performer_legacy_id,creator_id,rights_source,rights_contract_instance_id,rights_status,exclusive,territory,rights_start_at,rights_end_at,post_termination_end_at,commercial_exploitation_allowed,marketing_allowed,editing_allowed,sublicensing_allowed,notes,created_at,updated_at FROM v3_content_rights_records WHERE production_id=$1 ${contentId ? 'AND content_legacy_id=$2' : ''} ORDER BY created_at DESC`, args);
-    return { production_id: productionId, records: result.rows.map(row => ({ ...row, readiness: rightsReadiness(row) })) };
+    return { production_id: productionId, status: result.rowCount ? 'RECORDED' : 'LEGACY_RIGHTS_STATUS_UNKNOWN', records: result.rows.map(row => ({ ...row, readiness: rightsReadiness(row) })) };
   }
 }
