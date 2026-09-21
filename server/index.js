@@ -9,6 +9,7 @@ import { DashboardService } from './dashboards.js';
 import { importEntities, snapshotFromExports } from './import-base44.js';
 import { CatalogueService } from './catalog.js';
 import { DataExportService } from './data-export.js';
+import { NewsService } from './news.js';
 
 const config = loadConfig();
 const pool = new Pool({ connectionString: config.databaseUrl || undefined });
@@ -18,6 +19,7 @@ const auth = new AuthService(pool, config);
 const dashboards = new DashboardService(pool);
 const catalogue = new CatalogueService(pool);
 const dataExports = new DataExportService(pool);
+const news = new NewsService(pool);
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', ...headers });
@@ -36,6 +38,8 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
     if (req.method === 'GET' && url.pathname === '/healthz') return send(res, 200, { status: 'ok', service: 'fleshlab-api', mediaMigrationEnabled: config.mediaMigrationEnabled });
+    if (req.method === 'POST' && url.pathname === '/api/v1/public/functions/getPublicNews') return send(res, 200, await news.list({ publicOnly: true }));
+    if (req.method === 'POST' && url.pathname === '/api/v1/public/functions/getPublicNewsArticleBySlug') return send(res, 200, await news.get((await body(req)).slug, { publicOnly: true }));
     if (req.method === 'POST' && /^\/api\/v1\/public\/functions\/[a-zA-Z0-9_-]+$/.test(url.pathname)) {
       const result = await catalogue.dispatch(url.pathname.split('/').at(-1), await body(req));
       if (result) return send(res, 200, result, { 'cache-control': 'public, max-age=60, stale-while-revalidate=300' });
@@ -65,6 +69,9 @@ const server = http.createServer(async (req, res) => {
       await auth.requireRole(req, ['admin']);
       return send(res, 200, await dataExports.exports(url.pathname.split('/').at(-1)));
     }
+    if (req.method === 'GET' && url.pathname === '/api/v1/admin/news') { await auth.requireRole(req, ['admin']); return send(res, 200, await news.list()); }
+    if (req.method === 'POST' && url.pathname === '/api/v1/admin/news') { requireSameOrigin(req, config); await auth.requireRole(req, ['admin']); return send(res, 201, await news.save(null, await body(req))); }
+    if (/^\/api\/v1\/admin\/news\/[^/]+$/.test(url.pathname)) { const id=url.pathname.split('/').at(-1); if(req.method==='PATCH'){requireSameOrigin(req,config);await auth.requireRole(req,['admin']);return send(res,200,await news.save(id,await body(req)));} if(req.method==='DELETE'){requireSameOrigin(req,config);await auth.requireRole(req,['admin']);return send(res,200,await news.remove(id));} }
     if (req.method === 'POST' && url.pathname === '/api/v1/admin/imports/base44/catalogue/dry-run') {
       requireSameOrigin(req, config); await auth.requireRole(req, ['admin']);
       return send(res, 200, await importEntities({ snapshot: snapshotFromExports((await body(req, 25 * 1024 * 1024)).exports), execute: false, pool }));

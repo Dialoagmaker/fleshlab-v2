@@ -85,3 +85,9 @@ export const adminCatalogue = {
 export const adminDataExports = {
   get: (entity = 'all') => fleshlabRequest(`/admin/exports/${encodeURIComponent(entity)}`)
 };
+export const adminNews = {
+  list: () => fleshlabRequest('/admin/news'),
+  create: (payload) => fleshlabRequest('/admin/news', { method: 'POST', body: JSON.stringify(payload) }),
+  update: (id, payload) => fleshlabRequest(`/admin/news/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  remove: (id) => fleshlabRequest(`/admin/news/${encodeURIComponent(id)}`, { method: 'DELETE' })
+};

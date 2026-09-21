@@ -14,12 +14,12 @@ const NAV_GROUPS = [
       { href: "/admin/applications", label: "Recruitment", icon: Search },
       { href: "/admin/catalogue-import", label: "Catalogue import", icon: Upload },
       { href: "/admin/data-export", label: "Data Export", icon: Database },
+      { href: "/admin/news", label: "News", icon: Newspaper },
     ],
   },
   {
     label: "MIGRATION PENDING · NO SELF-HOSTED DATA SOURCE",
     items: [
-      { label: "News", icon: Newspaper, unavailable: true },
       { label: "Discovery", icon: Compass, unavailable: true },
       { label: "Campaigns", icon: BarChart3, unavailable: true },
       { label: "Marketing", icon: BarChart3, unavailable: true },

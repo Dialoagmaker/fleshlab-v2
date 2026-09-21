@@ -1,0 +1,10 @@
+import { HttpError } from './errors.js';
+const fields = ['title','slug','category','content','excerpt','cover_image_url','status','published_at','meta_title','meta_description','tags'];
+function clean(input) { const out={}; for (const key of fields) if (Object.hasOwn(input,key)) out[key]=key==='tags' ? (Array.isArray(input[key]) ? input[key].filter((x)=>typeof x==='string') : []) : input[key]; return out; }
+export class NewsService {
+  constructor(db){this.db=db;}
+  async list({publicOnly=false}={}) { const q=publicOnly ? "SELECT * FROM news_articles WHERE status='published' AND published_at<=now() ORDER BY published_at DESC" : 'SELECT * FROM news_articles ORDER BY updated_at DESC'; return (await this.db.query(q)).rows; }
+  async get(slug,{publicOnly=false}={}) { const q=publicOnly ? "SELECT * FROM news_articles WHERE slug=$1 AND status='published' AND published_at<=now()" : 'SELECT * FROM news_articles WHERE slug=$1'; const r=await this.db.query(q,[slug]); if(!r.rowCount) throw new HttpError(404,'NOT_FOUND','News article was not found.'); return r.rows[0]; }
+  async save(id,input) { const value=clean(input); if(!String(value.title||'').trim()||!String(value.slug||'').trim()) throw new HttpError(422,'NEWS_INVALID','Title and slug are required.'); if(value.status==='published'&&!value.published_at)value.published_at=new Date().toISOString(); const keys=Object.keys(value); if(id){const sets=keys.map((key,i)=>`${key}=$${i+1}`).join(','); const r=await this.db.query(`UPDATE news_articles SET ${sets},updated_at=now() WHERE id=$${keys.length+1} RETURNING *`,[...keys.map(k=>value[k]),id]);if(!r.rowCount)throw new HttpError(404,'NOT_FOUND','News article was not found.');return r.rows[0];} const r=await this.db.query(`INSERT INTO news_articles(${keys.join(',')}) VALUES(${keys.map((_,i)=>'$'+(i+1)).join(',')}) RETURNING *`,keys.map(k=>value[k]));return r.rows[0]; }
+  async remove(id){const r=await this.db.query('DELETE FROM news_articles WHERE id=$1 RETURNING id',[id]);if(!r.rowCount)throw new HttpError(404,'NOT_FOUND','News article was not found.');return {deleted:true};}
+}
