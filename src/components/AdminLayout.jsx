@@ -23,7 +23,8 @@ const NAV_GROUPS = [
     ],
   },
   {
-    label: "MIGRATION PENDING · NO SELF-HOSTED DATA SOURCE",
+    label: "BLOCKED · SELF-HOSTED DATA/PROVIDER REQUIRED",
+    blocked: true,
     items: [
       { label: "Business", icon: WalletCards, unavailable: true },
       { label: "AI", icon: Bot, unavailable: true },
@@ -68,7 +69,7 @@ function DesktopSidebar() {
                 if (item.unavailable) return (
                   <div key={item.label} title="This Base44 module has not yet been migrated to the self-hosted backend." className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground/55 cursor-not-allowed">
                     <Icon className="w-4 h-4 flex-shrink-0" />
-                    <span>{item.label}</span><span className="ml-auto text-[9px] font-semibold uppercase tracking-wide">Pending</span>
+                    <span>{item.label}</span><span className="ml-auto text-[9px] font-semibold uppercase tracking-wide">{group.blocked ? "Blocked" : "Pending"}</span>
                   </div>
                 );
                 return (
@@ -184,7 +185,7 @@ function MobileDrawer({ onClose }) {
                 const active = item.unavailable ? false : isActive(item);
                 if (item.unavailable) return (
                   <div key={item.label} className="flex items-center gap-3 px-3.5 py-3 min-h-[48px] rounded-lg text-sm text-muted-foreground/55">
-                    <Icon className="w-4 h-4 flex-shrink-0" /><span>{item.label}</span><span className="ml-auto text-[9px] uppercase">Pending</span>
+                    <Icon className="w-4 h-4 flex-shrink-0" /><span>{item.label}</span><span className="ml-auto text-[9px] uppercase">{group.blocked ? "Blocked" : "Pending"}</span>
                   </div>
                 );
                 return (
