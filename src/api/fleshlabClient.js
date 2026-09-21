@@ -95,3 +95,4 @@ export const adminDiscovery = {
   snapshot: () => fleshlabRequest('/admin/discovery')
 };
 export const adminCampaigns = { list:()=>fleshlabRequest('/admin/campaigns'), create:(payload)=>fleshlabRequest('/admin/campaigns',{method:'POST',body:JSON.stringify(payload)}), update:(id,payload)=>fleshlabRequest(`/admin/campaigns/${encodeURIComponent(id)}`,{method:'PATCH',body:JSON.stringify(payload)}), remove:(id)=>fleshlabRequest(`/admin/campaigns/${encodeURIComponent(id)}`,{method:'DELETE'}) };
+export const adminMarketing = { snapshot:()=>fleshlabRequest('/admin/marketing') };
