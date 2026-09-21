@@ -23,6 +23,7 @@ import LiveActivity from './pages/admin/LiveActivity';
 import AdminNews from './pages/admin/News';
 import CatalogueImport from './pages/admin/CatalogueImport';
 import SelfHostedCatalogue from './pages/admin/SelfHostedCatalogue';
+import DataExport from './pages/admin/DataExport';
 // Add page imports here
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
@@ -196,6 +197,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
                 <Route path="/admin/dashboard" element={<AdminDashboardSelfHosted />} />
                 <Route path="/admin/catalogue-import" element={<CatalogueImport />} />
+                <Route path="/admin/data-export" element={<DataExport />} />
                 <Route path="/admin/creator" element={<SelfHostedCatalogue section="creator" />} />
                 <Route path="/admin/library" element={<SelfHostedCatalogue section="library" />} />
                 <Route path="/admin/collections" element={<SelfHostedCatalogue section="collections" />} />

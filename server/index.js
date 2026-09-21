@@ -8,6 +8,7 @@ import { AuthService, requireSameOrigin } from './auth.js';
 import { DashboardService } from './dashboards.js';
 import { importEntities, snapshotFromExports } from './import-base44.js';
 import { CatalogueService } from './catalog.js';
+import { DataExportService } from './data-export.js';
 
 const config = loadConfig();
 const pool = new Pool({ connectionString: config.databaseUrl || undefined });
@@ -16,6 +17,7 @@ const recruiting = new RecruitingService(pool, createAzureBlob(config) || unavai
 const auth = new AuthService(pool, config);
 const dashboards = new DashboardService(pool);
 const catalogue = new CatalogueService(pool);
+const dataExports = new DataExportService(pool);
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', ...headers });
@@ -58,6 +60,10 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/v1/admin/catalogue') {
       await auth.requireRole(req, ['admin']);
       return send(res, 200, await catalogue.adminSnapshot());
+    }
+    if (req.method === 'GET' && /^\/api\/v1\/admin\/exports\/(?:all|Brand|Performer|Video|VideoPerformer)$/i.test(url.pathname)) {
+      await auth.requireRole(req, ['admin']);
+      return send(res, 200, await dataExports.exports(url.pathname.split('/').at(-1)));
     }
     if (req.method === 'POST' && url.pathname === '/api/v1/admin/imports/base44/catalogue/dry-run') {
       requireSameOrigin(req, config); await auth.requireRole(req, ['admin']);

@@ -81,3 +81,7 @@ export const catalogueImports = {
 export const adminCatalogue = {
   snapshot: () => fleshlabRequest('/admin/catalogue')
 };
+
+export const adminDataExports = {
+  get: (entity = 'all') => fleshlabRequest(`/admin/exports/${encodeURIComponent(entity)}`)
+};
