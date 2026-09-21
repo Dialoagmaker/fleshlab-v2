@@ -33,3 +33,13 @@ test('Performer Services Agreement v2 migration contains the complete reviewable
   assert.match(migration, /LEGAL_REVIEW_REQUIRED/);
   assert.match(migration, /ON CONFLICT\(template_id,version\) DO NOTHING/);
 });
+
+test('Content Rights release migration preserves the separate rights instrument and five-year review terms', () => {
+  const migration = fs.readFileSync(new URL('../migrations/0016_content_rights_release_v2.sql', import.meta.url), 'utf8');
+  assert.match(migration, /template_key='content_rights_release'/);
+  assert.match(migration, /five years after termination/);
+  assert.match(migration, /30% revenue share/);
+  assert.match(migration, /copyright, performer rights, publicity rights and exploitation rights/);
+  assert.match(migration, /ON CONFLICT\(template_id,version\) DO NOTHING/);
+  assert.match(migration, /LEGAL_REVIEW_REQUIRED/);
+});
