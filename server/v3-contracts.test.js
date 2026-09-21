@@ -43,3 +43,13 @@ test('Content Rights release migration preserves the separate rights instrument 
   assert.match(migration, /ON CONFLICT\(template_id,version\) DO NOTHING/);
   assert.match(migration, /LEGAL_REVIEW_REQUIRED/);
 });
+
+test('Optional Management Agreement remains separate and authority-limited', () => {
+  const migration = fs.readFileSync(new URL('../migrations/0017_optional_management_agreement_v2.sql', import.meta.url), 'utf8');
+  assert.match(migration, /template_key='management_optional'/);
+  assert.match(migration, /Management Commission: 0%/);
+  assert.match(migration, /Sign a new third-party contract without Performer approval: NOT ALLOWED/);
+  assert.match(migration, /This Agreement is optional and is never automatically assigned/);
+  assert.match(migration, /LEGAL_REVIEW_REQUIRED/);
+  assert.match(migration, /ON CONFLICT\(template_id,version\) DO NOTHING/);
+});
