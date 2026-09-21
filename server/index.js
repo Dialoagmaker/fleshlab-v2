@@ -133,6 +133,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/production/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Operations.production()); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/production/consent-overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Consent.overview()); }
     if (req.method === 'GET' && /^\/api\/v3\/admin\/production\/consent\/[^/]+$/.test(url.pathname)) { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Consent.production(url.pathname.split('/').at(-1))); }
+    if (req.method === 'GET' && /^\/api\/v3\/admin\/production\/rights\/[^/]+$/.test(url.pathname)) { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Consent.rights(url.pathname.split('/').at(-1),url.searchParams.get('content_id'))); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/growth/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Operations.growth()); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/system/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Operations.system()); }
     if (req.method === 'GET' && /^\/api\/v1\/admin\/exports\/(?:all|Brand|Performer|Video|VideoPerformer)$/i.test(url.pathname)) {

@@ -11,8 +11,19 @@ export function publishingReadiness(input = {}) {
   }
   if (!['acknowledged', 'changed'].includes(input.consent_status)) blockers.push('production_consent_incomplete');
   if (input.prohibited_content_flag === true) blockers.push('prohibited_content_flag');
-  if (input.required_rights_available !== true) blockers.push('required_rights_missing');
+  if (input.required_rights_available === false) blockers.push('required_rights_missing');
+  const rights = rightsReadiness(input.rights || (input.required_rights_available === true ? { rights_status: 'active' } : { rights_status: 'missing' }));
+  blockers.push(...rights.blockers);
   return { publishable: blockers.length === 0, blockers: [...new Set(blockers)] };
+}
+
+export function rightsReadiness(rights = {}) {
+  const blockers = [];
+  if (rights.rights_status === 'legacy_unknown') blockers.push('legacy_rights_status_unknown');
+  else if (rights.rights_status !== 'active') blockers.push(rights.rights_status === 'expired' ? 'rights_expired' : rights.rights_status === 'blocked' ? 'rights_blocked' : 'rights_documentation_missing');
+  if (rights.commercial_exploitation_allowed !== undefined && rights.commercial_exploitation_allowed !== true) blockers.push('commercial_exploitation_not_authorized');
+  if (rights.participant_rights_complete === false) blockers.push('participant_rights_missing');
+  return { ready: blockers.length === 0, blockers: [...new Set(blockers)] };
 }
 
 const safeParticipant = row => ({
@@ -34,7 +45,10 @@ export class V3ConsentService {
       (SELECT count(*)::int FROM v3_production_consent_records WHERE status IN ('draft','blocked')) consent_needing_action,
       (SELECT count(*)::int FROM v3_production_participants) participants,
       (SELECT count(*)::int FROM v3_participant_releases WHERE status='accepted') accepted_releases,
-      (SELECT count(*)::int FROM v3_participant_releases WHERE status <> 'accepted') outstanding_releases`);
+      (SELECT count(*)::int FROM v3_participant_releases WHERE status <> 'accepted') outstanding_releases,
+      (SELECT count(*)::int FROM v3_content_rights_records) rights_records,
+      (SELECT count(*)::int FROM v3_content_rights_records WHERE rights_status='active') active_rights,
+      (SELECT count(*)::int FROM v3_content_rights_records WHERE rights_status IN ('missing','pending','blocked','legacy_unknown')) rights_needing_action`);
     return result.rows[0];
   }
 
@@ -43,9 +57,16 @@ export class V3ConsentService {
     const records = [];
     for (const row of consent.rows) {
       const participants = await this.db.query(`SELECT id,performer_legacy_id,display_name,role,age_verified,identity_verified,release_status FROM v3_production_participants WHERE consent_record_id=$1 ORDER BY created_at`, [row.id]);
-      const readiness = publishingReadiness({ consent_status: row.status, participants: participants.rows });
-      records.push({ ...row, participants: participants.rows.map(safeParticipant), publishing: readiness });
+      const rights = await this.rights(productionId, row.video_legacy_id);
+      const readiness = publishingReadiness({ consent_status: row.status, participants: participants.rows, rights: rights.records[0] || { rights_status: 'missing' } });
+      records.push({ ...row, participants: participants.rows.map(safeParticipant), rights: rights.records, publishing: readiness });
     }
     return { production_id: productionId, records };
+  }
+
+  async rights(productionId, contentId = null) {
+    const args = contentId ? [productionId, contentId] : [productionId];
+    const result = await this.db.query(`SELECT id,production_id,content_legacy_id,performer_legacy_id,creator_id,rights_source,rights_contract_instance_id,rights_status,exclusive,territory,rights_start_at,rights_end_at,post_termination_end_at,commercial_exploitation_allowed,marketing_allowed,editing_allowed,sublicensing_allowed,notes,created_at,updated_at FROM v3_content_rights_records WHERE production_id=$1 ${contentId ? 'AND content_legacy_id=$2' : ''} ORDER BY created_at DESC`, args);
+    return { production_id: productionId, records: result.rows.map(row => ({ ...row, readiness: rightsReadiness(row) })) };
   }
 }
