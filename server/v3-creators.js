@@ -1,13 +1,23 @@
 import crypto from 'node:crypto';
 import { HttpError } from './errors.js';
+import { RecruitingService } from './recruiting.js';
 
 export const creatorLifecycle = new Set(['onboarding','active','inactive','blocked']);
-export const applicationReviewStates = new Set(['under_review','rejected','approved']);
+export const applicationReviewStates = new Set(['submitted','under_review','needs_information','rejected','approved','withdrawn']);
 export const creatorOnboardingStates = new Set(['complete','incomplete','needs_review','blocked']);
 export const creatorDocumentStates = new Set(['needs_review','accepted','rejected']);
 const slug = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 const page = value => Math.max(1, Number.parseInt(value, 10) || 1);
 const limit = value => Math.min(100, Math.max(1, Number.parseInt(value, 10) || 24));
+export const applicationTransitions = {
+  draft: new Set(['submitted','withdrawn']),
+  submitted: new Set(['under_review','needs_information','withdrawn']),
+  under_review: new Set(['needs_information','approved','rejected','withdrawn']),
+  needs_information: new Set(['under_review','withdrawn']),
+  approved: new Set(),
+  rejected: new Set(['under_review','withdrawn']),
+  withdrawn: new Set()
+};
 
 export function publicDocument(row) {
   const { object_key, upload_session_hash, etag, ...safe } = row;
@@ -70,19 +80,32 @@ export class V3CreatorService {
   }
 
   async updateApplication(id, input, user) {
+    const before = await this.application(id);
     const data = {};
     if (Object.hasOwn(input, 'status')) {
-      if (!applicationReviewStates.has(input.status)) throw new HttpError(422, 'INVALID_REVIEW_STATUS', 'Only under_review, rejected or approved may be selected.');
+      if (!applicationReviewStates.has(input.status)) throw new HttpError(422, 'INVALID_REVIEW_STATUS', 'This review state is not supported.');
+      if (!(applicationTransitions[before.application.status] || new Set()).has(input.status)) throw new HttpError(409, 'INVALID_REVIEW_TRANSITION', `Cannot move an application from ${before.application.status} to ${input.status}.`);
       data.status = input.status;
     }
     if (Object.hasOwn(input, 'admin_notes')) data.admin_notes = input.admin_notes && typeof input.admin_notes === 'object' ? input.admin_notes : null;
     if (!Object.keys(data).length) throw new HttpError(422, 'INVALID_INPUT', 'No allowed review field supplied.');
-    const before = await this.application(id);
     const keys = Object.keys(data);
     const result = await this.db.query(`UPDATE performer_applications SET ${keys.map((key, index) => `${key}=$${index + 1}`).join(',')},updated_at=now() WHERE id=$${keys.length + 1} RETURNING id,status,updated_at`, [...keys.map(key => data[key]), id]);
     if (!result.rowCount) throw new HttpError(404, 'APPLICATION_NOT_FOUND', 'Application was not found.');
     await this.audit(user, 'creator.application.review', 'creator.application', id, { status: before.application.status }, result.rows[0]);
     return result.rows[0];
+  }
+
+  async linkAccount(applicationId, performerUserId, user) {
+    const recruiting = new RecruitingService(this.db, { });
+    const assigned = await recruiting.assignPerformer(applicationId, performerUserId);
+    const profile = await this.db.query('SELECT id,user_id FROM performer_profiles WHERE application_id=$1', [applicationId]);
+    if (!profile.rowCount) throw new HttpError(404, 'PERFORMER_PROFILE_NOT_FOUND', 'The performer profile was not found.');
+    const updated = await this.db.query(`UPDATE v3_creator_records SET user_id=$1,updated_at=now() WHERE application_id=$2 RETURNING id`, [profile.rows[0].user_id, applicationId]);
+    if (!updated.rowCount) throw new HttpError(409, 'CREATOR_NOT_CONVERTED', 'Convert the approved application before linking its account.');
+    await this.db.query(`UPDATE v3_creator_onboarding_items SET state='complete',reviewed_by=$1,reviewed_at=now(),updated_at=now() WHERE creator_id=$2 AND requirement_key='account_link'`, [user.id, updated.rows[0].id]);
+    await this.audit(user, 'creator.identity.link', 'creator.application', applicationId, null, { creator_id: updated.rows[0].id, performer_user_id: performerUserId });
+    return { ...assigned, creator_id: updated.rows[0].id };
   }
 
   async ensureCreator(applicationId, user) {
