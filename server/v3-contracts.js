@@ -19,9 +19,31 @@ const safe = row => { if (!row) return null; const { rendered_snapshot, legacy_f
 const replaceVariables = (body, variables) => String(body).replace(/\{\{([a-z0-9_]+)\}\}/gi, (whole, key) => Object.prototype.hasOwnProperty.call(variables, key) ? String(variables[key]) : whole);
 const pdfEscape = value => String(value).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)').replace(/\r?\n/g, ' ');
 export function renderPdf(snapshot) {
-  const lines = String(snapshot).split(/\r?\n/).slice(0, 120);
-  const stream = `BT /F1 11 Tf 54 760 Td ${lines.map((line, i) => `${i ? '0 -16 Td ' : ''}(${pdfEscape(line.slice(0, 110) )}) Tj`).join(' ')} ET`;
-  const objects = ['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',`<< /Length ${Buffer.byteLength(stream)} >>\nstream\n${stream}\nendstream`];
+  const raw = String(snapshot).split(/\r?\n/);
+  const cover = raw.slice(0, 9);
+  const body = raw.slice(9);
+  const pages = [cover, ...Array.from({ length: Math.max(1, Math.ceil(body.length / 38)) }, (_, index) => body.slice(index * 38, index * 38 + 38))];
+  const pageObjects = [];
+  const contentObjects = [];
+  const font1Id = 3 + pages.length;
+  const font2Id = 4 + pages.length;
+  const contentStartId = 5 + pages.length;
+  pages.forEach((lines, pageIndex) => {
+    const isCover = pageIndex === 0;
+    const titleSize = isCover ? 24 : 12;
+    const bodySize = isCover ? 12 : 9;
+    const startY = isCover ? 700 : 735;
+    const text = lines.map((line, index) => `${index ? `0 -${isCover ? 28 : 15} Td ` : ''}/F${index === 0 && isCover ? '2' : '1'} ${index === 0 && isCover ? titleSize : bodySize} Tf (${pdfEscape(line.slice(0, 105))}) Tj`).join(' ');
+    const footer = `/F1 7 Tf 54 -18 Td (FLESHLAB Studios - Page ${pageIndex + 1} - LEGAL_REVIEW_REQUIRED) Tj`;
+    const stream = `q ${isCover ? '0.08 0.08 0.08 rg 0 0 612 792 re f 1 1 1 rg' : '0.96 0.95 0.92 rg 0 0 612 792 re f 0.08 0.08 0.08 rg'} Q BT 54 ${startY} Td ${text} 0 -${isCover ? 44 : 18} Td ${footer} ET`;
+    const contentId = contentStartId + pageIndex;
+    contentObjects.push({ id: contentId, stream });
+    pageObjects.push({ id: 3 + pageIndex, contentId });
+  });
+  const objects = ['<< /Type /Catalog /Pages 2 0 R >>',`<< /Type /Pages /Kids [${pageObjects.map(page => `${page.id} 0 R`).join(' ')}] /Count ${pageObjects.length} >>`];
+  pageObjects.forEach(page => objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 ${font1Id} 0 R /F2 ${font2Id} 0 R >> >> /Contents ${page.contentId} 0 R >>`));
+  objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+  contentObjects.forEach(content => objects.push(`<< /Length ${Buffer.byteLength(content.stream)} >>\nstream\n${content.stream}\nendstream`));
   let pdf = '%PDF-1.4\n'; const offsets = [0];
   objects.forEach((object, index) => { offsets[index + 1] = Buffer.byteLength(pdf); pdf += `${index + 1} 0 obj\n${object}\nendobj\n`; });
   const xref = Buffer.byteLength(pdf); pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.slice(1).map(value => `${String(value).padStart(10,'0')} 00000 n `).join('\n')}\ntrailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
@@ -46,7 +68,7 @@ export class V3ContractService {
   }
   async templates() { const rows = await this.db.query(`SELECT t.*,count(v.id)::int AS version_count,max(v.created_at) AS latest_version_at FROM v3_contract_templates t LEFT JOIN v3_contract_template_versions v ON v.template_id=t.id GROUP BY t.id ORDER BY t.created_at`); return { records: rows.rows }; }
   async creators(q='') { const value=`%${String(q).trim()}%`; const result=await this.db.query(`SELECT c.id,c.full_name,c.country,c.lifecycle,c.user_id,p.display_name,p.legacy_id AS performer_legacy_id,p.status AS performer_status,coalesce(p.user_id IS NOT NULL,false) AS identity_verified FROM v3_creator_records c LEFT JOIN v3_creator_performer_links l ON l.creator_id=c.id LEFT JOIN catalog_performers p ON p.legacy_id=l.performer_legacy_id WHERE ($1='' OR c.full_name ILIKE $1 OR p.display_name ILIKE $1) ORDER BY c.full_name LIMIT 50`,[q ? value : '']); return { records:result.rows }; }
-  async template(id) { const result = await this.db.query('SELECT * FROM v3_contract_templates WHERE id=$1 OR template_key=$1', [id]); if (!result.rowCount) throw new HttpError(404,'TEMPLATE_NOT_FOUND','Contract template was not found.'); const versions = await this.db.query('SELECT id,template_id,version,sections,variables,body_hash,created_at FROM v3_contract_template_versions WHERE template_id=$1 ORDER BY created_at DESC',[result.rows[0].id]); return { template: result.rows[0], versions: versions.rows }; }
+  async template(id) { const result = await this.db.query('SELECT * FROM v3_contract_templates WHERE id=$1 OR template_key=$1', [id]); if (!result.rowCount) throw new HttpError(404,'TEMPLATE_NOT_FOUND','Contract template was not found.'); const versions = await this.db.query('SELECT id,template_id,version,body,sections,variables,body_hash,created_at FROM v3_contract_template_versions WHERE template_id=$1 ORDER BY created_at DESC',[result.rows[0].id]); return { template: result.rows[0], versions: versions.rows }; }
   async createVersion(templateId, input, actor) {
     const template = await this.db.query('SELECT * FROM v3_contract_templates WHERE id=$1 OR template_key=$1',[templateId]); if (!template.rowCount) throw new HttpError(404,'TEMPLATE_NOT_FOUND','Contract template was not found.');
     const body = String(input.body || defaultBody(template.rows[0].template_key)); const version = String(input.version || '').trim(); if (!version) throw new HttpError(422,'VERSION_REQUIRED','Template version is required.');
@@ -63,12 +85,12 @@ export class V3ContractService {
     const version = await this.db.query(`SELECT v.*,t.template_key,t.title,t.contract_type,t.status FROM v3_contract_template_versions v JOIN v3_contract_templates t ON t.id=v.template_id WHERE v.id=$1`, [input.template_version_id]);
     if (!version.rowCount) throw new HttpError(404, 'TEMPLATE_VERSION_NOT_FOUND', 'Template version was not found.');
     if (version.rows[0].status === 'retired') throw new HttpError(409, 'TEMPLATE_RETIRED', 'Retired templates cannot create contracts.');
-    const creator = await this.db.query(`SELECT c.id,c.full_name,p.display_name FROM v3_creator_records c LEFT JOIN v3_creator_performer_links l ON l.creator_id=c.id LEFT JOIN catalog_performers p ON p.legacy_id=l.performer_legacy_id WHERE c.id=$1`, [input.creator_id]);
-    if (!creator.rowCount) throw new HttpError(404, 'CREATOR_NOT_FOUND', 'Creator was not found.');
+    const creator = input.creator_id ? await this.db.query(`SELECT c.id,c.full_name,p.display_name FROM v3_creator_records c LEFT JOIN v3_creator_performer_links l ON l.creator_id=c.id LEFT JOIN catalog_performers p ON p.legacy_id=l.performer_legacy_id WHERE c.id=$1`, [input.creator_id]) : { rowCount: 0, rows: [] };
+    if (input.creator_id && !creator.rowCount) throw new HttpError(404, 'CREATOR_NOT_FOUND', 'Creator was not found.');
     const contractNumber = String(input.contract_number || `FLS-${version.rows[0].contract_type.slice(0,3).toUpperCase()}-${new Date().getUTCFullYear()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`);
-    const values = { company_legal_name:'Dialogmakers International Ltd.', company_number:'83273694', creator_legal_name:input.creator_legal_name || creator.rows[0].full_name, performer_name:input.performer_name || creator.rows[0].display_name || '', contract_number:contractNumber, effective_date:input.effective_date || new Date().toISOString().slice(0,10), template_version:version.rows[0].version, contract_status:'internal_draft', compensation_plan:input.compensation_plan || 'LEGAL_REVIEW_REQUIRED', payment_cycle:input.payment_cycle || 'LEGAL_REVIEW_REQUIRED', license_term:input.license_term || 'LEGAL_REVIEW_REQUIRED', territory:input.territory || 'worldwide', governing_law:input.governing_law || 'LEGAL_REVIEW_REQUIRED' };
+    const values = { company_legal_name:'Dialogmakers International Ltd.', company_number:'83273694', creator_legal_name:input.creator_legal_name || creator.rows[0]?.full_name || 'SAMPLE CREATOR — NOT A CONTRACT', performer_name:input.performer_name || creator.rows[0]?.display_name || 'SAMPLE PERFORMER', contract_number:contractNumber, effective_date:input.effective_date || new Date().toISOString().slice(0,10), template_version:version.rows[0].version, contract_status:'internal_draft', compensation_plan:input.compensation_plan || 'LEGAL_REVIEW_REQUIRED', payment_cycle:input.payment_cycle || 'LEGAL_REVIEW_REQUIRED', license_term:input.license_term || 'LEGAL_REVIEW_REQUIRED', territory:input.territory || 'worldwide', governing_law:input.governing_law || 'LEGAL_REVIEW_REQUIRED', studio_signer_name:'AUTHORIZED REPRESENTATIVE — LEGAL REVIEW', studio_signature:'[NO SIGNATURE]', studio_signed_at:'[NOT SIGNED]', creator_signature:'[NO SIGNATURE]', creator_signed_at:'[NOT SIGNED]', document_hash:'[GENERATED FOR PREVIEW]' };
     const snapshot = replaceVariables(version.rows[0].body, values);
-    return { template: { id:version.rows[0].template_id, title:version.rows[0].title, contract_type:version.rows[0].contract_type, status:version.rows[0].status, version:version.rows[0].version }, values, snapshot, hash:hash(snapshot), legal_review_required:version.rows[0].status !== 'approved', signing_enabled:contractSigningEnabled };
+    return { template: { id:version.rows[0].template_id, title:version.rows[0].title, contract_type:version.rows[0].contract_type, status:version.rows[0].status, version:version.rows[0].version }, values, snapshot, hash:hash(snapshot), legal_review_required:version.rows[0].status !== 'approved', signing_enabled:contractSigningEnabled, sample_preview:!input.creator_id };
   }
   async instances(actor) { const result=await this.db.query(`SELECT i.id,i.contract_number,i.status,i.creator_id,i.creator_legal_name,i.performer_name,i.issued_at,i.viewed_at,i.signed_at,i.source,i.snapshot_hash,t.title,t.contract_type,v.version FROM v3_contract_instances i LEFT JOIN v3_contract_template_versions v ON v.id=i.template_version_id LEFT JOIN v3_contract_templates t ON t.id=v.template_id ORDER BY i.issued_at DESC`); return { records:result.rows }; }
   async creatorInstances(user) { const result=await this.db.query(`SELECT i.id,i.contract_number,i.status,i.creator_legal_name,i.performer_name,i.issued_at,i.viewed_at,i.signed_at,i.source,i.snapshot_hash,t.title,t.contract_type,v.version FROM v3_contract_instances i JOIN v3_creator_records c ON c.id=i.creator_id LEFT JOIN v3_contract_template_versions v ON v.id=i.template_version_id LEFT JOIN v3_contract_templates t ON t.id=v.template_id WHERE c.user_id=$1 ORDER BY i.issued_at DESC`,[user.id]); return { records:result.rows }; }

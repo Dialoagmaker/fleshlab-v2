@@ -18,7 +18,7 @@ import { V3CatalogueService } from './v3-catalogue.js';
 import { V3CreatorService } from './v3-creators.js';
 import { V3CommerceService } from './v3-commerce.js';
 import { V3OperationsService } from './v3-operations.js';
-import { V3ContractService, contractSigningEnabled } from './v3-contracts.js';
+import { V3ContractService, contractSigningEnabled, renderPdf } from './v3-contracts.js';
 
 const config = loadConfig();
 const pool = new Pool({ connectionString: config.databaseUrl || undefined });
@@ -118,6 +118,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/contracts/templates') { const user=await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Contracts.templates(user)); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/contracts/creators') { const user=await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Contracts.creators(url.searchParams.get('q') || '')); }
     if (req.method === 'POST' && url.pathname === '/api/v3/admin/contracts/preview') { requireSameOrigin(req,config); await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Contracts.preview(await body(req))); }
+    if (req.method === 'POST' && url.pathname === '/api/v3/admin/contracts/preview/pdf') { requireSameOrigin(req,config); await auth.requireRole(req,['staff','admin']); const preview=await v3Contracts.preview(await body(req)); return sendBinary(res,200,renderPdf(preview.snapshot),{'content-type':'application/pdf','content-disposition':'inline; filename="fleshlab-template-preview.pdf"'}); }
     if (req.method === 'GET' && /^\/api\/v3\/admin\/contracts\/templates\/[^/]+$/.test(url.pathname)) { const user=await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Contracts.template(url.pathname.split('/').at(-1),user)); }
     if (req.method === 'POST' && /^\/api\/v3\/admin\/contracts\/templates\/[^/]+\/versions$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,201,await v3Contracts.createVersion(url.pathname.split('/').at(-2),await body(req),user)); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/contracts') { const user=await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Contracts.instances(user)); }
