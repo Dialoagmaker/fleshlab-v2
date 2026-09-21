@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applicationReviewStates, applicationTransitions, creatorDocumentStates, creatorLifecycle, creatorOnboardingStates, publicDocument, V3CreatorService } from './v3-creators.js';
+import { applicationReviewStates, applicationTransitions, assertCreatorOwner, creatorDocumentStates, creatorLifecycle, creatorOnboardingStates, publicDocument, V3CreatorService } from './v3-creators.js';
 
 test('V3 creator states are finite and cannot include legacy free-form review values', () => {
   assert.equal(applicationReviewStates.has('approved'), true);
@@ -14,6 +14,14 @@ test('V3 creator states are finite and cannot include legacy free-form review va
 test('V3 creator endpoint refuses a non-performer before reading a creator record', async () => {
   const service = new V3CreatorService({ query: async () => { throw new Error('database should not be called'); } });
   await assert.rejects(() => service.creatorForUser({ id: 'customer', role: 'customer' }), { code: 'FORBIDDEN' });
+});
+
+test('two creator identities remain isolated in the ownership guard', () => {
+  const creatorA = { id: 'creator-a', role: 'performer' };
+  const creatorB = { id: 'creator-b', role: 'performer' };
+  const recordA = { user_id: creatorA.id };
+  assert.doesNotThrow(() => assertCreatorOwner(creatorA, recordA));
+  assert.throws(() => assertCreatorOwner(creatorB, recordA), { code: 'FORBIDDEN' });
 });
 
 test('V3 creator document projection never returns storage capabilities', async () => {

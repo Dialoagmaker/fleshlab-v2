@@ -24,6 +24,10 @@ export function publicDocument(row) {
   return safe;
 }
 
+export function assertCreatorOwner(actor, record) {
+  if (actor?.role !== 'performer' || actor.id !== record.user_id) throw new HttpError(403, 'FORBIDDEN', 'Creator records are private.');
+}
+
 export class V3CreatorService {
   constructor(db) { this.db = db; }
 
@@ -170,7 +174,7 @@ export class V3CreatorService {
       FROM v3_creator_records c JOIN performer_applications a ON a.id=c.application_id WHERE c.id=$1`, [id]);
     if (!result.rowCount) throw new HttpError(404, 'CREATOR_NOT_FOUND', 'Creator was not found.');
     const record = result.rows[0];
-    if (self && record.user_id !== actor.id) throw new HttpError(403, 'FORBIDDEN', 'Creator records are private.');
+    if (self) assertCreatorOwner(actor, record);
     const [items, docs, contracts, performers, videos, notifications, history] = await Promise.all([
       this.db.query('SELECT id,requirement_key,state,note,reviewed_at,updated_at FROM v3_creator_onboarding_items WHERE creator_id=$1 ORDER BY requirement_key', [id]),
       this.db.query(`SELECT d.id,d.document_type,d.classification,d.review_state,d.reviewed_at,d.expires_at,d.note,d.created_at,u.file_name,u.content_type,u.byte_size,u.status AS upload_status,u.confirmed_at
