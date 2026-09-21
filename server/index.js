@@ -18,6 +18,7 @@ import { V3CatalogueService } from './v3-catalogue.js';
 import { V3CreatorService } from './v3-creators.js';
 import { V3CommerceService } from './v3-commerce.js';
 import { V3OperationsService } from './v3-operations.js';
+import { V3ContractService, contractSigningEnabled } from './v3-contracts.js';
 
 const config = loadConfig();
 const pool = new Pool({ connectionString: config.databaseUrl || undefined });
@@ -36,10 +37,15 @@ const v3Catalogue = new V3CatalogueService(pool);
 const v3Creators = new V3CreatorService(pool);
 const v3Commerce = new V3CommerceService(pool);
 const v3Operations = new V3OperationsService(pool);
+const v3Contracts = new V3ContractService(pool);
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', ...headers });
   res.end(JSON.stringify(body));
+}
+function sendBinary(res, status, bytes, headers = {}) {
+  res.writeHead(status, { 'cache-control': 'private, no-store', 'x-content-type-options': 'nosniff', ...headers });
+  res.end(bytes);
 }
 async function body(req, maximumBytes = 1024 * 1024) {
   const chunks = [];
@@ -108,6 +114,16 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/v3/creator/me') return send(res,200,await v3Creators.creatorForUser(await auth.current(req)));
     if (req.method === 'PATCH' && url.pathname === '/api/v3/creator/me') { requireSameOrigin(req,config); const user=await auth.current(req); const current=await v3Creators.creatorForUser(user); return send(res,200,await v3Creators.updateCreator(current.creator.id,await body(req),user,{self:true})); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/commerce/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Commerce.overview()); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/admin/contracts/overview') { const user=await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Contracts.overview(user)); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/admin/contracts/templates') { const user=await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Contracts.templates(user)); }
+    if (req.method === 'GET' && /^\/api\/v3\/admin\/contracts\/templates\/[^/]+$/.test(url.pathname)) { const user=await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Contracts.template(url.pathname.split('/').at(-1),user)); }
+    if (req.method === 'POST' && /^\/api\/v3\/admin\/contracts\/templates\/[^/]+\/versions$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,201,await v3Contracts.createVersion(url.pathname.split('/').at(-2),await body(req),user)); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/admin/contracts') { const user=await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Contracts.instances(user)); }
+    if (req.method === 'POST' && url.pathname === '/api/v3/admin/contracts/assign') { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,201,await v3Contracts.assign(await body(req),user)); }
+    if (req.method === 'POST' && url.pathname === '/api/v3/admin/contracts/import-legacy') { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,201,await v3Contracts.importLegacy(await body(req),user)); }
+    if (req.method === 'GET' && /^\/api\/v3\/admin\/contracts\/[^/]+\/pdf$/.test(url.pathname)) { const user=await auth.requireRole(req,['staff','admin']); const result=await v3Contracts.pdf(url.pathname.split('/').at(-2),user,{admin:true}); return sendBinary(res,200,result.bytes,{'content-type':'application/pdf','content-disposition':`attachment; filename="${result.contract_number}.pdf"`}); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/creator/contracts') { const user=await auth.requireRole(req,['performer']); return send(res,200,await v3Contracts.creatorInstances(user)); }
+    if (req.method === 'GET' && /^\/api\/v3\/creator\/contracts\/[^/]+\/pdf$/.test(url.pathname)) { const user=await auth.requireRole(req,['performer']); const result=await v3Contracts.pdf(url.pathname.split('/').at(-2),user); return sendBinary(res,200,result.bytes,{'content-type':'application/pdf','content-disposition':`attachment; filename="${result.contract_number}.pdf"`}); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/production/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Operations.production()); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/growth/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Operations.growth()); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/system/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Operations.system()); }
