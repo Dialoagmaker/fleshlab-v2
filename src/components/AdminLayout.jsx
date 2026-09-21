@@ -18,6 +18,8 @@ const NAV_GROUPS = [
       { href: "/admin/discovery", label: "Discovery", icon: Compass },
       { href: "/admin/campaigns", label: "Campaigns", icon: BarChart3 },
       { href: "/admin/marketing", label: "Marketing", icon: BarChart3 },
+      { href: "/admin/cover-engine/visual-attention", label: "Cover Designer", icon: Palette },
+      { href: "/admin/creative-brain", label: "Creative Brain", icon: WandSparkles },
     ],
   },
   {
@@ -25,8 +27,6 @@ const NAV_GROUPS = [
     items: [
       { label: "Business", icon: WalletCards, unavailable: true },
       { label: "AI", icon: Bot, unavailable: true },
-      { label: "Cover Designer", icon: Palette, unavailable: true },
-      { label: "Creative Brain", icon: WandSparkles, unavailable: true },
       { label: "Rendering Intelligence", icon: Gauge, unavailable: true },
       { label: "Production QA", icon: ShieldCheck, unavailable: true },
       { label: "Studio Audit", icon: ShieldCheck, unavailable: true },
