@@ -27,6 +27,7 @@ import DataExport from './pages/admin/DataExport';
 import Discovery from './pages/admin/Discovery';
 import Campaigns from './pages/admin/Campaigns';
 import Marketing from './pages/admin/Marketing';
+import AdminOperations from './pages/admin/AdminOperations';
 // Add page imports here
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
@@ -228,6 +229,13 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/discovery" element={<Discovery />} />
                 <Route path="/admin/campaigns" element={<Campaigns />} />
                 <Route path="/admin/marketing" element={<Marketing />} />
+                <Route path="/admin/rendering-intelligence" element={<AdminOperations kind="rendering" />} />
+                <Route path="/admin/production-qa" element={<AdminOperations kind="qa" />} />
+                <Route path="/admin/studio-audit" element={<AdminOperations kind="audit" />} />
+                <Route path="/admin/certification" element={<AdminOperations kind="certification" />} />
+                <Route path="/admin/adult-provider-readiness" element={<AdminOperations kind="readiness" />} />
+                <Route path="/admin/automation" element={<AdminOperations kind="automation" />} />
+                <Route path="/admin/settings" element={<AdminOperations kind="settings" />} />
                 <Route path="/admin/seo" element={<ComingSoon title="SEO Management" />} />
                 <Route path="/admin/migration" element={<ComingSoon title="Migration Tools" />} />
                 <Route path="/admin/monthly-closeout" element={<MonthlyCloseout />} />
