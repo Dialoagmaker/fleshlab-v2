@@ -18,3 +18,8 @@ test('rendered contract PDF is deterministic for an immutable snapshot', () => {
 test('contract center does not expose signing through a feature flag', () => {
   assert.equal(contractSigningEnabled, false);
 });
+
+test('contract creation remains a draft operation before legal approval', () => {
+  assert.equal(contractInstanceStates.has('signed'), true);
+  assert.equal(contractSigningEnabled, false);
+});
