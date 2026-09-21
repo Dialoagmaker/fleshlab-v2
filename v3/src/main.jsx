@@ -58,7 +58,7 @@ function Catalogue({ section }) {
   const [selected, setSelected] = useState(null); const [detail, setDetail] = useState(null); const [collectionDetail, setCollectionDetail] = useState(null); const [error, setError] = useState(''); const [collections, setCollections] = useState([]); const [report, setReport] = useState(null); const [collectionTitle, setCollectionTitle] = useState('');
   const load = async () => { try { if (kind === 'collections') { setCollections((await apiV3('/admin/catalogue/collections')).records); return; } setData(await apiV3(`/admin/catalogue/${kind}?q=${encodeURIComponent(q)}&limit=24`)); } catch (e) { setError(e.message); } };
   useEffect(() => { if (section === 'Catalogue') load(); }, [section, kind]);
-  if (section !== 'Catalogue') return <section className="coming"><span className="eyebrow">V3 DOMAIN</span><h2>{section}</h2><p>This V3 domain is intentionally not represented by a V2 page clone. Its vertical slice follows after catalogue acceptance.</p></section>;
+  if (section !== 'Catalogue') return null;
   const singular = kind === 'videos' ? 'video' : kind === 'brands' ? 'brand' : 'performer';
   const open = async row => { setSelected(row); setDetail(await apiV3(`/admin/catalogue/${singular}/${row.legacy_id}`)); };
   const openCollection = async row => { const videos = await apiV3(`/admin/catalogue/collections/${row.id}/videos`); setCollectionDetail({ ...row, videoIds: videos.records.map(video => video.legacy_id).join(', ') }); };
