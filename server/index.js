@@ -14,6 +14,7 @@ import { DiscoveryService } from './discovery.js';
 import { CampaignService } from './campaigns.js';
 import { MarketingService } from './marketing.js';
 import { AdminOperationsService } from './admin-operations.js';
+import { V3CatalogueService } from './v3-catalogue.js';
 
 const config = loadConfig();
 const pool = new Pool({ connectionString: config.databaseUrl || undefined });
@@ -28,6 +29,7 @@ const discovery = new DiscoveryService(pool);
 const campaigns = new CampaignService(pool);
 const marketing = new MarketingService(pool);
 const adminOperations = new AdminOperationsService(pool);
+const v3Catalogue = new V3CatalogueService(pool);
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', ...headers });
@@ -73,6 +75,18 @@ const server = http.createServer(async (req, res) => {
       await auth.requireRole(req, ['admin']);
       return send(res, 200, await catalogue.adminSnapshot());
     }
+    if (req.method === 'GET' && url.pathname === '/api/v3/admin/catalogue/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Catalogue.overview()); }
+    if (req.method === 'GET' && /^\/api\/v3\/admin\/catalogue\/(brands|performers|videos)$/.test(url.pathname)) { await auth.requireRole(req,['staff','admin']); const type=url.pathname.split('/').at(-1); return send(res,200,await v3Catalogue.list(type==='brands'?'brands':type==='performers'?'performers':'videos',{q:url.searchParams.get('q'),page:url.searchParams.get('page'),limit:url.searchParams.get('limit')})); }
+    if (req.method === 'GET' && /^\/api\/v3\/admin\/catalogue\/(brand|performer|video)\/[^/]+$/.test(url.pathname)) { await auth.requireRole(req,['staff','admin']); const parts=url.pathname.split('/'); return send(res,200,await v3Catalogue.detail(parts.at(-2),parts.at(-1))); }
+    if (req.method === 'PATCH' && /^\/api\/v3\/admin\/catalogue\/(brand|performer|video)\/[^/]+$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); const parts=url.pathname.split('/'); return send(res,200,await v3Catalogue.update(parts.at(-2),parts.at(-1),await body(req),user)); }
+    if (req.method === 'GET' && /^\/api\/v3\/admin\/catalogue\/video\/[^/]+\/performers$/.test(url.pathname)) { await auth.requireRole(req,['staff','admin']); return send(res,200,{records:await v3Catalogue.relationships(url.pathname.split('/').at(-2))}); }
+    if (req.method === 'PUT' && /^\/api\/v3\/admin\/catalogue\/video\/[^/]+\/performers$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,200,{records:await v3Catalogue.replaceRelationships(url.pathname.split('/').at(-2),(await body(req)).performer_ids,user)}); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/admin/catalogue/collections') { await auth.requireRole(req,['staff','admin']); return send(res,200,{records:await v3Catalogue.collections()}); }
+    if (req.method === 'POST' && url.pathname === '/api/v3/admin/catalogue/collections') { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,201,await v3Catalogue.saveCollection(null,await body(req),user)); }
+    if (req.method === 'PATCH' && /^\/api\/v3\/admin\/catalogue\/collections\/[^/]+$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,200,await v3Catalogue.saveCollection(url.pathname.split('/').at(-1),await body(req),user)); }
+    if (req.method === 'GET' && /^\/api\/v3\/admin\/catalogue\/collections\/[^/]+\/videos$/.test(url.pathname)) { await auth.requireRole(req,['staff','admin']); return send(res,200,{records:await v3Catalogue.collectionVideos(url.pathname.split('/').at(-2))}); }
+    if (req.method === 'PUT' && /^\/api\/v3\/admin\/catalogue\/collections\/[^/]+\/videos$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,200,{records:await v3Catalogue.replaceCollectionVideos(url.pathname.split('/').at(-2),(await body(req)).video_ids,user)}); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/admin/catalogue/migration-report') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Catalogue.migrationReport()); }
     if (req.method === 'GET' && /^\/api\/v1\/admin\/exports\/(?:all|Brand|Performer|Video|VideoPerformer)$/i.test(url.pathname)) {
       await auth.requireRole(req, ['admin']);
       return send(res, 200, await dataExports.exports(url.pathname.split('/').at(-1)));

@@ -1,0 +1,3 @@
+import test from 'node:test'; import assert from 'node:assert/strict'; import { V3CatalogueService } from './v3-catalogue.js';
+test('V3 catalogue rejects unsafe lifecycle values before mutation',async()=>{const service=new V3CatalogueService({query:async()=>({rows:[{legacy_id:'v',title:'V',slug:'v',performers:[]}],rowCount:1})});await assert.rejects(()=>service.update('video','v',{v3_lifecycle:'unsafe'},{id:'a'}),{code:'INVALID_LIFECYCLE'});});
+test('V3 publish contract exposes real missing-field blockers',()=>{const service=new V3CatalogueService({});const result=service.publishCheck({title:'V',slug:'v',performers:[]});assert.equal(result.publishable,false);assert.ok(result.blockers.includes('missing_brand'));assert.ok(result.blockers.includes('missing_performer'));});
