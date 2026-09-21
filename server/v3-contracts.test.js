@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { contractInstanceStates, contractSigningEnabled, contractTemplateStates, renderPdf } from './v3-contracts.js';
+import { publishingReadiness } from './v3-consent.js';
 
 test('contract templates start behind legal review and signing is disabled', () => {
   assert.equal(contractTemplateStates.has('legal_review_required'), true);
@@ -52,4 +53,23 @@ test('Optional Management Agreement remains separate and authority-limited', () 
   assert.match(migration, /This Agreement is optional and is never automatically assigned/);
   assert.match(migration, /LEGAL_REVIEW_REQUIRED/);
   assert.match(migration, /ON CONFLICT\(template_id,version\) DO NOTHING/);
+});
+
+test('Consent and Production Standards installs an immutable legal-review draft and consent model', () => {
+  const migration = fs.readFileSync(new URL('../migrations/0018_consent_production_standards_v2.sql', import.meta.url), 'utf8');
+  assert.match(migration, /template_key='consent_standards'/);
+  assert.match(migration, /Withdrawal Before Activity/);
+  assert.match(migration, /v3_production_consent_records/);
+  assert.match(migration, /v3_production_participants/);
+  assert.match(migration, /v3_participant_releases/);
+  assert.match(migration, /Publishing Restrictions/);
+  assert.match(migration, /LEGAL_REVIEW_REQUIRED/);
+  assert.match(migration, /ON CONFLICT\(template_id,version\) DO NOTHING/);
+});
+
+test('publishing readiness exposes every consent and participant blocker', () => {
+  const blocked = publishingReadiness({ consent_status: 'draft', participants: [{ age_verified: false, identity_verified: false, release_status: 'missing' }], primary_performer_verified: false, required_rights_available: false, prohibited_content_flag: true });
+  assert.equal(blocked.publishable, false);
+  for (const blocker of ['primary_performer_unverified','co_performer_age_unverified','co_performer_identity_missing','participant_release_missing','production_consent_incomplete','prohibited_content_flag','required_rights_missing']) assert.ok(blocked.blockers.includes(blocker));
+  assert.equal(publishingReadiness({ consent_status: 'acknowledged', participants: [], primary_performer_verified: true, required_rights_available: true }).publishable, true);
 });
