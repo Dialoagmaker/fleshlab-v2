@@ -15,6 +15,8 @@ import { CampaignService } from './campaigns.js';
 import { MarketingService } from './marketing.js';
 import { AdminOperationsService } from './admin-operations.js';
 import { V3CatalogueService } from './v3-catalogue.js';
+import { V3CreatorService } from './v3-creators.js';
+import { V3CommerceService } from './v3-commerce.js';
 
 const config = loadConfig();
 const pool = new Pool({ connectionString: config.databaseUrl || undefined });
@@ -30,6 +32,8 @@ const campaigns = new CampaignService(pool);
 const marketing = new MarketingService(pool);
 const adminOperations = new AdminOperationsService(pool);
 const v3Catalogue = new V3CatalogueService(pool);
+const v3Creators = new V3CreatorService(pool);
+const v3Commerce = new V3CommerceService(pool);
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', ...headers });
@@ -87,6 +91,20 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && /^\/api\/v3\/admin\/catalogue\/collections\/[^/]+\/videos$/.test(url.pathname)) { await auth.requireRole(req,['staff','admin']); return send(res,200,{records:await v3Catalogue.collectionVideos(url.pathname.split('/').at(-2))}); }
     if (req.method === 'PUT' && /^\/api\/v3\/admin\/catalogue\/collections\/[^/]+\/videos$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,200,{records:await v3Catalogue.replaceCollectionVideos(url.pathname.split('/').at(-2),(await body(req)).video_ids,user)}); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/catalogue/migration-report') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Catalogue.migrationReport()); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/admin/creators/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Creators.overview()); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/admin/creators/applications') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Creators.applications({status:url.searchParams.get('status'),q:url.searchParams.get('q'),page:url.searchParams.get('page'),limit:url.searchParams.get('limit')})); }
+    if (req.method === 'GET' && /^\/api\/v3\/admin\/creators\/applications\/[^/]+$/.test(url.pathname)) { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Creators.application(url.pathname.split('/').at(-1))); }
+    if (req.method === 'PATCH' && /^\/api\/v3\/admin\/creators\/applications\/[^/]+$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Creators.updateApplication(url.pathname.split('/').at(-1),await body(req),user)); }
+    if (req.method === 'POST' && /^\/api\/v3\/admin\/creators\/applications\/[^/]+\/convert$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,200,await v3Creators.ensureCreator(url.pathname.split('/').at(-2),user)); }
+    if (req.method === 'POST' && /^\/api\/v3\/admin\/creators\/applications\/[^/]+\/performer-link$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,200,await v3Creators.linkPerformer(url.pathname.split('/').at(-2),await body(req),user)); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/admin/creators') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Creators.creators({q:url.searchParams.get('q'),page:url.searchParams.get('page'),limit:url.searchParams.get('limit')})); }
+    if (req.method === 'GET' && /^\/api\/v3\/admin\/creators\/records\/[^/]+$/.test(url.pathname)) { const user=await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Creators.creator(url.pathname.split('/').at(-1),{actor:user})); }
+    if (req.method === 'PATCH' && /^\/api\/v3\/admin\/creators\/records\/[^/]+$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,200,await v3Creators.updateCreator(url.pathname.split('/').at(-1),await body(req),user)); }
+    if (req.method === 'PATCH' && /^\/api\/v3\/admin\/creators\/records\/[^/]+\/onboarding\/[^/]+$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['staff','admin']); const parts=url.pathname.split('/'); return send(res,200,await v3Creators.updateOnboarding(parts.at(-3),parts.at(-1),await body(req),user)); }
+    if (req.method === 'PATCH' && /^\/api\/v3\/admin\/creators\/records\/[^/]+\/documents\/[^/]+$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['staff','admin']); const parts=url.pathname.split('/'); return send(res,200,await v3Creators.reviewDocument(parts.at(-3),parts.at(-1),await body(req),user)); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/creator/me') return send(res,200,await v3Creators.creatorForUser(await auth.current(req)));
+    if (req.method === 'PATCH' && url.pathname === '/api/v3/creator/me') { requireSameOrigin(req,config); const user=await auth.current(req); const current=await v3Creators.creatorForUser(user); return send(res,200,await v3Creators.updateCreator(current.creator.id,await body(req),user,{self:true})); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/admin/commerce/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Commerce.overview()); }
     if (req.method === 'GET' && /^\/api\/v1\/admin\/exports\/(?:all|Brand|Performer|Video|VideoPerformer)$/i.test(url.pathname)) {
       await auth.requireRole(req, ['admin']);
       return send(res, 200, await dataExports.exports(url.pathname.split('/').at(-1)));
