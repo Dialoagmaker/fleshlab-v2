@@ -17,6 +17,7 @@ import { AdminOperationsService } from './admin-operations.js';
 import { V3CatalogueService } from './v3-catalogue.js';
 import { V3CreatorService } from './v3-creators.js';
 import { V3CommerceService } from './v3-commerce.js';
+import { V3OperationsService } from './v3-operations.js';
 
 const config = loadConfig();
 const pool = new Pool({ connectionString: config.databaseUrl || undefined });
@@ -34,6 +35,7 @@ const adminOperations = new AdminOperationsService(pool);
 const v3Catalogue = new V3CatalogueService(pool);
 const v3Creators = new V3CreatorService(pool);
 const v3Commerce = new V3CommerceService(pool);
+const v3Operations = new V3OperationsService(pool);
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', ...headers });
@@ -105,6 +107,9 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/v3/creator/me') return send(res,200,await v3Creators.creatorForUser(await auth.current(req)));
     if (req.method === 'PATCH' && url.pathname === '/api/v3/creator/me') { requireSameOrigin(req,config); const user=await auth.current(req); const current=await v3Creators.creatorForUser(user); return send(res,200,await v3Creators.updateCreator(current.creator.id,await body(req),user,{self:true})); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/commerce/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Commerce.overview()); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/admin/production/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Operations.production()); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/admin/growth/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Operations.growth()); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/admin/system/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Operations.system()); }
     if (req.method === 'GET' && /^\/api\/v1\/admin\/exports\/(?:all|Brand|Performer|Video|VideoPerformer)$/i.test(url.pathname)) {
       await auth.requireRole(req, ['admin']);
       return send(res, 200, await dataExports.exports(url.pathname.split('/').at(-1)));
