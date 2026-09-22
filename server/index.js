@@ -37,7 +37,7 @@ const campaigns = new CampaignService(pool);
 const marketing = new MarketingService(pool);
 const adminOperations = new AdminOperationsService(pool);
 const v3Catalogue = new V3CatalogueService(pool);
-const v3Creators = new V3CreatorService(pool);
+const v3Creators = new V3CreatorService(pool, createAzureBlob(config) || unavailableBlob);
 const v3Commerce = new V3CommerceService(pool);
 const v3Operations = new V3OperationsService(pool);
 const v3Contracts = new V3ContractService(pool);
@@ -131,6 +131,13 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'PATCH' && /^\/api\/v3\/admin\/creators\/records\/[^/]+\/documents\/[^/]+$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['staff','admin']); const parts=url.pathname.split('/'); return send(res,200,await v3Creators.reviewDocument(parts.at(-3),parts.at(-1),await body(req),user)); }
     if (req.method === 'GET' && url.pathname === '/api/v3/creator/me') return send(res,200,await v3Creators.creatorForUser(await auth.current(req)));
     if (req.method === 'PATCH' && url.pathname === '/api/v3/creator/me') { requireSameOrigin(req,config); const user=await auth.current(req); const current=await v3Creators.creatorForUser(user); return send(res,200,await v3Creators.updateCreator(current.creator.id,await body(req),user,{self:true})); }
+    if (req.method === 'PATCH' && url.pathname === '/api/v3/creator/profile') { requireSameOrigin(req,config); const user=await auth.requireRole(req,['performer']); const current=await v3Creators.creatorForUser(user); return send(res,200,await v3Creators.updateProfile(current.creator.id,await body(req),user,{self:true})); }
+    if (req.method === 'PATCH' && url.pathname === '/api/v3/creator/settings') { requireSameOrigin(req,config); const user=await auth.requireRole(req,['performer']); const current=await v3Creators.creatorForUser(user); return send(res,200,await v3Creators.updateSettings(current.creator.id,await body(req),user)); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/creator/actions') { const user=await auth.requireRole(req,['performer']); const current=await v3Creators.creatorForUser(user); return send(res,200,await v3Creators.actions(current.creator.id,user)); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/creator/history') { const user=await auth.requireRole(req,['performer']); const current=await v3Creators.creatorForUser(user); return send(res,200,await v3Creators.historyForCreator(current.creator.id,user)); }
+    if (req.method === 'POST' && url.pathname === '/api/v3/creator/documents/upload') { requireSameOrigin(req,config); const user=await auth.requireRole(req,['performer']); const current=await v3Creators.creatorForUser(user); return send(res,201,await v3Creators.issueDocumentUpload(current.creator.id,await body(req),user)); }
+    if (req.method === 'POST' && /^\/api\/v3\/creator\/documents\/[^/]+\/confirm$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['performer']); const current=await v3Creators.creatorForUser(user); return send(res,200,await v3Creators.confirmDocumentUpload(current.creator.id,url.pathname.split('/').at(-2),await body(req),user)); }
+    if (req.method === 'GET' && /^\/api\/v3\/creator\/documents\/[^/]+\/download$/.test(url.pathname)) { const user=await auth.requireRole(req,['performer']); const current=await v3Creators.creatorForUser(user); return send(res,200,await v3Creators.documentDownload(current.creator.id,url.pathname.split('/').at(-2),user)); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/commerce/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Commerce.overview()); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/compensation/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Compensation.overview()); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/contracts/overview') { const user=await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Contracts.overview(user)); }

@@ -37,3 +37,12 @@ test('application lifecycle exposes explicit safe transitions', () => {
   assert.equal(applicationTransitions.under_review.has('approved'), true);
   assert.equal(applicationTransitions.withdrawn.size, 0);
 });
+
+test('creator document upload remains unavailable rather than exposing storage internals', async () => {
+  const service = new V3CreatorService({ query: async () => ({ rows: [], rowCount: 0 }) });
+  await assert.rejects(() => service.issueDocumentUpload('creator-a', { name: 'id.pdf', content_type: 'application/pdf', byte_size: 100 }, { id: 'user-a', role: 'performer' }), { code: 'CREATOR_NOT_FOUND' });
+});
+
+test('creator profile input accepts only structured private fields', () => {
+  assert.equal(publicDocument({ file_name: 'id.pdf', storage_reference: 'secret' }).storage_reference, undefined);
+});

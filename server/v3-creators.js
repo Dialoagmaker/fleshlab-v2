@@ -20,7 +20,7 @@ export const applicationTransitions = {
 };
 
 export function publicDocument(row) {
-  const { object_key, upload_session_hash, etag, ...safe } = row;
+  const { object_key, upload_session_hash, etag, storage_reference, ...safe } = row;
   return safe;
 }
 
@@ -29,7 +29,7 @@ export function assertCreatorOwner(actor, record) {
 }
 
 export class V3CreatorService {
-  constructor(db) { this.db = db; }
+  constructor(db, blob = null) { this.db = db; this.blob = blob; }
 
   async audit(user, action, entityType, entityId, before = null, after = null) {
     await this.db.query(
@@ -44,7 +44,7 @@ export class V3CreatorService {
       (SELECT count(*)::int FROM performer_applications WHERE status='approved') AS approved_unconverted,
       (SELECT count(*)::int FROM v3_creator_records WHERE lifecycle='onboarding') AS onboarding_incomplete,
       (SELECT count(*)::int FROM v3_creator_documents WHERE review_state='needs_review') AS documents_needing_review,
-      (SELECT count(*)::int FROM v3_creator_contracts WHERE lifecycle='signed') AS signed_contracts,
+      (SELECT count(*)::int FROM v3_contract_instances WHERE status='signed') AS signed_contracts,
       (SELECT count(*)::int FROM v3_creator_records WHERE lifecycle='active') AS active_creators`);
     return { metrics: result.rows[0] };
   }
@@ -76,7 +76,7 @@ export class V3CreatorService {
     const [uploads, contract, links, history] = await Promise.all([
       this.db.query(`SELECT d.id,d.document_type,d.classification,d.review_state,d.reviewed_at,d.expires_at,d.note,d.created_at,u.id AS upload_id,u.file_name,u.content_type,u.byte_size,u.status AS upload_status,u.confirmed_at
         FROM application_uploads u LEFT JOIN v3_creator_documents d ON d.application_upload_id=u.id WHERE u.application_id=$1 ORDER BY u.created_at`, [id]),
-      this.db.query(`SELECT vc.id,vc.lifecycle,vc.template_version,vc.signed_at,vc.created_at FROM v3_creator_contracts vc JOIN v3_creator_records c ON c.id=vc.creator_id WHERE c.application_id=$1 ORDER BY vc.created_at DESC LIMIT 1`, [id]),
+      this.db.query(`SELECT i.id,i.status,i.contract_number,i.issued_at,i.viewed_at,i.signed_at,v.version,t.title FROM v3_contract_instances i JOIN v3_creator_records c ON c.id=i.creator_id LEFT JOIN v3_contract_template_versions v ON v.id=i.template_version_id LEFT JOIN v3_contract_templates t ON t.id=v.template_id WHERE c.application_id=$1 ORDER BY i.issued_at DESC LIMIT 1`, [id]),
       this.db.query(`SELECT l.performer_legacy_id,p.display_name,p.slug,l.linked_at FROM v3_creator_performer_links l JOIN v3_creator_records c ON c.id=l.creator_id JOIN catalog_performers p ON p.legacy_id=l.performer_legacy_id WHERE c.application_id=$1`, [id]),
       this.history('creator.application', id)
     ]);
@@ -175,18 +175,21 @@ export class V3CreatorService {
     if (!result.rowCount) throw new HttpError(404, 'CREATOR_NOT_FOUND', 'Creator was not found.');
     const record = result.rows[0];
     if (self) assertCreatorOwner(actor, record);
-    const [items, docs, contracts, performers, videos, notifications, history] = await Promise.all([
+    const [items, docs, contracts, performers, videos, notifications, history, profile] = await Promise.all([
       this.db.query('SELECT id,requirement_key,state,note,reviewed_at,updated_at FROM v3_creator_onboarding_items WHERE creator_id=$1 ORDER BY requirement_key', [id]),
-      this.db.query(`SELECT d.id,d.document_type,d.classification,d.review_state,d.reviewed_at,d.expires_at,d.note,d.created_at,u.file_name,u.content_type,u.byte_size,u.status AS upload_status,u.confirmed_at
+      this.db.query(`SELECT d.id,d.document_type,d.classification,d.review_state,d.reviewed_at,d.expires_at,d.note,d.version,d.created_at,u.file_name,u.content_type,u.byte_size,u.status AS upload_status,u.confirmed_at
         FROM v3_creator_documents d JOIN application_uploads u ON u.id=d.application_upload_id WHERE d.creator_id=$1 ORDER BY d.created_at DESC`, [id]),
-      this.db.query('SELECT id,lifecycle,template_version,signed_at,created_at FROM v3_creator_contracts WHERE creator_id=$1 ORDER BY created_at DESC', [id]),
+      this.db.query(`SELECT i.id,i.contract_number,i.status,i.creator_legal_name,i.performer_name,i.issued_at,i.viewed_at,i.signed_at,i.source,i.snapshot_hash,t.title,t.contract_type,v.version
+        FROM v3_contract_instances i LEFT JOIN v3_contract_template_versions v ON v.id=i.template_version_id LEFT JOIN v3_contract_templates t ON t.id=v.template_id
+        WHERE i.creator_id=$1 ORDER BY i.issued_at DESC`, [id]),
       this.db.query('SELECT l.performer_legacy_id,p.display_name,p.slug,p.status FROM v3_creator_performer_links l JOIN catalog_performers p ON p.legacy_id=l.performer_legacy_id WHERE l.creator_id=$1 ORDER BY p.display_name', [id]),
       this.db.query(`SELECT DISTINCT v.legacy_id,v.title,v.slug,v.status,v.v3_lifecycle,v.legacy_thumbnail_url FROM v3_creator_performer_links l JOIN catalog_video_performers x ON x.performer_legacy_id=l.performer_legacy_id JOIN catalog_videos v ON v.legacy_id=x.video_legacy_id WHERE l.creator_id=$1 ORDER BY v.title`, [id]),
       this.db.query('SELECT id,kind,title,body,action_path,read_at,created_at FROM v3_creator_notifications WHERE creator_id=$1 ORDER BY created_at DESC LIMIT 20', [id]),
-      self ? Promise.resolve({ rows: [] }) : this.history('creator.record', id)
+      self ? Promise.resolve({ rows: [] }) : this.history('creator.record', id),
+      this.db.query('SELECT preferred_name,contact_email,contact_phone,locale,timezone,notification_preferences,updated_at FROM v3_creator_profiles WHERE creator_id=$1', [id])
     ]);
-    const safeRecord = self ? { id: record.id, lifecycle: record.lifecycle, private_profile: record.private_profile, full_name: record.full_name, country: record.country, created_at: record.created_at } : record;
-    return { creator: safeRecord, onboarding: items.rows, documents: docs.rows.map(publicDocument), contracts: contracts.rows, performers: performers.rows, videos: videos.rows, notifications: notifications.rows, history };
+    const safeRecord = self ? { id: record.id, application_id: record.application_id, lifecycle: record.lifecycle, private_profile: record.private_profile, full_name: record.full_name, country: record.country, created_at: record.created_at } : record;
+    return { creator: safeRecord, profile: profile.rows[0] || {}, onboarding: items.rows, documents: docs.rows.map(publicDocument), contracts: contracts.rows, performers: performers.rows, videos: videos.rows, notifications: notifications.rows, actions: notifications.rows.filter(item => item.action_state === 'open'), history };
   }
 
   async updateCreator(id, input, user, { self = false } = {}) {
@@ -201,6 +204,69 @@ export class V3CreatorService {
     return result.rows[0];
   }
 
+  async updateProfile(id, input, user, { self = false } = {}) {
+    const current = await this.creator(id, { actor: user, self });
+    const allowed = ['preferred_name','contact_email','contact_phone','locale','timezone','notification_preferences'];
+    const values = Object.fromEntries(allowed.filter(key => Object.hasOwn(input, key)).map(key => [key, input[key]]));
+    if (values.contact_email && !/^\S+@\S+\.\S+$/.test(String(values.contact_email))) throw new HttpError(422, 'INVALID_CONTACT_EMAIL', 'A valid contact email is required.');
+    if (!Object.keys(values).length) throw new HttpError(422, 'INVALID_INPUT', 'No profile fields supplied.');
+    const keys = Object.keys(values), args = [id, ...keys.map(key => values[key]), user.id];
+    const result = await this.db.query(`INSERT INTO v3_creator_profiles(creator_id,${keys.join(',')},updated_at) VALUES($1,${keys.map((_,i)=>`$${i+2}`).join(',')},now()) ON CONFLICT(creator_id) DO UPDATE SET ${keys.map((key,i)=>`${key}=$${i+2}`).join(',')},updated_at=now() RETURNING *`, args.slice(0, -1));
+    if (values.preferred_name || values.contact_email || values.locale || values.timezone) await this.db.query(`UPDATE v3_creator_onboarding_items SET state='complete',updated_at=now() WHERE creator_id=$1 AND requirement_key='profile'`, [id]);
+    await this.audit(user, 'creator.profile.structured_update', 'creator.record', id, current.profile || {}, result.rows[0]);
+    return result.rows[0];
+  }
+
+  async updateSettings(id, input, user) {
+    const current = await this.creator(id, { actor: user, self: true });
+    const preferences = input.notification_preferences && typeof input.notification_preferences === 'object' ? input.notification_preferences : current.profile?.notification_preferences || {};
+    const result = await this.db.query('UPDATE v3_creator_profiles SET notification_preferences=$1,updated_at=now() WHERE creator_id=$2 RETURNING notification_preferences,updated_at', [preferences, id]);
+    if (!result.rowCount) throw new HttpError(404, 'CREATOR_PROFILE_NOT_FOUND', 'Creator profile is not initialized.');
+    await this.audit(user, 'creator.settings.update', 'creator.record', id, current.profile || {}, result.rows[0]);
+    return result.rows[0];
+  }
+
+  async actions(id, user) {
+    const current = await this.creator(id, { actor: user, self: true });
+    return { records: current.actions || [] };
+  }
+
+  async historyForCreator(id, user) {
+    await this.creator(id, { actor: user, self: true });
+    return { records: await this.history('creator.record', id) };
+  }
+
+  async issueDocumentUpload(id, input, user) {
+    const current = await this.creator(id, { actor: user, self: true });
+    if (!this.blob) throw new HttpError(503, 'PRIVATE_UPLOAD_UNAVAILABLE', 'Private document storage is not configured.');
+    const name = String(input.name || '').trim(); const contentType = String(input.content_type || '').trim(); const byteSize = Number(input.byte_size);
+    const allowed = new Set(['image/jpeg','image/png','image/webp','application/pdf']);
+    if (!name || !allowed.has(contentType) || !Number.isFinite(byteSize) || byteSize <= 0 || byteSize > 50 * 1024 * 1024) throw new HttpError(422, 'INVALID_DOCUMENT_UPLOAD', 'Document metadata is invalid.');
+    const token = crypto.randomBytes(32).toString('base64url'); const hash = crypto.createHash('sha256').update(token).digest('hex'); const objectKey = `creators/private/${id}/${crypto.randomUUID()}`;
+    const row = await this.db.query(`INSERT INTO application_uploads(application_id,upload_session_hash,object_key,file_name,content_type,byte_size,status,write_expires_at) VALUES($1,$2,$3,$4,$5,$6,'issued',now()+interval '15 minutes') RETURNING id`, [current.creator.application_id, hash, objectKey, name, contentType, byteSize]);
+    try { return { upload_id: row.rows[0].id, upload_url: await this.blob.issueWriteUrl(objectKey, contentType), expires_in_seconds: 900 }; } catch (error) { await this.db.query('DELETE FROM application_uploads WHERE id=$1 AND status=\'issued\'', [row.rows[0].id]); throw new HttpError(503, 'PRIVATE_UPLOAD_UNAVAILABLE', 'Private document storage is not currently available.'); }
+  }
+
+  async confirmDocumentUpload(id, uploadId, input, user) {
+    const current = await this.creator(id, { actor: user, self: true });
+    const found = await this.db.query('SELECT * FROM application_uploads WHERE id=$1 AND application_id=$2 FOR UPDATE', [uploadId, current.creator.application_id]);
+    if (!found.rowCount) throw new HttpError(404, 'DOCUMENT_UPLOAD_NOT_FOUND', 'Document upload was not found.');
+    const upload = found.rows[0]; if (upload.status !== 'confirmed') { const metadata = this.blob ? await this.blob.verifyObject(upload.object_key) : null; if (!metadata || metadata.byteSize !== Number(upload.byte_size)) throw new HttpError(422, 'DOCUMENT_UPLOAD_NOT_PRESENT', 'The uploaded document cannot be verified.'); await this.db.query('UPDATE application_uploads SET status=\'confirmed\',confirmed_at=now(),etag=$2 WHERE id=$1', [upload.id, metadata.etag || null]); }
+    const prior = await this.db.query('SELECT id,version FROM v3_creator_documents WHERE creator_id=$1 AND document_type=$2 ORDER BY version DESC LIMIT 1', [id, input.document_type || upload.content_type]);
+    const version = (prior.rows[0]?.version || 0) + 1;
+    const result = await this.db.query(`INSERT INTO v3_creator_documents(creator_id,application_upload_id,document_type,version,replaced_document_id) VALUES($1,$2,$3,$4,$5) RETURNING id,document_type,version,review_state,created_at`, [id, upload.id, input.document_type || upload.content_type, version, prior.rows[0]?.id || null]);
+    await this.audit(user, 'creator.document.upload_confirmed', 'creator.record', id, null, { document_id: result.rows[0].id, document_type: result.rows[0].document_type, version });
+    return result.rows[0];
+  }
+
+  async documentDownload(id, documentId, user) {
+    const current = await this.creator(id, { actor: user, self: true });
+    if (!this.blob?.issueReadUrl) throw new HttpError(503, 'PRIVATE_DOWNLOAD_UNAVAILABLE', 'Private document retrieval is not configured.');
+    const result = await this.db.query(`SELECT d.id,u.object_key,u.file_name,u.content_type FROM v3_creator_documents d JOIN application_uploads u ON u.id=d.application_upload_id WHERE d.id=$1 AND d.creator_id=$2 AND u.status='confirmed'`, [documentId, current.creator.id]);
+    if (!result.rowCount) throw new HttpError(404, 'DOCUMENT_NOT_FOUND', 'Document was not found.');
+    return { download_url: await this.blob.issueReadUrl(result.rows[0].object_key), expires_in_seconds: 300, file_name: result.rows[0].file_name, content_type: result.rows[0].content_type };
+  }
+
   async updateOnboarding(creatorId, requirementKey, input, user) {
     if (!creatorOnboardingStates.has(input.state)) throw new HttpError(422, 'INVALID_ONBOARDING_STATE', 'Invalid onboarding state.');
     const result = await this.db.query(`UPDATE v3_creator_onboarding_items SET state=$1,note=$2,reviewed_by=$3,reviewed_at=now(),updated_at=now() WHERE creator_id=$4 AND requirement_key=$5 RETURNING *`, [input.state, input.note || null, user.id, creatorId, requirementKey]);
@@ -213,6 +279,8 @@ export class V3CreatorService {
     if (!creatorDocumentStates.has(input.review_state)) throw new HttpError(422, 'INVALID_DOCUMENT_STATE', 'Invalid document review state.');
     const result = await this.db.query(`UPDATE v3_creator_documents SET review_state=$1,note=$2,reviewer_id=$3,reviewed_at=now(),updated_at=now() WHERE id=$4 AND creator_id=$5 RETURNING id,review_state,note,reviewed_at`, [input.review_state, input.note || null, user.id, documentId, creatorId]);
     if (!result.rowCount) throw new HttpError(404, 'DOCUMENT_NOT_FOUND', 'Document was not found.');
+    await this.db.query(`UPDATE v3_creator_onboarding_items SET state=$1,note=$2,reviewed_by=$3,reviewed_at=now(),updated_at=now() WHERE creator_id=$4 AND requirement_key='private_upload'`, [input.review_state === 'accepted' ? 'complete' : input.review_state === 'rejected' ? 'blocked' : 'needs_review', input.note || null, user.id, creatorId]);
+    await this.db.query(`INSERT INTO v3_creator_notifications(creator_id,kind,title,body,action_path) VALUES($1,'document_review',$2,$3,'/v3/creator/documents')`, [creatorId, input.review_state === 'accepted' ? 'Document accepted' : 'Document requires attention', input.note || `Your document review state is ${input.review_state}.`]);
     await this.audit(user, 'creator.document.review', 'creator.record', creatorId, null, result.rows[0]);
     return result.rows[0];
   }

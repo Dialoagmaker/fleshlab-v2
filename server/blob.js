@@ -14,6 +14,13 @@ export function createAzureBlob(config) {
       const sas = generateBlobSASQueryParameters({ containerName: container.containerName, blobName: objectKey, permissions: BlobSASPermissions.parse('cw'), startsOn, expiresOn, protocol: SASProtocol.Https, contentType }, delegation, service.accountName).toString();
       return `${container.getBlockBlobClient(objectKey).url}?${sas}`;
     },
+    async issueReadUrl(objectKey) {
+      const startsOn = new Date(Date.now() - 60_000);
+      const expiresOn = new Date(Date.now() + 5 * 60_000);
+      const delegation = await service.getUserDelegationKey(startsOn, expiresOn);
+      const sas = generateBlobSASQueryParameters({ containerName: container.containerName, blobName: objectKey, permissions: BlobSASPermissions.parse('r'), startsOn, expiresOn, protocol: SASProtocol.Https }, delegation, service.accountName).toString();
+      return `${container.getBlobClient(objectKey).url}?${sas}`;
+    },
     async verifyObject(objectKey) {
       try { const properties = await container.getBlobClient(objectKey).getProperties(); return { byteSize: Number(properties.contentLength), etag: properties.etag }; } catch { return null; }
     }
