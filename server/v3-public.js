@@ -68,11 +68,24 @@ export class V3PublicService {
   }
 
   async collection(slug) {
+    if (slug === 'new-releases') {
+      const videos = await this.listVideos({ limit: 12, sort: 'newest' });
+      return { record: { id: 'new-releases', title: 'New Releases', slug, description: 'The latest published FLESHLAB productions.' }, videos: videos.records };
+    }
     const r = await this.db.query(`SELECT id,title,slug,description,cover_asset_reference FROM v3_catalogue_collections WHERE slug=$1 AND visibility='public'`, [slug]);
     if (!r.rowCount) throw new HttpError(404,'NOT_FOUND','Published collection was not found.');
     const videos = await this.db.query(`SELECT v.slug FROM v3_catalogue_collection_videos i JOIN catalog_videos v ON v.legacy_id=i.video_legacy_id WHERE i.collection_id=$1 AND v.v3_lifecycle='published' AND v.status='published' ORDER BY i.display_order,v.title`, [r.rows[0].id]);
     const records=[]; for (const item of videos.rows) { try { records.push((await this.video(item.slug)).record); } catch {} }
     return { record:r.rows[0], videos:records };
+  }
+
+  async collections() {
+    const rows = await this.db.query(`SELECT c.id,c.title,c.slug,c.description,c.cover_asset_reference,count(i.video_legacy_id)::int video_count
+      FROM v3_catalogue_collections c LEFT JOIN v3_catalogue_collection_videos i ON i.collection_id=c.id
+      LEFT JOIN catalog_videos v ON v.legacy_id=i.video_legacy_id AND v.v3_lifecycle='published' AND v.status='published'
+      WHERE c.visibility='public' GROUP BY c.id ORDER BY c.display_order,c.title`);
+    const newest = await this.listVideos({ limit: 1 });
+    return { records: [{ id: 'new-releases', title: 'New Releases', slug: 'new-releases', description: 'The latest published FLESHLAB productions.', video_count: newest.total }, ...rows.rows] };
   }
 
   async media(id) {
