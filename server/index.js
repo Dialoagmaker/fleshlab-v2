@@ -22,6 +22,7 @@ import { V3ContractService, contractSigningEnabled, renderPdf } from './v3-contr
 import { V3ConsentService } from './v3-consent.js';
 import { V3CompensationService } from './v3-compensation.js';
 import { V3PublicService } from './v3-public.js';
+import { V3ProductionService } from './v3-production.js';
 
 const config = loadConfig();
 const pool = new Pool({ connectionString: config.databaseUrl || undefined });
@@ -44,6 +45,7 @@ const v3Contracts = new V3ContractService(pool);
 const v3Consent = new V3ConsentService(pool);
 const v3Compensation = new V3CompensationService(pool);
 const v3Public = new V3PublicService(pool);
+const v3Production = new V3ProductionService(pool);
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', ...headers });
@@ -154,8 +156,23 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && /^\/api\/v3\/admin\/contracts\/[^/]+\/pdf$/.test(url.pathname)) { const user=await auth.requireRole(req,['staff','admin']); const result=await v3Contracts.pdf(url.pathname.split('/').at(-2),user,{admin:true}); return sendBinary(res,200,result.bytes,{'content-type':'application/pdf','content-disposition':`attachment; filename="${result.contract_number}.pdf"`}); }
     if (req.method === 'GET' && url.pathname === '/api/v3/creator/contracts') { const user=await auth.requireRole(req,['performer']); return send(res,200,await v3Contracts.creatorInstances(user)); }
     if (req.method === 'GET' && url.pathname === '/api/v3/creator/compensation') { const user=await auth.requireRole(req,['performer']); return send(res,200,await v3Compensation.creatorStatement(user)); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/creator/productions') { const user=await auth.requireRole(req,['performer']); return send(res,200,await v3Production.creatorProductions(user)); }
     if (req.method === 'GET' && /^\/api\/v3\/creator\/contracts\/[^/]+\/pdf$/.test(url.pathname)) { const user=await auth.requireRole(req,['performer']); const result=await v3Contracts.pdf(url.pathname.split('/').at(-2),user); return sendBinary(res,200,result.bytes,{'content-type':'application/pdf','content-disposition':`attachment; filename="${result.contract_number}.pdf"`}); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/production/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Operations.production()); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/admin/productions') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Production.list(Object.fromEntries(url.searchParams))); }
+    if (req.method === 'POST' && url.pathname === '/api/v3/admin/productions') { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,201,await v3Production.create(await body(req),user)); }
+    if (req.method === 'GET' && /^\/api\/v3\/admin\/productions\/[^/]+$/.test(url.pathname)) { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Production.detail(url.pathname.split('/').at(-1))); }
+    if (req.method === 'PATCH' && /^\/api\/v3\/admin\/productions\/[^/]+$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,200,await v3Production.update(url.pathname.split('/').at(-1),await body(req),user)); }
+    if (req.method === 'POST' && /^\/api\/v3\/admin\/productions\/[^/]+\/transition$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,200,await v3Production.transition(url.pathname.split('/').at(-2),(await body(req)).status,user)); }
+    if (req.method === 'GET' && /^\/api\/v3\/admin\/productions\/[^/]+\/readiness$/.test(url.pathname)) { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Production.readiness(url.pathname.split('/').at(-2))); }
+    if (req.method === 'GET' && /^\/api\/v3\/admin\/productions\/[^/]+\/events$/.test(url.pathname)) { await auth.requireRole(req,['staff','admin']); return send(res,200,{records:(await v3Production.detail(url.pathname.split('/').at(-2))).events}); }
+    if (req.method === 'POST' && /^\/api\/v3\/admin\/productions\/[^/]+\/shoots$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,201,await v3Production.shoot(url.pathname.split('/').at(-2),await body(req),user)); }
+    if (req.method === 'POST' && /^\/api\/v3\/admin\/productions\/[^/]+\/scenes$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,201,await v3Production.scene(url.pathname.split('/').at(-2),await body(req),user)); }
+    if (req.method === 'POST' && /^\/api\/v3\/admin\/productions\/[^/]+\/participants$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,201,await v3Production.participant(url.pathname.split('/').at(-2),await body(req),user)); }
+    if (req.method === 'POST' && /^\/api\/v3\/admin\/productions\/[^/]+\/assets$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,201,await v3Production.asset(url.pathname.split('/').at(-2),await body(req),user)); }
+    if (req.method === 'POST' && /^\/api\/v3\/admin\/productions\/[^/]+\/qa$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,201,await v3Production.qa(url.pathname.split('/').at(-2),await body(req),user)); }
+    if (req.method === 'POST' && /^\/api\/v3\/admin\/productions\/[^/]+\/renders$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,201,await v3Production.render(url.pathname.split('/').at(-2),await body(req),user)); }
+    if (req.method === 'POST' && /^\/api\/v3\/admin\/productions\/[^/]+\/catalogue-handoff$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,201,await v3Production.handoff(url.pathname.split('/').at(-2),await body(req),user)); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/production/consent-overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Consent.overview()); }
     if (req.method === 'GET' && /^\/api\/v3\/admin\/production\/consent\/[^/]+$/.test(url.pathname)) { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Consent.production(url.pathname.split('/').at(-1))); }
     if (req.method === 'GET' && /^\/api\/v3\/admin\/production\/rights\/[^/]+$/.test(url.pathname)) { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Consent.rights(url.pathname.split('/').at(-1),url.searchParams.get('content_id'))); }
