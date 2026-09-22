@@ -36,3 +36,11 @@ test('scene requires a positive deterministic number and title', async () => {
   const service = new V3ProductionService({ query: async (sql) => sql.toLowerCase().includes('v3_productions') ? { rowCount: 1, rows: [{ id: 'p1' }] } : { rowCount: 0, rows: [] } });
   await assert.rejects(() => service.scene('p1', { scene_number: 0, title: '' }, { id: 'admin' }), { code: 'SCENE_REQUIRED' });
 });
+
+test('creator production projection is ownership-scoped', async () => {
+  let statement = ''; let parameter;
+  const service = new V3ProductionService({ query: async (sql, values) => { statement = sql; parameter = values[0]; return { rows: [] }; } });
+  await service.creatorProductions({ id: 'creator-user-a' });
+  assert.match(statement, /c\.user_id=\$1/);
+  assert.equal(parameter, 'creator-user-a');
+});
