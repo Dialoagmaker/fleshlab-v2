@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { contractInstanceStates, contractSigningEnabled, contractTemplateStates, renderPdf } from './v3-contracts.js';
 import { publishingReadiness, rightsReadiness } from './v3-consent.js';
+import { allocatePerformerPool, applyCarryForward, calculateRevenueShare, settlementPolicy } from './v3-compensation.js';
 
 test('contract templates start behind legal review and signing is disabled', () => {
   assert.equal(contractTemplateStates.has('legal_review_required'), true);
@@ -85,4 +86,25 @@ test('Content Rights readiness migration preserves legacy uncertainty and indepe
   assert.match(migration, /five years after termination/);
   assert.match(migration, /ON CONFLICT\(template_id,version\) DO NOTHING/);
   assert.match(migration, /LEGAL_REVIEW_REQUIRED/);
+});
+
+test('Compensation Schedule installs an immutable 30/70 plan and auditable ledger schema', () => {
+  const migration = fs.readFileSync(new URL('../migrations/0020_compensation_schedule_v2.sql', import.meta.url), 'utf8');
+  assert.match(migration, /template_key='compensation_schedule'/);
+  assert.match(migration, /'2\.0'/);
+  assert.match(migration, /v3_compensation_plans/);
+  assert.match(migration, /v3_earnings_ledger/);
+  assert.match(migration, /v3_compensation_settlements/);
+  assert.match(migration, /30% Performer/);
+  assert.match(migration, /LEGAL_REVIEW_REQUIRED/);
+  assert.match(migration, /ON CONFLICT\(template_id,version\) DO NOTHING/);
+});
+
+test('Compensation engine uses Revenue Share Base without hidden Studio deductions', () => {
+  const result = calculateRevenueShare({ eligibleRevenueMinor: 10000, adjustmentsMinor: 0 });
+  assert.deepEqual(result, { eligible_revenue_minor: 10000, adjustments_minor: 0, revenue_share_base_minor: 10000, performer_share_percentage: 30, studio_share_percentage: 70, performer_amount_minor: 3000, studio_amount_minor: 7000 });
+  assert.deepEqual(allocatePerformerPool(3000, [{ performer_legacy_id: 'a', percentage: 60 }, { performer_legacy_id: 'b', percentage: 40 }]).map(item => item.amount_minor), [1800, 1200]);
+  assert.deepEqual(applyCarryForward(4900), { payable_amount_minor: 0, carry_forward_minor: 4900 });
+  assert.deepEqual(applyCarryForward(100), { payable_amount_minor: 0, carry_forward_minor: 100 });
+  assert.deepEqual(settlementPolicy('live_cam'), { frequency: '14_days', payout_days: [5, 20] });
 });
