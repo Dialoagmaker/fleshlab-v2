@@ -21,6 +21,7 @@ import { V3OperationsService } from './v3-operations.js';
 import { V3ContractService, contractSigningEnabled, renderPdf } from './v3-contracts.js';
 import { V3ConsentService } from './v3-consent.js';
 import { V3CompensationService } from './v3-compensation.js';
+import { V3PublicService } from './v3-public.js';
 
 const config = loadConfig();
 const pool = new Pool({ connectionString: config.databaseUrl || undefined });
@@ -42,6 +43,7 @@ const v3Operations = new V3OperationsService(pool);
 const v3Contracts = new V3ContractService(pool);
 const v3Consent = new V3ConsentService(pool);
 const v3Compensation = new V3CompensationService(pool);
+const v3Public = new V3PublicService(pool);
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', ...headers });
@@ -64,6 +66,15 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
     if (req.method === 'GET' && url.pathname === '/healthz') return send(res, 200, { status: 'ok', service: 'fleshlab-api', mediaMigrationEnabled: config.mediaMigrationEnabled });
+    if (req.method === 'GET' && url.pathname === '/api/v3/public/catalogue') return send(res, 200, { videos: await v3Public.listVideos({ limit: 12 }), performers: await v3Public.performers({ limit: 12 }), brands: await v3Public.brands({ limit: 12 }) }, { 'cache-control': 'public, max-age=60, stale-while-revalidate=300' });
+    if (req.method === 'GET' && url.pathname === '/api/v3/public/videos') return send(res, 200, await v3Public.listVideos(Object.fromEntries(url.searchParams)), { 'cache-control': 'public, max-age=60, stale-while-revalidate=300' });
+    if (req.method === 'GET' && /^\/api\/v3\/public\/videos\/[^/]+$/.test(url.pathname)) return send(res, 200, await v3Public.video(decodeURIComponent(url.pathname.split('/').at(-1))), { 'cache-control': 'public, max-age=60, stale-while-revalidate=300' });
+    if (req.method === 'GET' && url.pathname === '/api/v3/public/performers') return send(res, 200, await v3Public.performers(Object.fromEntries(url.searchParams)), { 'cache-control': 'public, max-age=60, stale-while-revalidate=300' });
+    if (req.method === 'GET' && /^\/api\/v3\/public\/performers\/[^/]+$/.test(url.pathname)) return send(res, 200, await v3Public.performer(decodeURIComponent(url.pathname.split('/').at(-1))), { 'cache-control': 'public, max-age=60, stale-while-revalidate=300' });
+    if (req.method === 'GET' && url.pathname === '/api/v3/public/brands') return send(res, 200, await v3Public.brands(Object.fromEntries(url.searchParams)), { 'cache-control': 'public, max-age=60, stale-while-revalidate=300' });
+    if (req.method === 'GET' && /^\/api\/v3\/public\/brands\/[^/]+$/.test(url.pathname)) return send(res, 200, await v3Public.brand(decodeURIComponent(url.pathname.split('/').at(-1))), { 'cache-control': 'public, max-age=60, stale-while-revalidate=300' });
+    if (req.method === 'GET' && /^\/api\/v3\/public\/collections\/[^/]+$/.test(url.pathname)) return send(res, 200, await v3Public.collection(decodeURIComponent(url.pathname.split('/').at(-1))), { 'cache-control': 'public, max-age=60, stale-while-revalidate=300' });
+    if (req.method === 'GET' && /^\/api\/v3\/public\/media\/[^/]+$/.test(url.pathname)) return send(res, 200, await v3Public.media(url.pathname.split('/').at(-1)), { 'cache-control': 'public, max-age=300, stale-while-revalidate=600' });
     if (req.method === 'POST' && url.pathname === '/api/v1/public/functions/getPublicNews') return send(res, 200, await news.list({ publicOnly: true }));
     if (req.method === 'POST' && url.pathname === '/api/v1/public/functions/getPublicNewsArticleBySlug') return send(res, 200, await news.get((await body(req)).slug, { publicOnly: true }));
     if (req.method === 'POST' && /^\/api\/v1\/public\/functions\/[a-zA-Z0-9_-]+$/.test(url.pathname)) {
