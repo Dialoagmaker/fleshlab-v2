@@ -53,7 +53,7 @@ export class V3ConsentService {
   }
 
   async production(productionId) {
-    const consent = await this.db.query(`SELECT id,production_id,performer_legacy_id,creator_id,video_legacy_id,production_date,categories,approved_activities,excluded_activities,notes,status,acknowledged_at,withdrawn_at,created_at,updated_at FROM v3_production_consent_records WHERE production_id=$1 ORDER BY created_at DESC`, [productionId]);
+    const consent = await this.db.query(`SELECT id,production_id,performer_legacy_id,creator_id,video_legacy_id,production_date,categories,approved_activities,excluded_activities,notes,status,acknowledged_at,withdrawn_at,created_at,updated_at FROM v3_production_consent_records WHERE production_id=$1 OR production_id=(SELECT reference FROM v3_productions WHERE id=$1) ORDER BY created_at DESC`, [productionId]);
     const records = [];
     for (const row of consent.rows) {
       const participants = await this.db.query(`SELECT id,performer_legacy_id,display_name,role,age_verified,identity_verified,release_status FROM v3_production_participants WHERE consent_record_id=$1 ORDER BY created_at`, [row.id]);
@@ -66,7 +66,7 @@ export class V3ConsentService {
 
   async rights(productionId, contentId = null) {
     const args = contentId ? [productionId, contentId] : [productionId];
-    const result = await this.db.query(`SELECT id,production_id,content_legacy_id,performer_legacy_id,creator_id,rights_source,rights_contract_instance_id,rights_status,exclusive,territory,rights_start_at,rights_end_at,post_termination_end_at,commercial_exploitation_allowed,marketing_allowed,editing_allowed,sublicensing_allowed,notes,created_at,updated_at FROM v3_content_rights_records WHERE production_id=$1 ${contentId ? 'AND content_legacy_id=$2' : ''} ORDER BY created_at DESC`, args);
+    const result = await this.db.query(`SELECT id,production_id,content_legacy_id,performer_legacy_id,creator_id,rights_source,rights_contract_instance_id,rights_status,exclusive,territory,rights_start_at,rights_end_at,post_termination_end_at,commercial_exploitation_allowed,marketing_allowed,editing_allowed,sublicensing_allowed,notes,created_at,updated_at FROM v3_content_rights_records WHERE (production_id=$1 OR production_id=(SELECT reference FROM v3_productions WHERE id=$1)) ${contentId ? 'AND content_legacy_id=$2' : ''} ORDER BY created_at DESC`, args);
     return { production_id: productionId, status: result.rowCount ? 'RECORDED' : 'LEGACY_RIGHTS_STATUS_UNKNOWN', records: result.rows.map(row => ({ ...row, readiness: rightsReadiness(row) })) };
   }
 }

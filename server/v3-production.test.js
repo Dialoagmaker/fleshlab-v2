@@ -44,3 +44,34 @@ test('creator production projection is ownership-scoped', async () => {
   assert.match(statement, /c\.user_id=\$1/);
   assert.equal(parameter, 'creator-user-a');
 });
+
+test('publishing readiness accepts consent and rights recorded against either production id or reference', async () => {
+  const queries = [];
+  const db = { query: async (sql, values) => {
+    queries.push({ sql, values });
+    const normalized = sql.toLowerCase();
+    if (normalized.includes('select * from v3_productions where id')) return { rowCount: 1, rows: [{ id: 'production-uuid', reference: 'shoot-2026-01', status: 'qa', brand_legacy_id: 'brand-1' }] };
+    if (normalized.includes('v3_production_participant_assignments')) return { rowCount: 1, rows: [{ creator_id: null, participation_status: 'confirmed' }] };
+    if (normalized.includes('v3_production_consent_records')) return { rowCount: 1, rows: [{ status: 'acknowledged' }] };
+    if (normalized.includes('v3_content_rights_records')) return { rowCount: 1, rows: [{ rights_status: 'active', commercial_exploitation_allowed: true }] };
+    if (normalized.includes('v3_production_assets')) return { rowCount: 2, rows: [{ asset_role: 'edited_master', processing_state: 'ready', visibility: 'public' }, { asset_role: 'thumbnail_candidate', processing_state: 'ready', visibility: 'public' }] };
+    if (normalized.includes('v3_production_qa_checks')) return { rowCount: 1, rows: [{ status: 'passed', severity: 'info' }] };
+    if (normalized.includes('v3_production_catalogue_links')) return { rowCount: 1, rows: [{}] };
+    return { rowCount: 0, rows: [] };
+  } };
+  const readiness = await new V3ProductionService(db).readiness('production-uuid');
+  assert.equal(readiness.publishable, true);
+  const consentQuery = queries.find(item => item.sql.includes('v3_production_consent_records'));
+  assert.deepEqual(consentQuery.values[0], ['production-uuid', 'shoot-2026-01']);
+  assert.match(consentQuery.sql, /ANY\(\$1::text\[\]\)/);
+});
+
+test('creator production projection includes linked performer assignments without cross-account leakage', async () => {
+  let statement = '';
+  const service = new V3ProductionService({ query: async sql => { statement = sql; return { rows: [] }; } });
+  await service.creatorProductions({ id: 'creator-user-a' });
+  assert.match(statement, /v3_creator_performer_links/);
+  assert.match(statement, /c\.user_id=\$1/);
+  assert.match(statement, /a\.creator_id=c\.id OR a\.performer_legacy_id=l\.performer_legacy_id/);
+  assert.match(statement, /a\.participation_status NOT IN/);
+});
