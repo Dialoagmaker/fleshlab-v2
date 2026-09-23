@@ -41,8 +41,23 @@ services:
       target: api
     command: ["node", "server/worker.js"]
     restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 8787
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: fleshlab
+      POSTGRES_USER: fleshlab
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN}
+      EARN_ORIGIN: ${EARN_ORIGIN}
+      COOKIE_SECURE: "true"
+      SESSION_SECRET_FILE: /run/secrets/session_secret
+      AZURE_STORAGE_ACCOUNT_URL: ${AZURE_STORAGE_ACCOUNT_URL}
+      PRIVATE_UPLOAD_CONTAINER: private-uploads
+      FLESHLAB_MEDIA_MIGRATION_ENABLED: "false"
     depends_on:
       postgres: { condition: service_healthy }
+    secrets: [postgres_password, session_secret]
   web:
     build:
       context: .
