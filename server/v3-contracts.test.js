@@ -38,6 +38,13 @@ test('contract creator administration reads canonical application and profile fi
   assert.doesNotMatch(statement, /c\.country/);
 });
 
+test('contract template selector accepts both UUID and template key without a UUID/text operator error', async () => {
+  const statements = [];
+  const db = { query: async sql => { statements.push(sql); return statements.length === 1 ? { rowCount: 1, rows: [{ id: 'template-id', template_key: 'content_rights_release' }] } : { rowCount: 0, rows: [] }; } };
+  await new V3ContractService(db).template('content_rights_release');
+  assert.match(statements[0], /id::text=\$1 OR template_key=\$1/);
+});
+
 test('Performer Services Agreement v2 migration contains the complete reviewable section set', () => {
   const migration = fs.readFileSync(new URL('../migrations/0015_performer_services_agreement_v2.sql', import.meta.url), 'utf8');
   for (const heading of Array.from({ length: 30 }, (_, index) => `${index + 1}. `)) assert.equal(migration.includes(heading), true, `missing section ${heading}`);
