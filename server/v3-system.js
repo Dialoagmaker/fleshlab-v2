@@ -12,14 +12,17 @@ export const SYSTEM_PERMISSIONS = [
   'system.read', 'system.users', 'system.roles', 'system.sessions',
   'system.settings', 'system.flags', 'system.integrations', 'system.audit',
   'system.diagnostics', 'system.backups',
-  'growth.read', 'commerce.read', 'commerce.execute'
+  'growth.read', 'growth.write', 'growth.campaigns', 'growth.assets', 'growth.publish',
+  'commerce.read', 'commerce.pricing', 'commerce.payments', 'commerce.settlements',
+  'commerce.payouts.review', 'commerce.payouts.approve', 'commerce.payouts.execute',
+  'commerce.providers', 'commerce.reconcile', 'commerce.execute'
 ];
 
 const STAFF_PERMISSIONS = new Set([
   'catalogue.read', 'creator.read', 'creator.review', 'contracts.read',
   'production.read', 'production.qa', 'system.read', 'system.roles',
   'system.audit', 'system.diagnostics', 'system.integrations',
-  'growth.read', 'commerce.read'
+  'growth.read', 'commerce.read', 'commerce.settlements', 'commerce.payouts.review', 'commerce.reconcile'
 ]);
 const ROLE_PERMISSIONS = Object.freeze({
   admin: new Set(SYSTEM_PERMISSIONS),

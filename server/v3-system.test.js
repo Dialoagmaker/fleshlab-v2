@@ -10,6 +10,10 @@ test('canonical roles preserve admin/staff boundaries and deny creator/customer 
   assert.deepEqual(permissionsFor({ role: 'customer' }), []);
   assert.throws(() => assertPermission({ role: 'performer' }, 'system.read'), { code: 'FORBIDDEN' });
   assert.equal(roleDefinitions().find(role => role.role === 'admin').permissions.includes('commerce.execute'), true);
+  assert.equal(hasPermission({ role: 'admin' }, 'commerce.payouts.execute'), true);
+  assert.equal(hasPermission({ role: 'staff' }, 'commerce.payouts.execute'), false);
+  assert.equal(hasPermission({ role: 'staff' }, 'commerce.read'), true);
+  assert.equal(hasPermission({ role: 'performer' }, 'commerce.read'), false);
 });
 
 test('system audit projection redacts secret-shaped metadata', async () => {
@@ -39,4 +43,3 @@ test('system settings never writes sensitive or read-only catalog entries', asyn
   const result = await service.updateSetting('public_support_email', { value: 'ops@example.test' }, { id: 'admin', role: 'admin' });
   assert.equal(result.value, 'ops@example.test');
 });
-
