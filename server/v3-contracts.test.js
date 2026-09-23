@@ -45,6 +45,18 @@ test('contract template selector accepts both UUID and template key without a UU
   assert.match(statements[0], /id::text=\$1 OR template_key=\$1/);
 });
 
+test('contract view audit uses the canonical template id foreign key', async () => {
+  const calls = [];
+  const db = { query: async (sql, values) => {
+    calls.push({ sql, values });
+    if (sql.startsWith('SELECT i.*')) return { rowCount: 1, rows: [{ id: 'contract-1', template_id: 'template-1', template_version_id: 'version-1', viewed_at: null, rendered_snapshot: 'draft' }] };
+    return { rowCount: 1, rows: [] };
+  } };
+  await new V3ContractService(db).instance('contract-1', { id: 'admin-1' }, { admin: true });
+  const event = calls.find(call => call.sql.includes('INSERT INTO v3_contract_events'));
+  assert.equal(event.values[1], 'template-1');
+});
+
 test('Performer Services Agreement v2 migration contains the complete reviewable section set', () => {
   const migration = fs.readFileSync(new URL('../migrations/0015_performer_services_agreement_v2.sql', import.meta.url), 'utf8');
   for (const heading of Array.from({ length: 30 }, (_, index) => `${index + 1}. `)) assert.equal(migration.includes(heading), true, `missing section ${heading}`);
