@@ -184,7 +184,7 @@ export class V3CreatorService {
         WHERE i.creator_id=$1 ORDER BY i.issued_at DESC`, [id]),
       this.db.query('SELECT l.performer_legacy_id,p.display_name,p.slug,p.status FROM v3_creator_performer_links l JOIN catalog_performers p ON p.legacy_id=l.performer_legacy_id WHERE l.creator_id=$1 ORDER BY p.display_name', [id]),
       this.db.query(`SELECT DISTINCT v.legacy_id,v.title,v.slug,v.status,v.v3_lifecycle,v.legacy_thumbnail_url FROM v3_creator_performer_links l JOIN catalog_video_performers x ON x.performer_legacy_id=l.performer_legacy_id JOIN catalog_videos v ON v.legacy_id=x.video_legacy_id WHERE l.creator_id=$1 ORDER BY v.title`, [id]),
-      this.db.query('SELECT id,kind,title,body,action_path,read_at,created_at FROM v3_creator_notifications WHERE creator_id=$1 ORDER BY created_at DESC LIMIT 20', [id]),
+      this.db.query('SELECT id,kind,title,body,action_path,action_state,completed_at,read_at,created_at FROM v3_creator_notifications WHERE creator_id=$1 ORDER BY created_at DESC LIMIT 20', [id]),
       self ? Promise.resolve({ rows: [] }) : this.history('creator.record', id),
       this.db.query('SELECT preferred_name,contact_email,contact_phone,locale,timezone,notification_preferences,updated_at FROM v3_creator_profiles WHERE creator_id=$1', [id])
     ]);

@@ -19,8 +19,21 @@ test('public video listing is server-filtered to published records and paginated
 });
 
 test('public media projection never exposes private or storage references', async () => {
-  const db = { query: async () => ({ rowCount: 1, rows: [{ id: 'a1', asset_type: 'thumbnail', legacy_url: 'https://cdn.example/thumb.jpg', processing_state: 'ready', visibility: 'public', storage_reference: 'private/key' }] }) };
-  const result = await new V3PublicService(db).media('a1');
-  assert.deepEqual(result, { id: 'a1', type: 'thumbnail', url: 'https://cdn.example/thumb.jpg', processing_state: 'ready' });
+  const id = '11111111-1111-4111-8111-111111111111';
+  const db = { query: async () => ({ rowCount: 1, rows: [{ id, asset_type: 'thumbnail', legacy_url: 'https://cdn.example/thumb.jpg', processing_state: 'ready', visibility: 'public', storage_reference: 'private/key' }] }) };
+  const result = await new V3PublicService(db).media(id);
+  assert.deepEqual(result, { id, type: 'thumbnail', url: 'https://cdn.example/thumb.jpg', processing_state: 'ready' });
   assert.equal('storage_reference' in result, false);
+});
+
+test('malformed public media ids are rejected before reaching PostgreSQL', async () => {
+  let queried = false;
+  const db = { query: async () => { queried = true; return { rowCount: 0, rows: [] }; } };
+  await assert.rejects(() => new V3PublicService(db).media('not-a-uuid'), { code: 'NOT_FOUND' });
+  assert.equal(queried, false);
+});
+
+test('valid missing public media ids return not found', async () => {
+  const db = { query: async () => ({ rowCount: 0, rows: [] }) };
+  await assert.rejects(() => new V3PublicService(db).media('11111111-1111-4111-8111-111111111111'), { code: 'NOT_FOUND' });
 });

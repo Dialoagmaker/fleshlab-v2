@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { contractInstanceStates, contractSigningEnabled, contractTemplateStates, renderPdf } from './v3-contracts.js';
+import { contractInstanceStates, contractSigningEnabled, contractTemplateStates, renderPdf, V3ContractService } from './v3-contracts.js';
 import { publishingReadiness, rightsReadiness } from './v3-consent.js';
 import { allocatePerformerPool, applyCarryForward, calculateRevenueShare, settlementPolicy } from './v3-compensation.js';
 
@@ -25,6 +25,17 @@ test('contract center does not expose signing through a feature flag', () => {
 test('contract creation remains a draft operation before legal approval', () => {
   assert.equal(contractInstanceStates.has('signed'), true);
   assert.equal(contractSigningEnabled, false);
+});
+
+test('contract creator administration reads canonical application and profile fields', async () => {
+  let statement = '';
+  const db = { query: async sql => { statement = sql; return { rowCount: 0, rows: [] }; } };
+  await new V3ContractService(db).creators('Ada');
+  assert.match(statement, /JOIN performer_applications a ON a\.id=c\.application_id/);
+  assert.match(statement, /LEFT JOIN v3_creator_profiles cp ON cp\.creator_id=c\.id/);
+  assert.match(statement, /a\.full_name/);
+  assert.doesNotMatch(statement, /c\.full_name/);
+  assert.doesNotMatch(statement, /c\.country/);
 });
 
 test('Performer Services Agreement v2 migration contains the complete reviewable section set', () => {

@@ -46,3 +46,19 @@ test('creator document upload remains unavailable rather than exposing storage i
 test('creator profile input accepts only structured private fields', () => {
   assert.equal(publicDocument({ file_name: 'id.pdf', storage_reference: 'secret' }).storage_reference, undefined);
 });
+
+test('creator actions project open notifications and preserve state fields', async () => {
+  const statements = [];
+  const db = { query: async (sql) => {
+    statements.push(sql);
+    if (sql.includes('FROM v3_creator_records')) return { rowCount: 1, rows: [{ id: 'creator-a', application_id: 'application-a', user_id: 'user-a', lifecycle: 'active', private_profile: {}, full_name: 'Ada', country: 'DE', application_status: 'approved' }] };
+    if (sql.includes('v3_creator_notifications')) return { rowCount: 2, rows: [
+      { id: 'open', kind: 'document_review', title: 'Review document', body: 'Review', action_path: '/v3/creator/documents', action_state: 'open', completed_at: null },
+      { id: 'done', kind: 'profile', title: 'Profile complete', body: 'Done', action_path: null, action_state: 'completed', completed_at: new Date().toISOString() }
+    ] };
+    return { rowCount: 0, rows: [] };
+  } };
+  const result = await new V3CreatorService(db).creator('creator-a', { actor: { id: 'user-a', role: 'performer' }, self: true });
+  assert.deepEqual(result.actions.map(item => item.id), ['open']);
+  assert.match(statements.find(sql => sql.includes('v3_creator_notifications')), /action_state/);
+});

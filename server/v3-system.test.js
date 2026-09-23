@@ -29,7 +29,7 @@ test('migration status reports legacy applied rows and pending migrations withou
   const service = new V3SystemService(db, {}, null, new URL('../migrations/', import.meta.url).pathname);
   const result = await service.migrations();
   const phase4 = result.records.find(item => item.version === '0025_phase4_production_integrity.sql');
-  assert.equal(phase4.status, 'applied_legacy');
+  assert.equal(phase4.status, 'LEGACY_APPLIED_CHECKSUM_UNAVAILABLE');
   assert.equal(result.records.some(item => item.version === '0026_v3_system_administration.sql' && item.status === 'pending'), true);
 });
 

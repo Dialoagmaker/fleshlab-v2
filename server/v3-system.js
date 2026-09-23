@@ -261,7 +261,7 @@ export class V3SystemService {
       const content = await fs.readFile(path.join(this.migrationDirectory, file));
       const checksum = crypto.createHash('sha256').update(content).digest('hex');
       const row = appliedByVersion.get(file);
-      records.push({ version: file, checksum, applied_checksum: row?.checksum || null, applied_at: row?.applied_at || null, status: row ? (row.checksum && row.checksum !== checksum ? 'checksum_mismatch' : row.checksum ? 'applied' : 'applied_legacy') : 'pending' });
+      records.push({ version: file, checksum, applied_checksum: row?.checksum || null, applied_at: row?.applied_at || null, status: row ? (row.checksum && row.checksum !== checksum ? 'checksum_mismatch' : row.checksum ? 'applied' : 'LEGACY_APPLIED_CHECKSUM_UNAVAILABLE') : 'pending' });
     }
     return { records, applied: records.filter(row => row.status.startsWith('applied')).length, pending: records.filter(row => row.status === 'pending').length, mismatched: records.filter(row => row.status === 'checksum_mismatch').length, latest: records.at(-1) || null };
   }
@@ -277,10 +277,12 @@ export class V3SystemService {
     checks.push({ key: 'storage', label: 'Private storage', state: storage.status, detail: storage.configured ? 'Configured storage readiness was checked without exposing credentials.' : 'Private storage is not configured.' });
     const jobs = await this.db.query(`SELECT
       (SELECT count(*)::int FROM v3_production_render_jobs WHERE status IN ('queued','running')) AS render_active,
+      (SELECT count(*)::int FROM v3_production_render_jobs WHERE status IN ('queued','running') AND updated_at < now() - interval '1 hour') AS render_stale,
       (SELECT count(*)::int FROM v3_production_render_jobs WHERE status='failed') AS render_failed,
       (SELECT count(*)::int FROM outbound_email_queue WHERE status='failed') AS email_failed`);
     const jobCounts = jobs.rows[0];
-    checks.push({ key: 'background_jobs', label: 'Background jobs', state: Number(jobCounts.render_failed || 0) || Number(jobCounts.email_failed || 0) ? 'degraded' : 'healthy', detail: `${jobCounts.render_active} rendering jobs active; ${jobCounts.render_failed} rendering failures; ${jobCounts.email_failed} email failures.` });
+    const jobDegraded = Number(jobCounts.render_failed || 0) || Number(jobCounts.email_failed || 0) || Number(jobCounts.render_stale || 0);
+    checks.push({ key: 'background_jobs', label: 'Background jobs', state: jobDegraded ? 'degraded' : 'healthy', detail: `${jobCounts.render_active} rendering jobs active; ${jobCounts.render_stale} stale rendering jobs; ${jobCounts.render_failed} rendering failures; ${jobCounts.email_failed} email failures.` });
     checks.push({ key: 'rendering', label: 'Rendering readiness', state: integrations.records.find(item => item.key === 'rendering')?.status || 'unknown', detail: 'Production render-job state is read from PostgreSQL.' });
     const publicData = await this.db.query("SELECT count(*)::int AS published FROM catalog_videos WHERE status='published' AND v3_lifecycle='published'");
     checks.push({ key: 'public_v3', label: 'Public V3', state: 'healthy', detail: `${publicData.rows[0].published} published V3 catalogue records are queryable.` });

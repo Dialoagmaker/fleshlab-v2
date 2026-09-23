@@ -89,6 +89,7 @@ export class V3PublicService {
   }
 
   async media(id) {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(id || ''))) throw new HttpError(404,'NOT_FOUND','Public media was not found.');
     const r = await this.db.query(`SELECT id,asset_type,legacy_url,processing_state,visibility FROM v3_media_assets WHERE id=$1`, [id]);
     if (!r.rowCount || r.rows[0].visibility !== 'public' || r.rows[0].processing_state !== 'ready') throw new HttpError(404,'NOT_FOUND','Public media was not found.');
     return publicAsset(r.rows[0]);
