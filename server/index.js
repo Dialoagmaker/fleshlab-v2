@@ -61,6 +61,12 @@ function sendBinary(res, status, bytes, headers = {}) {
   res.writeHead(status, { 'cache-control': 'private, no-store', 'x-content-type-options': 'nosniff', ...headers });
   res.end(bytes);
 }
+function sendPrivateStream(res, media) {
+  const safeName=String(media.file_name||'private-file').replace(/[^a-zA-Z0-9._-]/g,'_');
+  const headers={ 'content-type': media.content_type || 'application/octet-stream', 'content-disposition': `inline; filename=\"${safeName}\"`, 'cache-control':'private, no-store, max-age=0', 'x-content-type-options':'nosniff', 'referrer-policy':'no-referrer' }; if(media.contentLength>0) headers['content-length']=media.contentLength;
+  res.writeHead(200, headers);
+  media.stream.on('error',()=>res.destroy()); media.stream.pipe(res);
+}
 async function body(req, maximumBytes = 1024 * 1024) {
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
@@ -155,7 +161,9 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && /^\/api\/v3\/creator\/submissions\/[^/]+$/.test(url.pathname)) { const user=await auth.requireRole(req,['performer']); return send(res,200,await v3Submissions.detailForCreator(user,url.pathname.split('/').at(-1))); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/creator-submissions') { await auth.requireRole(req,['admin']); return send(res,200,await v3Submissions.adminList(Object.fromEntries(url.searchParams))); }
     if (req.method === 'GET' && /^\/api\/v3\/admin\/creator-submissions\/[^/]+$/.test(url.pathname)) { await auth.requireRole(req,['admin']); return send(res,200,await v3Submissions.adminDetail(url.pathname.split('/').at(-1))); }
+    if (req.method === 'GET' && /^\/api\/v3\/admin\/creator-submissions\/[^/]+\/assets\/[^/]+\/view$/.test(url.pathname)) { const user=await auth.requireRole(req,['admin']); return sendPrivateStream(res,await v3Submissions.streamAdminRead(user,url.pathname.split('/').at(-4),url.pathname.split('/').at(-2),url.searchParams.get('token'),req)); }
     if (req.method === 'POST' && /^\/api\/v3\/admin\/creator-submissions\/[^/]+\/assets\/[^/]+\/view$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); const parts=url.pathname.split('/'); return send(res,200,await v3Submissions.issueAdminRead(user,parts.at(-4),parts.at(-2),req)); }
+    if (req.method === 'GET' && /^\/api\/v3\/admin\/creator-submissions\/identity\/[^/]+\/view$/.test(url.pathname)) { const user=await auth.requireRole(req,['admin']); return sendPrivateStream(res,await v3Submissions.streamAdminIdentityRead(user,url.pathname.split('/').at(-2),url.searchParams.get('token'),req)); }
     if (req.method === 'POST' && /^\/api\/v3\/admin\/creator-submissions\/identity\/[^/]+\/view$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,200,await v3Submissions.issueAdminIdentityRead(user,url.pathname.split('/').at(-2),req)); }
     if (req.method === 'PATCH' && /^\/api\/v3\/admin\/creator-submissions\/identity\/[^/]+$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,200,await v3Submissions.reviewIdentity(url.pathname.split('/').at(-1),await body(req),user,req)); }
     if (req.method === 'POST' && /^\/api\/v3\/admin\/creator-submissions\/[^/]+\/adjustments$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); return send(res,201,await v3Submissions.addAdjustment(url.pathname.split('/').at(-2),await body(req),user,req)); }

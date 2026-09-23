@@ -33,6 +33,10 @@ export function createAzureBlob(config) {
     async uploadStream(objectKey, stream, contentType, options = {}) {
       const block = clientFor(options.container).getBlockBlobClient(objectKey);
       return block.uploadStream(stream, 4 * 1024 * 1024, 5, { blobHTTPHeaders: { blobContentType: contentType } });
+    },
+    async downloadStream(objectKey, options = {}) {
+      const result = await clientFor(options.container).getBlobClient(objectKey).download();
+      return { stream: result.readableStreamBody, contentType: result.contentType, contentLength: Number(result.contentLength || 0) };
     }
   };
 }
