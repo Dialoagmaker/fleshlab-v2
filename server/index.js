@@ -72,6 +72,7 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
     if (req.method === 'GET' && url.pathname === '/healthz') return send(res, 200, { status: 'ok', service: 'fleshlab-api', mediaMigrationEnabled: config.mediaMigrationEnabled });
+    if (req.method === 'GET' && url.pathname === '/api/v3/public/homepage') return send(res, 200, await v3Public.homepage(), { 'cache-control': 'public, max-age=60, stale-while-revalidate=300' });
     if (req.method === 'GET' && url.pathname === '/api/v3/public/catalogue') return send(res, 200, { videos: await v3Public.listVideos({ limit: 12 }), performers: await v3Public.performers({ limit: 12 }), brands: await v3Public.brands({ limit: 12 }) }, { 'cache-control': 'public, max-age=60, stale-while-revalidate=300' });
     if (req.method === 'GET' && url.pathname === '/api/v3/public/videos') return send(res, 200, await v3Public.listVideos(Object.fromEntries(url.searchParams)), { 'cache-control': 'public, max-age=60, stale-while-revalidate=300' });
     if (req.method === 'GET' && /^\/api\/v3\/public\/videos\/[^/]+$/.test(url.pathname)) return send(res, 200, await v3Public.video(decodeURIComponent(url.pathname.split('/').at(-1))), { 'cache-control': 'public, max-age=60, stale-while-revalidate=300' });
@@ -110,6 +111,8 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, await catalogue.adminSnapshot());
     }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/catalogue/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Catalogue.overview()); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/admin/catalogue/homepage') { const user=await auth.current(req); assertPermission(user,'catalogue.publish'); return send(res,200,await v3Public.adminHomepage()); }
+    if (req.method === 'PATCH' && url.pathname === '/api/v3/admin/catalogue/homepage') { requireSameOrigin(req,config); const user=await auth.current(req); assertPermission(user,'catalogue.publish'); return send(res,200,await v3Public.updateHomepage(await body(req),user,req)); }
     if (req.method === 'GET' && /^\/api\/v3\/admin\/catalogue\/(brands|performers|videos)$/.test(url.pathname)) { await auth.requireRole(req,['staff','admin']); const type=url.pathname.split('/').at(-1); return send(res,200,await v3Catalogue.list(type==='brands'?'brands':type==='performers'?'performers':'videos',Object.fromEntries(url.searchParams))); }
     if (req.method === 'GET' && /^\/api\/v3\/admin\/catalogue\/(brand|performer|video)\/[^/]+$/.test(url.pathname)) { await auth.requireRole(req,['staff','admin']); const parts=url.pathname.split('/'); return send(res,200,await v3Catalogue.detail(parts.at(-2),parts.at(-1))); }
     if (req.method === 'PATCH' && /^\/api\/v3\/admin\/catalogue\/(brand|performer|video)\/[^/]+$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['admin']); const parts=url.pathname.split('/'); return send(res,200,await v3Catalogue.update(parts.at(-2),parts.at(-1),await body(req),user)); }
