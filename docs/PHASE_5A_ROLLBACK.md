@@ -1,12 +1,12 @@
 # Phase 5A rollback record
 
-Deployment: `067f43b` (`Complete Phase 5A system administration`)
+Deployment: `3ba0ab9` (Phase 5A system administration with migration-ledger checksum fix)
 
 Production host: `fleshlab-prod-vm` in resource group `fleshlab-prod`
 
-Live release directory: `/opt/fleshlab/releases/fleshlab-067f43b`
+Live release directory: `/opt/fleshlab/releases/fleshlab-3ba0ab9`
 
-Previous release directory: `/opt/fleshlab/releases/fleshlab-118acb1`
+Previous release directory: `/opt/fleshlab/releases/fleshlab-067f43b`
 
 Database backup created before migration:
 
