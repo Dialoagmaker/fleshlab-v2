@@ -19,3 +19,11 @@ test('creator submission uploads are authenticated API streams, not browser-acce
   assert.match(api, /streamVideoUpload/);
   assert.match(api, /auth\.requireRole\(req,\['performer'\]\)/);
 });
+
+test('creator upload transport disables proxy buffering and reuses an unfinished matching upload', () => {
+  const nginx = fs.readFileSync(new URL('../infra/nginx.conf', import.meta.url), 'utf8');
+  assert.match(nginx, /client_max_body_size 20g/);
+  assert.match(nginx, /proxy_request_buffering off/);
+  assert.match(source, /submission\.video_upload_reused/);
+  assert.match(source, /a\.expected_byte_size=\$4/);
+});
