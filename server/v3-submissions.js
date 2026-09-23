@@ -62,7 +62,7 @@ export class V3SubmissionService {
     const prior = await this.db.query(`SELECT id,document_version FROM v3_creator_identity_documents WHERE creator_id=$1 AND document_type=$2 AND status <> 'replaced' ORDER BY document_version DESC LIMIT 1`, [creator.id, documentType]);
     if (prior.rowCount) await this.db.query(`UPDATE v3_creator_identity_documents SET status='replaced',updated_at=now() WHERE id=$1`, [prior.rows[0].id]);
     const row = await this.db.query(`INSERT INTO v3_creator_identity_documents(id,verification_id,creator_id,document_type,object_key,file_name,content_type,expected_byte_size,document_version,replaced_document_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`, [id, verification.rows[0].id, creator.id, documentType, objectKey, safe(input.file_name).slice(0,200) || 'identity-image', contentType, size, (prior.rows[0]?.document_version || 0) + 1, prior.rows[0]?.id || null]);
-    try { const upload_url = await this.blob.issueWriteUrl(objectKey, contentType); await this.audit(user, 'identity.upload_issued', 'identity_document', row.rows[0].id, null, { document_type: documentType }, request); return { document_id: row.rows[0].id, upload_url, expires_in_seconds: 900 }; } catch { await this.db.query(`DELETE FROM v3_creator_identity_documents WHERE id=$1`, [id]); throw new HttpError(503, 'PRIVATE_UPLOAD_UNAVAILABLE', 'Private identity storage is unavailable.'); }
+    try { await this.audit(user, 'identity.upload_issued', 'identity_document', row.rows[0].id, null, { document_type: documentType, transport: 'authenticated_stream' }, request); return { document_id: row.rows[0].id, upload_url: `/api/v3/creator/submissions/identity/documents/${row.rows[0].id}/upload`, expires_in_seconds: 900 }; } catch { await this.db.query(`DELETE FROM v3_creator_identity_documents WHERE id=$1`, [id]); throw new HttpError(503, 'PRIVATE_UPLOAD_UNAVAILABLE', 'Private identity storage is unavailable.'); }
   }
   async confirmIdentityUpload(user, id, request) {
     if (!uuid(id)) throw new HttpError(404, 'IDENTITY_DOCUMENT_NOT_FOUND', 'Identity document was not found.'); const creator = await this.creator(user);
@@ -79,13 +79,31 @@ export class V3SubmissionService {
     const media = await this.db.query(`INSERT INTO v3_media_assets(asset_type,mime_type,byte_size,processing_state,visibility) VALUES('source',$1,$2,'pending','private') RETURNING id`, [contentType,size]);
     const assetId = crypto.randomUUID(); const fileName=safe(input.file_name).replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,180)||'submission-video'; const objectKey=`creator-submissions/${creator.id}/${submission.rows[0].id}/${fileName}`;
     await this.db.query(`INSERT INTO v3_creator_submission_assets(id,submission_id,media_asset_id,asset_type,object_key,file_name,content_type,expected_byte_size) VALUES($1,$2,$3,'original_video',$4,$5,$6,$7)`, [assetId,submission.rows[0].id,media.rows[0].id,objectKey,fileName,contentType,size]);
-    try { const upload_url=await this.blob.issueWriteUrl(objectKey,contentType,{expiresInSeconds:1800}); await this.audit(user,'submission.video_upload_issued','creator_submission',submission.rows[0].id,null,{asset_type:'original_video'},request); return { submission_id:submission.rows[0].id,asset_id:assetId,upload_url,expires_in_seconds:1800 }; } catch (e) { await this.db.query(`UPDATE v3_creator_submissions SET status='cancelled',rejection_reason='PRIVATE_UPLOAD_UNAVAILABLE' WHERE id=$1`,[submission.rows[0].id]); throw new HttpError(503,'PRIVATE_UPLOAD_UNAVAILABLE','Private submission storage is unavailable.'); }
+    try { await this.audit(user,'submission.video_upload_issued','creator_submission',submission.rows[0].id,null,{asset_type:'original_video',transport:'authenticated_stream'},request); return { submission_id:submission.rows[0].id,asset_id:assetId,upload_url:`/api/v3/creator/submissions/${submission.rows[0].id}/upload`,expires_in_seconds:1800 }; } catch (e) { await this.db.query(`UPDATE v3_creator_submissions SET status='cancelled',rejection_reason='PRIVATE_UPLOAD_UNAVAILABLE' WHERE id=$1`,[submission.rows[0].id]); throw new HttpError(503,'PRIVATE_UPLOAD_UNAVAILABLE','Private submission storage is unavailable.'); }
   }
   async confirmVideoUpload(user, id, request) {
     if (!uuid(id)) throw new HttpError(404,'SUBMISSION_NOT_FOUND','Submission was not found.'); const creator=await this.creator(user);
     const row=await this.db.query(`SELECT s.id,s.creator_id,a.id AS asset_id,a.object_key,a.expected_byte_size FROM v3_creator_submissions s JOIN v3_creator_submission_assets a ON a.submission_id=s.id AND a.asset_type='original_video' WHERE s.id=$1 AND s.creator_id=$2 AND a.status='issued'`,[id,creator.id]); if(!row.rowCount) throw new HttpError(404,'SUBMISSION_NOT_FOUND','Submission was not found.');
     const object=await this.blob.verifyObject(row.rows[0].object_key); if(!object || object.byteSize!==Number(row.rows[0].expected_byte_size)) throw new HttpError(422,'PRIVATE_UPLOAD_INVALID','The uploaded video could not be verified.');
     await this.db.query(`UPDATE v3_creator_submission_assets SET status='uploaded',actual_byte_size=$2,etag=$3,updated_at=now() WHERE id=$1`,[row.rows[0].asset_id,object.byteSize,object.etag]); await this.db.query(`UPDATE v3_creator_submissions SET status='processing',updated_at=now() WHERE id=$1`,[id]); await this.audit(user,'submission.video_upload_confirmed','creator_submission',id,null,{byte_size:object.byteSize},request); return { id,status:'processing' };
+  }
+  async streamIdentityUpload(user, id, request) {
+    if (!uuid(id)) throw new HttpError(404, 'IDENTITY_DOCUMENT_NOT_FOUND', 'Identity document was not found.');
+    const creator = await this.creator(user); const contentType = safe(request.headers['content-type']).split(';')[0].toLowerCase();
+    const row = await this.db.query(`SELECT * FROM v3_creator_identity_documents WHERE id=$1 AND creator_id=$2 AND status='issued'`, [id, creator.id]);
+    if (!row.rowCount || contentType !== row.rows[0].content_type) throw new HttpError(404, 'IDENTITY_DOCUMENT_NOT_FOUND', 'Identity document was not found.');
+    if (Number(request.headers['content-length']) !== Number(row.rows[0].expected_byte_size)) throw new HttpError(422, 'PRIVATE_UPLOAD_INVALID', 'The uploaded identity file size does not match the authorized file.');
+    await this.blob.uploadStream(row.rows[0].object_key, request, contentType); await this.audit(user, 'identity.upload_streamed', 'identity_document', id, null, { byte_size: row.rows[0].expected_byte_size }, request);
+    return { id, uploaded: true };
+  }
+  async streamVideoUpload(user, id, request) {
+    if (!uuid(id)) throw new HttpError(404, 'SUBMISSION_NOT_FOUND', 'Submission was not found.');
+    const creator = await this.creator(user); const contentType = safe(request.headers['content-type']).split(';')[0].toLowerCase();
+    const row = await this.db.query(`SELECT s.id,a.object_key,a.content_type,a.expected_byte_size FROM v3_creator_submissions s JOIN v3_creator_submission_assets a ON a.submission_id=s.id AND a.asset_type='original_video' WHERE s.id=$1 AND s.creator_id=$2 AND a.status='issued'`, [id, creator.id]);
+    if (!row.rowCount || contentType !== row.rows[0].content_type) throw new HttpError(404, 'SUBMISSION_NOT_FOUND', 'Submission was not found.');
+    if (Number(request.headers['content-length']) !== Number(row.rows[0].expected_byte_size)) throw new HttpError(422, 'PRIVATE_UPLOAD_INVALID', 'The uploaded video size does not match the authorized file.');
+    await this.blob.uploadStream(row.rows[0].object_key, request, contentType); await this.audit(user, 'submission.video_upload_streamed', 'creator_submission', id, null, { byte_size: row.rows[0].expected_byte_size }, request);
+    return { id, uploaded: true };
   }
   async rights(user,id,input,request) {
     if(!uuid(id)) throw new HttpError(404,'SUBMISSION_NOT_FOUND','Submission was not found.'); const creator=await this.creator(user); const submission=await this.db.query(`SELECT id,status FROM v3_creator_submissions WHERE id=$1 AND creator_id=$2`,[id,creator.id]); if(!submission.rowCount||TERMINAL.has(submission.rows[0].status)) throw new HttpError(404,'SUBMISSION_NOT_FOUND','Submission was not found.');

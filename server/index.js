@@ -29,7 +29,7 @@ import { V3SubmissionService } from './v3-submissions.js';
 
 const config = loadConfig();
 const pool = new Pool({ connectionString: config.databaseUrl || undefined });
-const unavailableBlob = { issueWriteUrl: async () => { throw unavailable('Private upload storage'); }, verifyObject: async () => null };
+const unavailableBlob = { issueWriteUrl: async () => { throw unavailable('Private upload storage'); }, verifyObject: async () => null, uploadStream: async () => { throw unavailable('Private upload storage'); } };
 const recruiting = new RecruitingService(pool, createAzureBlob(config) || unavailableBlob);
 const auth = new AuthService(pool, config);
 const dashboards = new DashboardService(pool);
@@ -144,8 +144,10 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'PATCH' && /^\/api\/v3\/admin\/creators\/records\/[^/]+\/documents\/[^/]+$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['staff','admin']); const parts=url.pathname.split('/'); return send(res,200,await v3Creators.reviewDocument(parts.at(-3),parts.at(-1),await body(req),user)); }
     if (req.method === 'GET' && url.pathname === '/api/v3/creator/submissions/identity') { const user=await auth.requireRole(req,['performer']); return send(res,200,await v3Submissions.identity(user)); }
     if (req.method === 'POST' && url.pathname === '/api/v3/creator/submissions/identity/upload') { requireSameOrigin(req,config); const user=await auth.requireRole(req,['performer']); return send(res,201,await v3Submissions.issueIdentityUpload(user,await body(req),req)); }
+    if (req.method === 'PUT' && /^\/api\/v3\/creator\/submissions\/identity\/documents\/[^/]+\/upload$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['performer']); return send(res,200,await v3Submissions.streamIdentityUpload(user,url.pathname.split('/').at(-2),req)); }
     if (req.method === 'POST' && /^\/api\/v3\/creator\/submissions\/identity\/documents\/[^/]+\/confirm$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['performer']); return send(res,200,await v3Submissions.confirmIdentityUpload(user,url.pathname.split('/').at(-2),req)); }
     if (req.method === 'POST' && url.pathname === '/api/v3/creator/submissions/upload') { requireSameOrigin(req,config); const user=await auth.requireRole(req,['performer']); return send(res,201,await v3Submissions.issueVideoUpload(user,await body(req),req)); }
+    if (req.method === 'PUT' && /^\/api\/v3\/creator\/submissions\/[^/]+\/upload$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['performer']); return send(res,200,await v3Submissions.streamVideoUpload(user,url.pathname.split('/').at(-2),req)); }
     if (req.method === 'POST' && /^\/api\/v3\/creator\/submissions\/[^/]+\/confirm$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['performer']); return send(res,200,await v3Submissions.confirmVideoUpload(user,url.pathname.split('/').at(-2),req)); }
     if (req.method === 'PUT' && /^\/api\/v3\/creator\/submissions\/[^/]+\/rights$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['performer']); return send(res,200,await v3Submissions.rights(user,url.pathname.split('/').at(-2),await body(req),req)); }
     if (req.method === 'POST' && /^\/api\/v3\/creator\/submissions\/[^/]+\/submit$/.test(url.pathname)) { requireSameOrigin(req,config); const user=await auth.requireRole(req,['performer']); return send(res,200,await v3Submissions.submit(user,url.pathname.split('/').at(-2),req)); }

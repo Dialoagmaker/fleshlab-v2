@@ -29,6 +29,10 @@ export function createAzureBlob(config) {
     },
     async verifyObject(objectKey, options = {}) {
       try { const properties = await clientFor(options.container).getBlobClient(objectKey).getProperties(); return { byteSize: Number(properties.contentLength), etag: properties.etag }; } catch { return null; }
+    },
+    async uploadStream(objectKey, stream, contentType, options = {}) {
+      const block = clientFor(options.container).getBlockBlobClient(objectKey);
+      return block.uploadStream(stream, 4 * 1024 * 1024, 5, { blobHTTPHeaders: { blobContentType: contentType } });
     }
   };
 }
