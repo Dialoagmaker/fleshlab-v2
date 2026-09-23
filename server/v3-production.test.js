@@ -43,6 +43,7 @@ test('creator production projection is ownership-scoped', async () => {
   await service.creatorProductions({ id: 'creator-user-a' });
   assert.match(statement, /c\.user_id=\$1/);
   assert.equal(parameter, 'creator-user-a');
+  assert.match(statement, /p\.updated_at AS production_updated_at/);
 });
 
 test('publishing readiness accepts consent and rights recorded against either production id or reference', async () => {
