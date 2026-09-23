@@ -263,7 +263,7 @@ export class V3SystemService {
       const row = appliedByVersion.get(file);
       records.push({ version: file, checksum, applied_checksum: row?.checksum || null, applied_at: row?.applied_at || null, status: row ? (row.checksum && row.checksum !== checksum ? 'checksum_mismatch' : row.checksum ? 'applied' : 'LEGACY_APPLIED_CHECKSUM_UNAVAILABLE') : 'pending' });
     }
-    return { records, applied: records.filter(row => row.status.startsWith('applied')).length, pending: records.filter(row => row.status === 'pending').length, mismatched: records.filter(row => row.status === 'checksum_mismatch').length, latest: records.at(-1) || null };
+    return { records, applied: records.filter(row => row.status === 'applied' || row.status === 'LEGACY_APPLIED_CHECKSUM_UNAVAILABLE').length, pending: records.filter(row => row.status === 'pending').length, mismatched: records.filter(row => row.status === 'checksum_mismatch').length, latest: records.at(-1) || null };
   }
 
   async health() {
