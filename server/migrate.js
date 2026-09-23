@@ -28,7 +28,8 @@ for (const file of files) {
   try {
     await client.query('BEGIN');
     await client.query(sql);
-    if (hasChecksum) await client.query('INSERT INTO schema_migrations(version,checksum) VALUES($1,$2)', [file, checksum]);
+    const checksumNow = hasChecksum || (await client.query(`SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='schema_migrations' AND column_name='checksum'`)).rowCount > 0;
+    if (checksumNow) await client.query('INSERT INTO schema_migrations(version,checksum) VALUES($1,$2)', [file, checksum]);
     else await client.query('INSERT INTO schema_migrations(version) VALUES($1)', [file]);
     await client.query('COMMIT');
   } catch (error) { await client.query('ROLLBACK'); throw error; } finally { client.release(); }
