@@ -34,3 +34,18 @@ The temporary firewall rule attempted during artifact upload was removed; the
 storage account remains `Deny` by default. The deployed release was prepared
 from the current production revision using a verified compressed Git diff when
 the artifact store rejected the authenticated upload.
+
+## Main brand homepage review release — 2026-09-23
+
+- Production release: `/opt/fleshlab/releases/fleshlab-brand-e0435b1`
+- Application commit: `e0435b1` (`Add dedicated V3 brand homepage route`)
+- Pre-release backup: `/opt/fleshlab/backups/phase6a-brand-home-pre-e0435b1-20260923-205104.sql.gz`
+- Immediate rollback release: `/opt/fleshlab/releases/fleshlab-earn-848aa0a`
+
+This is a web-only release: no migration, data mutation, storage change, DNS
+change, or root-domain routing change was made. To roll back, retain the
+protected runtime environment, change to the rollback release, run
+`docker compose build web`, then `docker compose up -d --no-build
+--force-recreate web`. Verify `/v3/home`, `/v3/`, `earn.fleshlab.online`, and
+the V2 root afterwards. Do not restore the database for this application-only
+rollback.
