@@ -105,7 +105,7 @@ export class AuthService {
     return { reset: true };
   }
 
-  async login(input, remoteAddress) {
+  async login(input, remoteAddress, requestMeta = {}) {
     const address = email(input.email);
     const password = String(input.password || '');
     await this.limit(`login:${remoteAddress}`, 10);
@@ -113,7 +113,7 @@ export class AuthService {
     const user = result.rows[0];
     if (!user || !verifyPassword(password, user.password_hash) || user.account_status !== 'active') throw new HttpError(401, 'INVALID_LOGIN', 'Email or password is incorrect.');
     const raw = crypto.randomBytes(32).toString('base64url');
-    await this.db.query(`INSERT INTO web_sessions(user_id,token_hash,expires_at) VALUES($1,$2,now() + interval '14 days')`, [user.id, hashToken(this.config.sessionSecret, raw)]);
+    await this.db.query(`INSERT INTO web_sessions(user_id,token_hash,expires_at,user_agent,ip_address) VALUES($1,$2,now() + interval '14 days',$3,$4)`, [user.id, hashToken(this.config.sessionSecret, raw), String(requestMeta.userAgent || '').slice(0, 512) || null, remoteAddress || null]);
     return { user: serializeUser(user), cookie: sessionCookie(raw, this.config.cookieSecure) };
   }
 

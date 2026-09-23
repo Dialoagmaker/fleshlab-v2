@@ -23,6 +23,7 @@ import { V3ConsentService } from './v3-consent.js';
 import { V3CompensationService } from './v3-compensation.js';
 import { V3PublicService } from './v3-public.js';
 import { V3ProductionService } from './v3-production.js';
+import { V3SystemService, assertPermission, roleDefinitions } from './v3-system.js';
 
 const config = loadConfig();
 const pool = new Pool({ connectionString: config.databaseUrl || undefined });
@@ -46,6 +47,7 @@ const v3Consent = new V3ConsentService(pool);
 const v3Compensation = new V3CompensationService(pool);
 const v3Public = new V3PublicService(pool);
 const v3Production = new V3ProductionService(pool);
+const v3System = new V3SystemService(pool, config, createAzureBlob(config) || null);
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', ...headers });
@@ -89,7 +91,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/v1/auth/register') { requireSameOrigin(req, config); return send(res, 201, await auth.register(await body(req), req.socket.remoteAddress)); }
     if (req.method === 'POST' && url.pathname === '/api/v1/auth/login') {
       requireSameOrigin(req, config);
-      const result = await auth.login(await body(req), req.socket.remoteAddress);
+      const result = await auth.login(await body(req), req.socket.remoteAddress, { userAgent: req.headers['user-agent'] });
       return send(res, 200, result.user, { 'set-cookie': result.cookie });
     }
     if (req.method === 'POST' && url.pathname === '/api/v1/auth/verify-email') { requireSameOrigin(req, config); return send(res, 200, await auth.verifyEmail(await body(req))); }
@@ -182,7 +184,27 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && /^\/api\/v3\/admin\/production\/consent\/[^/]+$/.test(url.pathname)) { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Consent.production(url.pathname.split('/').at(-1))); }
     if (req.method === 'GET' && /^\/api\/v3\/admin\/production\/rights\/[^/]+$/.test(url.pathname)) { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Consent.rights(url.pathname.split('/').at(-1),url.searchParams.get('content_id'))); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/growth/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Operations.growth()); }
-    if (req.method === 'GET' && url.pathname === '/api/v3/admin/system/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Operations.system()); }
+    if (url.pathname.startsWith('/api/v3/admin/system')) {
+      const user = await auth.current(req);
+      if (req.method === 'GET' && url.pathname === '/api/v3/admin/system/overview') { assertPermission(user, 'system.read'); return send(res, 200, await v3System.overview()); }
+      if (req.method === 'GET' && url.pathname === '/api/v3/admin/system/users') { assertPermission(user, 'system.users'); return send(res, 200, await v3System.users(Object.fromEntries(url.searchParams))); }
+      if (req.method === 'GET' && /^\/api\/v3\/admin\/system\/users\/[^/]+$/.test(url.pathname)) { assertPermission(user, 'system.users'); return send(res, 200, await v3System.user(url.pathname.split('/').at(-1))); }
+      if (req.method === 'PATCH' && /^\/api\/v3\/admin\/system\/users\/[^/]+$/.test(url.pathname)) { requireSameOrigin(req, config); assertPermission(user, 'system.users'); return send(res, 200, await v3System.updateUser(url.pathname.split('/').at(-1), await body(req), user, req)); }
+      if (req.method === 'GET' && url.pathname === '/api/v3/admin/system/roles') { assertPermission(user, 'system.roles'); return send(res, 200, { roles: roleDefinitions() }); }
+      if (req.method === 'GET' && url.pathname === '/api/v3/admin/system/sessions') { assertPermission(user, 'system.sessions'); return send(res, 200, await v3System.sessions({ includeExpired: url.searchParams.get('include_expired') === 'true' })); }
+      if (req.method === 'POST' && /^\/api\/v3\/admin\/system\/sessions\/[^/]+\/revoke$/.test(url.pathname)) { requireSameOrigin(req, config); assertPermission(user, 'system.sessions'); return send(res, 200, await v3System.revokeSession(url.pathname.split('/').at(-2), user, req)); }
+      if (req.method === 'GET' && url.pathname === '/api/v3/admin/system/settings') { assertPermission(user, 'system.settings'); return send(res, 200, { records: await v3System.settings() }); }
+      if (req.method === 'PATCH' && /^\/api\/v3\/admin\/system\/settings\/[^/]+$/.test(url.pathname)) { requireSameOrigin(req, config); assertPermission(user, 'system.settings'); return send(res, 200, await v3System.updateSetting(decodeURIComponent(url.pathname.split('/').at(-1)), await body(req), user, req)); }
+      if (req.method === 'GET' && url.pathname === '/api/v3/admin/system/flags') { assertPermission(user, 'system.flags'); return send(res, 200, await v3System.flags(url.searchParams.get('environment') || 'all')); }
+      if (req.method === 'PATCH' && /^\/api\/v3\/admin\/system\/flags\/[^/]+$/.test(url.pathname)) { requireSameOrigin(req, config); assertPermission(user, 'system.flags'); return send(res, 200, await v3System.updateFlag(decodeURIComponent(url.pathname.split('/').at(-1)), await body(req), user, req)); }
+      if (req.method === 'GET' && url.pathname === '/api/v3/admin/system/integrations') { assertPermission(user, 'system.integrations'); return send(res, 200, await v3System.integrations()); }
+      if (req.method === 'POST' && /^\/api\/v3\/admin\/system\/integrations\/[^/]+\/check$/.test(url.pathname)) { requireSameOrigin(req, config); assertPermission(user, 'system.integrations'); return send(res, 200, await v3System.checkIntegration(url.pathname.split('/').at(-2), { actor: user, request: req })); }
+      if (req.method === 'GET' && url.pathname === '/api/v3/admin/system/health') { assertPermission(user, 'system.read'); return send(res, 200, await v3System.health()); }
+      if (req.method === 'GET' && url.pathname === '/api/v3/admin/system/migrations') { assertPermission(user, 'system.read'); return send(res, 200, await v3System.migrations()); }
+      if (req.method === 'GET' && url.pathname === '/api/v3/admin/system/audit') { assertPermission(user, 'system.audit'); return send(res, 200, await v3System.auditLog(Object.fromEntries(url.searchParams))); }
+      if (req.method === 'GET' && url.pathname === '/api/v3/admin/system/diagnostics') { assertPermission(user, 'system.diagnostics'); return send(res, 200, await v3System.diagnostics()); }
+      if (req.method === 'GET' && url.pathname === '/api/v3/admin/system/backups') { assertPermission(user, 'system.backups'); return send(res, 200, await v3System.backups()); }
+    }
     if (req.method === 'GET' && /^\/api\/v1\/admin\/exports\/(?:all|Brand|Performer|Video|VideoPerformer)$/i.test(url.pathname)) {
       await auth.requireRole(req, ['admin']);
       return send(res, 200, await dataExports.exports(url.pathname.split('/').at(-1)));

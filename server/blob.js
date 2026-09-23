@@ -7,6 +7,9 @@ export function createAzureBlob(config) {
   const service = new BlobServiceClient(config.storageAccountUrl, credential);
   const container = service.getContainerClient(config.uploadContainer);
   return {
+    async health() {
+      try { await container.exists(); return { healthy: true }; } catch { return { healthy: false }; }
+    },
     async issueWriteUrl(objectKey, contentType) {
       const startsOn = new Date(Date.now() - 60_000);
       const expiresOn = new Date(Date.now() + 15 * 60_000);
