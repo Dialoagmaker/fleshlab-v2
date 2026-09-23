@@ -6,26 +6,29 @@ export function createAzureBlob(config) {
   const credential = new DefaultAzureCredential();
   const service = new BlobServiceClient(config.storageAccountUrl, credential);
   const container = service.getContainerClient(config.uploadContainer);
+  const clientFor = (containerName = config.uploadContainer) => service.getContainerClient(containerName);
   return {
     async health() {
       try { await container.exists(); return { healthy: true }; } catch { return { healthy: false }; }
     },
-    async issueWriteUrl(objectKey, contentType) {
+    async issueWriteUrl(objectKey, contentType, options = {}) {
+      const target = clientFor(options.container);
       const startsOn = new Date(Date.now() - 60_000);
-      const expiresOn = new Date(Date.now() + 15 * 60_000);
+      const expiresOn = new Date(Date.now() + (options.expiresInSeconds || 900) * 1000);
       const delegation = await service.getUserDelegationKey(startsOn, expiresOn);
-      const sas = generateBlobSASQueryParameters({ containerName: container.containerName, blobName: objectKey, permissions: BlobSASPermissions.parse('cw'), startsOn, expiresOn, protocol: SASProtocol.Https, contentType }, delegation, service.accountName).toString();
-      return `${container.getBlockBlobClient(objectKey).url}?${sas}`;
+      const sas = generateBlobSASQueryParameters({ containerName: target.containerName, blobName: objectKey, permissions: BlobSASPermissions.parse('cw'), startsOn, expiresOn, protocol: SASProtocol.Https, contentType }, delegation, service.accountName).toString();
+      return `${target.getBlockBlobClient(objectKey).url}?${sas}`;
     },
-    async issueReadUrl(objectKey) {
+    async issueReadUrl(objectKey, options = {}) {
+      const target = clientFor(options.container);
       const startsOn = new Date(Date.now() - 60_000);
-      const expiresOn = new Date(Date.now() + 5 * 60_000);
+      const expiresOn = new Date(Date.now() + (options.expiresInSeconds || 300) * 1000);
       const delegation = await service.getUserDelegationKey(startsOn, expiresOn);
-      const sas = generateBlobSASQueryParameters({ containerName: container.containerName, blobName: objectKey, permissions: BlobSASPermissions.parse('r'), startsOn, expiresOn, protocol: SASProtocol.Https }, delegation, service.accountName).toString();
-      return `${container.getBlobClient(objectKey).url}?${sas}`;
+      const sas = generateBlobSASQueryParameters({ containerName: target.containerName, blobName: objectKey, permissions: BlobSASPermissions.parse('r'), startsOn, expiresOn, protocol: SASProtocol.Https }, delegation, service.accountName).toString();
+      return `${target.getBlobClient(objectKey).url}?${sas}`;
     },
-    async verifyObject(objectKey) {
-      try { const properties = await container.getBlobClient(objectKey).getProperties(); return { byteSize: Number(properties.contentLength), etag: properties.etag }; } catch { return null; }
+    async verifyObject(objectKey, options = {}) {
+      try { const properties = await clientFor(options.container).getBlobClient(objectKey).getProperties(); return { byteSize: Number(properties.contentLength), etag: properties.etag }; } catch { return null; }
     }
   };
 }

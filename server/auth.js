@@ -5,7 +5,7 @@ const email = (value) => String(value || '').trim().toLowerCase();
 const hashToken = (secret, value) => crypto.createHmac('sha256', secret).update(value).digest('hex');
 const serializeUser = (user) => ({ id: user.id, email: user.email, role: user.role, account_status: user.account_status });
 
-function passwordHash(password) {
+export function passwordHash(password) {
   const salt = crypto.randomBytes(16).toString('base64url');
   const derived = crypto.scryptSync(password, salt, 64).toString('base64url');
   return `scrypt$${salt}$${derived}`;
@@ -144,5 +144,5 @@ export class AuthService {
 
 export function requireSameOrigin(req, config) {
   const origin = req.headers.origin;
-  if (origin && origin !== config.publicOrigin) throw new HttpError(403, 'ORIGIN_REJECTED', 'Cross-origin state changes are not allowed.');
+  if (origin && !(config.publicOrigins || [config.publicOrigin]).includes(origin)) throw new HttpError(403, 'ORIGIN_REJECTED', 'Cross-origin state changes are not allowed.');
 }

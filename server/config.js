@@ -17,6 +17,7 @@ export function loadConfig(env = process.env) {
     port: Number(env.PORT || 8787),
     databaseUrl,
     publicOrigin: env.PUBLIC_ORIGIN || 'http://localhost:5173',
+    publicOrigins: [env.PUBLIC_ORIGIN || 'http://localhost:5173', env.EARN_ORIGIN].filter(Boolean),
     sessionSecret: sessionSecret || 'local-development-only-not-for-production',
     cookieSecure: env.COOKIE_SECURE === 'true',
     uploadContainer: env.PRIVATE_UPLOAD_CONTAINER || 'private-uploads',
