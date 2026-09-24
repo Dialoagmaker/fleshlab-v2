@@ -73,6 +73,7 @@ services:
     ports: ["443:443"]
     volumes:
       - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+      - /opt/fleshlab/secrets/origin-ca:/etc/caddy/certs:ro
       - caddy-data:/data
       - caddy-config:/config
     depends_on: [web]

@@ -6,9 +6,9 @@ workers_dev = false
 
 # These are the entire production surface: V2 retains fleshlab.online/*.
 [[routes]]
-pattern = "https://fleshlab.online/v3/*"
+pattern = "fleshlab.online/v3/*"
 zone_id = "bbd914f59dc4b3ce2e61df679203e1b3"
 
 [[routes]]
-pattern = "https://fleshlab.online/api/v3/*"
+pattern = "fleshlab.online/api/v3/*"
 zone_id = "bbd914f59dc4b3ce2e61df679203e1b3"

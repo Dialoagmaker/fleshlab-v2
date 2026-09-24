@@ -7,7 +7,7 @@ test('main-domain V3 edge router is limited to V3 routes and keeps a reversible 
   const config = await fs.readFile(new URL('../infra/wrangler.v3-path-router.toml', import.meta.url), 'utf8');
   assert.match(source, /https:\/\/earn\.fleshlab\.online/);
   assert.match(source, /host-only/);
-  assert.match(config, /fleshlab\.online\/v3\*/);
+  assert.match(config, /fleshlab\.online\/v3\/\*/);
   assert.match(config, /fleshlab\.online\/api\/v3\/\*/);
-  assert.match(config, /Never attach the worker to fleshlab\.online\/\*/);
+  assert.doesNotMatch(config, /pattern\s*=\s*"fleshlab\.online\/\*"/);
 });

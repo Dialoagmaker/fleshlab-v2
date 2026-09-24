@@ -1,17 +1,49 @@
-{$PUBLIC_HOST}, {$EARN_HOST} {
-  encode zstd gzip
-  header {
-    Strict-Transport-Security "max-age=31536000; includeSubDomains"
-    X-Content-Type-Options "nosniff"
-    X-Frame-Options "DENY"
-    Referrer-Policy "strict-origin-when-cross-origin"
-    Permissions-Policy "camera=(), microphone=(), geolocation=()"
-    Content-Security-Policy "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://fleshlabprod233ab.blob.core.windows.net; worker-src 'self' blob:"
-  }
-  handle /healthz {
-    reverse_proxy api:8787
-  }
-  handle {
-    reverse_proxy web:8080
-  }
+fleshlab.online {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://fleshlabprod233ab.blob.core.windows.net; worker-src 'self' blob:"
+	}
+	tls /etc/caddy/certs/fleshlab.online.crt /etc/caddy/certs/fleshlab.online.key
+
+	@v3 path /v3 /v3/* /api/v3 /api/v3/*
+	handle @v3 {
+		reverse_proxy https://fleshlab-test-233ab.eastus.cloudapp.azure.com {
+			header_up Host fleshlab-test-233ab.eastus.cloudapp.azure.com
+			transport http {
+				tls_server_name fleshlab-test-233ab.eastus.cloudapp.azure.com
+			}
+		}
+	}
+
+	handle {
+		reverse_proxy https://216.24.57.1 {
+			header_up Host fleshlab.online
+			transport http {
+				tls_server_name fleshlab.online
+			}
+		}
+	}
+}
+
+{$EARN_HOST} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://fleshlabprod233ab.blob.core.windows.net; worker-src 'self' blob:"
+	}
+	handle /healthz {
+		reverse_proxy api:8787
+	}
+	handle {
+		reverse_proxy web:8080
+	}
 }
