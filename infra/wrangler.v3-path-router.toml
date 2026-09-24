@@ -1,0 +1,9 @@
+name = "fleshlab-v3-path-router"
+main = "cloudflare-v3-path-router.js"
+compatibility_date = "2026-09-24"
+
+# Production routes are intentionally not declared here because an account ID
+# is supplied by the authenticated Cloudflare deployment context. Attach only:
+# - fleshlab.online/v3*
+# - fleshlab.online/api/v3/*
+# Never attach the worker to fleshlab.online/*; V2 owns the root route.
