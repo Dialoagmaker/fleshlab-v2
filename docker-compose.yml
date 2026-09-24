@@ -26,6 +26,8 @@ services:
       POSTGRES_USER: fleshlab
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
       PUBLIC_ORIGIN: ${PUBLIC_ORIGIN}
+      ADMIN_ORIGIN: ${ADMIN_ORIGIN}
+      PERFORMER_ORIGIN: ${PERFORMER_ORIGIN}
       EARN_ORIGIN: ${EARN_ORIGIN}
       COOKIE_SECURE: "true"
       SESSION_SECRET_FILE: /run/secrets/session_secret
@@ -49,6 +51,8 @@ services:
       POSTGRES_USER: fleshlab
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
       PUBLIC_ORIGIN: ${PUBLIC_ORIGIN}
+      ADMIN_ORIGIN: ${ADMIN_ORIGIN}
+      PERFORMER_ORIGIN: ${PERFORMER_ORIGIN}
       EARN_ORIGIN: ${EARN_ORIGIN}
       COOKIE_SECURE: "true"
       SESSION_SECRET_FILE: /run/secrets/session_secret
@@ -69,6 +73,8 @@ services:
     restart: unless-stopped
     environment:
       PUBLIC_HOST: ${PUBLIC_HOST}
+      ADMIN_HOST: ${ADMIN_HOST}
+      PERFORMER_HOST: ${PERFORMER_HOST}
       EARN_HOST: ${EARN_HOST}
     ports: ["443:443"]
     volumes:

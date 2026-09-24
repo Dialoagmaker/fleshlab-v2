@@ -17,7 +17,15 @@ export function loadConfig(env = process.env) {
     port: Number(env.PORT || 8787),
     databaseUrl,
     publicOrigin: env.PUBLIC_ORIGIN || 'http://localhost:5173',
-    publicOrigins: [env.PUBLIC_ORIGIN || 'http://localhost:5173', env.EARN_ORIGIN].filter(Boolean),
+    adminOrigin: env.ADMIN_ORIGIN || 'https://admin.fleshlab.online',
+    performerOrigin: env.PERFORMER_ORIGIN || 'https://performer.fleshlab.online',
+    earnOrigin: env.EARN_ORIGIN || 'https://earn.fleshlab.online',
+    publicOrigins: [
+      env.PUBLIC_ORIGIN || 'http://localhost:5173',
+      env.ADMIN_ORIGIN || 'https://admin.fleshlab.online',
+      env.PERFORMER_ORIGIN || 'https://performer.fleshlab.online',
+      env.EARN_ORIGIN || 'https://earn.fleshlab.online'
+    ].filter(Boolean),
     sessionSecret: sessionSecret || 'local-development-only-not-for-production',
     cookieSecure: env.COOKIE_SECURE === 'true',
     uploadContainer: env.PRIVATE_UPLOAD_CONTAINER || 'private-uploads',

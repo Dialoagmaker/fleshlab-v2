@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { HttpError } from './errors.js';
+import { assertPortal, portalForRequest, portalOrigin } from './portal.js';
 
 const email = (value) => String(value || '').trim().toLowerCase();
 const hashToken = (secret, value) => crypto.createHmac('sha256', secret).update(value).digest('hex');
@@ -85,13 +86,19 @@ export class AuthService {
     return serializeUser(result.rows[0]);
   }
 
-  async requestPasswordReset(input, remoteAddress) {
+  async requestPasswordReset(input, remoteAddress, req) {
     const address = email(input.email);
     await this.limit(`reset:${remoteAddress}`, 5);
     const result = this.config.emailDeliveryUrl ? await this.db.query(`SELECT id,email FROM app_users WHERE email=$1 AND account_status='active'`, [address]) : { rowCount: 0, rows: [] };
     if (result.rowCount) {
       const action = await this.issueAction(result.rows[0].id, 'reset_password', 1);
-      await this.queueEmail(result.rows[0].email, 'reset_password', { token: action, email: result.rows[0].email });
+      const portal = portalForRequest(req, this.config);
+      const origin = portalOrigin(this.config, portal) || this.config.publicOrigin;
+      await this.queueEmail(result.rows[0].email, 'reset_password', {
+        token: action,
+        email: result.rows[0].email,
+        reset_url: `${String(origin).replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(action)}`
+      });
     }
     return { accepted: true };
   }
@@ -112,9 +119,37 @@ export class AuthService {
     const result = await this.db.query('SELECT * FROM app_users WHERE email=$1', [address]);
     const user = result.rows[0];
     if (!user || !verifyPassword(password, user.password_hash) || user.account_status !== 'active') throw new HttpError(401, 'INVALID_LOGIN', 'Email or password is incorrect.');
+    await this.assertPortalLogin(user, requestMeta.portal);
     const raw = crypto.randomBytes(32).toString('base64url');
     await this.db.query(`INSERT INTO web_sessions(user_id,token_hash,expires_at,user_agent,ip_address) VALUES($1,$2,now() + interval '14 days',$3,$4)`, [user.id, hashToken(this.config.sessionSecret, raw), String(requestMeta.userAgent || '').slice(0, 512) || null, remoteAddress || null]);
     return { user: serializeUser(user), cookie: sessionCookie(raw, this.config.cookieSecure) };
+  }
+
+  async assertPortalLogin(user, portal) {
+    if (!portal || portal === 'public' || portal === 'unknown') return;
+    if (portal === 'admin' && !['admin', 'staff'].includes(user.role)) throw new HttpError(403, 'ADMIN_PORTAL_REQUIRED', 'This account is not authorized for the Admin Portal.');
+    if (portal === 'performer') {
+      if (user.role !== 'performer') throw new HttpError(403, 'PERFORMER_PORTAL_REQUIRED', 'A performer-compatible account is required.');
+      const linked = await this.db.query(`
+        SELECT 1
+        FROM v3_creator_records c
+        JOIN v3_creator_performer_links l ON l.creator_id=c.id
+        JOIN catalog_performers p ON p.legacy_id=l.performer_legacy_id
+        WHERE c.user_id=$1 AND c.lifecycle='active' AND p.status='active' AND p.operational_status='active'
+        LIMIT 1`, [user.id]);
+      if (!linked.rowCount) throw new HttpError(403, 'CONTRACTED_PERFORMER_REQUIRED', 'An active contracted performer link is required.');
+    }
+    if (portal === 'earn') {
+      if (user.role !== 'performer') throw new HttpError(403, 'CREATOR_PORTAL_REQUIRED', 'This portal is for external creator accounts.');
+      const linked = await this.db.query(`
+        SELECT 1
+        FROM v3_creator_records c
+        JOIN v3_creator_performer_links l ON l.creator_id=c.id
+        JOIN catalog_performers p ON p.legacy_id=l.performer_legacy_id
+        WHERE c.user_id=$1 AND c.lifecycle='active' AND p.status='active' AND p.operational_status='active'
+        LIMIT 1`, [user.id]);
+      if (linked.rowCount) throw new HttpError(403, 'USE_PERFORMER_PORTAL', 'Contracted performers must use the Performer Portal.');
+    }
   }
 
   async current(req) {
@@ -135,6 +170,48 @@ export class AuthService {
     return user;
   }
 
+  async requireAdminPortal(req, roles = ['admin', 'staff']) {
+    assertPortal(req, this.config, 'admin');
+    return this.requireRole(req, roles);
+  }
+
+  async requireContractedPerformer(req) {
+    assertPortal(req, this.config, 'performer');
+    const user = await this.requireRole(req, ['performer']);
+    const result = await this.db.query(`
+      SELECT c.id AS creator_id, l.performer_legacy_id, p.display_name, p.slug
+      FROM v3_creator_records c
+      JOIN v3_creator_performer_links l ON l.creator_id=c.id
+      JOIN catalog_performers p ON p.legacy_id=l.performer_legacy_id
+      WHERE c.user_id=$1
+        AND c.lifecycle='active'
+        AND p.status='active'
+        AND p.operational_status='active'
+      LIMIT 1`, [user.id]);
+    if (!result.rowCount) throw new HttpError(403, 'CONTRACTED_PERFORMER_REQUIRED', 'An active contracted performer link is required.');
+    return { ...user, performer_link: result.rows[0] };
+  }
+
+  async requireCreatorSubmissionAccess(req) {
+    const portal = portalForRequest(req, this.config);
+    const user = await this.requireRole(req, ['performer']);
+    const result = await this.db.query(`
+      SELECT c.lifecycle, l.performer_legacy_id, p.status AS performer_status, p.operational_status
+      FROM v3_creator_records c
+      LEFT JOIN v3_creator_performer_links l ON l.creator_id=c.id
+      LEFT JOIN catalog_performers p ON p.legacy_id=l.performer_legacy_id
+      WHERE c.user_id=$1
+      LIMIT 1`, [user.id]);
+    const linked = result.rows[0]?.lifecycle === 'active'
+      && result.rows[0]?.performer_legacy_id
+      && result.rows[0]?.performer_status === 'active'
+      && result.rows[0]?.operational_status === 'active';
+    if (portal === 'performer' && linked) return { ...user, creator_portal: 'performer' };
+    if (portal === 'earn' && !linked) return { ...user, creator_portal: 'earn' };
+    if (portal === 'earn' && linked) throw new HttpError(403, 'USE_PERFORMER_PORTAL', 'Contracted performers must use the Performer Portal.');
+    throw new HttpError(403, 'CREATOR_PORTAL_REQUIRED', 'This creator workflow is not available on this portal.');
+  }
+
   async logout(req) {
     const raw = parseCookies(req.headers.cookie).fleshlab_session;
     if (raw) await this.db.query('UPDATE web_sessions SET revoked_at=now() WHERE token_hash=$1 AND revoked_at IS NULL', [hashToken(this.config.sessionSecret, raw)]);
@@ -144,5 +221,10 @@ export class AuthService {
 
 export function requireSameOrigin(req, config) {
   const origin = req.headers.origin;
-  if (origin && !(config.publicOrigins || [config.publicOrigin]).includes(origin)) throw new HttpError(403, 'ORIGIN_REJECTED', 'Cross-origin state changes are not allowed.');
+  if (!origin) return;
+  const allowed = config.publicOrigins || [config.publicOrigin];
+  if (!allowed.includes(origin)) throw new HttpError(403, 'ORIGIN_REJECTED', 'Cross-origin state changes are not allowed.');
+  const portal = portalForRequest(req, config);
+  const expected = portalOrigin(config, portal);
+  if (expected && origin !== expected) throw new HttpError(403, 'ORIGIN_REJECTED', 'State changes must originate from the active portal.');
 }

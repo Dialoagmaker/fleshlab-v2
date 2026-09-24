@@ -17,7 +17,7 @@ test('creator submission uploads are authenticated API streams, not browser-acce
   assert.match(source, /async streamVideoUpload\(user, id, request\)/);
   assert.match(source, /expected_byte_size/);
   assert.match(api, /streamVideoUpload/);
-  assert.match(api, /auth\.requireRole\(req,\['performer'\]\)/);
+  assert.match(api, /auth\.requireCreatorSubmissionAccess\(req\)/);
 });
 
 test('creator upload transport disables proxy buffering and reuses an unfinished matching upload', () => {

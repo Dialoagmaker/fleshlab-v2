@@ -14,6 +14,9 @@ lerna-debug.log*
 node_modules
 dist
 dist-v3
+dist-admin
+dist-performer
+dist-earn
 dist-ssr
 *.local
 
