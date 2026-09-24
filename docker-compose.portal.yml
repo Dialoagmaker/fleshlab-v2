@@ -1,0 +1,10 @@
+services:
+  api:
+    build:
+      dockerfile: infra/Dockerfile.portal-deploy
+  worker:
+    build:
+      dockerfile: infra/Dockerfile.portal-deploy
+  web:
+    build:
+      dockerfile: infra/Dockerfile.portal-deploy
