@@ -6,6 +6,7 @@ import { HttpError } from './errors.js';
 
 export const SYSTEM_PERMISSIONS = [
   'catalogue.read', 'catalogue.write', 'catalogue.publish',
+  'performer.read', 'performer.create', 'performer.update', 'performer.archive',
   'creator.read', 'creator.review', 'creator.write',
   'contracts.read', 'contracts.admin',
   'production.read', 'production.write', 'production.qa', 'production.render',
@@ -19,7 +20,7 @@ export const SYSTEM_PERMISSIONS = [
 ];
 
 const STAFF_PERMISSIONS = new Set([
-  'catalogue.read', 'creator.read', 'creator.review', 'contracts.read',
+  'catalogue.read', 'performer.read', 'creator.read', 'creator.review', 'contracts.read',
   'production.read', 'production.qa', 'system.read', 'system.roles',
   'system.audit', 'system.diagnostics', 'system.integrations',
   'growth.read', 'commerce.read', 'commerce.settlements', 'commerce.payouts.review', 'commerce.reconcile'

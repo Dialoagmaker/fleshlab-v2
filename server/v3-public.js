@@ -35,7 +35,7 @@ export class V3PublicService {
         (SELECT a.legacy_url FROM v3_media_assets a JOIN v3_media_asset_links ml ON ml.asset_id=a.id WHERE ml.video_legacy_id=v.legacy_id AND a.asset_type='thumbnail' AND a.visibility='public' AND a.processing_state='ready' ORDER BY ml.is_primary DESC LIMIT 1) thumbnail_url,
         (SELECT a.legacy_url FROM v3_media_assets a JOIN v3_media_asset_links ml ON ml.asset_id=a.id WHERE ml.video_legacy_id=v.legacy_id AND a.asset_type='trailer' AND a.visibility='public' AND a.processing_state='ready' ORDER BY ml.is_primary DESC LIMIT 1) trailer_url
       FROM catalog_videos v LEFT JOIN catalog_brands b ON b.legacy_id=v.brand_legacy_id AND b.v3_lifecycle='active'
-      LEFT JOIN catalog_video_performers r ON r.video_legacy_id=v.legacy_id LEFT JOIN catalog_performers p2 ON p2.legacy_id=r.performer_legacy_id AND p2.v3_lifecycle='active'
+      LEFT JOIN catalog_video_performers r ON r.video_legacy_id=v.legacy_id LEFT JOIN catalog_performers p2 ON p2.legacy_id=r.performer_legacy_id AND p2.v3_lifecycle='active' AND p2.status='active' AND p2.public_visibility=true AND p2.operational_status='active'
       WHERE ${where} GROUP BY v.legacy_id,b.name,b.slug ORDER BY ${sort} LIMIT ${l} OFFSET ${offset}`, values);
     return { records: rows.rows, page: p, limit: l, total: count.rows[0].total, pages: Math.ceil(count.rows[0].total / l) };
   }
@@ -44,7 +44,7 @@ export class V3PublicService {
     const r = await this.db.query(`SELECT v.legacy_id id,v.title,v.slug,v.description,v.short_summary,v.release_date,v.duration_seconds,v.access_tier,b.name brand_name,b.slug brand_slug,
       COALESCE(json_agg(DISTINCT jsonb_build_object('id',p.legacy_id,'name',p.display_name,'slug',p.slug)) FILTER (WHERE p.legacy_id IS NOT NULL),'[]') performers
       FROM catalog_videos v LEFT JOIN catalog_brands b ON b.legacy_id=v.brand_legacy_id AND b.v3_lifecycle='active'
-      LEFT JOIN catalog_video_performers r ON r.video_legacy_id=v.legacy_id LEFT JOIN catalog_performers p ON p.legacy_id=r.performer_legacy_id AND p.v3_lifecycle='active'
+      LEFT JOIN catalog_video_performers r ON r.video_legacy_id=v.legacy_id LEFT JOIN catalog_performers p ON p.legacy_id=r.performer_legacy_id AND p.v3_lifecycle='active' AND p.status='active' AND p.public_visibility=true AND p.operational_status='active'
       WHERE v.slug=$1 AND v.v3_lifecycle='published' AND v.status='published' GROUP BY v.legacy_id,b.name,b.slug`, [slug]);
     if (!r.rowCount) throw new HttpError(404,'NOT_FOUND','Published video was not found.');
     const item = r.rows[0];
@@ -58,7 +58,7 @@ export class V3PublicService {
 
   async entityList(kind, input = {}) {
     const p = page(input.page); const l = limit(input.limit); const q = String(input.q || '').trim(); const values = []; const column = kind === 'performer' ? 'display_name' : 'name'; const table = kind === 'performer' ? 'catalog_performers' : 'catalog_brands';
-    const where = [`v3_lifecycle='active'`, "status='active'"]; if (q) { values.push(`%${q}%`); where.push(`${column} ILIKE $${values.length}`); } if (Array.isArray(input.ids) && input.ids.length) { values.push(ids(input.ids, 24)); where.push(`legacy_id = ANY($${values.length}::text[])`); }
+    const where = [`v3_lifecycle='active'`, "status='active'", kind === 'performer' ? "public_visibility=true AND operational_status='active'" : 'true']; if (q) { values.push(`%${q}%`); where.push(`${column} ILIKE $${values.length}`); } if (Array.isArray(input.ids) && input.ids.length) { values.push(ids(input.ids, 24)); where.push(`legacy_id = ANY($${values.length}::text[])`); }
     const total = await this.db.query(`SELECT count(*)::int total FROM ${table} WHERE ${where.join(' AND ')}`, values); const offset=(p-1)*l;
     const fields = kind === 'performer' ? 'legacy_id id,display_name,slug,bio,nationality,legacy_profile_image_url,legacy_cover_image_url' : 'legacy_id id,name,slug,description,legacy_logo_url,legacy_cover_image_url';
     const rows = await this.db.query(`SELECT ${fields} FROM ${table} WHERE ${where.join(' AND ')} ORDER BY ${column} ASC LIMIT ${l} OFFSET ${offset}`, values);
@@ -71,7 +71,7 @@ export class V3PublicService {
   async profile(kind, slug) {
     const table = kind === 'performer' ? 'catalog_performers' : 'catalog_brands'; const idColumn = kind === 'performer' ? 'display_name' : 'name';
     const fields = kind === 'performer' ? 'legacy_id id,display_name,slug,bio,nationality,legacy_profile_image_url,legacy_cover_image_url' : 'legacy_id id,name,slug,description,legacy_logo_url,legacy_cover_image_url';
-    const r = await this.db.query(`SELECT ${fields} FROM ${table} WHERE slug=$1 AND v3_lifecycle='active' AND status='active'`, [slug]);
+    const r = await this.db.query(`SELECT ${fields} FROM ${table} WHERE slug=$1 AND v3_lifecycle='active' AND status='active'${kind === 'performer' ? " AND public_visibility=true AND operational_status='active'" : ''}`, [slug]);
     if (!r.rowCount) throw new HttpError(404,'NOT_FOUND',`Published ${kind} was not found.`); const record = r.rows[0];
     const filter = kind === 'performer' ? 'EXISTS (SELECT 1 FROM catalog_video_performers x WHERE x.video_legacy_id=v.legacy_id AND x.performer_legacy_id=$1)' : 'v.brand_legacy_id=$1';
     const videos = await this.listVideos({ limit: 48, [kind === 'performer' ? 'performer' : 'brand']: record.id });
@@ -150,7 +150,7 @@ export class V3PublicService {
     };
     await Promise.all([
       verify(videoIds, "SELECT legacy_id AS id FROM catalog_videos WHERE legacy_id = ANY($1::text[]) AND v3_lifecycle='published' AND status='published'", 'video'),
-      verify(performerIds, "SELECT legacy_id AS id FROM catalog_performers WHERE legacy_id = ANY($1::text[]) AND v3_lifecycle='active' AND status='active'", 'performer'),
+      verify(performerIds, "SELECT legacy_id AS id FROM catalog_performers WHERE legacy_id = ANY($1::text[]) AND v3_lifecycle='active' AND status='active' AND public_visibility=true AND operational_status='active'", 'performer'),
       verify(collectionIds, "SELECT id::text AS id FROM v3_catalogue_collections WHERE id::text = ANY($1::text[]) AND visibility='public'", 'collection')
     ]);
   }

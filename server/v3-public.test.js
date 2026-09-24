@@ -102,6 +102,16 @@ test('public homepage UI keeps SEO, lazy imagery and no storage references', asy
   assert.doesNotMatch(source, /storage_reference|private_profile|audit/);
 });
 
+test('public performer projections require public visibility and active operational state', async () => {
+  const calls = [];
+  const db = { query: async (sql, values) => {
+    calls.push({ sql, values });
+    return sql.includes('count(*)') ? { rows: [{ total: 0 }] } : { rows: [] };
+  } };
+  await new V3PublicService(db).performers();
+  assert.equal(calls.some(call => /public_visibility=true AND operational_status='active'/.test(call.sql)), true);
+});
+
 test('Phase 6A homepage migration is additive and configures a singleton curator record', async () => {
   const migration = await fs.readFile(new URL('../migrations/0029_v3_public_homepage.sql', import.meta.url), 'utf8');
   assert.match(migration, /CREATE TABLE IF NOT EXISTS v3_public_homepage_config/);

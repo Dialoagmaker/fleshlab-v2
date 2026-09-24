@@ -26,6 +26,7 @@ import { V3ProductionService } from './v3-production.js';
 import { V3SystemService, assertPermission, roleDefinitions } from './v3-system.js';
 import { V3GrowthService } from './v3-growth.js';
 import { V3SubmissionService } from './v3-submissions.js';
+import { V3PerformerService } from './v3-performers.js';
 
 const config = loadConfig();
 const pool = new Pool({ connectionString: config.databaseUrl || undefined });
@@ -52,6 +53,7 @@ const v3Production = new V3ProductionService(pool);
 const v3System = new V3SystemService(pool, config, createAzureBlob(config) || null);
 const v3Growth = new V3GrowthService(pool, config);
 const v3Submissions = new V3SubmissionService(pool, createAzureBlob(config) || unavailableBlob, config);
+const v3Performers = new V3PerformerService(pool);
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', ...headers });
@@ -121,6 +123,10 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, await catalogue.adminSnapshot());
     }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/catalogue/overview') { await auth.requireRole(req,['staff','admin']); return send(res,200,await v3Catalogue.overview()); }
+    if (req.method === 'GET' && url.pathname === '/api/v3/admin/performers') { const user=await auth.current(req); assertPermission(user,'performer.read'); return send(res,200,await v3Performers.list(Object.fromEntries(url.searchParams))); }
+    if (req.method === 'POST' && url.pathname === '/api/v3/admin/performers') { requireSameOrigin(req,config); const user=await auth.current(req); assertPermission(user,'performer.create'); return send(res,201,await v3Performers.create(await body(req),user,req)); }
+    if (req.method === 'GET' && /^\/api\/v3\/admin\/performers\/[^/]+$/.test(url.pathname)) { const user=await auth.current(req); assertPermission(user,'performer.read'); return send(res,200,await v3Performers.detail(url.pathname.split('/').at(-1))); }
+    if (req.method === 'PATCH' && /^\/api\/v3\/admin\/performers\/[^/]+$/.test(url.pathname)) { requireSameOrigin(req,config); const input=await body(req); const user=await auth.current(req); assertPermission(user,input.operational_status === 'archived' ? 'performer.archive' : 'performer.update'); return send(res,200,await v3Performers.update(url.pathname.split('/').at(-1),input,user,req)); }
     if (req.method === 'GET' && url.pathname === '/api/v3/admin/catalogue/homepage') { const user=await auth.current(req); assertPermission(user,'catalogue.publish'); return send(res,200,await v3Public.adminHomepage()); }
     if (req.method === 'PATCH' && url.pathname === '/api/v3/admin/catalogue/homepage') { requireSameOrigin(req,config); const user=await auth.current(req); assertPermission(user,'catalogue.publish'); return send(res,200,await v3Public.updateHomepage(await body(req),user,req)); }
     if (req.method === 'GET' && /^\/api\/v3\/admin\/catalogue\/(brands|performers|videos)$/.test(url.pathname)) { await auth.requireRole(req,['staff','admin']); const type=url.pathname.split('/').at(-1); return send(res,200,await v3Catalogue.list(type==='brands'?'brands':type==='performers'?'performers':'videos',Object.fromEntries(url.searchParams))); }

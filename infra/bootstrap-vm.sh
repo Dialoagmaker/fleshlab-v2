@@ -5,6 +5,10 @@ set -euo pipefail
 # public host and immutable source artifact name.
 PUBLIC_HOST="${1:?public host required}"
 ARTIFACT_NAME="${2:?artifact name required}"
+# The V3 API is intentionally available on both the main-domain /v3 surface
+# and the dedicated creator-acquisition host.  Keep the two origins explicit
+# so same-origin validation never has to be weakened for a routing cutover.
+EARN_HOST="${3:-earn.fleshlab.online}"
 STORAGE_ACCOUNT='fleshlabprod233ab'
 KEY_VAULT='fleshlabprod233abkv'
 RELEASE_DIR="/opt/fleshlab/releases/${ARTIFACT_NAME%.tar.gz}"
@@ -45,8 +49,9 @@ curl -fsS \
 install -d -m 0755 "$RELEASE_DIR"
 tar -xzf "$tmp_archive" -C "$RELEASE_DIR"
 
-export PUBLIC_HOST
+export PUBLIC_HOST EARN_HOST
 export PUBLIC_ORIGIN="https://${PUBLIC_HOST}"
+export EARN_ORIGIN="https://${EARN_HOST}"
 export AZURE_STORAGE_ACCOUNT_URL="https://${STORAGE_ACCOUNT}.blob.core.windows.net"
 export POSTGRES_PASSWORD_FILE="${SECRETS_DIR}/postgres_password"
 export SESSION_SECRET_FILE="${SECRETS_DIR}/session_secret"
