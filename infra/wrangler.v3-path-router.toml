@@ -1,9 +1,14 @@
 name = "fleshlab-v3-path-router"
+account_id = "aee5a2c1098dbb664c57f458dc7b99b3"
 main = "cloudflare-v3-path-router.js"
 compatibility_date = "2026-09-24"
+workers_dev = false
 
-# Production routes are intentionally not declared here because an account ID
-# is supplied by the authenticated Cloudflare deployment context. Attach only:
-# - fleshlab.online/v3*
-# - fleshlab.online/api/v3/*
-# Never attach the worker to fleshlab.online/*; V2 owns the root route.
+# These are the entire production surface: V2 retains fleshlab.online/*.
+[[routes]]
+pattern = "https://fleshlab.online/v3/*"
+zone_id = "bbd914f59dc4b3ce2e61df679203e1b3"
+
+[[routes]]
+pattern = "https://fleshlab.online/api/v3/*"
+zone_id = "bbd914f59dc4b3ce2e61df679203e1b3"
