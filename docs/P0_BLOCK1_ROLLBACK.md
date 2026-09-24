@@ -23,5 +23,15 @@ explicit incident decision.
 
 ## Final release record
 
-The production revision, rollback release directory, backup path and edge-rule
-identifier are appended after the production deployment and smoke checks.
+- Application commit: `05c39d2` (`Add V3 performer operations domain`)
+- Azure production release: `/opt/fleshlab/releases/fleshlab-p0-block1-05c39d2`
+- Application rollback release: `/opt/fleshlab/releases/fleshlab-earn-848aa0a`
+- Pre-deployment backup:
+  `/opt/fleshlab/backups/p0-block1-pre-0031-20260924-101605.sql.gz`
+- Applied migration: `0031_v3_performer_operations.sql`
+- Edge routing artifact: commit `93e1721`,
+  `infra/cloudflare-v3-path-router.js`.
+
+The worker must be attached only to `fleshlab.online/v3*` and
+`fleshlab.online/api/v3/*`. Its route identifiers are recorded after the
+authenticated Cloudflare deployment; it has no root-domain route by design.
