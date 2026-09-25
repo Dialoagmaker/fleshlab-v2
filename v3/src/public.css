@@ -156,9 +156,9 @@ button, input { font: inherit; }
 .earn-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .earn-learn-more { border-color: transparent; padding-right: 0; padding-left: 0; }
 .earn-learn-more:hover, .earn-learn-more:focus-visible { border-color: transparent; background: transparent; color: var(--red); transform: translateX(2px); }
-.earn-steps { display: grid; gap: 14px; color: var(--paper); font-family: "Courier New", monospace; font-size: 9px; font-weight: 800; line-height: 1.2; text-transform: uppercase; }
-.earn-steps span { display: flex; align-items: center; gap: 6px; }
-.earn-steps i { display: inline-grid; width: 19px; height: 19px; flex: 0 0 19px; place-items: center; margin: 0; border: 1px solid var(--red); color: var(--red); font-size: 11px; font-style: normal; text-align: center; }
+.public-earn-steps { display: grid; gap: 14px; color: var(--paper); font-family: "Courier New", monospace; font-size: 9px; font-weight: 800; line-height: 1.2; text-transform: uppercase; }
+.public-earn-steps span { display: flex; align-items: center; gap: 6px; }
+.public-earn-steps i { display: inline-grid; width: 19px; height: 19px; flex: 0 0 19px; place-items: center; margin: 0; border: 1px solid var(--red); color: var(--red); font-size: 11px; font-style: normal; text-align: center; }
 .earn-brand-block { position: relative; align-self: stretch; display: grid; grid-template-columns: 1fr auto; grid-template-rows: 1fr auto; min-height: 250px; overflow: hidden; padding: 13px; border: 1px solid rgba(238, 236, 230, .55); background: var(--red); color: #140000; }
 .earn-brand-image { position: absolute; inset: 0; overflow: hidden; background: #47100d; }
 .earn-brand-image .flesh-image, .earn-brand-image img { width: 100%; height: 100%; }
@@ -281,7 +281,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px soli
   .earn-image { min-height: 290px; margin: 0 7px 28px 0; }
   .earn-copy h2 { max-width: 350px; font-size: 53px; }
   .earn-actions { gap: 8px; }
-  .earn-steps { margin-top: 28px; padding-top: 21px; border-top: 1px solid var(--line); }
+  .public-earn-steps { margin-top: 28px; padding-top: 21px; border-top: 1px solid var(--line); }
   .earn-brand-block { min-height: 245px; margin-top: 28px; }
   .archive-title { padding-top: 58px; padding-bottom: 28px; }
   .archive-title h1 { font-size: clamp(67px, 20vw, 105px); }
