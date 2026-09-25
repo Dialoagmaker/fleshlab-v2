@@ -13,8 +13,7 @@ The system is deliberately anti-corporate while remaining accessible, responsive
 - `#171717` — media panels
 - `#EEECE6` — dirty-white paper and primary text
 - `#AAA9A3` — metadata and supporting text
-- `#F04435` — FLESHLAB red: recording light, stamp ink and calls to action
-- `#C59B61` — restrained archive amber, only for occasional metadata emphasis
+- `#FF342C` — FLESHLAB red: recording light, stamp ink and calls to action
 
 Red is a signal, not a page wash. Avoid luxury copper, brown gradients, glossy orange and SaaS-blue accents.
 
@@ -28,12 +27,12 @@ Display type carries the brand mark and section titles. Monospace carries tape I
 
 ## Spacing and structure
 
-Use a compact archive rhythm built from 8/13/17/24/38/52/70/100px steps. The content maximum is 1540px. Full-bleed media can escape the content column; metadata and controls remain aligned.
+Use the approved compact archive rhythm built from 8/12/20/28/48/72px steps. The content maximum is 1510px. Full-bleed hero media can escape the content column; metadata and controls remain aligned.
 
 ## Media ratios
 
-- Hero: full stage, `object-fit: cover`, one intentional focal position
-- Tape/contact-sheet cards: 16:10 or 16:9
+- Hero: a left copy / right real-media split, `object-fit: cover`, one intentional focal position
+- Tape/contact-sheet cards: consistent landscape archive frames
 - Performer sheets: 4:5 portrait
 - Series posters: 1.6:1, or a full-width 2.9:1 feature when only one public series exists
 
@@ -42,13 +41,13 @@ Never stretch media, leak private assets or expose storage references. Amateur s
 ## Components
 
 - `FleshNav` — archive terminology and public navigation
-- `RawHero` — selected footage frame with REC/timecode annotations
+- `RawHero` — approved split hero with documentary copy, REC/timecode and a selected public frame
 - `TapeCard` — public video archive card
 - `PerformerSheet` — casting/contact-sheet style performer card
 - `SeriesPoster` — public collection/series treatment
 - `FilmMetadata` — safe public tape metadata
-- `BrandStatement` — restrained AMATEUR WINS. brand moment
-- `EarnPoster` — creator recruitment poster linking to Earn
+- `BrandStatement` — four-part AMATEUR WINS. manifesto/contact-sheet composition
+- `EarnPoster` — production-call creator recruitment composition linking to Earn
 - `FleshFooter` — end-credit/archive footer
 
 ## Texture rules
