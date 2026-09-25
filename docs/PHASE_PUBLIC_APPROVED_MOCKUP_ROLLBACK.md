@@ -4,12 +4,13 @@
 
 - Release: `/opt/fleshlab/releases/fleshlab-public-approved-mockup-20260925140959`
 - Previous release: `/opt/fleshlab/releases/fleshlab-public-approved-mockup-20260925132456`
-- Source revision: `eac0e16` (`Isolate public open call styles`)
-- Packaged V3 visual artifact: `9a8b162`
+- Source revision: `ff76651` (`Keep mobile manifesto typography readable`)
+- Packaged V3 visual artifact: `258df173072f35f7f825dc71b78dd52ff80d91aa`
 - Target: `FLESHLAB-PROD / fleshlab-prod-vm`
 - Scope: V3 public static bundle and `fleshlab-web-1` only
 - No migration, DNS, Cloudflare, Caddy, API, worker, portal-auth or root/V2 change was made.
 - The design references remain in `docs/design-reference/`.
+- Pre-update static backups: `/opt/fleshlab/backups/fleshlab-v3-public-static-pre-typography-20260925145311.tar.gz` and `/opt/fleshlab/backups/fleshlab-v3-public-static-pre-mobile-typography-20260925145532.tar.gz`
 
 ## Rollback
 
