@@ -2,8 +2,8 @@
 
 ## Deployment
 
-- Release: `/opt/fleshlab/releases/fleshlab-public-approved-mockup-20260925125800`
-- Previous release: `/opt/fleshlab/releases/fleshlab-public-approved-mockup-20260925125400`
+- Release: `/opt/fleshlab/releases/fleshlab-public-approved-mockup-20260925132456`
+- Previous release: `/opt/fleshlab/releases/fleshlab-public-approved-mockup-20260925125800`
 - Target: `FLESHLAB-PROD / fleshlab-prod-vm`
 - Scope: V3 public static bundle and `fleshlab-web-1` only
 - No migration, DNS, Cloudflare, Caddy, API, worker, portal-auth or root/V2 change was made.
@@ -14,7 +14,7 @@
 From the VM, rebuild and restart the web container from the previous release:
 
 ```sh
-cd /opt/fleshlab/releases/fleshlab-public-approved-mockup-20260925125400
+cd /opt/fleshlab/releases/fleshlab-public-approved-mockup-20260925125800
 COMPOSE_PROJECT_NAME=fleshlab docker compose -f docker-compose.yml -f docker-compose.portal.yml build web
 COMPOSE_PROJECT_NAME=fleshlab docker compose -f docker-compose.yml -f docker-compose.portal.yml up -d --no-build --force-recreate web
 ```
