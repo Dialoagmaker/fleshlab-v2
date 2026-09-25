@@ -235,6 +235,68 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px soli
 .public-empty { padding: 24px; border: 1px dashed var(--line); color: var(--muted); font-family: "Courier New", monospace; font-size: 11px; line-height: 1.5; }
 .error { color: #ff958b; font-family: "Courier New", monospace; font-size: 12px; }
 
+/* Typography legibility pass: display type stays condensed; content and UI use
+   readable system sans/mono faces with enough size and leading for normal zoom. */
+:root { --ui-readable: Arial, Helvetica, sans-serif; --mono-readable: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+body { font-family: var(--ui-readable); }
+.flesh-nav nav a, .flesh-nav-actions a, .nav-menu-label,
+.flesh-mobile-nav summary, .flesh-mobile-nav > div a,
+.raw-button, .archive-search input, .archive-search button,
+.archive-filters a, .flesh-footer > div > a { font-family: var(--ui-readable); font-size: 12px; letter-spacing: .045em; }
+.flesh-nav nav a, .flesh-nav-actions a, .flesh-mobile-nav summary, .flesh-mobile-nav > div a,
+.raw-button, .archive-filters a { font-weight: 700; }
+.flesh-logo small, .raw-kicker, .archive-kicker, .detail-kicker, .detail-stamp,
+.poster-kicker, .section-number, .hero-meta, .film-metadata, .rec-badge, .timecode,
+.section-detail, .tape-top, .tape-open, .sheet-mark, .sheet-caption span, .sheet-labels,
+.manifesto-aside, .earn-image-note, .public-earn-steps, .archive-title p,
+.performer-label-filters > span, .public-label-list, .frame-label,
+.film-file span, .dossier-meta span, .film-file strong, .dossier-meta strong,
+.series-caption span, .series-caption b, .flesh-footer > div > span,
+.footer-socials a, .footer-credit, .public-empty, .error { font-family: var(--mono-readable); }
+.flesh-logo small { font-size: 9px; }
+.raw-kicker, .archive-kicker, .detail-kicker, .detail-stamp, .poster-kicker,
+.section-number, .hero-meta, .film-metadata, .rec-badge, .timecode { font-size: 11px; }
+.raw-hero-copy p { max-width: 520px; color: var(--paper); font-family: var(--ui-readable); font-size: 15px; font-weight: 600; letter-spacing: .01em; line-height: 1.65; text-transform: none; }
+.raw-button { min-height: 45px; font-size: 12px; }
+.hero-time, .hero-rec { font-family: var(--mono-readable); font-size: 14px; }
+.hero-scribble { font-family: var(--mono-readable); font-size: 13px; line-height: 1.5; }
+.section-detail, .archive-section-head > a { font-size: 11px; }
+.tape-top { font-size: 11px; }
+.tape-bottom h3 { font-family: var(--ui-readable); font-size: 17px; line-height: 1.15; }
+.film-metadata { font-size: 11px; line-height: 1.5; }
+.tape-open { font-size: 11px; }
+.sheet-mark { font-size: 12px; }
+.sheet-caption strong { font-family: Impact, "Arial Narrow", Arial, sans-serif; font-size: 16px; }
+.sheet-caption span { font-size: 11px; letter-spacing: .02em; }
+.sheet-caption b { font-size: 22px; }
+.sheet-labels { min-height: 28px; font-size: 10.5px; line-height: 1.45; letter-spacing: .01em; }
+.people-note { font-family: var(--ui-readable); font-size: 13px; line-height: 1.6; }
+.manifesto-aside { font-size: 12px; line-height: 1.6; letter-spacing: .045em; }
+.manifesto-aside small { font-size: 10px; }
+.manifesto-copy { color: var(--paper); font-family: var(--ui-readable); font-size: 13px; font-weight: 600; letter-spacing: .015em; line-height: 1.65; }
+.manifesto-contact > span { font-family: var(--mono-readable); font-size: 10px; line-height: 1.45; }
+.earn-image-note { font-size: 14px; line-height: 1.4; }
+.earn-copy p, .earn-copy > strong { font-family: var(--ui-readable); font-size: 14px; font-weight: 600; letter-spacing: .02em; line-height: 1.55; text-transform: none; }
+.earn-copy > strong { font-size: 15px; font-weight: 800; }
+.public-earn-steps { font-family: var(--ui-readable); font-size: 12px; line-height: 1.4; }
+.earn-brand-image span { font-family: var(--mono-readable); font-size: 10px; line-height: 1.45; }
+.earn-brand-block > small { font-family: var(--mono-readable); font-size: 10px; line-height: 1.45; }
+.archive-title p { max-width: 680px; color: var(--paper); font-size: 14px; line-height: 1.65; text-transform: none; }
+.archive-search input, .archive-search button { font-size: 12px; }
+.archive-filters a, .performer-label-filters > span { font-size: 11px; }
+.public-label-list { font-size: 13px; line-height: 1.5; }
+.detail-heading p { max-width: 680px; color: var(--paper); font-family: var(--ui-readable); font-size: 16px; font-weight: 500; letter-spacing: normal; line-height: 1.65; text-transform: none; }
+.detail-frame span, .frame-label { font-family: var(--mono-readable); font-size: 11px; }
+.film-file span, .dossier-meta span { font-size: 11px; }
+.film-file strong, .dossier-meta strong { font-size: 12px; line-height: 1.4; }
+.series-caption span, .series-caption b { font-size: 11px; }
+.series-caption p { font-family: var(--ui-readable); font-size: 14px; line-height: 1.55; }
+.flesh-footer > div > span { font-size: 11px; }
+.flesh-footer > div > a { color: var(--paper); font-size: 12px; letter-spacing: .02em; }
+.footer-socials a { font-size: 12px; }
+.footer-credit { font-size: 10px; }
+.public-empty, .error { font-family: var(--ui-readable); font-size: 13px; line-height: 1.6; }
+
 @media (max-width: 1120px) {
   .flesh-nav { gap: 28px; }
   .flesh-nav nav { gap: 18px; }
@@ -318,4 +380,27 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px soli
   .film-metadata span + span::before { margin-right: 6px; }
   .sheet-caption { display: block; }
   .sheet-caption span { display: block; margin-top: 4px; }
+}
+
+/* Keep the mobile legibility values above the compact layout rules. */
+@media (max-width: 780px) {
+  .raw-hero-copy p { max-width: 340px; font-size: 13px; }
+  .section-detail { font-size: 10px; }
+  .tape-bottom h3 { font-size: 13px; }
+  .film-metadata { font-size: 10px; }
+  .people-note { font-size: 11px; }
+  .manifesto-aside { font-size: 11px; }
+  .manifesto-copy { font-size: 13px; }
+  .public-earn-steps { font-size: 12px; }
+  .archive-filters a, .performer-label-filters > span { font-size: 11px; }
+  .detail-heading p { font-size: 15px; }
+  .film-file span, .dossier-meta span { font-size: 10.5px; }
+  .film-file strong, .dossier-meta strong { font-size: 11.5px; }
+  .flesh-footer > div > a { font-size: 12px; }
+}
+
+@media (max-width: 430px) {
+  .raw-button { font-size: 11px; }
+  .tape-open { font-size: 10px; }
+  .film-metadata { font-size: 10px; }
 }
