@@ -3,6 +3,7 @@
 FROM fleshlab-api AS api
 WORKDIR /app
 COPY server ./server
+COPY migrations ./migrations
 CMD ["node", "server/index.js"]
 
 FROM fleshlab-web AS web
