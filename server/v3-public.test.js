@@ -96,8 +96,10 @@ test('public homepage UI keeps SEO, lazy imagery and no storage references', asy
   const source = await fs.readFile(new URL('../v3/src/public.jsx', import.meta.url), 'utf8');
   assert.match(source, /application\/ld\+json/);
   assert.match(source, /loading=\{eager \? 'eager' : 'lazy'\}/);
-  assert.match(source, /parts\[0\]==='home'/);
-  assert.match(source, /EDITORIAL SPOTLIGHT/);
+  assert.match(source, /parts\[0\]\s*===\s*'home'/);
+  assert.match(source, /function HomeHero/);
+  assert.match(source, /function ContentCard/);
+  assert.doesNotMatch(source, /editorial-spotlight|brand-story|final-brand-cta/);
   assert.match(source, /https:\/\/earn\.fleshlab\.online/);
   assert.doesNotMatch(source, /storage_reference|private_profile|audit/);
 });
