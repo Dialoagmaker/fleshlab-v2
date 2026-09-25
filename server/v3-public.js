@@ -57,11 +57,19 @@ export class V3PublicService {
   async brands(input = {}) { return this.entityList('brand', input); }
 
   async entityList(kind, input = {}) {
-    const p = page(input.page); const l = limit(input.limit); const q = String(input.q || '').trim(); const values = []; const column = kind === 'performer' ? 'display_name' : 'name'; const table = kind === 'performer' ? 'catalog_performers' : 'catalog_brands';
-    const where = [`v3_lifecycle='active'`, "status='active'", kind === 'performer' ? "public_visibility=true AND operational_status='active'" : 'true']; if (q) { values.push(`%${q}%`); where.push(`${column} ILIKE $${values.length}`); } if (Array.isArray(input.ids) && input.ids.length) { values.push(ids(input.ids, 24)); where.push(`legacy_id = ANY($${values.length}::text[])`); }
-    const total = await this.db.query(`SELECT count(*)::int total FROM ${table} WHERE ${where.join(' AND ')}`, values); const offset=(p-1)*l;
-    const fields = kind === 'performer' ? 'legacy_id id,display_name,slug,bio,nationality,legacy_profile_image_url,legacy_cover_image_url' : 'legacy_id id,name,slug,description,legacy_logo_url,legacy_cover_image_url';
-    const rows = await this.db.query(`SELECT ${fields} FROM ${table} WHERE ${where.join(' AND ')} ORDER BY ${column} ASC LIMIT ${l} OFFSET ${offset}`, values);
+    const isPerformer = kind === 'performer'; const p = page(input.page); const l = limit(input.limit); const q = String(input.q || '').trim(); const values = [];
+    const table = isPerformer ? 'catalog_performers' : 'catalog_brands'; const alias = isPerformer ? 'p' : 'b'; const column = isPerformer ? 'display_name' : 'name';
+    const add = value => { values.push(value); return `$${values.length}`; };
+    const where = ["v3_lifecycle='active'", "status='active'", isPerformer ? "public_visibility=true AND operational_status='active'" : 'true'];
+    if (q) where.push(`${alias}.${column} ILIKE ${add(`%${q}%`)}`);
+    if (Array.isArray(input.ids) && input.ids.length) where.push(`${alias}.legacy_id = ANY(${add(ids(input.ids, 24))}::text[])`);
+    if (isPerformer && input.label) where.push(`EXISTS (SELECT 1 FROM v3_performer_brand_affiliations pa JOIN catalog_brands lb ON lb.legacy_id=pa.brand_legacy_id WHERE pa.performer_legacy_id=p.legacy_id AND pa.affiliation_status='active' AND lb.slug=${add(String(input.label))} AND lb.status='active' AND lb.v3_lifecycle='active')`);
+    const whereSql = where.join(' AND '); const total = await this.db.query(`SELECT count(*)::int total FROM ${table} ${alias} WHERE ${whereSql}`, values); const offset=(p-1)*l;
+    const fields = isPerformer
+      ? `p.legacy_id id,p.display_name,p.slug,p.bio,p.nationality,trim(p.nationality) public_location,p.legacy_profile_image_url,p.legacy_cover_image_url,
+        COALESCE((SELECT json_agg(json_build_object('id',lb.legacy_id,'name',lb.name,'slug',lb.slug) ORDER BY lb.name) FROM v3_performer_brand_affiliations pa JOIN catalog_brands lb ON lb.legacy_id=pa.brand_legacy_id WHERE pa.performer_legacy_id=p.legacy_id AND pa.affiliation_status='active' AND lb.status='active' AND lb.v3_lifecycle='active'),'[]'::json) labels`
+      : 'b.legacy_id id,b.name,b.slug,b.description,b.legacy_logo_url,b.legacy_cover_image_url';
+    const rows = await this.db.query(`SELECT ${fields} FROM ${table} ${alias} WHERE ${whereSql} ORDER BY ${alias}.${column} ASC LIMIT ${l} OFFSET ${offset}`, values);
     return { records: rows.rows, page:p, limit:l, total:total.rows[0].total, pages:Math.ceil(total.rows[0].total/l) };
   }
 
@@ -69,9 +77,12 @@ export class V3PublicService {
   async brand(slug) { return this.profile('brand', slug); }
 
   async profile(kind, slug) {
-    const table = kind === 'performer' ? 'catalog_performers' : 'catalog_brands'; const idColumn = kind === 'performer' ? 'display_name' : 'name';
-    const fields = kind === 'performer' ? 'legacy_id id,display_name,slug,bio,nationality,legacy_profile_image_url,legacy_cover_image_url' : 'legacy_id id,name,slug,description,legacy_logo_url,legacy_cover_image_url';
-    const r = await this.db.query(`SELECT ${fields} FROM ${table} WHERE slug=$1 AND v3_lifecycle='active' AND status='active'${kind === 'performer' ? " AND public_visibility=true AND operational_status='active'" : ''}`, [slug]);
+    const isPerformer = kind === 'performer'; const table = isPerformer ? 'catalog_performers p' : 'catalog_brands b';
+    const fields = isPerformer
+      ? `p.legacy_id id,p.display_name,p.slug,p.bio,p.nationality,trim(p.nationality) public_location,p.legacy_profile_image_url,p.legacy_cover_image_url,
+        COALESCE((SELECT json_agg(json_build_object('id',lb.legacy_id,'name',lb.name,'slug',lb.slug) ORDER BY lb.name) FROM v3_performer_brand_affiliations pa JOIN catalog_brands lb ON lb.legacy_id=pa.brand_legacy_id WHERE pa.performer_legacy_id=p.legacy_id AND pa.affiliation_status='active' AND lb.status='active' AND lb.v3_lifecycle='active'),'[]'::json) labels`
+      : 'b.legacy_id id,b.name,b.slug,b.description,b.legacy_logo_url,b.legacy_cover_image_url';
+    const r = await this.db.query(`SELECT ${fields} FROM ${table} WHERE ${isPerformer ? 'p' : 'b'}.slug=$1 AND ${isPerformer ? 'p' : 'b'}.v3_lifecycle='active' AND ${isPerformer ? 'p' : 'b'}.status='active'${isPerformer ? " AND p.public_visibility=true AND p.operational_status='active'" : ''}`, [slug]);
     if (!r.rowCount) throw new HttpError(404,'NOT_FOUND',`Published ${kind} was not found.`); const record = r.rows[0];
     const filter = kind === 'performer' ? 'EXISTS (SELECT 1 FROM catalog_video_performers x WHERE x.video_legacy_id=v.legacy_id AND x.performer_legacy_id=$1)' : 'v.brand_legacy_id=$1';
     const videos = await this.listVideos({ limit: 48, [kind === 'performer' ? 'performer' : 'brand']: record.id });

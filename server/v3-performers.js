@@ -33,9 +33,11 @@ export class V3PerformerService {
     if (['true', 'false'].includes(String(input.public_visibility))) clauses.push(`p.public_visibility=${add(input.public_visibility === 'true')}`);
     if (input.account_link === 'linked') clauses.push(`EXISTS (SELECT 1 FROM v3_performer_user_links ul WHERE ul.performer_legacy_id=p.legacy_id) OR EXISTS (SELECT 1 FROM v3_creator_performer_links cl JOIN v3_creator_records cr ON cr.id=cl.creator_id WHERE cl.performer_legacy_id=p.legacy_id AND cr.user_id IS NOT NULL)`);
     if (input.account_link === 'unlinked') clauses.push(`NOT EXISTS (SELECT 1 FROM v3_performer_user_links ul WHERE ul.performer_legacy_id=p.legacy_id) AND NOT EXISTS (SELECT 1 FROM v3_creator_performer_links cl JOIN v3_creator_records cr ON cr.id=cl.creator_id WHERE cl.performer_legacy_id=p.legacy_id AND cr.user_id IS NOT NULL)`);
+    if (input.label) clauses.push(`EXISTS (SELECT 1 FROM v3_performer_brand_affiliations pa JOIN catalog_brands lb ON lb.legacy_id=pa.brand_legacy_id WHERE pa.performer_legacy_id=p.legacy_id AND pa.affiliation_status='active' AND lb.slug=$${values.push(String(input.label))} AND lb.status='active' AND lb.v3_lifecycle='active')`);
     const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
     const total = await this.db.query(`SELECT count(*)::int total FROM catalog_performers p ${where}`, values);
     const rows = await this.db.query(`SELECT p.legacy_id,p.display_name,p.slug,p.nationality,p.status,p.v3_lifecycle,p.operational_status,p.public_visibility,p.featured,p.verified,p.legacy_profile_image_url,
+      COALESCE((SELECT json_agg(json_build_object('id',lb.legacy_id,'name',lb.name,'slug',lb.slug,'status',pa.affiliation_status) ORDER BY lb.name) FROM v3_performer_brand_affiliations pa JOIN catalog_brands lb ON lb.legacy_id=pa.brand_legacy_id WHERE pa.performer_legacy_id=p.legacy_id AND pa.affiliation_status='active' AND lb.status='active' AND lb.v3_lifecycle='active'),'[]'::json) AS labels,
       EXISTS(SELECT 1 FROM v3_creator_performer_links cl WHERE cl.performer_legacy_id=p.legacy_id) AS has_creator_link,
       EXISTS(SELECT 1 FROM v3_performer_user_links ul WHERE ul.performer_legacy_id=p.legacy_id) OR EXISTS(SELECT 1 FROM v3_creator_performer_links cl JOIN v3_creator_records cr ON cr.id=cl.creator_id WHERE cl.performer_legacy_id=p.legacy_id AND cr.user_id IS NOT NULL) AS has_user_link,
       COALESCE((SELECT iv.status FROM v3_creator_performer_links cl JOIN v3_creator_identity_verifications iv ON iv.creator_id=cl.creator_id WHERE cl.performer_legacy_id=p.legacy_id ORDER BY iv.updated_at DESC LIMIT 1),'not_started') AS kyc_status,
@@ -46,6 +48,7 @@ export class V3PerformerService {
 
   async detail(id) {
     const performer = await this.db.query(`SELECT p.*,
+      COALESCE((SELECT json_agg(json_build_object('id',lb.legacy_id,'name',lb.name,'slug',lb.slug,'status',pa.affiliation_status) ORDER BY lb.name) FROM v3_performer_brand_affiliations pa JOIN catalog_brands lb ON lb.legacy_id=pa.brand_legacy_id WHERE pa.performer_legacy_id=p.legacy_id AND pa.affiliation_status='active' AND lb.status='active' AND lb.v3_lifecycle='active'),'[]'::json) AS labels,
       COALESCE((SELECT json_agg(json_build_object('id',c.id,'name',a.full_name,'lifecycle',c.lifecycle,'user_id',c.user_id)) FROM v3_creator_performer_links cl JOIN v3_creator_records c ON c.id=cl.creator_id JOIN performer_applications a ON a.id=c.application_id WHERE cl.performer_legacy_id=p.legacy_id),'[]'::json) AS creators,
       COALESCE((SELECT json_agg(json_build_object('user_id',linked.user_id,'email',linked.email,'role',linked.role,'account_status',linked.account_status,'source',linked.source)) FROM (
         SELECT u.id AS user_id,u.email,u.role,u.account_status,'direct'::text AS source
@@ -114,5 +117,24 @@ export class V3PerformerService {
     const action = current.operational_status !== next.operational_status ? 'performer.operational_status_changed' : current.public_visibility !== next.public_visibility ? 'performer.visibility_changed' : 'performer.updated';
     await this.audit(actor, action, id, current, result.rows[0], request);
     return this.detail(id);
+  }
+
+  async updateLabels(id, input, actor, request) {
+    if (!Array.isArray(input?.brand_ids) || !input.brand_ids.every(value => typeof value === 'string')) throw new HttpError(422, 'INVALID_LABELS', 'brand_ids must be an array of label identifiers.');
+    const brandIds = [...new Set(input.brand_ids.map(value => value.trim()).filter(Boolean))].slice(0, 12);
+    const before = await this.detail(id);
+    const available = brandIds.length ? await this.db.query("SELECT legacy_id FROM catalog_brands WHERE legacy_id=ANY($1::text[]) AND status='active' AND v3_lifecycle='active'", [brandIds]) : { rows: [] };
+    if (available.rows.length !== brandIds.length) throw new HttpError(422, 'INVALID_LABELS', 'Only active public labels may be assigned.');
+    const client = await this.db.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query("UPDATE v3_performer_brand_affiliations SET affiliation_status='inactive',updated_at=now() WHERE performer_legacy_id=$1", [id]);
+      for (const brandId of brandIds) await client.query(`INSERT INTO v3_performer_brand_affiliations(performer_legacy_id,brand_legacy_id,affiliation_status,source)
+        VALUES($1,$2,'active','admin') ON CONFLICT(performer_legacy_id,brand_legacy_id) DO UPDATE SET affiliation_status='active',source='admin',updated_at=now()`, [id, brandId]);
+      await client.query('COMMIT');
+    } catch (error) { await client.query('ROLLBACK'); throw error; } finally { client.release(); }
+    const after = await this.detail(id);
+    await this.audit(actor, 'performer.labels.updated', id, before.performer.labels || [], after.performer.labels || [], request);
+    return after;
   }
 }
