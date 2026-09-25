@@ -13,7 +13,7 @@
 * { box-sizing: border-box; }
 html { background: var(--black); scroll-behavior: smooth; }
 body { margin: 0; background: var(--black); color: var(--paper); font-family: Arial, Helvetica, sans-serif; }
-body::before { content: ""; position: fixed; inset: 0; z-index: 100; pointer-events: none; opacity: .12; background-image: radial-gradient(rgba(255, 255, 255, .55) .55px, transparent .8px); background-size: 4px 4px; mix-blend-mode: screen; }
+body::before { content: ""; position: fixed; inset: 0; z-index: 100; pointer-events: none; opacity: .1; background-image: radial-gradient(rgba(255, 255, 255, .55) .55px, transparent .8px), repeating-linear-gradient(103deg, transparent 0 164px, rgba(255, 255, 255, .08) 165px, transparent 166px 318px); background-size: 4px 4px, 318px 318px; mix-blend-mode: screen; }
 a { color: inherit; }
 button, input { font: inherit; }
 .flesh-shell { min-height: 100vh; overflow: clip; background: var(--black); color: var(--paper); }
@@ -54,7 +54,8 @@ button, input { font: inherit; }
 .raw-hero-copy { position: relative; display: flex; flex-direction: column; justify-content: center; padding: 74px max(42px, calc((100vw - var(--max)) / 2)) 70px; }
 .raw-kicker, .archive-kicker, .detail-kicker, .detail-stamp, .poster-kicker, .section-number, .hero-meta, .film-metadata, .rec-badge, .timecode { font-family: "Courier New", monospace; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .raw-kicker { color: var(--paper); }
-.raw-hero-copy h1 { max-width: 720px; margin: 23px 0 0; color: var(--paper); font-family: Impact, "Arial Narrow", Arial, sans-serif; font-size: clamp(67px, 8.8vw, 152px); font-weight: 900; letter-spacing: -.045em; line-height: .78; }
+.raw-hero-copy h1 { max-width: none; margin: 23px 0 0; color: var(--paper); font-family: Impact, "Arial Narrow", Arial, sans-serif; font-size: clamp(58px, 7.5vw, 138px); font-weight: 900; letter-spacing: -.045em; line-height: .78; overflow: visible; }
+.raw-hero-copy h1 span { display: block; width: max-content; white-space: nowrap; transform: scaleX(.76); transform-origin: left center; }
 .raw-mark { display: block; width: min(280px, 48%); height: 8px; margin: 13px 0 24px; border-radius: 50%; background: var(--red); transform: rotate(-2deg); }
 .raw-hero-copy p { max-width: 425px; margin: 0 0 24px; color: var(--paper); font-family: "Courier New", monospace; font-size: 12px; font-weight: 700; line-height: 1.65; text-transform: uppercase; }
 .raw-button { display: inline-flex; align-items: center; justify-content: center; min-height: 43px; width: fit-content; padding: 0 17px; border: 1px solid var(--paper); color: var(--paper); font-family: "Courier New", monospace; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-decoration: none; text-transform: uppercase; transition: transform .18s ease, background .18s ease, color .18s ease; }
@@ -63,8 +64,8 @@ button, input { font: inherit; }
 .raw-button-red:hover, .raw-button-red:focus-visible { background: var(--paper); color: var(--black); }
 .raw-hero-media { position: relative; min-height: 100%; overflow: hidden; border-left: 1px solid var(--line); }
 .raw-hero-media .flesh-image, .raw-hero-media img, .hero-media-shade { position: absolute; inset: 0; width: 100%; height: 100%; }
-.raw-hero-media img { object-fit: cover; filter: saturate(.72) contrast(1.08); }
-.hero-media-shade { background: linear-gradient(90deg, rgba(5, 5, 5, .2), transparent 28%), linear-gradient(0deg, rgba(0, 0, 0, .66), transparent 39%, rgba(0, 0, 0, .1)); }
+.raw-hero-media img { object-fit: cover; filter: saturate(.55) contrast(1.16) brightness(.72); }
+.hero-media-shade { background: linear-gradient(90deg, rgba(5, 5, 5, .35), transparent 34%), linear-gradient(0deg, rgba(0, 0, 0, .78), transparent 42%, rgba(0, 0, 0, .24)); }
 .hero-frame { position: absolute; inset: 30px; border: 1px solid rgba(238, 236, 230, .65); pointer-events: none; }
 .hero-frame::before, .hero-frame::after { content: ""; position: absolute; width: 29px; height: 22px; border-color: var(--paper); border-style: solid; }
 .hero-frame::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
@@ -89,8 +90,9 @@ button, input { font: inherit; }
 .archive-section-head > a:hover, .archive-section-head > a:focus-visible { color: var(--red); }
 .contact-sheet { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
 .tape-card { position: relative; display: block; min-width: 0; aspect-ratio: 1.12 / 1; overflow: hidden; background: var(--panel); color: var(--paper); text-decoration: none; isolation: isolate; }
+.contact-sheet .tape-card { aspect-ratio: 1.3 / 1; border: 1px solid rgba(238, 236, 230, .46); }
 .tape-card .flesh-image { position: absolute; inset: 0; height: 100%; }
-.tape-card img { transition: transform .35s ease, filter .35s ease; }
+.tape-card img { filter: saturate(.68) contrast(1.1) brightness(.84); transition: transform .35s ease, filter .35s ease; }
 .tape-card:hover img, .tape-card:focus-visible img { transform: scale(1.045); filter: saturate(1.08); }
 .tape-noise { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: .16; background-image: radial-gradient(rgba(255, 255, 255, .7) .5px, transparent .8px); background-size: 4px 4px; mix-blend-mode: screen; }
 .tape-card::after { content: ""; position: absolute; inset: 0; z-index: 0; background: linear-gradient(0deg, rgba(0, 0, 0, .93), transparent 63%); pointer-events: none; }
@@ -111,7 +113,7 @@ button, input { font: inherit; }
 .performer-sheet:nth-child(2n) { transform: translateY(4px); }
 .performer-sheet:hover, .performer-sheet:focus-visible { z-index: 2; border-color: var(--red); transform: translateY(-5px); }
 .performer-sheet .flesh-image { aspect-ratio: 4 / 5; min-height: 0; background: #252525; }
-.performer-sheet .flesh-image img { filter: grayscale(1) contrast(1.08); }
+.performer-sheet .flesh-image img { filter: grayscale(1) contrast(1.15) brightness(.92); }
 .sheet-mark { margin-top: 7px; color: var(--paper); font-family: "Courier New", monospace; font-size: 8px; font-weight: 800; }
 .sheet-caption { display: flex; align-items: baseline; justify-content: space-between; gap: 4px; margin-top: 5px; }
 .sheet-caption strong { overflow: hidden; font-size: 13px; font-weight: 900; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
@@ -138,7 +140,7 @@ button, input { font: inherit; }
 .manifesto-contact .flesh-image { min-height: 65px; background: #222; }
 .manifesto-contact img { filter: grayscale(1) contrast(1.15); }
 .manifesto-contact > span { position: absolute; right: -12px; bottom: -16px; color: var(--paper); font-family: "Courier New", monospace; font-size: 9px; line-height: 1.35; transform: rotate(-8deg); }
-.earn-poster { display: grid; grid-template-columns: 1.15fr 1.65fr 1.2fr .7fr; align-items: center; gap: 27px; min-height: 305px; margin-bottom: 40px; padding: 24px 0; border-bottom: 1px solid var(--line); }
+.earn-poster { display: grid; grid-template-columns: 1.05fr 1.55fr 1.05fr .9fr; align-items: center; gap: 27px; min-height: 305px; margin-bottom: 40px; padding: 24px 0; border-bottom: 1px solid var(--line); }
 .earn-image { position: relative; align-self: stretch; min-height: 250px; overflow: hidden; border: 1px solid var(--line); transform: rotate(-1deg); }
 .earn-image .flesh-image, .earn-image img { position: absolute; inset: 0; width: 100%; height: 100%; }
 .earn-image img { object-fit: cover; filter: saturate(.72) contrast(1.08); }
@@ -154,10 +156,20 @@ button, input { font: inherit; }
 .earn-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .earn-learn-more { border-color: transparent; padding-right: 0; padding-left: 0; }
 .earn-learn-more:hover, .earn-learn-more:focus-visible { border-color: transparent; background: transparent; color: var(--red); transform: translateX(2px); }
-.earn-steps { display: grid; gap: 17px; color: var(--paper); font-family: "Courier New", monospace; font-size: 9px; font-weight: 800; line-height: 1.2; text-transform: uppercase; }
-.earn-steps i { display: inline-block; width: 20px; margin-right: 3px; color: var(--red); font-size: 16px; font-style: normal; text-align: center; vertical-align: -2px; }
-.earn-stamp { align-self: end; color: var(--paper); font-family: Impact, "Arial Narrow", Arial, sans-serif; font-size: 20px; line-height: .95; }
-.earn-stamp small { display: block; margin-top: 10px; color: var(--muted); font-family: "Courier New", monospace; font-size: 8px; line-height: 1.35; }
+.earn-steps { display: grid; gap: 14px; color: var(--paper); font-family: "Courier New", monospace; font-size: 9px; font-weight: 800; line-height: 1.2; text-transform: uppercase; }
+.earn-steps span { display: flex; align-items: center; gap: 6px; }
+.earn-steps i { display: inline-grid; width: 19px; height: 19px; flex: 0 0 19px; place-items: center; margin: 0; border: 1px solid var(--red); color: var(--red); font-size: 11px; font-style: normal; text-align: center; }
+.earn-brand-block { position: relative; align-self: stretch; display: grid; grid-template-columns: 1fr auto; grid-template-rows: 1fr auto; min-height: 250px; overflow: hidden; padding: 13px; border: 1px solid rgba(238, 236, 230, .55); background: var(--red); color: #140000; }
+.earn-brand-image { position: absolute; inset: 0; overflow: hidden; background: #47100d; }
+.earn-brand-image .flesh-image, .earn-brand-image img { width: 100%; height: 100%; }
+.earn-brand-image img { object-fit: cover; filter: grayscale(.25) sepia(.32) saturate(1.55) contrast(1.12) brightness(.7); mix-blend-mode: multiply; }
+.earn-brand-image::after { content: ""; position: absolute; inset: 0; background: rgba(255, 52, 44, .62); mix-blend-mode: screen; }
+.earn-brand-image span { position: absolute; z-index: 1; top: 15px; right: 11px; color: var(--paper); font-family: "Courier New", monospace; font-size: 8px; font-weight: 800; line-height: 1.35; text-align: right; transform: rotate(-7deg); }
+.earn-brand-block::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0, 0, 0, .16) 4px); mix-blend-mode: multiply; }
+.earn-barcode { position: relative; z-index: 2; align-self: end; width: 58px; height: 34px; background: repeating-linear-gradient(90deg, #140000 0 2px, transparent 2px 4px, #140000 4px 5px, transparent 5px 8px); }
+.earn-brand-block > strong { position: relative; z-index: 2; align-self: end; color: var(--paper); font-family: Impact, "Arial Narrow", Arial, sans-serif; font-size: 31px; line-height: .8; }
+.earn-brand-block > strong sup { font-family: Arial, sans-serif; font-size: 7px; }
+.earn-brand-block > small { position: relative; z-index: 2; grid-column: 1 / -1; color: var(--paper); font-family: "Courier New", monospace; font-size: 7px; font-weight: 800; line-height: 1.35; text-transform: uppercase; }
 
 /* Archive, series and public entry pages retain the same physical-file language. */
 .archive-title { padding: 76px 0 35px; border-bottom: 1px solid var(--line); }
@@ -200,12 +212,12 @@ button, input { font: inherit; }
 .series-caption p { max-width: 480px; margin: 0 0 10px; color: var(--paper); font-size: 12px; }
 
 /* Footer as end credits. */
-.flesh-footer { display: grid; grid-template-columns: 1.55fr repeat(3, 1fr); gap: 35px; padding: 40px max(48px, calc((100vw - var(--max)) / 2)) 22px; border-top: 1px solid var(--line); background: var(--black); }
+.flesh-footer { display: grid; grid-template-columns: 1.55fr repeat(3, 1fr); gap: 24px 31px; padding: 30px max(48px, calc((100vw - var(--max)) / 2)) 17px; border-top: 1px solid var(--line); background: var(--black); }
 .flesh-footer > div:not(.footer-lockup) { display: grid; align-content: start; gap: 9px; }
 .flesh-footer > div > span { margin-bottom: 4px; color: var(--red); font-family: "Courier New", monospace; font-size: 9px; font-weight: 800; letter-spacing: .1em; }
 .flesh-footer > div > a { color: var(--muted); font-family: "Courier New", monospace; font-size: 10px; text-decoration: none; }
 .flesh-footer > div > a:hover, .flesh-footer > div > a:focus-visible { color: var(--paper); }
-.footer-socials { display: flex !important; gap: 13px; margin-top: 27px; }
+.footer-socials { display: flex !important; gap: 13px; margin-top: 16px; }
 .footer-socials a { color: var(--paper); font-family: "Courier New", monospace; font-size: 11px; font-weight: 800; text-decoration: none; }
 .footer-socials a:hover, .footer-socials a:focus-visible { color: var(--red); }
 .footer-credit { grid-column: 1 / -1; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-family: "Courier New", monospace; font-size: 8px; }
@@ -224,7 +236,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px soli
   .manifesto-contact { grid-column: 1 / -1; min-height: 150px; grid-template-columns: repeat(9, 1fr); }
   .manifesto-contact > span { right: 8px; bottom: -13px; }
   .earn-poster { grid-template-columns: 1fr 1.55fr 1fr; }
-  .earn-stamp { display: none; }
+  .earn-brand-block { grid-column: 1 / -1; min-height: 175px; grid-template-columns: minmax(120px, 1fr) auto minmax(120px, 1fr); grid-template-rows: 1fr auto; }
   .film-file, .dossier-meta { grid-template-columns: repeat(3, 1fr); }
 }
 
@@ -237,6 +249,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px soli
   .raw-hero { display: flex; flex-direction: column; min-height: 0; }
   .raw-hero-copy { min-height: 445px; padding: 59px 16px 42px; }
   .raw-hero-copy h1 { font-size: clamp(58px, 16vw, 91px); }
+  .raw-hero-copy h1 span { transform: scaleX(.86); }
   .raw-hero-copy p { max-width: 310px; font-size: 10px; }
   .raw-hero-media { min-height: 390px; border-top: 1px solid var(--line); border-left: 0; }
   .hero-frame { inset: 17px; }
@@ -269,6 +282,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px soli
   .earn-copy h2 { max-width: 350px; font-size: 53px; }
   .earn-actions { gap: 8px; }
   .earn-steps { margin-top: 28px; padding-top: 21px; border-top: 1px solid var(--line); }
+  .earn-brand-block { min-height: 245px; margin-top: 28px; }
   .archive-title { padding-top: 58px; padding-bottom: 28px; }
   .archive-title h1 { font-size: clamp(67px, 20vw, 105px); }
   .archive-controls { display: block; padding: 18px 0; }
@@ -287,6 +301,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px soli
 
 @media (max-width: 430px) {
   .raw-hero-copy h1 { font-size: 57px; }
+  .raw-hero-copy h1 span { transform: scaleX(.82); }
   .raw-button { min-height: 40px; padding: 0 13px; font-size: 9px; }
   .tape-open { font-size: 7px; }
   .film-metadata { font-size: 7px; gap: 3px 6px; }
