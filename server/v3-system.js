@@ -306,13 +306,14 @@ export class V3SystemService {
   }
 
   async diagnostics() {
-    const [renders, emails, stale, rights] = await Promise.all([
+    const [renders, emails, stale, rights, probes] = await Promise.all([
       this.db.query("SELECT id,production_id,status,failure_reason,updated_at FROM v3_production_render_jobs WHERE status='failed' ORDER BY updated_at DESC LIMIT 25"),
       this.db.query("SELECT id,recipient_email,template,status,last_error,created_at FROM outbound_email_queue WHERE status='failed' ORDER BY created_at DESC LIMIT 25"),
       this.db.query("SELECT count(*)::int AS count FROM v3_production_render_jobs WHERE status IN ('queued','running') AND updated_at < now() - interval '1 hour'"),
-      this.db.query("SELECT count(*)::int AS count FROM v3_production_participant_assignments WHERE consent_record_id IS NULL OR participation_status NOT IN ('confirmed','completed')")
+      this.db.query("SELECT count(*)::int AS count FROM v3_production_participant_assignments WHERE consent_record_id IS NULL OR participation_status NOT IN ('confirmed','completed')"),
+      this.db.query("SELECT id,submission_id,status,attempts,last_error_code,last_error_message,updated_at FROM v3_creator_submission_processing_jobs WHERE status IN ('retryable_failure','permanent_failure') ORDER BY updated_at DESC LIMIT 25")
     ]);
-    return { failed_jobs: renders.rows, integration_failures: emails.rows.map(row => ({ ...row, recipient_email: row.recipient_email ? `${row.recipient_email.slice(0, 2)}…` : null })), stuck_workflows: { rendering_jobs: stale.rows[0].count, participant_assignments_needing_action: rights.rows[0].count }, recent_errors: [...renders.rows, ...emails.rows].slice(0, 50) };
+    return { failed_jobs: renders.rows, processing_jobs: probes.rows, integration_failures: emails.rows.map(row => ({ ...row, recipient_email: row.recipient_email ? `${row.recipient_email.slice(0, 2)}…` : null })), stuck_workflows: { rendering_jobs: stale.rows[0].count, participant_assignments_needing_action: rights.rows[0].count }, recent_errors: [...renders.rows, ...probes.rows, ...emails.rows].slice(0, 50) };
   }
 
   async backups() {
