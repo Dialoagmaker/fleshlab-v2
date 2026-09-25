@@ -13,7 +13,7 @@
 * { box-sizing: border-box; }
 html { background: var(--black); scroll-behavior: smooth; }
 body { margin: 0; background: var(--black); color: var(--paper); font-family: Arial, Helvetica, sans-serif; }
-body::before { content: ""; position: fixed; inset: 0; z-index: 100; pointer-events: none; opacity: .1; background-image: radial-gradient(rgba(255, 255, 255, .55) .55px, transparent .8px), repeating-linear-gradient(103deg, transparent 0 164px, rgba(255, 255, 255, .08) 165px, transparent 166px 318px); background-size: 4px 4px, 318px 318px; mix-blend-mode: screen; }
+body::before { content: ""; position: fixed; inset: 0; z-index: 100; pointer-events: none; opacity: .055; background-image: radial-gradient(rgba(255, 255, 255, .55) .55px, transparent .8px), repeating-linear-gradient(103deg, transparent 0 164px, rgba(255, 255, 255, .08) 165px, transparent 166px 318px); background-size: 4px 4px, 318px 318px; mix-blend-mode: screen; }
 a { color: inherit; }
 button, input { font: inherit; }
 .flesh-shell { min-height: 100vh; overflow: clip; background: var(--black); color: var(--paper); }
@@ -52,10 +52,10 @@ button, input { font: inherit; }
 /* Raw hero — the approved reference uses copy on the left and one framed real image on the right. */
 .raw-hero { position: relative; display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); min-height: clamp(540px, 70vh, 780px); overflow: hidden; border-bottom: 1px solid var(--line); background: var(--black); }
 .raw-hero-copy { position: relative; display: flex; flex-direction: column; justify-content: center; padding: 74px max(42px, calc((100vw - var(--max)) / 2)) 70px; }
-.raw-kicker, .archive-kicker, .detail-kicker, .detail-stamp, .poster-kicker, .section-number, .hero-meta, .film-metadata, .rec-badge, .timecode { font-family: "Courier New", monospace; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.raw-kicker, .archive-kicker, .detail-kicker, .detail-stamp, .poster-kicker, .section-number, .hero-meta, .film-metadata, .rec-badge, .timecode { font-family: "Courier New", monospace; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .raw-kicker { color: var(--paper); }
-.raw-hero-copy h1 { max-width: none; margin: 23px 0 0; color: var(--paper); font-family: Impact, "Arial Narrow", Arial, sans-serif; font-size: clamp(58px, 7.5vw, 138px); font-weight: 900; letter-spacing: -.045em; line-height: .78; overflow: visible; }
-.raw-hero-copy h1 span { display: block; width: max-content; white-space: nowrap; transform: scaleX(.76); transform-origin: left center; }
+.raw-hero-copy h1 { max-width: none; margin: 23px 0 0; color: var(--paper); font-family: Impact, "Arial Narrow", Arial, sans-serif; font-size: clamp(55px, 6.4vw, 116px); font-weight: 900; letter-spacing: -.012em; line-height: .9; overflow: visible; }
+.raw-hero-copy h1 span { display: block; width: max-content; white-space: nowrap; transform: scaleX(.82); transform-origin: left center; }
 .raw-mark { display: block; width: min(280px, 48%); height: 8px; margin: 13px 0 24px; border-radius: 50%; background: var(--red); transform: rotate(-2deg); }
 .raw-hero-copy p { max-width: 425px; margin: 0 0 24px; color: var(--paper); font-family: "Courier New", monospace; font-size: 12px; font-weight: 700; line-height: 1.65; text-transform: uppercase; }
 .raw-button { display: inline-flex; align-items: center; justify-content: center; min-height: 43px; width: fit-content; padding: 0 17px; border: 1px solid var(--paper); color: var(--paper); font-family: "Courier New", monospace; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-decoration: none; text-transform: uppercase; transition: transform .18s ease, background .18s ease, color .18s ease; }
@@ -97,13 +97,13 @@ button, input { font: inherit; }
 .tape-noise { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: .16; background-image: radial-gradient(rgba(255, 255, 255, .7) .5px, transparent .8px); background-size: 4px 4px; mix-blend-mode: screen; }
 .tape-card::after { content: ""; position: absolute; inset: 0; z-index: 0; background: linear-gradient(0deg, rgba(0, 0, 0, .93), transparent 63%); pointer-events: none; }
 .tape-top, .tape-bottom { position: absolute; z-index: 2; left: 12px; right: 12px; display: flex; justify-content: space-between; gap: 8px; }
-.tape-top { top: 11px; color: var(--paper); font-family: "Courier New", monospace; font-size: 8px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.tape-top { top: 11px; color: var(--paper); font-family: "Courier New", monospace; font-size: 9px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
 .tape-top span:last-child { color: var(--red); }
 .tape-bottom { bottom: 12px; display: block; }
 .tape-bottom h3 { max-width: 100%; overflow: hidden; margin: 0 0 6px; color: #fff; font-size: 16px; font-weight: 800; line-height: 1.05; text-overflow: ellipsis; white-space: nowrap; }
-.film-metadata { display: flex; flex-wrap: wrap; gap: 4px 9px; color: rgba(238, 236, 230, .78); font-size: 8px; line-height: 1.35; }
+.film-metadata { display: flex; flex-wrap: wrap; gap: 4px 9px; color: rgba(238, 236, 230, .78); font-size: 9px; line-height: 1.4; }
 .film-metadata span + span::before { content: "/"; margin-right: 9px; color: var(--red); }
-.tape-open { display: block; margin-top: 7px; color: var(--red); font-family: "Courier New", monospace; font-size: 8px; font-weight: 800; letter-spacing: .08em; }
+.tape-open { display: block; margin-top: 7px; color: var(--red); font-family: "Courier New", monospace; font-size: 9px; font-weight: 800; letter-spacing: .06em; }
 .tape-strip { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 60px) / 6); gap: 12px; overflow-x: auto; padding-bottom: 8px; scrollbar-color: var(--red) var(--ink); }
 .tape-strip .tape-card { aspect-ratio: 1.35 / 1; }
 
@@ -117,7 +117,7 @@ button, input { font: inherit; }
 .sheet-mark { margin-top: 7px; color: var(--paper); font-family: "Courier New", monospace; font-size: 8px; font-weight: 800; }
 .sheet-caption { display: flex; align-items: baseline; justify-content: space-between; gap: 4px; margin-top: 5px; }
 .sheet-caption strong { overflow: hidden; font-size: 13px; font-weight: 900; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
-.sheet-caption span { color: var(--muted); font-family: "Courier New", monospace; font-size: 7px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+.sheet-caption span { color: var(--muted); font-family: "Courier New", monospace; font-size: 8px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
 .sheet-caption b { color: var(--paper); font-size: 14px; font-weight: 400; }
 .people-note { display: grid; align-content: center; padding: 20px; border: 1px solid var(--line); color: var(--paper); font-family: "Courier New", monospace; font-size: 12px; font-weight: 800; line-height: 1.7; text-align: center; text-transform: uppercase; }
 .people-note::after { content: ""; display: block; width: 75px; height: 3px; margin: 18px auto 0; background: var(--red); transform: rotate(-5deg); }
@@ -130,9 +130,9 @@ button, input { font: inherit; }
 .manifesto-aside > i { display: block; width: 90px; height: 1px; margin: 12px 0 18px; background: var(--red); }
 .manifesto-aside p { margin: 0; }
 .manifesto-aside small { margin-top: auto; font-size: 8px; }
-.manifesto-wordmark { display: flex; flex-direction: column; font-family: Impact, "Arial Narrow", Arial, sans-serif; font-size: clamp(65px, 9vw, 145px); font-weight: 900; letter-spacing: -.06em; line-height: .71; }
+.manifesto-wordmark { display: flex; flex-direction: column; font-family: Impact, "Arial Narrow", Arial, sans-serif; font-size: clamp(65px, 9vw, 145px); font-weight: 900; letter-spacing: -.035em; line-height: .8; }
 .manifesto-wordmark span { color: var(--paper); }
-.manifesto-wordmark strong { color: var(--red); font-size: 1.08em; font-style: normal; transform: translateX(30px) rotate(-5deg); }
+.manifesto-wordmark strong { color: var(--red); font-size: 1.02em; font-style: normal; transform: translateX(24px) rotate(-5deg); }
 .manifesto-copy { color: var(--paper); font-family: "Courier New", monospace; font-size: 10px; font-weight: 700; line-height: 1.5; text-transform: uppercase; }
 .manifesto-copy p { margin: 28px 0 15px; }
 .manifesto-copy b { color: var(--paper); }
@@ -303,8 +303,8 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px soli
   .raw-hero-copy h1 { font-size: 57px; }
   .raw-hero-copy h1 span { transform: scaleX(.82); }
   .raw-button { min-height: 40px; padding: 0 13px; font-size: 9px; }
-  .tape-open { font-size: 7px; }
-  .film-metadata { font-size: 7px; gap: 3px 6px; }
+  .tape-open { font-size: 8px; }
+  .film-metadata { font-size: 8px; gap: 3px 6px; }
   .film-metadata span + span::before { margin-right: 6px; }
   .sheet-caption { display: block; }
   .sheet-caption span { display: block; margin-top: 4px; }
