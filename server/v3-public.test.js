@@ -97,9 +97,10 @@ test('public homepage UI keeps SEO, lazy imagery and no storage references', asy
   assert.match(source, /application\/ld\+json/);
   assert.match(source, /loading=\{eager \? 'eager' : 'lazy'\}/);
   assert.match(source, /parts\[0\]\s*===\s*'home'/);
-  assert.match(source, /function HomeHero/);
-  assert.match(source, /function ContentCard/);
-  assert.doesNotMatch(source, /editorial-spotlight|brand-story|final-brand-cta/);
+  assert.match(source, /function RawHero/);
+  assert.match(source, /function TapeCard/);
+  assert.match(source, /AMATEUR/);
+  assert.doesNotMatch(source, /editorial-spotlight|brand-story|final-brand-cta|streaming/);
   assert.match(source, /https:\/\/earn\.fleshlab\.online/);
   assert.doesNotMatch(source, /storage_reference|private_profile|audit/);
 });
