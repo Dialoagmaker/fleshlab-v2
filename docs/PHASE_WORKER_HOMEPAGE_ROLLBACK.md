@@ -3,7 +3,7 @@
 Deployment: 2026-09-25
 
 - Release: `/opt/fleshlab/releases/fleshlab-worker-homepage-0467533`
-- Source commits: `0467533`, `de3d5c5`, `a7501ab`
+- Source commits: `0467533`, `de3d5c5`, `a7501ab`, `93fe05c`
 - Migration: `0032_creator_submission_probe_hardening.sql`
 - Backup: `/opt/fleshlab/backups/phase-worker-homepage-pre-0032-20260925081351.sql.gz`
 - Immediate application rollback: `/opt/fleshlab/releases/fleshlab-portal-separation-f68f3a1`
