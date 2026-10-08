@@ -1,0 +1,138 @@
+/**
+ * Shared helper for computing upload readiness status.
+ * Used by both admin and applicant-facing features.
+ * Returns computed status without modifying application.status.
+ */
+
+export function computeUploadReadiness(application) {
+  if (!application) return null;
+
+  // Count uploads
+  const photoCount = (application.profile_photo_r2_keys || []).length;
+  const hasIdFront = !!(application.id_document_front_r2_key || application.id_document_r2_key);
+  const hasIdBack = !!application.id_document_back_r2_key;
+  const hasSelfie = !!application.selfie_with_id_r2_key;
+  const hasIntroVideo = !!application.intro_video_r2_key;
+  const hasHardcoreVideo = !!application.hardcore_video_r2_key;
+  const videoCount = (hasIntroVideo ? 1 : 0) + (hasHardcoreVideo ? 1 : 0);
+
+  // Required counts
+  const photoRequired = 5;
+  const videoRequired = 2;
+
+  // Missing items
+  const missingItems = [];
+  if (photoCount < photoRequired) {
+    missingItems.push(`${photoRequired - photoCount} photo${photoRequired - photoCount > 1 ? 's' : ''}`);
+  }
+  if (!hasIntroVideo) {
+    missingItems.push('intro video');
+  }
+  if (!hasHardcoreVideo) {
+    missingItems.push('hardcore video');
+  }
+  if (!hasIdFront) {
+    missingItems.push('ID document');
+  }
+  if (!hasSelfie) {
+    missingItems.push('selfie with ID');
+  }
+
+  // All required complete?
+  const allRequiredComplete = 
+    photoCount >= photoRequired &&
+    videoCount >= videoRequired &&
+    hasIdFront &&
+    hasSelfie;
+
+  // Compute readiness status
+  let readinessStatus = 'incomplete';
+  let readinessMessage = 'Missing required uploads';
+
+  if (allRequiredComplete) {
+    // All uploads complete - check application status
+    if (application.status === 'approved') {
+      readinessStatus = 'approved';
+      readinessMessage = 'Application approved';
+    } else if (application.status === 'rejected') {
+      readinessStatus = 'rejected';
+      readinessMessage = 'Application rejected';
+    } else if (['reviewing', 'contacted', 'more_info_requested'].includes(application.status)) {
+      readinessStatus = 'under_review';
+      readinessMessage = 'Under review';
+    } else {
+      readinessStatus = 'ready_for_review';
+      readinessMessage = 'Ready for review';
+    }
+  } else {
+    // Incomplete - determine what's missing
+    if (application.status === 'media_pending') {
+      readinessStatus = 'media_pending';
+      readinessMessage = 'Waiting for media uploads';
+    } else if (application.compliance_upload_status === 'uploaded' && !hasIdFront) {
+      readinessStatus = 'id_pending';
+      readinessMessage = 'Waiting for ID verification';
+    } else if (!hasIdFront && !hasSelfie && videoCount === 0 && photoCount === 0) {
+      readinessStatus = 'not_started';
+      readinessMessage = 'No uploads yet';
+    } else {
+      readinessStatus = 'incomplete';
+      readinessMessage = missingItems.length > 0 ? `Missing: ${missingItems.join(', ')}` : 'Incomplete';
+    }
+  }
+
+  return {
+    readiness_status: readinessStatus,
+    readiness_message: readinessMessage,
+    all_required_complete: allRequiredComplete,
+    missing_items: missingItems,
+    upload_counts: {
+      photos: {
+        uploaded: photoCount,
+        required: photoRequired,
+        missing: Math.max(0, photoRequired - photoCount)
+      },
+      videos: {
+        uploaded: videoCount,
+        required: videoRequired,
+        missing: Math.max(0, videoRequired - videoCount)
+      },
+      id_verification: {
+        id_front: hasIdFront,
+        id_back: hasIdBack,
+        selfie: hasSelfie,
+        complete: hasIdFront && hasSelfie
+      }
+    },
+    token_expires_at: application.application_upload_token_expires_at,
+    last_activity_at: application.last_activity_at || application.updated_date
+  };
+}
+
+export function getReadinessBadgeVariant(status) {
+  const variants = {
+    not_started: 'secondary',
+    incomplete: 'secondary',
+    id_pending: 'warning',
+    media_pending: 'warning',
+    under_review: 'default',
+    ready_for_review: 'default',
+    approved: 'success',
+    rejected: 'destructive'
+  };
+  return variants[status] || 'secondary';
+}
+
+export function getReadinessBadgeColor(status) {
+  const colors = {
+    not_started: 'bg-gray-500/10 text-gray-500',
+    incomplete: 'bg-orange-500/10 text-orange-500',
+    id_pending: 'bg-amber-500/10 text-amber-500',
+    media_pending: 'bg-orange-500/10 text-orange-500',
+    under_review: 'bg-blue-500/10 text-blue-500',
+    ready_for_review: 'bg-green-500/10 text-green-500',
+    approved: 'bg-emerald-500/10 text-emerald-500',
+    rejected: 'bg-red-500/10 text-red-500'
+  };
+  return colors[status] || 'bg-gray-500/10 text-gray-500';
+}

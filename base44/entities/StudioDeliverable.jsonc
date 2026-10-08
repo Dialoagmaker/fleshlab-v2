@@ -1,0 +1,68 @@
+{
+  "name": "StudioDeliverable",
+  "type": "object",
+  "properties": {
+    "deliverable_id": {
+      "type": "string",
+      "title": "Deliverable ID"
+    },
+    "project_id": {
+      "type": "string",
+      "title": "Project ID"
+    },
+    "asset_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Asset IDs"
+    },
+    "channel": {
+      "type": "string",
+      "title": "Publishing Channel"
+    },
+    "publish_status": {
+      "type": "string",
+      "enum": [
+        "not_ready",
+        "ready",
+        "scheduled",
+        "published",
+        "failed",
+        "archived"
+      ],
+      "default": "not_ready",
+      "title": "Publish Status"
+    },
+    "published_url": {
+      "type": "string",
+      "title": "Published URL"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Published At"
+    },
+    "performance_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Performance JSON"
+    },
+    "knowledge_update_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Knowledge Update JSON"
+    },
+    "history_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Deliverable History JSON"
+    }
+  },
+  "required": [
+    "deliverable_id",
+    "project_id",
+    "channel",
+    "publish_status"
+  ]
+}

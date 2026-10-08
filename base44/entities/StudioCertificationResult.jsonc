@@ -1,0 +1,107 @@
+{
+  "name": "StudioCertificationResult",
+  "type": "object",
+  "properties": {
+    "certification_id": {
+      "type": "string",
+      "title": "Certification ID"
+    },
+    "version": {
+      "type": "string",
+      "title": "Certification Version"
+    },
+    "trigger": {
+      "type": "string",
+      "title": "Trigger"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Timestamp"
+    },
+    "execution_time_ms": {
+      "type": "number",
+      "title": "Execution Time MS"
+    },
+    "overall_certification_score": {
+      "type": "number",
+      "title": "Overall Certification Score"
+    },
+    "certification_status": {
+      "type": "string",
+      "enum": [
+        "CERTIFIED",
+        "CERTIFIED WITH WARNINGS",
+        "NOT CERTIFIED"
+      ],
+      "title": "Certification Status"
+    },
+    "subsystem_scores_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Subsystem Scores JSON"
+    },
+    "passed_tests_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Passed Tests JSON"
+    },
+    "failed_tests_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Failed Tests JSON"
+    },
+    "warnings_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Warnings JSON"
+    },
+    "recommendations_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Recommendations JSON"
+    },
+    "stress_metrics_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Stress Metrics JSON"
+    },
+    "scenario_results_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Scenario Results JSON"
+    },
+    "negative_results_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Negative Results JSON"
+    },
+    "consistency_results_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Consistency Results JSON"
+    },
+    "release_gate_required": {
+      "type": "boolean",
+      "default": false,
+      "title": "Release Gate Required"
+    },
+    "release_gate_pass": {
+      "type": "boolean",
+      "default": false,
+      "title": "Release Gate Pass"
+    },
+    "public_summary": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Public Summary"
+    }
+  },
+  "required": [
+    "certification_id",
+    "version",
+    "timestamp",
+    "overall_certification_score",
+    "certification_status"
+  ]
+}

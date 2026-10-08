@@ -1,0 +1,85 @@
+{
+  "name": "CreativeBenchmarkResult",
+  "type": "object",
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "title": "Benchmark Run ID"
+    },
+    "case_id": {
+      "type": "string",
+      "title": "Benchmark Case ID"
+    },
+    "system_version": {
+      "type": "string",
+      "title": "System Version"
+    },
+    "suite_version": {
+      "type": "string",
+      "title": "Suite Version"
+    },
+    "scores_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Scores JSON"
+    },
+    "executive_report": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Executive Report"
+    },
+    "board_minutes": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Board Minutes"
+    },
+    "critique_report": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Critique Report"
+    },
+    "decision_trace_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Decision Trace JSON"
+    },
+    "risk_analysis_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Risk Analysis JSON"
+    },
+    "confidence_report_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Confidence Report JSON"
+    },
+    "revision_history_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Revision History JSON"
+    },
+    "regression_flags_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Regression Flags JSON"
+    },
+    "passed": {
+      "type": "boolean",
+      "default": false,
+      "title": "Passed"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Completed At"
+    }
+  },
+  "required": [
+    "run_id",
+    "case_id",
+    "system_version",
+    "suite_version",
+    "scores_json",
+    "passed"
+  ]
+}

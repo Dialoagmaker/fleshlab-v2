@@ -1,0 +1,65 @@
+{
+  "name": "SEOPage",
+  "type": "object",
+  "properties": {
+    "page_type": {
+      "type": "string",
+      "enum": [
+        "video",
+        "performer",
+        "brand",
+        "category",
+        "tag",
+        "news",
+        "custom"
+      ],
+      "title": "Page Type"
+    },
+    "entity_id": {
+      "type": "string",
+      "title": "Entity ID"
+    },
+    "slug": {
+      "type": "string",
+      "title": "Slug"
+    },
+    "meta_title": {
+      "type": "string",
+      "title": "Meta Title"
+    },
+    "meta_description": {
+      "type": "string",
+      "title": "Meta Description"
+    },
+    "og_image_url": {
+      "type": "string",
+      "title": "OG Image URL"
+    },
+    "canonical_url": {
+      "type": "string",
+      "title": "Canonical URL"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "approved",
+        "needs_review"
+      ],
+      "title": "Status",
+      "default": "draft"
+    },
+    "schema_json": {
+      "type": "string",
+      "title": "Schema JSON (raw)"
+    },
+    "v1_id": {
+      "type": "string",
+      "title": "V1 Migration ID"
+    }
+  },
+  "required": [
+    "page_type",
+    "slug"
+  ]
+}

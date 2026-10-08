@@ -1,0 +1,46 @@
+{
+  "name": "NotificationLog",
+  "type": "object",
+  "properties": {
+    "recipient_email": {
+      "type": "string",
+      "format": "email",
+      "title": "Recipient Email"
+    },
+    "recipient_user_id": {
+      "type": "string",
+      "title": "Recipient User ID"
+    },
+    "notification_type": {
+      "type": "string",
+      "title": "Notification Type"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "sent",
+        "failed"
+      ],
+      "title": "Status",
+      "default": "pending"
+    },
+    "subject": {
+      "type": "string",
+      "title": "Subject"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Sent At"
+    },
+    "error_message": {
+      "type": "string",
+      "title": "Error Message"
+    }
+  },
+  "required": [
+    "recipient_email",
+    "notification_type"
+  ]
+}

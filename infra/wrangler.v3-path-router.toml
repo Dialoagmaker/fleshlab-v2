@@ -1,0 +1,14 @@
+name = "fleshlab-v3-path-router"
+account_id = "aee5a2c1098dbb664c57f458dc7b99b3"
+main = "cloudflare-v3-path-router.js"
+compatibility_date = "2026-09-24"
+workers_dev = false
+
+# These are the entire production surface: V2 retains fleshlab.online/*.
+[[routes]]
+pattern = "fleshlab.online/v3/*"
+zone_id = "bbd914f59dc4b3ce2e61df679203e1b3"
+
+[[routes]]
+pattern = "fleshlab.online/api/v3/*"
+zone_id = "bbd914f59dc4b3ce2e61df679203e1b3"

@@ -1,0 +1,3 @@
+import test from 'node:test'; import assert from 'node:assert/strict'; import { AdminOperationsService } from './admin-operations.js';
+test('admin operations list is read-only and table scoped', async () => { let sql=''; const db={query:async q=>{sql=q;return {rows:[]};}}; await new AdminOperationsService(db).list('qa'); assert.match(sql,/admin_qa_records/); assert.rejects(()=>new AdminOperationsService(db).list('unknown'),{code:'NOT_FOUND'}); });
+test('admin operations rejects empty writes', async () => { await assert.rejects(()=>new AdminOperationsService({query:async()=>({rows:[]})}).save('qa',null,{}, {id:'u'}),{code:'INVALID_INPUT'}); });

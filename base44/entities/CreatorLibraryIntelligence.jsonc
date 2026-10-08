@@ -1,0 +1,70 @@
+{
+  "name": "CreatorLibraryIntelligence",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "run_id": {
+      "type": "string",
+      "title": "Run ID"
+    },
+    "analysis_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Analysis Date"
+    },
+    "library_diversity": {
+      "type": "string",
+      "title": "Library Diversity"
+    },
+    "library_freshness": {
+      "type": "string",
+      "title": "Library Freshness"
+    },
+    "genre_balance": {
+      "type": "string",
+      "title": "Genre Balance"
+    },
+    "series_progress": {
+      "type": "string",
+      "title": "Series Progress"
+    },
+    "missing_categories_json": {
+      "type": "string",
+      "title": "Missing Categories JSON",
+      "format": "textarea"
+    },
+    "overused_locations_json": {
+      "type": "string",
+      "title": "Overused Locations JSON",
+      "format": "textarea"
+    },
+    "content_saturation_json": {
+      "type": "string",
+      "title": "Content Saturation JSON",
+      "format": "textarea"
+    },
+    "series_json": {
+      "type": "string",
+      "title": "Series JSON",
+      "format": "textarea"
+    },
+    "evidence_json": {
+      "type": "string",
+      "title": "Evidence JSON",
+      "format": "textarea"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Generated At"
+    }
+  },
+  "required": [
+    "performer_id",
+    "analysis_date",
+    "generated_at"
+  ]
+}

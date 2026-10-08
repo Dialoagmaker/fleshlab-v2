@@ -1,0 +1,105 @@
+{
+  "name": "ComplianceDocument",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "document_type": {
+      "type": "string",
+      "enum": [
+        "id_front",
+        "id_back",
+        "selfie_with_id",
+        "performer_contract",
+        "model_release",
+        "release_agreement",
+        "consent_form",
+        "age_verification",
+        "medical_test",
+        "sti_hiv_test",
+        "background_check",
+        "work_permit",
+        "other"
+      ],
+      "title": "Document Type"
+    },
+    "title": {
+      "type": "string",
+      "title": "Document Title"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "requested",
+        "uploaded",
+        "under_review",
+        "approved",
+        "rejected",
+        "expired",
+        "revoked"
+      ],
+      "title": "Status",
+      "default": "uploaded"
+    },
+    "file_uri": {
+      "type": "string",
+      "title": "File URI (R2)"
+    },
+    "filename": {
+      "type": "string",
+      "title": "Original Filename"
+    },
+    "mime_type": {
+      "type": "string",
+      "title": "MIME Type"
+    },
+    "file_size_bytes": {
+      "type": "integer",
+      "title": "File Size (bytes)"
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Issued At"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Expires At"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Reviewed At"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "title": "Reviewed By User ID"
+    },
+    "rejection_reason": {
+      "type": "string",
+      "title": "Rejection Reason",
+      "format": "textarea"
+    },
+    "admin_note": {
+      "type": "string",
+      "title": "Admin Note (Internal)",
+      "format": "textarea"
+    },
+    "performer_visible_note": {
+      "type": "string",
+      "title": "Performer Visible Note",
+      "format": "textarea"
+    }
+  },
+  "required": [
+    "performer_id",
+    "document_type",
+    "title",
+    "file_uri",
+    "filename",
+    "mime_type"
+  ]
+}

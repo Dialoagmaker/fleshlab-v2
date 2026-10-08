@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /api/
+Allow: /api/v3/public/sitemap.xml
+Allow: /v3/pricing$
+
+Sitemap: https://fleshlab.online/sitemap.xml
+Sitemap: https://fleshlab.online/api/v3/public/sitemap.xml

@@ -1,0 +1,42 @@
+{
+  "name": "SystemStat",
+  "type": "object",
+  "properties": {
+    "total_videos": {
+      "type": "integer",
+      "title": "Total Videos",
+      "default": 0
+    },
+    "total_performers": {
+      "type": "integer",
+      "title": "Total Performers",
+      "default": 0
+    },
+    "total_brands": {
+      "type": "integer",
+      "title": "Total Brands",
+      "default": 0
+    },
+    "total_news_articles": {
+      "type": "integer",
+      "title": "Total News Articles",
+      "default": 0
+    },
+    "unassigned_video_count": {
+      "type": "integer",
+      "title": "Unassigned Videos",
+      "default": 0
+    },
+    "assignment_coverage_pct": {
+      "type": "number",
+      "title": "Assignment Coverage (%)",
+      "default": 0
+    },
+    "last_refreshed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last Refreshed At"
+    }
+  },
+  "required": []
+}

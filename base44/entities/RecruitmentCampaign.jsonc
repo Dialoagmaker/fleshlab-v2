@@ -1,0 +1,97 @@
+{
+  "name": "RecruitmentCampaign",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Campaign Name"
+    },
+    "slug": {
+      "type": "string",
+      "title": "Campaign Slug"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "paused",
+        "archived"
+      ],
+      "default": "active",
+      "title": "Status"
+    },
+    "landing_page": {
+      "type": "string",
+      "title": "Landing Page"
+    },
+    "source": {
+      "type": "string",
+      "title": "UTM Source"
+    },
+    "medium": {
+      "type": "string",
+      "title": "UTM Medium"
+    },
+    "campaign": {
+      "type": "string",
+      "title": "UTM Campaign"
+    },
+    "content": {
+      "type": "string",
+      "title": "UTM Content"
+    },
+    "term": {
+      "type": "string",
+      "title": "UTM Term"
+    },
+    "country": {
+      "type": "string",
+      "title": "Target Country"
+    },
+    "channel": {
+      "type": "string",
+      "title": "Channel"
+    },
+    "referral_code": {
+      "type": "string",
+      "title": "Referral Code"
+    },
+    "performer_referral_name": {
+      "type": "string",
+      "title": "Performer Referral"
+    },
+    "template_id": {
+      "type": "string",
+      "title": "Template ID"
+    },
+    "generated_url": {
+      "type": "string",
+      "title": "Tracked URL"
+    },
+    "notes": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Notes"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+    },
+    "last_used_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last Used At"
+    }
+  },
+  "required": [
+    "name",
+    "slug",
+    "landing_page",
+    "source",
+    "medium",
+    "campaign",
+    "country",
+    "channel"
+  ]
+}

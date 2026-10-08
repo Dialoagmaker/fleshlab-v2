@@ -1,0 +1,73 @@
+{
+  "name": "CreatorVideoAIAnalysis",
+  "type": "object",
+  "properties": {
+    "video_id": {
+      "type": "string",
+      "title": "Video ID"
+    },
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "analysis_status": {
+      "type": "string",
+      "enum": [
+        "complete",
+        "needs_review",
+        "failed"
+      ],
+      "title": "Analysis Status",
+      "default": "complete"
+    },
+    "detected_categories_json": {
+      "type": "string",
+      "title": "Detected Categories JSON",
+      "format": "textarea"
+    },
+    "detected_locations_json": {
+      "type": "string",
+      "title": "Detected Locations JSON",
+      "format": "textarea"
+    },
+    "series_name": {
+      "type": "string",
+      "title": "Series Name"
+    },
+    "episode_number": {
+      "type": "integer",
+      "title": "Episode Number"
+    },
+    "creative_notes": {
+      "type": "string",
+      "title": "Creative Notes",
+      "format": "textarea"
+    },
+    "quality_notes_json": {
+      "type": "string",
+      "title": "Quality Notes JSON",
+      "format": "textarea"
+    },
+    "improvement_suggestions_json": {
+      "type": "string",
+      "title": "Improvement Suggestions JSON",
+      "format": "textarea"
+    },
+    "evidence_json": {
+      "type": "string",
+      "title": "Evidence JSON",
+      "format": "textarea"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Generated At"
+    }
+  },
+  "required": [
+    "video_id",
+    "performer_id",
+    "analysis_status",
+    "generated_at"
+  ]
+}

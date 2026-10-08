@@ -1,0 +1,91 @@
+{
+  "name": "StudioAsset",
+  "type": "object",
+  "properties": {
+    "asset_id": {
+      "type": "string",
+      "title": "Asset ID"
+    },
+    "project_id": {
+      "type": "string",
+      "title": "Project ID"
+    },
+    "asset_name": {
+      "type": "string",
+      "title": "Asset Name"
+    },
+    "asset_type": {
+      "type": "string",
+      "enum": [
+        "image",
+        "video",
+        "cover",
+        "thumbnail",
+        "logo",
+        "landing_page",
+        "social_post",
+        "banner",
+        "advertising",
+        "brand_kit"
+      ],
+      "title": "Asset Type"
+    },
+    "department": {
+      "type": "string",
+      "enum": [
+        "creative",
+        "production",
+        "asset_management",
+        "campaign_management",
+        "publishing",
+        "quality_assurance",
+        "performance_analytics",
+        "knowledge"
+      ],
+      "title": "Department"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "planning",
+        "production",
+        "internal_review",
+        "revision",
+        "approved",
+        "publishing",
+        "completed",
+        "archived"
+      ],
+      "default": "draft",
+      "title": "Asset Status"
+    },
+    "current_version": {
+      "type": "integer",
+      "default": 1,
+      "title": "Current Version"
+    },
+    "current_version_id": {
+      "type": "string",
+      "title": "Current Version ID"
+    },
+    "locked_no_overwrite": {
+      "type": "boolean",
+      "default": true,
+      "title": "No Overwrite Policy"
+    },
+    "history_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Asset History JSON"
+    }
+  },
+  "required": [
+    "asset_id",
+    "project_id",
+    "asset_name",
+    "asset_type",
+    "status",
+    "current_version"
+  ]
+}

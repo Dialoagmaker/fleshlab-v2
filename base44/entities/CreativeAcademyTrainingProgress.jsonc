@@ -1,0 +1,49 @@
+{
+  "name": "CreativeAcademyTrainingProgress",
+  "type": "object",
+  "properties": {
+    "module_slug": {
+      "type": "string",
+      "title": "Module Slug"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "installed",
+        "missing",
+        "training",
+        "certified"
+      ],
+      "default": "missing",
+      "title": "Status"
+    },
+    "current_lesson_slug": {
+      "type": "string",
+      "title": "Current Lesson Slug"
+    },
+    "lessons_installed": {
+      "type": "integer",
+      "default": 0,
+      "title": "Lessons Installed"
+    },
+    "lessons_required": {
+      "type": "integer",
+      "default": 0,
+      "title": "Lessons Required"
+    },
+    "progress_pct": {
+      "type": "number",
+      "default": 0,
+      "title": "Progress Percent"
+    },
+    "details_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Progress Details JSON"
+    }
+  },
+  "required": [
+    "module_slug",
+    "status"
+  ]
+}

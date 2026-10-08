@@ -1,0 +1,71 @@
+{
+  "name": "RecruitmentCampaignTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Template Name"
+    },
+    "market": {
+      "type": "string",
+      "title": "Market"
+    },
+    "channel": {
+      "type": "string",
+      "title": "Channel"
+    },
+    "landing_page": {
+      "type": "string",
+      "title": "Landing Page"
+    },
+    "source": {
+      "type": "string",
+      "title": "Default Source"
+    },
+    "medium": {
+      "type": "string",
+      "title": "Default Medium"
+    },
+    "campaign_prefix": {
+      "type": "string",
+      "title": "Campaign Prefix"
+    },
+    "default_country": {
+      "type": "string",
+      "title": "Default Country"
+    },
+    "referral_code_hint": {
+      "type": "string",
+      "title": "Referral Code Hint"
+    },
+    "post_copy": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Social Post Copy"
+    },
+    "whatsapp_copy": {
+      "type": "string",
+      "format": "textarea",
+      "title": "WhatsApp Copy"
+    },
+    "notes": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Notes"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "title": "Active"
+    }
+  },
+  "required": [
+    "name",
+    "market",
+    "channel",
+    "landing_page",
+    "source",
+    "medium",
+    "campaign_prefix"
+  ]
+}

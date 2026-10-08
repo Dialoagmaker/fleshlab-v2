@@ -1,0 +1,85 @@
+{
+  "name": "CreativeAcademyModule",
+  "type": "object",
+  "properties": {
+    "slug": {
+      "type": "string",
+      "title": "Module Slug"
+    },
+    "title": {
+      "type": "string",
+      "title": "Module Title"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "installed",
+        "missing",
+        "training",
+        "certified"
+      ],
+      "default": "missing",
+      "title": "Status"
+    },
+    "installed": {
+      "type": "boolean",
+      "default": false,
+      "title": "Installed"
+    },
+    "certified": {
+      "type": "boolean",
+      "default": false,
+      "title": "Certified"
+    },
+    "training_progress": {
+      "type": "number",
+      "default": 0,
+      "title": "Training Progress"
+    },
+    "version": {
+      "type": "string",
+      "default": "0.0.0",
+      "title": "Knowledge Version"
+    },
+    "known_scope": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Exposed Knowledge Scope"
+    },
+    "exposed_knowledge_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Exposed Knowledge JSON"
+    },
+    "missing_requirements_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Missing Requirements JSON"
+    },
+    "dependency_slugs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Knowledge Dependencies"
+    },
+    "quality_score": {
+      "type": "number",
+      "default": 0,
+      "title": "Quality Score"
+    },
+    "last_trained_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last Trained At"
+    }
+  },
+  "required": [
+    "slug",
+    "title",
+    "status",
+    "installed",
+    "certified",
+    "version"
+  ]
+}

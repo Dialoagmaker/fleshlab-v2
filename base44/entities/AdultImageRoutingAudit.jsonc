@@ -1,0 +1,87 @@
+{
+  "name": "AdultImageRoutingAudit",
+  "type": "object",
+  "properties": {
+    "generation_job_id": {
+      "type": "string",
+      "title": "Generation Job ID"
+    },
+    "content_classification": {
+      "type": "string",
+      "enum": [
+        "SAFE_MARKETING",
+        "SUGGESTIVE_ADULT",
+        "EXPLICIT_VERIFIED_ADULT",
+        "BLOCKED_OR_UNVERIFIED"
+      ],
+      "title": "Content Classification"
+    },
+    "verification_status": {
+      "type": "string",
+      "enum": [
+        "passed",
+        "failed",
+        "not_required"
+      ],
+      "title": "Verification Status"
+    },
+    "verification_reference": {
+      "type": "string",
+      "title": "Verification Reference"
+    },
+    "routing_decision": {
+      "type": "string",
+      "title": "Routing Decision"
+    },
+    "selected_provider": {
+      "type": "string",
+      "title": "Selected Provider"
+    },
+    "selected_model": {
+      "type": "string",
+      "title": "Selected Model"
+    },
+    "policy_compatible": {
+      "type": "string",
+      "enum": [
+        "yes",
+        "no",
+        "unknown"
+      ],
+      "title": "Policy Compatible",
+      "default": "unknown"
+    },
+    "request_sent": {
+      "type": "boolean",
+      "title": "Request Sent",
+      "default": false
+    },
+    "output_received": {
+      "type": "boolean",
+      "title": "Output Received",
+      "default": false
+    },
+    "reason": {
+      "type": "string",
+      "title": "Reason",
+      "format": "textarea"
+    },
+    "attempts_json": {
+      "type": "string",
+      "title": "Attempts JSON",
+      "format": "textarea"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+    }
+  },
+  "required": [
+    "generation_job_id",
+    "content_classification",
+    "verification_status",
+    "routing_decision",
+    "created_at"
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "name": "CreativeAcademyExam",
+  "type": "object",
+  "properties": {
+    "module_slug": {
+      "type": "string",
+      "title": "Module Slug"
+    },
+    "exam_slug": {
+      "type": "string",
+      "title": "Exam Slug"
+    },
+    "title": {
+      "type": "string",
+      "title": "Exam Title"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "ready",
+        "passed",
+        "failed"
+      ],
+      "default": "draft",
+      "title": "Status"
+    },
+    "questions_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Questions JSON"
+    },
+    "pass_threshold": {
+      "type": "number",
+      "default": 90,
+      "title": "Pass Threshold"
+    },
+    "last_score": {
+      "type": "number",
+      "default": 0,
+      "title": "Last Score"
+    },
+    "certified": {
+      "type": "boolean",
+      "default": false,
+      "title": "Certified"
+    }
+  },
+  "required": [
+    "module_slug",
+    "exam_slug",
+    "title",
+    "status"
+  ]
+}

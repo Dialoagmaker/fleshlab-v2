@@ -1,0 +1,6 @@
+import { Camera, CheckCircle2, Clapperboard, Megaphone, WandSparkles } from "lucide-react";
+
+export default function CreateWorkspace({ mission }) {
+  const steps = [[WandSparkles,"Idea",mission?.title || "Hotel confession scene"],[Camera,"Shot list","3 hooks, 2 close moments, 1 teaser frame"],[Clapperboard,"Production","Film in 45–90 minutes with natural light"],[Megaphone,"Promotion","Post teaser, VIP note and fanclub upsell"]];
+  return <section id="create" className="cos2-workspace cos2-create"><div className="cos2-work-head"><p>CREATE WORKSPACE</p><h2>From idea to income, in one production flow.</h2></div><div className="cos2-timeline">{steps.map(([Icon,k,v],i)=><div key={k} className="cos2-step"><em>0{i+1}</em><Icon /><h3>{k}</h3><p>{v}</p>{i===0&&<button><CheckCircle2 /> accept mission</button>}</div>)}</div><div className="cos2-script"><b>AI shot direction</b><span>{mission?.description || "Open with a direct hook, keep the first thirty seconds personal, and capture one clean thumbnail candidate before filming the full scene."}</span></div></section>;
+}

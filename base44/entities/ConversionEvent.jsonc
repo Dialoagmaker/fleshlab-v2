@@ -1,0 +1,39 @@
+{
+  "name": "ConversionEvent",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "title": "User ID",
+      "description": "Optional \u2014 not all events have a logged-in user (e.g., registration_start, login_failed)"
+    },
+    "anonymous_session_id": {
+      "type": "string",
+      "title": "Anonymous Session ID"
+    },
+    "event_name": {
+      "type": "string",
+      "title": "Event Name",
+      "description": "e.g., registration_completed, onboarding_viewed, checkout_start"
+    },
+    "source_page": {
+      "type": "string",
+      "title": "Source Page"
+    },
+    "dedupe_key": {
+      "type": "string",
+      "title": "Canonical Dedupe Key"
+    },
+    "dedupe_bucket": {
+      "type": "string",
+      "title": "Dedupe Time Bucket"
+    },
+    "metadata_json": {
+      "type": "string",
+      "title": "Metadata (JSON)"
+    }
+  },
+  "required": [
+    "event_name"
+  ]
+}

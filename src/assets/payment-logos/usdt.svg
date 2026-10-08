@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60">
+  <rect width="200" height="60" fill="#26A17E"/>
+  <circle cx="30" cy="30" r="20" fill="white"/>
+  <text x="30" y="38" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#26A17E" text-anchor="middle">₮</text>
+  <text x="100" y="38" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white">USDT</text>
+</svg>

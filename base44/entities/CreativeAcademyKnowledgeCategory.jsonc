@@ -1,0 +1,56 @@
+{
+  "name": "CreativeAcademyKnowledgeCategory",
+  "type": "object",
+  "properties": {
+    "module_slug": {
+      "type": "string",
+      "title": "Module Slug"
+    },
+    "category_slug": {
+      "type": "string",
+      "title": "Category Slug"
+    },
+    "title": {
+      "type": "string",
+      "title": "Category Title"
+    },
+    "description": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Description"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "installed",
+        "missing",
+        "training",
+        "certified"
+      ],
+      "default": "missing",
+      "title": "Status"
+    },
+    "coverage_score": {
+      "type": "number",
+      "default": 0,
+      "title": "Coverage Score"
+    },
+    "record_count": {
+      "type": "integer",
+      "default": 0,
+      "title": "Knowledge Record Count"
+    },
+    "revision": {
+      "type": "string",
+      "default": "1.0",
+      "title": "Revision"
+    }
+  },
+  "required": [
+    "module_slug",
+    "category_slug",
+    "title",
+    "status",
+    "revision"
+  ]
+}

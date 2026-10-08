@@ -1,0 +1,64 @@
+{
+  "name": "Fanclub",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "name": {
+      "type": "string",
+      "title": "Fanclub Name"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "format": "textarea"
+    },
+    "cover_image_url": {
+      "type": "string",
+      "title": "Cover Image URL"
+    },
+    "monthly_price_usd": {
+      "type": "number",
+      "title": "Monthly Price (USD)"
+    },
+    "perks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Perks"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "coming_soon"
+      ],
+      "title": "Status",
+      "default": "coming_soon"
+    },
+    "subscriber_count": {
+      "type": "integer",
+      "title": "Subscriber Count",
+      "default": 0
+    },
+    "stripe_product_id": {
+      "type": "string",
+      "title": "Stripe Product ID"
+    },
+    "stripe_price_id": {
+      "type": "string",
+      "title": "Stripe Price ID"
+    },
+    "v1_id": {
+      "type": "string",
+      "title": "V1 Migration ID"
+    }
+  },
+  "required": [
+    "performer_id"
+  ]
+}

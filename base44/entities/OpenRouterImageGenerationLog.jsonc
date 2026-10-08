@@ -1,0 +1,90 @@
+{
+  "name": "OpenRouterImageGenerationLog",
+  "type": "object",
+  "properties": {
+    "generation_job_id": {
+      "type": "string",
+      "title": "Generation Job ID"
+    },
+    "openrouter_request_id": {
+      "type": "string",
+      "title": "OpenRouter Request ID"
+    },
+    "openrouter_generation_id": {
+      "type": "string",
+      "title": "OpenRouter Generation ID"
+    },
+    "model": {
+      "type": "string",
+      "title": "Model"
+    },
+    "provider": {
+      "type": "string",
+      "title": "Resolved Provider"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "succeeded",
+        "failed"
+      ],
+      "title": "Status"
+    },
+    "http_status": {
+      "type": "integer",
+      "title": "HTTP Status"
+    },
+    "error_code": {
+      "type": "string",
+      "title": "OpenRouter Error Code"
+    },
+    "error_message": {
+      "type": "string",
+      "title": "OpenRouter Error Message",
+      "format": "textarea"
+    },
+    "error_category": {
+      "type": "string",
+      "title": "Error Category"
+    },
+    "retryable": {
+      "type": "boolean",
+      "title": "Retryable",
+      "default": false
+    },
+    "processing_began": {
+      "type": "boolean",
+      "title": "Processing Began",
+      "default": false
+    },
+    "cost_usd": {
+      "type": "number",
+      "title": "Cost USD",
+      "default": 0
+    },
+    "usage_json": {
+      "type": "string",
+      "title": "Usage JSON",
+      "format": "textarea"
+    },
+    "diagnostic_json": {
+      "type": "string",
+      "title": "Diagnostic JSON",
+      "format": "textarea"
+    },
+    "payload_summary_json": {
+      "type": "string",
+      "title": "Payload Summary JSON",
+      "format": "textarea"
+    },
+    "month": {
+      "type": "string",
+      "title": "Month"
+    }
+  },
+  "required": [
+    "generation_job_id",
+    "status",
+    "month"
+  ]
+}

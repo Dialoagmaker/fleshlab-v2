@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>FLESHLAB — Amateur Wins Mockup</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#050505;color:#eee;font-family:Arial,Helvetica,sans-serif}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.15;background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);background-size:4px 4px}
+header{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:18px 36px;border-bottom:1px solid #222;background:rgba(5,5,5,.96)}
+.logo{font-weight:900;font-size:28px;letter-spacing:-1px}.tag{display:block;font-size:10px;letter-spacing:2px;color:#ff3b30;margin-top:2px}
+nav{display:flex;gap:26px;font-size:13px;font-weight:700}nav span{opacity:.75}.earn{border:1px solid #ff3b30;padding:10px 14px}
+.hero{min-height:72vh;display:grid;grid-template-columns:1.35fr .65fr;border-bottom:1px solid #1b1b1b}
+.hero-visual{position:relative;display:flex;align-items:flex-end;padding:44px;background:linear-gradient(180deg,transparent 25%,rgba(0,0,0,.8)),linear-gradient(135deg,#1d1d1d,#0d0d0d 45%,#222)}
+.frame{position:absolute;inset:32px;border:1px solid #555}.rec{position:absolute;top:48px;left:52px;font:700 12px monospace;color:#ff3b30}.time{position:absolute;top:48px;right:52px;font:700 12px monospace}
+.hero h1{font-size:76px;line-height:.9;margin:0;max-width:700px;letter-spacing:-3px;text-transform:uppercase}
+.hero-right{padding:50px 38px;background:#0b0b0b;border-left:1px solid #222;display:flex;flex-direction:column;justify-content:flex-end}
+.meta{font:700 12px monospace;color:#aaa;line-height:1.8}.hero-right p{font-size:18px;line-height:1.5;color:#ccc}
+.btns{display:flex;gap:12px;margin-top:20px}.btn{padding:12px 16px;border:1px solid #444;font-weight:800;font-size:13px;display:inline-block}.btn.primary{background:#eee;color:#050505;border-color:#eee}
+section{padding:54px 36px;border-bottom:1px solid #181818}.section-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:24px}.section-head h2{font-size:34px;margin:0;text-transform:uppercase;letter-spacing:-1px}.section-head small{font:700 11px monospace;color:#ff3b30}
+.contact{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.tile{background:#111;border:1px solid #242424;min-height:210px;position:relative;overflow:hidden}.tile .img{height:150px;background:linear-gradient(135deg,#292929,#111);border-bottom:1px solid #242424}.tile .label{padding:12px}.tile b{display:block;font-size:17px}.tile small{font:700 10px monospace;color:#999}.stamp{position:absolute;top:10px;left:10px;border:1px solid #ff3b30;color:#ff3b30;padding:4px 6px;font:700 9px monospace;transform:rotate(-2deg)}
+.people{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.person{aspect-ratio:4/5;background:linear-gradient(160deg,#222,#0d0d0d);position:relative;border:1px solid #252525}.person .name{position:absolute;left:12px;bottom:12px;font-weight:900;font-size:18px;text-transform:uppercase}.person .id{position:absolute;right:10px;top:10px;font:700 9px monospace;color:#ff3b30}
+.manifesto{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center;background:#eee;color:#050505}.manifesto h2{font-size:82px;line-height:.82;margin:0;text-transform:uppercase;letter-spacing:-4px}.manifesto p{font-size:18px;max-width:480px}
+.earn-strip{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:center}.earn-strip h2{font-size:48px;margin:0 0 10px;text-transform:uppercase}.poster{min-height:240px;border:1px solid #3b3b3b;background:linear-gradient(135deg,rgba(255,59,48,.14),transparent 45%),#101010;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:42px;letter-spacing:-2px;text-align:center}
+footer{padding:34px 36px;display:flex;justify-content:space-between;color:#888;font-size:12px}
+@media(max-width:900px){header{padding:14px 18px}nav{display:none}.hero{grid-template-columns:1fr}.hero-right{border-left:0;border-top:1px solid #222}.hero h1{font-size:52px}.contact{grid-template-columns:1fr 1fr}.people{grid-template-columns:1fr 1fr}.manifesto,.earn-strip{grid-template-columns:1fr}.manifesto h2{font-size:58px}}
+</style>
+</head>
+<body>
+<header>
+  <div><div class="logo">FLESHLAB</div><span class="tag">AMATEUR WINS.</span></div>
+  <nav><span>ARCHIVE</span><span>PEOPLE</span><span>SERIES</span><span>LABELS</span></nav>
+  <div class="earn">EARN</div>
+</header>
+
+<div class="hero">
+  <div class="hero-visual">
+    <div class="frame"></div>
+    <div class="rec">● REC / FL-042</div>
+    <div class="time">00:18:42:12</div>
+    <h1>REAL PEOPLE.<br>RAW STORIES.</h1>
+  </div>
+  <div class="hero-right">
+    <div class="meta">FLESHLAB PRESENTS<br>MANILA / 2026<br>RAW CUT / 24:17</div>
+    <p>A living archive of independent performers, unpolished rooms and footage that feels like it actually happened.</p>
+    <div class="btns"><div class="btn primary">WATCH</div><div class="btn">VIEW ENTRY</div></div>
+  </div>
+</div>
+
+<section>
+  <div class="section-head"><h2>Latest from the lab</h2><small>ARCHIVE / 004</small></div>
+  <div class="contact">
+    <div class="tile"><div class="img"></div><span class="stamp">NEW TAPE</span><div class="label"><b>ROOM 07</b><small>FL-071 / 18:22 / TAIPEI</small></div></div>
+    <div class="tile"><div class="img"></div><div class="label"><b>AFTER HOURS</b><small>FL-068 / 21:09 / MANILA</small></div></div>
+    <div class="tile"><div class="img"></div><div class="label"><b>NO SCRIPT</b><small>FL-064 / 16:44 / KAOHSIUNG</small></div></div>
+    <div class="tile"><div class="img"></div><div class="label"><b>CAMERA LEFT ON</b><small>FL-059 / 26:03 / TAIPEI</small></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head"><h2>People of FLESHLAB</h2><small>CAST / PUBLIC</small></div>
+  <div class="people">
+    <div class="person"><span class="id">P-016</span><span class="name">JAMESON</span></div>
+    <div class="person"><span class="id">P-011</span><span class="name">LEO</span></div>
+    <div class="person"><span class="id">P-009</span><span class="name">MING</span></div>
+    <div class="person"><span class="id">P-005</span><span class="name">NOAH</span></div>
+    <div class="person"><span class="id">P-003</span><span class="name">KAI</span></div>
+  </div>
+</section>
+
+<section class="manifesto">
+  <h2>AMATEUR<br>WINS.</h2>
+  <div>
+    <p>No fake polish. No corporate gloss. FLESHLAB turns real environments, real personalities and imperfect footage into the brand language itself.</p>
+    <div class="btn" style="border-color:#050505">READ THE MANIFESTO</div>
+  </div>
+</section>
+
+<section>
+  <div class="earn-strip">
+    <div>
+      <div class="meta">CREATOR ACCESS / OPEN</div>
+      <h2>You don't need a studio.</h2>
+      <p>Submit original footage. Earn up to $1 per approved minute. Private verification, secure upload, transparent review.</p>
+      <div class="btn primary">START HERE</div>
+    </div>
+    <div class="poster">FLESHLAB<br>CREATOR CALL</div>
+  </div>
+</section>
+
+<footer>
+  <div>FLESHLAB / AMATEUR WINS.</div>
+  <div>ARCHIVE&nbsp;&nbsp; PEOPLE&nbsp;&nbsp; SERIES&nbsp;&nbsp; EARN&nbsp;&nbsp; PRIVACY&nbsp;&nbsp; TERMS</div>
+</footer>
+</body>
+</html>

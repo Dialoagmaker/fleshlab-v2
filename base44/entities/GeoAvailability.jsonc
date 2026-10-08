@@ -1,0 +1,28 @@
+{
+  "name": "GeoAvailability",
+  "type": "object",
+  "properties": {
+    "video_id": {
+      "type": "string",
+      "title": "Video ID"
+    },
+    "country_code": {
+      "type": "string",
+      "title": "Country Code"
+    },
+    "available": {
+      "type": "boolean",
+      "title": "Available",
+      "default": true
+    },
+    "computed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Computed At"
+    }
+  },
+  "required": [
+    "video_id",
+    "country_code"
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "name": "CreatorPlanItem",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "briefing_id": {
+      "type": "string",
+      "title": "Briefing ID"
+    },
+    "mission_id": {
+      "type": "string",
+      "title": "Mission ID"
+    },
+    "plan_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Plan Date"
+    },
+    "time": {
+      "type": "string",
+      "title": "Time"
+    },
+    "label": {
+      "type": "string",
+      "title": "Label"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "completed",
+        "skipped"
+      ],
+      "title": "Status",
+      "default": "open"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Completed At"
+    },
+    "skipped_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Skipped At"
+    },
+    "rescheduled_from": {
+      "type": "string",
+      "title": "Rescheduled From"
+    },
+    "order": {
+      "type": "integer",
+      "title": "Order",
+      "default": 0
+    }
+  },
+  "required": [
+    "performer_id",
+    "plan_date",
+    "time",
+    "label",
+    "status"
+  ]
+}

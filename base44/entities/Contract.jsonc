@@ -1,0 +1,217 @@
+{
+  "name": "Contract",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "application_id": {
+      "type": "string",
+      "title": "Application ID",
+      "description": "GuestProductionApplication ID that led to this contract"
+    },
+    "contract_type": {
+      "type": "string",
+      "enum": [
+        "performer",
+        "guest",
+        "licensing",
+        "release"
+      ],
+      "title": "Contract Type"
+    },
+    "title": {
+      "type": "string",
+      "title": "Contract Title"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent",
+        "viewed",
+        "signed",
+        "expired",
+        "cancelled"
+      ],
+      "title": "Status",
+      "default": "draft"
+    },
+    "signing_token": {
+      "type": "string",
+      "title": "Signing Token",
+      "description": "Unique secure token for signing link"
+    },
+    "signing_url": {
+      "type": "string",
+      "title": "Signing URL",
+      "description": "Full signing URL with token"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Sent At"
+    },
+    "viewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Viewed At"
+    },
+    "performer_signed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Performer Signed At"
+    },
+    "admin_signed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Admin Signed At"
+    },
+    "signed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Signed At"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Expires At"
+    },
+    "generated_html": {
+      "type": "string",
+      "title": "Generated HTML (Preview)",
+      "format": "textarea",
+      "description": "Short preview only (first 2000 chars) - full contract stored as private snapshot"
+    },
+    "variables_json": {
+      "type": "string",
+      "title": "Variables JSON",
+      "description": "JSON string of template variables used"
+    },
+    "performer_signature_type": {
+      "type": "string",
+      "enum": [
+        "typed",
+        "drawn"
+      ],
+      "title": "Signature Type"
+    },
+    "performer_signature_text": {
+      "type": "string",
+      "title": "Signature Text"
+    },
+    "performer_signature_ip": {
+      "type": "string",
+      "title": "Signature IP Address"
+    },
+    "performer_signature_user_agent": {
+      "type": "string",
+      "title": "Signature User Agent"
+    },
+    "performer_signature_consent_checked": {
+      "type": "boolean",
+      "title": "Consent Checked",
+      "default": false
+    },
+    "performer_signature_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Signature Timestamp"
+    },
+    "admin_signature_text": {
+      "type": "string",
+      "title": "Admin Signature Text"
+    },
+    "admin_signature_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Admin Signature Timestamp"
+    },
+    "document_url": {
+      "type": "string",
+      "title": "Snapshot R2 Key",
+      "description": "Private R2 storage key: contracts/{id}/v{version}/snapshot.html"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes",
+      "format": "textarea"
+    },
+    "verified": {
+      "type": "boolean",
+      "title": "Verified",
+      "default": false,
+      "description": "Whether admin has verified this contract"
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Verified At"
+    },
+    "verified_by": {
+      "type": "string",
+      "title": "Verified By",
+      "description": "User ID or email of admin who verified"
+    },
+    "version": {
+      "type": "integer",
+      "title": "Contract Version",
+      "default": 1,
+      "description": "Version number - increments on regeneration"
+    },
+    "snapshot_hash": {
+      "type": "string",
+      "title": "Snapshot SHA-256 Hash",
+      "description": "Legal integrity hash of rendered contract snapshot"
+    },
+    "snapshot_stored_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Snapshot Stored At",
+      "description": "Timestamp when snapshot was uploaded to R2"
+    },
+    "template_id": {
+      "type": "string",
+      "title": "Template ID",
+      "description": "ContractTemplate record ID used to generate this contract"
+    },
+    "contract_model": {
+      "type": "string",
+      "title": "Contract Model",
+      "description": "full_management | distribution_only | single_scene | guest_production"
+    },
+    "revenue_share_percent": {
+      "type": "number",
+      "title": "Revenue Share (%)",
+      "description": "Percentage of revenue that goes to the performer"
+    },
+    "minimum_term_months": {
+      "type": "integer",
+      "title": "Minimum Term (Months)"
+    },
+    "post_termination_usage_years": {
+      "type": "integer",
+      "title": "Post-Termination Usage (Years)"
+    },
+    "effective_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Effective Date"
+    },
+    "readiness_snapshot": {
+      "type": "string",
+      "title": "Readiness Snapshot (JSON)",
+      "description": "JSON snapshot of compliance readiness at time of generation"
+    },
+    "v1_id": {
+      "type": "string",
+      "title": "V1 Migration ID"
+    }
+  },
+  "required": [
+    "performer_id",
+    "contract_type",
+    "title"
+  ]
+}

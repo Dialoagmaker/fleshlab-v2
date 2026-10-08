@@ -1,0 +1,50 @@
+{
+  "name": "CreativeAcademyCertification",
+  "type": "object",
+  "properties": {
+    "module_slug": {
+      "type": "string",
+      "title": "Module Slug"
+    },
+    "certification_slug": {
+      "type": "string",
+      "title": "Certification Slug"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "active",
+        "expired",
+        "revoked"
+      ],
+      "default": "pending",
+      "title": "Status"
+    },
+    "certified_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Certified At"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Expires At"
+    },
+    "score": {
+      "type": "number",
+      "default": 0,
+      "title": "Certification Score"
+    },
+    "evidence_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Evidence JSON"
+    }
+  },
+  "required": [
+    "module_slug",
+    "certification_slug",
+    "status"
+  ]
+}

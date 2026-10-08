@@ -1,0 +1,52 @@
+{
+  "name": "GeoPolicy",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Policy Name"
+    },
+    "policy_type": {
+      "type": "string",
+      "enum": [
+        "allowlist",
+        "blocklist"
+      ],
+      "title": "Policy Type"
+    },
+    "applies_to": {
+      "type": "string",
+      "enum": [
+        "all_content",
+        "brand",
+        "performer",
+        "video",
+        "fanclub"
+      ],
+      "title": "Applies To"
+    },
+    "entity_id": {
+      "type": "string",
+      "title": "Target Entity ID"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "active": {
+      "type": "boolean",
+      "title": "Active",
+      "default": true
+    },
+    "priority": {
+      "type": "integer",
+      "title": "Priority",
+      "default": 0
+    }
+  },
+  "required": [
+    "name",
+    "policy_type",
+    "applies_to"
+  ]
+}

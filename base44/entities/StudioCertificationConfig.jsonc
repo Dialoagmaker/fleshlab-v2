@@ -1,0 +1,44 @@
+{
+  "name": "StudioCertificationConfig",
+  "type": "object",
+  "properties": {
+    "config_key": {
+      "type": "string",
+      "title": "Config Key"
+    },
+    "release_gate_required": {
+      "type": "boolean",
+      "default": false,
+      "title": "Require Certification Before Major Updates"
+    },
+    "required_status": {
+      "type": "string",
+      "enum": [
+        "CERTIFIED",
+        "CERTIFIED WITH WARNINGS"
+      ],
+      "default": "CERTIFIED",
+      "title": "Required Certification Status"
+    },
+    "minimum_score": {
+      "type": "number",
+      "default": 90,
+      "title": "Minimum Certification Score"
+    },
+    "last_updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last Updated At"
+    },
+    "last_updated_by": {
+      "type": "string",
+      "title": "Last Updated By"
+    }
+  },
+  "required": [
+    "config_key",
+    "release_gate_required",
+    "required_status",
+    "minimum_score"
+  ]
+}

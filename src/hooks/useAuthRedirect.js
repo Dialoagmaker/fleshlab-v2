@@ -1,0 +1,54 @@
+import { useEffect } from 'react';
+import { useAuth } from '@/lib/AuthContext';
+
+/**
+ * Auto-redirect hook for authenticated users
+ * - Admins on "/" → /admin/dashboard
+ * - Performers on "/" → /performer/dashboard
+ */
+export function useAuthRedirect() {
+  const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
+
+  useEffect(() => {
+    if (!authChecked || isLoadingAuth || !isAuthenticated || !user) {
+      return;
+    }
+
+    const path = window.location.pathname;
+    
+    // CRITICAL: Never redirect away from performer login pages or dashboard
+    if (path === '/performerlogin' || path === '/performer/login' || path === '/performer/dashboard') {
+      return;
+    }
+    
+    // Redirect admins from "/" to dashboard
+    if (user.role === 'admin' && path === '/') {
+      console.log('AUTO_REDIRECT_ADMIN', { role: user.role });
+      window.location.href = '/admin/dashboard';
+    }
+    
+    // Redirect performers from "/" to dashboard
+    if (user.role === 'performer' && path === '/') {
+      console.log('AUTO_REDIRECT_PERFORMER', { role: user.role });
+      window.location.href = '/performer/dashboard';
+    }
+    
+    // Redirect clients from "/" to account page
+    if (user.role === 'client' && path === '/') {
+      console.log('AUTO_REDIRECT_CLIENT', { role: user.role });
+      window.location.href = '/account';
+    }
+    
+    // Redirect non-performers away from /performer/* routes (except login pages)
+    // BUT: Check for performer session token first (independent from Base44 auth)
+    if (path.startsWith('/performer/') && path !== '/performer/login' && path !== '/performerlogin') {
+      const performerToken = localStorage.getItem('performer_session_token');
+      const isPerformer = user?.role === 'performer' || user?.performer_profile_id || user?.performer_id || performerToken;
+      
+      if (!isPerformer) {
+        console.log('PERFORMER_ROUTE_DENIED', { role: user.role, path, hasPerformerToken: !!performerToken });
+        window.location.href = '/performer/login?from=' + encodeURIComponent(path);
+      }
+    }
+  }, [authChecked, isLoadingAuth, isAuthenticated, user]);
+}

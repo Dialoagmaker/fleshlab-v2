@@ -1,0 +1,89 @@
+{
+  "name": "CreatorDailyBriefing",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "run_id": {
+      "type": "string",
+      "title": "Run ID"
+    },
+    "briefing_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Briefing Date"
+    },
+    "greeting": {
+      "type": "string",
+      "title": "Greeting"
+    },
+    "headline": {
+      "type": "string",
+      "title": "Headline"
+    },
+    "summary": {
+      "type": "string",
+      "title": "Summary",
+      "format": "textarea"
+    },
+    "today_mission": {
+      "type": "string",
+      "title": "Today's Mission",
+      "format": "textarea"
+    },
+    "revenue_last_24h_usd": {
+      "type": "number",
+      "title": "Revenue Last 24h USD",
+      "default": 0
+    },
+    "revenue_last_7d_usd": {
+      "type": "number",
+      "title": "Revenue Last 7d USD",
+      "default": 0
+    },
+    "new_sales_count": {
+      "type": "integer",
+      "title": "New Sales Count",
+      "default": 0
+    },
+    "new_fans_count": {
+      "type": "integer",
+      "title": "New Fans Count",
+      "default": 0
+    },
+    "revenue_potential_usd": {
+      "type": "number",
+      "title": "Revenue Potential USD",
+      "default": 0
+    },
+    "trends_json": {
+      "type": "string",
+      "title": "Trends JSON",
+      "format": "textarea"
+    },
+    "open_tasks_json": {
+      "type": "string",
+      "title": "Open Tasks JSON",
+      "format": "textarea"
+    },
+    "evidence_json": {
+      "type": "string",
+      "title": "Evidence JSON",
+      "format": "textarea"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Generated At"
+    }
+  },
+  "required": [
+    "performer_id",
+    "briefing_date",
+    "headline",
+    "summary",
+    "generated_at"
+  ]
+}

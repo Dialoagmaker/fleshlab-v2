@@ -1,0 +1,138 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fleshlab
+      POSTGRES_USER: fleshlab
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets: [postgres_password]
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fleshlab -d fleshlab"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+  api:
+    build:
+      context: .
+      target: api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 8787
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: fleshlab
+      POSTGRES_USER: fleshlab
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN}
+      V3_REVIEW_ORIGIN: ${V3_REVIEW_ORIGIN}
+      ADMIN_ORIGIN: ${ADMIN_ORIGIN}
+      PERFORMER_ORIGIN: ${PERFORMER_ORIGIN}
+      EARN_ORIGIN: ${EARN_ORIGIN}
+      COOKIE_SECURE: "true"
+      SESSION_SECRET_FILE: /run/secrets/session_secret
+      AZURE_STORAGE_ACCOUNT_URL: ${AZURE_STORAGE_ACCOUNT_URL}
+      PAYOUT_KEY_VAULT_URL: ${PAYOUT_KEY_VAULT_URL}
+      PAYOUT_KEY_VAULT_SECRET_NAME: ${PAYOUT_KEY_VAULT_SECRET_NAME:-fleshlab-payout-encryption-key}
+      PRIVATE_UPLOAD_CONTAINER: private-uploads
+      FLESHLAB_MEDIA_MIGRATION_ENABLED: "false"
+      CHAIN2PAY_ENV: ${CHAIN2PAY_ENV:-sandbox}
+      CHAIN2PAY_API_KEY: ${CHAIN2PAY_API_KEY:-}
+      CHAIN2PAY_SANDBOX_API_KEY: ${CHAIN2PAY_SANDBOX_API_KEY:-}
+      CHAIN2PAY_WEBHOOK_SECRET: ${CHAIN2PAY_WEBHOOK_SECRET:-}
+      CHAIN2PAY_PROVIDER_MODE: ${CHAIN2PAY_PROVIDER_MODE:-AUTO}
+      CHAIN2PAY_ALLOWED_PROVIDERS: ${CHAIN2PAY_ALLOWED_PROVIDERS:-}
+      CHAIN2PAY_BLOCKED_PROVIDERS: ${CHAIN2PAY_BLOCKED_PROVIDERS:-paypal,stripe}
+      CHAIN2PAY_CALLBACK_URL: ${CHAIN2PAY_CALLBACK_URL:-https://fleshlab.online/api/v3/payments/chain2pay/webhook}
+      LOYALFANS_PROVIDER_CLIENT_ENABLED: ${LOYALFANS_PROVIDER_CLIENT_ENABLED:-false}
+      LOYALFANS_CATALOGUE_FULL_VIDEO_INGESTION_ENABLED: ${LOYALFANS_CATALOGUE_FULL_VIDEO_INGESTION_ENABLED:-false}
+      LOYALFANS_MEDIA_FULFILLMENT_ENABLED: ${LOYALFANS_MEDIA_FULFILLMENT_ENABLED:-false}
+      LOYALFANS_CREATOR_LEDGER_POSTED_CONFIRMED: ${LOYALFANS_CREATOR_LEDGER_POSTED_CONFIRMED:-false}
+      PROVIDER_MEDIA_ENABLED: ${PROVIDER_MEDIA_ENABLED:-false}
+      PROVIDER_MEDIA_ALLOWED_HOSTS: ${PROVIDER_MEDIA_ALLOWED_HOSTS:-}
+      PROVIDER_MEDIA_ALLOWED_SUBDOMAIN_ROOTS: ${PROVIDER_MEDIA_ALLOWED_SUBDOMAIN_ROOTS:-}
+      PROVIDER_MEDIA_MAX_BYTES: ${PROVIDER_MEDIA_MAX_BYTES:-21474836480}
+      PROVIDER_MEDIA_TIMEOUT_MS: ${PROVIDER_MEDIA_TIMEOUT_MS:-1800000}
+      LOYALFANS_CREATOR_BEARER_TOKEN_FILE: /run/secrets/loyalfans_creator_bearer_token
+      LOYALFANS_CREATOR_COOKIE_HEADER_FILE: /run/secrets/loyalfans_creator_cookie_header
+      LOYALFANS_XSRF_TOKEN_FILE: /run/secrets/loyalfans_creator_xsrf_token
+      LOYALFANS_CREATOR_USER_AGENT_FILE: /run/secrets/loyalfans_creator_user_agent
+      LOYALFANS_CREATOR_COMMENTS_PATH_TEMPLATE: ${LOYALFANS_CREATOR_COMMENTS_PATH_TEMPLATE:-}
+      LOYALFANS_CREATOR_COMMENTS_REQUEST_CONTRACT_JSON: ${LOYALFANS_CREATOR_COMMENTS_REQUEST_CONTRACT_JSON:-}
+      LOYALFANS_CREATOR_CATALOGUE_REQUEST_CONTRACT_JSON: ${LOYALFANS_CREATOR_CATALOGUE_REQUEST_CONTRACT_JSON:-}
+      LOYALFANS_CREATOR_CATALOGUE_SLUG: ${LOYALFANS_CREATOR_CATALOGUE_SLUG:-}
+      LOYALFANS_CREATOR_CATALOGUE_LIMIT: ${LOYALFANS_CREATOR_CATALOGUE_LIMIT:-36}
+      LOYALFANS_CREATOR_SETTLEMENT_CURRENCY: ${LOYALFANS_CREATOR_SETTLEMENT_CURRENCY:-}
+      LOYALFANS_CREATOR_CATALOGUE_PATH: ${LOYALFANS_CREATOR_CATALOGUE_PATH:-}
+      LOYALFANS_CREATOR_CATALOGUE_PAGE_PARAMETER: ${LOYALFANS_CREATOR_CATALOGUE_PAGE_PARAMETER:-}
+      LOYALFANS_CREATOR_MEDIA_HOSTS: ${LOYALFANS_CREATOR_MEDIA_HOSTS:-}
+      LOYALFANS_CATALOGUE_SYNC_ENABLED: ${LOYALFANS_CATALOGUE_SYNC_ENABLED:-false}
+      LOYALFANS_CATALOGUE_TRAILER_INGESTION_ENABLED: ${LOYALFANS_CATALOGUE_TRAILER_INGESTION_ENABLED:-false}
+    depends_on:
+      postgres: { condition: service_healthy }
+    secrets: [postgres_password, session_secret, loyalfans_creator_bearer_token, loyalfans_creator_cookie_header, loyalfans_creator_xsrf_token, loyalfans_creator_user_agent]
+  worker:
+    build:
+      context: .
+      target: api
+    command: ["node", "server/worker.js"]
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 8787
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: fleshlab
+      POSTGRES_USER: fleshlab
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN}
+      V3_REVIEW_ORIGIN: ${V3_REVIEW_ORIGIN}
+      ADMIN_ORIGIN: ${ADMIN_ORIGIN}
+      PERFORMER_ORIGIN: ${PERFORMER_ORIGIN}
+      EARN_ORIGIN: ${EARN_ORIGIN}
+      COOKIE_SECURE: "true"
+      SESSION_SECRET_FILE: /run/secrets/session_secret
+      AZURE_STORAGE_ACCOUNT_URL: ${AZURE_STORAGE_ACCOUNT_URL}
+      PRIVATE_UPLOAD_CONTAINER: private-uploads
+      FLESHLAB_MEDIA_MIGRATION_ENABLED: "false"
+    depends_on:
+      postgres: { condition: service_healthy }
+    secrets: [postgres_password, session_secret]
+  web:
+    build:
+      context: .
+      target: web
+    restart: unless-stopped
+    depends_on: [api]
+  edge:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST}
+      ADMIN_HOST: ${ADMIN_HOST}
+      PERFORMER_HOST: ${PERFORMER_HOST}
+      EARN_HOST: ${EARN_HOST}
+    ports: ["443:443"]
+    volumes:
+      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+      - /opt/fleshlab/secrets/origin-ca:/etc/caddy/certs:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [web]
+secrets:
+  postgres_password:
+    file: ${POSTGRES_PASSWORD_FILE}
+  session_secret:
+    file: ${SESSION_SECRET_FILE}
+  loyalfans_creator_bearer_token:
+    file: /opt/fleshlab/secrets/loyalfans/bearer_token
+  loyalfans_creator_cookie_header:
+    file: /opt/fleshlab/secrets/loyalfans/cookie_header
+  loyalfans_creator_xsrf_token:
+    file: /opt/fleshlab/secrets/loyalfans/xsrf_token
+  loyalfans_creator_user_agent:
+    file: /opt/fleshlab/secrets/loyalfans/user_agent
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:

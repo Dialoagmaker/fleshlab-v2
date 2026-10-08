@@ -1,0 +1,245 @@
+{
+  "name": "Video",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "Title"
+    },
+    "slug": {
+      "type": "string",
+      "title": "Slug"
+    },
+    "legacy_slugs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Legacy Slugs",
+      "description": "Array of old slugs that should redirect to this video's current slug"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "format": "textarea"
+    },
+    "short_summary": {
+      "type": "string",
+      "title": "Short Teaser / Summary"
+    },
+    "brand_id": {
+      "type": "string",
+      "title": "Brand ID"
+    },
+    "primary_category": {
+      "type": "string",
+      "title": "Primary Category"
+    },
+    "secondary_categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Secondary Categories"
+    },
+    "series_id": {
+      "type": "string",
+      "title": "Series ID"
+    },
+    "series_title": {
+      "type": "string",
+      "title": "Series Title"
+    },
+    "episode_number": {
+      "type": "integer",
+      "title": "Episode Number"
+    },
+    "performer_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Performer IDs"
+    },
+    "production_type": {
+      "type": "string",
+      "title": "Production Type"
+    },
+    "location_type": {
+      "type": "string",
+      "title": "Location Type"
+    },
+    "release_status": {
+      "type": "string",
+      "enum": [
+        "public",
+        "private",
+        "draft",
+        "unlisted",
+        "archived"
+      ],
+      "title": "Release Status",
+      "default": "public"
+    },
+    "thumbnail": {
+      "type": "string",
+      "title": "Thumbnail"
+    },
+    "teaser": {
+      "type": "string",
+      "title": "Teaser"
+    },
+    "duration": {
+      "type": "integer",
+      "title": "Duration"
+    },
+    "trending": {
+      "type": "boolean",
+      "title": "Trending",
+      "default": false
+    },
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Legacy Categories"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published",
+        "unlisted",
+        "archived"
+      ],
+      "title": "Status",
+      "default": "draft"
+    },
+    "processing_status": {
+      "type": "string",
+      "enum": [
+        "uploading",
+        "processing",
+        "metadata_pending",
+        "draft_ready",
+        "failed"
+      ],
+      "title": "Processing Status"
+    },
+    "ai_metadata_draft": {
+      "type": "string",
+      "title": "AI Metadata Draft (JSON)"
+    },
+    "ai_metadata_generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "AI Metadata Generated At"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Published At"
+    },
+    "access_tier": {
+      "type": "string",
+      "enum": [
+        "free",
+        "fanclub",
+        "ppv"
+      ],
+      "title": "Access Tier",
+      "default": "free"
+    },
+    "release_date": {
+      "type": "string",
+      "format": "date",
+      "title": "Release Date"
+    },
+    "duration_seconds": {
+      "type": "integer",
+      "title": "Duration (seconds)"
+    },
+    "source_video_url": {
+      "type": "string",
+      "title": "Source Video URL (R2/CDN)"
+    },
+    "primary_thumbnail_url": {
+      "type": "string",
+      "title": "Thumbnail URL"
+    },
+    "cover_image_url": {
+      "type": "string",
+      "title": "Cover Image URL"
+    },
+    "trailer_url": {
+      "type": "string",
+      "title": "Trailer URL"
+    },
+    "preview_gif_url": {
+      "type": "string",
+      "title": "Preview GIF URL"
+    },
+    "meta_title": {
+      "type": "string",
+      "title": "Meta Title"
+    },
+    "meta_description": {
+      "type": "string",
+      "title": "Meta Description"
+    },
+    "view_count": {
+      "type": "integer",
+      "title": "View Count",
+      "default": 0
+    },
+    "featured": {
+      "type": "boolean",
+      "title": "Featured",
+      "default": false
+    },
+    "is_exclusive": {
+      "type": "boolean",
+      "title": "Exclusive",
+      "default": false
+    },
+    "ppv_enabled": {
+      "type": "boolean",
+      "title": "PPV Enabled (metadata only)",
+      "default": false
+    },
+    "download_price": {
+      "type": "number",
+      "title": "Download Price USD (metadata only)"
+    },
+    "production_cost": {
+      "type": "number",
+      "title": "Production Cost USD (internal)"
+    },
+    "xhamster_video_url": {
+      "type": "string",
+      "title": "xHamster Video URL",
+      "description": "URL of the video on xHamster platform"
+    },
+    "xhamster_video_title": {
+      "type": "string",
+      "title": "xHamster Video Title",
+      "description": "Title of the video on xHamster (may differ from internal title)"
+    },
+    "v1_id": {
+      "type": "string",
+      "title": "V1 Migration ID"
+    }
+  },
+  "required": [
+    "title",
+    "slug"
+  ]
+}

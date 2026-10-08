@@ -1,0 +1,54 @@
+{
+  "name": "CreativeAcademyExample",
+  "type": "object",
+  "properties": {
+    "module_slug": {
+      "type": "string",
+      "title": "Module Slug"
+    },
+    "example_slug": {
+      "type": "string",
+      "title": "Example Slug"
+    },
+    "title": {
+      "type": "string",
+      "title": "Example Title"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "rejected",
+        "trained"
+      ],
+      "default": "pending",
+      "title": "Status"
+    },
+    "asset_url": {
+      "type": "string",
+      "title": "Asset URL"
+    },
+    "explanation_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Explanation JSON"
+    },
+    "accepted": {
+      "type": "boolean",
+      "default": false,
+      "title": "Accepted"
+    },
+    "quality_score": {
+      "type": "number",
+      "default": 0,
+      "title": "Quality Score"
+    }
+  },
+  "required": [
+    "module_slug",
+    "example_slug",
+    "title",
+    "status"
+  ]
+}

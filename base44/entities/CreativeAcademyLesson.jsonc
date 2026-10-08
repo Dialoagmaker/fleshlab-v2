@@ -1,0 +1,56 @@
+{
+  "name": "CreativeAcademyLesson",
+  "type": "object",
+  "properties": {
+    "module_slug": {
+      "type": "string",
+      "title": "Module Slug"
+    },
+    "lesson_slug": {
+      "type": "string",
+      "title": "Lesson Slug"
+    },
+    "title": {
+      "type": "string",
+      "title": "Lesson Title"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "ready",
+        "installed",
+        "failed"
+      ],
+      "default": "draft",
+      "title": "Status"
+    },
+    "lesson_version": {
+      "type": "string",
+      "default": "0.0.0",
+      "title": "Lesson Version"
+    },
+    "training_payload_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Training Payload JSON"
+    },
+    "test_plan_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Test Plan JSON"
+    },
+    "installed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Installed At"
+    }
+  },
+  "required": [
+    "module_slug",
+    "lesson_slug",
+    "title",
+    "status",
+    "lesson_version"
+  ]
+}

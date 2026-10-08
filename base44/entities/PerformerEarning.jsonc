@@ -1,0 +1,72 @@
+{
+  "name": "PerformerEarning",
+  "type": "object",
+  "properties": {
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "period_month": {
+      "type": "string",
+      "title": "Period Month",
+      "description": "Format: YYYY-MM"
+    },
+    "total_gross_usd": {
+      "type": "number",
+      "title": "Total Gross (USD)",
+      "description": "Sum of all line item gross amounts"
+    },
+    "total_performer_usd": {
+      "type": "number",
+      "title": "Total Performer Share (USD)",
+      "description": "Sum of all line item performer amounts"
+    },
+    "total_studio_usd": {
+      "type": "number",
+      "title": "Total Studio Share (USD)",
+      "description": "Sum of all line item studio amounts"
+    },
+    "line_item_count": {
+      "type": "integer",
+      "title": "Line Item Count",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "estimated",
+        "pending",
+        "approved",
+        "paid"
+      ],
+      "title": "Status",
+      "default": "draft"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Approved At"
+    },
+    "approved_by": {
+      "type": "string",
+      "title": "Approved By",
+      "description": "User ID of admin who approved"
+    },
+    "paid_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Paid At"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes",
+      "format": "textarea"
+    }
+  },
+  "required": [
+    "performer_id",
+    "period_month",
+    "status"
+  ]
+}

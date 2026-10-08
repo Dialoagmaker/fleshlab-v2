@@ -1,0 +1,116 @@
+{
+  "name": "FlashPayTransaction",
+  "type": "object",
+  "properties": {
+    "wallet_id": {
+      "type": "string",
+      "title": "Wallet ID"
+    },
+    "user_id": {
+      "type": "string",
+      "title": "User ID"
+    },
+    "transaction_type": {
+      "type": "string",
+      "enum": [
+        "deposit",
+        "video_purchase",
+        "subscription_purchase",
+        "fanclub_purchase",
+        "tip",
+        "refund",
+        "reversal",
+        "bonus",
+        "adjustment"
+      ],
+      "title": "Transaction Type"
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "credit",
+        "debit"
+      ],
+      "title": "Direction"
+    },
+    "amount": {
+      "type": "number",
+      "title": "Amount"
+    },
+    "currency": {
+      "type": "string",
+      "title": "Currency",
+      "default": "usd"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "completed",
+        "failed",
+        "cancelled",
+        "refunded",
+        "reversed"
+      ],
+      "title": "Status",
+      "default": "pending"
+    },
+    "reference_type": {
+      "type": "string",
+      "title": "Reference Type"
+    },
+    "reference_id": {
+      "type": "string",
+      "title": "Reference ID"
+    },
+    "provider": {
+      "type": "string",
+      "title": "Provider"
+    },
+    "provider_transaction_id": {
+      "type": "string",
+      "title": "Provider Transaction ID"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "title": "Idempotency Key"
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "balance_before": {
+      "type": "number",
+      "title": "Balance Before"
+    },
+    "balance_after": {
+      "type": "number",
+      "title": "Balance After"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Completed At"
+    },
+    "failed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Failed At"
+    },
+    "metadata": {
+      "type": "string",
+      "title": "Metadata",
+      "format": "textarea"
+    }
+  },
+  "required": [
+    "wallet_id",
+    "user_id",
+    "transaction_type",
+    "direction",
+    "amount",
+    "currency",
+    "status",
+    "idempotency_key"
+  ]
+}

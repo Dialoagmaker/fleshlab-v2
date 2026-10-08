@@ -1,0 +1,67 @@
+{
+  "name": "HumanVisionReasoningFramework",
+  "type": "object",
+  "properties": {
+    "module_slug": {
+      "type": "string",
+      "default": "human-vision",
+      "title": "Module Slug"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "missing",
+        "training",
+        "ready",
+        "certified"
+      ],
+      "default": "training",
+      "title": "Status"
+    },
+    "version": {
+      "type": "string",
+      "default": "1.0",
+      "title": "Version"
+    },
+    "description": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Description"
+    },
+    "predicts_first_attention": {
+      "type": "boolean",
+      "default": true,
+      "title": "Predicts First Attention"
+    },
+    "predicts_second_attention": {
+      "type": "boolean",
+      "default": true,
+      "title": "Predicts Second Attention"
+    },
+    "predicts_third_attention": {
+      "type": "boolean",
+      "default": true,
+      "title": "Predicts Third Attention"
+    },
+    "explanation_required": {
+      "type": "boolean",
+      "default": true,
+      "title": "Explanation Required"
+    },
+    "decision_scope": {
+      "type": "string",
+      "title": "Decision Scope"
+    },
+    "output_contract_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Output Contract JSON"
+    }
+  },
+  "required": [
+    "module_slug",
+    "status",
+    "version",
+    "explanation_required"
+  ]
+}

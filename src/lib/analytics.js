@@ -1,0 +1,986 @@
+/**
+ * FLESHLAB Analytics Utility
+ * 
+ * Centralized GA4 tracking for SPA page views and custom events.
+ * Privacy-safe: excludes admin/internal routes from public traffic tracking.
+ * 
+ * Usage:
+ *   import { trackPageView, trackEvent, getRouteCategory } from '@/lib/analytics';
+ */
+
+import { base44 } from '@/api/base44Client';
+
+// ── Internal DB event logging (parallel to GA4) ─────────────────────────────
+// Current authenticated user id, kept in sync by AuthContext so DB-logged
+// events can be tied to a user_id when available (null for anonymous events).
+let _currentUserId = null;
+
+export function setAnalyticsUserId(userId) {
+  _currentUserId = userId || null;
+}
+
+export function clearAnalyticsUserId() {
+  _currentUserId = null;
+}
+
+export const RECRUITMENT_PAGES = [
+  '/become-performer',
+  '/gay-performer-recruitment-philippines',
+  '/gay-twink-performer-recruitment',
+  '/chaturbate-model-join-studio',
+  '/gay-onlyfans-alternative',
+];
+
+const CANONICAL_EVENT_NAME = {
+  recruitment_landing_viewed: 'recruitment_landing_view',
+  become_performer_cta_click: 'performer_apply_click',
+  philippines_whatsapp_click: 'recruitment_whatsapp_click',
+  whatsapp_recruitment_click: 'recruitment_whatsapp_click',
+  philippines_application_start: 'application_start',
+  recruitment_application_submitted: 'application_submit',
+  recruitment_verification_completed: 'application_submit',
+};
+
+export function isRecruitmentPagePath(path) {
+  return RECRUITMENT_PAGES.includes(path);
+}
+
+export function getRecruitmentAttribution(recruitmentPage = null) {
+  if (typeof window === 'undefined') return {};
+  const urlParams = new URLSearchParams(window.location.search);
+  const landingPage = recruitmentPage || window.location.pathname;
+  const currentSource = urlParams.get('utm_source') || urlParams.get('source') || null;
+  const currentMedium = urlParams.get('utm_medium') || null;
+  const currentCampaign = urlParams.get('utm_campaign') || urlParams.get('campaign') || null;
+  const referrer = document.referrer || null;
+
+  let firstTouchSource = window.localStorage?.getItem('fl_first_touch_source') || null;
+  let firstTouchLandingPage = window.localStorage?.getItem('fl_first_touch_landing_page') || null;
+
+  if (!firstTouchLandingPage && isRecruitmentPagePath(landingPage)) {
+    firstTouchLandingPage = landingPage;
+    window.localStorage?.setItem('fl_first_touch_landing_page', firstTouchLandingPage);
+  }
+  if (!firstTouchSource && (currentSource || referrer)) {
+    firstTouchSource = currentSource || referrer;
+    window.localStorage?.setItem('fl_first_touch_source', firstTouchSource);
+  }
+
+  return {
+    landing_page: landingPage,
+    recruitment_page: landingPage,
+    referrer,
+    source: currentSource,
+    medium: currentMedium,
+    campaign: currentCampaign,
+    country: urlParams.get('country') || urlParams.get('market') || null,
+    first_touch_source: firstTouchSource,
+    first_touch_landing_page: firstTouchLandingPage,
+    utm_source: currentSource,
+    utm_medium: currentMedium,
+    utm_campaign: currentCampaign,
+    utm_content: urlParams.get('utm_content') || null,
+    utm_term: urlParams.get('utm_term') || null,
+    campaign_id: urlParams.get('campaign_id') || null,
+    recruitment_campaign_id: urlParams.get('campaign_id') || null,
+    referral_code: urlParams.get('ref') || urlParams.get('referral_code') || null,
+  };
+}
+
+// Events also persisted to the ConversionEvent table via the logEvent function.
+// Keep in sync with base44/functions/logEvent/entry.ts ALLOWED_EVENTS.
+const DB_TRACKED_EVENTS = new Set([
+  'registration_start',
+  'registration_completed',
+  'otp_verified',
+  'login_success',
+  'login_failed',
+  'logout',
+  'onboarding_viewed',
+  'onboarding_completed',
+  'performer_profile_view',
+  'video_detail_view',
+  'fanclub_cta_click',
+  'checkout_start',
+  'payment_success',
+  'payment_failed',
+  'subscription_activated',
+  'wallet_selected',
+  'wallet_spend_started',
+  'wallet_spend_completed',
+  'wallet_spend_failed',
+  'wallet_purchase_completed',
+  'wallet_purchase_failed',
+  'wallet_abandoned',
+  'topup_before_purchase',
+  'recruitment_landing_view',
+  'performer_apply_click',
+  'application_start',
+  'application_submit',
+  'application_complete',
+  'recruitment_whatsapp_click',
+  'registration_complete',
+  'guest_production_cta_click',
+  'whatsapp_click',
+  'livecam_click',
+  'fanclub_join_click',
+  'video_unlock_click',
+  'fan_production_request_click',
+  ]);
+
+// Best-effort client-side enrichment — never overwrites explicit event params.
+function buildClientEnrichment() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    return {
+      screen_resolution: `${window.screen?.width || ''}x${window.screen?.height || ''}`,
+      language: navigator.language || null,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
+      ...getRecruitmentAttribution(),
+      ref: urlParams.get('ref') || null,
+      market: urlParams.get('market') || null,
+    };
+  } catch (_) {
+    return {};
+  }
+}
+
+function logDbEvent(eventName, params) {
+  try {
+    base44.functions.invoke('logEvent', {
+      event_name: eventName,
+      user_id: _currentUserId,
+      source_page: window.location.pathname,
+      metadata: { ...buildClientEnrichment(), ...params },
+    }).catch(() => {}); // best-effort, never block the UI
+  } catch (_) {}
+}
+
+// Public route patterns that should be tracked as normal page views
+const PUBLIC_ROUTE_PATTERNS = [
+  /^\/$/,
+  /^\/videos$/,
+  /^\/videos\/[a-z0-9-]+$/,
+  /^\/watch\/collections\/[a-z0-9-]+$/,
+  /^\/performers$/,
+  /^\/performers\/[a-z0-9-]+$/,
+  /^\/news$/,
+  /^\/news\/category\/[a-z0-9-]+$/,
+  /^\/news\/[a-z0-9-]+$/,
+  /^\/fanclub$/,
+  /^\/guest-production$/,
+  /^\/fan-productions$/,
+  /^\/become-performer$/,
+  /^\/gay-performer-recruitment-philippines$/,
+  /^\/gay-twink-performer-recruitment$/,
+  /^\/chaturbate-model-join-studio$/,
+  /^\/gay-onlyfans-alternative$/,
+  /^\/best-onlyfans-alternatives-gay-creators$/,
+  /^\/how-to-become-gay-content-creator$/,
+  /^\/live$/,
+  /^\/live\/fitmaster$/,
+  /^\/how-it-works$/,
+  /^\/faq$/,
+  /^\/brands$/,
+  /^\/brands\/[a-z0-9-]+$/,
+  /^\/terms$/,
+  /^\/privacy$/,
+  /^\/dmca$/,
+  /^\/2257$/,
+  /^\/compliance$/,
+  /^\/imprint$/,
+  /^\/cookie-policy$/,
+];
+
+// Routes to exclude from public analytics (admin, auth, performer dashboard)
+const EXCLUDED_ROUTE_PATTERNS = [
+  /^\/admin/,
+  /^\/performer\/dashboard/,
+  /^\/performerlogin/,
+  /^\/performer\/login/,
+  /^\/login/,
+  /^\/register/,
+  /^\/forgot-password/,
+  /^\/reset-password/,
+  /^\/account/,
+  /^\/sign-contract/,
+  /^\/application-upload/,
+  /^\/client\/dashboard/,
+];
+
+// Legacy redirect routes (track separately)
+const LEGACY_ROUTE_PATTERNS = [
+  /^\/VideoDetail/,
+  /^\/ActorDetail/,
+  /^\/ArticleReader/,
+  /^\/Videos/,
+  /^\/Actors/,
+  /^\/News/,
+  /^\/NewsCenter/,
+  /^\/Brands/,
+  /^\/BecomePerformer/,
+  /^\/HowItWorks/,
+  /^\/Home/,
+  /^\/Imprint/,
+  /^\/guest-productions/,
+];
+
+/**
+ * Check if a route should be tracked as public traffic
+ */
+function isPublicRoute(path) {
+  // Check exclusions first
+  if (EXCLUDED_ROUTE_PATTERNS.some(pattern => pattern.test(path))) {
+    return false;
+  }
+  // Check if it's a public route
+  return PUBLIC_ROUTE_PATTERNS.some(pattern => pattern.test(path));
+}
+
+/**
+ * Check if a route is a legacy redirect
+ */
+function isLegacyRoute(path) {
+  return LEGACY_ROUTE_PATTERNS.some(pattern => pattern.test(path));
+}
+
+/**
+ * Get route category for analytics classification
+ */
+function getRouteCategory(path) {
+  if (EXCLUDED_ROUTE_PATTERNS.some(pattern => pattern.test(path))) {
+    return 'excluded';
+  }
+  if (LEGACY_ROUTE_PATTERNS.some(pattern => pattern.test(path))) {
+    return 'legacy_redirect';
+  }
+  if (PUBLIC_ROUTE_PATTERNS.some(pattern => pattern.test(path))) {
+    return 'public';
+  }
+  return 'unknown';
+}
+
+/**
+ * Send page_view event to GA4
+ * 
+ * @param {string} path - Current route path
+ * @param {string} title - Page title
+ * @param {string} category - Route category (public, legacy_redirect, excluded)
+ */
+function sendPageView(path, title = document.title, category = 'public') {
+  if (typeof window === 'undefined' || typeof window.gtag === 'undefined') {
+    console.warn('[Analytics] GA4 not initialized');
+    return;
+  }
+
+  // Always send page views for debugging, but classify them
+  window.gtag('event', 'page_view', {
+    page_path: path,
+    page_title: title,
+    page_location: window.location.href,
+    page_category: category,
+    send_to: 'G-3Z4DV3SVR8',
+  });
+
+  // Log for debugging in development
+  if (import.meta.env.DEV) {
+    console.log('[Analytics] page_view:', { path, title, category });
+  }
+}
+
+/**
+ * Track page view with route classification
+ * 
+ * @param {string} path - Current route path
+ */
+export function trackPageView(path) {
+  const category = getRouteCategory(path);
+  const title = document.title;
+
+  if (category === 'excluded') {
+    if (import.meta.env.DEV) {
+      console.log('[Analytics] page_view excluded:', { path, title, category });
+    }
+    return;
+  }
+  
+  sendPageView(path, title, category);
+
+  if (isRecruitmentPagePath(path)) {
+    trackEvent('recruitment_landing_view', {
+      source_page: path,
+      landing_page_type: 'recruitment',
+      ...getRecruitmentAttribution(path),
+    });
+  }
+}
+
+/**
+ * Track custom event to GA4
+ * 
+ * @param {string} eventName - Event name (snake_case)
+ * @param {Object} params - Event parameters
+ */
+export function trackEvent(eventName, params = {}) {
+  const canonicalEventName = CANONICAL_EVENT_NAME[eventName] || eventName;
+  const enrichedParams = {
+    page_path: typeof window !== 'undefined' ? window.location.pathname : '',
+    page_title: typeof document !== 'undefined' ? document.title : '',
+    ...params,
+  };
+
+  if (typeof window === 'undefined' || typeof window.gtag === 'undefined') {
+    console.warn('[Analytics] GA4 not initialized');
+  } else {
+    window.gtag('event', canonicalEventName, enrichedParams);
+  }
+
+  // Log for debugging in development
+  if (import.meta.env.DEV) {
+    console.log('[Analytics] event:', canonicalEventName, enrichedParams);
+  }
+
+  // Persist a subset of events to our own DB (in parallel to GA4)
+  if (DB_TRACKED_EVENTS.has(canonicalEventName)) {
+    logDbEvent(canonicalEventName, enrichedParams);
+  }
+}
+
+/**
+ * Track video card click
+ */
+export function trackVideoCardClick(videoSlug, sourcePage) {
+  trackEvent('video_card_click', {
+    video_slug: videoSlug,
+    source_page: sourcePage,
+  });
+}
+
+/**
+ * Track video detail view
+ */
+export function trackVideoDetailView(videoSlug) {
+  trackEvent('video_detail_view', {
+    video_slug: videoSlug,
+  });
+}
+
+/**
+ * Track performer profile view
+ */
+export function trackPerformerProfileView(performerSlug) {
+  trackEvent('performer_profile_view', {
+    performer_slug: performerSlug,
+  });
+}
+
+/**
+ * Track fanclub CTA click
+ */
+export function trackFanclubCtaClick(planId, performerSlug, ctaLocation) {
+  trackEvent('fanclub_cta_click', {
+    plan_id: planId,
+    performer_slug: performerSlug || 'general',
+    cta_location: ctaLocation,
+    plan_or_product_type: 'fanclub',
+  });
+}
+
+/**
+ * Track guest production CTA click
+ */
+export function trackGuestProductionCtaClick(ctaLocation, isAuthenticated) {
+  trackEvent('guest_production_cta_click', {
+    cta_location: ctaLocation,
+    is_authenticated: isAuthenticated,
+    plan_or_product_type: 'guest_production',
+  });
+}
+
+/**
+ * Track become performer CTA click
+ */
+export function trackBecomePerformerCtaClick(ctaLocation) {
+  trackEvent('become_performer_cta_click', {
+    cta_location: ctaLocation,
+    plan_or_product_type: 'performer_recruitment',
+  });
+}
+
+/**
+ * Track registration started (canonical: registration_start)
+ */
+export function trackRegistrationStarted(source, checkoutParam) {
+  // Fire both events for backward compatibility + canonical naming
+  trackEvent('registration_start', {
+    source: source || 'direct',
+    checkout_intent: checkoutParam || null,
+  });
+  trackEvent('registration_started', {
+    source: source || 'direct',
+    checkout_intent: checkoutParam || null,
+  });
+}
+
+/**
+ * Track checkout started (canonical: checkout_start)
+ */
+export function trackCheckoutStarted(paymentType, planId, videoId, priceTier) {
+  // Fire both events for backward compatibility + canonical naming
+  trackEvent('checkout_start', {
+    payment_type: paymentType,
+    plan_id: planId || null,
+    video_id: videoId || null,
+    price_tier: priceTier || null,
+    plan_or_product_type: paymentType === 'ppv' ? 'ppv_unlock' : paymentType === 'fanclub' ? 'fanclub_membership' : 'guest_production_deposit',
+  });
+  trackEvent('checkout_started', {
+    payment_type: paymentType,
+    plan_id: planId || null,
+    video_id: videoId || null,
+    price_tier: priceTier || null,
+    plan_or_product_type: paymentType === 'ppv' ? 'ppv_unlock' : paymentType === 'fanclub' ? 'fanclub_membership' : 'guest_production_deposit',
+  });
+}
+
+/**
+ * Track external platform click (e.g., xHamster link)
+ */
+export function trackExternalPlatformClick(platformName, sourcePage) {
+  trackEvent('external_platform_click', {
+    platform_name: platformName,
+    source_page: sourcePage,
+  });
+}
+
+/**
+ * Track WhatsApp recruitment click
+ */
+export function trackWhatsappRecruitmentClick(sourcePage, params = {}) {
+  const eventParams = {
+    source_page: sourcePage,
+    cta_location: params.cta_location || 'recruitment',
+    market: params.market || null,
+    recruitment_type: params.recruitment_type || 'performer_recruitment',
+    landing_page_type: 'recruitment',
+    ...getRecruitmentAttribution(sourcePage),
+  };
+  trackEvent('recruitment_whatsapp_click', eventParams);
+}
+
+/**
+ * Track performer apply CTA click
+ */
+export function trackPerformerApplyClick(ctaLocation, sourcePage) {
+  trackEvent('performer_apply_click', {
+    cta_location: ctaLocation,
+    source_page: sourcePage,
+    landing_page_type: 'recruitment',
+  });
+}
+
+/**
+ * Track fan production request click
+ */
+export function trackFanProductionRequestClick(ctaLocation, sourcePage) {
+  trackEvent('fan_production_request_click', {
+    cta_location: ctaLocation,
+    source_page: sourcePage,
+    landing_page_type: 'fan_production',
+  });
+}
+
+/**
+ * Track fanclub join click
+ */
+export function trackFanclubJoinClick(planId, performerSlug, ctaLocation, sourcePage) {
+  trackEvent('fanclub_join_click', {
+    plan_id: planId,
+    performer_slug: performerSlug || 'general',
+    cta_location: ctaLocation,
+    source_page: sourcePage,
+  });
+}
+
+/**
+ * Track video unlock click
+ */
+export function trackVideoUnlockClick(videoId, priceTier, ctaLocation, sourcePage) {
+  trackEvent('video_unlock_click', {
+    video_id: videoId,
+    price_tier: priceTier,
+    cta_location: ctaLocation,
+    source_page: sourcePage,
+  });
+}
+
+/**
+ * Track application start
+ */
+export function trackApplicationStart(applicationType, sourcePage, params = {}) {
+  trackEvent('application_start', {
+    application_type: applicationType,
+    source_page: sourcePage,
+    market: params.market || null,
+    landing_page_type: params.landing_page_type || 'recruitment',
+    ...getRecruitmentAttribution(sourcePage),
+    ...params,
+  });
+}
+
+/**
+ * Track application step complete
+ */
+export function trackApplicationStepComplete(stepNumber, applicationType) {
+  trackEvent('application_step_complete', {
+    step_number: stepNumber,
+    application_type: applicationType,
+  });
+}
+
+/**
+ * Track application submit (Phase 2)
+ * Privacy-safe: no PII, no file names, no r2_keys
+ */
+export function trackApplicationSubmit(params) {
+  trackEvent('application_submit', {
+    ...getRecruitmentAttribution(params.source_page),
+    application_type: params.application_type,
+    source_page: params.source_page,
+    source_country: params.source_country || null,
+    market: params.market || null,
+    landing_page_type: params.landing_page_type,
+    photos_count: params.photos_count,
+    videos_count: params.videos_count,
+    id_uploaded: params.id_uploaded,
+    selfie_uploaded: params.selfie_uploaded,
+    missing_count: params.missing_count,
+    upload_status: params.upload_status,
+  });
+}
+
+export function trackApplicationComplete(params) {
+  trackEvent('application_complete', {
+    ...getRecruitmentAttribution(params.source_page),
+    application_type: params.application_type,
+    source_page: params.source_page,
+    market: params.market || null,
+    landing_page_type: params.landing_page_type,
+    upload_status: params.upload_status,
+    photos_count: params.photos_count,
+    videos_count: params.videos_count,
+    id_uploaded: params.id_uploaded,
+    selfie_uploaded: params.selfie_uploaded,
+    application_record_created: true,
+    backend_status: params.backend_status || null,
+  });
+}
+
+/**
+ * Track upload link opened (Phase 2)
+ * Privacy-safe: no application_id, no token values
+ */
+export function trackApplicationUploadOpened(params) {
+  trackEvent('application_upload_link_opened', {
+    upload_status: params.upload_status,
+    photos_count: params.photos_count || 0,
+    videos_count: params.videos_count || 0,
+    id_uploaded: params.id_uploaded || false,
+    selfie_uploaded: params.selfie_uploaded || false,
+    missing_count: params.missing_count,
+    token_valid: params.token_valid,
+    token_expired: params.token_expired,
+  });
+}
+
+/**
+ * Track upload complete (Phase 2)
+ * Privacy-safe: no file names, no r2_keys, no signed URLs
+ */
+export function trackUploadComplete(params) {
+  trackEvent('application_upload_complete', {
+    upload_type: params.upload_type,
+    upload_category: params.upload_category,
+    photos_count: params.photos_count,
+    videos_count: params.videos_count,
+    id_uploaded: params.id_uploaded,
+    selfie_uploaded: params.selfie_uploaded,
+    missing_count: params.missing_count,
+    ready_for_review: params.ready_for_review,
+  });
+}
+
+/**
+ * Track application ready for review (Phase 2)
+ * Privacy-safe: no application_id to avoid PII linkage
+ * Should only fire once when status changes from incomplete to ready
+ */
+export function trackApplicationReadyForReview(params) {
+  trackEvent('application_ready_for_review', {
+    photos_count: params.photos_count,
+    videos_count: params.videos_count,
+    id_uploaded: params.id_uploaded,
+    selfie_uploaded: params.selfie_uploaded,
+    required_complete: params.required_complete,
+    upload_status: params.upload_status,
+  });
+}
+
+/**
+ * Track fan production request start (Phase 2)
+ * Privacy-safe: no personal fantasies, messages, or sensitive request details
+ */
+export function trackFanProductionRequestStart(params) {
+  trackEvent('fan_production_request_start', {
+    source_page: params.source_page,
+    package_type: params.package_type || null,
+  });
+}
+
+/**
+ * Track fan production request submit (Phase 2)
+ * Privacy-safe: no personal data, no performer names, no fantasies
+ */
+export function trackFanProductionRequestSubmit(params) {
+  trackEvent('fan_production_request_submit', {
+    package_type: params.package_type,
+    package_price: params.package_price || null,
+    source_page: params.source_page,
+    cta_location: params.cta_location || 'form_submit',
+  });
+}
+
+/**
+ * Track fan production WhatsApp click
+ */
+export function trackFanProductionWhatsappClick(sourcePage) {
+  const params = {
+    source_page: sourcePage,
+    cta_location: 'fan_production',
+  };
+  trackEvent('whatsapp_click', params);
+  trackEvent('fan_production_whatsapp_click', params);
+}
+
+/**
+ * Track package select (Phase 2)
+ * Privacy-safe: only package metadata, no user data
+ */
+export function trackPackageSelect(params) {
+  trackEvent('package_select', {
+    package_type: params.package_type,
+    package_price: params.package_price || null,
+    source_page: params.source_page,
+    cta_location: params.cta_location || 'package_card',
+  });
+}
+
+/**
+ * Track checkout cancel (Phase 2)
+ * Privacy-safe: no user data, only checkout metadata
+ */
+export function trackCheckoutCancel(params) {
+  trackEvent('checkout_cancel', {
+    payment_type: params.payment_type,
+    plan_id: params.plan_id || null,
+    source_page: params.source_page,
+    price_tier: params.price_tier || null,
+  });
+}
+
+/**
+ * Track plan select
+ */
+export function trackPlanSelect(planId, price, billingPeriod, sourcePage) {
+  trackEvent('plan_select', {
+    plan_id: planId,
+    price: price,
+    billing_period: billingPeriod,
+    source_page: sourcePage,
+  });
+}
+
+/**
+ * Track checkout success
+ */
+export function trackCheckoutSuccess(paymentType, provider, amount, planId) {
+  trackEvent('checkout_success', {
+    payment_type: paymentType,
+    provider: provider,
+    amount_usd: amount,
+    plan_id: planId,
+  });
+}
+
+
+
+/**
+ * Track performer dashboard view
+ */
+export function trackPerformerDashboardView() {
+  trackEvent('performer_dashboard_view', {});
+}
+
+/**
+ * Track payout summary view
+ */
+export function trackPayoutSummaryView() {
+  trackEvent('payout_summary_view', {});
+}
+
+/**
+ * Track application review open
+ */
+export function trackApplicationReviewOpen(applicationId) {
+  trackEvent('application_review_open', {
+    application_id: applicationId,
+  });
+}
+
+/**
+ * Track application file preview open
+ */
+export function trackApplicationFilePreviewOpen(fileType, applicationId) {
+  trackEvent('application_file_preview_open', {
+    file_type: fileType,
+    application_id: applicationId,
+  });
+}
+
+/**
+ * Track Philippines application start
+ */
+export function trackPhilippinesApplicationStart(utmParams = {}) {
+  trackEvent('philippines_application_start', {
+    source_page: '/gay-performer-recruitment-philippines',
+    page_type: 'recruitment',
+    source_country: 'Philippines',
+    market: 'philippines',
+    utm_source: utmParams.utm_source || utmParams.utmSource || 'philippines-recruitment',
+    utm_market: utmParams.utm_market || utmParams.utmMarket || 'philippines',
+    utm_campaign: utmParams.utm_campaign || utmParams.utmCampaign || 'pinoy_recruitment',
+  });
+}
+
+export function trackLivecamClick(ctaLocation, sourcePage) {
+  trackEvent('livecam_click', {
+    cta_location: ctaLocation || 'unknown',
+    source_page: sourcePage || (typeof window !== 'undefined' ? window.location.pathname : ''),
+  });
+}
+
+
+
+/**
+ * Track payment success (server-side event, called from webhook)
+ * This is for client-side tracking only - server-side uses PaymentWebhookEvent entity
+ */
+export function trackPaymentSuccess(paymentType, provider, amount) {
+  trackEvent('payment_success', {
+    payment_type: paymentType,
+    provider,
+    amount_usd: amount,
+    plan_or_product_type: paymentType === 'ppv' ? 'ppv_unlock' : paymentType === 'fanclub' ? 'fanclub_membership' : 'guest_production_deposit',
+  });
+}
+
+/**
+ * Track payment failure (server-side event, called from webhook)
+ */
+export function trackPaymentFailed(paymentType, provider, reason) {
+  trackEvent('payment_failed', {
+    payment_type: paymentType,
+    provider,
+    failure_reason: reason,
+    plan_or_product_type: paymentType === 'ppv' ? 'ppv_unlock' : paymentType === 'fanclub' ? 'fanclub_membership' : 'guest_production_deposit',
+  });
+}
+
+/**
+ * Track provider error (server-side event)
+ */
+export function trackProviderError(provider, errorType, paymentType) {
+  trackEvent('provider_error', {
+    provider,
+    error_type: errorType,
+    payment_type: paymentType || null,
+  });
+}
+
+/**
+ * Initialize analytics on app startup
+ * Tracks initial page load
+ */
+export function initAnalytics() {
+  if (typeof window === 'undefined') return;
+  
+  // Track initial page load
+  const initialPath = window.location.pathname;
+  trackPageView(initialPath);
+}
+
+export { getRouteCategory };
+
+// ========================================================
+// CONVERSION FUNNEL TRACKING (Phase 3)
+// ========================================================
+
+/**
+ * Track registration completed (after OTP verification)
+ */
+export function trackRegistrationCompleted(source) {
+  const params = {
+    source: source || "direct",
+  };
+  trackEvent("registration_complete", params);
+  trackEvent("registration_completed", params);
+}
+
+/**
+ * Track OTP verified
+ */
+export function trackOtpVerified(source) {
+  trackEvent("otp_verified", {
+    source: source || "direct",
+  });
+}
+
+/**
+ * Track onboarding viewed
+ */
+export function trackOnboardingViewed() {
+  trackEvent("onboarding_viewed", {});
+}
+
+/**
+ * Track onboarding CTA clicks
+ */
+export function trackOnboardingCtaClick(action) {
+  trackEvent("onboarding_cta_click", {
+    action: action,
+  });
+}
+
+/**
+ * Track dashboard viewed
+ */
+export function trackDashboardViewed(source) {
+  trackEvent("dashboard_viewed", {
+    source: source || "direct",
+  });
+}
+
+/**
+ * Track dashboard CTA clicks
+ */
+export function trackDashboardCtaClick(action, destination) {
+  trackEvent("dashboard_cta_click", {
+    action: action,
+    destination: destination,
+  });
+}
+
+/**
+ * Track payment page reached
+ */
+export function trackPaymentPageReached(provider, paymentType) {
+  trackEvent("payment_page_reached", {
+    provider: provider,
+    payment_type: paymentType,
+  });
+}
+
+/**
+ * Track subscription activated
+ */
+export function trackSubscriptionActivated(planId, provider) {
+  trackEvent("subscription_activated", {
+    plan_id: planId,
+    provider: provider,
+  });
+}
+
+/**
+ * Track successful login
+ */
+export function trackLoginSuccess(role) {
+  trackEvent("login_success", { role: role || null });
+}
+
+/**
+ * Track failed login attempt
+ */
+export function trackLoginFailed(reason) {
+  trackEvent("login_failed", { reason: reason || "invalid_credentials" });
+}
+
+/**
+ * Track logout
+ */
+export function trackLogout() {
+  trackEvent("logout", {});
+}
+
+// ========================================================
+// FLASHPAY WALLET PAYMENT TRACKING (Phase 2)
+// ========================================================
+
+/**
+ * Track FlashPay Wallet selected as payment method
+ */
+export function trackWalletSelected(itemType, itemId) {
+  trackEvent("wallet_selected", { item_type: itemType, item_id: itemId || null });
+}
+
+/**
+ * Track wallet spend started (confirmed by user)
+ */
+export function trackWalletSpendStarted(itemType, itemId, amountUsd) {
+  trackEvent("wallet_spend_started", { item_type: itemType, item_id: itemId || null, amount_usd: amountUsd ?? null });
+}
+
+/**
+ * Track wallet spend / purchase completed successfully
+ */
+export function trackWalletPurchaseCompleted(itemType, itemId, amountUsd) {
+  trackEvent("wallet_spend_completed", { item_type: itemType, item_id: itemId || null, amount_usd: amountUsd ?? null });
+  trackEvent("wallet_purchase_completed", { item_type: itemType, item_id: itemId || null, amount_usd: amountUsd ?? null });
+}
+
+/**
+ * Track wallet spend / purchase failure (including insufficient balance)
+ */
+export function trackWalletPurchaseFailed(itemType, itemId, reason) {
+  trackEvent("wallet_spend_failed", { item_type: itemType, item_id: itemId || null, reason: reason || "unknown" });
+  trackEvent("wallet_purchase_failed", { item_type: itemType, item_id: itemId || null, reason: reason || "unknown" });
+}
+
+/**
+ * Track wallet checkout abandoned (selector shown, no purchase made)
+ */
+export function trackWalletAbandoned(itemType, itemId) {
+  trackEvent("wallet_abandoned", { item_type: itemType, item_id: itemId || null });
+}
+
+/**
+ * Track user directed to top up before completing a purchase
+ */
+export function trackTopupBeforePurchase(itemType, itemId, needed) {
+  trackEvent("topup_before_purchase", { item_type: itemType, item_id: itemId || null, needed_usd: needed ?? null });
+}
+
+/**
+ * Track FlashPay Wallet option shown on a checkout surface
+ */
+export function trackWalletOptionShown(itemType, itemId) {
+  trackEvent("wallet_option_shown", { item_type: itemType, item_id: itemId || null });
+}
+
+/**
+ * Track crypto payment method selected (as opposed to FlashPay Wallet)
+ */
+export function trackCryptoSelected(itemType, itemId) {
+  trackEvent("crypto_selected", { item_type: itemType, item_id: itemId || null });
+}
+
+// Phase 2 GA4 Conversion Tracking - Privacy-safe event wrappers

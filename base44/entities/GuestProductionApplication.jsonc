@@ -1,0 +1,528 @@
+{
+  "name": "GuestProductionApplication",
+  "type": "object",
+  "properties": {
+    "applicant_name": {
+      "type": "string",
+      "title": "Stage Name / Name"
+    },
+    "legal_name": {
+      "type": "string",
+      "title": "Legal Name (Private)"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "title": "Email"
+    },
+    "phone": {
+      "type": "string",
+      "title": "Phone / WhatsApp / Messaging"
+    },
+    "nationality": {
+      "type": "string",
+      "title": "Country of Residence"
+    },
+    "city": {
+      "type": "string",
+      "title": "City"
+    },
+    "experience": {
+      "type": "string",
+      "title": "Experience",
+      "format": "textarea"
+    },
+    "social_links": {
+      "type": "string",
+      "title": "Social Links"
+    },
+    "interests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Interests"
+    },
+    "message": {
+      "type": "string",
+      "title": "Notes / Fantasy Brief",
+      "format": "textarea"
+    },
+    "package_interest": {
+      "type": "string",
+      "title": "Package Interest"
+    },
+    "preferred_revenue_model": {
+      "type": "string",
+      "enum": [
+        "standard_studio_60_performer_40",
+        "network_performer_70_studio_30",
+        "undecided"
+      ],
+      "title": "Preferred Revenue Model",
+      "default": "undecided"
+    },
+    "work_type": {
+      "type": "string",
+      "enum": [
+        "solo",
+        "pair",
+        "both"
+      ],
+      "title": "Work Type",
+      "description": "Performer's availability for solo and/or pair productions"
+    },
+    "profile_photo_r2_keys": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Profile Photo R2 Keys"
+    },
+    "intro_video_r2_key": {
+      "type": "string",
+      "title": "Body Video R2 Key"
+    },
+    "hardcore_video_r2_key": {
+      "type": "string",
+      "title": "Hardcore Video R2 Key"
+    },
+    "id_document_r2_key": {
+      "type": "string",
+      "title": "ID Document R2 Key"
+    },
+    "id_document_front_r2_key": {
+      "type": "string",
+      "title": "ID Document Front R2 Key"
+    },
+    "id_document_url": {
+      "type": "string",
+      "title": "ID Document URL (Legacy)"
+    },
+    "id_document_back_r2_key": {
+      "type": "string",
+      "title": "ID Document Back R2 Key"
+    },
+    "selfie_with_id_r2_key": {
+      "type": "string",
+      "title": "Selfie with ID R2 Key"
+    },
+    "media_upload_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "partial",
+        "complete"
+      ],
+      "title": "Media Upload Status",
+      "default": "none"
+    },
+    "compliance_upload_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "uploaded",
+        "verified"
+      ],
+      "title": "ID Upload Status",
+      "default": "none"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "media_pending",
+        "reviewing",
+        "contacted",
+        "more_info_requested",
+        "approved",
+        "rejected",
+        "contract_pending",
+        "contract_sent",
+        "contract_signed",
+        "performer_created",
+        "user_linked",
+        "active"
+      ],
+      "title": "Status",
+      "default": "pending"
+    },
+    "admin_notes": {
+      "type": "string",
+      "title": "Admin Notes",
+      "format": "textarea"
+    },
+    "contact_log": {
+      "type": "string",
+      "title": "Contact Log",
+      "format": "textarea"
+    },
+    "status_history": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Status History Log (JSON)"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Submitted At"
+    },
+    "last_activity_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Last Applicant Activity At"
+    },
+    "applicant_withdrawn_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Applicant Withdrawn At"
+    },
+    "withdrawal_requested_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Withdrawal Requested At"
+    },
+    "privacy_cleanup_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "dry_run_candidate",
+        "purged",
+        "purge_failed"
+      ],
+      "title": "Privacy Cleanup Status",
+      "default": "none"
+    },
+    "privacy_cleanup_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Privacy Cleanup At"
+    },
+    "privacy_cleanup_error": {
+      "type": "string",
+      "title": "Privacy Cleanup Error"
+    },
+    "privacy_retention_category": {
+      "type": "string",
+      "title": "Privacy Retention Category"
+    },
+    "assigned_admin": {
+      "type": "string",
+      "title": "Assigned Admin ID"
+    },
+    "review_started_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Review Started At"
+    },
+    "media_reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Media Reviewed At"
+    },
+    "media_reviewed_by": {
+      "type": "string",
+      "title": "Media Reviewed By (User ID)"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Approved At"
+    },
+    "approved_by": {
+      "type": "string",
+      "title": "Approved By"
+    },
+    "rejected_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Rejected At"
+    },
+    "rejected_by": {
+      "type": "string",
+      "title": "Rejected By"
+    },
+    "rejection_reason": {
+      "type": "string",
+      "title": "Rejection Reason",
+      "format": "textarea"
+    },
+    "more_info_requested_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "More Info Requested At"
+    },
+    "more_info_requested_by": {
+      "type": "string",
+      "title": "More Info Requested By"
+    },
+    "more_info_request_message": {
+      "type": "string",
+      "title": "More Info Request Message",
+      "format": "textarea"
+    },
+    "contract_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "draft",
+        "sent",
+        "signed",
+        "negotiating"
+      ],
+      "title": "Contract Status"
+    },
+    "contract_id": {
+      "type": "string",
+      "title": "Contract ID"
+    },
+    "contract_generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Contract Generated At"
+    },
+    "contract_sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Contract Sent At"
+    },
+    "contract_signed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Contract Signed At"
+    },
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID"
+    },
+    "performer_created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Performer Created At"
+    },
+    "performer_created_by": {
+      "type": "string",
+      "title": "Performer Created By"
+    },
+    "linked_user_id": {
+      "type": "string",
+      "title": "Linked User ID"
+    },
+    "user_linked_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "User Linked At"
+    },
+    "user_linked_by": {
+      "type": "string",
+      "title": "User Linked By"
+    },
+    "activated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Activated At"
+    },
+    "activated_by": {
+      "type": "string",
+      "title": "Activated By"
+    },
+    "request_type": {
+      "type": "string",
+      "enum": [
+        "fan_production",
+        "guest_production",
+        "performer_application"
+      ],
+      "title": "Request Type",
+      "default": "fan_production",
+      "description": "Distinguishes Fan Production requests from other application types"
+    },
+    "preferred_performer": {
+      "type": "string",
+      "title": "Preferred Performer"
+    },
+    "alternate_performer": {
+      "type": "string",
+      "title": "Alternate Performer (Optional)"
+    },
+    "open_to_studio_suggestions": {
+      "type": "boolean",
+      "title": "Open to Studio Suggestions",
+      "default": false
+    },
+    "production_country": {
+      "type": "string",
+      "title": "Production Country"
+    },
+    "requested_city": {
+      "type": "string",
+      "title": "Requested City"
+    },
+    "is_local_fan": {
+      "type": "boolean",
+      "title": "Local Fan (already in country)",
+      "default": false
+    },
+    "expected_travel_date": {
+      "type": "string",
+      "title": "Expected Travel Date / Range"
+    },
+    "production_package": {
+      "type": "string",
+      "enum": [
+        "short_799",
+        "full_1499",
+        "premium_2499",
+        "custom_quote"
+      ],
+      "title": "Production Package"
+    },
+    "production_preferences": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Production Preferences"
+    },
+    "role_dynamic": {
+      "type": "string",
+      "title": "Role / Dynamic"
+    },
+    "dominance_preference": {
+      "type": "string",
+      "title": "Dominance Preference"
+    },
+    "privacy_option": {
+      "type": "string",
+      "title": "Privacy / Face Visibility Option"
+    },
+    "release_preference": {
+      "type": "string",
+      "title": "Release / Delivery Preference"
+    },
+    "confirmed_18_plus": {
+      "type": "boolean",
+      "title": "Confirmed 18+",
+      "default": false
+    },
+    "confirmed_not_private_date": {
+      "type": "boolean",
+      "title": "Confirmed Not a Private Date",
+      "default": false
+    },
+    "confirmed_performer_approval": {
+      "type": "boolean",
+      "title": "Confirmed Performer Approval Required",
+      "default": false
+    },
+    "confirmed_preferences_not_guaranteed": {
+      "type": "boolean",
+      "title": "Confirmed Preferences Not Guaranteed",
+      "default": false
+    },
+    "confirmed_travel_costs": {
+      "type": "boolean",
+      "title": "Confirmed Own Travel Costs",
+      "default": false
+    },
+    "confirmed_contact_consent": {
+      "type": "boolean",
+      "title": "Confirmed Contact Consent",
+      "default": false
+    },
+    "applicant_user_id": {
+      "type": "string",
+      "title": "Applicant User ID",
+      "description": "Base44 user ID if logged in at time of submission"
+    },
+    "source_page": {
+      "type": "string",
+      "title": "Source Page",
+      "description": "Page slug where application was submitted"
+    },
+    "source_country": {
+      "type": "string",
+      "title": "Source Country",
+      "description": "Country/market from application URL"
+    },
+    "landing_page": {
+      "type": "string",
+      "title": "Landing Page",
+      "description": "Recruitment landing page that introduced the applicant"
+    },
+    "recruitment_page": {
+      "type": "string",
+      "title": "Recruitment Page",
+      "description": "Canonical recruitment page for attribution"
+    },
+    "referrer": {
+      "type": "string",
+      "title": "Referrer"
+    },
+    "source": {
+      "type": "string",
+      "title": "Traffic Source"
+    },
+    "medium": {
+      "type": "string",
+      "title": "Traffic Medium"
+    },
+    "campaign": {
+      "type": "string",
+      "title": "Traffic Campaign"
+    },
+    "country": {
+      "type": "string",
+      "title": "Attribution Country"
+    },
+    "first_touch_source": {
+      "type": "string",
+      "title": "First Touch Source"
+    },
+    "first_touch_landing_page": {
+      "type": "string",
+      "title": "First Touch Landing Page"
+    },
+    "utm_source": {
+      "type": "string",
+      "title": "UTM Source",
+      "description": "URL param: utm_source/source"
+    },
+    "utm_market": {
+      "type": "string",
+      "title": "UTM Market",
+      "description": "URL param: market"
+    },
+    "utm_campaign": {
+      "type": "string",
+      "title": "UTM Campaign",
+      "description": "URL param: utm_campaign/campaign"
+    },
+    "utm_medium": {
+      "type": "string",
+      "title": "UTM Medium"
+    },
+    "utm_content": {
+      "type": "string",
+      "title": "UTM Content"
+    },
+    "utm_term": {
+      "type": "string",
+      "title": "UTM Term"
+    },
+    "referral_code": {
+      "type": "string",
+      "title": "Referral Code"
+    },
+    "recruitment_campaign_id": {
+      "type": "string",
+      "title": "Recruitment Campaign ID"
+    }
+  },
+  "required": [
+    "applicant_name",
+    "email"
+  ]
+}

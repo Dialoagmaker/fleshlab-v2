@@ -1,0 +1,134 @@
+{
+  "name": "VideoStatSnapshot",
+  "type": "object",
+  "properties": {
+    "video_id": {
+      "type": "string",
+      "title": "Video ID",
+      "description": "Internal Video ID \u2014 required if source_type = internal. Null for external-only entries."
+    },
+    "performer_id": {
+      "type": "string",
+      "title": "Performer ID",
+      "description": "Direct performer link \u2014 used for external-only stats not tied to a Video record"
+    },
+    "external_video_id": {
+      "type": "string",
+      "title": "External Video ID",
+      "description": "ExternalVideo record ID \u2014 required if source_type = external"
+    },
+    "external_title": {
+      "type": "string",
+      "title": "External Video Title",
+      "description": "Title of the external platform video, used when no internal Video record exists"
+    },
+    "external_url": {
+      "type": "string",
+      "title": "External Video URL",
+      "description": "URL of the video on the external platform"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "internal",
+        "external",
+        "external_manual"
+      ],
+      "title": "Source Type",
+      "default": "internal",
+      "description": "internal = FLESHLAB video, external = ExternalVideo record, external_manual = manually entered external stat"
+    },
+    "platform": {
+      "type": "string",
+      "enum": [
+        "xhamster",
+        "faphouse",
+        "internal",
+        "boyfriendtv",
+        "zapping",
+        "pornhub",
+        "chaturbate",
+        "stripchat",
+        "bongacams",
+        "xvideos",
+        "twitter_x",
+        "other"
+      ],
+      "title": "Platform"
+    },
+    "period_month": {
+      "type": "string",
+      "title": "Period Month",
+      "description": "Format: YYYY-MM"
+    },
+    "views": {
+      "type": "integer",
+      "title": "Views",
+      "default": 0
+    },
+    "likes": {
+      "type": "integer",
+      "title": "Likes",
+      "default": 0
+    },
+    "favourites": {
+      "type": "integer",
+      "title": "Favourites",
+      "default": 0
+    },
+    "revenue_usd": {
+      "type": "number",
+      "title": "Revenue (USD)",
+      "default": 0,
+      "description": "Gross platform revenue"
+    },
+    "sales_count": {
+      "type": "integer",
+      "title": "Sales Count",
+      "default": 0
+    },
+    "tips_usd": {
+      "type": "number",
+      "title": "Tips (USD)",
+      "default": 0
+    },
+    "promotion_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "planned",
+        "active",
+        "ended"
+      ],
+      "title": "Promotion Status",
+      "default": "none"
+    },
+    "promotion_note": {
+      "type": "string",
+      "title": "Promotion Note",
+      "format": "textarea"
+    },
+    "admin_note": {
+      "type": "string",
+      "title": "Admin Note",
+      "format": "textarea"
+    },
+    "raw_data_json": {
+      "type": "string",
+      "title": "Raw Data JSON"
+    },
+    "import_source": {
+      "type": "string",
+      "title": "Import Source"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes",
+      "format": "textarea"
+    }
+  },
+  "required": [
+    "platform",
+    "period_month"
+  ]
+}

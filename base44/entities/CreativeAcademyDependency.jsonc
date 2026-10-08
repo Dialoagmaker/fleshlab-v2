@@ -1,0 +1,44 @@
+{
+  "name": "CreativeAcademyDependency",
+  "type": "object",
+  "properties": {
+    "module_slug": {
+      "type": "string",
+      "title": "Module Slug"
+    },
+    "dependency_module_slug": {
+      "type": "string",
+      "title": "Dependency Module Slug"
+    },
+    "dependency_type": {
+      "type": "string",
+      "enum": [
+        "required",
+        "recommended",
+        "blocks_rendering"
+      ],
+      "default": "required",
+      "title": "Dependency Type"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "missing",
+        "satisfied"
+      ],
+      "default": "missing",
+      "title": "Status"
+    },
+    "reason": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Reason"
+    }
+  },
+  "required": [
+    "module_slug",
+    "dependency_module_slug",
+    "dependency_type",
+    "status"
+  ]
+}

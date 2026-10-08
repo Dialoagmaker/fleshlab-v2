@@ -1,0 +1,12 @@
+.git
+.env
+.env.*
+**/loyalfans-probe-session.json
+node_modules
+dist
+dist-*
+logs
+tmp
+tmp-*
+design-exploration
+design-reference

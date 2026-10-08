@@ -1,0 +1,62 @@
+{
+  "name": "FlashPayWallet",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "title": "User ID"
+    },
+    "currency": {
+      "type": "string",
+      "title": "Currency",
+      "default": "usd"
+    },
+    "available_balance": {
+      "type": "number",
+      "title": "Available Balance",
+      "default": 0
+    },
+    "pending_balance": {
+      "type": "number",
+      "title": "Pending Balance",
+      "default": 0
+    },
+    "lifetime_deposited": {
+      "type": "number",
+      "title": "Lifetime Deposited",
+      "default": 0
+    },
+    "lifetime_spent": {
+      "type": "number",
+      "title": "Lifetime Spent",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "frozen",
+        "closed"
+      ],
+      "title": "Status",
+      "default": "active"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Updated At"
+    }
+  },
+  "required": [
+    "user_id",
+    "currency",
+    "available_balance",
+    "pending_balance",
+    "status"
+  ]
+}

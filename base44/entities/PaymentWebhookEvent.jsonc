@@ -1,0 +1,172 @@
+{
+  "name": "PaymentWebhookEvent",
+  "type": "object",
+  "properties": {
+    "provider": {
+      "type": "string",
+      "enum": [
+        "nowpayments",
+        "ccbill",
+        "segpay"
+      ],
+      "title": "Payment Provider"
+    },
+    "provider_event_id": {
+      "type": "string",
+      "title": "Provider Event ID",
+      "description": "Provider event/payment identifier, usually NOWPayments payment_id"
+    },
+    "provider_invoice_id": {
+      "type": "string",
+      "title": "Provider Invoice ID",
+      "description": "NOWPayments invoice_id when supplied, otherwise payment_id fallback"
+    },
+    "provider_payment_id": {
+      "type": "string",
+      "title": "Provider Payment ID",
+      "description": "NOWPayments payment_id"
+    },
+    "provider_order_id": {
+      "type": "string",
+      "title": "Provider Order ID",
+      "description": "Merchant order_id received from provider"
+    },
+    "payment_intent_id": {
+      "type": "string",
+      "title": "Payment Intent ID",
+      "description": "Internal PaymentIntent record ID"
+    },
+    "event_type": {
+      "type": "string",
+      "title": "Normalized Event Type",
+      "description": "Internal event name such as payment.completed or payment.pending"
+    },
+    "raw_status": {
+      "type": "string",
+      "title": "Raw Provider Status",
+      "description": "Original status from provider (e.g., finished, failed)"
+    },
+    "normalized_status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "failed",
+        "cancelled",
+        "refunded",
+        "pending",
+        "processing",
+        "unknown",
+        "payment_review",
+        "underpaid",
+        "currency_mismatch"
+      ],
+      "title": "Normalized Status",
+      "description": "Internal normalized status"
+    },
+    "amount": {
+      "type": "number",
+      "title": "Amount"
+    },
+    "currency": {
+      "type": "string",
+      "title": "Currency",
+      "default": "usd"
+    },
+    "user_id": {
+      "type": "string",
+      "title": "User ID"
+    },
+    "product_type": {
+      "type": "string",
+      "enum": [
+        "fanclub",
+        "ppv",
+        "guest_production_deposit",
+        "guest_production",
+        "wallet_topup"
+      ],
+      "title": "Product Type"
+    },
+    "product_id": {
+      "type": "string",
+      "title": "Product ID",
+      "description": "plan_id, video_id, application_id, or wallet top-up order ID"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "title": "Event Idempotency Key",
+      "description": "Event-level key for deduplication: provider:payment_id:status"
+    },
+    "payment_idempotency_key": {
+      "type": "string",
+      "title": "Payment Idempotency Key",
+      "description": "Payment-level key for entitlement deduplication: provider:payment_id (no status)"
+    },
+    "signature_valid": {
+      "type": "boolean",
+      "title": "Signature Valid",
+      "default": false
+    },
+    "processed": {
+      "type": "boolean",
+      "title": "Processed",
+      "default": false
+    },
+    "duplicate": {
+      "type": "boolean",
+      "title": "Duplicate",
+      "default": false
+    },
+    "entitlement_granted": {
+      "type": "boolean",
+      "title": "Entitlement Granted",
+      "default": false
+    },
+    "entitlement_duplicate": {
+      "type": "boolean",
+      "title": "Entitlement Duplicate",
+      "default": false,
+      "description": "True if entitlement was already granted by another webhook"
+    },
+    "entitlement_type": {
+      "type": "string",
+      "title": "Entitlement Type",
+      "description": "Created access type, e.g. ppv, fanclub, guest_production, wallet_topup"
+    },
+    "entitlement_id": {
+      "type": "string",
+      "title": "Entitlement ID",
+      "description": "Created Payment, Subscription, ledger, or related entitlement record ID"
+    },
+    "verification_details": {
+      "type": "string",
+      "title": "Verification Details (JSON)",
+      "description": "JSON with amount/currency verification results"
+    },
+    "audit_details_json": {
+      "type": "string",
+      "title": "Audit Details (JSON)",
+      "description": "Non-sensitive audit snapshot for live IPN troubleshooting. Never stores API keys or full signatures."
+    },
+    "error_message": {
+      "type": "string",
+      "title": "Error Message"
+    },
+    "received_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Received At"
+    },
+    "processed_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Processed At"
+    }
+  },
+  "required": [
+    "provider",
+    "provider_event_id",
+    "raw_status",
+    "received_at"
+  ]
+}

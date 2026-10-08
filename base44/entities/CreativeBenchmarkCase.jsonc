@@ -1,0 +1,91 @@
+{
+  "name": "CreativeBenchmarkCase",
+  "type": "object",
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "title": "Benchmark Case ID"
+    },
+    "title": {
+      "type": "string",
+      "title": "Case Title"
+    },
+    "domain": {
+      "type": "string",
+      "title": "Domain"
+    },
+    "difficulty_level": {
+      "type": "integer",
+      "title": "Difficulty Level"
+    },
+    "difficulty_label": {
+      "type": "string",
+      "enum": [
+        "Single Image",
+        "Campaign",
+        "Multi Audience",
+        "Brand System",
+        "Executive Strategy"
+      ],
+      "title": "Difficulty Label"
+    },
+    "immutable": {
+      "type": "boolean",
+      "default": true,
+      "title": "Immutable"
+    },
+    "suite_version": {
+      "type": "string",
+      "title": "Suite Version"
+    },
+    "creative_brief": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Creative Brief"
+    },
+    "ground_truth": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Ground Truth"
+    },
+    "executive_notes": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Executive Notes"
+    },
+    "expected_risks_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Expected Risks JSON"
+    },
+    "board_discussion": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Board Discussion"
+    },
+    "reference_evaluation_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Reference Evaluation JSON"
+    },
+    "historical_scores_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Historical Scores JSON"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+    }
+  },
+  "required": [
+    "case_id",
+    "title",
+    "domain",
+    "difficulty_level",
+    "difficulty_label",
+    "immutable",
+    "suite_version"
+  ]
+}

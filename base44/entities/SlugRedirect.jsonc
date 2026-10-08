@@ -1,0 +1,43 @@
+{
+  "name": "SlugRedirect",
+  "type": "object",
+  "properties": {
+    "old_slug": {
+      "type": "string",
+      "title": "Old Slug"
+    },
+    "new_slug": {
+      "type": "string",
+      "title": "New Slug"
+    },
+    "redirect_type": {
+      "type": "string",
+      "enum": [
+        "301",
+        "302"
+      ],
+      "title": "Redirect Type",
+      "default": "301"
+    },
+    "entity_type": {
+      "type": "string",
+      "enum": [
+        "video",
+        "performer",
+        "brand",
+        "news",
+        "custom"
+      ],
+      "title": "Entity Type"
+    },
+    "active": {
+      "type": "boolean",
+      "title": "Active",
+      "default": true
+    }
+  },
+  "required": [
+    "old_slug",
+    "new_slug"
+  ]
+}

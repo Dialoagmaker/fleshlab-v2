@@ -1,0 +1,699 @@
+/**
+ * simulatePaymentWebhook — Admin-Only Test Function
+ *
+ * Simulates a NOWPayments IPN/webhook payload for testing purposes.
+ * This allows testing the complete payment flow without real money.
+ *
+ * SECURITY:
+ *   - Admin-only function (role check required)
+ *   - Does NOT bypass signature verification in real webhook handler
+ *   - Uses the EXACT same grantEntitlement logic as paymentWebhook
+ *   - Creates audit trail in PaymentIntent metadata
+ *
+ * USAGE:
+ *   - Call with paymentIntentId and desired status
+ *   - Function will simulate the webhook processing
+ *   - Returns detailed results for verification
+ */
+
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+
+// ── Revenue Model Resolver (inline) ──────────────────────────────────────────
+function resolvePerformerRevenueModel(performer) {
+  if (!performer) return { model_key: 'studio_managed', model_label: 'Studio Managed', performer_share_percentage: 40, studio_share_percentage: 60, source: 'default' };
+  if (performer.revenue_model === 'established_network') return { model_key: 'established_network', model_label: 'Established/Network', performer_share_percentage: 70, studio_share_percentage: 30, source: 'explicit_contract' };
+  if (performer.revenue_split_pct !== undefined && performer.revenue_split_pct !== null) {
+    const splitPct = parseFloat(performer.revenue_split_pct);
+    if (splitPct === 70) return { model_key: 'established_network', model_label: 'Established/Network', performer_share_percentage: 70, studio_share_percentage: 30, source: 'performer_profile' };
+    return { model_key: 'studio_managed', model_label: 'Studio Managed', performer_share_percentage: splitPct, studio_share_percentage: 100 - splitPct, source: 'performer_profile' };
+  }
+  return { model_key: 'studio_managed', model_label: 'Studio Managed', performer_share_percentage: 40, studio_share_percentage: 60, source: 'default' };
+}
+
+// ── Create PerformerEarningLineItem with idempotency ─────────────────────────
+async function createPerformerEarningLineItem(base44, params) {
+  const { performer_id, gross_amount_usd, performer_share_percent, source_type, source_platform, payment_idempotency_key, video_id, subscription_id, period_month, description, payment_intent_id, provider } = params;
+  
+  // IDEMPOTENCY CHECK
+  const existingItems = await base44.asServiceRole.entities.PerformerEarningLineItem.filter({ performer_id, source_type, period_month });
+  const existingItem = existingItems.find(item => {
+    try {
+      const meta = JSON.parse(item.description || '{}');
+      return meta.payment_idempotency_key === payment_idempotency_key || meta.payment_intent_id === payment_intent_id;
+    } catch { return false; }
+  });
+  
+  if (existingItem) {
+    console.log('[simulatePaymentWebhook] PerformerEarningLineItem already exists — skipping (idempotent)', { performer_id, source_type, existingItemId: existingItem.id });
+    return { duplicate: true, item: existingItem };
+  }
+  
+  const performer_amount_usd = gross_amount_usd * performer_share_percent / 100;
+  const studio_amount_usd = gross_amount_usd - performer_amount_usd;
+  
+  const lineItem = await base44.asServiceRole.entities.PerformerEarningLineItem.create({
+    performer_id,
+    performer_earning_id: null,
+    period_month,
+    source_type,
+    source_platform,
+    source_reference_id: video_id || subscription_id,
+    description: JSON.stringify({ payment_idempotency_key, payment_intent_id, provider, ...(description ? { note: description } : {}), test_mode: true }),
+    gross_amount_usd,
+    performer_share_percent,
+    performer_amount_usd,
+    studio_amount_usd,
+    currency: 'usd',
+    exchange_rate: 1,
+    status: 'approved',
+    test_mode: true,
+    notes: `Auto-created from ${source_type} payment via simulatePaymentWebhook (REVENUE_ATTRIBUTION_TEST)`,
+  });
+  
+  console.log('[simulatePaymentWebhook] PerformerEarningLineItem created:', { performer_id, source_type, gross: gross_amount_usd, performer_share: performer_share_percent, performer_amount: performer_amount_usd, studio_amount: studio_amount_usd, lineItemId: lineItem.id });
+  return { duplicate: false, item: lineItem };
+}
+
+// ── Grant entitlements with REVENUE ATTRIBUTION (same as paymentWebhook) ─────────
+async function grantEntitlement(base44, intent) {
+  const providerPaymentKey = `${intent.provider}:${intent.provider_session_id}`;
+  const periodMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  
+  if (intent.payment_type === 'ppv') {
+    // Create Payment record
+    const payment = await base44.asServiceRole.entities.Payment.create({
+      user_id:             intent.user_id,
+      amount_usd:          intent.amount,
+      currency:            intent.currency || 'usd',
+      payment_type:        'ppv',
+      status:              'completed',
+      related_entity_type: 'Video',
+      related_entity_id:   intent.video_id,
+      metadata: JSON.stringify({
+        provider:            intent.provider,
+        provider_session_id: intent.provider_session_id,
+        price_tier:          intent.price_tier,
+        payment_intent_id:   intent.id,
+        simulated: true,
+        test_mode: true,
+      }),
+    });
+    console.log('[simulatePaymentWebhook] PPV entitlement granted:', { userId: intent.user_id, videoId: intent.video_id, paymentId: payment.id });
+    
+    // REVENUE ATTRIBUTION: Find performers for this video
+    const videoPerformers = await base44.asServiceRole.entities.VideoPerformer.filter({ video_id: intent.video_id });
+    
+    if (videoPerformers.length === 0) {
+      console.warn('[simulatePaymentWebhook] PPV payment has no VideoPerformer records — skipping revenue attribution', { videoId: intent.video_id, paymentId: payment.id });
+      return { ok: true, duplicate: false, entitlement_type: 'ppv', payment_id: payment.id, revenue_attribution: 'no_performers' };
+    }
+    
+    // Create earning line items for each performer
+    const revenueAttributions = [];
+    for (const vp of videoPerformers) {
+      const performer = await base44.asServiceRole.entities.Performer.get(vp.performer_id);
+      if (!performer || performer.status === 'inactive') {
+        console.warn('[simulatePaymentWebhook] Performer not found or inactive — skipping', { performer_id: vp.performer_id, videoId: intent.video_id });
+        continue;
+      }
+      
+      const revenueModel = resolvePerformerRevenueModel(performer);
+      const performerGross = intent.amount / videoPerformers.length;
+      
+      const lineItemResult = await createPerformerEarningLineItem(base44, {
+        performer_id: vp.performer_id,
+        gross_amount_usd: performerGross,
+        performer_share_percent: revenueModel.performer_share_percentage,
+        source_type: 'ppv_purchase',
+        source_platform: 'fleshlab',
+        payment_idempotency_key: providerPaymentKey,
+        payment_intent_id: intent.id,
+        video_id: intent.video_id,
+        period_month: periodMonth,
+        description: `PPV purchase (TEST) - ${performer.display_name}`,
+        provider: intent.provider,
+        test_mode: true,
+      });
+      
+      revenueAttributions.push({
+        performer_id: vp.performer_id,
+        performer_name: performer.display_name,
+        gross: performerGross,
+        performer_share_percent: revenueModel.performer_share_percentage,
+        line_item_id: lineItemResult.item?.id,
+        duplicate: lineItemResult.duplicate,
+      });
+    }
+    
+    return {
+      ok: true,
+      duplicate: false,
+      entitlement_type: 'ppv',
+      payment_id: payment.id,
+      revenue_attribution: revenueAttributions,
+    };
+
+  } else if (intent.payment_type === 'fanclub') {
+    const ACCESS_PERIODS = {
+      fanclub_monthly:  1,
+      premium_monthly:  1,
+      fanclub_3mo:      3,
+      fanclub_6mo:      6,
+      fanclub_annual:   12,
+    };
+    const months = ACCESS_PERIODS[intent.plan_id] || 1;
+    const periodEnd = new Date();
+    periodEnd.setMonth(periodEnd.getMonth() + months);
+
+    const subscription = await base44.asServiceRole.entities.Subscription.create({
+      user_id:                intent.user_id,
+      fanclub_id:             intent.plan_id,
+      status:                 'active',
+      current_period_start:   new Date().toISOString(),
+      current_period_end:     periodEnd.toISOString(),
+      amount_usd:             intent.amount,
+      stripe_subscription_id: `nowpayments_${intent.provider_session_id}`,
+      payment_intent_id:      intent.id,
+      provider:               'nowpayments',
+    });
+    console.log('[simulatePaymentWebhook] Fanclub access pass granted:', { userId: intent.user_id, planId: intent.plan_id, months, subscriptionId: subscription.id });
+    
+    // REVENUE ATTRIBUTION: Check if fanclub is performer-specific
+    const fanclub = await base44.asServiceRole.entities.Fanclub.get(intent.plan_id);
+    
+    if (!fanclub) {
+      console.warn('[simulatePaymentWebhook] Fanclub not found — skipping revenue attribution', { planId: intent.plan_id, subscriptionId: subscription.id });
+      return { ok: true, duplicate: false, entitlement_type: 'fanclub', subscription_id: subscription.id, revenue_attribution: 'fanclub_not_found' };
+    }
+    
+    if (!fanclub.performer_id) {
+      console.log('[simulatePaymentWebhook] Fanclub is global (no performer_id) — marking as unattributed revenue', { fanclubId: fanclub.id, fanclubName: fanclub.name });
+      return {
+        ok: true,
+        duplicate: false,
+        entitlement_type: 'fanclub',
+        subscription_id: subscription.id,
+        revenue_attribution: 'global_fanclub_unattributed',
+        fanclub_name: fanclub.name,
+      };
+    }
+    
+    const performer = await base44.asServiceRole.entities.Performer.get(fanclub.performer_id);
+    if (!performer || performer.status === 'inactive') {
+      console.warn('[simulatePaymentWebhook] Performer not found or inactive for fanclub — skipping revenue attribution', { performer_id: fanclub.performer_id, fanclubId: fanclub.id });
+      return { ok: true, duplicate: false, entitlement_type: 'fanclub', subscription_id: subscription.id, revenue_attribution: 'performer_not_found' };
+    }
+    
+    const revenueModel = resolvePerformerRevenueModel(performer);
+    
+    const lineItemResult = await createPerformerEarningLineItem(base44, {
+      performer_id: fanclub.performer_id,
+      gross_amount_usd: intent.amount,
+      performer_share_percent: revenueModel.performer_share_percentage,
+      source_type: 'fanclub_subscription',
+      source_platform: 'fleshlab',
+      payment_idempotency_key: providerPaymentKey,
+      payment_intent_id: intent.id,
+      subscription_id: subscription.id,
+      period_month: periodMonth,
+      description: `Fanclub subscription (TEST) - ${fanclub.name} - ${performer.display_name}`,
+      provider: intent.provider,
+      test_mode: true,
+    });
+    
+    return {
+      ok: true,
+      duplicate: false,
+      entitlement_type: 'fanclub',
+      subscription_id: subscription.id,
+      revenue_attribution: {
+        performer_id: fanclub.performer_id,
+        performer_name: performer.display_name,
+        fanclub_name: fanclub.name,
+        gross: intent.amount,
+        performer_share_percent: revenueModel.performer_share_percentage,
+        line_item_id: lineItemResult.item?.id,
+        duplicate: lineItemResult.duplicate,
+      },
+    };
+
+  } else if (intent.payment_type === 'guest_production_deposit') {
+    if (intent.application_id) {
+      await base44.asServiceRole.entities.GuestProductionApplication.update(intent.application_id, {
+        status: 'reviewing',
+        admin_notes: `Deposit payment confirmed (SIMULATED). Provider: ${intent.provider}, Session: ${intent.provider_session_id}`,
+      });
+
+      await base44.asServiceRole.entities.Payment.create({
+        user_id:             intent.user_id,
+        amount_usd:          intent.amount,
+        currency:            intent.currency || 'usd',
+        payment_type:        'ppv',
+        status:              'completed',
+        related_entity_type: 'GuestProductionApplication',
+        related_entity_id:   intent.application_id,
+        metadata: JSON.stringify({
+          provider:            intent.provider,
+          provider_session_id: intent.provider_session_id,
+          payment_type:        'guest_production_deposit',
+          simulated: true,
+          test_mode: true,
+        }),
+      });
+    }
+    console.log('[simulatePaymentWebhook] Guest Production deposit marked paid:', { userId: intent.user_id, appId: intent.application_id });
+  }
+  
+  return { ok: false, error: 'unknown_payment_type' };
+}
+
+// ── Main handler ──────────────────────────────────────────────────────────────
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    // ADMIN-ONLY CHECK
+    const user = await base44.auth.me();
+    if (!user || user.role !== 'admin') {
+      return Response.json({ 
+        error: 'Admin access required',
+        success: false 
+      }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { 
+      paymentIntentId, 
+      simulatedStatus,
+      actuallyPaid,
+    } = body;
+
+    if (!paymentIntentId) {
+      return Response.json({ error: 'paymentIntentId required' }, { status: 400 });
+    }
+
+    const VALID_STATUSES = ['finished', 'confirmed', 'failed', 'expired', 'refunded', 'waiting', 'confirming'];
+    const testStatus = simulatedStatus || 'finished';
+    if (!VALID_STATUSES.includes(testStatus)) {
+      return Response.json({ 
+        error: `Invalid simulatedStatus. Must be one of: ${VALID_STATUSES.join(', ')}` 
+      }, { status: 400 });
+    }
+
+    console.log('[simulatePaymentWebhook] Starting simulation:', { 
+      paymentIntentId, 
+      simulatedStatus: testStatus,
+      adminUser: user.email 
+    });
+
+    // Validate PaymentIntent exists — return controlled 404, not raw 500
+    let intent;
+    try {
+      intent = await base44.asServiceRole.entities.PaymentIntent.get(paymentIntentId);
+    } catch (err) {
+      console.error('[simulatePaymentWebhook] Failed to fetch PaymentIntent:', {
+        paymentIntentId,
+        error: err.message,
+      });
+      return Response.json({ 
+        success: false,
+        error: 'PaymentIntent not found',
+        details: { paymentIntentId, error: err.message },
+      }, { status: 404 });
+    }
+
+    if (!intent) {
+      return Response.json({ 
+        success: false,
+        error: 'PaymentIntent not found',
+        details: { paymentIntentId },
+      }, { status: 404 });
+    }
+
+    // Idempotency check
+    if (intent.status === 'completed' && testStatus === 'finished') {
+      return Response.json({ 
+        success: true, 
+        duplicate: true,
+        message: 'Intent already completed — idempotency check passed',
+        intentId: paymentIntentId,
+        currentStatus: intent.status,
+      });
+    }
+
+    const simulatedPayload = {
+      payment_id: intent.provider_session_id || 'SIMULATED_' + Date.now(),
+      order_id: JSON.parse(intent.metadata || '{}').order_id || `simulated_${paymentIntentId}`,
+      payment_status: testStatus,
+      price_amount: intent.amount,
+      price_currency: intent.currency || 'usd',
+      actually_paid: actuallyPaid !== undefined ? actuallyPaid : intent.amount,
+      pay_currency: JSON.parse(intent.metadata || '{}').pay_currency_strategy || 'usdttrc20',
+      outcome_plan: testStatus === 'finished' ? 'finished' : testStatus,
+    };
+
+    console.log('[simulatePaymentWebhook] Simulated webhook payload:', simulatedPayload);
+
+    // Normalize event
+    let eventType;
+    switch (testStatus) {
+      case 'finished':
+      case 'confirmed':
+        eventType = 'payment.completed';
+        break;
+      case 'failed':
+        eventType = 'payment.failed';
+        break;
+      case 'expired':
+        eventType = 'payment.cancelled';
+        break;
+      case 'refunded':
+        eventType = 'payment.refunded';
+        break;
+      case 'waiting':
+      case 'confirming':
+      default:
+        eventType = 'payment.pending';
+        break;
+    }
+
+    console.log('[simulatePaymentWebhook] Normalized event:', { eventType, rawStatus: testStatus });
+
+    // Process by event type
+    if (eventType === 'payment.completed') {
+      // ── CRITICAL: Amount and Currency Verification (same as production webhook) ────────────────
+      const expectedAmount = intent.amount;
+      const expectedCurrency = (intent.currency || 'usd').toLowerCase();
+      const actuallyPaid = simulatedPayload.actually_paid !== undefined ? simulatedPayload.actually_paid : intent.amount;
+      const paidCurrency = (simulatedPayload.price_currency || 'usd').toLowerCase();
+
+      // Validate actually_paid
+      if (actuallyPaid === undefined || actuallyPaid === null || isNaN(actuallyPaid)) {
+        return Response.json({
+          success: false,
+          action: 'payment.completed',
+          entitlementGranted: false,
+          reason: 'actually_paid_missing',
+          details: { paymentIntentId, actuallyPaid },
+          message: 'Payment verification failed: actually_paid missing or invalid',
+        });
+      }
+
+      // Validate amount (1% tolerance)
+      const tolerance = 0.01;
+      const minRequired = expectedAmount * (1 - tolerance);
+      
+      if (actuallyPaid < minRequired) {
+        return Response.json({
+          success: false,
+          action: 'payment.completed',
+          entitlementGranted: false,
+          reason: 'underpayment',
+          details: { 
+            paymentIntentId,
+            expectedAmount,
+            actuallyPaid,
+            minRequired: minRequired.toFixed(2),
+          },
+          message: `Underpayment: expected $${expectedAmount}, received $${actuallyPaid}`,
+        });
+      }
+
+      // Validate currency
+      if (paidCurrency !== expectedCurrency) {
+        return Response.json({
+          success: false,
+          action: 'payment.completed',
+          entitlementGranted: false,
+          reason: 'currency_mismatch',
+          details: {
+            paymentIntentId,
+            expectedCurrency,
+            paidCurrency,
+          },
+          message: `Currency mismatch: expected ${expectedCurrency}, received ${paidCurrency}`,
+        });
+      }
+
+      console.log('[simulatePaymentWebhook] Amount/currency verification passed:', {
+        paymentIntentId,
+        expectedAmount,
+        actuallyPaid,
+        expectedCurrency,
+        paidCurrency,
+      });
+
+      await base44.asServiceRole.entities.PaymentIntent.update(paymentIntentId, {
+        status:       'completed',
+        completed_at: new Date().toISOString(),
+        metadata: JSON.stringify({
+          ...JSON.parse(intent.metadata || '{}'),
+          nowpayments_payment_id: simulatedPayload.payment_id,
+          actually_paid: simulatedPayload.actually_paid,
+          raw_status: testStatus,
+          simulated: true,
+          simulated_at: new Date().toISOString(),
+          simulated_by: user.email,
+          verified_amount: true,
+          verified_currency: true,
+        }),
+      });
+
+      // ── BRANCH: wallet_topup vs standard entitlement ──────────────────────
+      if (intent.payment_type === 'wallet_topup') {
+        // ── FleshPay Wallet Top‑up Credit (simulated) ───────────────────────
+        const topupOrders = await base44.asServiceRole.entities.FleshPayTopupOrder.filter({
+          user_id: intent.user_id,
+          payment_intent_id: intent.id,
+        });
+
+        if (topupOrders.length === 0) {
+          return Response.json({
+            success: false,
+            error: 'No matching FleshPayTopupOrder found',
+          });
+        }
+
+        const topupOrder = topupOrders[0];
+        const idempotencyKey = `nowpayments_${simulatedPayload.payment_id}_wallet_topup_credit`;
+
+        // IDEMPOTENCY CHECK
+        const existingLedger = await base44.asServiceRole.entities.FleshPayLedger.filter({
+          idempotency_key: idempotencyKey,
+        });
+
+        if (existingLedger.length > 0) {
+          console.log('[simulatePaymentWebhook] wallet_topup already credited — idempotent skip');
+          return Response.json({
+            success: true,
+            duplicate: true,
+            action: 'payment.completed',
+            entitlementGranted: false,
+            message: 'Wallet already credited — idempotent',
+            wallet_topup: { already_credited: true, ledger_entry_id: existingLedger[0].id },
+          });
+        }
+
+        // Get wallet
+        let wallets = await base44.asServiceRole.entities.FleshPayWallet.filter({ user_id: intent.user_id });
+        let wallet;
+        if (wallets.length === 0) {
+          wallet = await base44.asServiceRole.entities.FleshPayWallet.create({
+            user_id: intent.user_id,
+            balance_usd: 0,
+            currency: 'usd',
+            status: 'active',
+            lifetime_topups_usd: 0,
+            lifetime_spends_usd: 0,
+          });
+        } else {
+          wallet = wallets[0];
+        }
+
+        const topupAmount = intent.amount;
+        const balanceBefore = wallet.balance_usd;
+        const balanceAfter = balanceBefore + topupAmount;
+
+        // Create ledger entry
+        const ledgerEntry = await base44.asServiceRole.entities.FleshPayLedger.create({
+          wallet_id: wallet.id,
+          user_id: intent.user_id,
+          entry_type: 'credit',
+          transaction_type: 'credit',
+          amount_usd: topupAmount,
+          balance_before_usd: balanceBefore,
+          balance_after_usd: balanceAfter,
+          source_type: 'topup',
+          reference_type: 'topup',
+          source_id: topupOrder.id,
+          reference_id: topupOrder.id,
+          provider: 'nowpayments',
+          provider_transaction_id: simulatedPayload.payment_id,
+          idempotency_key: idempotencyKey,
+          status: 'completed',
+          description: `Wallet top-up — $${topupAmount} USD (SIMULATED)`,
+          metadata_json: JSON.stringify({
+            provider: 'nowpayments',
+            provider_payment_id: simulatedPayload.payment_id,
+            payment_intent_id: intent.id,
+            topup_order_id: topupOrder.id,
+            simulated: true,
+          }),
+        });
+
+        // Update wallet balance
+        await base44.asServiceRole.entities.FleshPayWallet.update(wallet.id, {
+          balance_usd: balanceAfter,
+          lifetime_topups_usd: wallet.lifetime_topups_usd + topupAmount,
+          lifetime_topup_usd: wallet.lifetime_topup_usd + topupAmount,
+          last_transaction_at: new Date().toISOString(),
+        });
+
+        // Update topup order
+        await base44.asServiceRole.entities.FleshPayTopupOrder.update(topupOrder.id, {
+          status: 'paid',
+          completed_at: new Date().toISOString(),
+          confirmed_at: new Date().toISOString(),
+          provider_payment_id: simulatedPayload.payment_id,
+          actually_paid: simulatedPayload.actually_paid,
+          amount_received_usd: topupAmount,
+          ipn_callback_raw: JSON.stringify(simulatedPayload),
+        });
+
+        return Response.json({
+          success: true,
+          action: 'payment.completed',
+          intentId: paymentIntentId,
+          newStatus: 'completed',
+          entitlementGranted: true,
+          wallet_topup: {
+            topup_order_id: topupOrder.id,
+            wallet_id: wallet.id,
+            amount_usd: topupAmount,
+            balance_before_usd: balanceBefore,
+            balance_after_usd: balanceAfter,
+            ledger_entry_id: ledgerEntry.id,
+          },
+          simulatedPayload,
+          verified: {
+            amount: actuallyPaid,
+            currency: paidCurrency,
+            expected_amount: expectedAmount,
+            expected_currency: expectedCurrency,
+          },
+          message: 'Wallet credited via simulated webhook',
+        });
+      } else {
+        // ── Standard entitlement (PPV / fanclub / guest production) ─────────
+        await grantEntitlement(base44, intent);
+
+        return Response.json({
+          success: true,
+          action: 'payment.completed',
+          intentId: paymentIntentId,
+          newStatus: 'completed',
+          entitlementGranted: true,
+          simulatedPayload,
+          verified: {
+            amount: actuallyPaid,
+            currency: paidCurrency,
+            expected_amount: expectedAmount,
+            expected_currency: expectedCurrency,
+          },
+          message: 'Payment marked as completed and entitlements granted (verified)',
+        });
+      }
+
+    } else if (eventType === 'payment.failed') {
+      await base44.asServiceRole.entities.PaymentIntent.update(paymentIntentId, {
+        status:        'failed',
+        failed_at:     new Date().toISOString(),
+        error_message: `Payment failed (${testStatus}) [SIMULATED]`,
+        metadata: JSON.stringify({
+          ...JSON.parse(intent.metadata || '{}'),
+          simulated: true,
+          simulated_at: new Date().toISOString(),
+          simulated_by: user.email,
+        }),
+      });
+
+      return Response.json({
+        success: true,
+        action: 'payment.failed',
+        intentId: paymentIntentId,
+        newStatus: 'failed',
+        entitlementGranted: false,
+        simulatedPayload,
+        message: 'Payment marked as failed — no entitlements granted',
+      });
+
+    } else if (eventType === 'payment.cancelled') {
+      await base44.asServiceRole.entities.PaymentIntent.update(paymentIntentId, {
+        status:        'cancelled',
+        cancelled_at:  new Date().toISOString(),
+        error_message: 'Payment expired or cancelled [SIMULATED]',
+        metadata: JSON.stringify({
+          ...JSON.parse(intent.metadata || '{}'),
+          simulated: true,
+          simulated_at: new Date().toISOString(),
+          simulated_by: user.email,
+        }),
+      });
+
+      return Response.json({
+        success: true,
+        action: 'payment.cancelled',
+        intentId: paymentIntentId,
+        newStatus: 'cancelled',
+        entitlementGranted: false,
+        simulatedPayload,
+        message: 'Payment marked as cancelled — no entitlements granted',
+      });
+
+    } else if (eventType === 'payment.refunded') {
+      await base44.asServiceRole.entities.PaymentIntent.update(paymentIntentId, {
+        status:        'refunded',
+        error_message: 'Payment refunded [SIMULATED]',
+        metadata: JSON.stringify({
+          ...JSON.parse(intent.metadata || '{}'),
+          simulated: true,
+          simulated_at: new Date().toISOString(),
+          simulated_by: user.email,
+        }),
+      });
+
+      return Response.json({
+        success: true,
+        action: 'payment.refunded',
+        intentId: paymentIntentId,
+        newStatus: 'refunded',
+        entitlementGranted: false,
+        simulatedPayload,
+        message: 'Payment marked as refunded — no entitlements granted',
+      });
+
+    } else {
+      return Response.json({
+        success: true,
+        action: 'payment.pending',
+        intentId: paymentIntentId,
+        currentStatus: intent.status,
+        entitlementGranted: false,
+        simulatedPayload,
+        message: 'Pending/confirming status — no action taken (same as production webhook)',
+      });
+    }
+
+  } catch (err) {
+    console.error('[simulatePaymentWebhook] Unexpected error:', {
+      paymentIntentId: body?.paymentIntentId,
+      error: err.message,
+      stack: err.stack,
+    });
+    return Response.json({ 
+      error: 'Internal server error',
+      success: false,
+      details: { error: err.message },
+    }, { status: 500 });
+  }
+});

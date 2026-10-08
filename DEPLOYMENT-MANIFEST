@@ -1,0 +1,5 @@
+LOCAL_LAYOUT_CORRECTION=true
+SOURCE=working-tree CSS correction
+NO_API_WORKER_DATABASE_CHANGE=true
+reference-home.css sha256=5c34d9a4c0e6f0d01ce048510062de2879a0f06be91186efa232ec34d5f
+public-editorial.css sha256=71e4385ce346f4fe5f3a832f8feaf37f2976a860c64010f85abc6a4b0dac2475

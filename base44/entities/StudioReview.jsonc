@@ -1,0 +1,71 @@
+{
+  "name": "StudioReview",
+  "type": "object",
+  "properties": {
+    "review_id": {
+      "type": "string",
+      "title": "Review ID"
+    },
+    "project_id": {
+      "type": "string",
+      "title": "Project ID"
+    },
+    "asset_id": {
+      "type": "string",
+      "title": "Asset ID"
+    },
+    "version_id": {
+      "type": "string",
+      "title": "Version ID"
+    },
+    "review_type": {
+      "type": "string",
+      "enum": [
+        "executive_review",
+        "creative_review",
+        "production_review",
+        "quality_review",
+        "publishing_review",
+        "performance_review",
+        "knowledge_review"
+      ],
+      "title": "Review Type"
+    },
+    "reviewer": {
+      "type": "string",
+      "title": "Reviewer"
+    },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "approved",
+        "rejected",
+        "changes_requested",
+        "escalated"
+      ],
+      "title": "Decision"
+    },
+    "notes": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Review Notes"
+    },
+    "evidence_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Evidence JSON"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+    }
+  },
+  "required": [
+    "review_id",
+    "project_id",
+    "review_type",
+    "reviewer",
+    "decision"
+  ]
+}

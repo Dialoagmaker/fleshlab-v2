@@ -1,0 +1,78 @@
+{
+  "name": "HumanVisionAttentionFramework",
+  "type": "object",
+  "properties": {
+    "module_slug": {
+      "type": "string",
+      "default": "human-vision",
+      "title": "Module Slug"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "missing",
+        "training",
+        "ready",
+        "certified"
+      ],
+      "default": "training",
+      "title": "Status"
+    },
+    "version": {
+      "type": "string",
+      "default": "1.0",
+      "title": "Version"
+    },
+    "primary_attention_area": {
+      "type": "boolean",
+      "default": true,
+      "title": "Primary Attention Area"
+    },
+    "secondary_attention_area": {
+      "type": "boolean",
+      "default": true,
+      "title": "Secondary Attention Area"
+    },
+    "third_attention_area": {
+      "type": "boolean",
+      "default": true,
+      "title": "Third Attention Area"
+    },
+    "ignored_areas": {
+      "type": "boolean",
+      "default": true,
+      "title": "Ignored Areas"
+    },
+    "distracting_areas": {
+      "type": "boolean",
+      "default": true,
+      "title": "Distracting Areas"
+    },
+    "visual_flow": {
+      "type": "boolean",
+      "default": true,
+      "title": "Visual Flow"
+    },
+    "attention_path": {
+      "type": "boolean",
+      "default": true,
+      "title": "Attention Path"
+    },
+    "explanation_required": {
+      "type": "boolean",
+      "default": true,
+      "title": "Explanation Required"
+    },
+    "output_contract_json": {
+      "type": "string",
+      "format": "textarea",
+      "title": "Output Contract JSON"
+    }
+  },
+  "required": [
+    "module_slug",
+    "status",
+    "version",
+    "explanation_required"
+  ]
+}

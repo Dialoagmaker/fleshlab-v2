@@ -1,0 +1,3 @@
+services:
+  web:
+    image: fleshlab-web:applicants-fix-20261009

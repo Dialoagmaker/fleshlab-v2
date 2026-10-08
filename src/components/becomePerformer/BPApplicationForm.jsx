@@ -1,0 +1,535 @@
+import { useState, useMemo, useRef, forwardRef } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, ChevronRight, ChevronLeft } from "lucide-react";
+import { getRecruitmentAttribution, trackApplicationStart, trackApplicationSubmit, trackApplicationComplete } from "@/lib/analytics";
+import { base44 } from "@/api/base44Client";
+import toast from "react-hot-toast";
+import FileUploadField from "@/components/application/FileUploadField";
+import MultiPhotoUpload from "@/components/application/MultiPhotoUpload";
+import RecruitmentTrustCard from "@/components/becomePerformer/RecruitmentTrustCard";
+
+const STEP_LABELS = ["Creator profile", "Private review media", "Secure verification"];
+
+function StepIndicator({ current }) {
+  return (
+    <div className="flex items-center gap-2 mb-10">
+      {STEP_LABELS.map((label, i) => (
+        <div key={i} className="flex items-center gap-2 flex-1">
+          <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 text-xs font-black transition-colors ${
+            i < current ? "bg-primary border-primary text-primary-foreground"
+            : i === current ? "bg-primary/20 border-primary text-primary"
+            : "bg-transparent border-white/20 text-white/25"
+          }`}>
+            {i < current ? "✓" : i + 1}
+          </div>
+          <span className={`text-xs font-semibold truncate hidden sm:block ${i === current ? "text-white" : "text-white/30"}`}>{label}</span>
+          {i < STEP_LABELS.length - 1 && (
+            <div className={`flex-1 h-px ${i < current ? "bg-primary/50" : "bg-border"}`} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ChoiceButton({ label, selected, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`min-h-11 px-4 py-3 rounded-xl border text-sm font-semibold transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+        selected ? "border-primary/60 bg-primary/10 text-primary" : "border-border bg-secondary/35 text-muted-foreground hover:border-primary/35 hover:text-foreground"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+const BPApplicationForm = forwardRef(function BPApplicationForm({ onSuccess, sourcePage, sourceCountry, utmSource, utmMarket, utmCampaign, utmMedium, utmContent, utmTerm, referralCode, recruitmentCampaignId, embedded = false }, ref) {
+  // Issued server-side after the identity/age step. It is never derived from
+  // an email address or a client-generated UUID.
+  const [sessionId, setSessionId] = useState(null);
+  const [startingDraft, setStartingDraft] = useState(false);
+  const [step, setStep] = useState(0);
+  const applicationStartedRef = useRef(false);
+  const normalizedSourcePage = sourcePage ? (sourcePage.startsWith('/') ? sourcePage : `/${sourcePage}`) : null;
+  const market = sourceCountry === "Philippines" || utmMarket === "philippines" ? "philippines" : null;
+  const attribution = useMemo(() => ({
+    ...getRecruitmentAttribution(normalizedSourcePage),
+    source: utmSource || null,
+    medium: utmMedium || null,
+    campaign: utmCampaign || null,
+    country: sourceCountry || utmMarket || null,
+    utm_source: utmSource || null,
+    utm_medium: utmMedium || null,
+    utm_campaign: utmCampaign || null,
+    utm_content: utmContent || null,
+    utm_term: utmTerm || null,
+    referral_code: referralCode || null,
+    recruitment_campaign_id: recruitmentCampaignId || null,
+  }), [normalizedSourcePage, sourceCountry, utmSource, utmMarket, utmCampaign, utmMedium, utmContent, utmTerm, referralCode, recruitmentCampaignId]);
+
+  const markApplicationStarted = () => {
+    if (applicationStartedRef.current) return;
+    applicationStartedRef.current = true;
+    trackApplicationStart('performer_application', normalizedSourcePage, { market, landing_page_type: 'recruitment', ...attribution });
+  };
+
+  // Part 1
+  const [p1, setP1] = useState({
+    first_name: "", last_name: "", email: "", whatsapp: "", other_contact: "",
+    country: "", city: "", age_confirmed: false,
+    sexual_identity: "", interests: "", role: "", preferred_model: "",
+  });
+
+  // Part 2
+  const [p2, setP2] = useState({ why: "" });
+  const [mediaKeys, setMediaKeys] = useState({
+    profile_photo_r2_keys: [],
+    intro_video_r2_key: null,
+    hardcore_video_r2_key: null,
+  });
+
+  // Part 3
+  const [p3, setP3] = useState({
+    id_type: "",
+    id_document_r2_key: null,
+    id_back_r2_key: null,
+    selfie_r2_key: null,
+    consent1: false,
+    consent2: false,
+    consent3: false,
+    consent4: false,
+    consent5: false,
+  });
+
+    const submitMutation = useMutation({
+    mutationFn: async () => {
+      const modelMap = {
+        "managed_40": "standard_studio_60_performer_40",
+        "network_70": "network_performer_70_studio_30",
+        "not_sure": "undecided",
+        "": "undecided",
+      };
+
+      // Combine id docs into one key for backward compat (use front doc as primary)
+      const id_document_r2_key = p3.id_document_r2_key;
+
+      const payload = {
+        application_session_id: sessionId,
+        applicant_name: `${p1.first_name} ${p1.last_name}`.trim(),
+        legal_name: `${p1.first_name} ${p1.last_name}`.trim(),
+        email: p1.email,
+        phone: p1.whatsapp || p1.other_contact || null,
+        nationality: p1.country,
+        city: p1.city,
+        experience: p2.why || null,
+        social_links: p1.other_contact || null,
+        interests: p1.interests ? [p1.interests] : [],
+        package_interest: p1.preferred_model || "not_sure",
+        preferred_revenue_model: modelMap[p1.preferred_model] || "undecided",
+        // Media
+        profile_photo_r2_keys: mediaKeys.profile_photo_r2_keys,
+        intro_video_r2_key: mediaKeys.intro_video_r2_key,
+        hardcore_video_r2_key: mediaKeys.hardcore_video_r2_key,
+        id_document_r2_key,
+        id_document_back_r2_key: p3.id_back_r2_key,
+        selfie_with_id_r2_key: p3.selfie_r2_key,
+        confirmed_18_plus: !!p1.age_confirmed,
+        confirmed_contact_consent: true,
+        consent_review_materials: !!p3.consent3,
+        consent_version: "recruitment-2026-07",
+        request_type: "performer_application",
+        message: [
+          p1.sexual_identity ? `Sexual identity: ${p1.sexual_identity}` : "",
+          p1.role ? `Role: ${p1.role}` : "",
+          p3.id_type ? `ID type: ${p3.id_type}` : "",
+          p3.selfie_r2_key ? `Selfie R2: ${p3.selfie_r2_key}` : "",
+          p3.id_back_r2_key ? `ID back R2: ${p3.id_back_r2_key}` : "",
+        ].filter(Boolean).join("\n") || null,
+        // Source attribution
+        source_page: sourcePage || null,
+        source_country: sourceCountry || null,
+        utm_source: utmSource || null,
+        utm_market: utmMarket || null,
+        utm_campaign: utmCampaign || null,
+        utm_medium: utmMedium || null,
+        utm_content: utmContent || null,
+        utm_term: utmTerm || null,
+        referral_code: referralCode || null,
+        recruitment_campaign_id: recruitmentCampaignId || null,
+        landing_page: attribution.landing_page || normalizedSourcePage,
+        recruitment_page: attribution.recruitment_page || normalizedSourcePage,
+        referrer: attribution.referrer || null,
+        source: attribution.source || utmSource || null,
+        medium: attribution.medium || utmMedium || null,
+        campaign: attribution.campaign || utmCampaign || null,
+        country: attribution.country || sourceCountry || null,
+        first_touch_source: attribution.first_touch_source || null,
+        first_touch_landing_page: attribution.first_touch_landing_page || null,
+      };
+
+      const photosCount = mediaKeys.profile_photo_r2_keys.length;
+      const videosCount = (mediaKeys.intro_video_r2_key ? 1 : 0) + (mediaKeys.hardcore_video_r2_key ? 1 : 0);
+      const idUploaded = !!p3.id_document_r2_key;
+      const selfieUploaded = !!p3.selfie_r2_key;
+      const missingCount = Math.max(0, 5 - photosCount) + Math.max(0, 2 - videosCount) + (idUploaded ? 0 : 1) + (selfieUploaded ? 0 : 1);
+      trackApplicationSubmit({
+        ...attribution,
+        application_type: 'performer_application',
+        source_page: normalizedSourcePage,
+        source_country: sourceCountry,
+        market,
+        landing_page_type: 'recruitment',
+        photos_count: photosCount,
+        videos_count: videosCount,
+        id_uploaded: idUploaded,
+        selfie_uploaded: selfieUploaded,
+        missing_count: missingCount,
+        upload_status: missingCount === 0 ? 'complete' : 'partial',
+      });
+
+      const response = await base44.functions.invoke("submitPerformerApplication", payload);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      if (data?.success) {
+        const photosCount = mediaKeys.profile_photo_r2_keys.length;
+        const videosCount = (mediaKeys.intro_video_r2_key ? 1 : 0) + (mediaKeys.hardcore_video_r2_key ? 1 : 0);
+        const idUploaded = !!p3.id_document_r2_key;
+        const selfieUploaded = !!p3.selfie_r2_key;
+        const missingCount = Math.max(0, 5 - photosCount) + Math.max(0, 2 - videosCount) + (idUploaded ? 0 : 1) + (selfieUploaded ? 0 : 1);
+        trackApplicationComplete({
+          ...attribution,
+          application_type: 'performer_application',
+          source_page: normalizedSourcePage,
+          source_country: sourceCountry,
+          market,
+          landing_page_type: 'recruitment',
+          photos_count: photosCount,
+          videos_count: videosCount,
+          id_uploaded: idUploaded,
+          selfie_uploaded: selfieUploaded,
+          missing_count: missingCount,
+          upload_status: missingCount === 0 ? 'complete' : 'partial',
+          backend_status: data.status || null,
+        });
+      }
+      
+      onSuccess({ first_name: p1.first_name, last_name: p1.last_name, email: p1.email });
+    },
+    onError: () => {},
+  });
+
+  // Validation per step
+  const step0Valid = p1.first_name && p1.last_name && p1.email && p1.age_confirmed && p1.country;
+  const step1Valid = mediaKeys.profile_photo_r2_keys.length >= 5 && mediaKeys.intro_video_r2_key && mediaKeys.hardcore_video_r2_key;
+  const step2Valid = p3.id_document_r2_key && p3.selfie_r2_key && p3.consent1 && p3.consent2 && p3.consent3 && p3.consent4 && p3.consent5;
+
+  const handleNext = async () => {
+    markApplicationStarted();
+    if (step === 0 && !sessionId) {
+      setStartingDraft(true);
+      try {
+        const response = await fetch('/api/v1/recruiting/applications/draft', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            full_name: `${p1.first_name} ${p1.last_name}`.trim(),
+            email: p1.email,
+            country: p1.country,
+            age_confirmed: !!p1.age_confirmed,
+            answers: { source_page: sourcePage || null, source_country: sourceCountry || null },
+          }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.continuationToken) throw new Error(data?.error?.message || 'Could not start the secure application.');
+        setSessionId(data.continuationToken);
+      } catch (error) {
+        toast.error(error.message || 'Could not start the secure application.');
+        return;
+      } finally {
+        setStartingDraft(false);
+      }
+    }
+    setStep(s => s + 1);
+  };
+
+  const Wrapper = embedded ? "div" : "section";
+
+  return (
+    <Wrapper id="application-form" ref={ref} onFocusCapture={markApplicationStarted} onClickCapture={markApplicationStarted} className={embedded ? "pt-16 md:pt-20" : "py-24 px-6 bg-gradient-to-b from-fl-surface to-fl-background border-t border-border"}>
+      <div className="max-w-3xl mx-auto">
+        <div className="text-center mb-10">
+          <h2 className="text-4xl md:text-5xl font-black mb-3 text-white">
+            CONTINUE YOUR <span className="text-primary">CREATOR VERIFICATION</span>
+          </h2>
+          <p className="text-white/45 text-base">Secure review · 48-hour response · Nothing published without approval</p>
+        </div>
+
+        <div className="bg-card border border-primary/20 rounded-[1.75rem] p-6 shadow-2xl shadow-primary/10 md:p-10">
+          <StepIndicator current={step} />
+
+          {/* ── STEP 0 — Who are you? ── */}
+          {step === 0 && (
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label className="text-white/60 text-xs uppercase tracking-widest">First name *</Label>
+                  <Input value={p1.first_name} onChange={e => setP1({...p1, first_name: e.target.value})} placeholder="First name" className="bg-white/5 border-white/12 text-white" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-white/60 text-xs uppercase tracking-widest">Last name *</Label>
+                  <Input value={p1.last_name} onChange={e => setP1({...p1, last_name: e.target.value})} placeholder="Last name" className="bg-white/5 border-white/12 text-white" />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-white/60 text-xs uppercase tracking-widest">Email *</Label>
+                <Input type="email" value={p1.email} onChange={e => setP1({...p1, email: e.target.value})} placeholder="your@email.com" className="bg-white/5 border-white/12 text-white" />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-white/60 text-xs uppercase tracking-widest">WhatsApp</Label>
+                <Input value={p1.whatsapp} onChange={e => setP1({...p1, whatsapp: e.target.value})} placeholder="+1 234 567 890" className="bg-white/5 border-white/12 text-white" />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-white/60 text-xs uppercase tracking-widest">Other contact</Label>
+                <Input value={p1.other_contact} onChange={e => setP1({...p1, other_contact: e.target.value})} placeholder="Telegram, Instagram, Twitter, Line..." className="bg-white/5 border-white/12 text-white" />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label className="text-white/60 text-xs uppercase tracking-widest">Country *</Label>
+                  <Input value={p1.country} onChange={e => setP1({...p1, country: e.target.value})} placeholder="Your country" className="bg-white/5 border-white/12 text-white" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-white/60 text-xs uppercase tracking-widest">City</Label>
+                  <Input value={p1.city} onChange={e => setP1({...p1, city: e.target.value})} placeholder="Your city" className="bg-white/5 border-white/12 text-white" />
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-white/60 text-xs uppercase tracking-widest block mb-2">Identity / orientation</Label>
+                <div className="flex flex-wrap gap-2">
+                  {["Gay", "Bisexual", "Straight", "Trans", "Other", "Prefer not to say"].map(v => (
+                    <ChoiceButton key={v} label={v} selected={p1.sexual_identity === v} onClick={() => setP1({...p1, sexual_identity: v})} />
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-white/60 text-xs uppercase tracking-widest block mb-2">What do you want to do?</Label>
+                <div className="flex flex-wrap gap-2">
+                  {["Live Cam", "Productions", "Both"].map(v => (
+                    <ChoiceButton key={v} label={v} selected={p1.interests === v} onClick={() => setP1({...p1, interests: v})} />
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-white/60 text-xs uppercase tracking-widest block mb-2">Role</Label>
+                <div className="flex flex-wrap gap-2">
+                  {["Top", "Bottom", "Vers", "Not sure yet", "Depends on production"].map(v => (
+                    <ChoiceButton key={v} label={v} selected={p1.role === v} onClick={() => setP1({...p1, role: v})} />
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-white/60 text-xs uppercase tracking-widest block mb-2">Preferred performer model</Label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: "managed_40", label: "Managed — 40%" },
+                    { value: "network_70", label: "Network — 70%" },
+                    { value: "not_sure", label: "Not sure yet" },
+                  ].map(({ value, label }) => (
+                    <ChoiceButton key={value} label={label} selected={p1.preferred_model === value} onClick={() => setP1({...p1, preferred_model: value})} />
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 bg-primary/10 border border-primary/20 rounded-xl px-4 py-3">
+                <Checkbox checked={p1.age_confirmed} onCheckedChange={v => setP1({...p1, age_confirmed: v})} />
+                <span className="text-white/65 text-sm">I confirm I am 18 years or older *</span>
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 1 — Show us something of you ── */}
+          {step === 1 && (
+            <div className="space-y-6">
+              <RecruitmentTrustCard type="approval" />
+
+              <MultiPhotoUpload
+                sessionId={sessionId}
+                required
+                onKeysChanged={keys => setMediaKeys(prev => ({ ...prev, profile_photo_r2_keys: keys }))}
+              />
+
+              <FileUploadField
+                label="Explicit video 1 — Body / Intro"
+                hint="Show your body, confidence and sexual energy. No professional production needed."
+                fileType="intro_video"
+                sessionId={sessionId}
+                accept="video/mp4,video/quicktime,video/webm"
+                required
+                onUploaded={key => setMediaKeys(prev => ({ ...prev, intro_video_r2_key: key }))}
+                onCleared={() => setMediaKeys(prev => ({ ...prev, intro_video_r2_key: null }))}
+              />
+
+              <FileUploadField
+                label="Explicit video 2 — Hardcore / Action"
+                hint="Show explicit action and sexual confidence. Keep it clear and natural."
+                fileType="hardcore_video"
+                sessionId={sessionId}
+                accept="video/mp4,video/quicktime,video/webm"
+                required
+                onUploaded={key => setMediaKeys(prev => ({ ...prev, hardcore_video_r2_key: key }))}
+                onCleared={() => setMediaKeys(prev => ({ ...prev, hardcore_video_r2_key: null }))}
+              />
+
+              <div className="space-y-1.5">
+                <Label className="text-white/60 text-xs uppercase tracking-widest">Why would fans want more of you?</Label>
+                <Textarea
+                  value={p2.why}
+                  onChange={e => setP2({...p2, why: e.target.value})}
+                  placeholder="Describe your look, energy, personality, sexual style and what makes you stand out."
+                  className="min-h-[120px] bg-white/5 border-white/12 text-white"
+                />
+              </div>
+
+              {!step1Valid && (
+                <div className="flex items-start gap-2 bg-warning/10 border border-warning/25 rounded-xl px-4 py-3">
+                  <AlertCircle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+                  <p className="text-warning text-xs leading-relaxed">
+                    Please upload all required files:
+                    {mediaKeys.profile_photo_r2_keys.length < 5 && ` ${5 - mediaKeys.profile_photo_r2_keys.length} more photo(s),`}
+                    {!mediaKeys.intro_video_r2_key && " body video,"}
+                    {!mediaKeys.hardcore_video_r2_key && " hardcore video"}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── STEP 2 — Are you real? ── */}
+          {step === 2 && (
+            <div className="space-y-6">
+              <div className="grid gap-3 sm:grid-cols-2"><RecruitmentTrustCard type="id" /><RecruitmentTrustCard type="contracts" /></div>
+
+              <div>
+                <Label className="text-white/60 text-xs uppercase tracking-widest block mb-2">ID document type *</Label>
+                <div className="flex flex-wrap gap-2">
+                  {["National ID", "Driver License", "Passport", "Other official government ID"].map(v => (
+                    <ChoiceButton key={v} label={v} selected={p3.id_type === v} onClick={() => setP3({...p3, id_type: v})} />
+                  ))}
+                </div>
+                <p className="text-white/25 text-xs mt-2">Document must be valid and not expired. Face and ID number must be readable.</p>
+              </div>
+
+              <FileUploadField
+                label="ID document — front *"
+                hint="Clear photo of the front of your ID."
+                fileType="id_document"
+                sessionId={sessionId}
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                required
+                onUploaded={key => setP3(prev => ({ ...prev, id_document_r2_key: key }))}
+                onCleared={() => setP3(prev => ({ ...prev, id_document_r2_key: null }))}
+              />
+
+              <FileUploadField
+                label="ID document — back (if applicable)"
+                hint="Clear photo of the back of your ID, if it has one."
+                fileType="id_document_back"
+                sessionId={sessionId}
+                accept="image/jpeg,image/png,image/webp"
+                onUploaded={key => setP3(prev => ({ ...prev, id_back_r2_key: key }))}
+                onCleared={() => setP3(prev => ({ ...prev, id_back_r2_key: null }))}
+              />
+
+              <FileUploadField
+                label="Selfie holding your ID *"
+                hint="Photo of you holding your ID next to your face. Both your face and the ID must be clearly visible."
+                fileType="id_selfie"
+                sessionId={sessionId}
+                accept="image/jpeg,image/png,image/webp"
+                required
+                onUploaded={key => setP3(prev => ({ ...prev, selfie_r2_key: key }))}
+                onCleared={() => setP3(prev => ({ ...prev, selfie_r2_key: null }))}
+              />
+
+              <div className="space-y-3 pt-4 border-t border-white/8">
+                {[
+                  { key: "consent1", label: "I confirm I am 18 years or older" },
+                  { key: "consent2", label: "I confirm all uploaded content shows me" },
+                  { key: "consent3", label: "I consent to FLESHLAB reviewing my application materials" },
+                  { key: "consent4", label: "I understand nothing will be published without approval, contract and consent" },
+                  { key: "consent5", label: "I understand FLESHLAB is not escort, dating or private meetings" },
+                ].map(({ key, label }) => (
+                  <div key={key} className="flex items-start gap-3">
+                    <Checkbox
+                      checked={p3[key]}
+                      onCheckedChange={v => setP3(prev => ({ ...prev, [key]: v }))}
+                    />
+                    <span className="text-white/60 text-sm">{label}</span>
+                  </div>
+                ))}
+              </div>
+
+              {submitMutation.isError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>We couldn’t complete your verification submission just now. Please check your connection and try again — your completed fields and uploads remain on this screen.</AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+
+          {/* Navigation */}
+          <div className="flex justify-between gap-3 mt-8">
+            <Button
+              variant="outline"
+              onClick={() => setStep(s => s - 1)}
+              disabled={step === 0}
+              className="min-h-11 border-white/15 text-white/60 hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-white/30"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Back
+            </Button>
+
+            {step < 2 ? (
+              <Button
+                onClick={handleNext}
+                disabled={step === 0 ? (!step0Valid || startingDraft) : step === 1 ? !step1Valid : false}
+                className="min-h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                {step === 0 && startingDraft ? "Preparing secure upload…" : (step === 0 ? "Continue to private review" : "Continue to secure verification")}
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            ) : (
+              <Button
+                disabled={!step2Valid || submitMutation.isPending}
+                onClick={() => submitMutation.mutate()}
+                className="min-h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-black px-10 py-5 h-auto text-base shadow-xl shadow-primary/30 focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                {submitMutation.isPending ? "Creating your next milestone..." : "Unlock your next milestone"}
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </Wrapper>
+  );
+});
+
+export default BPApplicationForm;

@@ -1,0 +1,73 @@
+{
+  "name": "Subscription",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "title": "User ID"
+    },
+    "fanclub_id": {
+      "type": "string",
+      "title": "Fanclub ID"
+    },
+    "stripe_subscription_id": {
+      "type": "string",
+      "title": "Subscription ID (Legacy Stripe Field Name - Reused for NOWPayments)",
+      "description": "For NOWPayments: stores 'nowpayments_${payment_id}'. Legacy field name from Stripe integration, now reused generically."
+    },
+    "stripe_customer_id": {
+      "type": "string",
+      "title": "Customer ID (Legacy Stripe Field Name)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "cancelled",
+        "past_due",
+        "trialing",
+        "incomplete"
+      ],
+      "title": "Status"
+    },
+    "current_period_start": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Period Start"
+    },
+    "current_period_end": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Period End"
+    },
+    "cancelled_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Cancelled At"
+    },
+    "amount_usd": {
+      "type": "number",
+      "title": "Amount (USD)"
+    },
+    "payment_intent_id": {
+      "type": "string",
+      "title": "Payment Intent ID",
+      "description": "Reference to PaymentIntent record that created this subscription"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "stripe",
+        "nowpayments",
+        "ccbill",
+        "segpay"
+      ],
+      "title": "Payment Provider",
+      "description": "Which payment provider created this subscription"
+    }
+  },
+  "required": [
+    "user_id",
+    "fanclub_id"
+  ]
+}
