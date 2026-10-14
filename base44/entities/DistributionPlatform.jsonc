@@ -1,0 +1,41 @@
+{
+  "name": "DistributionPlatform",
+  "type": "object",
+  "properties": {
+    "platform_key": { "type": "string", "title": "Stable Platform Key" },
+    "name": { "type": "string", "title": "Platform Name" },
+    "partner_program": { "type": "string", "title": "Partner Program" },
+    "priority": { "type": "string", "enum": ["P0", "P1", "P2"], "title": "Priority" },
+    "official_url": { "type": "string", "title": "Official Platform URL" },
+    "application_url": { "type": "string", "title": "Official Application URL" },
+    "evidence_url": { "type": "string", "title": "Official Evidence URL" },
+    "evidence_verified_at": { "type": "string", "format": "date-time", "title": "Evidence Verified At" },
+    "evidence_summary": { "type": "string", "title": "Evidence Summary", "format": "textarea" },
+    "workflow_status": {
+      "type": "string",
+      "enum": ["NOT_RESEARCHED", "RESEARCHED", "APPLICATION_REQUIRED", "APPLICATION_PREPARED", "APPLICATION_SUBMITTED", "AWAITING_APPROVAL", "APPROVED", "INTEGRATION_IN_PROGRESS", "CONNECTED", "BLOCKED", "REJECTED"],
+      "default": "NOT_RESEARCHED",
+      "title": "Workflow Status"
+    },
+    "studio_eligibility": { "type": "string", "enum": ["UNKNOWN", "INDIVIDUAL_CREATOR", "STUDIO_OR_PRODUCER", "APPLICATION_REQUIRED", "INELIGIBLE", "REQUIRES_REVIEW"], "default": "UNKNOWN", "title": "Studio Eligibility" },
+    "approval_status": { "type": "string", "enum": ["NOT_REQUESTED", "AWAITING_APPROVAL", "APPROVED", "REJECTED", "EXPIRED"], "default": "NOT_REQUESTED", "title": "Approval Status" },
+    "application_submitted_at": { "type": "string", "format": "date-time", "title": "Application Submitted At" },
+    "integration_mode": { "type": "string", "enum": ["OFFICIAL_API", "AUTHORIZED_PARTNER_FEED", "OFFICIAL_BULK_UPLOAD", "OPERATOR_ASSISTED", "UNAVAILABLE"], "default": "OPERATOR_ASSISTED", "title": "Integration Mode" },
+    "authentication_status": { "type": "string", "enum": ["UNCONNECTED", "PENDING", "VALIDATED", "REVOKED", "NOT_APPLICABLE"], "default": "UNCONNECTED", "title": "Authentication Status" },
+    "monetization_model": { "type": "string", "enum": ["AD_REVENUE", "PPV", "SUBSCRIPTIONS", "CLIP_SALES", "MIXED", "UNKNOWN"], "default": "UNKNOWN", "title": "Monetization Model" },
+    "revenue_share_terms": { "type": "string", "title": "Verified Revenue Terms", "format": "textarea" },
+    "payout_restrictions": { "type": "string", "title": "Payout Restrictions", "format": "textarea" },
+    "supported_countries": { "type": "string", "title": "Country Availability Notes", "format": "textarea" },
+    "document_requirements": { "type": "array", "items": { "type": "string" }, "title": "Document Requirements" },
+    "upload_capabilities": { "type": "string", "title": "Upload Capabilities", "format": "textarea" },
+    "reporting_capabilities": { "type": "string", "title": "Reporting Capabilities", "format": "textarea" },
+    "content_rules": { "type": "string", "title": "Content Rules", "format": "textarea" },
+    "exclusivity_notes": { "type": "string", "title": "Exclusivity Notes", "format": "textarea" },
+    "account_owner": { "type": "string", "title": "Account Owner" },
+    "last_sync_at": { "type": "string", "format": "date-time", "title": "Last Successful Sync" },
+    "last_error": { "type": "string", "title": "Last Error" },
+    "next_action": { "type": "string", "title": "Next Required Action" },
+    "metadata_limits_json": { "type": "string", "title": "Metadata Limits JSON" }
+  },
+  "required": ["platform_key", "name", "priority", "workflow_status", "integration_mode"]
+}

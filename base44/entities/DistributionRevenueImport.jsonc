@@ -1,0 +1,26 @@
+{
+  "name": "DistributionRevenueImport",
+  "type": "object",
+  "properties": {
+    "platform_key": { "type": "string", "title": "Platform Key" },
+    "report_hash": { "type": "string", "title": "Source Report SHA-256" },
+    "source_file_name": { "type": "string", "title": "Source File Name" },
+    "source_report_text": { "type": "string", "title": "Original CSV Report" },
+    "period_start": { "type": "string", "format": "date", "title": "Period Start" },
+    "period_end": { "type": "string", "format": "date", "title": "Period End" },
+    "currency": { "type": "string", "title": "Currency" },
+    "classification": { "type": "string", "enum": ["PLATFORM_REPORTED", "ESTIMATE"], "title": "Data Classification" },
+    "row_count": { "type": "integer", "title": "Rows Imported" },
+    "gross_sales": { "type": "number", "title": "Gross Sales" },
+    "platform_deductions": { "type": "number", "title": "Platform Deductions" },
+    "refunds": { "type": "number", "title": "Refunds" },
+    "chargebacks": { "type": "number", "title": "Chargebacks" },
+    "net_distribution_revenue": { "type": "number", "title": "Net Distribution Revenue" },
+    "payout_status": { "type": "string", "enum": ["UNCONFIRMED", "PENDING", "PAID", "PARTIAL", "HELD"], "default": "UNCONFIRMED", "title": "Payout Status" },
+    "import_status": { "type": "string", "enum": ["IMPORTING", "IMPORTED", "FAILED"], "default": "IMPORTING", "title": "Import Status" },
+    "import_error": { "type": "string", "title": "Import Error" },
+    "imported_by": { "type": "string", "title": "Imported By" },
+    "imported_at": { "type": "string", "format": "date-time", "title": "Imported At" }
+  },
+  "required": ["platform_key", "report_hash", "source_file_name", "period_start", "period_end", "currency", "classification", "row_count", "imported_by"]
+}

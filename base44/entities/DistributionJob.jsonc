@@ -1,0 +1,24 @@
+{
+  "name": "DistributionJob",
+  "type": "object",
+  "properties": {
+    "video_id": { "type": "string", "title": "Video ID" },
+    "platform_key": { "type": "string", "title": "Platform Key" },
+    "distribution_variant": { "type": "string", "enum": ["FREE_MONETIZED", "PROMOTIONAL", "PREMIUM_PAID"], "title": "Distribution Variant" },
+    "idempotency_key": { "type": "string", "title": "Idempotency Key" },
+    "status": { "type": "string", "enum": ["DRAFT", "VALIDATING", "BLOCKED_COMPLIANCE", "READY", "QUEUED", "UPLOADING", "PROCESSING", "AWAITING_REVIEW", "PUBLISHED", "FAILED_RETRYABLE", "FAILED_PERMANENT", "REMOVAL_REQUESTED", "REMOVED"], "default": "DRAFT", "title": "Job Status" },
+    "validation_errors_json": { "type": "string", "title": "Validation Errors JSON" },
+    "metadata_snapshot_json": { "type": "string", "title": "Metadata Snapshot JSON" },
+    "source_asset_id": { "type": "string", "title": "Source Asset ID" },
+    "source_sha256": { "type": "string", "title": "Source SHA-256" },
+    "external_content_id": { "type": "string", "title": "External Content ID" },
+    "publication_url": { "type": "string", "title": "Publication URL" },
+    "retry_count": { "type": "integer", "default": 0, "title": "Retry Count" },
+    "last_error": { "type": "string", "title": "Last Error" },
+    "status_history_json": { "type": "string", "title": "State Transition Log JSON" },
+    "created_by": { "type": "string", "title": "Created By" },
+    "queued_at": { "type": "string", "format": "date-time", "title": "Queued At" },
+    "published_at": { "type": "string", "format": "date-time", "title": "Published At" }
+  },
+  "required": ["video_id", "platform_key", "distribution_variant", "idempotency_key", "status", "created_by"]
+}

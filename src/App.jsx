@@ -70,6 +70,7 @@ import GrowthDashboard from './pages/admin/GrowthDashboard';
 import ExecutiveDashboard from './pages/admin/ExecutiveDashboard';
 import AdminPayments from './pages/admin/Payments';
 import AdminRevenueDashboard from './pages/admin/RevenueDashboard';
+import DistributionOS from './pages/admin/DistributionOS';
 import MonthlyPayoutSummary from './pages/admin/MonthlyPayoutSummary';
 import MonthlyCloseoutPreview from './pages/admin/MonthlyCloseoutPreview';
 import PayoutCloseouts from './pages/admin/PayoutCloseouts';
@@ -243,6 +244,7 @@ const AuthenticatedApp = () => {
                 <Route path="/admin/executive-dashboard" element={<ExecutiveDashboard />} />
                 <Route path="/admin/payments" element={<AdminPayments />} />
                 <Route path="/admin/revenue" element={<AdminRevenueDashboard />} />
+                <Route path="/admin/distribution" element={<DistributionOS />} />
                 <Route path="/admin/monthly-payout-summary" element={<MonthlyPayoutSummary />} />
                 <Route path="/admin/monthly-closeout-preview" element={<MonthlyCloseoutPreview />} />
                 <Route path="/admin/payout-closeouts" element={<PayoutCloseouts />} />

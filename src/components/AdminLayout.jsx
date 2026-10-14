@@ -1,10 +1,9 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useState, useMemo } from "react";
 import {
-  LayoutDashboard, Video, Upload, Users, Tag, Newspaper,
-  Link2, Database, Menu, Play, ChevronRight, ChevronDown, Globe, FileText, ClipboardList,
-  AlertCircle, Settings, UserX, DollarSign, MessageSquare, LogOut, Sparkles,
-  TrendingUp, CalendarCheck, Eye, ListChecks, FlaskConical, Activity, X, Search, FolderKanban, ShieldAlert, ShieldCheck
+  LayoutDashboard, Video, Users, Newspaper,
+  Link2, Menu, Play, ChevronRight, ChevronDown, Globe, Settings, DollarSign, LogOut, Sparkles,
+  TrendingUp, FlaskConical, Activity, X, Search, FolderKanban, ShieldAlert, ShieldCheck
    } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
@@ -21,6 +20,7 @@ const NAV_GROUPS = [
       { href: "/admin/recruitment-intelligence", label: "Recruitment", icon: FlaskConical },
       { href: "/admin/recruitment-campaigns", label: "Campaigns", icon: Link2 },
       { href: "/admin/growth", label: "Marketing", icon: TrendingUp },
+      { href: "/admin/distribution", label: "Distribution", icon: Globe },
       { href: "/admin/revenue", label: "Business", icon: DollarSign },
       { href: "/admin/ai-text-generator", label: "AI", icon: Sparkles },
       { href: "/admin/ai-media-studio", label: "Cover Designer", icon: Sparkles },

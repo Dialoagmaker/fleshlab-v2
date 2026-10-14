@@ -1,0 +1,19 @@
+{
+  "name": "DistributionPartnerAgreement",
+  "type": "object",
+  "properties": {
+    "partner_name": { "type": "string", "title": "Partner Studio" },
+    "setup_fee_usd": { "type": "number", "default": 2490, "title": "One-Time Setup Fee (USD)" },
+    "creator_share_percent": { "type": "number", "default": 70, "title": "Creator Share (%)" },
+    "fleshlab_share_percent": { "type": "number", "default": 30, "title": "FLESHLAB Share (%)" },
+    "revenue_basis": { "type": "string", "enum": ["NET_AFTER_DEFINED_PLATFORM_DEDUCTIONS"], "default": "NET_AFTER_DEFINED_PLATFORM_DEDUCTIONS", "title": "Revenue Basis" },
+    "status": { "type": "string", "enum": ["DRAFT", "SENT", "SIGNED", "ACTIVE", "SUSPENDED", "TERMINATED"], "default": "DRAFT", "title": "Agreement Status" },
+    "signed_contract_id": { "type": "string", "title": "Signed Contract ID" },
+    "signed_at": { "type": "string", "format": "date-time", "title": "Signed At" },
+    "signed_evidence_url": { "type": "string", "title": "Signed Agreement Evidence URL" },
+    "setup_fee_status": { "type": "string", "enum": ["NOT_DUE", "DUE", "PAID", "WAIVED"], "default": "NOT_DUE", "title": "Setup Fee Status" },
+    "notes": { "type": "string", "title": "Internal Notes", "format": "textarea" },
+    "created_by": { "type": "string", "title": "Created By" }
+  },
+  "required": ["partner_name", "setup_fee_usd", "creator_share_percent", "fleshlab_share_percent", "revenue_basis", "status", "created_by"]
+}

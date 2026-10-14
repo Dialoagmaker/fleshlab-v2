@@ -1,0 +1,29 @@
+{
+  "name": "DistributionRightsGrant",
+  "type": "object",
+  "properties": {
+    "video_id": { "type": "string", "title": "Video ID" },
+    "performer_id": { "type": "string", "title": "Performer ID" },
+    "production_date": { "type": "string", "format": "date", "title": "Verified Production Date" },
+    "platform_keys": { "type": "array", "items": { "type": "string" }, "title": "Authorized Platforms" },
+    "variants": { "type": "array", "items": { "type": "string", "enum": ["FREE_MONETIZED", "PROMOTIONAL", "PREMIUM_PAID"] }, "title": "Authorized Distribution Variants" },
+    "territories": { "type": "array", "items": { "type": "string" }, "title": "Authorized Territories" },
+    "release_document_ids": { "type": "array", "items": { "type": "string" }, "title": "Approved Release Document IDs" },
+    "distribution_rights_verified": { "type": "boolean", "default": false, "title": "Commercial Distribution Rights Verified" },
+    "sublicensing_verified": { "type": "boolean", "default": false, "title": "Sublicensing Rights Verified" },
+    "identity_review_complete": { "type": "boolean", "default": false, "title": "Identity and Age Records Reviewed" },
+    "voluntary_consent_review_complete": { "type": "boolean", "default": false, "title": "Voluntary/Informed Consent Reviewed" },
+    "production_safety_review_complete": { "type": "boolean", "default": false, "title": "Production Safety Reviewed" },
+    "no_coercion_review_complete": { "type": "boolean", "default": false, "title": "Coercion/Control Risk Reviewed" },
+    "no_hidden_recording_review_complete": { "type": "boolean", "default": false, "title": "Hidden Recording Risk Reviewed" },
+    "no_impairment_review_complete": { "type": "boolean", "default": false, "title": "Consent Impairment Risk Reviewed" },
+    "release_production_match_review_complete": { "type": "boolean", "default": false, "title": "Release Matches This Production" },
+    "lawfulness_review_complete": { "type": "boolean", "default": false, "title": "Applicable Law and Recordkeeping Reviewed" },
+    "status": { "type": "string", "enum": ["MISSING_DOCUMENTS", "UNDER_REVIEW", "APPROVED", "REJECTED", "EXPIRED", "SUSPENDED", "LEGAL_HOLD"], "default": "MISSING_DOCUMENTS", "title": "Compliance Status" },
+    "reviewed_by": { "type": "string", "title": "Reviewed By" },
+    "reviewed_at": { "type": "string", "format": "date-time", "title": "Reviewed At" },
+    "expires_at": { "type": "string", "format": "date-time", "title": "Grant Expiry" },
+    "notes": { "type": "string", "title": "Internal Review Notes", "format": "textarea" }
+  },
+  "required": ["video_id", "performer_id", "status"]
+}

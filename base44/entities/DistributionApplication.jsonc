@@ -1,0 +1,26 @@
+{
+  "name": "DistributionApplication",
+  "type": "object",
+  "properties": {
+    "platform_key": { "type": "string", "title": "Platform Key" },
+    "workflow_status": { "type": "string", "enum": ["APPLICATION_PREPARED", "APPLICATION_SUBMITTED", "AWAITING_APPROVAL", "APPROVED", "REJECTED", "BLOCKED"], "default": "APPLICATION_PREPARED", "title": "Workflow Status" },
+    "legal_entity_name": { "type": "string", "title": "Legal Entity Name" },
+    "jurisdiction": { "type": "string", "title": "Jurisdiction" },
+    "contact_name": { "type": "string", "title": "Authorized Contact Name" },
+    "contact_email": { "type": "string", "title": "Authorized Contact Email" },
+    "official_website": { "type": "string", "title": "Official Website" },
+    "brand_description": { "type": "string", "title": "Brand Description", "format": "textarea" },
+    "content_portfolio": { "type": "string", "title": "Content Portfolio", "format": "textarea" },
+    "studio_capabilities": { "type": "string", "title": "Studio Capabilities", "format": "textarea" },
+    "requested_access": { "type": "string", "title": "Requested Access", "format": "textarea" },
+    "draft_text": { "type": "string", "title": "Application Draft", "format": "textarea" },
+    "submission_reference": { "type": "string", "title": "Submission Reference" },
+    "submitted_at": { "type": "string", "format": "date-time", "title": "Submitted At" },
+    "response_summary": { "type": "string", "title": "Response Summary", "format": "textarea" },
+    "follow_up_at": { "type": "string", "format": "date-time", "title": "Follow-up At" },
+    "evidence_url": { "type": "string", "title": "Submission/Approval Evidence URL" },
+    "evidence_verified_at": { "type": "string", "format": "date-time", "title": "Evidence Verified At" },
+    "created_by": { "type": "string", "title": "Created By" }
+  },
+  "required": ["platform_key", "workflow_status", "draft_text", "created_by"]
+}

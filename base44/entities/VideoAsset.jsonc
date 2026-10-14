@@ -76,6 +76,30 @@
       "type": "string",
       "title": "Aspect Ratio"
     },
+    "sha256": {
+      "type": "string",
+      "title": "SHA-256 Checksum",
+      "description": "Lowercase SHA-256 checksum of the exact stored file bytes"
+    },
+    "has_audio_stream": {
+      "type": "boolean",
+      "title": "Audio Stream Present"
+    },
+    "validation_status": {
+      "type": "string",
+      "enum": ["not_checked", "passed", "failed"],
+      "default": "not_checked",
+      "title": "Technical File Validation Status"
+    },
+    "validated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Technically Validated At"
+    },
+    "validated_by": {
+      "type": "string",
+      "title": "Technical Validation Actor"
+    },
     "frame_timestamp_seconds": {
       "type": "number",
       "title": "Frame Timestamp (seconds)"
